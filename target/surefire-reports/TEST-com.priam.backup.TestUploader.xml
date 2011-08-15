@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuite failures="0" time="0.007" errors="2" skipped="0" tests="2" name="com.priam.backup.TestUploader">
+  <properties>
+    <property name="java.runtime.name" value="Java(TM) SE Runtime Environment"/>
+    <property name="sun.boot.library.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries"/>
+    <property name="java.vm.version" value="20.1-b02-384"/>
+    <property name="awt.nativeDoubleBuffering" value="true"/>
+    <property name="gopherProxySet" value="false"/>
+    <property name="mrj.build" value="10M3425"/>
+    <property name="java.vm.vendor" value="Apple Inc."/>
+    <property name="java.vendor.url" value="http://www.apple.com/"/>
+    <property name="path.separator" value=":"/>
+    <property name="java.vm.name" value="Java HotSpot(TM) 64-Bit Server VM"/>
+    <property name="file.encoding.pkg" value="sun.io"/>
+    <property name="user.country" value="US"/>
+    <property name="sun.java.launcher" value="SUN_STANDARD"/>
+    <property name="sun.os.patch.level" value="unknown"/>
+    <property name="java.vm.specification.name" value="Java Virtual Machine Specification"/>
+    <property name="user.dir" value="/Users/vparthasarathy/Documents/workspace-oss/Priam"/>
+    <property name="java.runtime.version" value="1.6.0_26-b03-384-10M3425"/>
+    <property name="java.awt.graphicsenv" value="apple.awt.CGraphicsEnvironment"/>
+    <property name="basedir" value="/Users/vparthasarathy/Documents/workspace-oss/Priam"/>
+    <property name="java.endorsed.dirs" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/endorsed"/>
+    <property name="os.arch" value="x86_64"/>
+    <property name="surefire.real.class.path" value="/Users/vparthasarathy/Documents/workspace-oss/Priam/target/surefire/surefirebooter3433403804279167872.jar"/>
+    <property name="java.io.tmpdir" value="/var/folders/De/DegJ+9rSCoaOn2gn26aXJpg+br6/-Tmp-/"/>
+    <property name="line.separator" value="
+"/>
+    <property name="java.vm.specification.vendor" value="Sun Microsystems Inc."/>
+    <property name="os.name" value="Mac OS X"/>
+    <property name="sun.jnu.encoding" value="MacRoman"/>
+    <property name="java.library.path" value=".:/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java"/>
+    <property name="surefire.test.class.path" value="/Users/vparthasarathy/Documents/workspace-oss/Priam/target/test-classes:/Users/vparthasarathy/Documents/workspace-oss/Priam/target/classes:/Users/vparthasarathy/.m2/repository/commons-lang/commons-lang/2.3/commons-lang-2.3.jar:/Users/vparthasarathy/.m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/jcl-over-slf4j/1.6.1/jcl-over-slf4j-1.6.1.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1.jar:/Users/vparthasarathy/.m2/repository/com/amazonaws/aws-java-sdk/1.2.6/aws-java-sdk-1.2.6.jar:/Users/vparthasarathy/.m2/repository/org/apache/httpcomponents/httpclient/4.1.2/httpclient-4.1.2.jar:/Users/vparthasarathy/.m2/repository/org/apache/httpcomponents/httpcore/4.1.2/httpcore-4.1.2.jar:/Users/vparthasarathy/.m2/repository/commons-codec/commons-codec/1.3/commons-codec-1.3.jar:/Users/vparthasarathy/.m2/repository/org/codehaus/jackson/jackson-core-asl/1.8.5/jackson-core-asl-1.8.5.jar:/Users/vparthasarathy/.m2/repository/javax/mail/mail/1.4.1/mail-1.4.1.jar:/Users/vparthasarathy/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/Users/vparthasarathy/.m2/repository/stax/stax-api/1.0.1/stax-api-1.0.1.jar:/Users/vparthasarathy/.m2/repository/com/google/guava/guava/r05/guava-r05.jar:/Users/vparthasarathy/.m2/repository/com/google/inject/guice/3.0/guice-3.0.jar:/Users/vparthasarathy/.m2/repository/javax/inject/javax.inject/1/javax.inject-1.jar:/Users/vparthasarathy/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar:/Users/vparthasarathy/.m2/repository/org/apache/commons/commons-io/1.3.2/commons-io-1.3.2.jar:/Users/vparthasarathy/.m2/repository/org/quartz-scheduler/quartz/1.7.3/quartz-1.7.3.jar:/Users/vparthasarathy/.m2/repository/com/googlecode/json-simple/json-simple/1.1/json-simple-1.1.jar:/Users/vparthasarathy/.m2/repository/org/xerial/snappy/snappy-java/1.0.3.1/snappy-java-1.0.3.1.jar:/Users/vparthasarathy/.m2/repository/org/yaml/snakeyaml/1.9/snakeyaml-1.9.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/cassandra-all/0.8.4/cassandra-all-0.8.4.jar:/Users/vparthasarathy/.m2/repository/commons-cli/commons-cli/1.1/commons-cli-1.1.jar:/Users/vparthasarathy/.m2/repository/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar:/Users/vparthasarathy/.m2/repository/com/googlecode/concurrentlinkedhashmap/concurrentlinkedhashmap-lru/1.1/concurrentlinkedhashmap-lru-1.1.jar:/Users/vparthasarathy/.m2/repository/org/antlr/antlr/3.2/antlr-3.2.jar:/Users/vparthasarathy/.m2/repository/org/antlr/antlr-runtime/3.2/antlr-runtime-3.2.jar:/Users/vparthasarathy/.m2/repository/org/antlr/stringtemplate/3.2/stringtemplate-3.2.jar:/Users/vparthasarathy/.m2/repository/antlr/antlr/2.7.7/antlr-2.7.7.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/deps/avro/1.4.0-cassandra-1/avro-1.4.0-cassandra-1.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/jetty/6.1.22/jetty-6.1.22.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/jetty-util/6.1.22/jetty-util-6.1.22.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar:/Users/vparthasarathy/.m2/repository/org/codehaus/jackson/jackson-mapper-asl/1.4.0/jackson-mapper-asl-1.4.0.jar:/Users/vparthasarathy/.m2/repository/jline/jline/0.9.94/jline-0.9.94.jar:/Users/vparthasarathy/.m2/repository/com/github/stephenc/high-scale-lib/high-scale-lib/1.1.2/high-scale-lib-1.1.2.jar:/Users/vparthasarathy/.m2/repository/log4j/log4j/1.2.16/log4j-1.2.16.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/slf4j-log4j12/1.6.1/slf4j-log4j12-1.6.1.jar:/Users/vparthasarathy/.m2/repository/org/apache/thrift/libthrift/0.6.1/libthrift-0.6.1.jar:/Users/vparthasarathy/.m2/repository/junit/junit/4.4/junit-4.4.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/cassandra-thrift/0.8.4/cassandra-thrift-0.8.4.jar:/Users/vparthasarathy/.m2/repository/com/github/stephenc/jamm/0.2.2/jamm-0.2.2.jar:/Users/vparthasarathy/.m2/repository/javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1.jar:/Users/vparthasarathy/.m2/repository/joda-time/joda-time/2.0/joda-time-2.0.jar:/Users/vparthasarathy/.m2/repository/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar:"/>
+    <property name="java.specification.name" value="Java Platform API Specification"/>
+    <property name="java.class.version" value="50.0"/>
+    <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
+    <property name="os.version" value="10.6.8"/>
+    <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="user.home" value="/Users/vparthasarathy"/>
+    <property name="user.timezone" value="America/Los_Angeles"/>
+    <property name="java.awt.printerjob" value="apple.awt.CPrinterJob"/>
+    <property name="java.specification.version" value="1.6"/>
+    <property name="file.encoding" value="MacRoman"/>
+    <property name="user.name" value="vparthasarathy"/>
+    <property name="java.class.path" value="/Users/vparthasarathy/Documents/workspace-oss/Priam/target/test-classes:/Users/vparthasarathy/Documents/workspace-oss/Priam/target/classes:/Users/vparthasarathy/.m2/repository/commons-lang/commons-lang/2.3/commons-lang-2.3.jar:/Users/vparthasarathy/.m2/repository/commons-logging/commons-logging/1.1.1/commons-logging-1.1.1.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/jcl-over-slf4j/1.6.1/jcl-over-slf4j-1.6.1.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/slf4j-api/1.6.1/slf4j-api-1.6.1.jar:/Users/vparthasarathy/.m2/repository/com/amazonaws/aws-java-sdk/1.2.6/aws-java-sdk-1.2.6.jar:/Users/vparthasarathy/.m2/repository/org/apache/httpcomponents/httpclient/4.1.2/httpclient-4.1.2.jar:/Users/vparthasarathy/.m2/repository/org/apache/httpcomponents/httpcore/4.1.2/httpcore-4.1.2.jar:/Users/vparthasarathy/.m2/repository/commons-codec/commons-codec/1.3/commons-codec-1.3.jar:/Users/vparthasarathy/.m2/repository/org/codehaus/jackson/jackson-core-asl/1.8.5/jackson-core-asl-1.8.5.jar:/Users/vparthasarathy/.m2/repository/javax/mail/mail/1.4.1/mail-1.4.1.jar:/Users/vparthasarathy/.m2/repository/javax/activation/activation/1.1/activation-1.1.jar:/Users/vparthasarathy/.m2/repository/stax/stax-api/1.0.1/stax-api-1.0.1.jar:/Users/vparthasarathy/.m2/repository/com/google/guava/guava/r05/guava-r05.jar:/Users/vparthasarathy/.m2/repository/com/google/inject/guice/3.0/guice-3.0.jar:/Users/vparthasarathy/.m2/repository/javax/inject/javax.inject/1/javax.inject-1.jar:/Users/vparthasarathy/.m2/repository/aopalliance/aopalliance/1.0/aopalliance-1.0.jar:/Users/vparthasarathy/.m2/repository/org/apache/commons/commons-io/1.3.2/commons-io-1.3.2.jar:/Users/vparthasarathy/.m2/repository/org/quartz-scheduler/quartz/1.7.3/quartz-1.7.3.jar:/Users/vparthasarathy/.m2/repository/com/googlecode/json-simple/json-simple/1.1/json-simple-1.1.jar:/Users/vparthasarathy/.m2/repository/org/xerial/snappy/snappy-java/1.0.3.1/snappy-java-1.0.3.1.jar:/Users/vparthasarathy/.m2/repository/org/yaml/snakeyaml/1.9/snakeyaml-1.9.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/cassandra-all/0.8.4/cassandra-all-0.8.4.jar:/Users/vparthasarathy/.m2/repository/commons-cli/commons-cli/1.1/commons-cli-1.1.jar:/Users/vparthasarathy/.m2/repository/commons-collections/commons-collections/3.2.1/commons-collections-3.2.1.jar:/Users/vparthasarathy/.m2/repository/com/googlecode/concurrentlinkedhashmap/concurrentlinkedhashmap-lru/1.1/concurrentlinkedhashmap-lru-1.1.jar:/Users/vparthasarathy/.m2/repository/org/antlr/antlr/3.2/antlr-3.2.jar:/Users/vparthasarathy/.m2/repository/org/antlr/antlr-runtime/3.2/antlr-runtime-3.2.jar:/Users/vparthasarathy/.m2/repository/org/antlr/stringtemplate/3.2/stringtemplate-3.2.jar:/Users/vparthasarathy/.m2/repository/antlr/antlr/2.7.7/antlr-2.7.7.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/deps/avro/1.4.0-cassandra-1/avro-1.4.0-cassandra-1.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/jetty/6.1.22/jetty-6.1.22.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/jetty-util/6.1.22/jetty-util-6.1.22.jar:/Users/vparthasarathy/.m2/repository/org/mortbay/jetty/servlet-api/2.5-20081211/servlet-api-2.5-20081211.jar:/Users/vparthasarathy/.m2/repository/org/codehaus/jackson/jackson-mapper-asl/1.4.0/jackson-mapper-asl-1.4.0.jar:/Users/vparthasarathy/.m2/repository/jline/jline/0.9.94/jline-0.9.94.jar:/Users/vparthasarathy/.m2/repository/com/github/stephenc/high-scale-lib/high-scale-lib/1.1.2/high-scale-lib-1.1.2.jar:/Users/vparthasarathy/.m2/repository/log4j/log4j/1.2.16/log4j-1.2.16.jar:/Users/vparthasarathy/.m2/repository/org/slf4j/slf4j-log4j12/1.6.1/slf4j-log4j12-1.6.1.jar:/Users/vparthasarathy/.m2/repository/org/apache/thrift/libthrift/0.6.1/libthrift-0.6.1.jar:/Users/vparthasarathy/.m2/repository/junit/junit/4.4/junit-4.4.jar:/Users/vparthasarathy/.m2/repository/org/apache/cassandra/cassandra-thrift/0.8.4/cassandra-thrift-0.8.4.jar:/Users/vparthasarathy/.m2/repository/com/github/stephenc/jamm/0.2.2/jamm-0.2.2.jar:/Users/vparthasarathy/.m2/repository/javax/ws/rs/jsr311-api/1.1.1/jsr311-api-1.1.1.jar:/Users/vparthasarathy/.m2/repository/joda-time/joda-time/2.0/joda-time-2.0.jar:/Users/vparthasarathy/.m2/repository/javax/servlet/servlet-api/2.5/servlet-api-2.5.jar:"/>
+    <property name="java.vm.specification.version" value="1.0"/>
+    <property name="sun.arch.data.model" value="64"/>
+    <property name="java.home" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home"/>
+    <property name="sun.java.command" value="/Users/vparthasarathy/Documents/workspace-oss/Priam/target/surefire/surefirebooter3433403804279167872.jar /Users/vparthasarathy/Documents/workspace-oss/Priam/target/surefire/surefire7715742788784784714tmp /Users/vparthasarathy/Documents/workspace-oss/Priam/target/surefire/surefire8167934675304572813tmp"/>
+    <property name="java.specification.vendor" value="Sun Microsystems Inc."/>
+    <property name="user.language" value="en"/>
+    <property name="awt.toolkit" value="apple.awt.CToolkit"/>
+    <property name="java.vm.info" value="mixed mode"/>
+    <property name="java.version" value="1.6.0_26"/>
+    <property name="java.ext.dirs" value="/Library/Java/Extensions:/System/Library/Java/Extensions:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/ext"/>
+    <property name="sun.boot.class.path" value="/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsfd.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Resources/Java/JavaRuntimeSupport.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/ui.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/laf.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/sunrsasign.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsse.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jce.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/charsets.jar"/>
+    <property name="java.vendor" value="Apple Inc."/>
+    <property name="localRepository" value="/Users/vparthasarathy/.m2/repository"/>
+    <property name="file.separator" value="/"/>
+    <property name="java.vendor.url.bug" value="http://bugreport.apple.com/"/>
+    <property name="sun.cpu.endian" value="little"/>
+    <property name="sun.io.unicode.encoding" value="UnicodeLittle"/>
+    <property name="mrj.version" value="1060.1.6.0_26-384"/>
+    <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
+    <property name="sun.cpu.isalist" value=""/>
+  </properties>
+  <testcase time="0" classname="com.priam.backup.TestUploader" name="com.priam.backup.TestUploader">
+    <error message="Guice configuration errors:
+
+1) No implementation for com.priam.aws.ICredential was bound.
+  while locating com.priam.aws.ICredential
+
+1 error" type="com.google.inject.ConfigurationException">com.google.inject.ConfigurationException: Guice configuration errors:
+
+1) No implementation for com.priam.aws.ICredential was bound.
+  while locating com.priam.aws.ICredential
+
+1 error
+	at com.google.inject.internal.InjectorImpl.getProvider(InjectorImpl.java:1004)
+	at com.google.inject.internal.InjectorImpl.getProvider(InjectorImpl.java:961)
+	at com.google.inject.internal.InjectorImpl.getInstance(InjectorImpl.java:1013)
+	at com.priam.backup.TestUploader.setup(TestUploader.java:51)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.junit.internal.runners.ClassRoadie.runBefores(ClassRoadie.java:49)
+	at org.junit.internal.runners.ClassRoadie.runProtected(ClassRoadie.java:36)
+	at org.junit.internal.runners.JUnit4ClassRunner.run(JUnit4ClassRunner.java:42)
+	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:35)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:146)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:97)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.apache.maven.surefire.booter.ProviderFactory$ClassLoaderProxy.invoke(ProviderFactory.java:103)
+	at $Proxy0.invoke(Unknown Source)
+	at org.apache.maven.surefire.booter.SurefireStarter.invokeProvider(SurefireStarter.java:145)
+	at org.apache.maven.surefire.booter.SurefireStarter.runSuitesInProcess(SurefireStarter.java:87)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:69)
+</error>
+    <system-out>@SLTests run: 2, Failures: 0, Errors: 2, Skipped: 0, Time elapsed: 3.027 sec &lt;&lt;&lt; FAILURE!
+@SLRunning com.priam.backup.TestUploader
+</system-out>
+  </testcase>
+  <testcase time="0.001" classname="com.priam.backup.TestUploader" name="com.priam.backup.TestUploader">
+    <error type="java.lang.NullPointerException">java.lang.NullPointerException
+	at com.priam.backup.TestUploader.cleanup(TestUploader.java:90)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.junit.internal.runners.ClassRoadie.runAfters(ClassRoadie.java:65)
+	at org.junit.internal.runners.ClassRoadie.runProtected(ClassRoadie.java:40)
+	at org.junit.internal.runners.JUnit4ClassRunner.run(JUnit4ClassRunner.java:42)
+	at org.apache.maven.surefire.junit4.JUnit4TestSet.execute(JUnit4TestSet.java:35)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.executeTestSet(JUnit4Provider.java:146)
+	at org.apache.maven.surefire.junit4.JUnit4Provider.invoke(JUnit4Provider.java:97)
+	at sun.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at sun.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:39)
+	at sun.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:25)
+	at java.lang.reflect.Method.invoke(Method.java:597)
+	at org.apache.maven.surefire.booter.ProviderFactory$ClassLoaderProxy.invoke(ProviderFactory.java:103)
+	at $Proxy0.invoke(Unknown Source)
+	at org.apache.maven.surefire.booter.SurefireStarter.invokeProvider(SurefireStarter.java:145)
+	at org.apache.maven.surefire.booter.SurefireStarter.runSuitesInProcess(SurefireStarter.java:87)
+	at org.apache.maven.surefire.booter.ForkedBooter.main(ForkedBooter.java:69)
+</error>
+  </testcase>
+</testsuite>

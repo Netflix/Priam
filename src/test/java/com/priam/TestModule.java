@@ -14,26 +14,23 @@ import com.priam.conf.IConfiguration;
 import com.priam.identity.IMembership;
 import com.priam.identity.IPriamInstanceFactory;
 
-public class TestModule extends AbstractModule {
+public class TestModule extends AbstractModule
+{
 
-	@Override
-	protected void configure() {
-		bind(IConfiguration.class).toInstance(
-				new FakeConfiguration("fake-region", "fake-app", "fake-zone",
-						"fakeInstance1"));
-		bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
-		bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(
-				Scopes.SINGLETON);
-		String[] pinstances = { "fakeInstance1", "fakeInstance2",
-				"fakeInstance3" };
+    @Override
+    protected void configure()
+    {
+        bind(IConfiguration.class).toInstance(new FakeConfiguration("fake-region", "fake-app", "fake-zone", "fakeInstance1"));
+        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
+        bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
+        String[] pinstances = { "fakeInstance1", "fakeInstance2", "fakeInstance3" };
 
-		bind(IMembership.class).toInstance(
-				new FakeMembership(Arrays.asList(pinstances)));
-		// bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
-		// bind(IBackupRestoreFactory.class).to(FakeBackupRestoreFactory.class).in(Scopes.SINGLETON);
-		// bind(JMXNodeTool.class).to(FakeNodeProbe.class);
-		bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class);
-		bind(AbstractBackupPath.class).to(S3BackupPath.class);
-	}
+        bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList(pinstances)));
+        // bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
+        // bind(IBackupRestoreFactory.class).to(FakeBackupRestoreFactory.class).in(Scopes.SINGLETON);
+        // bind(JMXNodeTool.class).to(FakeNodeProbe.class);
+        bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class);
+        bind(AbstractBackupPath.class).to(S3BackupPath.class);
+    }
 
 }

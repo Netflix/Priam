@@ -3,7 +3,7 @@ package com.priam.backup;
 import java.io.File;
 
 /**
- * Should we do Output stream instead?
+ * Should we exited Output stream instead?
  */
 public interface Consumer
 {

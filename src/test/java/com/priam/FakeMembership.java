@@ -29,7 +29,7 @@ public class FakeMembership implements IMembership
     @Override
     public int getRacMembershipSize()
     {
-        return instances.size();
+        return 3;
     }
 
     @Override

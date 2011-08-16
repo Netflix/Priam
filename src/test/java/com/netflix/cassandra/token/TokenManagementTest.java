@@ -30,8 +30,8 @@ public class TokenManagementTest
     @Test
     public void printSplit()
     {
-        for (int i = 0; i < 7; i++)
-            System.out.println(TokenManager.intialToken(7, i, 0));
+        for (int i = 0; i < 18; i++)
+            System.out.println(TokenManager.intialToken(18, i, 0));
     }
 
     @Test

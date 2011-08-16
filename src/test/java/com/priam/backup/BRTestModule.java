@@ -12,7 +12,6 @@ import com.priam.FakeCLConsumer;
 import com.priam.FakeConfiguration;
 import com.priam.FakeMembership;
 import com.priam.FakePriamInstanceFactory;
-import com.priam.aws.ICredential;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.IMembership;
 import com.priam.identity.IPriamInstanceFactory;

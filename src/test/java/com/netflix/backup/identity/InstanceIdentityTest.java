@@ -97,11 +97,10 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
         createInstances();
         int before = factory.getAllIds("fake-app").size();
-        new DoubleRing(config, factory, membership).doubleSlots();
+        new DoubleRing(config, factory).doubleSlots();
         List<PriamInstance> lst = factory.getAllIds(config.getAppName());
         // sort it so it will look good if you want to print it.
         factory.sort(lst);
-        int hash = SystemUtils.hash(config.getDC());
         for (int i = 0; i < lst.size(); i++)
         {
             System.out.println(lst.get(i));
@@ -116,7 +115,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     public void testDoubleGrap() throws Exception
     {
         createInstances();
-        new DoubleRing(config, factory, membership).doubleSlots();
+        new DoubleRing(config, factory).doubleSlots();
         config.zone = "az1";
         config.instance_id = "fakeinstancex";
         int hash = SystemUtils.hash(config.getDC());

@@ -26,14 +26,12 @@ public class DoubleRing
     private static final String BACKUP_FILE = "/tmp/backup-instance-data.dat";
     private IConfiguration config;
     private IPriamInstanceFactory factory;
-    private IMembership membership;
 
     @Inject
-    public DoubleRing(IConfiguration config, IPriamInstanceFactory factory, IMembership membership)
+    public DoubleRing(IConfiguration config, IPriamInstanceFactory factory)
     {
         this.config = config;
         this.factory = factory;
-        this.membership = membership;
     }
 
     public void doubleSlots()
@@ -58,7 +56,7 @@ public class DoubleRing
             // if max then rotate.
             int currentSlot = data.getId() - hash;
             int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
-            String token = TokenManager.createToken(new_slot, membership.getRacCount(), new_ring_size, config.getDC());
+            String token = TokenManager.createToken(new_slot, new_ring_size, config.getDC());
             factory.create(data.getApp(), new_slot + hash, "new_slot", "new_host", "new_IP", data.getRac(), null, token);
         }
     }

@@ -6,9 +6,11 @@ import java.util.List;
 
 import org.junit.Test;
 
+import com.google.common.collect.Lists;
 import com.priam.identity.DoubleRing;
 import com.priam.identity.PriamInstance;
 import com.priam.utils.SystemUtils;
+import com.priam.utils.TokenManager;
 
 public class DoubleRingTest extends InstanceTestUtils
 {
@@ -18,7 +20,7 @@ public class DoubleRingTest extends InstanceTestUtils
     {
         createInstances();
         int originalSize = factory.getAllIds(config.getAppName()).size();
-        new DoubleRing(config, factory, membership).doubleSlots();
+        new DoubleRing(config, factory).doubleSlots();
         List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
         factory.sort(doubled);
 
@@ -28,8 +30,17 @@ public class DoubleRingTest extends InstanceTestUtils
 
     private void validate(List<PriamInstance> doubled)
     {
-        for (PriamInstance ins : doubled)
+        List<String> validator = Lists.newArrayList();
+        for (int i = 0; i < doubled.size(); i++)
         {
+            validator.add(TokenManager.createToken(i, doubled.size(), config.getDC()));
+
+        }
+
+        for (int i = 0; i < doubled.size(); i++)
+        {
+            PriamInstance ins = doubled.get(i);
+            assertEquals(validator.get(i), ins.getPayload());
             int id = ins.getId() - SystemUtils.hash(config.getDC());
             System.out.println(ins);
             if (0 != id % 2)
@@ -42,7 +53,7 @@ public class DoubleRingTest extends InstanceTestUtils
     {
         createInstances();
         int intialSize = factory.getAllIds(config.getAppName()).size();
-        DoubleRing ring = new DoubleRing(config, factory, membership);
+        DoubleRing ring = new DoubleRing(config, factory);
         ring.backup();
         ring.doubleSlots();
         assertEquals(intialSize * 2, factory.getAllIds(config.getAppName()).size());

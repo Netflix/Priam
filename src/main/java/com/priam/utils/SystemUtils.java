@@ -109,7 +109,7 @@ public class SystemUtils
     public static void startCassandra(boolean join_ring, IConfiguration config) throws IOException, InterruptedException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
-        
+
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))
         {
@@ -332,7 +332,8 @@ public class SystemUtils
             if (conn.getResponseCode() != 200)
                 throw new ConfigurationException("Ec2Snitch was unable to execute the API call. Not an ec2 node?");
 
-            // Read the information. I wish I could say (String) conn.getContent() here...
+            // Read the information. I wish I could say (String)
+            // conn.getContent() here...
             int cl = conn.getContentLength();
             byte[] b = new byte[cl];
             DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
@@ -359,7 +360,7 @@ public class SystemUtils
         });
         return files;
     }
-    
+
     public static class StreamReader extends Thread
     {
         public static final String ERROR = "ERROR";
@@ -397,7 +398,7 @@ public class SystemUtils
                 logger.error("Error in running sys command: ", ioe);
             }
         }
-        
+
         public String getOutput()
         {
             return output.toString();

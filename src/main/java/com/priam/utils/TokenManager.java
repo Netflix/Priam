@@ -51,6 +51,12 @@ public class TokenManager
         return intialToken(regionCount, my_slot, space).toString();
     }
     
+    public static String createToken(int my_slot, int totalCount, String region)
+    {
+        int space = SystemUtils.hash(region);
+        return intialToken(totalCount, my_slot, space).toString();
+    }
+    
     public static BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList)
     {
         Collections.sort(tokenList);

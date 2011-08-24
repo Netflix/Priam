@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
-import com.google.common.collect.Lists;
+import com.google.inject.internal.Lists;
 import com.priam.backup.AbstractBackupPath;
 
 public class S3BackupPath extends AbstractBackupPath
@@ -42,7 +42,7 @@ public class S3BackupPath extends AbstractBackupPath
                     continue;
                 pieces.add(ele);
             }
-            assert pieces.size() < 7 : "Too few elements in path " + remoteFilePath;
+            assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
             baseDir = pieces.get(0);
             region = pieces.get(1);
             clusterName = pieces.get(2);

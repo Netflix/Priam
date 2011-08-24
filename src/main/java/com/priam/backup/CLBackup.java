@@ -21,17 +21,25 @@ import com.priam.utils.SystemUtils;
 public class CLBackup extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(CLBackup.class);
-    public static long SLEEP_INTERVAL = 1000L;
+    public static long SLEEP_INTERVAL = 10000L;
     public static final String JOBNAME = "CL_BACKUP_THREAD";
     private Consumer consumer;
     private IConfiguration config;
     private File currentCLFile;
     private RandomAccessFile raf;
+    private long byteOffset;
     private static FilenameFilter headerFilter = new FilenameFilter()
     {
         public boolean accept(File dir, String name)
         {
             return !name.endsWith(".header");
+        }
+    };
+    private static FilenameFilter logFilter = new FilenameFilter()
+    {
+        public boolean accept(File dir, String name)
+        {
+            return !name.endsWith(".log");
         }
     };
 
@@ -48,7 +56,7 @@ public class CLBackup extends Task
         byte[] buf = new byte[2048];
         try
         {
-            if (currentCLFile == null || raf.length() == raf.getFilePointer())
+            if (raf == null || raf.length() == raf.getFilePointer())
             {
                 // Did the file rotate
                 File newFile = getLatestFile();
@@ -57,21 +65,23 @@ public class CLBackup extends Task
                 if (currentCLFile == null || !newFile.equals(currentCLFile))
                     setCLFile(newFile);
             }
-            long len = raf.length();
+
             int readBytes = 0;
             while ((readBytes = raf.read(buf, 0, buf.length)) != -1)
             {
                 consumer.write(buf, 0, readBytes);
-                if (raf.getFilePointer() >= len)
+                byteOffset += readBytes;
+                if (raf.getFilePointer() >= raf.length())
                     break;
             }
         }
-        finally
+        catch (IOException io)
         {
             try
             {
                 if (raf != null)
                     raf.close();
+                raf = null;
                 if (consumer != null)
                     consumer.close();
             }
@@ -93,8 +103,9 @@ public class CLBackup extends Task
     {
         if (raf != null)
             raf.close();
-        currentCLFile = getLatestFile();
-        raf = new RandomAccessReader(currentCLFile, 2048, true);
+        byteOffset = 0;
+        currentCLFile = newFile;
+        raf = new RandomAccessFile(currentCLFile, "r");
         consumer.setName(newFile.getName());
         copyHeaderFiles();
     }
@@ -102,7 +113,7 @@ public class CLBackup extends Task
     public void copyHeaderFiles()
     {
         File cldir = new File(config.getCommitLogLocation());
-        File[] files = cldir.listFiles(headerFilter);
+        File[] files = cldir.listFiles(logFilter);
         if (files.length > 0)
             consumer.copyFiles(files);
     }

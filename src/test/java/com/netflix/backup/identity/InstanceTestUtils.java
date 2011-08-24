@@ -4,7 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 
+import com.netflix.instance.identity.IdentityPersistenceException;
 import com.priam.FakeConfiguration;
 import com.priam.FakeMembership;
 import com.priam.FakePriamInstanceFactory;
@@ -12,6 +14,7 @@ import com.priam.identity.IMembership;
 import com.priam.identity.IPriamInstanceFactory;
 import com.priam.identity.InstanceIdentity;
 
+@Ignore
 public abstract class InstanceTestUtils
 {
 
@@ -22,7 +25,7 @@ public abstract class InstanceTestUtils
     InstanceIdentity identity;
 
     @Before
-    public void setup()
+    public void setup() throws IdentityPersistenceException
     {
         instances.add("fakeinstance1");
         instances.add("fakeinstance2");

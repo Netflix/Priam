@@ -25,13 +25,13 @@ public class EBSConsumer implements Consumer
     private IConfiguration config;
     private File backupCLDir;
     private long errorCount;
-    
+
     @Inject
     public EBSConsumer(IConfiguration config, InstanceIdentity identity, IPriamInstanceFactory factory) throws IOException, InterruptedException
     {
-        this.backupCLDir = new File("/commitlog");
+        this.backupCLDir = new File(config.getBackupCommitLogLocation());
         if (!backupCLDir.exists())
-            backupCLDir.mkdir();
+            backupCLDir.mkdirs();
         if (identity.getInstance().volumes == null || identity.getInstance().volumes.size() == 0)
             factory.attachVolumes(identity.getInstance(), backupCLDir.getAbsolutePath(), "/dev/sde6");
         SystemUtils.mountAll(identity.getInstance().getVolumes());
@@ -67,7 +67,7 @@ public class EBSConsumer implements Consumer
                 backupCLDir.mkdirs();
             currentCLBackupFile = new File(backupCLDir, fileName);
 
-            FileOutputStream fio = new FileOutputStream(currentCLBackupFile);
+            FileOutputStream fio = new FileOutputStream(currentCLBackupFile, true);
             bos = new BufferedOutputStream(fio);
         }
         catch (IOException e)
@@ -110,10 +110,10 @@ public class EBSConsumer implements Consumer
             if (!backupCLDir.exists() || !backupCLDir.isDirectory())
                 throw new RuntimeException("Cannot find backup commit log location ");
 
-            File[] flist = clDir.listFiles();
+            File[] flist = backupCLDir.listFiles();
             for (File file : flist)
             {
-                FileUtils.copyFileToDirectory(file, backupCLDir);
+                FileUtils.copyFileToDirectory(file, clDir);
             }
         }
         catch (Exception e)

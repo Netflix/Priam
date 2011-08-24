@@ -1,6 +1,8 @@
 package com.priam;
 
 import java.io.File;
+import java.util.HashSet;
+import java.util.Set;
 
 import com.priam.backup.Consumer;
 
@@ -8,7 +10,7 @@ public class FakeCLConsumer implements Consumer
 {
 
     private int bytecount = 0;
-    private int filecount = 0;
+    private Set<String> filelist = new HashSet<String>();
     private int headercount = 0;
 
     @Override
@@ -20,14 +22,16 @@ public class FakeCLConsumer implements Consumer
     @Override
     public void setName(String fileName)
     {
-        filecount++;
-
+        filelist.add(fileName);
     }
 
     @Override
     public void copyFiles(File[] files)
     {
-        headercount += files.length;
+        for( File f : files ){
+            if( f.getAbsolutePath().endsWith(".header"))
+            headercount++;
+        }
 
     }
 
@@ -38,7 +42,7 @@ public class FakeCLConsumer implements Consumer
 
     public int getFileCount()
     {
-        return this.filecount;
+        return this.filelist.size();
     }
 
     public int getHeaderCount()

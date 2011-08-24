@@ -1,46 +1,41 @@
 package com.priam.scheduler;
 
+import org.junit.Ignore;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.quartz.JobDataMap;
 
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.netflix.logging.LogManager;
 import com.priam.TestModule;
 import com.priam.conf.IConfiguration;
-import com.priam.utils.TokenManager;
 
 public class TestScheduler
 {
-    private static final Logger logger = LoggerFactory.getLogger(TokenManager.class);
 
+    private  static boolean setToFalse;
+    
     @Test
     public void testScedule() throws Exception
     {
+        setToFalse = true;
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test", VijayTest.class, new SimpleTimer("vijay", 10));
-        scheduler.addTask("test1", VijayTest.class, new SimpleTimer("test1"));
+        scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 100));
+        scheduler.addTask("test1", TestTask.class, new SimpleTimer("test1"));
         Thread.sleep(100);
         scheduler.shutdown();
     }
 
-    public static class VijayTest extends Task
+    @Ignore
+    public static class TestTask extends Task
     {
-        private IConfiguration config;
-
-        @Inject
-        public VijayTest(IConfiguration config)
-        {
-            this.config = config;
-        }
-
         @Override
         public void execute()
         {
-            logger.error(config.getAppName());
+            setToFalse = false;
         }
 
         @Override

@@ -34,18 +34,18 @@ public class Restore extends Task
     private AtomicInteger count = new AtomicInteger();
     private IConfiguration config;
     private ThreadPoolExecutor executor;
+    private IBackupFileSystem fs;
 
-    @Inject
-    IBackupFileSystem fs;
     @Inject
     Provider<AbstractBackupPath> pathProvider;
     @Inject
     MetaData metaData;
 
     @Inject
-    public Restore(IConfiguration config, InstanceIdentity id, IPriamInstanceFactory factory)
+    public Restore(IConfiguration config, IPriamInstanceFactory factory, IBackupFileSystem fs)
     {
         this.config = config;
+        this.fs = fs;
         this.executor = new ThreadPoolExecutor(0, config.getMaxBackupDownloadThreads(), 1000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
@@ -74,7 +74,8 @@ public class Restore extends Task
             if (path.type == BackupFileType.META)
                 metas.add(path);
         }
-        assert metas.size() == 0 : "[cass_backup] No snapshots found, Restore Failed.";
+        assert metas.size() != 0 : "[cass_backup] No snapshots found, Restore Failed.";
+
         Collections.sort(metas);
         AbstractBackupPath meta = metas.get(metas.size() - 1);
         // Download the snapshot which are listed in the meta file.

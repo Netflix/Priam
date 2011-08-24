@@ -35,6 +35,13 @@ import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.InstanceIdentity;
 
+/**
+ * This is test case for verifying upload.
+ * NOTE: Not a unit test. Does not mock S3
+ * Requires AWS access
+ * @author psadhu
+ *
+ */
 public class TestUploader
 {
 
@@ -70,7 +77,7 @@ public class TestUploader
         }
         bos2.close();
 
-        long fiveKB = (500L * 1024 * 1024);
+        long fiveKB = (5L * 1024 );
         System.out.println(fiveKB);
         BufferedOutputStream bos1 = new BufferedOutputStream(new FileOutputStream(smallFile));
         for (long i = 0; i < fiveKB; i++)
@@ -86,7 +93,7 @@ public class TestUploader
         
         File tmpDir = new File("cass");
         if (tmpDir.exists())
-            tmpDir.delete();
+            FileUtils.deleteQuietly(tmpDir);
         AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
         AmazonS3 s3Client = new AmazonS3Client(awscred);
         ListObjectsRequest listReq = new ListObjectsRequest();

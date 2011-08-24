@@ -14,6 +14,7 @@ import org.apache.commons.codec.DecoderException;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.xerial.snappy.SnappyOutputStream;
 
@@ -32,6 +33,13 @@ import com.priam.aws.S3BackupPath;
 import com.priam.aws.S3FileSystem;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
+
+/**
+ * Tests to verify download and compression
+ * NOTE: Not a unit test.  Requires AWS access
+ * @author Praveen Sadhu
+ *
+ */
 
 public class TestDownloader
 {
@@ -88,10 +96,10 @@ public class TestDownloader
         
         File tmpDir = new File("cass");
         if (tmpDir.exists())
-            tmpDir.delete();
+            FileUtils.deleteQuietly(tmpDir);
         tmpDir = new File("testdata");
         if (tmpDir.exists())
-            tmpDir.delete();
+            FileUtils.deleteQuietly(tmpDir);
         
         AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
         AmazonS3 s3Client = new AmazonS3Client(awscred);

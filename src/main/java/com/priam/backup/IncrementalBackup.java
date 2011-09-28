@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
 import com.priam.scheduler.SimpleTimer;
@@ -14,6 +15,7 @@ import com.priam.scheduler.TaskTimer;
 /*
  * Incremental/SSTable backup
  */
+@Singleton
 public class IncrementalBackup extends Backup
 {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);

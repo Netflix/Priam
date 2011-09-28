@@ -1,6 +1,8 @@
 package com.priam.backup;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -9,6 +11,7 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
@@ -16,6 +19,8 @@ import com.priam.conf.IConfiguration;
 import com.priam.conf.JMXNodeTool;
 import com.priam.scheduler.CronTimer;
 import com.priam.scheduler.TaskTimer;
+import com.priam.utils.RetryableCallable;
+import com.priam.utils.SystemUtils;
 
 public class SnapshotBackup extends Backup
 {
@@ -39,6 +44,7 @@ public class SnapshotBackup extends Backup
         String snapshotName = pathFactory.get().getFormat().format(cal.getTime());
         try
         {
+            logger.info("Starting snapshot " + snapshotName );
             takeSnapshot(snapshotName);
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
@@ -49,13 +55,18 @@ public class SnapshotBackup extends Backup
                 File snpDir = new File(keyspaceDir, "snapshots");
                 if (!isValidBackupDir(keyspaceDir, snpDir))
                     continue;
-                File snapshotDir = getValidateSnapshot(keyspaceDir, snpDir, snapshotName);
+                File snapshotDir = getValidSnapshot(keyspaceDir, snpDir, snapshotName);
                 // Add files to this dir
                 if (null != snapshotDir)
                     bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
             }
             // Upload meta file
             metaData.set(bps, snapshotName);
+            logger.info("Snapshot upload complete for " + snapshotName );
+        }
+        catch( Exception e ){
+            //Log it
+            logger.error(error, e);
         }
         finally
         {
@@ -70,7 +81,7 @@ public class SnapshotBackup extends Backup
         }
     }
 
-    private File getValidateSnapshot(File keyspaceDir, File snpDir, String snapshotName)
+    private File getValidSnapshot(File keyspaceDir, File snpDir, String snapshotName)
     {
         for (File snapshotDir : snpDir.listFiles())
             if (snapshotDir.getName().matches(snapshotName))
@@ -78,30 +89,44 @@ public class SnapshotBackup extends Backup
         return null;
     }
 
-    private void takeSnapshot(String snapshotName) throws IOException, InterruptedException
+    private void takeSnapshot(final String snapshotName) throws Exception
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
-        try
+        new RetryableCallable<Void>()
         {
-            nodetool.takeSnapshot(snapshotName);
-        }
-        finally
-        {
-            nodetool.close();
-        }
+            public Void retriableCall() throws Exception
+            {
+                JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                try
+                {
+                    nodetool.takeSnapshot(snapshotName);
+                }
+                finally
+                {
+                    nodetool.close();
+                }
+                return null;
+            }
+        }.call();
     }
 
-    private void clearSnapshot(String snapshotTag) throws IOException, InterruptedException
+    private void clearSnapshot(final String snapshotTag) throws Exception
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
-        try
+        new RetryableCallable<Void>()
         {
-            nodetool.clearSnapshot(snapshotTag);
-        }
-        finally
-        {
-            nodetool.close();
-        }
+            public Void retriableCall() throws Exception
+            {
+                JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                try
+                {
+                    nodetool.clearSnapshot(snapshotTag);
+                }
+                finally
+                {
+                    nodetool.close();
+                }
+                return null;
+            }
+        }.call();        
     }
 
     @Override

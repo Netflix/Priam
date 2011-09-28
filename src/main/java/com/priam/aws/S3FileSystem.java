@@ -6,10 +6,7 @@ import java.io.FileOutputStream;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
@@ -28,14 +25,20 @@ import com.priam.backup.BackupRestoreException;
 import com.priam.backup.IBackupFileSystem;
 import com.priam.backup.SnappyCompression;
 import com.priam.conf.IConfiguration;
+import com.priam.scheduler.CustomizedThreadPoolExecutor;
+import com.priam.utils.RetryableCallable;
 import com.priam.utils.SystemUtils;
+import com.priam.utils.Throttle;
 
 @Singleton
 public class S3FileSystem implements IBackupFileSystem
 {
-    public static final int MIN_PART_SIZE = (6 * 1024 * 1024); // 6MB
+    // 6MB
+    public static final int MIN_PART_SIZE = (6 * 1024 * 1024);
+    // timeout is set to 2 hours.
+    private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     public static final char PATH_SEP = '/';
-    private ThreadPoolExecutor executor;
+    private CustomizedThreadPoolExecutor executor;
     private IConfiguration config;
     private AmazonS3 s3Client;
 
@@ -45,13 +48,28 @@ public class S3FileSystem implements IBackupFileSystem
     @Inject
     SnappyCompression compress;
 
+    Throttle throttle;
+
     @Inject
-    public S3FileSystem(ICredential provider, IConfiguration config)
+    public S3FileSystem(ICredential provider, final IConfiguration config)
     {
         AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        this.executor = new ThreadPoolExecutor(0, config.getMaxBackupUploadThreads(), 1000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
+        int threads = config.getMaxBackupUploadThreads();
+        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
+        this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
         this.s3Client = new AmazonS3Client(cred);
         this.config = config;
+        this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
+        {
+            public int targetThroughput()
+            {
+                int throttleLimit = config.getUploadThrottle();
+                if (throttleLimit < 1)
+                    return 0;
+                int totalBytesPerMS = (throttleLimit * 1024 * 1024) / 1000;
+                return totalBytesPerMS;
+            }
+        });
     }
 
     @Override
@@ -59,13 +77,7 @@ public class S3FileSystem implements IBackupFileSystem
     {
         try
         {
-            S3Object obj = s3Client.getObject(config.getBackupPrefix(), backupfile.getRemotePath());
-            File retoreFile = backupfile.newRestoreFile();
-            File tmpFile = new File(retoreFile.getAbsolutePath() + ".tmp");
-            SystemUtils.copyAndClose(obj.getObjectContent(), new FileOutputStream(tmpFile));
-            // Extra step: snappy seems to have boundary problems with stream
-            compress.decompressAndClose(new FileInputStream(tmpFile), new FileOutputStream(retoreFile));
-            tmpFile.delete();
+            new S3FileDownloader(backupfile).call();
         }
         catch (Exception e)
         {
@@ -76,32 +88,12 @@ public class S3FileSystem implements IBackupFileSystem
     @Override
     public void upload(AbstractBackupPath backupfile) throws BackupRestoreException
     {
-        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), backupfile.getRemotePath());
-        InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
-        DataPart part = new DataPart(config.getBackupPrefix(), backupfile.getRemotePath(), initResponse.getUploadId());
-        List<Future<PartETag>> futures = Lists.newArrayList();
         try
         {
-            // FileInputStream fis = new FileInputStream(backupfile.localFile);
-            Iterator<byte[]> chunks = compress.compress(backupfile.localReader());
-            int partNum = 0;
-            // Upload parts.
-            while (chunks.hasNext())
-            {
-                byte[] chunk = chunks.next();
-                DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), backupfile.getRemotePath(), initResponse.getUploadId());
-                S3PartUploader partUploader = new S3PartUploader(s3Client, dp);
-                futures.add(executor.submit(partUploader));
-            }
-            // sleep till we
-            List<PartETag> partETags = Lists.newArrayList();
-            for (Future<PartETag> future : futures)
-                partETags.add(future.get());
-            new S3PartUploader(s3Client, part).completeUpload(partETags);
+            new S3FileUploader(backupfile).call();
         }
         catch (Exception e)
         {
-            new S3PartUploader(s3Client, part).abortUpload();
             throw new BackupRestoreException("Error uploading file " + backupfile.fileName, e);
         }
     }
@@ -113,8 +105,86 @@ public class S3FileSystem implements IBackupFileSystem
     }
 
     @Override
-    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till)
+    public Iterator<AbstractBackupPath> list(String path, Date start, Date till)
     {
-        return new S3FileIterator(pathProvider, s3Client, bucket, start, till);
+        return new S3FileIterator(pathProvider, s3Client, path, start, till);
+    }
+
+    public class S3FileUploader extends RetryableCallable<Void>
+    {
+        private AbstractBackupPath backupfile;
+
+        public S3FileUploader(AbstractBackupPath backupfile)
+        {
+            this.backupfile = backupfile;
+        }
+
+        @Override
+        public Void retriableCall() throws Exception
+        {
+            InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), backupfile.getRemotePath());
+            InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
+            DataPart part = new DataPart(config.getBackupPrefix(), backupfile.getRemotePath(), initResponse.getUploadId());
+            List<PartETag> partETags = Lists.newArrayList();
+            try
+            {
+                Iterator<byte[]> chunks = compress.compress(backupfile.localReader());
+                // Upload parts.
+                int partNum = 0;
+                while (chunks.hasNext())
+                {
+                    byte[] chunk = chunks.next();
+                    throttle.throttle(chunk.length);
+                    DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), backupfile.getRemotePath(), initResponse.getUploadId());
+                    S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
+                    executor.submit(partUploader);
+                }
+                executor.sleepTillEmpty();
+                if( partNum != partETags.size())
+                    throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() +")");
+                new S3PartUploader(s3Client, part, partETags).completeUpload();
+            }
+            catch (Exception e)
+            {
+                new S3PartUploader(s3Client, part, partETags).abortUpload();
+                throw new BackupRestoreException("Error uploading file " + backupfile.fileName, e);
+            }
+            return null;
+        }
+    }
+
+    public class S3FileDownloader extends RetryableCallable<Void>
+    {
+        private AbstractBackupPath backupfile;
+
+        public S3FileDownloader(AbstractBackupPath backupfile)
+        {
+            this.backupfile = backupfile;
+        }
+
+        @Override
+        public Void retriableCall() throws Exception
+        {
+
+            S3Object obj = s3Client.getObject(getPrefix(), backupfile.getRemotePath());
+            File retoreFile = backupfile.newRestoreFile();
+            File tmpFile = new File(retoreFile.getAbsolutePath() + ".tmp");
+            SystemUtils.copyAndClose(obj.getObjectContent(), new FileOutputStream(tmpFile));
+            // Extra step: snappy seems to have boundary problems with stream
+            compress.decompressAndClose(new FileInputStream(tmpFile), new FileOutputStream(retoreFile));
+            tmpFile.delete();
+            return null;
+        }
+    }
+    
+    public String getPrefix(){
+        String prefix = "";
+        if (!"".equals(config.getRestorePrefix()))            
+            prefix = config.getRestorePrefix();
+        else
+            prefix = config.getBackupPrefix();
+
+        String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
+        return paths[0];
     }
 }

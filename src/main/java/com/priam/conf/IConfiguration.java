@@ -67,4 +67,8 @@ public interface IConfiguration
     boolean isIncrBackup();
 
     public String getHostIP();
+
+    public int getUploadThrottle();
+    
+    boolean isLocalBootstrapEnabled();
 }

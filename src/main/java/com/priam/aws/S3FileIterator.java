@@ -4,9 +4,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -17,7 +14,6 @@ import com.priam.backup.AbstractBackupPath;
 
 public class S3FileIterator implements Iterator<AbstractBackupPath>
 {
-    private static final Logger logger = LoggerFactory.getLogger(S3FileIterator.class);
     private Provider<AbstractBackupPath> pathProvider;
     private Iterator<AbstractBackupPath> iterator;
     private ObjectListing objectListing;
@@ -25,15 +21,14 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
     private Date start;
     private Date till;
 
-    public S3FileIterator(Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, String path, Date start, Date till)
+    public S3FileIterator(Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, String bucket, Date start, Date till)
     {
         this.start = start;
         this.till = till;
         this.pathProvider = pathProvider;
         ListObjectsRequest listReq = new ListObjectsRequest();
-        String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));        
-        listReq.setBucketName(paths[0]);
-        listReq.setPrefix(pathProvider.get().remotePrefix(start, till, path));
+        listReq.setBucketName(bucket);
+        listReq.setPrefix(pathProvider.get().remotePrefix(start, till));
         this.s3Client = s3Client;
         objectListing = s3Client.listObjects(listReq);
         iterator = createIterator();
@@ -48,9 +43,9 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
         }
         else
         {
-            while(objectListing.isTruncated() && !iterator.hasNext()) 
+            if (objectListing.isTruncated())
             {
-                objectListing = s3Client.listNextBatchOfObjects(objectListing);                
+                objectListing = s3Client.listNextBatchOfObjects(objectListing);
                 iterator = createIterator();
             }
 
@@ -65,11 +60,8 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
         {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(summary.getKey());
-            logger.debug("New key " + summary.getKey() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.time );
-            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)){
+            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start))
                 temp.add(path);
-                logger.debug("Added key " + summary.getKey() );
-            }
         }
         return temp.iterator();
     }

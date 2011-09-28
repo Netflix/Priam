@@ -17,23 +17,20 @@ import com.priam.backup.BackupRestoreException;
 import com.priam.utils.RetryableCallable;
 import com.priam.utils.SystemUtils;
 
-public class S3PartUploader extends RetryableCallable<Void>
+public class S3PartUploader extends RetryableCallable<PartETag>
 {
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     public static final int MAX_RETRIES = 5;
     private AmazonS3 client;
     private DataPart dataPart;
-    private List<PartETag> partETags;
 
-    public S3PartUploader(AmazonS3 client, DataPart dp, List<PartETag> partETags)
+    public S3PartUploader(AmazonS3 client, DataPart dp)
     {
-        super(MAX_RETRIES, RetryableCallable.DEFAULT_WAIT_TIME);
         this.client = client;
         this.dataPart = dp;
-        this.partETags = partETags;
     }
 
-    private Void uploadPart() throws AmazonClientException, BackupRestoreException
+    private PartETag uploadPart() throws AmazonClientException, BackupRestoreException
     {
         UploadPartRequest req = new UploadPartRequest();
         req.setBucketName(dataPart.bucketName);
@@ -47,11 +44,10 @@ public class S3PartUploader extends RetryableCallable<Void>
         PartETag partETag = res.getPartETag();
         if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.md5)))
             throw new BackupRestoreException("Unable to match MD5 for part " + dataPart.partNo);
-        partETags.add(partETag);
-        return null;
+        return partETag;
     }
 
-    public void completeUpload() throws BackupRestoreException
+    public void completeUpload(List<PartETag> partETags) throws BackupRestoreException
     {
         CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(dataPart.bucketName, dataPart.s3key, dataPart.uploadID, partETags);
         client.completeMultipartUpload(compRequest);
@@ -65,7 +61,7 @@ public class S3PartUploader extends RetryableCallable<Void>
     }
 
     @Override
-    public Void retriableCall() throws AmazonClientException, BackupRestoreException
+    public PartETag retriableCall() throws AmazonClientException, BackupRestoreException
     {
         logger.info("Picked up part " + dataPart.partNo + " size " + dataPart.partData.length);
         return uploadPart();

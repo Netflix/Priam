@@ -62,27 +62,18 @@ public class S3BackupPath extends AbstractBackupPath
         }
     }
 
-    public String remotePrefix(Date start, Date end, String location)
+    public String remotePrefix(Date start, Date end)
     {
         StringBuffer buff = new StringBuffer();
-        String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));          
-        if (elements.length <= 1)
+        if ("".equals(config.getRestorePrefix()))
         {
             baseDir = config.getBackupLocation();
             region = config.getDC();
             clusterName = config.getAppName();
+            buff.append(baseDir).append(S3BackupPath.PATH_SEP);
+            buff.append(region).append(S3BackupPath.PATH_SEP);
+            buff.append(clusterName).append(S3BackupPath.PATH_SEP);
         }
-        else
-        {
-            assert elements.length >= 4 : "Too few elements in path " + location;
-            baseDir = elements[1];
-            region = elements[2];
-            clusterName = elements[3];
-        }
-        buff.append(baseDir).append(S3BackupPath.PATH_SEP);
-        buff.append(region).append(S3BackupPath.PATH_SEP);
-        buff.append(clusterName).append(S3BackupPath.PATH_SEP);
-        
         token = factory.getInstance().getPayload();
         buff.append(token).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.

@@ -61,7 +61,7 @@ public class MetaData
         }
         finally
         {
-            FileUtils.deleteQuietly(metafile);
+            metafile.delete();
         }
     }
 

@@ -18,8 +18,8 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
-import com.priam.conf.JMXNodeTool;
 import com.priam.identity.IPriamInstanceFactory;
+import com.priam.identity.InstanceIdentity;
 import com.priam.scheduler.SimpleTimer;
 import com.priam.scheduler.Task;
 import com.priam.scheduler.TaskTimer;
@@ -45,7 +45,8 @@ public class Restore extends Task
     public Restore(IConfiguration config, IPriamInstanceFactory factory, IBackupFileSystem fs)
     {
         this.config = config;
-        this.fs = fs;        
+        this.fs = fs;
+        this.executor = new ThreadPoolExecutor(0, config.getMaxBackupDownloadThreads(), 1000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
     }
 
     @Override
@@ -53,78 +54,46 @@ public class Restore extends Task
     {
         if (!"".equals(config.getRestoreSnapshot()))
         {
-            logger.info("Starting restore for " + config.getRestoreSnapshot());
             String[] restore = config.getRestoreSnapshot().split(",");
             AbstractBackupPath path = pathProvider.get();
-            final Date startTime = path.getFormat().parse(restore[0]);
-            final Date endTime = path.getFormat().parse(restore[1]);
-            new RetryableCallable<Void>()
-            {
-                public Void retriableCall() throws Exception
-                {
-                    logger.info("Attempting restore");
-                    restore(startTime, endTime);
-                    logger.info("Restore completed");
-                    return null;
-                }
-            }.call();
+            Date startTime = path.getFormat().parse(restore[0]);
+            Date endTime = path.getFormat().parse(restore[1]);
+            restore(startTime, endTime);
         }
         SystemUtils.startCassandra(true, config);
     }
 
     public void restore(Date startTime, Date endTime) throws Exception
     {
-        try
+        // Try and read the Meta file.
+        List<AbstractBackupPath> metas = Lists.newArrayList();
+        Iterator<AbstractBackupPath> backupfiles = fs.list(config.getBackupPrefix(), startTime, endTime);
+        while (backupfiles.hasNext())
         {
-            executor = new ThreadPoolExecutor(config.getMaxBackupDownloadThreads(), config.getMaxBackupDownloadThreads(), 1000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
-            executor.allowCoreThreadTimeOut(true);
-            // Stop cassandra if its running
-            SystemUtils.stopCassandra();
-            // Cleanup local data
-            SystemUtils.cleanupDir(config.getDataFileLocation());
+            AbstractBackupPath path = backupfiles.next();
+            if (path.type == BackupFileType.META)
+                metas.add(path);
+        }
+        assert metas.size() != 0 : "[cass_backup] No snapshots found, Restore Failed.";
 
-            // Try and read the Meta file.
-            List<AbstractBackupPath> metas = Lists.newArrayList();
-            String prefix = "";
-            if (!"".equals(config.getRestorePrefix()))
-                prefix = config.getRestorePrefix();
-            else
-                prefix = config.getBackupPrefix();
-            logger.info("Looking for meta file here:  " + prefix);
-            Iterator<AbstractBackupPath> backupfiles = fs.list(prefix, startTime, endTime);
-            while (backupfiles.hasNext())
-            {
-                AbstractBackupPath path = backupfiles.next();
-                if (path.type == BackupFileType.META)
-                    metas.add(path);
-            }
-            assert metas.size() != 0 : "[cass_backup] No snapshots found, Restore Failed.";
+        Collections.sort(metas);
+        AbstractBackupPath meta = metas.get(metas.size() - 1);
+        // Download the snapshot which are listed in the meta file.
+        // Don't download all of them but download the latest only.
+        List<AbstractBackupPath> snapshots = metaData.get(meta);
+        for (AbstractBackupPath path : snapshots)
+            download(path);
 
-            Collections.sort(metas);
-            AbstractBackupPath meta = metas.get(metas.size() - 1);
-            logger.info("Meta file for restore " + meta.getRemotePath());
-            // Download the snapshot which are listed in the meta file.
-            // Don't download all of them but download the latest only.
-            List<AbstractBackupPath> snapshots = metaData.get(meta);
-            for (AbstractBackupPath path : snapshots)
+        // take care of the incremental's.
+        Iterator<AbstractBackupPath> incrementals = fs.list(config.getBackupPrefix(), meta.time, endTime);
+        while (incrementals.hasNext())
+        {
+            AbstractBackupPath path = incrementals.next();
+            if (path.type == BackupFileType.SST)
                 download(path);
-
-            // take care of the incremental's.
-            Iterator<AbstractBackupPath> incrementals = fs.list(config.getBackupPrefix(), meta.time, endTime);
-            while (incrementals.hasNext())
-            {
-                AbstractBackupPath path = incrementals.next();
-                if (path.type == BackupFileType.SST)
-                    download(path);
-            }
-            waitToComplete();
-            // TODO support restore of the commit log.
         }
-        finally
-        {
-            executor.shutdownNow();
-        }
-
+        waitToComplete();
+        // TODO support restore of the commit log.
     }
 
     public void download(final AbstractBackupPath path)

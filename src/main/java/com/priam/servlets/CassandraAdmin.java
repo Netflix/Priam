@@ -7,11 +7,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.priam.conf.IConfiguration;
 import com.priam.conf.JMXNodeTool;
 import com.priam.conf.PriamServer;
 import com.priam.utils.SystemUtils;
@@ -20,28 +15,20 @@ import com.priam.utils.SystemUtils;
  * Do general operartion. For now start/stop 
  */
 @Path("/cassandra_admin")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({ "application/text" })
 public class CassandraAdmin
 {
 
     public static final String REST_HEADER_ACTION = "action";
     public static final String REST_HEADER_NODETOOL = "nodetool";
-    private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
 
-    //@Inject
-    //IConfiguration config;
-    
     @GET
-    //@Produces(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public Response runAction(@QueryParam(REST_HEADER_ACTION) String action)
     {
         try
         {
-        	//JMXNodeTool nodetool = JMXNodeTool.instance(config);
-            JMXNodeTool nodetool = JMXNodeTool.instance(PriamServer.instance.config);
-
-        	if (action.equalsIgnoreCase("start"))
+            if (action.equalsIgnoreCase("start"))
             {
                 SystemUtils.startCassandra(true, PriamServer.instance.config);
             } 
@@ -52,15 +39,12 @@ public class CassandraAdmin
             } 
             else if (action.equalsIgnoreCase("info"))
             {
-            	logger.info("node tool info being called");
-                return Response.ok(nodetool.info().toJSONString()).build();
+                return Response.ok(PriamServer.instance.injector.getInstance(JMXNodeTool.class).info()).build();
             } 
             else if (action.equalsIgnoreCase("ring"))
             {
-            	logger.info("node tool ring being called");
-                return Response.ok(nodetool.ring().toString()).build();
-            } 
-            else
+                return Response.ok(PriamServer.instance.injector.getInstance(JMXNodeTool.class).info()).build();
+            } else
                 return Response.status(404).build();
         } catch (Exception e)
         {

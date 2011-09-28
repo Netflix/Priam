@@ -3,8 +3,6 @@ package com.priam.identity;
 import java.io.Serializable;
 import java.util.Map;
 
-import com.netflix.instance.identity.StorageDevice;
-
 public class PriamInstance implements Serializable
 {
     private static final long serialVersionUID = 5606412386974488659L;
@@ -15,10 +13,9 @@ public class PriamInstance implements Serializable
     public String publicip;
     public String location;
     public String payload;
-    public Map<String, StorageDevice> volumes;
+    public Map<String, PriamStorageDevice> volumes;
     private String hostname;
-    private long updatetime;
-    
+
     public String getApp()
     {
         return app;
@@ -75,16 +72,6 @@ public class PriamInstance implements Serializable
         this.publicip = publicip;
     }
 
-    public void setHost(String hostname)
-    {
-        this.hostname = hostname;
-    }
-
-    public void setHostIP(String publicip)
-    {
-        this.publicip = publicip;
-    }
-
     public String getPayload()
     {
         return payload;
@@ -95,12 +82,12 @@ public class PriamInstance implements Serializable
         this.payload = payload;
     }
 
-    public Map<String, StorageDevice> getVolumes()
+    public Map<String, PriamStorageDevice> getVolumes()
     {
         return volumes;
     }
 
-    public void setVolumes(Map<String, StorageDevice> volumes)
+    public void setVolumes(Map<String, PriamStorageDevice> volumes)
     {
         this.volumes = volumes;
     }
@@ -120,16 +107,6 @@ public class PriamInstance implements Serializable
     public void setDC(String location)
     {
         this.location = location;
-    }
-
-    public long getUpdatetime()
-    {
-        return updatetime;
-    }
-
-    public void setUpdatetime(long updatetime)
-    {
-        this.updatetime = updatetime;
     }
 
 }

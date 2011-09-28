@@ -45,8 +45,11 @@ public abstract class Task implements Job
             status = STATE.ERROR;
             logger.error("Couldnt execute the task because of....", e);
         }
-        if (status != STATE.ERROR)
-            status = STATE.DONE;
+        finally
+        {
+            if (status != STATE.ERROR)
+                status = STATE.DONE;
+        }
     }
 
     public STATE state()

@@ -49,12 +49,11 @@ public class TuneCassandra extends Task
         map.put("rpc_port", 7102);
         map.put("listen_address", null);
         map.put("rpc_address", null);
-        //Dont bootstrap in restore mode
-        map.put("auto_bootstrap", config.getRestoreSnapshot().equals("")?true:false);
+        map.put("auto_bootstrap", true);
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
-        map.put("incremental_backups", (config.getBackupHour() >= 0 && config.isIncrBackup()) ? true : false);
+        map.put("incremental_backups", config.isIncrBackup());
         map.put("endpoint_snitch", config.getSnitch());
 
         // this is only for 0.8 so check before set.

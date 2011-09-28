@@ -2,26 +2,15 @@ package com.priam.conf;
 
 import java.io.IOException;
 import java.lang.management.MemoryUsage;
-import java.net.UnknownHostException;
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
-import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.tools.NodeProbe;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import com.priam.servlets.CassandraAdmin;
+import com.amazonaws.util.json.JSONException;
+import com.amazonaws.util.json.JSONObject;
 
 /**
  * This class provides a way to get the data out of the JMX.
@@ -30,8 +19,6 @@ import com.priam.servlets.CassandraAdmin;
  */
 public class JMXNodeTool extends NodeProbe
 {
-    private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
-
     private static JMXNodeTool tool = null;
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -41,7 +28,7 @@ public class JMXNodeTool extends NodeProbe
      * 
      * This will work only if cassandra runs.
      */
-    public JMXNodeTool(String host, int port) throws IOException, InterruptedException
+    JMXNodeTool(String host, int port) throws IOException, InterruptedException
     {
         super(host, port);
     }
@@ -69,10 +56,10 @@ public class JMXNodeTool extends NodeProbe
      * You must do the compaction before running this to remove the duplicate
      * tokens out of the server. TODO code it.
      */
-    public String estimateKeys()
+    public String estimateKeys() throws JSONException
     {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
-        JSONObject object = new JSONObject();
+        JSONObject object = new JSONObject("ESTIMATED_KEYS");
         while (it.hasNext())
         {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
@@ -83,10 +70,9 @@ public class JMXNodeTool extends NodeProbe
         return object.toString();
     }
 
-    public JSONObject info()
+    public String info() throws JSONException
     {
-    	logger.info("JMX info being called");
-        JSONObject object = new JSONObject();
+        JSONObject object = new JSONObject("INFO");
         object.put("INTIALIZED", isInitialized());
         object.put("Token", getToken());
         object.put("Load", getLoadString());
@@ -99,86 +85,7 @@ public class JMXNodeTool extends NodeProbe
         object.put("Data Center", getDataCenter());
         object.put("Rack", getRack());
         // object.put("Exceptions", getExceptionCount());
-        //return object.toString();
-        logger.info(object.toString());
-        return object;
-    }
-    
-    public JSONArray ring() throws com.netflix.configadmin.json.JSONException
-    {
-    	logger.info("JMX ring being called");
-        JSONArray ring = new JSONArray();
-        Map<Token, String> tokenToEndpoint = getTokenToEndpointMap();
-        List<Token> sortedTokens = new ArrayList<Token>(tokenToEndpoint.keySet());
-        Collections.sort(sortedTokens);
-
-        Collection<String> liveNodes = getLiveNodes();
-        Collection<String> deadNodes = getUnreachableNodes();
-        Collection<String> joiningNodes = getJoiningNodes();
-        Collection<String> leavingNodes = getLeavingNodes();
-        Collection<String> movingNodes = getMovingNodes();
-        Map<String, String> loadMap = getLoadMap();
-        // Calculate per-token ownership of the ring
-        Map<Token, Float> ownerships = getOwnership();
-
-        for (Token token : sortedTokens)
-        {
-            String primaryEndpoint = tokenToEndpoint.get(token);
-            String dataCenter;
-            try
-            {
-                dataCenter = getEndpointSnitchInfoProxy().getDatacenter(primaryEndpoint);
-            }
-            catch (UnknownHostException e)
-            {
-                dataCenter = "Unknown";
-            }
-            String rack;
-            try
-            {
-                rack = getEndpointSnitchInfoProxy().getRack(primaryEndpoint);
-            }
-            catch (UnknownHostException e)
-            {
-                rack = "Unknown";
-            }
-            String status = liveNodes.contains(primaryEndpoint)
-                            ? "Up"
-                            : deadNodes.contains(primaryEndpoint)
-                              ? "Down"
-                              : "?";
-
-            String state = "Normal";
-
-            if (joiningNodes.contains(primaryEndpoint))
-                state = "Joining";
-            else if (leavingNodes.contains(primaryEndpoint))
-                state = "Leaving";
-            else if (movingNodes.contains(primaryEndpoint))
-                state = "Moving";
-
-            String load = loadMap.containsKey(primaryEndpoint)
-                          ? loadMap.get(primaryEndpoint)
-                          : "?";
-            String owns = new DecimalFormat("##0.00%").format(ownerships.get(token));
-            ring.add(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
-        }
-        //return ring.toString();
-        logger.info(ring.toString());
-        return ring;
-    }
-
-    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token)
-    {
-        JSONObject object = new JSONObject();
-        object.put("ENDPOINT", primaryEndpoint);
-        object.put("DC", dataCenter);
-        object.put("RACK", rack);
-        object.put("STATUS", status);
-        object.put("LOAD", load);
-        object.put("OWNS", owns);
-        object.put("TOKEN", token);
-        return object;
+        return object.toString();
     }
 
     public void compact() throws IOException, ExecutionException, InterruptedException

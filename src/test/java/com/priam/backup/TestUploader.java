@@ -36,11 +36,11 @@ import com.priam.conf.IConfiguration;
 import com.priam.identity.InstanceIdentity;
 
 /**
- * This is test case for verifying upload.
- * NOTE: Not a unit test. Does not mock S3
- * Requires AWS access
+ * This is test case for verifying upload. NOTE: Not a unit test. Does not mock
+ * S3 Requires AWS access
+ * 
  * @author psadhu
- *
+ * 
  */
 public class TestUploader
 {
@@ -69,7 +69,7 @@ public class TestUploader
         File largeFile = new File(TestUploader.LARGE_FILE_PATH);
 
         BufferedOutputStream bos2 = new BufferedOutputStream(new FileOutputStream(largeFile));
-        long tenMB = (10L * 1024 * 1024);
+        long tenMB = (300L * 1024 * 1024);
         byte b = 8;
         for (int i = 0; i < tenMB; i++)
         {
@@ -77,7 +77,7 @@ public class TestUploader
         }
         bos2.close();
 
-        long fiveKB = (5L * 1024 );
+        long fiveKB = (5L * 1024);
         System.out.println(fiveKB);
         BufferedOutputStream bos1 = new BufferedOutputStream(new FileOutputStream(smallFile));
         for (long i = 0; i < fiveKB; i++)
@@ -90,7 +90,7 @@ public class TestUploader
     @AfterClass
     public static void cleanup()
     {
-        
+
         File tmpDir = new File("cass");
         if (tmpDir.exists())
             FileUtils.deleteQuietly(tmpDir);
@@ -115,12 +115,12 @@ public class TestUploader
     @Test
     public void testLargeFileUpload() throws Exception
     {
-
+        // Sends 2 parts
         File smallFile = new File(LARGE_FILE_PATH);
         Assert.assertTrue(smallFile.exists());
         InstanceIdentity factory = inject.getInstance(InstanceIdentity.class);
-        factory.getInstance().setPayload("1234567");//Token
-        
+        factory.getInstance().setPayload("1234567");// Token
+
         S3BackupPath file = inject.getInstance(S3BackupPath.class);
         file.parseLocal(smallFile, BackupFileType.SNAP);
         Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/SNAP/ks2/f2.db", file.getRemotePath());
@@ -133,12 +133,12 @@ public class TestUploader
 
         // The ETag does not reflect the right MD5 in case of multi-part
         GetObjectRequest req = new GetObjectRequest(TestUploader.conf.getBackupPrefix(), file.getRemotePath());
-        s3Client.getObject(req, new File("f2.db.cmp.remote"));
+        s3Client.getObject(req, new File("cass/f2.db.cmp.remote"));
 
-        TestUploader.snappyDecompress("./f2.db.cmp.remote", "./f2.db");
+        TestUploader.snappyDecompress("cass/f2.db.cmp.remote", "cass/f2.db");
 
         byte[] md5 = TestUploader.computeMD5Hash(new FileInputStream(new File(LARGE_FILE_PATH)));
-        byte[] rmd5 = TestUploader.computeMD5Hash(new FileInputStream(new File("./f2.db")));
+        byte[] rmd5 = TestUploader.computeMD5Hash(new FileInputStream(new File("cass/f2.db")));
 
         String local = TestUploader.toHex(md5);
         String remote = TestUploader.toHex(rmd5);
@@ -148,12 +148,12 @@ public class TestUploader
     @Test
     public void testSmallFileUpload() throws Exception
     {
-
+        // Sends 1 parts
         File smallFile = new File(SMALL_FILE_PATH);
         Assert.assertTrue(smallFile.exists());
         InstanceIdentity factory = inject.getInstance(InstanceIdentity.class);
-        factory.getInstance().setPayload("1234567");//Token
-        
+        factory.getInstance().setPayload("1234567");// Token
+
         S3BackupPath file = inject.getInstance(S3BackupPath.class);
         file.parseLocal(smallFile, BackupFileType.SNAP);
         Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/SNAP/ks1/f1.db", file.getRemotePath());
@@ -166,12 +166,12 @@ public class TestUploader
 
         // The ETag does not reflect the right MD5 in case of multi-part
         GetObjectRequest req = new GetObjectRequest(TestUploader.conf.getBackupPrefix(), file.getRemotePath());
-        s3Client.getObject(req, new File("f1.db.cmp.remote"));
+        s3Client.getObject(req, new File("cass/f1.db.cmp.remote"));
 
-        TestUploader.snappyDecompress("./f1.db.cmp.remote", "./f1.db");
+        TestUploader.snappyDecompress("cass/f1.db.cmp.remote", "cass/f1.db");
 
         byte[] md5 = TestUploader.computeMD5Hash(new FileInputStream(new File(SMALL_FILE_PATH)));
-        byte[] rmd5 = TestUploader.computeMD5Hash(new FileInputStream(new File("./f1.db")));
+        byte[] rmd5 = TestUploader.computeMD5Hash(new FileInputStream(new File("cass/f1.db")));
 
         String local = TestUploader.toHex(md5);
         String remote = TestUploader.toHex(rmd5);

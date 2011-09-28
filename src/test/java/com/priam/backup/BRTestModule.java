@@ -29,12 +29,9 @@ public class BRTestModule extends AbstractModule
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
-        bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
-        // bind(JMXNodeTool.class).to(FakeNodeProbe.class);
-        // bind(IBackupRestoreFactory.class).to(FakeBackupRestoreFactory.class).in(Scopes.SINGLETON);
+        bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
+        //bind(ICredential.class).to(FakeCredential.class).in(Scopes.SINGLETON);
         bind(Consumer.class).to(FakeCLConsumer.class).in(Scopes.SINGLETON);
-        bindConstant().annotatedWith(Names.named("Mount EBS CL Backup")).to(new Boolean(false));
-        // bind(FileUploader.class).toProvider(FakeFileUploaderProvider.class);
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
     }

@@ -55,7 +55,7 @@ public class TestBackupFile
     public static void cleanup() throws IOException
     {
         File file = new File("cass/data/ks1/f1.db");
-        file.delete();
+        FileUtils.deleteQuietly(file);
     }
 
     @Test

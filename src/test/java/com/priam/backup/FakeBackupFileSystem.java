@@ -21,6 +21,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     private List<AbstractBackupPath> flist;
     public Set<String> downloadedFiles;
     public Set<String> uploadedFiles;
+    public String baseDir, region, clusterName;
 
     @Inject
     Provider<S3BackupPath> pathProvider;
@@ -112,11 +113,22 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     @Override
     public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till)
     {
+        String[] paths = bucket.split(String.valueOf(S3BackupPath.PATH_SEP));
+        
+        if( paths.length > 1){
+            baseDir = paths[1];
+            region = paths[2];
+            clusterName = paths[3];
+        }
+        
         List<AbstractBackupPath> tmpList = new ArrayList<AbstractBackupPath>();
         for (AbstractBackupPath path : flist)
         {
-            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start))
-                tmpList.add(path);
+
+            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)){
+                if( path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.region.equals(region))
+                 tmpList.add(path);
+            }
         }
         return tmpList.iterator();
     }

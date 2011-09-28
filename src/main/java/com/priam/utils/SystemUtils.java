@@ -21,6 +21,7 @@ import java.util.TimerTask;
 
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -29,8 +30,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
+import com.netflix.instance.identity.StorageDevice;
 import com.priam.conf.IConfiguration;
-import com.priam.identity.PriamStorageDevice;
 
 public class SystemUtils
 {
@@ -39,9 +40,9 @@ public class SystemUtils
     /**
      * Mounts all the file systems in the volumes map.
      */
-    public static void mountAll(Map<String, PriamStorageDevice> volumes) throws IOException, InterruptedException
+    public static void mountAll(Map<String, StorageDevice> volumes) throws IOException, InterruptedException
     {
-        for (Entry<String, PriamStorageDevice> entry : volumes.entrySet())
+        for (Entry<String, StorageDevice> entry : volumes.entrySet())
         {
             List<String> command = Lists.newArrayList();
             if (!"root".equals(System.getProperty("user.name")))
@@ -109,7 +110,7 @@ public class SystemUtils
     public static void startCassandra(boolean join_ring, IConfiguration config) throws IOException, InterruptedException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
-
+        
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))
         {
@@ -200,14 +201,13 @@ public class SystemUtils
     }
 
     /**
-     * delete all the files in the given Directory but dont delete the dir
+     * delete all the files/dirs in the given Directory but dont delete the dir
      * itself.
+     * @throws IOException 
      */
-    public static void cleanup(String dirPath)
+    public static void cleanupDir(String dirPath) throws IOException
     {
-        File location = new File(dirPath);
-        for (File file : location.listFiles())
-            file.delete();
+        FileUtils.cleanDirectory(new File(dirPath));
     }
 
     public static void logErrorStream(Process proc)
@@ -332,8 +332,7 @@ public class SystemUtils
             if (conn.getResponseCode() != 200)
                 throw new ConfigurationException("Ec2Snitch was unable to execute the API call. Not an ec2 node?");
 
-            // Read the information. I wish I could say (String)
-            // conn.getContent() here...
+            // Read the information. I wish I could say (String) conn.getContent() here...
             int cl = conn.getContentLength();
             byte[] b = new byte[cl];
             DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
@@ -360,7 +359,7 @@ public class SystemUtils
         });
         return files;
     }
-
+    
     public static class StreamReader extends Thread
     {
         public static final String ERROR = "ERROR";
@@ -398,7 +397,7 @@ public class SystemUtils
                 logger.error("Error in running sys command: ", ioe);
             }
         }
-
+        
         public String getOutput()
         {
             return output.toString();

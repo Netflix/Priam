@@ -16,7 +16,8 @@ import org.xerial.snappy.SnappyOutputStream;
 public class SnappyCompression
 {
     private static final int BUFFER = 2 * 1024;
-    private static final int MAX_CHUNK = 6 * 1024 * 1024;
+    // Chunk sizes of 10 MB
+    private static final int MAX_CHUNK = 10 * 1024 * 1024;
 
     public void decompress(InputStream input, OutputStream output) throws IOException
     {
@@ -59,7 +60,6 @@ public class SnappyCompression
 
     public class ChunkedStream implements Iterator<byte[]>
     {
-        // Chunk sizes of 6 MB
         private boolean hasnext = true;
         private ByteArrayOutputStream bos;
         private SnappyOutputStream compress;
@@ -119,7 +119,7 @@ public class SnappyCompression
             return return_;
         }
 
-        private byte[] returnSafe()
+        private byte[] returnSafe() throws IOException
         {
             byte[] return_ = bos.toByteArray();
             bos.reset();

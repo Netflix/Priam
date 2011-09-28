@@ -20,7 +20,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public static enum BackupFileType
     {
-        SNAP, SST, CL, META, RANGE
+        SNAP, SST, CL, META
     };
 
     public BackupFileType type;
@@ -109,5 +109,5 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public abstract void parseRemote(String remoteFilePath);
 
-    public abstract String remotePrefix(Date start, Date end);
+    public abstract String remotePrefix(Date start, Date end, String location);
 }

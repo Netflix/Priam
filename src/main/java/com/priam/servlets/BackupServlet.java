@@ -18,6 +18,7 @@ import com.amazonaws.util.json.JSONObject;
 import com.priam.backup.AbstractBackupPath;
 import com.priam.backup.IBackupFileSystem;
 import com.priam.backup.Restore;
+import com.priam.backup.SnapshotBackup;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.PriamServer;
 import com.priam.utils.SystemUtils;
@@ -73,6 +74,25 @@ public class BackupServlet
             }
             return Response.ok(object.toString()).build();
         }
+        else if (type.equalsIgnoreCase("do_snapshot"))
+        {
+            PriamServer.instance.injector.getInstance(SnapshotBackup.class).execute();
+            return Response.status(200).build();
+        }
+        else if (type.equalsIgnoreCase("status"))
+        {
+            Restore res = PriamServer.instance.injector.getInstance(Restore.class);
+            int restoreTCount = res.getActiveCount();
+            logger.debug("Thread counts for backup is: %d", restoreTCount);
+            int backupTCount = PriamServer.instance.injector.getInstance(IBackupFileSystem.class).getActivecount();
+            logger.debug("Thread counts for restore is: %d", backupTCount);
+            SnapshotBackup sb = PriamServer.instance.injector.getInstance(SnapshotBackup.class);
+            return Response.ok("Restore: " + restoreTCount
+                    + "\nStatus: " + res.state()
+                    + "\nBackup: " + backupTCount
+                    + "\nStatus: " + sb.state()).build();
+        }
+
         logger.error(String.format("Couldnt serve the URL with parameters: type=%s and ext=%s", type, value));
         return Response.status(404).build();
     }

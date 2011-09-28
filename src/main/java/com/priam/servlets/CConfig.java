@@ -74,24 +74,6 @@ public class CConfig
                 }
                 return Response.status(200).build();
             }
-            else if (request_type.equalsIgnoreCase("DO_SNAPSHOT"))
-            {
-                PriamServer.instance.injector.getInstance(SnapshotBackup.class).execute();
-                return Response.status(200).build();
-            }
-            else if (request_type.equalsIgnoreCase("STATUS"))
-            {
-                Restore res = PriamServer.instance.injector.getInstance(Restore.class);
-                int restore = res.getActiveCount();
-                logger.debug("Thread counts for backup is: %d", restore);
-                int backup = PriamServer.instance.injector.getInstance(IBackupFileSystem.class).getActivecount();
-                logger.debug("Thread counts for restore is: %d", restore);
-                SnapshotBackup sb = PriamServer.instance.injector.getInstance(SnapshotBackup.class);
-                return Response.ok("Restore: " + restore
-                        + "\nStatus: " + res.state()
-                        + "\nBackup: " + backup
-                        + "\nStatus: " + sb.state()).build();
-            }
         }
         catch (Exception e)
         {

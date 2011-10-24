@@ -53,10 +53,10 @@ public class AWSMembership implements IMembership
         DescribeAutoScalingGroupsResult res = asgc.describeAutoScalingGroups(asgReq);
 
         List<String> instanceIds = Lists.newArrayList();
-        for (AutoScalingGroup asg : res.getAutoScalingGroups())
-        {
+        for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
             for (Instance ins : asg.getInstances())
-                instanceIds.add(ins.getInstanceId());
+                if (!ins.getLifecycleState().equals("Terminating"))
+                    instanceIds.add(ins.getInstanceId());
         }
         logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
         return instanceIds;

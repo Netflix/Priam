@@ -21,7 +21,7 @@ import com.priam.identity.DoubleRing;
  * This servlet will provide the configuration API service as and when cassandra
  * requests for it.
  * 
- * @author "Vijay Parthasarathy"
+ * @author "Vijay Parthasarathy","Aditya Jami"
  */
 @Path("/cassandra_config/{clusterName}")
 @Produces({ "application/text" })

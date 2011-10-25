@@ -6,6 +6,8 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.priam.netflix.EpicMetrics;
+
 /**
  * Task class that should be implemented by all cron tasks. Jobconf will contain
  * any instance specific data
@@ -28,17 +30,21 @@ public abstract class Task implements Job
      */
     public void execute(JobExecutionContext context) throws JobExecutionException
     {
-        try
+        EpicMetrics metrics = EpicMetrics.getInstance();
+    	try
         {
             if (status == STATE.RUNNING)
                 return;
             status = STATE.RUNNING;
             execute();
+            
         }
         catch (Exception e)
         {
             status = STATE.ERROR;
             logger.error("Couldnt execute the task because of....", e);
+            String classname = this.getClass().getName();
+            metrics.setFailedMetric(classname);
         }
         catch (Throwable e)
         {

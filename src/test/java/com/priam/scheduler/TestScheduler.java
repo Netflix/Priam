@@ -1,5 +1,9 @@
 package com.priam.scheduler;
 
+import java.util.Date;
+
+import junit.framework.Assert;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.quartz.JobDataMap;
@@ -7,8 +11,10 @@ import org.quartz.JobDataMap;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Singleton;
 import com.netflix.logging.LogManager;
 import com.priam.TestModule;
+import com.priam.backup.CLBackup;
 import com.priam.conf.IConfiguration;
 
 public class TestScheduler
@@ -29,6 +35,18 @@ public class TestScheduler
         scheduler.shutdown();
     }
 
+    @Test
+    public void testSingleInstanceScedule() throws Exception
+    {
+        Injector inject = Guice.createInjector(new TestModule());
+        PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
+        scheduler.start();
+        scheduler.addTask("test2", SingleTestTask.class, SingleTestTask.getTimer());
+        Thread.sleep(15*1000);
+        scheduler.shutdown();
+        Assert.assertEquals(3, SingleTestTask.count);
+    }
+
     @Ignore
     public static class TestTask extends Task
     {
@@ -45,4 +63,40 @@ public class TestScheduler
         }
 
     }
+    
+    @Ignore
+    @Singleton
+    public static class SingleTestTask extends Task
+    {
+        public static int count =0;
+        @Override
+        public void execute()
+        {
+            System.out.println( new Date() + " Running ");
+            ++count;
+            try
+            {
+                Thread.sleep(5000);//5sec
+            }
+            catch (InterruptedException e)
+            {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+
+        @Override
+        public String getName()
+        {
+            return "test2";
+        }
+        
+        public static TaskTimer getTimer()
+        {
+            return new SimpleTimer("test2", 1000L);
+        }
+
+
+    }
+
 }

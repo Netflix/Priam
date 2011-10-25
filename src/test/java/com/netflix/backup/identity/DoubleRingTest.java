@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.google.common.collect.Lists;
+import com.google.inject.internal.Lists;
 import com.priam.identity.DoubleRing;
 import com.priam.identity.PriamInstance;
 import com.priam.utils.SystemUtils;
@@ -34,9 +34,9 @@ public class DoubleRingTest extends InstanceTestUtils
         for (int i = 0; i < doubled.size(); i++)
         {
             validator.add(TokenManager.createToken(i, doubled.size(), config.getDC()));
-
+            
         }
-
+        
         for (int i = 0; i < doubled.size(); i++)
         {
             PriamInstance ins = doubled.get(i);

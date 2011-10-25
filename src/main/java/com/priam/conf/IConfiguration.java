@@ -60,11 +60,22 @@ public interface IConfiguration
 
     /**
      * Amazon specific setting to query ASG Membership
-     * @return
      */
     public String getASGName();
 
     boolean isIncrBackup();
 
     public String getHostIP();
+
+    public int getUploadThrottle();
+    
+    boolean isLocalBootstrapEnabled();
+
+    public int getInMemoryCompactionLimit();
+
+    public int getCompactionThroughput();
+
+    public String getMaxDirectMemory();
+    
+    public String getBootClusterName();
 }

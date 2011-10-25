@@ -127,6 +127,7 @@ public class SystemUtils
         env.put("LOCAL_BACKUP_DIR", config.getBackupLocation());
         env.put("CACHE_DIR", config.getCacheLocation());
         env.put("JMX_PORT", "" + config.getJmxPort());
+        env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);

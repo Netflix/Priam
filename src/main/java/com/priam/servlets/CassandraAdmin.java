@@ -60,6 +60,16 @@ public class CassandraAdmin
             	logger.info("node tool ring being called");
                 return Response.ok(nodetool.ring().toString()).build();
             } 
+            else if (action.equalsIgnoreCase("flush")){
+            	logger.info("node tool flush being called");
+            	nodetool.flush();
+            	return Response.status(200).build();
+            }
+            else if (action.equalsIgnoreCase("repair")){
+            	logger.info("node tool repair is being called");
+            	nodetool.repair();
+            	return Response.status(200).build();
+            }
             else
                 return Response.status(404).build();
         } catch (Exception e)

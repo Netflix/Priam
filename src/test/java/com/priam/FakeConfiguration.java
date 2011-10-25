@@ -3,8 +3,10 @@ package com.priam;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.inject.Singleton;
 import com.priam.conf.IConfiguration;
 
+@Singleton
 public class FakeConfiguration implements IConfiguration
 {
 
@@ -12,6 +14,7 @@ public class FakeConfiguration implements IConfiguration
     public String appName;
     public String zone;
     public String instance_id;
+    public String restorePrefix;
 
     public FakeConfiguration(String region, String appName, String zone, String ins_id)
     {
@@ -19,6 +22,7 @@ public class FakeConfiguration implements IConfiguration
         this.appName = appName;
         this.zone = zone;
         this.instance_id = ins_id;
+        this.restorePrefix  = "";
     }
 
     @Override
@@ -86,8 +90,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getJmxPort()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return 7199;
     }
 
     @Override
@@ -185,11 +188,17 @@ public class FakeConfiguration implements IConfiguration
         return 3;
     }
 
+    public void setRestorePrefix(String prefix)
+    {
+        // TODO Auto-generated method stub
+        restorePrefix = prefix;
+    }
+
     @Override
     public String getRestorePrefix()
     {
         // TODO Auto-generated method stub
-        return null;
+        return restorePrefix;
     }
 
     @Override
@@ -223,6 +232,45 @@ public class FakeConfiguration implements IConfiguration
     {
         // TODO Auto-generated method stub
         return null;
+    }
+
+    @Override
+    public int getUploadThrottle()
+    {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+	@Override
+	public boolean isLocalBootstrapEnabled() {
+		// TODO Auto-generated method stub
+		return false;
+	}
+
+	@Override
+	public int getInMemoryCompactionLimit() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+	@Override
+	public int getCompactionThroughput() {
+		// TODO Auto-generated method stub
+		return 0;
+	}
+
+    @Override
+    public String getMaxDirectMemory()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getBootClusterName()
+    {
+        // TODO Auto-generated method stub
+        return "cass_bootstrap";
     }
 
 }

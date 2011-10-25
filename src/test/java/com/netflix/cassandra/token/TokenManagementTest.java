@@ -31,7 +31,7 @@ public class TokenManagementTest
     public void printSplit()
     {
         for (int i = 0; i < 18; i++)
-            System.out.println(TokenManager.intialToken(18, i, 0));
+            System.out.println(TokenManager.intialToken(18, i, 1808575600));
     }
 
     @Test

@@ -69,7 +69,8 @@ public class PriamServer
             if (config.isCommitLogBackup())
                 scheduler.addTask(CLBackup.JOBNAME, CLBackup.class, CLBackup.getTimer());
         }
-
+        // NodeToolMonitor monitorObj = injector.getInstance(NodeToolMonitor.class);
+        // scheduler.addTask(monitorObj.getName(), monitorObj.getClass(), monitorObj.getTimer());
     }
 
 }

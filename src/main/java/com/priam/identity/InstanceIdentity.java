@@ -5,6 +5,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,6 +81,7 @@ public class InstanceIdentity
         // Grab a new token
         if (null == myInstance)
             myInstance = new GetNewToken().call();
+        logger.info("My token: " + myInstance.getPayload());
     }
 
     private void populateRacMap()
@@ -97,6 +99,8 @@ public class InstanceIdentity
         {
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
+            //Sleep random interval - upto 15 sec
+            Thread.sleep(new Random().nextInt(5000) + 10000);
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
@@ -108,7 +112,7 @@ public class InstanceIdentity
                 factory.delete(dead);
                 isReplace = true;
                 String payLoad = markAsDead.getPayload();
-                logger.info("Slot grabbed {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
+                logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
                 return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
             }
             return null;
@@ -125,10 +129,12 @@ public class InstanceIdentity
         @Override
         public PriamInstance retriableCall() throws Exception
         {
+            //Sleep random interval - upto 15 sec
+            Thread.sleep(new Random().nextInt(15000));
             int hash = SystemUtils.hash(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.
-
+            
             int max = hash;
             for (PriamInstance data : factory.getAllIds(config.getAppName()))
                 max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;

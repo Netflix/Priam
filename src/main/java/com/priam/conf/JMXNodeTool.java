@@ -2,23 +2,38 @@ package com.priam.conf;
 
 import java.io.IOException;
 import java.lang.management.MemoryUsage;
+import java.net.UnknownHostException;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
+import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.tools.NodeProbe;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.amazonaws.util.json.JSONException;
-import com.amazonaws.util.json.JSONObject;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 
 /**
  * This class provides a way to get the data out of the JMX.
  * 
- * @author "Vijay Parthasarathy"
+ * @author "Vijay Parthasarathy","Aditya Jami"
  */
+@Singleton
 public class JMXNodeTool extends NodeProbe
 {
+    private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
+
     private static JMXNodeTool tool = null;
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -28,23 +43,42 @@ public class JMXNodeTool extends NodeProbe
      * 
      * This will work only if cassandra runs.
      */
-    JMXNodeTool(String host, int port) throws IOException, InterruptedException
+    public JMXNodeTool(String host, int port) throws IOException, InterruptedException
     {
         super(host, port);
+    }
+    
+    @Inject
+    public JMXNodeTool(IConfiguration config) throws IOException, InterruptedException
+    {
+        super("localhost", config.getJmxPort());
     }
 
     public static JMXNodeTool instance(IConfiguration config)
     {
         // try to create if it is null.
-        try
+        if (tool == null)
         {
-            tool = new JMXNodeTool("localhost", config.getJmxPort());
-        }
-        catch (Exception ex)
-        {
-            // ignore this for now..
+            synchronized (JMXNodeTool.class)
+            {
+                // doublecheck
+                if (tool == null)
+                    try
+                    {
+                        tool = new JMXNodeTool("localhost", config.getJmxPort());
+                    }
+                    catch (Exception ex)
+                    {
+                        throw new RuntimeException(ex);
+                    }
+            }
         }
         return tool;
+    }
+    
+    public static void reconnect()
+    {
+        // TODO implement this.
     }
 
     public void retry() throws IOException
@@ -56,10 +90,10 @@ public class JMXNodeTool extends NodeProbe
      * You must do the compaction before running this to remove the duplicate
      * tokens out of the server. TODO code it.
      */
-    public String estimateKeys() throws JSONException
+    public String estimateKeys()
     {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
-        JSONObject object = new JSONObject("ESTIMATED_KEYS");
+        JSONObject object = new JSONObject();
         while (it.hasNext())
         {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
@@ -70,9 +104,10 @@ public class JMXNodeTool extends NodeProbe
         return object.toString();
     }
 
-    public String info() throws JSONException
+    public JSONObject info()
     {
-        JSONObject object = new JSONObject("INFO");
+        logger.info("JMX info being called");
+        JSONObject object = new JSONObject();
         object.put("INTIALIZED", isInitialized());
         object.put("Token", getToken());
         object.put("Load", getLoadString());
@@ -85,7 +120,81 @@ public class JMXNodeTool extends NodeProbe
         object.put("Data Center", getDataCenter());
         object.put("Rack", getRack());
         // object.put("Exceptions", getExceptionCount());
-        return object.toString();
+        // return object.toString();
+        logger.info(object.toString());
+        return object;
+    }
+
+    public JSONArray ring() throws com.netflix.configadmin.json.JSONException
+    {
+        logger.info("JMX ring being called");
+        JSONArray ring = new JSONArray();
+        Map<Token, String> tokenToEndpoint = getTokenToEndpointMap();
+        List<Token> sortedTokens = new ArrayList<Token>(tokenToEndpoint.keySet());
+        Collections.sort(sortedTokens);
+
+        Collection<String> liveNodes = getLiveNodes();
+        Collection<String> deadNodes = getUnreachableNodes();
+        Collection<String> joiningNodes = getJoiningNodes();
+        Collection<String> leavingNodes = getLeavingNodes();
+        Collection<String> movingNodes = getMovingNodes();
+        Map<String, String> loadMap = getLoadMap();
+        // Calculate per-token ownership of the ring
+        Map<Token, Float> ownerships = getOwnership();
+
+        for (Token token : sortedTokens)
+        {
+            String primaryEndpoint = tokenToEndpoint.get(token);
+            String dataCenter;
+            try
+            {
+                dataCenter = getEndpointSnitchInfoProxy().getDatacenter(primaryEndpoint);
+            }
+            catch (UnknownHostException e)
+            {
+                dataCenter = "Unknown";
+            }
+            String rack;
+            try
+            {
+                rack = getEndpointSnitchInfoProxy().getRack(primaryEndpoint);
+            }
+            catch (UnknownHostException e)
+            {
+                rack = "Unknown";
+            }
+            String status = liveNodes.contains(primaryEndpoint) ? "Up" : deadNodes.contains(primaryEndpoint) ? "Down" : "?";
+
+            String state = "Normal";
+
+            if (joiningNodes.contains(primaryEndpoint))
+                state = "Joining";
+            else if (leavingNodes.contains(primaryEndpoint))
+                state = "Leaving";
+            else if (movingNodes.contains(primaryEndpoint))
+                state = "Moving";
+
+            String load = loadMap.containsKey(primaryEndpoint) ? loadMap.get(primaryEndpoint) : "?";
+            String owns = new DecimalFormat("##0.00%").format(ownerships.get(token));
+            ring.add(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
+        }
+        // return ring.toString();
+        logger.info(ring.toString());
+        return ring;
+    }
+
+    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token)
+    {
+        JSONObject object = new JSONObject();
+        object.put("ENDPOINT", primaryEndpoint);
+        object.put("DC", dataCenter);
+        object.put("RACK", rack);
+        object.put("STATUS", status);
+        object.put("STATE", state);
+        object.put("LOAD", load);
+        object.put("OWNS", owns);
+        object.put("TOKEN", token);
+        return object;
     }
 
     public void compact() throws IOException, ExecutionException, InterruptedException
@@ -104,6 +213,11 @@ public class JMXNodeTool extends NodeProbe
     {
         for (String keyspace : getKeyspaces())
             forceTableCleanup(keyspace, new String[0]);
+    }
+    
+    public void flush() throws IOException, ExecutionException, InterruptedException{
+    	for (String keyspace : getKeyspaces())
+    		forceTableFlush(keyspace, new String[0]);
     }
 
     // TODO move it test.
@@ -133,10 +247,15 @@ public class JMXNodeTool extends NodeProbe
         }
         System.out.println(new JMXNodeTool(host, port).estimateKeys());
     }
-
-    public boolean isInitialized()
+    
+    @Override
+    public void close() throws IOException
     {
-        // TODO Auto-generated method stub
-        return false;
+        synchronized (JMXNodeTool.class)
+        {
+            tool = null;
+            super.close();
+        }
     }
+
 }

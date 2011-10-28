@@ -72,9 +72,9 @@
 			<version>0.8.6</version>
 		</dependency>
 		<dependency>
-			<groupId>org.apache.thift</groupId>
+			<groupId>org.apache.thrift</groupId>
 			<artifactId>libthrift</artifactId>
-			<version>0.8.1</version>
+			<version>0.7.0</version>
 		</dependency>
 		<dependency>
 			<groupId>javax.ws.rs</groupId>
@@ -98,8 +98,8 @@
 		</dependency>
 		<dependency>
 			<groupId>mockit</groupId>
-			<artifactId>mockit</artifactId>
-			<version>0.999.8</version>
+			<artifactId>jmockit</artifactId>
+			<version>0.999.4</version>
 		</dependency>
 		<dependency>
       		<groupId>junit</groupId>

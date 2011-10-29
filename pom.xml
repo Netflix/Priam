@@ -4,6 +4,23 @@
 	<groupId>com.priam</groupId>
 	<artifactId>Priam</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
+	<repositories>
+		<repository>
+        	<snapshots>
+            		<enabled>false</enabled>
+          	</snapshots>
+          	<id>central</id>
+          	<name>libs-releases</name>
+          	<url>http://artifacts.netflix.com/libs-releases</url>
+        </repository>
+       <repository>
+          <snapshots />
+          <id>snapshots</id>
+          <name>libs-snapshots</name>
+          <url>http://artifacts.netflix.com/libs-snapshots</url>
+        </repository>
+
+	</repositories>
 	<dependencies>
 		<dependency>
 			<groupId>commons-lang</groupId>

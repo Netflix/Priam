@@ -18,7 +18,6 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
-import com.priam.conf.JMXNodeTool;
 import com.priam.identity.IPriamInstanceFactory;
 import com.priam.scheduler.SimpleTimer;
 import com.priam.scheduler.Task;

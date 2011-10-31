@@ -14,7 +14,6 @@ import com.priam.conf.IConfiguration;
 import com.priam.scheduler.SimpleTimer;
 import com.priam.scheduler.Task;
 import com.priam.scheduler.TaskTimer;
-import com.priam.utils.RandomAccessReader;
 import com.priam.utils.SystemUtils;
 
 @Singleton

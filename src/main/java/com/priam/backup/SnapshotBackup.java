@@ -1,8 +1,6 @@
 package com.priam.backup;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
@@ -11,17 +9,17 @@ import java.util.TimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.services.s3.model.S3Object;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
 import com.priam.conf.JMXNodeTool;
 import com.priam.scheduler.CronTimer;
 import com.priam.scheduler.TaskTimer;
 import com.priam.utils.RetryableCallable;
-import com.priam.utils.SystemUtils;
 
+@Singleton
 public class SnapshotBackup extends Backup
 {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
@@ -44,7 +42,7 @@ public class SnapshotBackup extends Backup
         String snapshotName = pathFactory.get().getFormat().format(cal.getTime());
         try
         {
-            logger.info("Starting snapshot " + snapshotName );
+            logger.info("Starting snapshot " + snapshotName);
             takeSnapshot(snapshotName);
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
@@ -62,10 +60,11 @@ public class SnapshotBackup extends Backup
             }
             // Upload meta file
             metaData.set(bps, snapshotName);
-            logger.info("Snapshot upload complete for " + snapshotName );
+            logger.info("Snapshot upload complete for " + snapshotName);
         }
-        catch( Exception e ){
-            //Log it
+        catch (Exception e)
+        {
+            // Log it
             logger.error(error, e);
         }
         finally
@@ -126,7 +125,7 @@ public class SnapshotBackup extends Backup
                 }
                 return null;
             }
-        }.call();        
+        }.call();
     }
 
     @Override

@@ -15,10 +15,12 @@ import org.yaml.snakeyaml.Yaml;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.priam.scheduler.SimpleTimer;
 import com.priam.scheduler.Task;
 import com.priam.scheduler.TaskTimer;
 
+@Singleton
 public class TuneCassandra extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(HintedHandOffManager.class);

@@ -4,7 +4,7 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
-import com.google.inject.internal.Lists;
+import com.google.common.collect.Lists;
 import com.priam.backup.AbstractBackupPath;
 
 public class S3BackupPath extends AbstractBackupPath

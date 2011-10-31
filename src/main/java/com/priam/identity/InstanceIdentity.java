@@ -66,6 +66,15 @@ public class InstanceIdentity
             @Override
             public PriamInstance retriableCall() throws Exception
             {
+                //Check if this node is decomissioned
+                for (PriamInstance ins : factory.getAllIds(config.getAppName()+"-dead"))
+                {
+                    logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
+                    if (ins.getInstanceId().equals(config.getInstanceName())){
+                        ins.setOutOfService(true);
+                        return ins;
+                    }
+                }
                 for (PriamInstance ins : factory.getAllIds(config.getAppName()))
                 {
                     logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));

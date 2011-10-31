@@ -18,8 +18,13 @@ public abstract class RetryableCallable<T> implements Callable<T>
 
     public RetryableCallable(int retrys, long waitTime)
     {
+        set(retrys, waitTime);
+    }
+    
+    public void set(int retrys, long waitTime)
+    {
         this.retrys = retrys;
-        this.waitTime = waitTime;
+        this.waitTime = waitTime;   
     }
 
     public abstract T retriableCall() throws Exception;

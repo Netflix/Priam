@@ -16,4 +16,6 @@ public interface IMembership
     public void removeACL(Collection<String> listIPs, int from, int to);
 
     public List<String> listACL();
+    
+    public void expandRacMembership(int count);
 }

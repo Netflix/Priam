@@ -15,7 +15,6 @@ import com.priam.backup.Consumer;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.IPriamInstanceFactory;
 import com.priam.identity.InstanceIdentity;
-import com.priam.utils.SystemUtils;
 
 public class EBSConsumer implements Consumer
 {
@@ -34,7 +33,7 @@ public class EBSConsumer implements Consumer
             backupCLDir.mkdirs();
         if (identity.getInstance().volumes == null || identity.getInstance().volumes.size() == 0)
             factory.attachVolumes(identity.getInstance(), backupCLDir.getAbsolutePath(), "/dev/sde6");
-        SystemUtils.mountAll(identity.getInstance().getVolumes());
+
         this.config = config;
     }
 

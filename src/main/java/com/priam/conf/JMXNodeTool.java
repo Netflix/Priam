@@ -23,18 +23,21 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.priam.utils.RetryableCallable;
+import com.priam.utils.SystemUtils;
 
 /**
  * This class provides a way to get the data out of the JMX.
  * 
- * @author "Vijay Parthasarathy","Aditya Jami"
+ * @author "Vijay Parthasarathy"
  */
 @Singleton
 public class JMXNodeTool extends NodeProbe
 {
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
 
-    private static JMXNodeTool tool = null;
+    private static volatile JMXNodeTool tool = null;
+
     /**
      * Hostname and Port to talk to will be same server for now optionally we
      * might want the ip to poll.
@@ -47,50 +50,59 @@ public class JMXNodeTool extends NodeProbe
     {
         super(host, port);
     }
-    
+
     @Inject
     public JMXNodeTool(IConfiguration config) throws IOException, InterruptedException
     {
         super("localhost", config.getJmxPort());
     }
 
+    /**
+     * try to create if it is null.
+     */
     public static JMXNodeTool instance(IConfiguration config)
     {
-        // try to create if it is null.
         if (tool == null)
-        {
-            synchronized (JMXNodeTool.class)
-            {
-                // doublecheck
-                if (tool == null)
-                    try
-                    {
-                        tool = new JMXNodeTool("localhost", config.getJmxPort());
-                    }
-                    catch (Exception ex)
-                    {
-                        throw new RuntimeException(ex);
-                    }
-            }
-        }
+            tool = connect(config);
+        if (testConnection())
+            tool = connect(config);
         return tool;
     }
-    
-    public static void reconnect()
+
+    private static boolean testConnection()
     {
-        // TODO implement this.
+        try
+        {
+            return tool.isInitialized();
+        }
+        catch (Throwable ex)
+        {
+            return false;
+        }
+        finally
+        {
+            SystemUtils.closeQuietly(tool);
+        }
     }
 
-    public void retry() throws IOException
+    public static synchronized JMXNodeTool connect(final IConfiguration config)
     {
-        // super.connect();
+        return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>()
+        {
+            @Override
+            public JMXNodeTool retriableCall() throws IOException, InterruptedException
+            {
+                return new JMXNodeTool("localhost", config.getJmxPort());
+            }
+        });
     }
 
     /**
      * You must do the compaction before running this to remove the duplicate
      * tokens out of the server. TODO code it.
      */
-    public String estimateKeys()
+    @SuppressWarnings("unchecked")
+    public JSONObject estimateKeys()
     {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
         JSONObject object = new JSONObject();
@@ -101,9 +113,10 @@ public class JMXNodeTool extends NodeProbe
             object.put("Column Family", entry.getValue().getColumnFamilyName());
             object.put("Estimated Size", entry.getValue().estimateKeys());
         }
-        return object.toString();
+        return object;
     }
 
+    @SuppressWarnings("unchecked")
     public JSONObject info()
     {
         logger.info("JMX info being called");
@@ -125,6 +138,7 @@ public class JMXNodeTool extends NodeProbe
         return object;
     }
 
+    @SuppressWarnings("unchecked")
     public JSONArray ring() throws com.netflix.configadmin.json.JSONException
     {
         logger.info("JMX ring being called");
@@ -183,6 +197,7 @@ public class JMXNodeTool extends NodeProbe
         return ring;
     }
 
+    @SuppressWarnings("unchecked")
     private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token)
     {
         JSONObject object = new JSONObject();
@@ -214,10 +229,11 @@ public class JMXNodeTool extends NodeProbe
         for (String keyspace : getKeyspaces())
             forceTableCleanup(keyspace, new String[0]);
     }
-    
-    public void flush() throws IOException, ExecutionException, InterruptedException{
-    	for (String keyspace : getKeyspaces())
-    		forceTableFlush(keyspace, new String[0]);
+
+    public void flush() throws IOException, ExecutionException, InterruptedException
+    {
+        for (String keyspace : getKeyspaces())
+            forceTableFlush(keyspace, new String[0]);
     }
 
     // TODO move it test.
@@ -247,7 +263,7 @@ public class JMXNodeTool extends NodeProbe
         }
         System.out.println(new JMXNodeTool(host, port).estimateKeys());
     }
-    
+
     @Override
     public void close() throws IOException
     {

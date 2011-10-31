@@ -15,6 +15,7 @@ import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
 import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.Instance;
+import com.amazonaws.services.autoscaling.model.UpdateAutoScalingGroupRequest;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
@@ -140,4 +141,21 @@ public class AWSMembership implements IMembership
 
         return ipPermissions;
     }
+
+    @Override
+    public void expandRacMembership(int count)
+    {
+        AmazonAutoScalingClient asgc = new AmazonAutoScalingClient(cred);
+        asgc.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
+        DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+        DescribeAutoScalingGroupsResult res = asgc.describeAutoScalingGroups(asgReq);
+        AutoScalingGroup asg = res.getAutoScalingGroups().get(0);
+        UpdateAutoScalingGroupRequest ureq = new UpdateAutoScalingGroupRequest();
+        ureq.setAutoScalingGroupName(asg.getAutoScalingGroupName());
+        ureq.setMinSize(asg.getMinSize()+1);
+        ureq.setMaxSize(asg.getMinSize()+1);
+        ureq.setDesiredCapacity(asg.getMinSize()+1);
+        asgc.updateAutoScalingGroup(ureq);
+    }
+    
 }

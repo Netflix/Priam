@@ -34,7 +34,8 @@ public class PriamServer
         // Initialize the configurations to be read.
         config.intialize();
         id = injector.getInstance(InstanceIdentity.class);
-
+        if( id.getInstance().isOutOfService())
+            return;
         PriamScheduler scheduler = injector.getInstance(PriamScheduler.class);
         // start to schedule jobs
         scheduler.start();

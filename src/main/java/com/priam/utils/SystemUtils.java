@@ -32,75 +32,73 @@ import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.netflix.instance.identity.StorageDevice;
 import com.priam.conf.IConfiguration;
+import com.priam.conf.JMXNodeTool;
 
 public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
+    private static final String SUDO_STRING = "/usr/bin/sudo";
+    private static final String EBS_ATTACH_SCRIPT = "/usr/local/bin/mountvol";
+    private static final String CASSANDRA_STARTUP_SCRIPT = "/apps/nfcassandra_server/netflix_launch_cassandra.sh";
 
-    /**
-     * Mounts all the file systems in the volumes map.
-     */
-    public static void mountAll(Map<String, StorageDevice> volumes) throws IOException, InterruptedException
+    public static void mount(String device, String mountPoint) throws IOException, InterruptedException
     {
-        for (Entry<String, StorageDevice> entry : volumes.entrySet())
+        List<String> command = Lists.newArrayList();
+        if (!"root".equals(System.getProperty("user.name")))
         {
-            List<String> command = Lists.newArrayList();
+            command.add(SUDO_STRING);
+            command.add("-E");
+        }
+        command.add(EBS_ATTACH_SCRIPT);
+        command.add("-d");
+        command.add(device);
+        command.add("-p");
+        command.add(mountPoint);
+
+        ProcessBuilder mount = new ProcessBuilder(command);
+        final Process proc = mount.start();
+        new Timer().schedule(new TimerTask()
+        {
+            @Override
+            public void run()
+            {
+                proc.destroy();
+            }
+        }, 60 * 1000); // kill after it doesnt respond in 60 seconds.
+        proc.waitFor();
+        if (proc.exitValue() == 0)
+            logger.info(String.format("Sucessfully executed: %s", StringUtils.join(mount.command(), ",")));
+        else
+            logErrorStream(proc);
+
+        if (proc.exitValue() == 0)
+        {
+
+            List<String> command1 = Lists.newArrayList();
             if (!"root".equals(System.getProperty("user.name")))
             {
-                command.add("/usr/bin/sudo");
-                command.add("-E");
+                command1.add(SUDO_STRING);
+                command1.add("-E");
             }
-            command.add("/usr/local/bin/mountvol");
-            command.add("-d");
-            command.add(entry.getValue().getDevice());
-            command.add("-p");
-            command.add(entry.getValue().getMountPoint());
+            command1.add("/bin/mount");
+            command1.add(device);
+            command1.add(mountPoint);
 
-            ProcessBuilder mount = new ProcessBuilder(command);
-            final Process proc = mount.start();
+            ProcessBuilder mount1 = new ProcessBuilder(command);
+            final Process proc1 = mount1.start();
             new Timer().schedule(new TimerTask()
             {
                 @Override
                 public void run()
                 {
-                    proc.destroy();
+                    proc1.destroy();
                 }
             }, 60 * 1000); // kill after it doesnt respond in 60 seconds.
-            proc.waitFor();
-            if (proc.exitValue() == 0)
-                logger.info(String.format("Sucessfully executed: %s", StringUtils.join(mount.command(), ",")));
+            proc1.waitFor();
+            if (proc1.exitValue() == 0)
+                logger.info(String.format("Sucessfully executed: %s", StringUtils.join(mount1.command(), ",")));
             else
-                logErrorStream(proc);
-
-            if (proc.exitValue() == 0)
-            {
-
-                List<String> command1 = Lists.newArrayList();
-                if (!"root".equals(System.getProperty("user.name")))
-                {
-                    command1.add("/usr/bin/sudo");
-                    command1.add("-E");
-                }
-                command1.add("/bin/mount");
-                command1.add(entry.getValue().getDevice());
-                command1.add(entry.getValue().getMountPoint());
-
-                ProcessBuilder mount1 = new ProcessBuilder(command);
-                final Process proc1 = mount1.start();
-                new Timer().schedule(new TimerTask()
-                {
-                    @Override
-                    public void run()
-                    {
-                        proc1.destroy();
-                    }
-                }, 60 * 1000); // kill after it doesnt respond in 60 seconds.
-                proc1.waitFor();
-                if (proc1.exitValue() == 0)
-                    logger.info(String.format("Sucessfully executed: %s", StringUtils.join(mount1.command(), ",")));
-                else
-                    logErrorStream(proc1);
-            }
+                logErrorStream(proc1);
         }
     }
 
@@ -110,14 +108,14 @@ public class SystemUtils
     public static void startCassandra(boolean join_ring, IConfiguration config) throws IOException, InterruptedException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
-        
+
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))
         {
             command.add("/usr/bin/sudo");
             command.add("-E");
         }
-        command.add("/apps/nfcassandra_server/netflix_launch_cassandra.sh");
+        command.add(CASSANDRA_STARTUP_SCRIPT);
         ProcessBuilder startCass = new ProcessBuilder(command);
         Map<String, String> env = startCass.environment();
         env.put("HEAP_NEWSIZE", config.getHeapNewSize());
@@ -157,7 +155,6 @@ public class SystemUtils
                 logger.info("Could not stop cassandra. Unable to run kill_agent");
                 return false;
             }
-
         }
         catch (Exception e)
         {
@@ -180,7 +177,6 @@ public class SystemUtils
         int exitVal = p.waitFor();
         logger.info("Done sys command Exitval: " + exitVal);
         return exitVal;
-
     }
 
     public static int runHealthCheck(IConfiguration config) throws InterruptedException, IOException
@@ -198,13 +194,13 @@ public class SystemUtils
         int exitVal = p.waitFor();
         logger.info("Done running nodetool " + exitVal);
         return exitVal;
-
     }
 
     /**
      * delete all the files/dirs in the given Directory but dont delete the dir
      * itself.
-     * @throws IOException 
+     * 
+     * @throws IOException
      */
     public static void cleanupDir(String dirPath) throws IOException
     {
@@ -333,7 +329,8 @@ public class SystemUtils
             if (conn.getResponseCode() != 200)
                 throw new ConfigurationException("Ec2Snitch was unable to execute the API call. Not an ec2 node?");
 
-            // Read the information. I wish I could say (String) conn.getContent() here...
+            // Read the information. I wish I could say (String)
+            // conn.getContent() here...
             int cl = conn.getContentLength();
             byte[] b = new byte[cl];
             DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
@@ -360,7 +357,7 @@ public class SystemUtils
         });
         return files;
     }
-    
+
     public static class StreamReader extends Thread
     {
         public static final String ERROR = "ERROR";
@@ -398,11 +395,36 @@ public class SystemUtils
                 logger.error("Error in running sys command: ", ioe);
             }
         }
-        
+
         public String getOutput()
         {
             return output.toString();
         }
     }
 
+    public static void closeQuietly(JMXNodeTool tool)
+    {
+        try
+        {
+            tool.close();
+        }
+        catch (IOException e)
+        {
+            // Do nothing.
+        }
+    }
+
+    public static <T> T retryForEver(RetryableCallable<T> retryableCallable)
+    {
+        try
+        {
+            retryableCallable.set(Integer.MAX_VALUE, 1 * 1000);
+            return retryableCallable.call();
+        }
+        catch (Exception e)
+        {
+            // this might not happen because we are trying Integer.MAX_VALUE times.
+        }
+        return null;
+    }
 }

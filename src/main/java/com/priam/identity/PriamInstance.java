@@ -18,6 +18,7 @@ public class PriamInstance implements Serializable
     public Map<String, StorageDevice> volumes;
     private String hostname;
     private long updatetime;
+    private boolean outOfService;
     
     public String getApp()
     {
@@ -130,6 +131,16 @@ public class PriamInstance implements Serializable
     public void setUpdatetime(long updatetime)
     {
         this.updatetime = updatetime;
+    }
+
+    public boolean isOutOfService()
+    {
+        return outOfService;
+    }
+
+    public void setOutOfService(boolean outOfService)
+    {
+        this.outOfService = outOfService;
     }
 
 }

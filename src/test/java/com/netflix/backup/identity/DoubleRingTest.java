@@ -6,7 +6,7 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.google.inject.internal.Lists;
+import com.google.common.collect.Lists;
 import com.priam.identity.DoubleRing;
 import com.priam.identity.PriamInstance;
 import com.priam.utils.SystemUtils;

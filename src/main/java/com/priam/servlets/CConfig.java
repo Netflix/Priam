@@ -1,8 +1,6 @@
 package com.priam.servlets;
 
-import java.io.IOException;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 
 import javax.ws.rs.GET;
@@ -16,16 +14,10 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.priam.backup.AbstractBackupPath;
-import com.priam.backup.IBackupFileSystem;
-import com.priam.backup.Restore;
-import com.priam.backup.SnapshotBackup;
-import com.priam.conf.JMXNodeTool;
 import com.priam.conf.PriamServer;
 import com.priam.identity.DoubleRing;
 import com.priam.identity.IMembership;
 import com.priam.identity.IPriamInstanceFactory;
-import com.priam.identity.InstanceIdentity;
 import com.priam.identity.PriamInstance;
 import com.priam.utils.RetryableCallable;
 import com.priam.utils.SystemUtils;

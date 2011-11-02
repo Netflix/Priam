@@ -3,8 +3,6 @@ package com.priam.identity;
 import java.util.List;
 import java.util.Map;
 
-import com.netflix.instance.identity.StorageDevice;
-
 public interface IPriamInstanceFactory
 {
     public List<PriamInstance> getAllIds(String appName);
@@ -12,7 +10,7 @@ public interface IPriamInstanceFactory
     /**
      * This will create a instance of the Server Instance with its info...
      */
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, StorageDevice> volumes, String payload);
+    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload);
 
     public void delete(PriamInstance inst);
 

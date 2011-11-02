@@ -15,7 +15,6 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -30,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import com.netflix.instance.identity.StorageDevice;
 import com.priam.conf.IConfiguration;
 import com.priam.conf.JMXNodeTool;
 

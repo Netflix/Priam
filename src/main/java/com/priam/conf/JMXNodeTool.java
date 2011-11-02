@@ -139,7 +139,7 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONArray ring() throws com.netflix.configadmin.json.JSONException
+    public JSONArray ring()
     {
         logger.info("JMX ring being called");
         JSONArray ring = new JSONArray();

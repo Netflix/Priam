@@ -269,4 +269,29 @@ public class DefaultConfiguration implements IConfiguration
     {
         return PUBLIC_IP;
     }
+    @Override 
+    public String getBootClusterName(){
+    	return CLUSTER_NAME;	
+    }
+    @Override
+    public String getMaxDirectMemory(){
+        return null;
+    }
+    @Override
+    public int getCompactionThroughput(){
+        return (1);
+    }
+    @Override
+    public int getInMemoryCompactionLimit(){
+        return (1);
+    }
+    @Override
+    public int getUploadThrottle(){
+        return (1);
+    }
+    @Override
+    public boolean isLocalBootstrapEnabled(){
+        return false;
+    }
 }
+		

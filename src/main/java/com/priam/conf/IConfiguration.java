@@ -6,13 +6,17 @@ public interface IConfiguration
 {
     public void intialize();
 
-    public String getYamlLocation();
+    public String getCassHome();
+    
+    public String getCassStartupScript();
 
     public String getBackupLocation();
 
     public String getBackupPrefix();
 
     public String getRestorePrefix();
+    
+    public List<String> getRestoreKeySpaces();
 
     public String getDataFileLocation();
 
@@ -21,6 +25,8 @@ public interface IConfiguration
     public String getCommitLogLocation();
 
     public String getBackupCommitLogLocation();
+    
+    public long getBackupChunkSize();
 
     public boolean isCommitLogBackup();
 
@@ -51,12 +57,16 @@ public interface IConfiguration
     public boolean isExperimental();
 
     public String getDC();
+    
+    public void setDC(String region);
 
     public boolean isMultiDC();
 
     public int getMaxBackupUploadThreads();
 
     public int getMaxBackupDownloadThreads();
+    
+    public boolean isRestoreClosestToken();
 
     /**
      * Amazon specific setting to query ASG Membership
@@ -78,4 +88,6 @@ public interface IConfiguration
     public String getMaxDirectMemory();
     
     public String getBootClusterName();
+    
+    public int getCommitLogBackupPort();
 }

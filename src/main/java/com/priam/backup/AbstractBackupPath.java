@@ -5,6 +5,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 
@@ -17,9 +19,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 {
     public static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
     public static final char PATH_SEP = '/';
+    public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
-    public static enum BackupFileType
-    {
+    public static enum BackupFileType {
         SNAP, SST, CL, META
     };
 
@@ -54,7 +56,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         // TODO cleanup.
         this.backupFile = file;
-        
+
         String rpath = new File(config.getDataFileLocation()).toURI().relativize(file.toURI()).getPath();
         String[] elements = rpath.split("" + PATH_SEP);
         this.clusterName = config.getAppName();
@@ -62,12 +64,19 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.region = config.getDC();
         this.token = factory.getInstance().getPayload();
         this.type = type;
-        if (type != BackupFileType.META)
+        if (type != BackupFileType.META && type != BackupFileType.CL)
             this.keyspace = elements[0];
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[2]);
         if (type == BackupFileType.SST)
             time = new Date(file.lastModified());
+        if (type == BackupFileType.CL) {
+            Matcher matcher = clPattern.matcher(rpath);
+            if (matcher.matches()) {
+                long t = Long.parseLong(matcher.group(1)) / 1000;
+                time = new Date((t - t % 60) * 1000);
+            }
+        }
         this.fileName = file.getName();
     }
 
@@ -79,6 +88,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         String sString = DAY_FORMAT.format(start);
         String eString = DAY_FORMAT.format(end);
         int diff = StringUtils.indexOfDifference(sString, eString);
+        if (diff < 0)
+            return sString;
         return sString.substring(0, diff);
     }
 
@@ -98,7 +109,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             parent.mkdirs();
         return return_;
     }
-    
+
     @Override
     public int compareTo(AbstractBackupPath o)
     {

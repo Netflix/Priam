@@ -18,6 +18,8 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import javax.management.remote.JMXConnector;
+
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -36,8 +38,7 @@ public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
-    private static final String EBS_ATTACH_SCRIPT = "/usr/local/bin/mountvol";
-    private static final String CASSANDRA_STARTUP_SCRIPT = "/apps/nfcassandra_server/netflix_launch_cassandra.sh";
+    private static final String EBS_ATTACH_SCRIPT = "/usr/local/bin/mountvol";    
 
     public static void mount(String device, String mountPoint) throws IOException, InterruptedException
     {
@@ -113,7 +114,7 @@ public class SystemUtils
             command.add("/usr/bin/sudo");
             command.add("-E");
         }
-        command.add(CASSANDRA_STARTUP_SCRIPT);
+        command.add(config.getCassStartupScript());
         ProcessBuilder startCass = new ProcessBuilder(command);
         Map<String, String> env = startCass.environment();
         env.put("HEAP_NEWSIZE", config.getHeapNewSize());
@@ -200,9 +201,14 @@ public class SystemUtils
      * 
      * @throws IOException
      */
-    public static void cleanupDir(String dirPath) throws IOException
+    public static void cleanupDir(String dirPath, List<String> childdirs) throws IOException
     {
-        FileUtils.cleanDirectory(new File(dirPath));
+        if( childdirs == null || childdirs.size() == 0 )
+            FileUtils.cleanDirectory(new File(dirPath));
+        else{
+            for( String cdir : childdirs )
+                FileUtils.cleanDirectory(new File(dirPath + "/" + cdir));
+        }
     }
 
     public static void logErrorStream(Process proc)
@@ -424,5 +430,17 @@ public class SystemUtils
             // this might not happen because we are trying Integer.MAX_VALUE times.
         }
         return null;
+    }
+
+    public static void closeQuietly(JMXConnector jmc)
+    {
+        try
+        {
+            jmc.close();
+        }
+        catch (IOException e)
+        {
+            // Do nothing.
+        }
     }
 }

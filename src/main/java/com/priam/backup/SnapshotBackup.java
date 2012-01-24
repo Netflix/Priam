@@ -95,14 +95,7 @@ public class SnapshotBackup extends Backup
             public Void retriableCall() throws Exception
             {
                 JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                try
-                {
-                    nodetool.takeSnapshot(snapshotName);
-                }
-                finally
-                {
-                    nodetool.close();
-                }
+                nodetool.takeSnapshot(snapshotName);
                 return null;
             }
         }.call();
@@ -115,14 +108,7 @@ public class SnapshotBackup extends Backup
             public Void retriableCall() throws Exception
             {
                 JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                try
-                {
-                    nodetool.clearSnapshot(snapshotTag);
-                }
-                finally
-                {
-                    nodetool.close();
-                }
+                nodetool.clearSnapshot(snapshotTag);
                 return null;
             }
         }.call();

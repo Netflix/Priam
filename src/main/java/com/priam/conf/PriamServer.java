@@ -4,6 +4,8 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.priam.backup.CLBackup;
+import com.priam.backup.CLFileBackup;
+import com.priam.backup.CLStreamBackup;
 import com.priam.backup.IncrementalBackup;
 import com.priam.backup.Restore;
 import com.priam.backup.SnapshotBackup;
@@ -20,6 +22,7 @@ public class PriamServer
 {
     public static final PriamServer instance = new PriamServer();
     public Injector injector;
+    public PriamScheduler scheduler;
     public IConfiguration config;
     public InstanceIdentity id;
 
@@ -36,20 +39,22 @@ public class PriamServer
         id = injector.getInstance(InstanceIdentity.class);
         if( id.getInstance().isOutOfService())
             return;
-        PriamScheduler scheduler = injector.getInstance(PriamScheduler.class);
+        scheduler = injector.getInstance(PriamScheduler.class);
         // start to schedule jobs
         scheduler.start();
 
         // update security settings.
         if (config.isMultiDC())
         {
+            scheduler.runTaskNow(UpdateSecuritySettings.class);
+            // sleep for 60 sec for the SG update to happen.
+            if(UpdateSecuritySettings.firstTimeUpdated)
+                Thread.sleep(60 * 1000);
             scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer());
-            // sleep for 30 sec for the SG update to happen.
-            Thread.sleep(30 * 1000);
         }
 
         // Run the task to tune Cassandra
-        scheduler.addTask(TuneCassandra.JOBNAME, TuneCassandra.class, TuneCassandra.getTimer());
+        scheduler.runTaskNow(TuneCassandra.class);
 
         // restore from backup else start cassandra.
         if (!config.getRestoreSnapshot().equals(""))
@@ -67,8 +72,11 @@ public class PriamServer
         {
             scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
             // Start Commit log backup schedule if enabled
-            if (config.isCommitLogBackup())
-                scheduler.addTask(CLBackup.JOBNAME, CLBackup.class, CLBackup.getTimer());
+            if (config.isCommitLogBackup()){
+                //scheduler.addTask(CLBackup.JOBNAME, CLBackup.class, CLBackup.getTimer());
+                scheduler.addTask(CLStreamBackup.JOBNAME, CLStreamBackup.class, CLStreamBackup.getTimer());
+                scheduler.addTask(CLFileBackup.JOBNAME, CLFileBackup.class, CLFileBackup.getTimer());
+            }
         }
         // NodeToolMonitor monitorObj = injector.getInstance(NodeToolMonitor.class);
         // scheduler.addTask(monitorObj.getName(), monitorObj.getClass(), monitorObj.getTimer());

@@ -1,9 +1,12 @@
 package com.priam.conf;
 
 import java.io.IOException;
+import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
+import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -13,6 +16,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
+import javax.management.JMX;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+
+import org.apache.cassandra.cache.InstrumentingCacheMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.tools.NodeProbe;
@@ -35,8 +44,11 @@ import com.priam.utils.SystemUtils;
 public class JMXNodeTool extends NodeProbe
 {
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
+    private static String keyCacheObjFmt = "org.apache.cassandra.db:type=Caches,keyspace=%s,cache=%sKeyCache";
+    private static String rowCacheObjFmt = "org.apache.cassandra.db:type=Caches,keyspace=%s,cache=%sRowCache";
 
     private static volatile JMXNodeTool tool = null;
+    private MBeanServerConnection mbeanServerConn = null;
 
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -64,9 +76,25 @@ public class JMXNodeTool extends NodeProbe
     {
         if (tool == null)
             tool = connect(config);
-        if (testConnection())
+        if (!testConnection())
             tool = connect(config);
         return tool;
+    }
+
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean)
+    {
+        try
+        {
+            if (mxbean)
+                return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
+            else
+                return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
+        }
+        catch (Exception e)
+        {
+            logger.error(e.getMessage(), e);
+        }
+        return null;
     }
 
     private static boolean testConnection()
@@ -77,11 +105,8 @@ public class JMXNodeTool extends NodeProbe
         }
         catch (Throwable ex)
         {
-            return false;
-        }
-        finally
-        {
             SystemUtils.closeQuietly(tool);
+            return false;
         }
     }
 
@@ -90,9 +115,18 @@ public class JMXNodeTool extends NodeProbe
         return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>()
         {
             @Override
-            public JMXNodeTool retriableCall() throws IOException, InterruptedException
+            public JMXNodeTool retriableCall() throws Exception
             {
-                return new JMXNodeTool("localhost", config.getJmxPort());
+                JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+                Field fields[] = NodeProbe.class.getDeclaredFields();
+                for (int i = 0; i < fields.length; i++)
+                {
+                    if (!fields[i].getName().equals("mbeanServerConn"))
+                        continue;
+                    fields[i].setAccessible(true);
+                    nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
+                }
+                return nodetool;
             }
         });
     }
@@ -208,7 +242,7 @@ public class JMXNodeTool extends NodeProbe
         object.put("STATE", state);
         object.put("LOAD", load);
         object.put("OWNS", owns);
-        object.put("TOKEN", token);
+        object.put("TOKEN", token.toString());
         return object;
     }
 
@@ -236,32 +270,18 @@ public class JMXNodeTool extends NodeProbe
             forceTableFlush(keyspace, new String[0]);
     }
 
-    // TODO move it test.
-    public static void main(String[] args) throws Exception
+    public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException
     {
-        System.err.println("WARNING: Do a manual compaction on the node before running this tool, to be more acurrate.... ");
-        System.err.println("WARNING: If you have a lot of updates, this estimate will be way off... else it could be more accurate.... \n");
-        System.err.println("Hint: Atleast run flush before running this tool to get data which is in memory... \n");
-        if (args.length == 0)
+        Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
+        while (it.hasNext())
         {
-            System.out.println("USEAGE: command <hostname, port> \n");
+            Entry<String, ColumnFamilyStoreMBean> entry = it.next();
+            if (keyspaces.contains(entry.getKey()))
+            {
+                logger.info("Refreshing " + entry.getKey() + " " + entry.getValue().getColumnFamilyName());
+                loadNewSSTables(entry.getKey(), entry.getValue().getColumnFamilyName());
+            }
         }
-
-        String host;
-        int port;
-        if (args.length < 2)
-        {
-            System.out.println("Assuming the hostname to be: " + "127.0.0.1 and port 7199");
-            System.out.println("================ \t================");
-            host = "127.0.0.1";
-            port = 7199;
-        }
-        else
-        {
-            host = args[0];
-            port = Integer.parseInt(args[1]);
-        }
-        System.out.println(new JMXNodeTool(host, port).estimateKeys());
     }
 
     @Override
@@ -274,4 +294,78 @@ public class JMXNodeTool extends NodeProbe
         }
     }
 
+    public Iterator<Map.Entry<String, InstrumentingCacheMBean>> getKeyCacheMBeanProxies(IConfiguration config)
+    {
+        try
+        {
+            return new CacheMBeanIterator(mbeanServerConn, keyCacheObjFmt);
+        }
+        catch (MalformedObjectNameException e)
+        {
+            throw new RuntimeException("Invalid ObjectName", e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Could not retrieve list of stat mbeans.", e);
+        }
+    }
+
+    public Iterator<Map.Entry<String, InstrumentingCacheMBean>> getRowCacheMBeanProxies(IConfiguration config)
+    {
+        try
+        {
+            return new CacheMBeanIterator(mbeanServerConn, rowCacheObjFmt);
+        }
+        catch (MalformedObjectNameException e)
+        {
+            throw new RuntimeException("Invalid ObjectName.", e);
+        }
+        catch (IOException e)
+        {
+            throw new RuntimeException("Could not retrieve list of stat mbeans.", e);
+        }
+    }
+
+    class CacheMBeanIterator implements Iterator<Map.Entry<String, InstrumentingCacheMBean>>
+    {
+        private Iterator<ObjectName> resIter;
+        private MBeanServerConnection mbeanServerConn;
+        private String cachePath;
+
+        public CacheMBeanIterator(MBeanServerConnection mbeanServerConn, String cachePath) throws MalformedObjectNameException, NullPointerException, IOException
+        {
+            ObjectName query = new ObjectName("org.apache.cassandra.db:type=ColumnFamilies,*");
+            resIter = mbeanServerConn.queryNames(query, null).iterator();
+            this.mbeanServerConn = mbeanServerConn;
+            this.cachePath = cachePath;
+        }
+
+        public boolean hasNext()
+        {
+            return resIter.hasNext();
+        }
+
+        public Entry<String, InstrumentingCacheMBean> next()
+        {
+            ObjectName objectName = resIter.next();
+            String tableName = objectName.getKeyProperty("keyspace");
+            String cfName = objectName.getKeyProperty("columnfamily");
+            String keyCachePath = String.format(cachePath, tableName, cfName);
+            InstrumentingCacheMBean cacheProxy = null;
+            try
+            {
+                cacheProxy = JMX.newMBeanProxy(mbeanServerConn, new ObjectName(keyCachePath), InstrumentingCacheMBean.class);
+            }
+            catch (Exception e)
+            {
+                logger.error("Cannot get cache MBean", e);
+            }
+            return new AbstractMap.SimpleImmutableEntry<String, InstrumentingCacheMBean>(tableName + "_" + cfName, cacheProxy);
+        }
+
+        public void remove()
+        {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

@@ -23,7 +23,7 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(getFormat().format(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
-        if (type != BackupFileType.META)
+        if (type != BackupFileType.META && type != BackupFileType.CL)
             buff.append(keyspace).append(S3BackupPath.PATH_SEP);
         buff.append(fileName);
         return buff.toString();
@@ -49,7 +49,7 @@ public class S3BackupPath extends AbstractBackupPath
             token = pieces.get(3);
             time = getFormat().parse(pieces.get(4));
             type = BackupFileType.valueOf(pieces.get(5));
-            if (type != BackupFileType.META)
+            if (type != BackupFileType.META && type != BackupFileType.CL)
             {
                 keyspace = pieces.get(6);
             }

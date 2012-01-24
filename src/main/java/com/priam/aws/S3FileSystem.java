@@ -3,6 +3,8 @@ package com.priam.aws;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Iterator;
@@ -29,6 +31,7 @@ import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath;
 import com.priam.backup.BackupRestoreException;
 import com.priam.backup.IBackupFileSystem;
+
 import com.priam.backup.SnappyCompression;
 import com.priam.conf.IConfiguration;
 import com.priam.scheduler.CustomizedThreadPoolExecutor;
@@ -82,7 +85,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             }
         });
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        String mbeanName = "com.priam.aws.S3FileSystemMBean:name=S3FileSystemMBean";
+        String mbeanName = MBEAN_NAME;
         try
         {
             mbs.registerMBean(this, new ObjectName(mbeanName));
@@ -107,6 +110,19 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     }
 
     @Override
+    public void download(AbstractBackupPath backupfile, OutputStream os) throws BackupRestoreException
+    {
+        try
+        {
+            new S3FileDownloader(backupfile, os).call();
+        }
+        catch (Exception e)
+        {
+            throw new BackupRestoreException(e.getMessage(), e);
+        }
+    }
+
+    @Override
     public void upload(AbstractBackupPath backupfile) throws BackupRestoreException
     {
         try
@@ -116,6 +132,19 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         catch (Exception e)
         {
             throw new BackupRestoreException("Error uploading file " + backupfile.fileName, e);
+        }
+    }
+
+    @Override
+    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
+    {
+        try
+        {
+            new S3FileUploader(path, in).call();
+        }
+        catch (Exception e)
+        {
+            throw new BackupRestoreException("Error uploading stream " + path.fileName, e);
         }
     }
 
@@ -134,10 +163,19 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     public class S3FileUploader extends RetryableCallable<Void>
     {
         private AbstractBackupPath backupfile;
+        private InputStream is;
 
         public S3FileUploader(AbstractBackupPath backupfile)
         {
             this.backupfile = backupfile;
+            uploadCount.incrementAndGet();
+        }
+
+        public S3FileUploader(AbstractBackupPath backupfile, InputStream is)
+        {
+            super(1, 0);// no retries
+            this.backupfile = backupfile;
+            this.is = is;
             uploadCount.incrementAndGet();
         }
 
@@ -150,7 +188,11 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             List<PartETag> partETags = Lists.newArrayList();
             try
             {
-                Iterator<byte[]> chunks = compress.compress(backupfile.localReader());
+                Iterator<byte[]> chunks;
+                if (is == null)
+                    chunks = compress.compress(backupfile.localReader(), config.getBackupChunkSize());
+                else
+                    chunks = compress.compress(is, config.getBackupChunkSize());
                 // Upload parts.
                 int partNum = 0;
                 while (chunks.hasNext())
@@ -163,8 +205,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
                     bytesUploaded.addAndGet(chunk.length);
                 }
                 executor.sleepTillEmpty();
-                if( partNum != partETags.size())
-                    throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() +")");
+                if (partNum != partETags.size())
+                    throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
                 new S3PartUploader(s3Client, part, partETags).completeUpload();
             }
             catch (Exception e)
@@ -179,6 +221,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     public class S3FileDownloader extends RetryableCallable<Void>
     {
         private AbstractBackupPath backupfile;
+        private OutputStream os;
 
         public S3FileDownloader(AbstractBackupPath backupfile)
         {
@@ -186,25 +229,35 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             downloadCount.incrementAndGet();
         }
 
+        public S3FileDownloader(AbstractBackupPath backupfile, OutputStream os)
+        {
+            this.backupfile = backupfile;
+            downloadCount.incrementAndGet();
+            this.os = os;
+        }
+
         @Override
         public Void retriableCall() throws Exception
         {
-
             S3Object obj = s3Client.getObject(getPrefix(), backupfile.getRemotePath());
-            File retoreFile = backupfile.newRestoreFile();
-            File tmpFile = new File(retoreFile.getAbsolutePath() + ".tmp");
-            SystemUtils.copyAndClose(obj.getObjectContent(), new FileOutputStream(tmpFile));
-            bytesDownloaded.addAndGet(tmpFile.length());
-            // Extra step: snappy seems to have boundary problems with stream
-            compress.decompressAndClose(new FileInputStream(tmpFile), new FileOutputStream(retoreFile));
-            tmpFile.delete();
+            if (os == null)
+            {
+                File retoreFile = backupfile.newRestoreFile();
+                compress.decompressAndClose(obj.getObjectContent(), new FileOutputStream(retoreFile));
+            }
+            else
+            {
+                compress.decompressAndClose(obj.getObjectContent(), os);
+            }
+            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
             return null;
         }
     }
-    
-    public String getPrefix(){
+
+    public String getPrefix()
+    {
         String prefix = "";
-        if (!"".equals(config.getRestorePrefix()))            
+        if (!"".equals(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
         else
             prefix = config.getBackupPrefix();
@@ -236,4 +289,5 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         return bytesDownloaded.get();
     }
+
 }

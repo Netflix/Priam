@@ -17,6 +17,7 @@ import com.google.inject.Singleton;
 public class PriamScheduler
 {
     private Scheduler scheduler;
+    private GuiceJobFactory jobFactory;
 
     @Inject
     public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory)
@@ -25,6 +26,7 @@ public class PriamScheduler
         {
             this.scheduler = factory.getScheduler();
             this.scheduler.setJobFactory(jobFactory);
+            this.jobFactory = jobFactory;
         }
         catch (SchedulerException e)
         {
@@ -39,7 +41,12 @@ public class PriamScheduler
     {
         assert timer != null : "Cannot add scheduler task " + name + " as not timer is set";
         JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
-        scheduler.scheduleJob(job, timer.getTrigger());
+        scheduler.scheduleJob(job, timer.getTrigger());        
+    }
+
+    public void runTaskNow(Class<? extends Task> taskclass) throws Exception
+    {
+        jobFactory.guice.getInstance(taskclass).execute(null);
     }
 
     public void deleteTask(String name) throws SchedulerException, ParseException

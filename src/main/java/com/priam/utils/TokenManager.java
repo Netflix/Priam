@@ -61,6 +61,13 @@ public class TokenManager
     {
         Collections.sort(tokenList);
         int index = Collections.binarySearch(tokenList, tokenToSearch);
-        return tokenList.get(Math.abs(index));
+        if (index < 0)
+        {
+            int i = Math.abs(index) - 1;
+            if ((i >= tokenList.size()) || (i > 0 && tokenList.get(i).subtract(tokenToSearch).compareTo(tokenToSearch.subtract(tokenList.get(i - 1))) > 0))
+                --i;
+            return tokenList.get(i);
+        }
+        return tokenList.get(index);
     }
 }

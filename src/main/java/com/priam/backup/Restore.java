@@ -1,5 +1,6 @@
 package com.priam.backup;
 
+import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -18,10 +19,12 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.priam.backup.AbstractBackupPath.BackupFileType;
 import com.priam.conf.IConfiguration;
-import com.priam.identity.IPriamInstanceFactory;
+import com.priam.conf.JMXNodeTool;
+import com.priam.conf.PriamServer;
 import com.priam.scheduler.SimpleTimer;
 import com.priam.scheduler.Task;
 import com.priam.scheduler.TaskTimer;
+import com.priam.utils.ExponentialRetryCallable;
 import com.priam.utils.RetryableCallable;
 import com.priam.utils.SystemUtils;
 
@@ -30,6 +33,7 @@ public class Restore extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
+    public static final String SYSTEM_KEYSPACE = "system";
     private AtomicInteger count = new AtomicInteger();
     private IConfiguration config;
     private ThreadPoolExecutor executor;
@@ -38,13 +42,15 @@ public class Restore extends Task
     @Inject
     Provider<AbstractBackupPath> pathProvider;
     @Inject
+    Provider<IRestoreTokenSelector> tokenSelectorProvider;
+    @Inject
     MetaData metaData;
 
     @Inject
-    public Restore(IConfiguration config, IPriamInstanceFactory factory, IBackupFileSystem fs)
+    public Restore(IConfiguration config, IBackupFileSystem fs)
     {
         this.config = config;
-        this.fs = fs;        
+        this.fs = fs;
     }
 
     @Override
@@ -57,16 +63,29 @@ public class Restore extends Task
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            new RetryableCallable<Void>()
+            String origToken = PriamServer.instance.id.getInstance().getPayload();
+            try
             {
-                public Void retriableCall() throws Exception
+                if (config.isRestoreClosestToken())
                 {
-                    logger.info("Attempting restore");
-                    restore(startTime, endTime);
-                    logger.info("Restore completed");
-                    return null;
+                    BigInteger restoreToken = tokenSelectorProvider.get().getClosestToken(new BigInteger(origToken), startTime);
+                    PriamServer.instance.id.getInstance().setPayload(restoreToken.toString());
                 }
-            }.call();
+                new RetryableCallable<Void>()
+                {
+                    public Void retriableCall() throws Exception
+                    {
+                        logger.info("Attempting restore");
+                        restore(startTime, endTime);
+                        logger.info("Restore completed");
+                        return null;
+                    }
+                }.call();
+            }
+            finally
+            {
+                PriamServer.instance.id.getInstance().setPayload(origToken);
+            }
         }
         SystemUtils.startCassandra(true, config);
     }
@@ -77,10 +96,11 @@ public class Restore extends Task
         {
             executor = new ThreadPoolExecutor(config.getMaxBackupDownloadThreads(), config.getMaxBackupDownloadThreads(), 1000, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<Runnable>());
             executor.allowCoreThreadTimeOut(true);
-            // Stop cassandra if its running
-            SystemUtils.stopCassandra();
+            // Stop cassandra if its running and restoring all keyspaces
+            if (config.getRestoreKeySpaces().size() == 0)
+                SystemUtils.stopCassandra();
             // Cleanup local data
-            SystemUtils.cleanupDir(config.getDataFileLocation());
+            SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
 
             // Try and read the Meta file.
             List<AbstractBackupPath> metas = Lists.newArrayList();
@@ -102,22 +122,18 @@ public class Restore extends Task
             Collections.sort(metas);
             AbstractBackupPath meta = metas.get(metas.size() - 1);
             logger.info("Meta file for restore " + meta.getRemotePath());
+
             // Download the snapshot which are listed in the meta file.
-            // Don't download all of them but download the latest only.
             List<AbstractBackupPath> snapshots = metaData.get(meta);
             for (AbstractBackupPath path : snapshots)
                 download(path);
 
             // take care of the incremental's.
-            Iterator<AbstractBackupPath> incrementals = fs.list(config.getBackupPrefix(), meta.time, endTime);
-            while (incrementals.hasNext())
-            {
-                AbstractBackupPath path = incrementals.next();
-                if (path.type == BackupFileType.SST)
-                    download(path);
-            }
-            waitToComplete();
-            // TODO support restore of the commit log.
+            Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.time, endTime);
+            if (config.isCommitLogBackup())
+                downloadCommitLogs(incrementals);
+            else
+                downloadIncrementals(incrementals, BackupFileType.SST);
         }
         finally
         {
@@ -126,15 +142,43 @@ public class Restore extends Task
 
     }
 
-    public void download(final AbstractBackupPath path)
+    private void downloadIncrementals(Iterator<AbstractBackupPath> incrementals, BackupFileType fileType) throws Exception
     {
+        while (incrementals.hasNext())
+        {
+            AbstractBackupPath path = incrementals.next();
+            if (path.type == fileType)
+                download(path);
+        }
+        waitToComplete();
+    }
+
+    private void downloadCommitLogs(Iterator<AbstractBackupPath> incrementals) throws Exception
+    {
+        waitToComplete();
+        SystemUtils.startCassandra(false, config);
+        waitForCassandra();
+        logger.info("Downloading incremental commitlogs");
+        downloadIncrementals(incrementals, BackupFileType.CL);
+        waitToComplete();
+        JMXNodeTool.instance(config).joinRing();
+    }
+
+    public void download(final AbstractBackupPath path) throws Exception
+    {
+        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
+            return;
+
         count.incrementAndGet();
         executor.submit(new RetryableCallable<Integer>()
         {
             @Override
             public Integer retriableCall() throws Exception
             {
-                fs.download(path);
+                if (path.type == BackupFileType.CL)
+                    fs.download(path, CLStreamBackup.getOuputStream(config));
+                else
+                    fs.download(path);
                 return count.decrementAndGet();
             }
         });
@@ -154,6 +198,20 @@ public class Restore extends Task
                 logger.error("Interrupted: ", e);
             }
         }
+    }
+
+    public void waitForCassandra() throws Exception
+    {
+        new ExponentialRetryCallable<Void>(3000, 10 * 60 * 1000)
+        {
+            @Override
+            public Void retriableCall() throws Exception
+            {
+                logger.info("Waiting for cassandra to start...");
+                JMXNodeTool.instance(config).info();//Got Better check?
+                return null;
+            }
+        }.call();
     }
 
     public static TaskTimer getTimer()

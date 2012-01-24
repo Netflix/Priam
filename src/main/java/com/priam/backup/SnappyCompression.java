@@ -16,9 +16,7 @@ import org.xerial.snappy.SnappyOutputStream;
 public class SnappyCompression
 {
     private static final int BUFFER = 2 * 1024;
-    // Chunk sizes of 10 MB
-    private static final int MAX_CHUNK = 10 * 1024 * 1024;
-
+    
     public void decompress(InputStream input, OutputStream output) throws IOException
     {
 
@@ -53,9 +51,14 @@ public class SnappyCompression
         }
     }
 
-    public Iterator<byte[]> compress(RandomAccessFile fis) throws IOException
+    public Iterator<byte[]> compress(RandomAccessFile fis, long chunkSize) throws IOException
     {
-        return new ChunkedStream(fis);
+        return new ChunkedRAFStream(fis, chunkSize);
+    }
+
+    public Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException
+    {
+        return new ChunkedStream(is, chunkSize);
     }
 
     public class ChunkedStream implements Iterator<byte[]>
@@ -63,13 +66,15 @@ public class SnappyCompression
         private boolean hasnext = true;
         private ByteArrayOutputStream bos;
         private SnappyOutputStream compress;
-        private RandomAccessFile origin;
+        private InputStream origin;
+        private long chunkSize;
 
-        public ChunkedStream(RandomAccessFile fis) throws IOException
+        public ChunkedStream(InputStream is, long chunkSize) throws IOException
         {
-            this.origin = fis;
+            this.origin = is;
             this.bos = new ByteArrayOutputStream();
             this.compress = new SnappyOutputStream(bos);
+            this.chunkSize = chunkSize;
         }
 
         @Override
@@ -88,7 +93,84 @@ public class SnappyCompression
                 while ((count = origin.read(data, 0, data.length)) != -1)
                 {
                     compress.write(data, 0, count);
-                    if (bos.size() >= MAX_CHUNK)
+                    if (bos.size() >= chunkSize)
+                        return returnSafe();
+                }
+                // We don't have anything else to read hence set to false.
+                return done();
+            }
+            catch (IOException e)
+            {
+                throw new RuntimeException(e);
+            }
+        }
+
+        private byte[] done() throws IOException
+        {
+            compress.flush();
+            byte[] return_ = bos.toByteArray();
+            hasnext = false;
+            IOUtils.closeQuietly(compress);
+            IOUtils.closeQuietly(bos);
+            try
+            {
+                if (origin != null)
+                    origin.close();
+            }
+            catch (IOException ex)
+            {
+                // do nothing.
+            }
+            return return_;
+        }
+
+        private byte[] returnSafe() throws IOException
+        {
+            byte[] return_ = bos.toByteArray();
+            bos.reset();
+            return return_;
+        }
+
+        @Override
+        public void remove()
+        {
+            // TODO Auto-generated method stub
+        }
+    }
+
+    public class ChunkedRAFStream implements Iterator<byte[]>
+    {
+        private boolean hasnext = true;
+        private ByteArrayOutputStream bos;
+        private SnappyOutputStream compress;
+        private RandomAccessFile origin;
+        private long chunkSize;
+
+        public ChunkedRAFStream(RandomAccessFile fis, long chunkSize) throws IOException
+        {
+            this.origin = fis;
+            this.bos = new ByteArrayOutputStream();
+            this.compress = new SnappyOutputStream(bos);
+            this.chunkSize = chunkSize;
+        }
+
+        @Override
+        public boolean hasNext()
+        {
+            return hasnext;
+        }
+
+        @Override
+        public byte[] next()
+        {
+            try
+            {
+                byte data[] = new byte[2048];
+                int count;
+                while ((count = origin.read(data, 0, data.length)) != -1)
+                {
+                    compress.write(data, 0, count);
+                    if (bos.size() >= chunkSize)
                         return returnSafe();
                 }
                 // We don't have anything else to read hence set to false.

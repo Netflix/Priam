@@ -5,6 +5,7 @@ import java.util.Random;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.priam.identity.IMembership;
 import com.priam.identity.IPriamInstanceFactory;
 import com.priam.identity.PriamInstance;
@@ -27,6 +28,7 @@ import com.priam.scheduler.TaskTimer;
  * 
  * @author "Vijay Parthasarathy"
  */
+@Singleton
 public class UpdateSecuritySettings extends Task
 {
     public static final String JOBNAME = "Update_SG";
@@ -34,13 +36,14 @@ public class UpdateSecuritySettings extends Task
     private IPriamInstanceFactory factory;
     private IConfiguration config;
     private IMembership membership;
+    public static boolean firstTimeUpdated = false;
 
     @Inject
     public UpdateSecuritySettings(IPriamInstanceFactory factory, IConfiguration config, IMembership membership)
     {
         this.factory = factory;
         this.config = config;
-        this.membership = membership;
+        this.membership = membership;        
     }
 
     /**
@@ -64,8 +67,10 @@ public class UpdateSecuritySettings extends Task
             if (!acls.contains(range))
                 add.add(range);
         }
-        if (add.size() > 0)
+        if (add.size() > 0){
             membership.addACL(add, 7103, 7103);
+            firstTimeUpdated = true;
+        }
 
         // just iterate to generate ranges.
         List<String> currentRanges = Lists.newArrayList();
@@ -80,8 +85,10 @@ public class UpdateSecuritySettings extends Task
         for (String acl : acls)
             if (!currentRanges.contains(acl)) // if not found then remove....
                 remove.add(acl);
-        if (remove.size() > 0)
+        if (remove.size() > 0){
             membership.removeACL(remove, 7103, 7103);
+            firstTimeUpdated = true;
+        }
     }
 
     public static TaskTimer getTimer()

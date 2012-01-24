@@ -43,7 +43,7 @@ public class TuneCassandra extends Task
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
-        File yamlFile = new File(config.getYamlLocation());
+        File yamlFile = new File(config.getCassHome() + "/conf/cassandra.yaml");
         @SuppressWarnings("rawtypes")
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
@@ -69,6 +69,21 @@ public class TuneCassandra extends Task
             m.put("class_name", "org.apache.cassandra.thrift.NFSeedProvider");
         }
         logger.info(yaml.dump(map));
+        yaml.dump(map, new FileWriter(yamlFile));
+    }
+
+    @SuppressWarnings("unchecked")
+    public void updateYaml(boolean autobootstrap) throws IOException
+    {
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
+        Yaml yaml = new Yaml(options);
+        File yamlFile = new File(config.getCassHome() + "/conf/cassandra.yaml");
+        @SuppressWarnings("rawtypes")
+        Map map = (Map) yaml.load(new FileInputStream(yamlFile));
+        //Dont bootstrap in restore mode
+        map.put("auto_bootstrap", autobootstrap);
+        logger.info("Updating yaml" + yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
     }
 

@@ -23,13 +23,11 @@ import com.priam.identity.InstanceIdentity;
 public class TestBackupFile
 {
     private static Injector injector;
-    private static IConfiguration conf;
 
     @BeforeClass
     public static void setup() throws IOException
     {
         injector = Guice.createInjector(new BRTestModule());
-        conf = injector.getInstance(IConfiguration.class);
         File file = new File("cass/data/ks1/", "f1.db");
         if (!file.exists())
         {

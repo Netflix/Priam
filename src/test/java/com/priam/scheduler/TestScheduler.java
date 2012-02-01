@@ -6,15 +6,10 @@ import junit.framework.Assert;
 
 import org.junit.Ignore;
 import org.junit.Test;
-import org.quartz.JobDataMap;
-
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.priam.TestModule;
-import com.priam.backup.CLBackup;
-import com.priam.conf.IConfiguration;
 
 public class TestScheduler
 {

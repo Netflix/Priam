@@ -73,13 +73,10 @@ public class PriamServer
             scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
             // Start Commit log backup schedule if enabled
             if (config.isCommitLogBackup()){
-                //scheduler.addTask(CLBackup.JOBNAME, CLBackup.class, CLBackup.getTimer());
                 scheduler.addTask(CLStreamBackup.JOBNAME, CLStreamBackup.class, CLStreamBackup.getTimer());
                 scheduler.addTask(CLFileBackup.JOBNAME, CLFileBackup.class, CLFileBackup.getTimer());
             }
         }
-        // NodeToolMonitor monitorObj = injector.getInstance(NodeToolMonitor.class);
-        // scheduler.addTask(monitorObj.getName(), monitorObj.getClass(), monitorObj.getTimer());
     }
 
 }

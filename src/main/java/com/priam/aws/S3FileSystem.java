@@ -1,7 +1,6 @@
 package com.priam.aws;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -36,7 +35,6 @@ import com.priam.backup.SnappyCompression;
 import com.priam.conf.IConfiguration;
 import com.priam.scheduler.CustomizedThreadPoolExecutor;
 import com.priam.utils.RetryableCallable;
-import com.priam.utils.SystemUtils;
 import com.priam.utils.Throttle;
 
 @Singleton

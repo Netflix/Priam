@@ -3,7 +3,7 @@
 	<groupId>com.netflix.priam</groupId>
 	<artifactId>Priam</artifactId>
 	<packaging>jar</packaging>
-	<version>0.0.3-SNAPSHOT</version>
+	<version>0.0.3</version>
     
 	<parent>
       <groupId>org.sonatype.oss</groupId>

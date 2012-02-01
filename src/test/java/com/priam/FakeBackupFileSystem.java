@@ -1,5 +1,7 @@
 package com.priam;
 
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -34,5 +36,19 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
+    {
+        // TODO Auto-generated method stub
+        
     }
 }

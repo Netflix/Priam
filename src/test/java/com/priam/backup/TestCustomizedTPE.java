@@ -1,4 +1,4 @@
-package com.priam.scheduler;
+package com.priam.backup;
 
 import static junit.framework.Assert.*;
 
@@ -9,6 +9,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.priam.scheduler.CustomizedThreadPoolExecutor;
 
 public class TestCustomizedTPE
 {

@@ -2,6 +2,8 @@ package com.priam.backup;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
@@ -138,6 +140,20 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
+    {
+        // TODO Auto-generated method stub
+        
     }
 
 }

@@ -12,7 +12,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.netflix.logging.LogManager;
 import com.priam.TestModule;
 import com.priam.backup.CLBackup;
 import com.priam.conf.IConfiguration;

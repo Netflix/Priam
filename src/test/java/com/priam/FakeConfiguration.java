@@ -3,6 +3,7 @@ package com.priam;
 import java.util.Arrays;
 import java.util.List;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.priam.conf.IConfiguration;
 
@@ -30,13 +31,6 @@ public class FakeConfiguration implements IConfiguration
     {
         // TODO Auto-generated method stub
 
-    }
-
-    @Override
-    public String getYamlLocation()
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -271,6 +265,54 @@ public class FakeConfiguration implements IConfiguration
     {
         // TODO Auto-generated method stub
         return "cass_bootstrap";
+    }
+
+    @Override
+    public String getCassHome()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public String getCassStartupScript()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
+    public List<String> getRestoreKeySpaces()
+    {
+        // TODO Auto-generated method stub
+        return Lists.newArrayList();
+    }
+
+    @Override
+    public long getBackupChunkSize()
+    {        
+        return 5L*1024*1024;
+    }
+
+    @Override
+    public void setDC(String region)
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
+    @Override
+    public boolean isRestoreClosestToken()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public int getCommitLogBackupPort()
+    {
+        // TODO Auto-generated method stub
+        return 7101;
     }
 
 }

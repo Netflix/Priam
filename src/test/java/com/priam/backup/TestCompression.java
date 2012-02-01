@@ -151,7 +151,8 @@ public class TestCompression
     {
         SnappyCompression compress = new SnappyCompression();
         RandomAccessFile file = new RandomAccessFile(new File("/tmp/compress-test.txt"), "r");
-        Iterator<byte[]> it = compress.compress(file);
+        long chunkSize = 5L*1024*1024;
+        Iterator<byte[]> it = compress.compress(file, chunkSize);
         FileOutputStream ostream = new FileOutputStream("/tmp/test1.snp");
         while (it.hasNext())
         {

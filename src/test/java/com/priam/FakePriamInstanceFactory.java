@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.inject.Inject;
-import com.netflix.instance.identity.StorageDevice;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.PriamInstance;
 import com.priam.identity.IPriamInstanceFactory;
@@ -28,13 +27,13 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
     {
         return new ArrayList<PriamInstance>(instances);
     }
-
+    
     @Override
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String zone, Map<String, StorageDevice> volumes, String payload)
+    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload)
     {
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
-        ins.setRac(zone);
+        ins.setRac(rac);
         ins.setHost(hostname, ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);

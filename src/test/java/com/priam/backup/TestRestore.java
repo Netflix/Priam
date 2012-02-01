@@ -3,6 +3,7 @@ package com.priam.backup;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
 import junit.framework.Assert;
@@ -13,10 +14,8 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.ibm.icu.util.Calendar;
 import com.priam.FakeConfiguration;
 import com.priam.conf.IConfiguration;
-import com.priam.identity.IPriamInstanceFactory;
 
 public class TestRestore
 {
@@ -100,7 +99,7 @@ public class TestRestore
     {
         try {        
             filesystem.setupTest(new ArrayList<String>());
-            Restore restore = new Restore(injector.getInstance(IConfiguration.class), injector.getInstance(IPriamInstanceFactory.class), filesystem);            
+            Restore restore = new Restore(injector.getInstance(IConfiguration.class), filesystem);            
             cal.set(2011, 8, 11, 0, 30);
             Date startTime = cal.getTime();
             cal.add(Calendar.HOUR, 5);

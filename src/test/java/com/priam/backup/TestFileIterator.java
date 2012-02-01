@@ -2,6 +2,7 @@ package com.priam.backup;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -23,7 +24,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.ibm.icu.util.Calendar;
 import com.priam.FakeConfiguration;
 import com.priam.aws.S3FileIterator;
 import com.priam.conf.IConfiguration;

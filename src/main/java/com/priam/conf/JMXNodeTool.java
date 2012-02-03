@@ -97,17 +97,23 @@ public class JMXNodeTool extends NodeProbe
         return null;
     }
 
+    /**
+     * This method will test if you can connect and query something before handing over the connection,
+     * This is required for our retry logic.
+     * @return
+     */
     private static boolean testConnection()
     {
         try
         {
-            return tool.isInitialized();
+            tool.isInitialized();
         }
         catch (Throwable ex)
         {
             SystemUtils.closeQuietly(tool);
             return false;
         }
+        return true;
     }
 
     public static synchronized JMXNodeTool connect(final IConfiguration config)

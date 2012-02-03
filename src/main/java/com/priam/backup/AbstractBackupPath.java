@@ -68,15 +68,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             this.keyspace = elements[0];
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[2]);
-        if (type == BackupFileType.SST)
+        if (type == BackupFileType.SST || type == BackupFileType.CL)
             time = new Date(file.lastModified());
-        if (type == BackupFileType.CL) {
-            Matcher matcher = clPattern.matcher(rpath);
-            if (matcher.matches()) {
-                long t = Long.parseLong(matcher.group(1)) / 1000;
-                time = new Date((t - t % 60) * 1000);
-            }
-        }
         this.fileName = file.getName();
     }
 

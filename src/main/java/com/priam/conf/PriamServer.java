@@ -3,9 +3,6 @@ package com.priam.conf;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Module;
-import com.priam.backup.CLBackup;
-import com.priam.backup.CLFileBackup;
-import com.priam.backup.CLStreamBackup;
 import com.priam.backup.IncrementalBackup;
 import com.priam.backup.Restore;
 import com.priam.backup.SnapshotBackup;
@@ -14,9 +11,11 @@ import com.priam.scheduler.PriamScheduler;
 import com.priam.utils.SystemUtils;
 
 /**
- * This Class will start all the required schedules.
- * 
- * @author "Vijay Parthasarathy"
+ * Start all tasks here
+ *  - Property update task
+ *  - Backup task
+ *  - Restore task
+ *  - Incremental backup
  */
 public class PriamServer
 {
@@ -71,11 +70,6 @@ public class PriamServer
         if (config.getBackupHour() >= 0 && config.isIncrBackup())
         {
             scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
-            // Start Commit log backup schedule if enabled
-            if (config.isCommitLogBackup()){
-                scheduler.addTask(CLStreamBackup.JOBNAME, CLStreamBackup.class, CLStreamBackup.getTimer());
-                scheduler.addTask(CLFileBackup.JOBNAME, CLFileBackup.class, CLFileBackup.getTimer());
-            }
         }
     }
 

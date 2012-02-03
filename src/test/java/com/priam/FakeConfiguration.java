@@ -315,4 +315,18 @@ public class FakeConfiguration implements IConfiguration
         return 7101;
     }
 
+    @Override
+    public long getCommitLogSize()
+    {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
+    @Override
+    public int getCommitLogInterval()
+    {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

@@ -90,4 +90,9 @@ public interface IConfiguration
     public String getBootClusterName();
     
     public int getCommitLogBackupPort();
+    
+    public long getCommitLogSize();
+    
+    //Minutes
+    public int getCommitLogInterval();
 }

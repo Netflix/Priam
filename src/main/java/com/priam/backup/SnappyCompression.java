@@ -16,6 +16,8 @@ import org.xerial.snappy.SnappyOutputStream;
 public class SnappyCompression
 {
     private static final int BUFFER = 2 * 1024;
+    private static final int MAX_CHUNKS = 10000;
+    private static final float ESTIMATED_COMPRESSION = 0.85f;
     
     public void decompress(InputStream input, OutputStream output) throws IOException
     {
@@ -73,7 +75,7 @@ public class SnappyCompression
         {
             this.origin = is;
             this.bos = new ByteArrayOutputStream();
-            this.compress = new SnappyOutputStream(bos);
+            this.compress = new SnappyOutputStream(bos);            
             this.chunkSize = chunkSize;
         }
 
@@ -151,7 +153,10 @@ public class SnappyCompression
             this.origin = fis;
             this.bos = new ByteArrayOutputStream();
             this.compress = new SnappyOutputStream(bos);
-            this.chunkSize = chunkSize;
+            if( (fis.length()*ESTIMATED_COMPRESSION)/chunkSize >= MAX_CHUNKS )
+                this.chunkSize = fis.length()/(MAX_CHUNKS-1);//Aggressive
+            else
+                this.chunkSize = chunkSize;
         }
 
         @Override

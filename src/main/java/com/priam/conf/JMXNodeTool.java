@@ -74,8 +74,6 @@ public class JMXNodeTool extends NodeProbe
      */
     public static JMXNodeTool instance(IConfiguration config)
     {
-        if (tool == null)
-            tool = connect(config);
         if (!testConnection())
             tool = connect(config);
         return tool;
@@ -104,6 +102,10 @@ public class JMXNodeTool extends NodeProbe
      */
     private static boolean testConnection()
     {
+        // connecting first time hence return false.
+        if (tool == null)
+            return false;
+        
         try
         {
             tool.isInitialized();

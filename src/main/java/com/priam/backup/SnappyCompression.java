@@ -153,7 +153,9 @@ public class SnappyCompression
             this.origin = fis;
             this.bos = new ByteArrayOutputStream();
             this.compress = new SnappyOutputStream(bos);
-                this.chunkSize = fis.length()/(MAX_CHUNKS-1);//Aggressive
+            //Aggressive
+            if( fis.length()/chunkSize >= MAX_CHUNKS )
+                this.chunkSize = fis.length()/(MAX_CHUNKS-1);
             else
                 this.chunkSize = chunkSize;
         }

@@ -1,20 +1,15 @@
 package com.priam.backup;
 
-import com.priam.aws.ICredential;
+import com.amazonaws.auth.AWSCredentials;
 
-public class FakeCredentials implements ICredential
-{
-
+public class FakeCredentials implements AWSCredentials {
     @Override
-    public String getAccessKeyId()
-    {
+    public String getAWSAccessKeyId() {
         return "";
     }
 
     @Override
-    public String getSecretAccessKey()
-    {
+    public String getAWSSecretKey() {
         return "";
     }
-
 }

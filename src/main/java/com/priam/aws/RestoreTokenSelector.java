@@ -32,7 +32,7 @@ public class RestoreTokenSelector implements IRestoreTokenSelector
     IConfiguration config;
 
     @Inject 
-    public RestoreTokenSelector(ICredential provider, IConfiguration config)
+    public RestoreTokenSelector(AWSCredentials credentials, IConfiguration config)
     {
         this.config = config;
         String path = "";
@@ -44,8 +44,7 @@ public class RestoreTokenSelector implements IRestoreTokenSelector
         String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
         bucket = paths[0];
         this.prefix = remotePrefix(path);
-        AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        s3Client = new AmazonS3Client(cred);
+        s3Client = new AmazonS3Client(credentials);
     }
     
     public String remotePrefix(String location)

@@ -1,36 +1,21 @@
 package com.priam.aws;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
-import com.amazonaws.services.simpledb.model.Attribute;
-import com.amazonaws.services.simpledb.model.DeleteAttributesRequest;
-import com.amazonaws.services.simpledb.model.PutAttributesRequest;
-import com.amazonaws.services.simpledb.model.ReplaceableAttribute;
-import com.amazonaws.services.simpledb.model.SelectRequest;
-import com.amazonaws.services.simpledb.model.SelectResult;
-import com.amazonaws.services.simpledb.model.UpdateCondition;
+import com.amazonaws.services.simpledb.model.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.priam.identity.PriamInstance;
 
+import java.util.*;
+
 @Singleton
-public class InstanceDataDAOSDB
-{
+public class InstanceDataDAOSDB {
     public static final String DOMAIN = "InstanceIdentity";
     public static final String APP_GROUP_NONE = "NONE";
 
-    public static class Attributes
-    {
+    public static class Attributes {
         public final static String APP_ID = "appId";
         public final static String ID = "id";
         public final static String INSTANCE_ID = "instanceId";
@@ -48,32 +33,26 @@ public class InstanceDataDAOSDB
     private AmazonSimpleDBClient simpleDBClient;
 
     @Inject
-    public InstanceDataDAOSDB(ICredential provider)
-    {
-        AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        simpleDBClient = new AmazonSimpleDBClient(cred);
+    public InstanceDataDAOSDB(AWSCredentials credentials) {
+        simpleDBClient = new AmazonSimpleDBClient(credentials);
     }
 
-    public PriamInstance getInstance(String app, int id)
-    {
+    public PriamInstance getInstance(String app, int id) {
         SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, id));
         SelectResult result = simpleDBClient.select(request);
         return transform(result.getItems().get(0));
     }
 
-    public Set<PriamInstance> getAllIds(String app)
-    {
+    public Set<PriamInstance> getAllIds(String app) {
         Set<PriamInstance> inslist = new HashSet<PriamInstance>();
         String nextToken = null;
-        do
-        {
+        do {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, app));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
             Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext())
-            {
+            while (itemiter.hasNext()) {
                 inslist.add(transform(itemiter.next()));
             }
 
@@ -81,14 +60,12 @@ public class InstanceDataDAOSDB
         return inslist;
     }
 
-    public void createInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void createInstance(PriamInstance instance) throws AmazonServiceException {
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
 
-    public void registerInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
@@ -97,14 +74,12 @@ public class InstanceDataDAOSDB
         simpleDBClient.putAttributes(putReq);
     }
 
-    public void deregisterInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
         DeleteAttributesRequest delReq = new DeleteAttributesRequest(DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 
-    protected List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance)
-    {
+    protected List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance) {
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
         attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
@@ -119,8 +94,7 @@ public class InstanceDataDAOSDB
         return attrs;
     }
 
-    protected List<Attribute> createAttributesToDeRegister(PriamInstance instance)
-    {
+    protected List<Attribute> createAttributesToDeRegister(PriamInstance instance) {
         List<Attribute> attrs = new ArrayList<Attribute>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
         attrs.add(new Attribute(Attributes.TOKEN, instance.getPayload()));
@@ -134,12 +108,10 @@ public class InstanceDataDAOSDB
         return attrs;
     }
 
-    public PriamInstance transform(Item item)
-    {
+    public PriamInstance transform(Item item) {
         PriamInstance ins = new PriamInstance();
         Iterator<Attribute> attrs = item.getAttributes().iterator();
-        while (attrs.hasNext())
-        {
+        while (attrs.hasNext()) {
             Attribute att = attrs.next();
             if (att.getName().equals(Attributes.INSTANCE_ID))
                 ins.setInstanceId(att.getValue());
@@ -163,8 +135,7 @@ public class InstanceDataDAOSDB
         return ins;
     }
 
-    private String getKey(PriamInstance instance)
-    {
+    private String getKey(PriamInstance instance) {
         return instance.getApp() + instance.getId();
     }
 }

@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import com.amazonaws.auth.AWSCredentials;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,14 +36,14 @@ import com.priam.identity.IMembership;
 public class AWSMembership implements IMembership
 {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
-    private BasicAWSCredentials cred;
+    private AWSCredentials cred;
     private IConfiguration config;
 
     @Inject
-    public AWSMembership(IConfiguration config, ICredential provider)
+    public AWSMembership(IConfiguration config, AWSCredentials credentials)
     {
         this.config = config;
-        cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
+        cred = credentials;
     }
 
     @Override

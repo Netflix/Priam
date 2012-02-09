@@ -21,13 +21,12 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.priam.aws.ICredential;
 import com.priam.conf.IConfiguration;
 
 public class TestIncrementalRestore
 {
     private static IConfiguration conf;
-    private static ICredential cred;
+    private static AWSCredentials cred;
     private static Injector injector;
     private static int FILECOUNT = 10;
     private static List<String> remoteFiles;
@@ -37,7 +36,7 @@ public class TestIncrementalRestore
     {
 
         injector = Guice.createInjector(new BRTestModule());
-        cred = injector.getInstance(ICredential.class);
+        cred = injector.getInstance(AWSCredentials.class);
         conf = injector.getInstance(IConfiguration.class);
         TestIncrementalRestore.cleanup();
         TestIncrementalRestore.remoteFiles = new ArrayList<String>();
@@ -52,8 +51,7 @@ public class TestIncrementalRestore
         }
         bos1.close();
 
-        AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
-        AmazonS3 s3Client = new AmazonS3Client(awscred);
+        AmazonS3 s3Client = new AmazonS3Client(cred);
 
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         cal.add(Calendar.DATE, -2);
@@ -81,8 +79,7 @@ public class TestIncrementalRestore
         if (tmpFile.exists())
             tmpFile.delete();
 
-        AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
-        AmazonS3 s3Client = new AmazonS3Client(awscred);
+        AmazonS3 s3Client = new AmazonS3Client(cred);
         ListObjectsRequest listReq = new ListObjectsRequest();
         listReq.setBucketName(conf.getBackupPrefix());
         listReq.setPrefix("fake-app");

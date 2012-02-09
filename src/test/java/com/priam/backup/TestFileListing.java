@@ -22,7 +22,6 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.priam.FakeMembership;
-import com.priam.aws.ICredential;
 import com.priam.aws.S3BackupPath;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.IMembership;
@@ -30,7 +29,7 @@ import com.priam.identity.IMembership;
 public class TestFileListing
 {
     private static IConfiguration conf;
-    private static ICredential cred;
+    private static AWSCredentials cred;
     private static Injector injector;
     private static int FILECOUNT = 6;
     private static String[] snapshots = new String[2];
@@ -39,7 +38,7 @@ public class TestFileListing
     public static void setup() throws InterruptedException, IOException
     {
         injector = Guice.createInjector(new BRTestModule());
-        cred = injector.getInstance(ICredential.class);
+        cred = injector.getInstance(AWSCredentials.class);
         conf = injector.getInstance(IConfiguration.class);
 
         List<String> instances = new ArrayList<String>();
@@ -61,8 +60,7 @@ public class TestFileListing
         }
         bos1.close();
 
-        AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
-        AmazonS3 s3Client = new AmazonS3Client(awscred);
+        AmazonS3 s3Client = new AmazonS3Client(cred);
 
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
 
@@ -88,8 +86,7 @@ public class TestFileListing
         File tmpFile = new File("tmp.db");
         if (tmpFile.exists())
             tmpFile.delete();
-        AWSCredentials awscred = new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey());
-        AmazonS3 s3Client = new AmazonS3Client(awscred);
+        AmazonS3 s3Client = new AmazonS3Client(cred);
         ListObjectsRequest listReq = new ListObjectsRequest();
         listReq.setBucketName(conf.getBackupPrefix());
         listReq.setPrefix("fake-app");

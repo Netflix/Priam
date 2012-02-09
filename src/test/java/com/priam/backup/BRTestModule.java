@@ -2,6 +2,7 @@ package com.priam.backup;
 
 import java.util.Arrays;
 
+import com.amazonaws.auth.AWSCredentials;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -13,7 +14,6 @@ import com.priam.FakeCLConsumer;
 import com.priam.FakeConfiguration;
 import com.priam.FakeMembership;
 import com.priam.FakePriamInstanceFactory;
-import com.priam.aws.ICredential;
 import com.priam.aws.S3BackupPath;
 import com.priam.conf.IConfiguration;
 import com.priam.identity.IMembership;
@@ -29,8 +29,8 @@ public class BRTestModule extends AbstractModule
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
-        bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
-        //bind(ICredential.class).to(FakeCredential.class).in(Scopes.SINGLETON);
+        bind(AWSCredentials.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
+        //bind(AWSCredentials.class).to(FakeCredential.class).in(Scopes.SINGLETON);
         bind(Consumer.class).to(FakeCLConsumer.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);

@@ -7,10 +7,10 @@ import java.util.List;
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
-import com.priam.identity.DoubleRing;
-import com.priam.identity.PriamInstance;
-import com.priam.utils.SystemUtils;
-import com.priam.utils.TokenManager;
+import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TokenManager;
 
 public class DoubleRingTest extends InstanceTestUtils
 {

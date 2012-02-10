@@ -26,13 +26,14 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.priam.aws.DataPart;
-import com.priam.aws.S3BackupPath;
-import com.priam.aws.S3FileSystem;
-import com.priam.aws.S3PartUploader;
-import com.priam.backup.AbstractBackupPath.BackupFileType;
-import com.priam.conf.IConfiguration;
-import com.priam.utils.RetryableCallable;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.aws.DataPart;
+import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.S3FileSystem;
+import com.netflix.priam.aws.S3PartUploader;
+import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.utils.RetryableCallable;
 
 public class TestS3FileSystem
 {

@@ -4,7 +4,7 @@ import java.util.Random;
 
 import org.junit.Test;
 
-import com.priam.utils.Throttle;
+import com.netflix.priam.utils.Throttle;
 
 public class ThrottalTest
 {

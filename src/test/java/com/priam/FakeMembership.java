@@ -3,7 +3,7 @@ package com.priam;
 import java.util.Collection;
 import java.util.List;
 
-import com.priam.identity.IMembership;
+import com.netflix.priam.identity.IMembership;
 
 public class FakeMembership implements IMembership
 {

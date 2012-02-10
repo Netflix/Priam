@@ -9,6 +9,10 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.scheduler.SimpleTimer;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.scheduler.TaskTimer;
 import com.priam.TestModule;
 
 public class TestScheduler

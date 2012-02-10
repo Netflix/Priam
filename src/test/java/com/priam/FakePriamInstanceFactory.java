@@ -7,9 +7,9 @@ import java.util.List;
 import java.util.Map;
 
 import com.google.inject.Inject;
-import com.priam.conf.IConfiguration;
-import com.priam.identity.PriamInstance;
-import com.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.PriamInstance;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory
 {

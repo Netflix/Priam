@@ -1,6 +1,6 @@
 package com.priam.backup;
 
-import com.priam.aws.ICredential;
+import com.netflix.priam.ICredential;
 
 public class FakeCredentials implements ICredential
 {

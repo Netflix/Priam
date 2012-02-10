@@ -22,6 +22,9 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalBackup;
+import com.netflix.priam.backup.SnapshotBackup;
 
 /**
  * Unit test case to test a snapshot backup and incremental backup

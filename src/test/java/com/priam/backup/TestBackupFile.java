@@ -15,10 +15,11 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.priam.aws.S3BackupPath;
-import com.priam.backup.AbstractBackupPath.BackupFileType;
-import com.priam.conf.IConfiguration;
-import com.priam.identity.InstanceIdentity;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.identity.InstanceIdentity;
 
 public class TestBackupFile
 {

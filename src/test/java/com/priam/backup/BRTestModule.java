@@ -9,15 +9,16 @@ import org.quartz.impl.StdSchedulerFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
-import com.priam.FakeCLConsumer;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredential;
+import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.priam.FakeConfiguration;
 import com.priam.FakeMembership;
 import com.priam.FakePriamInstanceFactory;
-import com.priam.aws.ICredential;
-import com.priam.aws.S3BackupPath;
-import com.priam.conf.IConfiguration;
-import com.priam.identity.IMembership;
-import com.priam.identity.IPriamInstanceFactory;
 @Ignore
 public class BRTestModule extends AbstractModule
 {
@@ -31,7 +32,6 @@ public class BRTestModule extends AbstractModule
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
         //bind(ICredential.class).to(FakeCredential.class).in(Scopes.SINGLETON);
-        bind(Consumer.class).to(FakeCLConsumer.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
     }

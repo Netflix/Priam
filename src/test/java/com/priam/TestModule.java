@@ -7,14 +7,14 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
-import com.priam.aws.ICredential;
-import com.priam.aws.S3BackupPath;
-import com.priam.backup.AbstractBackupPath;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredential;
+import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.priam.backup.FakeCredentials;
-import com.priam.backup.IBackupFileSystem;
-import com.priam.conf.IConfiguration;
-import com.priam.identity.IMembership;
-import com.priam.identity.IPriamInstanceFactory;
 
 @Ignore
 public class TestModule extends AbstractModule

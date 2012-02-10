@@ -153,11 +153,13 @@
 			<groupId>com.googlecode.jmockit</groupId>
 			<artifactId>jmockit</artifactId>
 			<version>0.999.12</version>
+			<scope>test</scope>
 		</dependency>
 		<dependency>
       		<groupId>junit</groupId>
      		 <artifactId>junit</artifactId>
      		 <version>4.8</version>
+     		 <scope>test</scope>
      	</dependency>
      	<dependency>
       		<groupId>xerces</groupId>
@@ -235,7 +237,7 @@
 					<argLine>
 						-Xms256m -Xmx1024m -XX:MaxPermSize=512m -javaagent:"${settings.localRepository}"/com/googlecode/jmockit/jmockit/0.999.12/jmockit-0.999.12.jar
 					</argLine>
-					<skipTests>true</skipTests>
+					<skipTests>false</skipTests>
 				</configuration>	
             </plugin>
 

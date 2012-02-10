@@ -7,8 +7,8 @@ import java.math.BigInteger;
 
 import org.junit.Test;
 
-import com.priam.utils.SystemUtils;
-import com.priam.utils.TokenManager;
+import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TokenManager;
 
 public class TokenManagementTest
 {

@@ -24,10 +24,11 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.aws.S3FileIterator;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.priam.FakeConfiguration;
-import com.priam.aws.S3FileIterator;
-import com.priam.conf.IConfiguration;
-import com.priam.identity.InstanceIdentity;
 
 /**
  * Unit test for backup file iterator

@@ -14,8 +14,10 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.Restore;
 import com.priam.FakeConfiguration;
-import com.priam.conf.IConfiguration;
 
 public class TestRestore
 {

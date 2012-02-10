@@ -5,9 +5,9 @@ import java.io.OutputStream;
 import java.util.Date;
 import java.util.Iterator;
 
-import com.priam.backup.AbstractBackupPath;
-import com.priam.backup.BackupRestoreException;
-import com.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.IBackupFileSystem;
 
 public class FakeBackupFileSystem implements IBackupFileSystem
 {

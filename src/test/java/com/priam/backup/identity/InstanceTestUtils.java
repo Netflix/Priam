@@ -6,12 +6,12 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
 
+import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.priam.FakeConfiguration;
 import com.priam.FakeMembership;
 import com.priam.FakePriamInstanceFactory;
-import com.priam.identity.IMembership;
-import com.priam.identity.IPriamInstanceFactory;
-import com.priam.identity.InstanceIdentity;
 
 @Ignore
 public abstract class InstanceTestUtils

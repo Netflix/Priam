@@ -5,7 +5,7 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.priam.conf.IConfiguration;
+import com.netflix.priam.IConfiguration;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -146,13 +146,6 @@ public class FakeConfiguration implements IConfiguration
     {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public boolean isExperimental()
-    {
-        // TODO Auto-generated method stub
-        return false;
     }
 
     @Override
@@ -327,6 +320,13 @@ public class FakeConfiguration implements IConfiguration
     {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public String getCassStopScript()
+    {
+        // TODO Auto-generated method stub
+        return null;
     }
 
 }

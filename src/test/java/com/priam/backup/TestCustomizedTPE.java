@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.priam.scheduler.CustomizedThreadPoolExecutor;
+import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
 
 public class TestCustomizedTPE
 {

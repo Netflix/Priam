@@ -6,10 +6,10 @@ import java.util.List;
 
 import org.junit.Test;
 
-import com.priam.identity.DoubleRing;
-import com.priam.identity.PriamInstance;
-import com.priam.identity.InstanceIdentity;
-import com.priam.utils.SystemUtils;
+import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.SystemUtils;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {

@@ -101,7 +101,7 @@ public class TestRestore
     {
         try {        
             filesystem.setupTest(new ArrayList<String>());
-            Restore restore = new Restore(injector.getInstance(IConfiguration.class), filesystem);            
+            Restore restore = injector.getInstance(Restore.class);            
             cal.set(2011, 8, 11, 0, 30);
             Date startTime = cal.getTime();
             cal.add(Calendar.HOUR, 5);

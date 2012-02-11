@@ -15,12 +15,14 @@ import org.apache.commons.io.IOUtils;
 import org.json.simple.JSONArray;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.Singleton;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 
+@Singleton
 public class FakeBackupFileSystem implements IBackupFileSystem
 {
     private List<AbstractBackupPath> flist;

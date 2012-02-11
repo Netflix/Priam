@@ -9,6 +9,7 @@ import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
@@ -48,6 +49,11 @@ public class TestScheduler
     @Ignore
     public static class TestTask extends Task
     {
+        public TestTask(IConfiguration config)
+        {
+            super(config);
+        }
+
         @Override
         public void execute()
         {
@@ -66,6 +72,11 @@ public class TestScheduler
     @Singleton
     public static class SingleTestTask extends Task
     {
+        public SingleTestTask(IConfiguration config)
+        {
+            super(config);
+        }
+
         public static int count =0;
         @Override
         public void execute()

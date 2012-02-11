@@ -4,9 +4,6 @@ import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class TokenManager
 {    
     protected static final BigInteger MINIMUM_TOKEN = new BigInteger("0");

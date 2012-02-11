@@ -37,7 +37,6 @@ import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Throttle;
 
-
 @Singleton
 public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 {
@@ -51,27 +50,26 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     // timeout is set to 2 hours.
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     public static final char PATH_SEP = '/';
-    private CustomizedThreadPoolExecutor executor;
-    private IConfiguration config;
-    private AmazonS3 s3Client;
+    protected CustomizedThreadPoolExecutor executor;
+
+    protected final AmazonS3 s3Client;
+    protected Throttle throttle;
+
+    protected final Provider<AbstractBackupPath> pathProvider;
+    protected final SnappyCompression compress;
+    protected final IConfiguration config;
 
     @Inject
-    Provider<AbstractBackupPath> pathProvider;
-
-    @Inject
-    SnappyCompression compress;
-
-    Throttle throttle;
-
-    @Inject
-    public S3FileSystem(ICredential provider, final IConfiguration config)
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, SnappyCompression compress, final IConfiguration config, ICredential provider)
     {
+        this.pathProvider = pathProvider;
+        this.compress = compress;
+        this.config = config;
         AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
         this.s3Client = new AmazonS3Client(cred);
-        this.config = config;
         this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
         {
             public int targetThroughput()

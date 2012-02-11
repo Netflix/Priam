@@ -1,8 +1,7 @@
 package com.netflix.priam;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Module;
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
@@ -13,34 +12,30 @@ import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 
 /**
- * Start all tasks here
- *  - Property update task
- *  - Backup task
- *  - Restore task
- *  - Incremental backup
+ * Start all tasks here - Property update task - Backup task - Restore task -
+ * Incremental backup
  */
+@Singleton
 public class PriamServer
 {
-    public static final PriamServer instance = new PriamServer();
-    public Injector injector;
-    public PriamScheduler scheduler;
-    public IConfiguration config;
-    public InstanceIdentity id;
+    private final PriamScheduler scheduler;
+    private final IConfiguration config;    
+    private final InstanceIdentity id;
 
-    private PriamServer()
+    @Inject
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id)
     {
+        this.config = config;
+        this.scheduler = scheduler;
+        this.id = id;
     }
 
-    public void intialize(Module module) throws Exception
-    {
-        injector = Guice.createInjector(module);
-        config = injector.getInstance(IConfiguration.class);
-        // Initialize the configurations to be read.
-        config.intialize();
-        id = injector.getInstance(InstanceIdentity.class);
-        if( id.getInstance().isOutOfService())
+    public void intialize() throws Exception
+    {     
+        id.init();
+        if (id.getInstance().isOutOfService())
             return;
-        scheduler = injector.getInstance(PriamScheduler.class);
+
         // start to schedule jobs
         scheduler.start();
 
@@ -49,9 +44,9 @@ public class PriamServer
         {
             scheduler.runTaskNow(UpdateSecuritySettings.class);
             // sleep for 60 sec for the SG update to happen.
-            if(UpdateSecuritySettings.firstTimeUpdated)
+            if (UpdateSecuritySettings.firstTimeUpdated)
                 Thread.sleep(60 * 1000);
-            scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer());
+            scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
         }
 
         // Run the task to tune Cassandra
@@ -65,13 +60,18 @@ public class PriamServer
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)
-        if (config.getBackupHour() >= 0){
+        if (config.getBackupHour() >= 0)
+        {
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
             // Start the Incremental backup schedule if enabled
             if (config.isIncrBackup())
                 scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
         }
+    }
+    
+    public InstanceIdentity getId(){
+        return id;
     }
 
 }

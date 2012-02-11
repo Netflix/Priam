@@ -9,6 +9,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
 
@@ -17,18 +18,26 @@ import com.netflix.priam.scheduler.Task;
  */
 public abstract class Backup extends Task
 {
-    List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
-    List<String> FILTER_COLUMN_FAMILY = Arrays.asList("LocationInfo");
+    protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
+    protected final List<String> FILTER_COLUMN_FAMILY = Arrays.asList("LocationInfo");
+    protected final Provider<AbstractBackupPath> pathFactory;
+    protected final IBackupFileSystem fs;
 
     @Inject
-    protected Provider<AbstractBackupPath> pathFactory;
-    @Inject
-    protected IBackupFileSystem fs;
+    public Backup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
+    {
+        super(config);
+        this.fs = fs;
+        this.pathFactory = pathFactory;
+    }
 
     /**
      * Upload files in the specified dir
-     * @param parent    Parent dir
-     * @param type      Type of file (META, SST, SNAP etc)
+     * 
+     * @param parent
+     *            Parent dir
+     * @param type
+     *            Type of file (META, SST, SNAP etc)
      * @return
      * @throws ParseException
      * @throws BackupRestoreException
@@ -59,6 +68,7 @@ public abstract class Backup extends Task
 
     /**
      * Filters unwanted keyspaces and column families
+     * 
      * @param keyspaceDir
      * @param backupDir
      * @return

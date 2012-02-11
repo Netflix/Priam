@@ -26,7 +26,7 @@ import com.netflix.priam.utils.TokenManager;
 public class DoubleRing
 {
     private static final Logger logger = LoggerFactory.getLogger(DoubleRing.class);
-    private static final String BACKUP_FILE = "/tmp/backup-instance-data.dat";
+    private static File TMP_BACKUP_FILE;
     private IConfiguration config;
     private IPriamInstanceFactory factory;
 
@@ -38,9 +38,9 @@ public class DoubleRing
     }
 
     /**
-     * Doubling is done by pre-calculating all slots of a double ring 
-     * and registering them. When new nodes come up, they will get 
-     * the unsed token assigned per token logic. 
+     * Doubling is done by pre-calculating all slots of a double ring and
+     * registering them. When new nodes come up, they will get the unsed token
+     * assigned per token logic.
      */
     public void doubleSlots()
     {
@@ -81,17 +81,19 @@ public class DoubleRing
 
     /**
      * Backup the current state in case of failure
+     * 
      * @throws IOException
      */
     public void backup() throws IOException
     {
         // writing to the backup file.
-        OutputStream out = new FileOutputStream(new File(BACKUP_FILE));
+        TMP_BACKUP_FILE = File.createTempFile("Backup-instance-data", ".dat");
+        OutputStream out = new FileOutputStream(TMP_BACKUP_FILE);
         ObjectOutputStream stream = new ObjectOutputStream(out);
         try
         {
             stream.writeObject(filteredRemote(factory.getAllIds(config.getAppName())));
-            logger.info("Wrote the backup of the instances to: " + BACKUP_FILE);
+            logger.info("Wrote the backup of the instances to: " + TMP_BACKUP_FILE.getAbsolutePath());
         }
         finally
         {
@@ -102,6 +104,7 @@ public class DoubleRing
 
     /**
      * Restore tokens if a failure occurs
+     * 
      * @throws IOException
      * @throws ClassNotFoundException
      */
@@ -111,7 +114,7 @@ public class DoubleRing
             factory.delete(data);
 
         // read from the file.
-        InputStream in = new FileInputStream(new File(BACKUP_FILE));
+        InputStream in = new FileInputStream(TMP_BACKUP_FILE);
         ObjectInputStream stream = new ObjectInputStream(in);
         try
         {
@@ -119,7 +122,7 @@ public class DoubleRing
             List<PriamInstance> allInstances = (List<PriamInstance>) stream.readObject();
             for (PriamInstance data : allInstances)
                 factory.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getRac(), data.getVolumes(), data.getPayload());
-            logger.info("Sucecsfully restored the Instances from the backup: " + BACKUP_FILE);
+            logger.info("Sucecsfully restored the Instances from the backup: " + TMP_BACKUP_FILE.getAbsolutePath());
         }
         finally
         {

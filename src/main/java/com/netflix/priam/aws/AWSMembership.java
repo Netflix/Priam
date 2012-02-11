@@ -31,16 +31,15 @@ import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.IMembership;
 
 /**
- * Class to query amazon ASG for its members to provide
- *  - Number of valid nodes in the ASG
- *  - Number of zones
- *  - Methods for adding ACLs for the nodes
+ * Class to query amazon ASG for its members to provide - Number of valid nodes
+ * in the ASG - Number of zones - Methods for adding ACLs for the nodes
  */
 public class AWSMembership implements IMembership
 {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
-    private BasicAWSCredentials cred;
-    private IConfiguration config;
+    private final BasicAWSCredentials cred;
+
+    protected final IConfiguration config;
 
     @Inject
     public AWSMembership(IConfiguration config, ICredential provider)

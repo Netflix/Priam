@@ -16,8 +16,8 @@ import com.google.inject.Singleton;
 @Singleton
 public class PriamScheduler
 {
-    private Scheduler scheduler;
-    private GuiceJobFactory jobFactory;
+    private final Scheduler scheduler;
+    private final GuiceJobFactory jobFactory;
 
     @Inject
     public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory)

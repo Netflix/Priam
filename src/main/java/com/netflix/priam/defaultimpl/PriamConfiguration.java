@@ -54,7 +54,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_RESTORE_KEYSPACES = MY_WEBAPP_NAME + ".restore.keyspaces";
     private static final String CONFIG_CL_BACKUP_PORT = MY_WEBAPP_NAME + ".backup.commitlog.port";
     private static final String CONFIG_CL_LOG_SIZE = MY_WEBAPP_NAME + ".commitlog.size";
-    private static final String CONFIG_CL_LOG_INTERVAL = MY_WEBAPP_NAME + ".commitlog.interval"; //minutes
+    private static final String CONFIG_CL_LOG_INTERVAL = MY_WEBAPP_NAME + ".commitlog.interval"; // minutes
     private static final String CONFIG_BACKUP_CHUNK_SIZE = MY_WEBAPP_NAME + ".backup.chunksizemb";
 
     // Amazon specific
@@ -79,7 +79,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_RESTORE_THREADS = 30;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_CL_BACKUP_PORT = 7104;
-    private final long DEFAULT_CL_FILE_SIZE = 128L*1024*1024;
+    private final long DEFAULT_CL_FILE_SIZE = 128L * 1024 * 1024;
     private final int DEFAULT_CL_ROTATE_INTERVAL = 120;
 
     private PriamProperties config;
@@ -112,7 +112,6 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
     }
-
 
     @Override
     public String getCassStartupScript()
@@ -360,7 +359,6 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getInteger(CONFIG_CL_BACKUP_PORT, DEFAULT_CL_BACKUP_PORT);
     }
-
 
     @Override
     public long getCommitLogSize()

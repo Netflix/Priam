@@ -29,14 +29,15 @@ public class RestoreTokenSelector implements IRestoreTokenSelector
 {
     private static final Logger logger = LoggerFactory.getLogger(RestoreTokenSelector.class);
     public static final char PATH_SEP = '/';
+
+    private final AmazonS3 s3Client;
     private String bucket = "";
-    private AmazonS3 s3Client;
     private String prefix = "";
 
-    IConfiguration config;
+    protected final IConfiguration config;
 
     @Inject
-    public RestoreTokenSelector(ICredential provider, IConfiguration config)
+    public RestoreTokenSelector(IConfiguration config, ICredential provider)
     {
         this.config = config;
         String path = "";

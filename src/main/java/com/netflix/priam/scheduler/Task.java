@@ -12,6 +12,9 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+
 /**
  * Task class that should be implemented by all cron tasks. Jobconf will contain
  * any instance specific data
@@ -23,15 +26,19 @@ public abstract class Task implements Job, TaskMBean
     private static final Logger logger = LoggerFactory.getLogger(Task.class);
     private final AtomicInteger errors = new AtomicInteger();
     private final AtomicInteger executions = new AtomicInteger();
+
+    protected final IConfiguration config;
     
     public STATE status = STATE.DONE;
+    
     public static enum STATE
     {
         ERROR, RUNNING, DONE
     }
     
-    public Task()
+    public Task(IConfiguration config)
     {
+        this.config = config;
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = "com.priam.scheduler:type=" + this.getClass().getName();
         try
@@ -59,10 +66,10 @@ public abstract class Task implements Job, TaskMBean
         // nothing to intialize
     }
     
-    public Task(boolean skipMbean)
-    {
-        // TODO fix this allover.
-    }
+//    public Task(boolean skipMbean)
+//    {
+//        // TODO fix this allover.
+//    }
     
     public abstract void execute() throws Exception;
 

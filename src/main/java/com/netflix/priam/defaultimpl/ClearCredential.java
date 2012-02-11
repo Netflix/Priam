@@ -12,10 +12,8 @@ import com.netflix.priam.ICredential;
  * implement their own versions for more secured access. This class requires
  * clear AWS key and access.
  * 
- * Set the folowing properties in "conf/awscredntial.properties"          
- * Eg:
- * AWSACCESSID = "..." 
- * AWSKEY = "..."
+ * Set the folowing properties in "conf/awscredntial.properties" Eg: AWSACCESSID
+ * = "..." AWSKEY = "..."
  * 
  */
 public class ClearCredential implements ICredential

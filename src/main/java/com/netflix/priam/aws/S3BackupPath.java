@@ -5,13 +5,22 @@ import java.util.Date;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.identity.InstanceIdentity;
 
 /**
  * Represents an S3 object key
  */
 public class S3BackupPath extends AbstractBackupPath
 {
+    @Inject
+    public S3BackupPath(IConfiguration config, InstanceIdentity factory)
+    {
+        super(config, factory);
+    }
+
     /**
      * Format of backup path:
      * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE

@@ -30,8 +30,7 @@ import com.netflix.priam.identity.PriamInstance;
 @Singleton
 public class InstanceDataDAOSDB
 {
-    public static final String DOMAIN = "InstanceIdentity";
-    public static final String APP_GROUP_NONE = "NONE";
+    private static final String DOMAIN = "InstanceIdentity";
 
     public static class Attributes
     {

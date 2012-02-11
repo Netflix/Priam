@@ -6,6 +6,10 @@ import java.util.Map;
 public class PriamInstance implements Serializable
 {
     private static final long serialVersionUID = 5606412386974488659L;
+    private String hostname;
+    private long updatetime;
+    private boolean outOfService;
+
     public String app;
     public int Id;
     public String instanceId;
@@ -15,9 +19,6 @@ public class PriamInstance implements Serializable
     public String payload;
     //Handles Storage objects
     public Map<String, Object> volumes;
-    private String hostname;
-    private long updatetime;
-    private boolean outOfService;
     
     public String getApp()
     {

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -83,6 +84,21 @@ public class SystemUtils
         stopCass.start();
     }
 
+    public static String getDataFromUrl(String url) throws MalformedURLException, IOException, ConfigurationException
+    {
+        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+        conn.setRequestMethod("GET");
+        if (conn.getResponseCode() != 200)
+        {
+            throw new ConfigurationException("Not able to get the required Data....");
+        }
+        int cl = conn.getContentLength();
+        byte[] b = new byte[cl];
+        DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
+        d.readFully(b);
+        return new String(b, "UTF-8");
+    }
+    
     public static int runSysCommand(String command) throws InterruptedException, IOException
     {
         logger.info("Running command " + command.toString());

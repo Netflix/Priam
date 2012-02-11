@@ -26,7 +26,6 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;

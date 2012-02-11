@@ -28,7 +28,7 @@ import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 
-/** 
+/**
  * Main class for restoring data from backup
  */
 @Singleton
@@ -38,22 +38,22 @@ public class Restore extends Task
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     public static final String SYSTEM_KEYSPACE = "system";
     private AtomicInteger count = new AtomicInteger();
-    private IConfiguration config;
     private ThreadPoolExecutor executor;
-    private IBackupFileSystem fs;
+    private final IBackupFileSystem fs;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final Provider<IRestoreTokenSelector> tokenSelectorProvider;
+    private final MetaData metaData;
+    private final PriamServer priamServer;
 
     @Inject
-    Provider<AbstractBackupPath> pathProvider;
-    @Inject
-    Provider<IRestoreTokenSelector> tokenSelectorProvider;
-    @Inject
-    MetaData metaData;
-
-    @Inject
-    public Restore(IConfiguration config, IBackupFileSystem fs)
+    public Restore(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathProvider, Provider<IRestoreTokenSelector> tokenSelectorProvider, MetaData metaData, PriamServer priamServer)
     {
-        this.config = config;
+        super(config);
+        this.pathProvider = pathProvider;
+        this.tokenSelectorProvider = tokenSelectorProvider;
+        this.metaData = metaData;
         this.fs = fs;
+        this.priamServer = priamServer;
     }
 
     @Override
@@ -66,13 +66,13 @@ public class Restore extends Task
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            String origToken = PriamServer.instance.id.getInstance().getPayload();
+            String origToken = priamServer.getId().getInstance().getPayload();
             try
             {
                 if (config.isRestoreClosestToken())
                 {
                     BigInteger restoreToken = tokenSelectorProvider.get().getClosestToken(new BigInteger(origToken), startTime);
-                    PriamServer.instance.id.getInstance().setPayload(restoreToken.toString());
+                    priamServer.getId().getInstance().setPayload(restoreToken.toString());
                 }
                 new RetryableCallable<Void>()
                 {
@@ -87,7 +87,7 @@ public class Restore extends Task
             }
             finally
             {
-                PriamServer.instance.id.getInstance().setPayload(origToken);
+                priamServer.getId().getInstance().setPayload(origToken);
             }
         }
         SystemUtils.startCassandra(true, config);
@@ -95,6 +95,7 @@ public class Restore extends Task
 
     /**
      * Restore backup data for the specified time range
+     * 
      * @param startTime
      * @param endTime
      * @throws Exception
@@ -108,7 +109,7 @@ public class Restore extends Task
             // Stop cassandra if its running and restoring all keyspaces
             if (config.getRestoreKeySpaces().size() == 0)
                 SystemUtils.stopCassandra(config);
-            
+
             // Cleanup local data
             SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
 
@@ -185,7 +186,7 @@ public class Restore extends Task
             @Override
             public Integer retriableCall() throws Exception
             {
-                //Need to handle Commit logs here
+                // Need to handle Commit logs here
                 fs.download(path);
                 return count.decrementAndGet();
             }
@@ -215,7 +216,7 @@ public class Restore extends Task
             public Void retriableCall() throws Exception
             {
                 logger.info("Waiting for cassandra to start...");
-                JMXNodeTool.instance(config).info();//Got Better check?
+                JMXNodeTool.instance(config).info();// Got Better check?
                 return null;
             }
         }.call();

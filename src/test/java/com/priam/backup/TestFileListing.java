@@ -23,7 +23,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.identity.IMembership;
 import com.priam.FakeMembership;

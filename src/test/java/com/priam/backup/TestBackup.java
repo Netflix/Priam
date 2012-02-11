@@ -14,6 +14,7 @@ import mockit.Mockit;
 
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -45,6 +46,13 @@ public class TestBackup
         injector = Guice.createInjector(new BRTestModule());
         filesystem = (FakeBackupFileSystem) injector.getInstance(IBackupFileSystem.class);
         Mockit.setUpMock(NodeProbe.class, MockNodeProbe.class);
+    }
+    
+    @AfterClass
+    public static void cleanup() throws IOException
+    {
+        File file = new File("cass");
+        FileUtils.deleteQuietly(file);
     }
 
     @Test

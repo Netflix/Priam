@@ -22,7 +22,7 @@ import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
 
 /**
- * This class provides the central place to create and consume the identiy of
+ * This class provides the central place to create and consume the identity of
  * the instance - token, seeds etc.
  * 
  */
@@ -65,11 +65,12 @@ public class InstanceIdentity
             @Override
             public PriamInstance retriableCall() throws Exception
             {
-                //Check if this node is decomissioned
-                for (PriamInstance ins : factory.getAllIds(config.getAppName()+"-dead"))
+                // Check if this node is decomissioned
+                for (PriamInstance ins : factory.getAllIds(config.getAppName() + "-dead"))
                 {
                     logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
-                    if (ins.getInstanceId().equals(config.getInstanceName())){
+                    if (ins.getInstanceId().equals(config.getInstanceName()))
+                    {
                         ins.setOutOfService(true);
                         return ins;
                     }
@@ -107,7 +108,7 @@ public class InstanceIdentity
         {
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
-            //Sleep random interval - upto 15 sec
+            // Sleep random interval - upto 15 sec
             Thread.sleep(new Random().nextInt(5000) + 10000);
             for (PriamInstance dead : allIds)
             {
@@ -115,7 +116,8 @@ public class InstanceIdentity
                 if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()))
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
-                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(), dead.getPayload());
+                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
+                        dead.getPayload());
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
@@ -137,12 +139,12 @@ public class InstanceIdentity
         @Override
         public PriamInstance retriableCall() throws Exception
         {
-            //Sleep random interval - upto 15 sec
+            // Sleep random interval - upto 15 sec
             Thread.sleep(new Random().nextInt(15000));
             int hash = SystemUtils.hash(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.
-            
+
             int max = hash;
             for (PriamInstance data : factory.getAllIds(config.getAppName()))
                 max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;

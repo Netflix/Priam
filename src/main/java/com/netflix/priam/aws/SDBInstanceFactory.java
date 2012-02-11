@@ -17,18 +17,22 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
 /**
- * SimpleDB based instance factory.  Requires 'InstanceIdentity' domain
- * to be created ahead
+ * SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be
+ * created ahead
  */
 public class SDBInstanceFactory implements IPriamInstanceFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
-    @Inject
-    IConfiguration config;
+    protected final IConfiguration config;
+    protected final InstanceDataDAOSDB dao;
 
     @Inject
-    InstanceDataDAOSDB dao;
+    public SDBInstanceFactory(IConfiguration config, InstanceDataDAOSDB dao)
+    {
+        this.config = config;
+        this.dao = dao;
+    }
 
     @Override
     public List<PriamInstance> getAllIds(String appName)

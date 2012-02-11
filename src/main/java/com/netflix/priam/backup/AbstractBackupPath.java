@@ -10,10 +10,8 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
 
-import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-
 
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
@@ -21,7 +19,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public static final char PATH_SEP = '/';
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
-    public static enum BackupFileType {
+    public static enum BackupFileType
+    {
         SNAP, SST, CL, META
     };
 
@@ -33,13 +32,16 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public String token;
     public String region;
     public Date time;
-    // TODO cleanup... don't need this?
     private File backupFile;
 
-    @Inject
     public InstanceIdentity factory;
-    @Inject
     public IConfiguration config;
+
+    public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
+    {
+        this.factory = factory;
+        this.config = config;
+    }
 
     public SimpleDateFormat getFormat()
     {

@@ -21,24 +21,18 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
 
 /**
- * Class to create a meta data file with a list of snapshot files.
- * Also list the contents of a meta data file.
+ * Class to create a meta data file with a list of snapshot files. Also list the
+ * contents of a meta data file.
  */
 public class MetaData
 {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
+    @Inject
     private Provider<AbstractBackupPath> pathProvider;
-    private IBackupFileSystem fs;
-
     @Inject
-    InstanceIdentity id;
-
+    protected IBackupFileSystem fs;
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathProvider, IBackupFileSystem fs)
-    {
-        this.pathProvider = pathProvider;
-        this.fs = fs;
-    }
+    protected InstanceIdentity id;
 
     @SuppressWarnings("unchecked")
     public void set(List<AbstractBackupPath> bps, String snapshotName) throws IOException, ParseException, BackupRestoreException

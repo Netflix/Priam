@@ -1,7 +1,6 @@
 package com.netflix.priam.backup;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -27,14 +27,13 @@ public class SnapshotBackup extends Backup
 {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     public static String JOBNAME = "SnapshotBackup";
-    private IConfiguration config;
     private String error;
-    private MetaData metaData;
+    private final MetaData metaData;
 
     @Inject
-    public SnapshotBackup(IConfiguration config, MetaData metaData) throws IOException, InterruptedException
+    public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
     {
-        this.config = config;
+        super(config, fs, pathFactory);
         this.metaData = metaData;
     }
 

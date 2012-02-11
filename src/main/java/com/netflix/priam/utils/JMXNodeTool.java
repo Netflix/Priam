@@ -51,7 +51,7 @@ public class JMXNodeTool extends NodeProbe
      * Hostname and Port to talk to will be same server for now optionally we
      * might want the ip to poll.
      * 
-     * NOTE: This class shouldn't be a singleton and this shouldnt be cached.
+     * NOTE: This class shouldn't be a singleton and this shouldn't be cached.
      * 
      * This will work only if cassandra runs.
      */
@@ -171,8 +171,6 @@ public class JMXNodeTool extends NodeProbe
         object.put("Heap Memory (MB)", memUsed + "/" + memMax);
         object.put("Data Center", getDataCenter());
         object.put("Rack", getRack());
-        // object.put("Exceptions", getExceptionCount());
-        // return object.toString();
         logger.info(object.toString());
         return object;
     }

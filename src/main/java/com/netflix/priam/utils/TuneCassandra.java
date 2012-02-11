@@ -25,13 +25,12 @@ import com.netflix.priam.scheduler.TaskTimer;
 public class TuneCassandra extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(HintedHandOffManager.class);
-    public static final String JOBNAME = "Tune-Cassandra";
-    private IConfiguration config;
+    public static final String JOBNAME = "Tune-Cassandra";    
 
     @Inject
     public TuneCassandra(IConfiguration config)
     {
-        this.config = config;
+        super(config);
     }
 
     /**

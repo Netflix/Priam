@@ -30,8 +30,9 @@ public class TestScheduler
         scheduler.start();
         scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 100));
         scheduler.addTask("test1", TestTask.class, new SimpleTimer("test1"));
-        Thread.sleep(100);
+        Thread.sleep(10000);
         scheduler.shutdown();
+        Assert.assertEquals(false, setToFalse);
     }
 
     @Test

@@ -252,7 +252,7 @@
 					<argLine>
 						-Xms256m -Xmx1024m -XX:MaxPermSize=512m -javaagent:"${settings.localRepository}"/com/googlecode/jmockit/jmockit/0.999.12/jmockit-0.999.12.jar
 					</argLine>
-					<skipTests>true</skipTests>
+					<skipTests>false</skipTests>
 				</configuration>	
             </plugin>
 

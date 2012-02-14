@@ -39,7 +39,7 @@ public class PriamScheduler
      */
     public void addTask(String name, Class<? extends Task> taskclass, TaskTimer timer) throws SchedulerException, ParseException
     {
-        assert timer != null : "Cannot add scheduler task " + name + " as not timer is set";
+        assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
         scheduler.scheduleJob(job, timer.getTrigger());
     }

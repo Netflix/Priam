@@ -329,4 +329,11 @@ public class FakeConfiguration implements IConfiguration
         return null;
     }
 
+    @Override
+    public int getStoragePort()
+    {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

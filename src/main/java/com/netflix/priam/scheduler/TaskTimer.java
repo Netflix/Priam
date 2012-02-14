@@ -9,5 +9,5 @@ import org.quartz.Trigger;
  */
 public interface TaskTimer
 {
-    Trigger getTrigger() throws ParseException;
+    public Trigger getTrigger() throws ParseException;
 }

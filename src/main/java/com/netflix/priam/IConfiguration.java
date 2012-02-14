@@ -87,6 +87,12 @@ public interface IConfiguration
      * @return Cassandra's JMX port
      */
     public int getJmxPort();
+        
+    /**
+     * Cassandra storage/cluster communication port
+     * @return
+     */
+    public int getStoragePort();
 
     /**
      * @return Cassandra's thrift port

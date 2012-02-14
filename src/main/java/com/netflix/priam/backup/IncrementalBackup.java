@@ -19,8 +19,8 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class IncrementalBackup extends Backup
 {
-    private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
+    private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
 
     @Inject
     public IncrementalBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)

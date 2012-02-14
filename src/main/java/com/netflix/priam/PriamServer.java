@@ -73,5 +73,14 @@ public class PriamServer
     public InstanceIdentity getId(){
         return id;
     }
+    
+    public PriamScheduler getScheduler(){
+        return scheduler;
+    }
+
+    public IConfiguration getConfiguration(){
+        return config;
+    }
+
 
 }

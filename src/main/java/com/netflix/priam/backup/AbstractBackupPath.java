@@ -32,10 +32,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public String token;
     public String region;
     public Date time;
-    private File backupFile;
 
-    public InstanceIdentity factory;
-    public IConfiguration config;
+    protected final InstanceIdentity factory;
+    protected final IConfiguration config;
+    protected File backupFile;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {

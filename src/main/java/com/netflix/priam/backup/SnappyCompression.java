@@ -14,10 +14,8 @@ import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
 /**
- * 
  * Class to generate compressed chunks of data from either an input stream or a
  * RandomAccessFile
- * 
  */
 public class SnappyCompression
 {

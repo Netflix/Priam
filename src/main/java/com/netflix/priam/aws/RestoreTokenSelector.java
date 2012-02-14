@@ -27,14 +27,14 @@ import com.netflix.priam.utils.TokenManager;
  */
 public class RestoreTokenSelector implements IRestoreTokenSelector
 {
-    private static final Logger logger = LoggerFactory.getLogger(RestoreTokenSelector.class);
     public static final char PATH_SEP = '/';
 
-    private final AmazonS3 s3Client;
+    protected final IConfiguration config;
+    protected final AmazonS3 s3Client;
+
+    private static final Logger logger = LoggerFactory.getLogger(RestoreTokenSelector.class);
     private String bucket = "";
     private String prefix = "";
-
-    protected final IConfiguration config;
 
     @Inject
     public RestoreTokenSelector(IConfiguration config, ICredential provider)

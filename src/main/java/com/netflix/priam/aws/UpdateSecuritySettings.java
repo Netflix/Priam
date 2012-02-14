@@ -32,12 +32,12 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class UpdateSecuritySettings extends Task
 {
-    public static final String JOBNAME = "Update_SG";
-    private static Random ran = new Random();
+    public static final String JOBNAME = "Update_SG";    
     public static boolean firstTimeUpdated = false;
 
-    protected IMembership membership;
-    protected IPriamInstanceFactory factory;
+    private static final Random ran = new Random();
+    private final IMembership membership;
+    private final IPriamInstanceFactory factory;    
 
     @Inject
     public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)

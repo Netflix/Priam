@@ -132,27 +132,6 @@ public class SystemUtils
         }
     }
 
-    public static void logErrorStream(Process proc)
-    {
-        InputStream iError = proc.getErrorStream();
-        BufferedReader bfr = new BufferedReader(new InputStreamReader(iError));
-        String line = null;
-        try
-        {
-            while ((line = bfr.readLine()) != null)
-                logger.info(line);
-        }
-        catch (IOException e)
-        {
-            logger.error("IOE: ", e);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(iError);
-            IOUtils.closeQuietly(bfr);
-        }
-    }
-
     public static void createDirs(String location)
     {
         File dirFile = new File(location);

@@ -6,11 +6,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T>
-{
-    private static final Logger logger = LoggerFactory.getLogger(ExponentialRetryCallable.class);
+{    
     public final static long MAX_SLEEP = 240000;
     public final static long MIN_SLEEP = 200;
 
+    private static final Logger logger = LoggerFactory.getLogger(ExponentialRetryCallable.class);
     private long max;
     private long min;
 

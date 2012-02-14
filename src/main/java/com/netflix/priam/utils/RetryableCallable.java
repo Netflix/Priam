@@ -20,11 +20,11 @@ public abstract class RetryableCallable<T> implements Callable<T>
     {
         set(retrys, waitTime);
     }
-    
+
     public void set(int retrys, long waitTime)
     {
         this.retrys = retrys;
-        this.waitTime = waitTime;   
+        this.waitTime = waitTime;
     }
 
     public abstract T retriableCall() throws Exception;
@@ -57,7 +57,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
             }
         }
     }
-    
+
     public void forEachExecution()
     {
         // do nothing by default.

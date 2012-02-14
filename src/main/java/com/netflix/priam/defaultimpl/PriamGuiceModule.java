@@ -24,10 +24,10 @@ public class PriamGuiceModule extends AbstractModule
     {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
         bind(IConfiguration.class).to(PriamConfiguration.class).asEagerSingleton();
-        bind(IPriamInstanceFactory.class).to(SDBInstanceFactory.class).asEagerSingleton();
+        bind(IPriamInstanceFactory.class).to(SDBInstanceFactory.class);
         bind(IMembership.class).to(AWSMembership.class);
         bind(ICredential.class).to(ClearCredential.class);
-        bind(IBackupFileSystem.class).to(S3FileSystem.class).asEagerSingleton();
+        bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(IRestoreTokenSelector.class).to(RestoreTokenSelector.class);
     }

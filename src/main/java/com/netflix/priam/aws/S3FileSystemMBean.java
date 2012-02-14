@@ -4,13 +4,13 @@ public interface S3FileSystemMBean
 {
     String MBEAN_NAME = "com.priam.aws.S3FileSystemMBean:name=S3FileSystemMBean";
     
-    int downloadCount();
+    public int downloadCount();
 
-    int uploadCount();
+    public int uploadCount();
 
-    int getActivecount();
+    public int getActivecount();
 
-    long bytesUploaded();
+    public long bytesUploaded();
 
-    long bytesDownloaded();
+    public long bytesDownloaded();
 }

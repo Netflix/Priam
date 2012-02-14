@@ -33,10 +33,10 @@ import com.netflix.priam.utils.SystemUtils;
  */
 @Singleton
 public class Restore extends Task
-{
+{    
+    public static final String JOBNAME = "AUTO_RESTORE_JOB";    
+    private static final String SYSTEM_KEYSPACE = "system";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
-    public static final String JOBNAME = "AUTO_RESTORE_JOB";
-    public static final String SYSTEM_KEYSPACE = "system";
     private AtomicInteger count = new AtomicInteger();
     private ThreadPoolExecutor executor;
     private final IBackupFileSystem fs;

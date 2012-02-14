@@ -30,8 +30,6 @@ import com.netflix.priam.identity.PriamInstance;
 @Singleton
 public class InstanceDataDAOSDB
 {
-    private static final String DOMAIN = "InstanceIdentity";
-
     public static class Attributes
     {
         public final static String APP_ID = "appId";
@@ -44,12 +42,12 @@ public class InstanceDataDAOSDB
         public final static String LOCATION = "location";
         public final static String HOSTNAME = "hostname";
     }
-
+    public static final String DOMAIN = "InstanceIdentity";
     public static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     public static String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' " + Attributes.INSTANCE_ID + "='%d'";
 
-    private AmazonSimpleDBClient simpleDBClient;
-
+    protected final AmazonSimpleDBClient simpleDBClient;
+    
     @Inject
     public InstanceDataDAOSDB(ICredential provider)
     {

@@ -41,7 +41,7 @@ public class InstanceIdentity
     private PriamInstance myInstance;
     private IMembership membership;
     private IConfiguration config;
-    public boolean isReplace = false;
+    private boolean isReplace = false;
 
     @Inject
     public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config) throws Exception
@@ -180,5 +180,9 @@ public class InstanceIdentity
         populateRacMap();
         String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
         return myInstance.getHostName().equals(ip);
+    }
+    
+    public boolean isReplace(){
+        return isReplace;
     }
 }

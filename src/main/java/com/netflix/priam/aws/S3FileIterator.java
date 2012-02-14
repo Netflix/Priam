@@ -16,14 +16,14 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 
 public class S3FileIterator implements Iterator<AbstractBackupPath>
-{
+{    
+    protected final Provider<AbstractBackupPath> pathProvider;
+    protected final AmazonS3 s3Client;
+    protected Iterator<AbstractBackupPath> iterator;
+    protected ObjectListing objectListing;    
+    protected Date start;
+    protected Date till;
     private static final Logger logger = LoggerFactory.getLogger(S3FileIterator.class);
-    private Provider<AbstractBackupPath> pathProvider;
-    private Iterator<AbstractBackupPath> iterator;
-    private ObjectListing objectListing;
-    private AmazonS3 s3Client;
-    private Date start;
-    private Date till;
 
     public S3FileIterator(Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, String path, Date start, Date till)
     {

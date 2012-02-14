@@ -36,10 +36,10 @@ import com.netflix.priam.identity.IMembership;
  */
 public class AWSMembership implements IMembership
 {
+    protected final IConfiguration config;
+    
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
     private final BasicAWSCredentials cred;
-
-    protected final IConfiguration config;
 
     @Inject
     public AWSMembership(IConfiguration config, ICredential provider)

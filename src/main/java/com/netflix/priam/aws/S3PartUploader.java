@@ -18,12 +18,13 @@ import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 
 public class S3PartUploader extends RetryableCallable<Void>
-{
+{               
+    protected final AmazonS3 client;
+    protected DataPart dataPart;
+    protected List<PartETag> partETags;
+    
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
-    public static final int MAX_RETRIES = 5;
-    private AmazonS3 client;
-    private DataPart dataPart;
-    private List<PartETag> partETags;
+    private static final int MAX_RETRIES = 5;
 
     public S3PartUploader(AmazonS3 client, DataPart dp, List<PartETag> partETags)
     {

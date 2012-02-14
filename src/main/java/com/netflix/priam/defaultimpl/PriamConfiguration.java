@@ -33,6 +33,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_NEW_MAX_HEAP_SIZE = MY_WEBAPP_NAME + ".heap.newgen.size.";
     private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = MY_WEBAPP_NAME + ".direct.memory.size.";
     private static final String CONFIG_THRIFT_LISTERN_PORT_NAME = MY_WEBAPP_NAME + ".thrift.port";
+    private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = MY_WEBAPP_NAME + ".storage.port";
     private static final String CONFIG_CL_BK_LOCATION = MY_WEBAPP_NAME + ".backup.commitlog.location";
     private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = MY_WEBAPP_NAME + ".upload.throttle";
     private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = MY_WEBAPP_NAME + ".memory.compaction.limit";
@@ -72,8 +73,9 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_COMMIT_LOG_BACKUP_LOCATION = "/mnt/data/backup/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra070/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
-    private final int DEFAULT_JMX_PORT = 7501;
-    private final int DEFAULT_THRIFT_PORT = 7102;
+    private final int DEFAULT_JMX_PORT = 7199;
+    private final int DEFAULT_THRIFT_PORT = 9160;
+    private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_BACKUP_HOUR = 12;
     private final int DEFAULT_BACKUP_THREADS = 10;
     private final int DEFAULT_RESTORE_THREADS = 30;
@@ -201,6 +203,12 @@ public class PriamConfiguration implements IConfiguration
     public int getThriftPort()
     {
         return config.getInteger(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
+    }
+
+    @Override
+    public int getStoragePort()
+    {
+        return config.getInteger(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
     }
 
     @Override
@@ -400,4 +408,5 @@ public class PriamConfiguration implements IConfiguration
         }
 
     }
+
 }

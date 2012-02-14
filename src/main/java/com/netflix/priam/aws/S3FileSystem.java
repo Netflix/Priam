@@ -40,24 +40,18 @@ import com.netflix.priam.utils.Throttle;
 @Singleton
 public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 {
-    AtomicLong bytesDownloaded = new AtomicLong();
-    AtomicLong bytesUploaded = new AtomicLong();
-    AtomicInteger uploadCount = new AtomicInteger();
-    AtomicInteger downloadCount = new AtomicInteger();
-
-    // 6MB
-    public static final int MIN_PART_SIZE = (6 * 1024 * 1024);
-    // timeout is set to 2 hours.
-    private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
-    public static final char PATH_SEP = '/';
-    protected CustomizedThreadPoolExecutor executor;
-
     protected final AmazonS3 s3Client;
-    protected Throttle throttle;
-
     protected final Provider<AbstractBackupPath> pathProvider;
     protected final SnappyCompression compress;
     protected final IConfiguration config;
+    protected Throttle throttle;
+    protected CustomizedThreadPoolExecutor executor;
+
+    private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
+    private AtomicLong bytesDownloaded = new AtomicLong();
+    private AtomicLong bytesUploaded = new AtomicLong();
+    private AtomicInteger uploadCount = new AtomicInteger();
+    private AtomicInteger downloadCount = new AtomicInteger();
 
     @Inject
     public S3FileSystem(Provider<AbstractBackupPath> pathProvider, SnappyCompression compress, final IConfiguration config, ICredential provider)

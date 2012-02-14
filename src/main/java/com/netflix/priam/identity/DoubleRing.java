@@ -27,8 +27,8 @@ public class DoubleRing
 {
     private static final Logger logger = LoggerFactory.getLogger(DoubleRing.class);
     private static File TMP_BACKUP_FILE;
-    private IConfiguration config;
-    private IPriamInstanceFactory factory;
+    private final IConfiguration config;
+    private final IPriamInstanceFactory factory;
 
     @Inject
     public DoubleRing(IConfiguration config, IPriamInstanceFactory factory)

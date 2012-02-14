@@ -25,14 +25,20 @@ import com.netflix.priam.identity.InstanceIdentity;
  * contents of a meta data file.
  */
 public class MetaData
-{
+{    
+    protected final Provider<AbstractBackupPath> pathProvider;
+    protected final IBackupFileSystem fs;
+    protected final InstanceIdentity id;
+
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
+    
     @Inject
-    private Provider<AbstractBackupPath> pathProvider;
-    @Inject
-    protected IBackupFileSystem fs;
-    @Inject
-    protected InstanceIdentity id;
+    public MetaData(Provider<AbstractBackupPath> pathProvider, IBackupFileSystem fs, InstanceIdentity id)
+    {
+        this.pathProvider = pathProvider;
+        this.fs = fs;
+        this.id = id;
+    }
 
     @SuppressWarnings("unchecked")
     public void set(List<AbstractBackupPath> bps, String snapshotName) throws IOException, ParseException, BackupRestoreException

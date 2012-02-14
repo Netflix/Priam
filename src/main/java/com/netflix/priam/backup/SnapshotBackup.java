@@ -25,9 +25,9 @@ import com.netflix.priam.utils.RetryableCallable;
 @Singleton
 public class SnapshotBackup extends Backup
 {
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     public static String JOBNAME = "SnapshotBackup";
-    private String error;
+    
+    private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
 
     @Inject
@@ -67,7 +67,7 @@ public class SnapshotBackup extends Backup
         catch (Exception e)
         {
             // Log it
-            logger.error(error, e);
+            logger.error(e.getMessage(), e);
         }
         finally
         {
@@ -77,7 +77,7 @@ public class SnapshotBackup extends Backup
             }
             catch (Exception e)
             {
-                logger.error(error, e);
+                logger.error(e.getMessage(), e);
             }
         }
     }

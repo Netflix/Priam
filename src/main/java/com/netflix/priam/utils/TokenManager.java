@@ -6,8 +6,8 @@ import java.util.List;
 
 public class TokenManager
 {    
-    protected static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
-    protected static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
+    public static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
+    public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
 
     public static BigInteger intialToken(int size, int position, int space)
     {

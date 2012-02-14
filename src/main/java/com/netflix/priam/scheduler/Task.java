@@ -12,7 +12,6 @@ import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 
 /**
@@ -23,19 +22,18 @@ import com.netflix.priam.IConfiguration;
  */
 public abstract class Task implements Job, TaskMBean
 {
-    private static final Logger logger = LoggerFactory.getLogger(Task.class);
-    private final AtomicInteger errors = new AtomicInteger();
-    private final AtomicInteger executions = new AtomicInteger();
-
-    protected final IConfiguration config;
-    
     public STATE status = STATE.DONE;
-    
+
     public static enum STATE
     {
         ERROR, RUNNING, DONE
     }
+    protected final IConfiguration config;
     
+    private static final Logger logger = LoggerFactory.getLogger(Task.class);
+    private final AtomicInteger errors = new AtomicInteger();
+    private final AtomicInteger executions = new AtomicInteger();
+
     public Task(IConfiguration config)
     {
         this.config = config;

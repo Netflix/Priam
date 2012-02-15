@@ -13,7 +13,6 @@ import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.aws.RestoreTokenSelector;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;

@@ -28,7 +28,7 @@ import com.netflix.priam.identity.PriamInstance;
  * DAO for handling Instance identity information such as token, zone, region
  */
 @Singleton
-public class InstanceDataDAOSDB
+public class SDBInstanceData
 {
     public static class Attributes
     {
@@ -49,7 +49,7 @@ public class InstanceDataDAOSDB
     protected final AmazonSimpleDBClient simpleDBClient;
     
     @Inject
-    public InstanceDataDAOSDB(ICredential provider)
+    public SDBInstanceData(ICredential provider)
     {
         AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
         simpleDBClient = new AmazonSimpleDBClient(cred);

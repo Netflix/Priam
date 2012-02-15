@@ -1,10 +1,9 @@
 package com.netflix.priam.backup;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -19,29 +18,27 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.RetryableCallable;
 
 /**
  * Class to create a meta data file with a list of snapshot files. Also list the
  * contents of a meta data file.
  */
 public class MetaData
-{    
-    protected final Provider<AbstractBackupPath> pathProvider;
-    protected final IBackupFileSystem fs;
-    protected final InstanceIdentity id;
-
+{
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
-    
+    private final Provider<AbstractBackupPath> pathFactory;
+    private final IBackupFileSystem fs;
+
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathProvider, IBackupFileSystem fs, InstanceIdentity id)
+    public MetaData(IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
     {
-        this.pathProvider = pathProvider;
+        this.pathFactory = pathFactory;
         this.fs = fs;
-        this.id = id;
     }
 
     @SuppressWarnings("unchecked")
-    public void set(List<AbstractBackupPath> bps, String snapshotName) throws IOException, ParseException, BackupRestoreException
+    public void set(List<AbstractBackupPath> bps, String snapshotName) throws Exception
     {
         File metafile = new File("/tmp/meta.json");
         FileWriter fr = new FileWriter(metafile);
@@ -56,12 +53,12 @@ public class MetaData
         {
             IOUtils.closeQuietly(fr);
         }
-        AbstractBackupPath backupfile = pathProvider.get();
+        AbstractBackupPath backupfile = pathFactory.get();
         backupfile.parseLocal(metafile, BackupFileType.META);
         backupfile.time = backupfile.getFormat().parse(snapshotName);
         try
         {
-            fs.upload(backupfile);
+            upload(backupfile);
         }
         finally
         {
@@ -69,17 +66,26 @@ public class MetaData
         }
     }
 
-    public List<AbstractBackupPath> get(AbstractBackupPath meta)
+    public List<AbstractBackupPath> get(final AbstractBackupPath meta)
     {
         List<AbstractBackupPath> files = Lists.newArrayList();
         try
         {
-            fs.download(meta);
+            new RetryableCallable<Void>()
+            {
+                @Override
+                public Void retriableCall() throws Exception
+                {
+                    fs.download(meta, new FileOutputStream(meta.newRestoreFile()));
+                    return null;
+                }
+            }.call();
+
             File file = meta.newRestoreFile();
             JSONArray jsonObj = (JSONArray) new JSONParser().parse(new FileReader(file));
             for (int i = 0; i < jsonObj.size(); i++)
             {
-                AbstractBackupPath p = pathProvider.get();
+                AbstractBackupPath p = pathFactory.get();
                 p.parseRemote((String) jsonObj.get(i));
                 files.add(p);
             }
@@ -89,5 +95,31 @@ public class MetaData
             logger.error("Error downloading the Meta data try with a diffrent date...", ex);
         }
         return files;
+    }
+
+    private void upload(final AbstractBackupPath bp) throws Exception
+    {
+        new RetryableCallable<Void>()
+        {
+            @Override
+            public Void retriableCall() throws Exception
+            {
+                fs.upload(bp, bp.localReader());
+                return null;
+            }
+        }.call();
+    }
+
+    public void download(final AbstractBackupPath path) throws Exception
+    {
+        new RetryableCallable<Void>()
+        {
+            @Override
+            public Void retriableCall() throws Exception
+            {
+                fs.download(path, new FileOutputStream(path.newRestoreFile()));
+                return null;
+            }
+        }.call();
     }
 }

@@ -2,11 +2,14 @@ package com.netflix.priam.backup;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
+import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
 
@@ -24,14 +27,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         SNAP, SST, CL, META
     };
 
-    public BackupFileType type;
-    public String clusterName;
-    public String keyspace;
-    public String fileName;
-    public String baseDir;
-    public String token;
-    public String region;
-    public Date time;
+    protected BackupFileType type;
+    protected String clusterName;
+    protected String keyspace;
+    protected String fileName;
+    protected String baseDir;
+    protected String token;
+    protected String region;
+    protected Date time;
+    protected long size;
 
     protected final InstanceIdentity factory;
     protected final IConfiguration config;
@@ -48,10 +52,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return DAY_FORMAT;
     }
 
-    public RandomAccessReader localReader() throws IOException
+    public InputStream localReader() throws IOException
     {
         assert backupFile != null;
-        return RandomAccessReader.open(backupFile, true);
+        return new RafInputStream(RandomAccessReader.open(backupFile, true));
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException
@@ -73,6 +77,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (type == BackupFileType.SST || type == BackupFileType.CL)
             time = new Date(file.lastModified());
         this.fileName = file.getName();
+        this.size = file.length();
     }
 
     /**
@@ -116,4 +121,84 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public abstract void parseRemote(String remoteFilePath);
 
     public abstract String remotePrefix(Date start, Date end, String location);
+
+    public BackupFileType getType()
+    {
+        return type;
+    }
+
+    public String getClusterName()
+    {
+        return clusterName;
+    }
+
+    public String getKeyspace()
+    {
+        return keyspace;
+    }
+
+    public String getFileName()
+    {
+        return fileName;
+    }
+
+    public String getBaseDir()
+    {
+        return baseDir;
+    }
+
+    public String getToken()
+    {
+        return token;
+    }
+
+    public String getRegion()
+    {
+        return region;
+    }
+
+    public Date getTime()
+    {
+        return time;
+    }
+
+    public long getSize()
+    {
+        return size;
+    }
+
+    public File getBackupFile()
+    {
+        return backupFile;
+    }
+    
+    public class RafInputStream extends InputStream
+    {
+        private RandomAccessFile raf;
+
+        public RafInputStream(RandomAccessFile raf)
+        {
+            this.raf = raf;
+        }
+
+        @Override
+        public synchronized int read(byte[] bytes, int off, int len) throws IOException
+        {
+            return raf.read(bytes, off, len);
+        }
+
+        @Override
+        public void close()
+        {
+            FileUtils.closeQuietly(raf);
+        }
+
+        @Override
+        public int read() throws IOException
+        {
+            return 0;
+        }
+    }
+
+
 }

@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.xerial.snappy.SnappyInputStream;
 import org.xerial.snappy.SnappyOutputStream;
 
-import com.netflix.priam.backup.SnappyCompression;
+import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
 
 public class TestCompression

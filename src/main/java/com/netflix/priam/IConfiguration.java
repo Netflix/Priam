@@ -229,12 +229,4 @@ public interface IConfiguration
      */
     public String getBootClusterName();
 
-    /**
-     * @return (coming soon)
-     */
-    public int getCommitLogBackupPort();
-
-    public long getCommitLogSize();
-
-    public int getCommitLogInterval();
 }

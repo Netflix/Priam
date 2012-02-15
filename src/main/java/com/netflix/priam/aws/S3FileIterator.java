@@ -15,6 +15,9 @@ import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 
+/**
+ * Iterator representing list of backup files available on S3
+ */
 public class S3FileIterator implements Iterator<AbstractBackupPath>
 {    
     protected final Provider<AbstractBackupPath> pathProvider;
@@ -65,8 +68,8 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
         {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(summary.getKey());
-            logger.debug("New key " + summary.getKey() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.time );
-            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)){
+            logger.debug("New key " + summary.getKey() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.getTime() );
+            if ((path.getTime().after(start) && path.getTime().before(till)) || path.getTime().equals(start)){
                 temp.add(path);
                 logger.debug("Added key " + summary.getKey() );
             }

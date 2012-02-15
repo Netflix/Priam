@@ -1,8 +1,6 @@
 package com.netflix.priam.backup;
 
 import java.io.File;
-import java.io.IOException;
-import java.text.ParseException;
 import java.util.Arrays;
 import java.util.List;
 
@@ -12,6 +10,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.RetryableCallable;
 
 /**
  * Abstract Backup class for uploading files to backup location
@@ -39,23 +38,21 @@ public abstract class Backup extends Task
      * @param type
      *            Type of file (META, SST, SNAP etc)
      * @return
-     * @throws ParseException
-     * @throws BackupRestoreException
-     * @throws IOException
+     * @throws Exception
      */
-    public List<AbstractBackupPath> upload(File parent, BackupFileType type) throws ParseException, BackupRestoreException, IOException
+    protected List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
     {
         List<AbstractBackupPath> bps = Lists.newArrayList();
         for (File file : parent.listFiles())
         {
             try
             {
-                AbstractBackupPath bp = pathFactory.get();
+                final AbstractBackupPath bp = pathFactory.get();
                 bp.parseLocal(file, type);
                 String[] cfPrefix = bp.fileName.split("-");
                 if (cfPrefix.length > 1 && FILTER_COLUMN_FAMILY.contains(cfPrefix[0]))
                     continue;
-                fs.upload(bp);
+                upload(bp);
                 bps.add(bp);
             }
             finally
@@ -67,11 +64,23 @@ public abstract class Backup extends Task
     }
 
     /**
+     * Upload specified file (RandomAccessFile) with retries 
+     */
+    protected void upload(final AbstractBackupPath bp) throws Exception
+    {
+        new RetryableCallable<Void>()
+        {
+            @Override
+            public Void retriableCall() throws Exception
+            {
+                fs.upload(bp, bp.localReader());
+                return null;
+            }
+        }.call();
+    }
+
+    /**
      * Filters unwanted keyspaces and column families
-     * 
-     * @param keyspaceDir
-     * @param backupDir
-     * @return
      */
     public boolean isValidBackupDir(File keyspaceDir, File backupDir)
     {

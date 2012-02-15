@@ -1,5 +1,6 @@
 package com.netflix.priam.backup;
 
+import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
@@ -23,8 +24,6 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.ExponentialRetryCallable;
-import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 
@@ -33,24 +32,25 @@ import com.netflix.priam.utils.SystemUtils;
  */
 @Singleton
 public class Restore extends Task
-{    
-    public static final String JOBNAME = "AUTO_RESTORE_JOB";    
+{
+    public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final String SYSTEM_KEYSPACE = "system";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
     private AtomicInteger count = new AtomicInteger();
     private ThreadPoolExecutor executor;
     private final IBackupFileSystem fs;
     private final Provider<AbstractBackupPath> pathProvider;
-    private final Provider<IRestoreTokenSelector> tokenSelectorProvider;
+    private final RestoreTokenSelector tokenSelector;
     private final MetaData metaData;
     private final PriamServer priamServer;
 
     @Inject
-    public Restore(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathProvider, Provider<IRestoreTokenSelector> tokenSelectorProvider, MetaData metaData, PriamServer priamServer)
+    public Restore(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathProvider, RestoreTokenSelector tokenSelector, MetaData metaData,
+            PriamServer priamServer)
     {
         super(config);
         this.pathProvider = pathProvider;
-        this.tokenSelectorProvider = tokenSelectorProvider;
+        this.tokenSelector = tokenSelector;
         this.metaData = metaData;
         this.fs = fs;
         this.priamServer = priamServer;
@@ -71,7 +71,7 @@ public class Restore extends Task
             {
                 if (config.isRestoreClosestToken())
                 {
-                    BigInteger restoreToken = tokenSelectorProvider.get().getClosestToken(new BigInteger(origToken), startTime);
+                    BigInteger restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
                     priamServer.getId().getInstance().setPayload(restoreToken.toString());
                 }
                 new RetryableCallable<Void>()
@@ -134,17 +134,13 @@ public class Restore extends Task
             AbstractBackupPath meta = metas.get(metas.size() - 1);
             logger.info("Meta file for restore " + meta.getRemotePath());
 
-            // Download the snapshot which is listed in the meta file.
+            // Download snapshot which is listed in the meta file.
             List<AbstractBackupPath> snapshots = metaData.get(meta);
-            for (AbstractBackupPath path : snapshots)
-                download(path);
+            download(snapshots.iterator());
 
-            // take care of the incrementals.
+            // Download incrementals (SST).
             Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.time, endTime);
-            if (config.isCommitLogBackup())
-                downloadCommitLogs(incrementals);
-            else
-                downloadIncrementals(incrementals, BackupFileType.SST);
+            download(incrementals);
         }
         finally
         {
@@ -153,26 +149,14 @@ public class Restore extends Task
 
     }
 
-    private void downloadIncrementals(Iterator<AbstractBackupPath> incrementals, BackupFileType fileType) throws Exception
+    private void download(Iterator<AbstractBackupPath> incrementals) throws Exception
     {
         while (incrementals.hasNext())
         {
             AbstractBackupPath path = incrementals.next();
-            if (path.type == fileType)
-                download(path);
+            download(path);
         }
         waitToComplete();
-    }
-
-    private void downloadCommitLogs(Iterator<AbstractBackupPath> incrementals) throws Exception
-    {
-        waitToComplete();
-        SystemUtils.startCassandra(false, config);
-        waitForCassandra();
-        logger.info("Downloading incremental commitlogs");
-        downloadIncrementals(incrementals, BackupFileType.CL);
-        waitToComplete();
-        JMXNodeTool.instance(config).joinRing();
     }
 
     public void download(final AbstractBackupPath path) throws Exception
@@ -186,8 +170,7 @@ public class Restore extends Task
             @Override
             public Integer retriableCall() throws Exception
             {
-                // Need to handle Commit logs here
-                fs.download(path);
+                fs.download(path, new FileOutputStream(path.newRestoreFile()));
                 return count.decrementAndGet();
             }
         });
@@ -206,20 +189,6 @@ public class Restore extends Task
                 logger.error("Interrupted: ", e);
             }
         }
-    }
-
-    private void waitForCassandra() throws Exception
-    {
-        new ExponentialRetryCallable<Void>(3000, 10 * 60 * 1000)
-        {
-            @Override
-            public Void retriableCall() throws Exception
-            {
-                logger.info("Waiting for cassandra to start...");
-                JMXNodeTool.instance(config).info();// Got Better check?
-                return null;
-            }
-        }.call();
     }
 
     public static TaskTimer getTimer()

@@ -25,10 +25,10 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
     protected final IConfiguration config;
-    protected final InstanceDataDAOSDB dao;
+    protected final SDBInstanceData dao;
 
     @Inject
-    public SDBInstanceFactory(IConfiguration config, InstanceDataDAOSDB dao)
+    public SDBInstanceFactory(IConfiguration config, SDBInstanceData dao)
     {
         this.config = config;
         this.dao = dao;

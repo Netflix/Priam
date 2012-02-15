@@ -4,8 +4,8 @@ Priam is a process/tool built for Apache Cassandra to perform the following:
 - Backup and recovery (Complete and incremental)
 - Supports AWS environment
 
-Apache Cassandra is a highly available column oriented database: http://cassandra.apache.org
-and Priam wds the father of Cassandra in greek mythology. 
+Apache Cassandra is a highly available, column oriented database: http://cassandra.apache.org
+and Priam was the father of Cassandra in greek mythology. 
 
 Priam is actively developed and used at Netflix. 
 

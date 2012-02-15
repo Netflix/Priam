@@ -27,11 +27,8 @@ public class TestModule extends AbstractModule
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         String[] pinstances = { "fakeInstance1", "fakeInstance2", "fakeInstance3" };
-
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList(pinstances)));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
-        // bind(IBackupRestoreFactory.class).to(FakeBackupRestoreFactory.class).in(Scopes.SINGLETON);
-        // bind(JMXNodeTool.class).to(FakeNodeProbe.class);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
     }

@@ -81,7 +81,6 @@ public class TestRestore
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
         tmpdir = new File(conf.getDataFileLocation() + "/test");
-        boolean ex = tmpdir.exists();
         Assert.assertFalse(tmpdir.exists());
     }
 

@@ -107,7 +107,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     @Override
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
-        uploadedFiles.add(path.getFileName());
+        uploadedFiles.add(path.backupFile.getAbsolutePath());
     }
 
     @Override

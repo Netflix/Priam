@@ -74,7 +74,7 @@ public class TestS3FileSystem
     {
         MockS3PartUploader.setup();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-//        String snapshotfile = "cass/data/ks1/snapshots/201108082320/f1.db";
+        // String snapshotfile = "cass/data/ks1/snapshots/201108082320/f1.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
         fs.upload(backupfile, backupfile.localReader());
@@ -96,11 +96,10 @@ public class TestS3FileSystem
         }
         catch (BackupRestoreException e)
         {
-            //ignore
+            // ignore
         }
-        //Actual retries = S3PartUploader.MAX_RETRIES*RetryableCallable.DEFAULT_NUMBER_OF_RETRIES
-        Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES*RetryableCallable.DEFAULT_NUMBER_OF_RETRIES, MockS3PartUploader.partAttempts);
-        Assert.assertEquals(0, MockS3PartUploader.compattempts);        
+        Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES, MockS3PartUploader.partAttempts);
+        Assert.assertEquals(0, MockS3PartUploader.compattempts);
     }
 
     @Test
@@ -118,11 +117,11 @@ public class TestS3FileSystem
         }
         catch (BackupRestoreException e)
         {
-            //ignore
+            // ignore
         }
-        //Actual retries = S3PartUploader.MAX_RETRIES*RetryableCallable.DEFAULT_NUMBER_OF_RETRIES
-        Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES, MockS3PartUploader.partAttempts);
-        Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES, MockS3PartUploader.compattempts);        
+        Assert.assertEquals(1, MockS3PartUploader.partAttempts);
+        // No retries with the new logic
+        Assert.assertEquals(1, MockS3PartUploader.compattempts);
     }
 
     // Mock Nodeprobe class
@@ -134,10 +133,10 @@ public class TestS3FileSystem
         public static boolean partFailure = false;
         public static boolean completionFailure = false;
         private static List<PartETag> partETags;
-        
+
         @Mock
         public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags)
-        {       
+        {
             this.partETags = partETags;
         }
 
@@ -145,7 +144,7 @@ public class TestS3FileSystem
         private Void uploadPart() throws AmazonClientException, BackupRestoreException
         {
             ++partAttempts;
-            if(partFailure)
+            if (partFailure)
                 throw new BackupRestoreException("Test exception");
             this.partETags.add(new PartETag(0, null));
             return null;
@@ -155,11 +154,8 @@ public class TestS3FileSystem
         public void completeUpload() throws BackupRestoreException
         {
             ++compattempts;
-            if(completionFailure){
-                System.out.println("comepletion " + compattempts);
+            if (completionFailure)
                 throw new BackupRestoreException("Test exception");
-                
-            }
         }
 
         @Mock
@@ -174,12 +170,13 @@ public class TestS3FileSystem
             logger.info("MOCK UPLOADING...");
             return uploadPart();
         }
-        
-        public static void setup(){
+
+        public static void setup()
+        {
             compattempts = 0;
             partAttempts = 0;
             partFailure = false;
-            completionFailure = false;            
+            completionFailure = false;
         }
     }
 

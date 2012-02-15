@@ -29,11 +29,9 @@ public interface IBackupFileSystem
     public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till);
     
     /**
-     * Get a list of tokens available in backup for the specified date
-     * @param clusterPath
-     * @return
+     * Get a list of prefixes for the cluster available in backup for the specified date
      */
-    public Iterator<BigInteger> tokenIterator(String path, Date date);
+    public Iterator<AbstractBackupPath> listPrefixes(String path, Date date);
 
     /**
      * Get number of active upload or downloads

@@ -10,7 +10,6 @@ import java.util.Iterator;
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
 
-
 /**
  * Class to generate compressed chunks of data from an input stream using 
  * SnappyCompression

@@ -23,8 +23,6 @@ public class TokenManager
             BigInteger delta = decValue.subtract(MAXIMUM_TOKEN);
             decValue = MINIMUM_TOKEN.add(delta);
         }
-        //logger.debug(String.format("Computed token for the slot %d is %s with a region spacer as %d:", position, decValue.toString(), space));
-        // return the computed value.
         return decValue;
     }
 

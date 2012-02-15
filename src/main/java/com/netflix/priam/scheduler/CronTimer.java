@@ -8,7 +8,6 @@ import org.quartz.Trigger;
 
 /**
  * Runs jobs at the specified absolute time and frequency
- * 
  */
 public class CronTimer implements TaskTimer
 {

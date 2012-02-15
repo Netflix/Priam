@@ -64,7 +64,7 @@ public abstract class Backup extends Task
     }
 
     /**
-     * Upload specified file (RandomAccessFile) with retries 
+     * Upload specified file (RandomAccessFile) with retries
      */
     protected void upload(final AbstractBackupPath bp) throws Exception
     {

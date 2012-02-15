@@ -81,7 +81,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     /**
-     * TODO cleanup... Pass Dates or String here?
+     * Given a date range, find a common string prefix Eg: 20120212, 20120213 =>
+     * 2012021
      */
     public String match(Date start, Date end)
     {
@@ -94,7 +95,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     /**
-     * Restore location locally...
+     * Local restore file
      */
     public File newRestoreFile()
     {
@@ -119,7 +120,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public abstract String getRemotePath();
 
     public abstract void parseRemote(String remoteFilePath);
-    
+
     public abstract void parsePartialPrefix(String remoteFilePath);
 
     public abstract String remotePrefix(Date start, Date end, String location);
@@ -173,7 +174,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         return backupFile;
     }
-    
+
     public static class RafInputStream extends InputStream
     {
         private RandomAccessFile raf;
@@ -201,6 +202,5 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             return 0;
         }
     }
-
 
 }

@@ -81,8 +81,6 @@ public class DoubleRing
 
     /**
      * Backup the current state in case of failure
-     * 
-     * @throws IOException
      */
     public void backup() throws IOException
     {

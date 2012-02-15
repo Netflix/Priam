@@ -2,7 +2,6 @@ package com.netflix.priam.backup;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
 

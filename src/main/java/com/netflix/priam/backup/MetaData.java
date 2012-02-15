@@ -17,7 +17,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.RetryableCallable;
 
 /**

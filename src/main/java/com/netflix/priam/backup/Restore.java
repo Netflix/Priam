@@ -45,8 +45,7 @@ public class Restore extends Task
     private final PriamServer priamServer;
 
     @Inject
-    public Restore(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathProvider, RestoreTokenSelector tokenSelector, MetaData metaData,
-            PriamServer priamServer)
+    public Restore(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathProvider, RestoreTokenSelector tokenSelector, MetaData metaData, PriamServer priamServer)
     {
         super(config);
         this.pathProvider = pathProvider;
@@ -95,10 +94,6 @@ public class Restore extends Task
 
     /**
      * Restore backup data for the specified time range
-     * 
-     * @param startTime
-     * @param endTime
-     * @throws Exception
      */
     public void restore(Date startTime, Date endTime) throws Exception
     {
@@ -149,11 +144,11 @@ public class Restore extends Task
 
     }
 
-    private void download(Iterator<AbstractBackupPath> incrementals) throws Exception
+    private void download(Iterator<AbstractBackupPath> fileiter) throws Exception
     {
-        while (incrementals.hasNext())
+        while (fileiter.hasNext())
         {
-            AbstractBackupPath path = incrementals.next();
+            AbstractBackupPath path = fileiter.next();
             download(path);
         }
         waitToComplete();

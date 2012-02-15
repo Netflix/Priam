@@ -3,12 +3,9 @@ package com.netflix.priam.aws;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
-import java.math.BigInteger;
 import java.util.Date;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -35,7 +32,6 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
-import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.Throttle;
 
 /**
@@ -163,6 +159,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         return new S3PrefixIterator(config, pathProvider, s3Client, date);
     }
 
+    /**
+     * Get S3 prefix which will be used to locate S3 files
+     */
     public String getPrefix()
     {
         String prefix = "";

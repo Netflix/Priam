@@ -18,7 +18,7 @@ import com.netflix.priam.IConfiguration;
  * Task class that should be implemented by all cron tasks. Jobconf will contain
  * any instance specific data
  * 
- * REMEMBER: constructor must not throw any exception.
+ * NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to failure
  */
 public abstract class Task implements Job, TaskMBean
 {

@@ -45,26 +45,6 @@ public class NFThinCassandraDaemon extends CassandraDaemon
         if (isReplace)
             System.setProperty("cassandra.replace_token", token);
 
-        try
-        {
-            // add Firewall Friendly JMX RMI Port at {7501}
-            String hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
-            // JMXProxy.startJMXService(hostname);
-        }
-        catch (Exception ex)
-        {
-            logger.error("Couldnt set the JMX WorkAround ", ex);
-        }
-        catch (Throwable ex)
-        {
-            logger.error("Couldnt set the JMX WorkAround ", ex);
-            // seems like you are running 0.8 so ignore.
-        }
         new CassandraDaemon().activate();
-    }
-
-    private static String getServiceUrl(final int port, final String hostname)
-    {
-        return "service:jmx:rmi://" + hostname + ":" + port + "/jndi/rmi://" + hostname + ":" + port + "/jmxrmi";
     }
 }

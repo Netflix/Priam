@@ -7,7 +7,10 @@ import java.util.Iterator;
 
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyOutputStream;
-
+/**
+ * Byte iterator representing compressed data.
+ * Uses snappy compression
+ */
 public class ChunkedStream implements Iterator<byte[]>
 {
     private boolean hasnext = true;

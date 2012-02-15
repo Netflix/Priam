@@ -8,7 +8,7 @@ import java.util.Iterator;
 public interface ICompression
 {
     /**
-     * Decompress the input stream and write to the output stream.
+     * Uncompress the input stream and write to the output stream.
      * Closes both input and output streams
      */
     public void decompressAndClose(InputStream input, OutputStream output) throws IOException;

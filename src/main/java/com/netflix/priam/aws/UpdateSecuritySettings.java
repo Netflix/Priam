@@ -32,12 +32,12 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class UpdateSecuritySettings extends Task
 {
-    public static final String JOBNAME = "Update_SG";    
+    public static final String JOBNAME = "Update_SG";
     public static boolean firstTimeUpdated = false;
 
     private static final Random ran = new Random();
     private final IMembership membership;
-    private final IPriamInstanceFactory factory;    
+    private final IPriamInstanceFactory factory;
 
     @Inject
     public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
@@ -49,10 +49,9 @@ public class UpdateSecuritySettings extends Task
     }
 
     /**
-     * This is called when a node boots up.... in addition seeds in other region
-     * call it frequently between 60 - 120 Secs....
-     * 
-     * Seeds in cassandra are the first node in each Availablity Zone....
+     * Seeds nodes execute this at the specifed interval.
+     * Other nodes run only on startup.
+     * Seeds in cassandra are the first node in each Availablity Zone.
      */
     @Override
     public void execute()

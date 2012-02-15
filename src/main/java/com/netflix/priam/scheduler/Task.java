@@ -63,12 +63,7 @@ public abstract class Task implements Job, TaskMBean
     {
         // nothing to intialize
     }
-    
-//    public Task(boolean skipMbean)
-//    {
-//        // TODO fix this allover.
-//    }
-    
+        
     public abstract void execute() throws Exception;
 
     /**

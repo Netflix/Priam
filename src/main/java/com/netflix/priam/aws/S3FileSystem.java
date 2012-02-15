@@ -158,13 +158,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(String path, Date date)
+    public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {
-        Set<AbstractBackupPath> tokenList = new HashSet<AbstractBackupPath>();
-//        Iterator<AbstractBackupPath> iter = new S3FileIterator(pathProvider, s3Client, path, SystemUtils.getDayBeginTime(date), SystemUtils.getDayEndTime(date));
-//        while(iter.hasNext())
-//            tokenList.add(new BigInteger(iter.next().getToken()));
-        return tokenList.iterator();
+        return new S3PrefixIterator(config, pathProvider, s3Client, date);
     }
 
     public String getPrefix()

@@ -31,7 +31,7 @@ public interface IBackupFileSystem
     /**
      * Get a list of prefixes for the cluster available in backup for the specified date
      */
-    public Iterator<AbstractBackupPath> listPrefixes(String path, Date date);
+    public Iterator<AbstractBackupPath> listPrefixes(Date date);
 
     /**
      * Get number of active upload or downloads

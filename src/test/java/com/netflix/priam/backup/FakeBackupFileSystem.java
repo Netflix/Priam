@@ -72,7 +72,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
 
     @SuppressWarnings("unchecked")
     @Override
-    public void download(AbstractBackupPath path) throws BackupRestoreException
+    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
     {
         try
         {
@@ -105,16 +105,9 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     }
 
     @Override
-    public void upload(AbstractBackupPath path) throws BackupRestoreException
+    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
-        try
-        {
-            uploadedFiles.add(path.localReader().getPath());
-        }
-        catch (IOException io)
-        {
-            throw new BackupRestoreException(io.getMessage(), io);
-        }
+        uploadedFiles.add(path.getFileName());
     }
 
     @Override
@@ -148,17 +141,10 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
+    public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {
         // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
-    {
-        // TODO Auto-generated method stub
-        
+        return null;
     }
 
 }

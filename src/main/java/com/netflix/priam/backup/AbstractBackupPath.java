@@ -119,6 +119,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public abstract String getRemotePath();
 
     public abstract void parseRemote(String remoteFilePath);
+    
+    public abstract void parsePartialPrefix(String remoteFilePath);
 
     public abstract String remotePrefix(Date start, Date end, String location);
 
@@ -172,7 +174,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return backupFile;
     }
     
-    public class RafInputStream extends InputStream
+    public static class RafInputStream extends InputStream
     {
         private RandomAccessFile raf;
 

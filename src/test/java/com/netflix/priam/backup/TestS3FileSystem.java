@@ -2,6 +2,7 @@ package com.netflix.priam.backup;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -73,10 +74,10 @@ public class TestS3FileSystem
     {
         MockS3PartUploader.setup();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile = "cass/data/ks1/snapshots/201108082320/f1.db";
+//        String snapshotfile = "cass/data/ks1/snapshots/201108082320/f1.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
-        backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
-        fs.upload(backupfile);
+        backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
+        fs.upload(backupfile, backupfile.localReader());
         Assert.assertEquals(1, MockS3PartUploader.compattempts);
     }
 
@@ -91,7 +92,7 @@ public class TestS3FileSystem
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try
         {
-            fs.upload(backupfile);
+            fs.upload(backupfile, backupfile.localReader());
         }
         catch (BackupRestoreException e)
         {
@@ -113,7 +114,7 @@ public class TestS3FileSystem
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try
         {
-            fs.upload(backupfile);
+            fs.upload(backupfile, backupfile.localReader());
         }
         catch (BackupRestoreException e)
         {

@@ -76,10 +76,29 @@ public class S3BackupPath extends AbstractBackupPath
     }
 
     @Override
+    public void parsePartialPrefix(String remoteFilePath)
+    {
+        String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
+        // parse out things which are empty
+        List<String> pieces = Lists.newArrayList();
+        for (String ele : elements)
+        {
+            if (ele.equals(""))
+                continue;
+            pieces.add(ele);
+        }
+        assert pieces.size() >= 4 : "Too few elements in path " + remoteFilePath;
+        baseDir = pieces.get(0);
+        region = pieces.get(1);
+        clusterName = pieces.get(2);
+        token = pieces.get(3);
+    }
+
+    @Override
     public String remotePrefix(Date start, Date end, String location)
     {
         StringBuffer buff = new StringBuffer();
-        String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));          
+        String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1)
         {
             baseDir = config.getBackupLocation();
@@ -96,7 +115,7 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(baseDir).append(S3BackupPath.PATH_SEP);
         buff.append(region).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);
-        
+
         token = factory.getInstance().getPayload();
         buff.append(token).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.

@@ -32,7 +32,7 @@ public class TestModule extends AbstractModule
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         // bind(IBackupRestoreFactory.class).to(FakeBackupRestoreFactory.class).in(Scopes.SINGLETON);
         // bind(JMXNodeTool.class).to(FakeNodeProbe.class);
-        bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class);
+        bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
     }
 

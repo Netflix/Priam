@@ -153,7 +153,7 @@ public class TestCompression
         SnappyCompression compress = new SnappyCompression();
         RandomAccessFile file = new RandomAccessFile(new File("/tmp/compress-test.txt"), "r");
         long chunkSize = 5L*1024*1024;
-        Iterator<byte[]> it = compress.compress(file, chunkSize);
+        Iterator<byte[]> it = compress.compress(new AbstractBackupPath.RafInputStream(file), chunkSize);
         FileOutputStream ostream = new FileOutputStream("/tmp/test1.snp");
         while (it.hasNext())
         {
@@ -168,7 +168,7 @@ public class TestCompression
     public void decompress() throws FileNotFoundException, IOException
     {
         SnappyCompression compress = new SnappyCompression();
-        compress.decompress(new FileInputStream("/tmp/test1.snp"), new FileOutputStream("/tmp/compress-test-out-2.txt"));
+        compress.decompressAndClose(new FileInputStream("/tmp/test1.snp"), new FileOutputStream("/tmp/compress-test-out-2.txt"));
         String md1 = SystemUtils.md5(new File("/tmp/compress-test.txt"));
         String md2 = SystemUtils.md5(new File("/tmp/compress-test-out-2.txt"));
         assertEquals(md1, md2);

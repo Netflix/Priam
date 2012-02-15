@@ -16,7 +16,6 @@ import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IRestoreTokenSelector;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 @Ignore
@@ -33,6 +32,5 @@ public class BRTestModule extends AbstractModule
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
-        bind(IRestoreTokenSelector.class).to(RestoreTokenSelector.class);
     }
 }

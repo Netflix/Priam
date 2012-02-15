@@ -24,7 +24,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3FileIterator;
 import com.netflix.priam.backup.AbstractBackupPath;

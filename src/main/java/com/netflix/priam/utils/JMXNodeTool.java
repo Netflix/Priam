@@ -160,8 +160,8 @@ public class JMXNodeTool extends NodeProbe
     {
         logger.info("JMX info being called");
         JSONObject object = new JSONObject();
-        object.put("intialized", isInitialized());
-        object.put("thrift_status", isThriftServerRunning());
+        object.put("gossip_active", isInitialized());
+        object.put("thrift_active", isThriftServerRunning());
         object.put("token", getToken());
         object.put("load", getLoadString());
         object.put("generation_no", getCurrentGenerationNumber());

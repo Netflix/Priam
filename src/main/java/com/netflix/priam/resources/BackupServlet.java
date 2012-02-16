@@ -145,16 +145,16 @@ public class BackupServlet
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
     {
         String origRegion = config.getDC();
-        String origToken = priamServer.getId().getInstance().getPayload();
+        String origToken = priamServer.getId().getInstance().getToken();
         if (token != null && token != "")
-            priamServer.getId().getInstance().setPayload(token);
+            priamServer.getId().getInstance().setToken(token);
 
         if (StringUtils.isNotBlank(region))
         {
             config.setDC(region);
             logger.info("Restoring from region " + region);
-            priamServer.getId().getInstance().setPayload(closestToken(priamServer.getId().getInstance().getPayload(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getPayload());
+            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
+            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
         }
 
         setRestoreKeyspaces(keyspaces);
@@ -166,7 +166,7 @@ public class BackupServlet
         finally
         {
             config.setDC(origRegion);
-            priamServer.getId().getInstance().setPayload(origToken);
+            priamServer.getId().getInstance().setToken(origToken);
         }
         tuneCassandra.updateYaml(false);
         SystemUtils.startCassandra(true, config);
@@ -186,7 +186,7 @@ public class BackupServlet
         for (PriamInstance ins : plist)
         {
             if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getPayload()));
+                tokenList.add(new BigInteger(ins.getToken()));
         }
         return TokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }

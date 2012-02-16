@@ -19,9 +19,9 @@ import com.netflix.priam.utils.SystemUtils;
 
 public class S3PartUploader extends RetryableCallable<Void>
 {               
-    protected final AmazonS3 client;
-    protected DataPart dataPart;
-    protected List<PartETag> partETags;
+    private final AmazonS3 client;
+    private DataPart dataPart;
+    private List<PartETag> partETags;
     
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     private static final int MAX_RETRIES = 5;
@@ -37,38 +37,38 @@ public class S3PartUploader extends RetryableCallable<Void>
     private Void uploadPart() throws AmazonClientException, BackupRestoreException
     {
         UploadPartRequest req = new UploadPartRequest();
-        req.setBucketName(dataPart.bucketName);
-        req.setKey(dataPart.s3key);
-        req.setUploadId(dataPart.uploadID);
-        req.setPartNumber(dataPart.partNo);
-        req.setPartSize(dataPart.partData.length);
-        req.setMd5Digest(SystemUtils.toBase64(dataPart.md5));
-        req.setInputStream(new ByteArrayInputStream(dataPart.partData));
+        req.setBucketName(dataPart.getBucketName());
+        req.setKey(dataPart.getS3key());
+        req.setUploadId(dataPart.getUploadID());
+        req.setPartNumber(dataPart.getPartNo());
+        req.setPartSize(dataPart.getPartData().length);
+        req.setMd5Digest(SystemUtils.toBase64(dataPart.getMd5()));
+        req.setInputStream(new ByteArrayInputStream(dataPart.getPartData()));
         UploadPartResult res = client.uploadPart(req);
         PartETag partETag = res.getPartETag();
-        if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.md5)))
-            throw new BackupRestoreException("Unable to match MD5 for part " + dataPart.partNo);
+        if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.getMd5())))
+            throw new BackupRestoreException("Unable to match MD5 for part " + dataPart.getPartNo());
         partETags.add(partETag);
         return null;
     }
 
     public void completeUpload() throws BackupRestoreException
     {
-        CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(dataPart.bucketName, dataPart.s3key, dataPart.uploadID, partETags);
+        CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID(), partETags);
         client.completeMultipartUpload(compRequest);
     }
 
     // Abort
     public void abortUpload()
     {
-        AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(dataPart.bucketName, dataPart.s3key, dataPart.uploadID);
+        AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID());
         client.abortMultipartUpload(abortRequest);
     }
 
     @Override
     public Void retriableCall() throws AmazonClientException, BackupRestoreException
     {
-        logger.info("Picked up part " + dataPart.partNo + " size " + dataPart.partData.length);
+        logger.info("Picked up part " + dataPart.getPartNo() + " size " + dataPart.getPartData().length);
         return uploadPart();
     }
 }

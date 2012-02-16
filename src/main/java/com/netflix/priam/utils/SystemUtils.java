@@ -1,6 +1,7 @@
 package com.netflix.priam.utils;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FilterInputStream;
@@ -72,7 +73,8 @@ public class SystemUtils
 
     /**
      * Stop cassandra process from this co-process.
-     * @throws IOException 
+     * 
+     * @throws IOException
      */
     public static void stopCassandra(IConfiguration config) throws IOException
     {
@@ -88,25 +90,38 @@ public class SystemUtils
         stopCass.start();
     }
 
-    public static String getDataFromUrl(String url) throws MalformedURLException, IOException, ConfigurationException
+    public static String getDataFromUrl(String url)
     {
-        HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-        conn.setRequestMethod("GET");
-        if (conn.getResponseCode() != 200)
+        try
         {
-            throw new ConfigurationException("Not able to get the required Data....");
+            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setRequestMethod("GET");
+            if (conn.getResponseCode() != 200)
+            {
+                throw new ConfigurationException("Unable to get data for URL " + url);
+            }
+            byte[] b = new byte[2048];
+            ByteArrayOutputStream bos = new ByteArrayOutputStream();
+            DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
+            int c = 0;
+            while ((c = d.read(b, 0, b.length)) != -1)
+                bos.write(b, 0, c);
+            String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
+            logger.info("Calling URL API: {} returns: {}", url, return_);
+            conn.disconnect();
+            return return_;
         }
-        int cl = conn.getContentLength();
-        byte[] b = new byte[cl];
-        DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
-        d.readFully(b);
-        return new String(b, "UTF-8");
+        catch (Exception ex)
+        {
+            throw new RuntimeException(ex);
+        }
+
     }
-    
+
     public static int runSysCommand(String command) throws InterruptedException, IOException
     {
         logger.info("Running command " + command.toString());
-        // Run backup_cron.sh command
+
         Process p = Runtime.getRuntime().exec(command.toString());
 
         StreamReader stdError = new StreamReader(p.getErrorStream(), StreamReader.ERROR);
@@ -228,32 +243,6 @@ public class SystemUtils
         }
     }
 
-    public static String apiCall(String url)
-    {
-        try
-        {
-            HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setRequestMethod("GET");
-            if (conn.getResponseCode() != 200)
-                throw new ConfigurationException("Ec2Snitch was unable to execute the API call. Not an ec2 node?");
-
-            // Read the information. I wish I could say (String)
-            // conn.getContent() here...
-            int cl = conn.getContentLength();
-            byte[] b = new byte[cl];
-            DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
-            d.readFully(b);
-            String return_ = new String(b, Charsets.UTF_8);
-            logger.info("Calling URL API: {} returns: {}", url, return_);
-            conn.disconnect();
-            return return_;
-        }
-        catch (Exception ex)
-        {
-            throw new RuntimeException(ex);
-        }
-    }
-
     public static File[] sortByLastModifiedTime(File[] files)
     {
         Arrays.sort(files, new Comparator<File>()
@@ -348,7 +337,7 @@ public class SystemUtils
             // Do nothing.
         }
     }
-    
+
     public static Date getDayBeginTime(Date date)
     {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));

@@ -8,12 +8,12 @@ import com.netflix.priam.utils.SystemUtils;
  */
 public class DataPart
 {
-    public final String bucketName;
-    public final String uploadID;
-    public final String s3key;
-    public int partNo;
-    public byte[] partData;
-    public byte[] md5;
+    private final String bucketName;
+    private final String uploadID;
+    private final String s3key;
+    private int partNo;
+    private byte[] partData;
+    private byte[] md5;
     
     public DataPart(String bucket, String s3key, String mUploadId)
     {
@@ -28,5 +28,35 @@ public class DataPart
         this.partNo = partNumber;
         this.partData = data;
         this.md5 = SystemUtils.md5(data);
+    }
+
+    public String getBucketName()
+    {
+        return bucketName;
+    }
+
+    public String getUploadID()
+    {
+        return uploadID;
+    }
+
+    public String getS3key()
+    {
+        return s3key;
+    }
+
+    public int getPartNo()
+    {
+        return partNo;
+    }
+
+    public byte[] getPartData()
+    {
+        return partData;
+    }
+
+    public byte[] getMd5()
+    {
+        return md5;
     }
 }

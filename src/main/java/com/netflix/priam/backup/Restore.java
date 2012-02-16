@@ -65,13 +65,13 @@ public class Restore extends Task
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            String origToken = priamServer.getId().getInstance().getPayload();
+            String origToken = priamServer.getId().getInstance().getToken();
             try
             {
                 if (config.isRestoreClosestToken())
                 {
                     BigInteger restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    priamServer.getId().getInstance().setPayload(restoreToken.toString());
+                    priamServer.getId().getInstance().setToken(restoreToken.toString());
                 }
                 new RetryableCallable<Void>()
                 {
@@ -86,7 +86,7 @@ public class Restore extends Task
             }
             finally
             {
-                priamServer.getId().getInstance().setPayload(origToken);
+                priamServer.getId().getInstance().setToken(origToken);
             }
         }
         SystemUtils.startCassandra(true, config);

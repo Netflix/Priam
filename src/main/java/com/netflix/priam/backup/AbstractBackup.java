@@ -40,7 +40,7 @@ public abstract class AbstractBackup extends Task
      * @return
      * @throws Exception
      */
-    public List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
+    protected List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
     {
         List<AbstractBackupPath> bps = Lists.newArrayList();
         for (File file : parent.listFiles())
@@ -66,7 +66,7 @@ public abstract class AbstractBackup extends Task
     /**
      * Upload specified file (RandomAccessFile) with retries
      */
-    public void upload(final AbstractBackupPath bp) throws Exception
+    protected void upload(final AbstractBackupPath bp) throws Exception
     {
         new RetryableCallable<Void>()
         {

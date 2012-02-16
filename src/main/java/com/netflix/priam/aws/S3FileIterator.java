@@ -19,14 +19,14 @@ import com.netflix.priam.backup.AbstractBackupPath;
  * Iterator representing list of backup files available on S3
  */
 public class S3FileIterator implements Iterator<AbstractBackupPath>
-{    
-    protected final Provider<AbstractBackupPath> pathProvider;
-    protected final AmazonS3 s3Client;
-    protected Iterator<AbstractBackupPath> iterator;
-    protected ObjectListing objectListing;    
-    protected Date start;
-    protected Date till;
+{   
     private static final Logger logger = LoggerFactory.getLogger(S3FileIterator.class);
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final AmazonS3 s3Client;
+    private final Date start;
+    private final Date till;
+    private Iterator<AbstractBackupPath> iterator;
+    private ObjectListing objectListing;    
 
     public S3FileIterator(Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, String path, Date start, Date till)
     {

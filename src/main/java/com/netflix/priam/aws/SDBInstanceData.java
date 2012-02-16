@@ -46,7 +46,7 @@ public class SDBInstanceData
     public static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     public static String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' " + Attributes.INSTANCE_ID + "='%d'";
 
-    protected final AmazonSimpleDBClient simpleDBClient;
+    private final AmazonSimpleDBClient simpleDBClient;
     
     @Inject
     public SDBInstanceData(ICredential provider)
@@ -143,7 +143,7 @@ public class SDBInstanceData
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
         attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
-        attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getPayload(), true));
+        attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getToken(), true));
         attrs.add(new ReplaceableAttribute(Attributes.APP_ID, instance.getApp(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ID, Integer.toString(instance.getId()), true));
         attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getRac(), true));
@@ -158,7 +158,7 @@ public class SDBInstanceData
     {
         List<Attribute> attrs = new ArrayList<Attribute>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
-        attrs.add(new Attribute(Attributes.TOKEN, instance.getPayload()));
+        attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
         attrs.add(new Attribute(Attributes.APP_ID, instance.getApp()));
         attrs.add(new Attribute(Attributes.ID, Integer.toString(instance.getId())));
         attrs.add(new Attribute(Attributes.AVAILABILITY_ZONE, instance.getRac()));
@@ -185,7 +185,7 @@ public class SDBInstanceData
             if (att.getName().equals(Attributes.INSTANCE_ID))
                 ins.setInstanceId(att.getValue());
             else if (att.getName().equals(Attributes.TOKEN))
-                ins.setPayload(att.getValue());
+                ins.setToken(att.getValue());
             else if (att.getName().equals(Attributes.APP_ID))
                 ins.setApp(att.getValue());
             else if (att.getName().equals(Attributes.ID))

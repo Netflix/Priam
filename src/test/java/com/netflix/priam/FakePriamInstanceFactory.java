@@ -37,7 +37,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
         ins.setHost(hostname, ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);
-        ins.setPayload(payload);
+        ins.setToken(payload);
         ins.setVolumes(volumes);
         ins.setDC(config.getDC());
         instances.add(ins);

@@ -16,7 +16,7 @@ public class PriamInstance implements Serializable
     private String availabilityZone;
     private String publicip;
     private String location;
-    private String payload;
+    private String token;
     //Handles Storage objects
     private Map<String, Object> volumes;
     
@@ -86,14 +86,14 @@ public class PriamInstance implements Serializable
         this.publicip = publicip;
     }
 
-    public String getPayload()
+    public String getToken()
     {
-        return payload;
+        return token;
     }
 
-    public void setPayload(String payload)
+    public void setToken(String token)
     {
-        this.payload = payload;
+        this.token = token;
     }
 
     public Map<String, Object> getVolumes()
@@ -110,7 +110,7 @@ public class PriamInstance implements Serializable
     public String toString()
     {
         return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Slot: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(),
-                getPayload());
+                getToken());
     }
 
     public String getDC()

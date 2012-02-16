@@ -47,8 +47,8 @@ public class TuneCassandra extends Task
         @SuppressWarnings("rawtypes")
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
-        map.put("storage_port", 7101);
-        map.put("rpc_port", 7102);
+        map.put("storage_port", config.getStoragePort());
+        map.put("rpc_port", config.getThriftPort());
         map.put("listen_address", null);
         map.put("rpc_address", null);
         //Dont bootstrap in restore mode

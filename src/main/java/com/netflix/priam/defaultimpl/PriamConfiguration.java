@@ -58,11 +58,11 @@ public class PriamConfiguration implements IConfiguration
     // Amazon specific
     private static final String CONFIG_ASG_NAME = MY_WEBAPP_NAME + ".az.asgname";
     private static final String CONFIG_REGION_NAME = MY_WEBAPP_NAME + ".az.region";
-    private final String RAC = SystemUtils.apiCall("http://169.254.169.254/latest/meta-data/placement/availability-zone");
-    private final String PUBLIC_HOSTNAME = SystemUtils.apiCall("http://169.254.169.254/latest/meta-data/public-hostname");
-    private final String PUBLIC_IP = SystemUtils.apiCall("http://169.254.169.254/latest/meta-data/public-ipv4");
-    private final String INSTANCE_ID = SystemUtils.apiCall("http://169.254.169.254/latest/meta-data/instance-id");
-    private final String INSTANCE_TYPE = SystemUtils.apiCall("http://169.254.169.254/latest/meta-data/instance-type");
+    private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
+    private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
+    private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
+    private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id");
+    private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type");
 
     // Defaults
     private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra070/data";

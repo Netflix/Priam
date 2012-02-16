@@ -14,7 +14,7 @@ import com.netflix.priam.utils.TokenManager;
  */
 public class RestoreTokenSelector
 {
-    protected final IBackupFileSystem fs;
+    private final IBackupFileSystem fs;
 
     @Inject
     public RestoreTokenSelector(IBackupFileSystem fs)

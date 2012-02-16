@@ -53,9 +53,9 @@ public class CassandraConfig
                 logger.error("Cannot find the Seeds " + priamServer.getId().getSeeds());
             }
             else if (action.equalsIgnoreCase("GET_TOKEN")) {
-                if (priamServer.getId().getInstance().getPayload() != null)
-                    return Response.ok(priamServer.getId().getInstance().getPayload()).build();
-                logger.error("Cannot find the token...:" + priamServer.getId().getInstance().getPayload());
+                if (priamServer.getId().getInstance().getToken() != null)
+                    return Response.ok(priamServer.getId().getInstance().getToken()).build();
+                logger.error("Cannot find the token...:" + priamServer.getId().getInstance().getToken());
             }
             else if (action.equalsIgnoreCase("IS_REPLACE_TOKEN")) {
                 return Response.ok("" + priamServer.getId().isReplace()).build();

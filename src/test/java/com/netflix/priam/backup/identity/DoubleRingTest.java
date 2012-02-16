@@ -40,7 +40,7 @@ public class DoubleRingTest extends InstanceTestUtils
         for (int i = 0; i < doubled.size(); i++)
         {
             PriamInstance ins = doubled.get(i);
-            assertEquals(validator.get(i), ins.getPayload());
+            assertEquals(validator.get(i), ins.getToken());
             int id = ins.getId() - SystemUtils.hash(config.getDC());
             System.out.println(ins);
             if (0 != id % 2)

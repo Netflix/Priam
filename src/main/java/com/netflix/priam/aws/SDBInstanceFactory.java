@@ -24,8 +24,8 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
-    protected final IConfiguration config;
-    protected final SDBInstanceData dao;
+    private final IConfiguration config;
+    private final SDBInstanceData dao;
 
     @Inject
     public SDBInstanceFactory(IConfiguration config, SDBInstanceData dao)
@@ -142,7 +142,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
         ins.setId(id);
         ins.setInstanceId(instanceID);
         ins.setDC(config.getDC());
-        ins.setPayload(payload);
+        ins.setToken(payload);
         ins.setVolumes(v);
         return ins;
     }

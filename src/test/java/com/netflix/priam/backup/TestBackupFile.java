@@ -47,7 +47,7 @@ public class TestBackupFile
             bos1.close();
         }
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        factory.getInstance().setPayload("1234567");//Token
+        factory.getInstance().setToken("1234567");//Token
     }
 
     @AfterClass

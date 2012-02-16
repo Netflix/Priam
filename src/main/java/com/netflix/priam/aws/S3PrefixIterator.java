@@ -24,12 +24,12 @@ import com.netflix.priam.backup.AbstractBackupPath;
  */
 public class S3PrefixIterator implements Iterator<AbstractBackupPath>
 {
-    protected final IConfiguration config;
-    protected final AmazonS3 s3Client;
-    protected final Provider<AbstractBackupPath> pathProvider;
-    protected Iterator<AbstractBackupPath> iterator;
-
     private static final Logger logger = LoggerFactory.getLogger(S3PrefixIterator.class);
+    private final IConfiguration config;
+    private final AmazonS3 s3Client;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private Iterator<AbstractBackupPath> iterator;
+    
     private String bucket = "";
     private String clusterPath = "";
     private SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");

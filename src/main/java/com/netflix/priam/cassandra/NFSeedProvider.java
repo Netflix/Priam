@@ -15,8 +15,6 @@ public class NFSeedProvider implements SeedProvider
 
     /**
      * Populates args with list of seeds queried from Priam
-     * 
-     * @param args
      */
     public NFSeedProvider(Map<String, String> args)
     {

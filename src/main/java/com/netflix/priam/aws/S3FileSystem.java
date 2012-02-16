@@ -40,15 +40,16 @@ import com.netflix.priam.utils.Throttle;
 @Singleton
 public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 {
-    protected final AmazonS3 s3Client;
-    protected final Provider<AbstractBackupPath> pathProvider;
-    protected final ICompression compress;
-    protected final IConfiguration config;
-    protected Throttle throttle;
-    protected CustomizedThreadPoolExecutor executor;
-
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
+
+    private final AmazonS3 s3Client;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final ICompression compress;
+    private final IConfiguration config;
+    private Throttle throttle;
+    private CustomizedThreadPoolExecutor executor;
+
     private AtomicLong bytesDownloaded = new AtomicLong();
     private AtomicLong bytesUploaded = new AtomicLong();
     private AtomicInteger uploadCount = new AtomicInteger();

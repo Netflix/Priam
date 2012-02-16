@@ -90,7 +90,7 @@ public class InstanceIdentity
         // Grab a new token
         if (null == myInstance)
             myInstance = new GetNewToken().call();
-        logger.info("My token: " + myInstance.getPayload());
+        logger.info("My token: " + myInstance.getToken());
     }
 
     private void populateRacMap()
@@ -117,11 +117,11 @@ public class InstanceIdentity
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
-                        dead.getPayload());
+                        dead.getToken());
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
-                String payLoad = markAsDead.getPayload();
+                String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
                 return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
             }

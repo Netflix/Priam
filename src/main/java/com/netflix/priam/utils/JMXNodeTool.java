@@ -148,9 +148,9 @@ public class JMXNodeTool extends NodeProbe
         while (it.hasNext())
         {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
-            object.put("Keyspace", entry.getKey());
-            object.put("Column Family", entry.getValue().getColumnFamilyName());
-            object.put("Estimated Size", entry.getValue().estimateKeys());
+            object.put("keyspace", entry.getKey());
+            object.put("column_family", entry.getValue().getColumnFamilyName());
+            object.put("estimated_size", entry.getValue().estimateKeys());
         }
         return object;
     }
@@ -160,17 +160,18 @@ public class JMXNodeTool extends NodeProbe
     {
         logger.info("JMX info being called");
         JSONObject object = new JSONObject();
-        object.put("INTIALIZED", isInitialized());
-        object.put("Token", getToken());
-        object.put("Load", getLoadString());
-        object.put("Generation No", getCurrentGenerationNumber());
-        object.put("Uptime (seconds)", getUptime() / 1000);
+        object.put("intialized", isInitialized());
+        object.put("thrift_status", isThriftServerRunning());
+        object.put("token", getToken());
+        object.put("load", getLoadString());
+        object.put("generation_no", getCurrentGenerationNumber());
+        object.put("uptime", getUptime() / 1000);
         MemoryUsage heapUsage = getHeapMemoryUsage();
         double memUsed = (double) heapUsage.getUsed() / (1024 * 1024);
         double memMax = (double) heapUsage.getMax() / (1024 * 1024);
-        object.put("Heap Memory (MB)", memUsed + "/" + memMax);
-        object.put("Data Center", getDataCenter());
-        object.put("Rack", getRack());
+        object.put("heap_memory_mb", memUsed + "/" + memMax);
+        object.put("data_center", getDataCenter());
+        object.put("rack", getRack());
         logger.info(object.toString());
         return object;
     }
@@ -238,14 +239,14 @@ public class JMXNodeTool extends NodeProbe
     private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token)
     {
         JSONObject object = new JSONObject();
-        object.put("ENDPOINT", primaryEndpoint);
-        object.put("DC", dataCenter);
-        object.put("RACK", rack);
-        object.put("STATUS", status);
-        object.put("STATE", state);
-        object.put("LOAD", load);
-        object.put("OWNS", owns);
-        object.put("TOKEN", token.toString());
+        object.put("endpoint", primaryEndpoint);
+        object.put("dc", dataCenter);
+        object.put("rack", rack);
+        object.put("status", status);
+        object.put("state", state);
+        object.put("load", load);
+        object.put("owns", owns);
+        object.put("token", token.toString());
         return object;
     }
 

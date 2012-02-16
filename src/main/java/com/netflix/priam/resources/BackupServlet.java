@@ -184,7 +184,7 @@ public class BackupServlet
         List<BigInteger> tokenList = Lists.newArrayList();
         for (PriamInstance ins : plist)
         {
-            if (ins.location.equalsIgnoreCase(region))
+            if (ins.getDC().equalsIgnoreCase(region))
                 tokenList.add(new BigInteger(ins.getPayload()));
         }
         return TokenManager.findClosestToken(new BigInteger(token), tokenList).toString();

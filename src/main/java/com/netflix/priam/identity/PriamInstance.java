@@ -10,15 +10,15 @@ public class PriamInstance implements Serializable
     private long updatetime;
     private boolean outOfService;
 
-    public String app;
-    public int Id;
-    public String instanceId;
-    public String availabilityZone;
-    public String publicip;
-    public String location;
-    public String payload;
+    private String app;
+    private int Id;
+    private String instanceId;
+    private String availabilityZone;
+    private String publicip;
+    private String location;
+    private String payload;
     //Handles Storage objects
-    public Map<String, Object> volumes;
+    private Map<String, Object> volumes;
     
     public String getApp()
     {

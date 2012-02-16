@@ -23,7 +23,7 @@ import com.netflix.priam.utils.RetryableCallable;
  * Task for running daily snapshots
  */
 @Singleton
-public class SnapshotBackup extends Backup
+public class SnapshotBackup extends AbstractBackup
 {
     public static String JOBNAME = "SnapshotBackup";
     

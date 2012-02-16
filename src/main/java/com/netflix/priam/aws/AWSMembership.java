@@ -95,6 +95,7 @@ public class AWSMembership implements IMembership
     /**
      * Adds a iplist to the SG.
      */
+    @Override
     public void addACL(Collection<String> listIPs, int from, int to)
     {
         AmazonEC2 client = new AmazonEC2Client(cred);
@@ -114,6 +115,7 @@ public class AWSMembership implements IMembership
     /**
      * removes a iplist from the SG
      */
+    @Override
     public void removeACL(Collection<String> listIPs, int from, int to)
     {
         AmazonEC2 client = new AmazonEC2Client(cred);
@@ -132,6 +134,7 @@ public class AWSMembership implements IMembership
     /**
      * List SG ACL's
      */
+    @Override
     public List<String> listACL()
     {
         AmazonEC2 client = new AmazonEC2Client(cred);

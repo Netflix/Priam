@@ -13,6 +13,7 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,7 +149,7 @@ public class BackupServlet
         if (token != null && token != "")
             priamServer.getId().getInstance().setPayload(token);
 
-        if (region != null && region != "")
+        if (StringUtils.isNotBlank(region))
         {
             config.setDC(region);
             logger.info("Restoring from region " + region);

@@ -17,7 +17,7 @@ import com.netflix.priam.scheduler.TaskTimer;
  * Incremental/SSTable backup
  */
 @Singleton
-public class IncrementalBackup extends Backup
+public class IncrementalBackup extends AbstractBackup
 {
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);

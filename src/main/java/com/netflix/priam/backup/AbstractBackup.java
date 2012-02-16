@@ -15,7 +15,7 @@ import com.netflix.priam.utils.RetryableCallable;
 /**
  * Abstract Backup class for uploading files to backup location
  */
-public abstract class Backup extends Task
+public abstract class AbstractBackup extends Task
 {
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final List<String> FILTER_COLUMN_FAMILY = Arrays.asList("LocationInfo");
@@ -23,7 +23,7 @@ public abstract class Backup extends Task
     protected final IBackupFileSystem fs;
 
     @Inject
-    public Backup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
+    public AbstractBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
     {
         super(config);
         this.fs = fs;
@@ -40,7 +40,7 @@ public abstract class Backup extends Task
      * @return
      * @throws Exception
      */
-    protected List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
+    public List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
     {
         List<AbstractBackupPath> bps = Lists.newArrayList();
         for (File file : parent.listFiles())
@@ -66,7 +66,7 @@ public abstract class Backup extends Task
     /**
      * Upload specified file (RandomAccessFile) with retries
      */
-    protected void upload(final AbstractBackupPath bp) throws Exception
+    public void upload(final AbstractBackupPath bp) throws Exception
     {
         new RetryableCallable<Void>()
         {

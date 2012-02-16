@@ -108,17 +108,4 @@ public class MetaData
             }
         }.call();
     }
-
-    public void download(final AbstractBackupPath path) throws Exception
-    {
-        new RetryableCallable<Void>()
-        {
-            @Override
-            public Void retriableCall() throws Exception
-            {
-                fs.download(path, new FileOutputStream(path.newRestoreFile()));
-                return null;
-            }
-        }.call();
-    }
 }

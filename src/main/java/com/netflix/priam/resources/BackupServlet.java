@@ -7,18 +7,17 @@ import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.util.json.JSONObject;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -35,13 +34,13 @@ import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
 
-@Path("/v1/backup/{type}")
-@Produces({ "application/text" })
+@Path("/v1/backup")
+@Produces(MediaType.APPLICATION_JSON)
 public class BackupServlet
 {
     private static final Logger logger = LoggerFactory.getLogger(BackupServlet.class);
 
-    private static final String REST_HEADER_KEY = "type";
+    private static final String REST_SUCCESS = "[\"ok\"]";
     private static final String REST_HEADER_RANGE = "daterange";
     private static final String REST_HEADER_FILTER = "filter";
     private static final String REST_HEADER_TOKEN = "token";
@@ -72,59 +71,82 @@ public class BackupServlet
     }
 
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response restore(@PathParam(REST_HEADER_KEY) String type, @QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) String filter,
-            @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token, @QueryParam(REST_KEYSPACES) String keyspaces) throws Exception
+    @Path("/do_snapshot")
+    public Response backup() throws Exception
+    {
+        snapshotBackup.execute();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/restore")
+    public Response restore(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token,
+            @QueryParam(REST_KEYSPACES) String keyspaces) throws Exception
     {
         Date startTime;
         Date endTime;
 
-        String[] restore = daterange.split(",");
-        if (daterange.equalsIgnoreCase("default"))
+        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default"))
         {
             startTime = new DateTime().minusDays(1).toDate();
             endTime = new DateTime().toDate();
         }
         else
         {
+            String[] restore = daterange.split(",");
             AbstractBackupPath path = pathProvider.get();
             startTime = path.getFormat().parse(restore[0]);
             endTime = path.getFormat().parse(restore[1]);
         }
-        if (type.equalsIgnoreCase("restore"))
-        {
-            restore(token, region, startTime, endTime, keyspaces);
-            return Response.ok("Restore completed").build();
-        }
-        else if (type.equalsIgnoreCase("list"))
-        {
-            Iterator<AbstractBackupPath> it = fs.list(config.getBackupPrefix(), startTime, endTime);
-            JSONObject object = new JSONObject();
-            while (it.hasNext())
-            {
-                AbstractBackupPath p = it.next();
-                if (filter != null && BackupFileType.valueOf(filter) != p.getType())
-                    continue;
-                object.put(p.getRemotePath(), p.getFormat().format(p.getTime()));
-            }
-            return Response.ok(object.toString()).build();
-        }
-        else if (type.equalsIgnoreCase("do_snapshot"))
-        {
-            snapshotBackup.execute();
-            return Response.status(200).build();
-        }
-        else if (type.equalsIgnoreCase("status"))
-        {
-            int restoreTCount = restoreObj.getActiveCount();
-            logger.debug("Thread counts for backup is: %d", restoreTCount);
-            int backupTCount = fs.getActivecount();
-            logger.debug("Thread counts for restore is: %d", backupTCount);
-            return Response.ok("Restore: " + restoreTCount + "\nStatus: " + restoreObj.state() + "\nBackup: " + backupTCount + "\nStatus: " + snapshotBackup.state()).build();
-        }
+        restore(token, region, startTime, endTime, keyspaces);
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
 
-        logger.error(String.format("Couldnt serve the URL with parameters: type=%s and ext=%s", type, daterange));
-        return Response.status(404).build();
+    @GET
+    @Path("/list")
+    public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) String filter) throws Exception
+    {
+        Date startTime;
+        Date endTime;
+
+        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default"))
+        {
+            startTime = new DateTime().minusDays(1).toDate();
+            endTime = new DateTime().toDate();
+        }
+        else
+        {
+            String[] restore = daterange.split(",");
+            AbstractBackupPath path = pathProvider.get();
+            startTime = path.getFormat().parse(restore[0]);
+            endTime = path.getFormat().parse(restore[1]);
+        }
+        Iterator<AbstractBackupPath> it = fs.list(config.getBackupPrefix(), startTime, endTime);
+        JSONObject object = new JSONObject();
+        while (it.hasNext())
+        {
+            AbstractBackupPath p = it.next();
+            if (filter != null && BackupFileType.valueOf(filter) != p.getType())
+                continue;
+            object.put(p.getRemotePath(), p.getFormat().format(p.getTime()));
+        }
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/status")
+    public Response status() throws Exception
+    {
+        int restoreTCount = restoreObj.getActiveCount();
+        logger.debug("Thread counts for backup is: %d", restoreTCount);
+        int backupTCount = fs.getActivecount();
+        logger.debug("Thread counts for restore is: %d", backupTCount);
+        JSONObject object = new JSONObject();
+        object.put("Restore", new Integer(restoreTCount));
+        object.put("Status", restoreObj.state().toString());
+        object.put("Backup", new Integer(backupTCount));
+        object.put("Status", snapshotBackup.state().toString());
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 
     /**
@@ -146,7 +168,7 @@ public class BackupServlet
     {
         String origRegion = config.getDC();
         String origToken = priamServer.getId().getInstance().getToken();
-        if (token != null && token != "")
+        if (StringUtils.isNotBlank(token))
             priamServer.getId().getInstance().setToken(token);
 
         if (StringUtils.isNotBlank(region))
@@ -174,10 +196,6 @@ public class BackupServlet
 
     /**
      * Find closest token in the specified region
-     * 
-     * @param token
-     * @param region
-     * @return
      */
     private String closestToken(String token, String region)
     {

@@ -1,12 +1,14 @@
 package com.netflix.priam.resources;
 
+import java.io.IOException;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,65 +21,88 @@ import com.netflix.priam.identity.DoubleRing;
  * This servlet will provide the configuration API service as and when Cassandra
  * requests for it.
  */
-@Path("/v1/cassconfig/{action}")
-@Produces({ "application/text" })
+@Path("/v1/cassconfig")
+@Produces(MediaType.TEXT_PLAIN)
 public class CassandraConfig
 {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
-    private static final String REST_HEADER_TYPE = "action";
-    
     private PriamServer priamServer;
     private DoubleRing doubleRing;
-    
+
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing){
+    public CassandraConfig(PriamServer server, DoubleRing doubleRing)
+    {
         this.priamServer = server;
         this.doubleRing = doubleRing;
     }
 
-    
     @GET
-    @Produces(MediaType.TEXT_PLAIN)
-    public Response getConfigGET(@PathParam(REST_HEADER_TYPE) String action)
+    @Path("/get_seeds")
+    public Response getSeeds()
     {
-        logger.info("Trying to run command: " + action);
-        return getTypedResponse(action);
+        try
+        {
+            if (CollectionUtils.isNotEmpty(priamServer.getId().getSeeds()))
+                return Response.ok(StringUtils.join(priamServer.getId().getSeeds(), ',')).build();
+            logger.error("Cannot find the Seeds " + priamServer.getId().getSeeds());
+        }
+        catch (Exception e)
+        {
+            logger.error("Error while executing get_seeds", e);
+            return Response.serverError().build();
+        }
+        return Response.status(404).build();
     }
 
-    private Response getTypedResponse(String action)
+    @GET
+    @Path("/get_token")
+    public Response getToken()
     {
-        try {
-            if (action.equalsIgnoreCase("GET_SEEDS")) {
-                if (priamServer.getId().getSeeds() != null && priamServer.getId().getSeeds().size() != 0)
-                    return Response.ok(StringUtils.join(priamServer.getId().getSeeds(), ',')).build();
-                logger.error("Cannot find the Seeds " + priamServer.getId().getSeeds());
-            }
-            else if (action.equalsIgnoreCase("GET_TOKEN")) {
-                if (priamServer.getId().getInstance().getToken() != null)
-                    return Response.ok(priamServer.getId().getInstance().getToken()).build();
-                logger.error("Cannot find the token...:" + priamServer.getId().getInstance().getToken());
-            }
-            else if (action.equalsIgnoreCase("IS_REPLACE_TOKEN")) {
-                return Response.ok("" + priamServer.getId().isReplace()).build();
-            }
-            else if (action.equalsIgnoreCase("DOUBLE_RING")) {                
-                try {
-                    doubleRing.backup();
-                    doubleRing.doubleSlots();
-                }
-                catch (Throwable th) {
-                    logger.error("Error in doubling the ring...", th);
-                    doubleRing.restore();
-                    // rethrow
-                    throw new RuntimeException(th);
-                }
-                return Response.status(200).build();
-            }
+        try
+        {
+            if (StringUtils.isNotBlank(priamServer.getId().getInstance().getToken()))
+                return Response.ok(priamServer.getId().getInstance().getToken()).build();
+            logger.error("Cannot find token for this instance.");
         }
-        catch (Exception e) {
-            logger.error("Error while executing the servlet... : ", e);
+        catch (Exception e)
+        {
+            logger.error("Error while executing get_token", e);
+            return Response.serverError().build();
         }
-        logger.error(String.format("Couldnt serve the URL with parameters: type=%s", action));
         return Response.status(404).build();
+    }
+
+    @GET
+    @Path("/is_replace_token")
+    public Response isReplaceToken()
+    {
+        try
+        {
+            return Response.ok(String.valueOf(priamServer.getId().isReplace())).build();
+        }
+        catch (Exception e)
+        {
+            logger.error("Error while executing is_replace_token", e);
+            return Response.serverError().build();
+        }
+    }
+
+    @GET
+    @Path("/double_ring")
+    public Response doubleRing() throws IOException, ClassNotFoundException
+    {
+        try
+        {
+            doubleRing.backup();
+            doubleRing.doubleSlots();
+        }
+        catch (Throwable th)
+        {
+            logger.error("Error in doubling the ring...", th);
+            doubleRing.restore();
+            // rethrow
+            throw new RuntimeException(th);
+        }
+        return Response.status(200).build();
     }
 }

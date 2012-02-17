@@ -199,7 +199,7 @@ public class Restore extends Task
 
     public int getActiveCount()
     {
-        return executor.getActiveCount();
+        return (executor == null)?0:executor.getActiveCount();
     }
 
 }

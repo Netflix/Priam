@@ -1,16 +1,13 @@
 package com.netflix.priam.utils;
 
-import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -41,7 +38,7 @@ public class SystemUtils
     private static final String SUDO_STRING = "/usr/bin/sudo";
 
     /**
-     * Start cassandra process from this co-process.
+     * Start Cassandra process from this co-process.
      */
     public static void startCassandra(boolean join_ring, IConfiguration config) throws IOException, InterruptedException
     {
@@ -72,9 +69,7 @@ public class SystemUtils
     }
 
     /**
-     * Stop cassandra process from this co-process.
-     * 
-     * @throws IOException
+     * Stop Cassandra process from this co-process.
      */
     public static void stopCassandra(IConfiguration config) throws IOException
     {
@@ -87,6 +82,8 @@ public class SystemUtils
         }
         command.add(config.getCassStopScript());
         ProcessBuilder stopCass = new ProcessBuilder(command);
+        stopCass.directory(new File("/"));
+        stopCass.redirectErrorStream(true);
         stopCass.start();
     }
 
@@ -118,27 +115,9 @@ public class SystemUtils
 
     }
 
-    public static int runSysCommand(String command) throws InterruptedException, IOException
-    {
-        logger.info("Running command " + command.toString());
-
-        Process p = Runtime.getRuntime().exec(command.toString());
-
-        StreamReader stdError = new StreamReader(p.getErrorStream(), StreamReader.ERROR);
-        StreamReader stdInput = new StreamReader(p.getInputStream(), StreamReader.INFO);
-        stdError.start();
-        stdInput.start();
-
-        int exitVal = p.waitFor();
-        logger.info("Done sys command Exitval: " + exitVal);
-        return exitVal;
-    }
-
     /**
      * delete all the files/dirs in the given Directory but dont delete the dir
      * itself.
-     * 
-     * @throws IOException
      */
     public static void cleanupDir(String dirPath, List<String> childdirs) throws IOException
     {
@@ -253,50 +232,6 @@ public class SystemUtils
             }
         });
         return files;
-    }
-
-    public static class StreamReader extends Thread
-    {
-        public static final String ERROR = "ERROR";
-        public static final String INFO = "INFO";
-        private StringBuilder output = new StringBuilder();
-        private InputStream is;
-        private String type;
-
-        public StreamReader(InputStream is, String type)
-        {
-            this.is = is;
-            this.type = type;
-        }
-
-        public void run()
-        {
-            try
-            {
-                InputStreamReader isr = new InputStreamReader(is);
-                BufferedReader br = new BufferedReader(isr);
-                String line = null;
-                while ((line = br.readLine()) != null)
-                {
-                    output.append(line + "\n");
-                    if (type == INFO)
-                        logger.info(line);
-                    else
-                        logger.error(line);
-                }
-                br.close();
-                logger.info("Done running sys command" + output.toString());
-            }
-            catch (IOException ioe)
-            {
-                logger.error("Error in running sys command: ", ioe);
-            }
-        }
-
-        public String getOutput()
-        {
-            return output.toString();
-        }
     }
 
     public static void closeQuietly(JMXNodeTool tool)

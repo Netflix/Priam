@@ -25,8 +25,11 @@ import org.apache.cassandra.cache.InstrumentingCacheMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.tools.NodeProbe;
-import org.json.simple.JSONArray;
-import org.json.simple.JSONObject;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+//import org.json.simple.JSONArray;
+//import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,7 +144,7 @@ public class JMXNodeTool extends NodeProbe
      * tokens out of the server. TODO code it.
      */
     @SuppressWarnings("unchecked")
-    public JSONObject estimateKeys()
+    public JSONObject estimateKeys() throws JSONException
     {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
         JSONObject object = new JSONObject();
@@ -156,7 +159,7 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject info()
+    public JSONObject info() throws JSONException
     {
         logger.info("JMX info being called");
         JSONObject object = new JSONObject();
@@ -177,7 +180,7 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONArray ring()
+    public JSONArray ring() throws JSONException
     {
         logger.info("JMX ring being called");
         JSONArray ring = new JSONArray();
@@ -228,15 +231,13 @@ public class JMXNodeTool extends NodeProbe
 
             String load = loadMap.containsKey(primaryEndpoint) ? loadMap.get(primaryEndpoint) : "?";
             String owns = new DecimalFormat("##0.00%").format(ownerships.get(token));
-            ring.add(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
+            ring.put(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
         }
-        // return ring.toString();
         logger.info(ring.toString());
         return ring;
     }
 
-    @SuppressWarnings("unchecked")
-    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token)
+    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token) throws JSONException
     {
         JSONObject object = new JSONObject();
         object.put("endpoint", primaryEndpoint);

@@ -310,8 +310,13 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getStoragePort()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return 7000;
+    }
+
+    @Override
+    public String getSeedProviderName()
+    {
+        return "com.netflix.priam.cassandra.NFSeedProvider";
     }
 
 }

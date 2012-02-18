@@ -30,6 +30,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";
     private static final String CONFIG_CASS_STOP_SCRIPT = PRIAM_PRE + ".cass.stopscript";
     private static final String CONFIG_CLUSTER_NAME = PRIAM_PRE + ".clustername";
+    private static final String CONFIG_SEED_PROVIDER_NAME = PRIAM_PRE + ".seed.provider";
     private static final String CONFIG_LOAD_LOCAL_PROPERTIES = PRIAM_PRE + ".localbootstrap.enable";
     private static final String CONFIG_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.size.";
     private static final String CONFIG_DATA_LOCATION = PRIAM_PRE + ".data.location";
@@ -75,11 +76,14 @@ public class PriamConfiguration implements IConfiguration
     private static String REGION = System.getenv("EC2_REGION");
 
     // Defaults
-    private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra070/data";
-    private final String DEFAULT_COMMIT_LOG_LOCATION = "/mnt/data/cassandra070/commitlog";
-    private final String DEFAULT_COMMIT_LOG_BACKUP_LOCATION = "/mnt/data/backup/commitlog";
-    private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra070/saved_caches";
+    private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra/data";
+    private final String DEFAULT_COMMIT_LOG_LOCATION = "/mnt/data/cassandra/commitlog";
+    private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
+    private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
+    private final String DEFAULT_MAX_DIRECT_MEM = "50G";
+    private final String DEFAULT_MAX_HEAP = "8G";
+    private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
     private final int DEFAULT_STORAGE_PORT = 7000;
@@ -109,12 +113,12 @@ public class PriamConfiguration implements IConfiguration
         AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
         // End point is us-east-1
         simpleDBClient = new AmazonSimpleDBClient(cred);
-        setupVars();
     }
 
     @Override
     public void intialize()
     {
+        setupEnvVars();
         populateProps();
         SystemUtils.createDirs(getBackupCommitLogLocation());
         SystemUtils.createDirs(getCommitLogLocation());
@@ -122,17 +126,19 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getDataFileLocation());
     }
 
-    private void setupVars(){
+    private void setupEnvVars(){
         //Search in java opt properties
         ASG_NAME = StringUtils.isBlank(ASG_NAME)?System.getProperty("ASG_NAME"):ASG_NAME;
         REGION = StringUtils.isBlank(REGION)?System.getProperty("EC2_REGION"):REGION;
         if (StringUtils.isBlank(REGION))
-            REGION = "us-east-1";
-        
+            REGION = "us-east-1";        
     }
 
     private void populateProps()
     {
+        config = new PriamProperties();
+        config.put(CONFIG_ASG_NAME, ASG_NAME);
+        config.put(CONFIG_REGION_NAME, REGION);
         String nextToken = null;
         String appid = ASG_NAME.substring(0, ASG_NAME.lastIndexOf('-'));
         do
@@ -237,7 +243,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getBackupCommitLogLocation()
     {
-        return config.getProperty(CONFIG_CL_BK_LOCATION, DEFAULT_COMMIT_LOG_BACKUP_LOCATION);
+        return config.getProperty(CONFIG_CL_BK_LOCATION, "");
     }
 
     @Override
@@ -309,13 +315,19 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHeapSize()
     {
-        return config.getProperty(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, "2G");
+        return config.getProperty(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
     }
 
     @Override
     public String getHeapNewSize()
     {
-        return config.getProperty(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, "2G");
+        return config.getProperty(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
+    }
+
+    @Override
+    public String getMaxDirectMemory()
+    {
+        return config.getProperty(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
     }
 
     @Override
@@ -410,15 +422,15 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
-    public String getMaxDirectMemory()
-    {
-        return config.getProperty(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, "50G");
-    }
-
-    @Override
     public String getBootClusterName()
     {
-        return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "cass_turtle");
+        return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "");
+    }
+    
+    @Override
+    public String getSeedProviderName()
+    {
+        return config.getProperty(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
     private class PriamProperties extends Properties
@@ -449,5 +461,4 @@ public class PriamConfiguration implements IConfiguration
         }
 
     }
-
 }

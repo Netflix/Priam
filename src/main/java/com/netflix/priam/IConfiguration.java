@@ -228,5 +228,10 @@ public interface IConfiguration
      * @return Bootstrap cluster name (depends on another cass cluster)
      */
     public String getBootClusterName();
+    
+    /** 
+     * @return Get the name of seed provider
+     */
+    public String getSeedProviderName();
 
 }

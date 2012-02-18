@@ -20,7 +20,7 @@ public class NFSeedProvider implements SeedProvider
     {
         try
         {
-            String seeds = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/GET_SEEDS");
+            String seeds = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
             for (String seed : seeds.split(","))
                 return_.add(InetAddress.getByName(seed));
         }

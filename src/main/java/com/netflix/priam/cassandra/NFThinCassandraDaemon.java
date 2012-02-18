@@ -19,9 +19,9 @@ public class NFThinCassandraDaemon extends CassandraDaemon
         {
             try
             {
-                token = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/GET_TOKEN");
-                seeds = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/GET_SEEDS");
-                isReplace = Boolean.parseBoolean(SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/IS_REPLACE_TOKEN"));
+                token = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_token");
+                seeds = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
+                isReplace = Boolean.parseBoolean(SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/is_replace_token"));
             }
             catch (Exception e)
             {

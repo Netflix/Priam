@@ -66,7 +66,7 @@ public class TuneCassandra extends Task
         {
             List<?> seedp = (List) map.get("seed_provider");
             Map<String, String> m = (Map<String, String>) seedp.get(0);
-            m.put("class_name", "org.apache.cassandra.thrift.NFSeedProvider");
+            m.put("class_name", config.getSeedProviderName());
         }
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));

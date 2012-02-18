@@ -4,8 +4,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import javax.servlet.ServletContextEvent;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -20,12 +18,13 @@ import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 public class InjectedWebListener extends GuiceServletContextListener
 {
-
-    private Injector injector;
-
     @Override
-    public void contextInitialized(ServletContextEvent servletContextEvent)
+    protected Injector getInjector()
     {
+        List<Module> moduleList = Lists.newArrayList();
+        moduleList.add(new JaxServletModule());
+        moduleList.add(new PriamGuiceModule());
+        Injector injector = Guice.createInjector(moduleList);
         try
         {
             injector.getInstance(IConfiguration.class).intialize();
@@ -35,15 +34,6 @@ public class InjectedWebListener extends GuiceServletContextListener
         {
             throw new RuntimeException(e.getMessage(), e);
         }
-    }
-
-    @Override
-    protected Injector getInjector()
-    {
-        List<Module> moduleList = Lists.newArrayList();
-        moduleList.add(new JaxServletModule());
-        moduleList.add(new PriamGuiceModule());
-        injector = Guice.createInjector(moduleList);
         return injector;
     }
 

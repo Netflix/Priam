@@ -2,8 +2,9 @@ package com.netflix.priam.defaultimpl;
 
 import java.io.FileInputStream;
 import java.util.Properties;
-
 import org.apache.cassandra.io.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.ICredential;
 
@@ -18,8 +19,8 @@ import com.netflix.priam.ICredential;
  */
 public class ClearCredential implements ICredential
 {
-
-    public static String CRED_FILE = "conf/awscredential.properties";
+    private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
+    public static String CRED_FILE = "/etc/awscredential.properties";
     private Properties props;
 
     public ClearCredential()
@@ -33,6 +34,7 @@ public class ClearCredential implements ICredential
         }
         catch (Exception e)
         {
+            logger.error("Exception with credential file ", e);
             throw new RuntimeException("Problem reading credential file. Cannot start.", e);
         }
         finally

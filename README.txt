@@ -1,21 +1,22 @@
-Priam is a process/tool built for Apache Cassandra to perform the following:
+Priam is a process/tool that runs alongside Apache Cassandra to automate the following:
+- Backup and recovery (Complete and incremental)
 - Token management
 - Configuration
-- Backup and recovery (Complete and incremental)
-- Supports AWS environment
+- Support AWS environment
 
-Apache Cassandra is a highly available, column oriented database: http://cassandra.apache.org
-and Priam was the father of Cassandra in greek mythology. 
+Apache Cassandra is a highly available, column oriented database: http://cassandra.apache.org.
+
+The name 'Priam' refers to King of Troy in Greek mythology, who the father of Cassandra. 
 
 Priam is actively developed and used at Netflix. 
 
 Features:
-- Token management using SimpleDB (other implementations to follow)
+- Token management using SimpleDB
 - Support multi-region Cassandra deployment in AWS via public IP.
 - Automated security group update in multi-region environment.
 - Backup SSTables from local ephemeral disks to S3.
-- Backup uses Snappy compression to compress data on the fly. Backups do not disturb file cache and are throttled.
-- Pluggable modules for future enhancements. (support for multiple data storage).
+- Uses Snappy compression to compress backup data on the fly. 
+- Backup throttling
+- Pluggable modules for future enhancements (support for multiple data storage).
 - APIs to list and restore backup data.
-- Commit log backup (coming up, stay tuned).
-- Scheduler interface for better thread Priority.
+- REST APIs for backup/restore and other operations

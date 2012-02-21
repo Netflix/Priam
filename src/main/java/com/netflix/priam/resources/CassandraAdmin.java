@@ -87,7 +87,6 @@ public class CassandraAdmin
     }
 
     @GET
-    @Produces(MediaType.APPLICATION_JSON)
     @Path("/flush")
     public Response cassFlush() throws IOException, InterruptedException, ExecutionException
     {

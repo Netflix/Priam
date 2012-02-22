@@ -131,11 +131,12 @@ public class Restore extends Task
 
             // Download snapshot which is listed in the meta file.
             List<AbstractBackupPath> snapshots = metaData.get(meta);
-            download(snapshots.iterator());
+            download(snapshots.iterator(), BackupFileType.SNAP);
 
+            logger.info("Downloading incrementals");
             // Download incrementals (SST).
             Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.time, endTime);
-            download(incrementals);
+            download(incrementals, BackupFileType.SST);
         }
         finally
         {
@@ -144,12 +145,13 @@ public class Restore extends Task
 
     }
 
-    private void download(Iterator<AbstractBackupPath> fileiter) throws Exception
+    private void download(Iterator<AbstractBackupPath> fileiter, BackupFileType filter) throws Exception
     {
         while (fileiter.hasNext())
         {
             AbstractBackupPath path = fileiter.next();
-            download(path);
+            if( path.getType() == filter)
+                download(path);
         }
         waitToComplete();
     }

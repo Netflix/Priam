@@ -13,6 +13,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
@@ -40,6 +43,7 @@ import com.netflix.priam.utils.Throttle;
 @Singleton
 public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 {
+    private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
 
@@ -90,12 +94,13 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     }
 
     @Override
-    public void download(AbstractBackupPath backupfile, OutputStream os) throws BackupRestoreException
+    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
     {
         try
         {
+            logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
-            S3Object obj = s3Client.getObject(getPrefix(), backupfile.getRemotePath());
+            S3Object obj = s3Client.getObject(getPrefix(), path.getRemotePath());
             compress.decompressAndClose(obj.getObjectContent(), os);
             bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
         }
@@ -109,6 +114,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
         uploadCount.incrementAndGet();
+        logger.debug("Uploadings " + path.getRemotePath());
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());

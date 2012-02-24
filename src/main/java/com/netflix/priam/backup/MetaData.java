@@ -39,7 +39,7 @@ public class MetaData
     @SuppressWarnings("unchecked")
     public void set(List<AbstractBackupPath> bps, String snapshotName) throws Exception
     {
-        File metafile = new File("/tmp/meta.json");
+        File metafile = File.createTempFile("meta", ".json");
         FileWriter fr = new FileWriter(metafile);
         try
         {

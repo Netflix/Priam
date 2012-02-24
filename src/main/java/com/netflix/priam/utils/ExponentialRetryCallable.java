@@ -10,7 +10,7 @@ public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T>
     public final static long MAX_SLEEP = 240000;
     public final static long MIN_SLEEP = 200;
 
-    private static final Logger logger = LoggerFactory.getLogger(ExponentialRetryCallable.class);
+    private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
     private long max;
     private long min;
 
@@ -40,13 +40,13 @@ public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T>
                 throw e;
             }
             catch (Exception e)
-            {
-                logger.error(e.getMessage(), e);
+            {                
                 delay *= 2;
                 if (delay > max)
                 {
                     throw e;
                 }
+                logger.error(e.getMessage());
                 Thread.sleep(delay);
             }
             finally

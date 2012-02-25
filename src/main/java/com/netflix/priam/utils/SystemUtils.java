@@ -19,7 +19,7 @@ import java.util.Map;
 import java.util.TimeZone;
 
 import javax.management.remote.JMXConnector;
-
+import org.apache.commons.lang.StringUtils;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -50,7 +50,10 @@ public class SystemUtils
             command.add(SUDO_STRING);
             command.add("-E");
         }
-        command.add(config.getCassStartupScript());
+        for(String param : config.getCassStartupScript().split(" ")){
+            if( StringUtils.isNotBlank(param))
+                command.add(param);
+        }
         ProcessBuilder startCass = new ProcessBuilder(command);
         Map<String, String> env = startCass.environment();
         env.put("HEAP_NEWSIZE", config.getHeapNewSize());
@@ -80,7 +83,10 @@ public class SystemUtils
             command.add(SUDO_STRING);
             command.add("-E");
         }
-        command.add(config.getCassStopScript());
+        for(String param : config.getCassStopScript().split(" ")){
+            if( StringUtils.isNotBlank(param))
+                command.add(param);
+        }
         ProcessBuilder stopCass = new ProcessBuilder(command);
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);

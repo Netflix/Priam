@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -39,7 +40,7 @@ public class MetaData
     @SuppressWarnings("unchecked")
     public void set(List<AbstractBackupPath> bps, String snapshotName) throws Exception
     {
-        File metafile = File.createTempFile("meta", ".json");
+        File metafile = createTmpMetaFile();
         FileWriter fr = new FileWriter(metafile);
         try
         {
@@ -108,4 +109,14 @@ public class MetaData
             }
         }.call();
     }
+    
+    public static File createTmpMetaFile() throws IOException{
+        File metafile = File.createTempFile("meta", ".json");
+        File destFile = new File(metafile.getParent(), "meta.json");
+        if(destFile.exists())
+            destFile.delete();
+        FileUtils.moveFile(metafile, destFile);
+        return destFile;
+    }
+
 }

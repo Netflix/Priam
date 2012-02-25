@@ -12,6 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonServiceException;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
@@ -20,6 +21,7 @@ import com.netflix.priam.identity.PriamInstance;
  * SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be
  * created ahead
  */
+@Singleton
 public class SDBInstanceFactory implements IPriamInstanceFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);

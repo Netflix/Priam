@@ -45,7 +45,6 @@ public class UpdateSecuritySettings extends Task
         super(config);
         this.membership = membership;
         this.factory = factory;
-
     }
 
     /**

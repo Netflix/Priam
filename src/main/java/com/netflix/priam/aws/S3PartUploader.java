@@ -68,7 +68,7 @@ public class S3PartUploader extends RetryableCallable<Void>
     @Override
     public Void retriableCall() throws AmazonClientException, BackupRestoreException
     {
-        logger.info("Picked up part " + dataPart.getPartNo() + " size " + dataPart.getPartData().length);
+        logger.debug("Picked up part " + dataPart.getPartNo() + " size " + dataPart.getPartData().length);
         return uploadPart();
     }
 }

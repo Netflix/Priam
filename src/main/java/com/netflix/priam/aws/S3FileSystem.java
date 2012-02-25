@@ -16,7 +16,6 @@ import javax.management.ObjectName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -47,10 +46,10 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
 
-    private final AmazonS3 s3Client;
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
     private final IConfiguration config;
+    private final ICredential cred;
     private Throttle throttle;
     private CustomizedThreadPoolExecutor executor;
 
@@ -60,16 +59,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private AtomicInteger downloadCount = new AtomicInteger();
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential provider)
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred)
     {
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
-        AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
+        this.cred = cred;
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
-        this.s3Client = new AmazonS3Client(cred);
         this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
         {
             public int targetThroughput()
@@ -100,7 +98,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
-            S3Object obj = s3Client.getObject(getPrefix(), path.getRemotePath());
+            S3Object obj = getS3Client().getObject(getPrefix(), path.getRemotePath());
             compress.decompressAndClose(obj.getObjectContent(), os);
             bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
         }
@@ -113,8 +111,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     @Override
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
-        uploadCount.incrementAndGet();
-        logger.debug("Uploadings " + path.getRemotePath());
+        uploadCount.incrementAndGet();        
+        AmazonS3 s3Client = getS3Client();
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
@@ -122,6 +120,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         long chunkSize = config.getBackupChunkSize();
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
+        logger.info(String.format("Uploading to %s with chunk size %d", path.getRemotePath(), chunkSize));
         try
         {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
@@ -157,13 +156,18 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     @Override
     public Iterator<AbstractBackupPath> list(String path, Date start, Date till)
     {
-        return new S3FileIterator(pathProvider, s3Client, path, start, till);
+        return new S3FileIterator(pathProvider, getS3Client(), path, start, till);
     }
 
     @Override
     public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {
-        return new S3PrefixIterator(config, pathProvider, s3Client, date);
+        return new S3PrefixIterator(config, pathProvider, getS3Client(), date);
+    }
+
+    private AmazonS3 getS3Client()
+    {
+        return new AmazonS3Client(new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey()));
     }
 
     /**

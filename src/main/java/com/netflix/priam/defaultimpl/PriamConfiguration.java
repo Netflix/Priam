@@ -7,7 +7,6 @@ import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.Attribute;
@@ -104,15 +103,13 @@ public class PriamConfiguration implements IConfiguration
 
     private static final String DOMAIN = "PriamProperties";
     private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-
-    private final AmazonSimpleDBClient simpleDBClient;
+    private final ICredential provider;
+    
 
     @Inject
     public PriamConfiguration(ICredential provider)
     {
-        AWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        // End point is us-east-1
-        simpleDBClient = new AmazonSimpleDBClient(cred);
+        this.provider = provider;
     }
 
     @Override
@@ -136,6 +133,8 @@ public class PriamConfiguration implements IConfiguration
 
     private void populateProps()
     {
+        // End point is us-east-1
+        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
         config = new PriamProperties();
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);

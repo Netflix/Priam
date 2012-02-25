@@ -30,13 +30,13 @@ public class AWSMembership implements IMembership
 {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
     private final IConfiguration config;
-    private final BasicAWSCredentials cred;
+    private final ICredential provider;    
 
     @Inject
     public AWSMembership(IConfiguration config, ICredential provider)
     {
         this.config = config;
-        cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
+        this.provider = provider;        
     }
 
     @Override
@@ -192,6 +192,7 @@ public class AWSMembership implements IMembership
 
     protected AmazonAutoScaling getAutoScalingClient()
     {
+        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
         AmazonAutoScaling client = new AmazonAutoScalingClient(cred);
         client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
         return client;
@@ -199,6 +200,7 @@ public class AWSMembership implements IMembership
 
     protected AmazonEC2 getEc2Client()
     {
+        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
         AmazonEC2 client = new AmazonEC2Client(cred);
         client.setEndpoint("ec2." + config.getDC() + ".amazonaws.com");
         return client;

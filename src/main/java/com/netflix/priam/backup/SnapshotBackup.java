@@ -64,11 +64,6 @@ public class SnapshotBackup extends AbstractBackup
             metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
         }
-        catch (Exception e)
-        {
-            // Log it
-            logger.error(e.getMessage(), e);
-        }
         finally
         {
             try

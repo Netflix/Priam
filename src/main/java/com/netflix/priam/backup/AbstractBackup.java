@@ -31,7 +31,8 @@ public abstract class AbstractBackup extends Task
     }
 
     /**
-     * Upload files in the specified dir
+     * Upload files in the specified dir. Does not delete the file in case of
+     * error
      * 
      * @param parent
      *            Parent dir
@@ -45,20 +46,14 @@ public abstract class AbstractBackup extends Task
         List<AbstractBackupPath> bps = Lists.newArrayList();
         for (File file : parent.listFiles())
         {
-            try
-            {
-                final AbstractBackupPath bp = pathFactory.get();
-                bp.parseLocal(file, type);
-                String[] cfPrefix = bp.fileName.split("-");
-                if (cfPrefix.length > 1 && FILTER_COLUMN_FAMILY.contains(cfPrefix[0]))
-                    continue;
-                upload(bp);
-                bps.add(bp);
-            }
-            finally
-            {
-                file.delete();
-            }
+            final AbstractBackupPath bp = pathFactory.get();
+            bp.parseLocal(file, type);
+            String[] cfPrefix = bp.fileName.split("-");
+            if (cfPrefix.length > 1 && FILTER_COLUMN_FAMILY.contains(cfPrefix[0]))
+                continue;
+            upload(bp);
+            bps.add(bp);
+            file.delete();
         }
         return bps;
     }

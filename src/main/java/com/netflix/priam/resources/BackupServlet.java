@@ -171,6 +171,9 @@ public class BackupServlet
         if (StringUtils.isNotBlank(token))
             priamServer.getId().getInstance().setToken(token);
 
+        if( config.isRestoreClosestToken())
+            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+        
         if (StringUtils.isNotBlank(region))
         {
             config.setDC(region);

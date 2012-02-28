@@ -46,6 +46,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = PRIAM_PRE + ".upload.throttle";
     private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = PRIAM_PRE + ".memory.compaction.limit";
     private static final String CONFIG_COMPACTION_THROUHPUT = PRIAM_PRE + ".compaction.throughput";
+    private static final String CONFIG_MAX_HINT_WINDOW_IN_MS = PRIAM_PRE + ".hint.window";
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
 
@@ -102,6 +103,7 @@ public class PriamConfiguration implements IConfiguration
     }
 
     private static final String DOMAIN = "PriamProperties";
+
     private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     private final ICredential provider;
     
@@ -418,6 +420,12 @@ public class PriamConfiguration implements IConfiguration
     public int getCompactionThroughput()
     {
         return config.getInteger(CONFIG_COMPACTION_THROUHPUT, 8);
+    }
+    
+    @Override
+    public int getMaxHintWindowInMS()
+    {
+        return config.getInteger(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
     }
 
     @Override

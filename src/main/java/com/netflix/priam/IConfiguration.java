@@ -220,6 +220,11 @@ public interface IConfiguration
     public int getCompactionThroughput();
 
     /**
+     * @return compaction_throughput_mb_per_sec
+     */
+    public int getMaxHintWindowInMS();
+    
+    /**
      * @return Size of Cassandra max direct memory
      */
     public String getMaxDirectMemory();

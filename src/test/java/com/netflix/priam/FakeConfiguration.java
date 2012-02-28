@@ -319,4 +319,11 @@ public class FakeConfiguration implements IConfiguration
         return "com.netflix.priam.cassandra.NFSeedProvider";
     }
 
+    @Override
+    public int getMaxHintWindowInMS()
+    {
+        // TODO Auto-generated method stub
+        return 36000;
+    }
+
 }

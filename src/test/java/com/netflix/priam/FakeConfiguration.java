@@ -330,5 +330,10 @@ public class FakeConfiguration implements IConfiguration
     {
         return Lists.newArrayList();
     }
+    
+    public int getMaxHintWindowInMS()
+    {
+        return 36000;
+    }
 
 }

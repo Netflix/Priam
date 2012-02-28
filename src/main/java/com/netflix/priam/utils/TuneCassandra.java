@@ -64,6 +64,12 @@ public class TuneCassandra extends Task
         map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
+        
+        if (null != map.get("max_hint_window_in_ms"))
+        {
+            map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
+            
+        }
 
         // this is only for 0.8 so check before set.
         if (null != map.get("seed_provider"))

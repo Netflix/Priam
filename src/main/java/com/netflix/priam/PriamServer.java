@@ -2,6 +2,7 @@ package com.netflix.priam;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
@@ -10,6 +11,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
+import org.apache.commons.collections.CollectionUtils;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -19,7 +21,7 @@ import com.netflix.priam.utils.TuneCassandra;
 public class PriamServer
 {
     private final PriamScheduler scheduler;
-    private final IConfiguration config;    
+    private final IConfiguration config;
     private final InstanceIdentity id;
 
     @Inject
@@ -60,7 +62,7 @@ public class PriamServer
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)
-        if (config.getBackupHour() >= 0)
+        if (config.getBackupHour() >= 0 && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac())))
         {
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
@@ -68,19 +70,24 @@ public class PriamServer
             if (config.isIncrBackup())
                 scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
         }
+        
+        //Set cleanup
+        scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
-    
-    public InstanceIdentity getId(){
+
+    public InstanceIdentity getId()
+    {
         return id;
     }
-    
-    public PriamScheduler getScheduler(){
+
+    public PriamScheduler getScheduler()
+    {
         return scheduler;
     }
 
-    public IConfiguration getConfiguration(){
+    public IConfiguration getConfiguration()
+    {
         return config;
     }
-
 
 }

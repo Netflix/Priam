@@ -319,4 +319,16 @@ public class FakeConfiguration implements IConfiguration
         return "com.netflix.priam.cassandra.NFSeedProvider";
     }
 
+    @Override
+    public int getBackupRetentionDays()
+    {
+        return 5;
+    }
+
+    @Override
+    public List<String> getBackupRacs()
+    {
+        return Lists.newArrayList();
+    }
+
 }

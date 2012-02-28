@@ -4,8 +4,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -19,10 +21,12 @@ import org.slf4j.LoggerFactory;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3Object;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -165,6 +169,47 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         return new S3PrefixIterator(config, pathProvider, getS3Client(), date);
     }
 
+    /**
+     * Note: Current limitation allows only 100 object expiration rules
+     * to be set.
+     */
+    @Override
+    public void cleanup()
+    {
+        AmazonS3 s3Client = getS3Client();
+        String clusterPath = pathProvider.get().clusterPrefix("");
+        BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(config.getBackupPrefix());
+        if( lifeConfig == null ){
+            lifeConfig = new BucketLifecycleConfiguration();
+            List<Rule> rules = Lists.newArrayList();
+            lifeConfig.setRules(rules);
+        }
+        List<Rule> rules = lifeConfig.getRules();
+        Rule rule = null;
+        for( BucketLifecycleConfiguration.Rule lcRule : rules){
+            if( lcRule.getPrefix().equals(clusterPath)){
+                rule = lcRule;
+                break;
+            }
+        }        
+        if(rule != null && rule.getExpirationInDays() == config.getBackupRetentionDays()){
+            logger.info("Cleanup rule already set");
+            return;
+        }
+        if( rule == null ){
+            //Create a new rule
+            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays()).withPrefix(clusterPath);
+            rule.setStatus(BucketLifecycleConfiguration.ENABLED);
+            rule.setId(clusterPath);
+            rules.add(rule);
+        }
+        else
+            rule.setExpirationInDays(config.getBackupRetentionDays());
+        logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
+        lifeConfig.setRules(rules);
+        s3Client.setBucketLifecycleConfiguration(config.getBackupPrefix(), lifeConfig);        
+    }
+
     private AmazonS3 getS3Client()
     {
         return new AmazonS3Client(new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey()));
@@ -208,4 +253,5 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         return bytesDownloaded.get();
     }
+
 }

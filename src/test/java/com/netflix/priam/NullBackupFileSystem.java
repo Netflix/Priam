@@ -39,4 +39,11 @@ public class NullBackupFileSystem implements IBackupFileSystem
     {
         return null;
     }
+
+    @Override
+    public void cleanup()
+    {
+        // TODO Auto-generated method stub
+        
+    }
 }

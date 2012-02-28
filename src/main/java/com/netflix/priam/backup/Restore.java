@@ -11,6 +11,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +60,7 @@ public class Restore extends Task
     @Override
     public void execute() throws Exception
     {
-        if (!"".equals(config.getRestoreSnapshot()))
+        if (isRestoreEnabled(config))
         {
             logger.info("Starting restore for " + config.getRestoreSnapshot());
             String[] restore = config.getRestoreSnapshot().split(",");
@@ -80,6 +82,8 @@ public class Restore extends Task
                         logger.info("Attempting restore");
                         restore(startTime, endTime);
                         logger.info("Restore completed");
+                        // Wait for other server init to complete
+                        Thread.sleep(30000);
                         return null;
                     }
                 }.call();
@@ -150,7 +154,7 @@ public class Restore extends Task
         while (fileiter.hasNext())
         {
             AbstractBackupPath path = fileiter.next();
-            if( path.getType() == filter)
+            if (path.getType() == filter)
                 download(path);
         }
         waitToComplete();
@@ -201,7 +205,14 @@ public class Restore extends Task
 
     public int getActiveCount()
     {
-        return (executor == null)?0:executor.getActiveCount();
+        return (executor == null) ? 0 : executor.getActiveCount();
+    }
+
+    public static boolean isRestoreEnabled(IConfiguration conf)
+    {
+        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
+        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
+        return !(isRestoreMode && isBackedupRac);
     }
 
 }

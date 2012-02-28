@@ -47,7 +47,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = PRIAM_PRE + ".memory.compaction.limit";
     private static final String CONFIG_COMPACTION_THROUHPUT = PRIAM_PRE + ".compaction.throughput";
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
-    private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
+    private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";    
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -62,6 +62,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_RESTORE_CLOSEST_TOKEN = PRIAM_PRE + ".restore.closesttoken";
     private static final String CONFIG_RESTORE_KEYSPACES = PRIAM_PRE + ".restore.keyspaces";
     private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
+    private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
+    private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -90,6 +92,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_BACKUP_THREADS = 10;
     private final int DEFAULT_RESTORE_THREADS = 30;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
+    private final int DEFAULT_BACKUP_RETENTION = 0;
 
     private PriamProperties config;
 
@@ -207,6 +210,18 @@ public class PriamConfiguration implements IConfiguration
     public String getBackupPrefix()
     {
         return config.getProperty(CONFIG_BUCKET_NAME);
+    }
+
+    @Override
+    public int getBackupRetentionDays()
+    {
+        return config.getInteger(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
+    }
+    
+    @Override
+    public List<String> getBackupRacs()
+    {
+        return config.getList(CONFIG_BACKUP_RACS);
     }
 
     @Override
@@ -431,7 +446,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getProperty(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
-
+    
     private class PriamProperties extends Properties
     {
 
@@ -460,4 +475,5 @@ public class PriamConfiguration implements IConfiguration
         }
 
     }
+
 }

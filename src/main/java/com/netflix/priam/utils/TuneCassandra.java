@@ -8,15 +8,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.cassandra.db.HintedHandOffManager;
+import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.Restore;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -51,12 +54,13 @@ public class TuneCassandra extends Task
         map.put("rpc_port", config.getThriftPort());
         map.put("listen_address", null);
         map.put("rpc_address", null);
-        //Dont bootstrap in restore mode
-        map.put("auto_bootstrap", config.getRestoreSnapshot().equals("")?true:false);
+        //Dont bootstrap in restore mode        
+        map.put("auto_bootstrap", Restore.isRestoreEnabled(config));
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
-        map.put("incremental_backups", (config.getBackupHour() >= 0 && config.isIncrBackup()) ? true : false);
+        boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
+        map.put("incremental_backups", enableIncremental);
         map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());

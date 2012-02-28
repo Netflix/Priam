@@ -25,13 +25,18 @@ public interface IBackupFileSystem
     /**
      * List all files in the backup location for the specified time range.
      */
-    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till);
+    public Iterator<AbstractBackupPath> list(String path, Date start, Date till);
     
     /**
      * Get a list of prefixes for the cluster available in backup for the specified date
      */
     public Iterator<AbstractBackupPath> listPrefixes(Date date);
 
+    /**
+     * Runs cleanup or set retention
+     */
+    public void cleanup();
+    
     /**
      * Get number of active upload or downloads
      */

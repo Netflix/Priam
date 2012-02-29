@@ -115,7 +115,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     @Override
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
-        uploadCount.incrementAndGet();        
+        uploadCount.incrementAndGet();
         AmazonS3 s3Client = getS3Client();
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
@@ -170,8 +170,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     }
 
     /**
-     * Note: Current limitation allows only 100 object expiration rules
-     * to be set.
+     * Note: Current limitation allows only 100 object expiration rules to be
+     * set. Removes the rule is set to 0.
      */
     @Override
     public void cleanup()
@@ -179,35 +179,62 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         AmazonS3 s3Client = getS3Client();
         String clusterPath = pathProvider.get().clusterPrefix("");
         BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(config.getBackupPrefix());
-        if( lifeConfig == null ){
+        if (lifeConfig == null)
+        {
             lifeConfig = new BucketLifecycleConfiguration();
             List<Rule> rules = Lists.newArrayList();
             lifeConfig.setRules(rules);
         }
         List<Rule> rules = lifeConfig.getRules();
+        if (updateLifecycleRule(rules, clusterPath))
+        {
+            if( rules.size() > 0 ){
+                lifeConfig.setRules(rules);
+                s3Client.setBucketLifecycleConfiguration(config.getBackupPrefix(), lifeConfig);
+            }
+            else
+                s3Client.deleteBucketLifecycleConfiguration(config.getBackupPrefix());
+        }
+    }
+
+    private boolean updateLifecycleRule(List<Rule> rules, String prefix)
+    {
         Rule rule = null;
-        for( BucketLifecycleConfiguration.Rule lcRule : rules){
-            if( lcRule.getPrefix().equals(clusterPath)){
+        for (BucketLifecycleConfiguration.Rule lcRule : rules)
+        {
+            if (lcRule.getPrefix().equals(prefix))
+            {
                 rule = lcRule;
                 break;
             }
-        }        
-        if(rule != null && rule.getExpirationInDays() == config.getBackupRetentionDays()){
-            logger.info("Cleanup rule already set");
-            return;
         }
-        if( rule == null ){
-            //Create a new rule
-            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays()).withPrefix(clusterPath);
+        if (rule == null && config.getBackupRetentionDays() <= 0)
+            return false;
+        if (rule != null && rule.getExpirationInDays() == config.getBackupRetentionDays())
+        {
+            logger.info("Cleanup rule already set");
+            return false;
+        }
+        if (rule == null)
+        {
+            // Create a new rule
+            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays()).withPrefix(prefix);
             rule.setStatus(BucketLifecycleConfiguration.ENABLED);
-            rule.setId(clusterPath);
+            rule.setId(prefix);
             rules.add(rule);
+            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
+        }
+        else if (config.getBackupRetentionDays() > 0)
+        {
+            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), config.getBackupRetentionDays()));
+            rule.setExpirationInDays(config.getBackupRetentionDays());
         }
         else
-            rule.setExpirationInDays(config.getBackupRetentionDays());
-        logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
-        lifeConfig.setRules(rules);
-        s3Client.setBucketLifecycleConfiguration(config.getBackupPrefix(), lifeConfig);        
+        {
+            logger.info(String.format("Removing cleanup rule for %s", rule.getPrefix()));
+            rules.remove(rule);
+        }
+        return true;
     }
 
     private AmazonS3 getS3Client()

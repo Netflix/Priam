@@ -48,7 +48,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMPACTION_THROUHPUT = PRIAM_PRE + ".compaction.throughput";
     private static final String CONFIG_MAX_HINT_WINDOW_IN_MS = PRIAM_PRE + ".hint.window";
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
-    private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";    
+    private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -78,11 +78,21 @@ public class PriamConfiguration implements IConfiguration
     private static String REGION = System.getenv("EC2_REGION");
 
     // Defaults
+    private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/mnt/data/cassandra/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
+
+    //rpm based. Can be modified for tar based.
+    private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
+    private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
+    private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
+    private final String DEFAULT_BACKUP_LOCATION = "backup";
+    private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
+    private final String DEFAULT_AVAILABILITY_ZONES = "us-east-1a,us-east-1c,us-east1d";
+
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
     private final String DEFAULT_MAX_HEAP = "8G";
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
@@ -109,7 +119,6 @@ public class PriamConfiguration implements IConfiguration
 
     private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     private final ICredential provider;
-    
 
     @Inject
     public PriamConfiguration(ICredential provider)
@@ -128,12 +137,13 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getDataFileLocation());
     }
 
-    private void setupEnvVars(){
-        //Search in java opt properties
-        ASG_NAME = StringUtils.isBlank(ASG_NAME)?System.getProperty("ASG_NAME"):ASG_NAME;
-        REGION = StringUtils.isBlank(REGION)?System.getProperty("EC2_REGION"):REGION;
+    private void setupEnvVars()
+    {
+        // Search in java opt properties
+        ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
+        REGION = StringUtils.isBlank(REGION) ? System.getProperty("EC2_REGION") : REGION;
         if (StringUtils.isBlank(REGION))
-            REGION = "us-east-1";        
+            REGION = "us-east-1";
     }
 
     private void populateProps()
@@ -187,31 +197,31 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getCassStartupScript()
     {
-        return config.getProperty(CONFIG_CASS_START_SCRIPT);
+        return config.getProperty(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
     }
 
     @Override
     public String getCassStopScript()
     {
-        return config.getProperty(CONFIG_CASS_STOP_SCRIPT);
+        return config.getProperty(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
     }
 
     @Override
     public String getCassHome()
     {
-        return config.getProperty(CONFIG_CASS_HOME_DIR);
+        return config.getProperty(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
     }
 
     @Override
     public String getBackupLocation()
     {
-        return config.getProperty(CONFIG_S3_BASE_DIR);
+        return config.getProperty(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
     }
 
     @Override
     public String getBackupPrefix()
     {
-        return config.getProperty(CONFIG_BUCKET_NAME);
+        return config.getProperty(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
     }
 
     @Override
@@ -219,7 +229,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getInteger(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
     }
-    
+
     @Override
     public List<String> getBackupRacs()
     {
@@ -301,7 +311,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getAppName()
     {
-        return config.getProperty(CONFIG_CLUSTER_NAME);
+        return config.getProperty(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
     }
 
     @Override
@@ -313,7 +323,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public List<String> getRacs()
     {
-        return config.getList(CONFIG_AVAILABILITY_ZONES);
+        return config.getList(CONFIG_AVAILABILITY_ZONES, DEFAULT_AVAILABILITY_ZONES);
     }
 
     @Override
@@ -436,7 +446,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getInteger(CONFIG_COMPACTION_THROUHPUT, 8);
     }
-    
+
     @Override
     public int getMaxHintWindowInMS()
     {
@@ -448,13 +458,13 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "");
     }
-    
+
     @Override
     public String getSeedProviderName()
     {
         return config.getProperty(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
-    
+
     private class PriamProperties extends Properties
     {
 
@@ -480,6 +490,13 @@ public class PriamConfiguration implements IConfiguration
             if (getProperty(prop) == null)
                 return Lists.newArrayList();
             return Arrays.asList(getProperty(prop).split(","));
+        }
+
+        public List<String> getList(String prop, String defaultValue)
+        {
+            if (getProperty(prop) == null)
+                return Lists.newArrayList(defaultValue.split(","));
+            return getList(prop);
         }
 
     }

@@ -111,8 +111,8 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_THRIFT_PORT = 9160;
     private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_BACKUP_HOUR = 12;
-    private final int DEFAULT_BACKUP_THREADS = 10;
-    private final int DEFAULT_RESTORE_THREADS = 30;
+    private final int DEFAULT_BACKUP_THREADS = 2;
+    private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
 

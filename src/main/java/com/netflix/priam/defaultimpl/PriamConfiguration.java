@@ -6,8 +6,19 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesRequest;
+import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
@@ -77,21 +88,21 @@ public class PriamConfiguration implements IConfiguration
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
 
-    // Defaults
+    // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
-    private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra/data";
-    private final String DEFAULT_COMMIT_LOG_LOCATION = "/mnt/data/cassandra/commitlog";
-    private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra/saved_caches";
+    private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
+    private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
+    private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
 
-    //rpm based. Can be modified for tar based.
+    // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
     private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
     private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
     private final String DEFAULT_BACKUP_LOCATION = "backup";
     private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
-    private final String DEFAULT_AVAILABILITY_ZONES = "us-east-1a,us-east-1c,us-east1d";
+    private String DEFAULT_AVAILABILITY_ZONES = "";
 
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
     private final String DEFAULT_MAX_HEAP = "8G";
@@ -106,6 +117,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_BACKUP_RETENTION = 0;
 
     private PriamProperties config;
+    private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
     private static class Attributes
     {
@@ -130,6 +142,7 @@ public class PriamConfiguration implements IConfiguration
     public void intialize()
     {
         setupEnvVars();
+        setDefaultRACList(REGION);
         populateProps();
         SystemUtils.createDirs(getBackupCommitLogLocation());
         SystemUtils.createDirs(getCommitLogLocation());
@@ -140,11 +153,58 @@ public class PriamConfiguration implements IConfiguration
     private void setupEnvVars()
     {
         // Search in java opt properties
-        ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
         REGION = StringUtils.isBlank(REGION) ? System.getProperty("EC2_REGION") : REGION;
+        // Infer from zone
         if (StringUtils.isBlank(REGION))
-            REGION = "us-east-1";
+            REGION = RAC.substring(0, RAC.length() - 1);
+        ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
+        if (StringUtils.isBlank(ASG_NAME))
+            ASG_NAME = populateASGName(REGION, INSTANCE_ID);
+        logger.info(String.format("REGION set to %s, ASG Name set to %s", REGION, ASG_NAME));
     }
+
+    /**
+     * Query amazon to get ASG name. Currently not available as part of instance
+     * info api.
+     */
+    private String populateASGName(String region, String instanceId)
+    {
+        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
+        DescribeInstancesResult res = client.describeInstances(desc);
+
+        for (Reservation resr : res.getReservations())
+        {
+            for (Instance ins : resr.getInstances())
+            {
+                for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                {
+                    if (tag.getKey().equals("aws:autoscaling:groupName"))
+                        return tag.getValue();
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the fist 3 available zones in the region 
+     */
+    public void setDefaultRACList(String region){
+        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
+        List<String> zone = Lists.newArrayList(); 
+        for(AvailabilityZone reg : res.getAvailabilityZones()){
+            if( reg.getState().equals("available") )
+                zone.add(reg.getZoneName());
+            if( zone.size() == 3)
+                break;
+        }
+        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+    }
+
 
     private void populateProps()
     {

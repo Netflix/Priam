@@ -225,6 +225,11 @@ public interface IConfiguration
     public int getMaxHintWindowInMS();
     
     /**
+     * @return hinted_handoff_throttle_delay_in_ms
+     */
+    public int getHintHandoffDelay();
+    
+    /**
      * @return Size of Cassandra max direct memory
      */
     public String getMaxDirectMemory();

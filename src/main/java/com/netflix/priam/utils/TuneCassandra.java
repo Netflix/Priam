@@ -64,7 +64,7 @@ public class TuneCassandra extends Task
         if (null != map.get("max_hint_window_in_ms"))
         {
             map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
-            
+            map.put("hinted_handoff_throttle_delay_in_ms", config.getHintHandoffDelay());
         }
 
         // this is only for 0.8 so check before set.

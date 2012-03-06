@@ -336,4 +336,11 @@ public class FakeConfiguration implements IConfiguration
         return 36000;
     }
 
+    @Override
+    public int getHintHandoffDelay()
+    {
+        // TODO Auto-generated method stub
+        return 0;
+    }
+
 }

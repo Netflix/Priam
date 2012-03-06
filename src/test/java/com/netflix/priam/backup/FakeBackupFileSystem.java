@@ -147,4 +147,11 @@ public class FakeBackupFileSystem implements IBackupFileSystem
         return null;
     }
 
+    @Override
+    public void cleanup()
+    {
+        // TODO Auto-generated method stub
+        
+    }
+
 }

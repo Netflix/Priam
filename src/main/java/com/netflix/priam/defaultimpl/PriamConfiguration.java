@@ -6,8 +6,19 @@ import java.util.List;
 import java.util.Properties;
 
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.services.ec2.AmazonEC2;
+import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.model.AvailabilityZone;
+import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesRequest;
+import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
+import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
+import com.amazonaws.services.ec2.model.DescribeInstancesResult;
+import com.amazonaws.services.ec2.model.Instance;
+import com.amazonaws.services.ec2.model.Reservation;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
@@ -64,6 +75,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_RESTORE_CLOSEST_TOKEN = PRIAM_PRE + ".restore.closesttoken";
     private static final String CONFIG_RESTORE_KEYSPACES = PRIAM_PRE + ".restore.keyspaces";
     private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
+    private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
+    private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -76,12 +89,22 @@ public class PriamConfiguration implements IConfiguration
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
 
-    // Defaults
-    private final String DEFAULT_DATA_LOCATION = "/mnt/data/cassandra/data";
-    private final String DEFAULT_COMMIT_LOG_LOCATION = "/mnt/data/cassandra/commitlog";
-    private final String DEFAULT_CACHE_LOCATION = "/mnt/data/cassandra/saved_caches";
+    // Defaults 
+    private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
+    private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
+    private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
+    private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
+
+    // rpm based. Can be modified for tar based.
+    private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
+    private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
+    private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
+    private final String DEFAULT_BACKUP_LOCATION = "backup";
+    private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
+    private String DEFAULT_AVAILABILITY_ZONES = "";
+
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
     private final String DEFAULT_MAX_HEAP = "8G";
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
@@ -89,11 +112,13 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_THRIFT_PORT = 9160;
     private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_BACKUP_HOUR = 12;
-    private final int DEFAULT_BACKUP_THREADS = 10;
-    private final int DEFAULT_RESTORE_THREADS = 30;
+    private final int DEFAULT_BACKUP_THREADS = 2;
+    private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
+    private final int DEFAULT_BACKUP_RETENTION = 0;
 
     private PriamProperties config;
+    private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
     private static class Attributes
     {
@@ -107,7 +132,6 @@ public class PriamConfiguration implements IConfiguration
 
     private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     private final ICredential provider;
-    
 
     @Inject
     public PriamConfiguration(ICredential provider)
@@ -119,6 +143,7 @@ public class PriamConfiguration implements IConfiguration
     public void intialize()
     {
         setupEnvVars();
+        setDefaultRACList(REGION);
         populateProps();
         SystemUtils.createDirs(getBackupCommitLogLocation());
         SystemUtils.createDirs(getCommitLogLocation());
@@ -126,13 +151,61 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getDataFileLocation());
     }
 
-    private void setupEnvVars(){
-        //Search in java opt properties
-        ASG_NAME = StringUtils.isBlank(ASG_NAME)?System.getProperty("ASG_NAME"):ASG_NAME;
-        REGION = StringUtils.isBlank(REGION)?System.getProperty("EC2_REGION"):REGION;
+    private void setupEnvVars()
+    {
+        // Search in java opt properties
+        REGION = StringUtils.isBlank(REGION) ? System.getProperty("EC2_REGION") : REGION;
+        // Infer from zone
         if (StringUtils.isBlank(REGION))
-            REGION = "us-east-1";        
+            REGION = RAC.substring(0, RAC.length() - 1);
+        ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
+        if (StringUtils.isBlank(ASG_NAME))
+            ASG_NAME = populateASGName(REGION, INSTANCE_ID);
+        logger.info(String.format("REGION set to %s, ASG Name set to %s", REGION, ASG_NAME));
     }
+
+    /**
+     * Query amazon to get ASG name. Currently not available as part of instance
+     * info api.
+     */
+    private String populateASGName(String region, String instanceId)
+    {
+        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
+        DescribeInstancesResult res = client.describeInstances(desc);
+
+        for (Reservation resr : res.getReservations())
+        {
+            for (Instance ins : resr.getInstances())
+            {
+                for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                {
+                    if (tag.getKey().equals("aws:autoscaling:groupName"))
+                        return tag.getValue();
+                }
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Get the fist 3 available zones in the region 
+     */
+    public void setDefaultRACList(String region){
+        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
+        List<String> zone = Lists.newArrayList(); 
+        for(AvailabilityZone reg : res.getAvailabilityZones()){
+            if( reg.getState().equals("available") )
+                zone.add(reg.getZoneName());
+            if( zone.size() == 3)
+                break;
+        }
+        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+    }
+
 
     private void populateProps()
     {
@@ -142,7 +215,7 @@ public class PriamConfiguration implements IConfiguration
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);
         String nextToken = null;
-        String appid = ASG_NAME.substring(0, ASG_NAME.lastIndexOf('-'));
+        String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.lastIndexOf('-')): ASG_NAME;
         do
         {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
@@ -185,31 +258,43 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getCassStartupScript()
     {
-        return config.getProperty(CONFIG_CASS_START_SCRIPT);
+        return config.getProperty(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
     }
 
     @Override
     public String getCassStopScript()
     {
-        return config.getProperty(CONFIG_CASS_STOP_SCRIPT);
+        return config.getProperty(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
     }
 
     @Override
     public String getCassHome()
     {
-        return config.getProperty(CONFIG_CASS_HOME_DIR);
+        return config.getProperty(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
     }
 
     @Override
     public String getBackupLocation()
     {
-        return config.getProperty(CONFIG_S3_BASE_DIR);
+        return config.getProperty(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
     }
 
     @Override
     public String getBackupPrefix()
     {
-        return config.getProperty(CONFIG_BUCKET_NAME);
+        return config.getProperty(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
+    }
+
+    @Override
+    public int getBackupRetentionDays()
+    {
+        return config.getInteger(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
+    }
+
+    @Override
+    public List<String> getBackupRacs()
+    {
+        return config.getList(CONFIG_BACKUP_RACS);
     }
 
     @Override
@@ -287,7 +372,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getAppName()
     {
-        return config.getProperty(CONFIG_CLUSTER_NAME);
+        return config.getProperty(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
     }
 
     @Override
@@ -299,7 +384,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public List<String> getRacs()
     {
-        return config.getList(CONFIG_AVAILABILITY_ZONES);
+        return config.getList(CONFIG_AVAILABILITY_ZONES, DEFAULT_AVAILABILITY_ZONES);
     }
 
     @Override
@@ -422,7 +507,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getInteger(CONFIG_COMPACTION_THROUHPUT, 8);
     }
-    
+
     @Override
     public int getMaxHintWindowInMS()
     {
@@ -440,7 +525,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "");
     }
-    
+
     @Override
     public String getSeedProviderName()
     {
@@ -474,5 +559,13 @@ public class PriamConfiguration implements IConfiguration
             return Arrays.asList(getProperty(prop).split(","));
         }
 
+        public List<String> getList(String prop, String defaultValue)
+        {
+            if (getProperty(prop) == null)
+                return Lists.newArrayList(defaultValue.split(","));
+            return getList(prop);
+        }
+
     }
+
 }

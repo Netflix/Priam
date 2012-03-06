@@ -320,9 +320,19 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public int getBackupRetentionDays()
+    {
+        return 5;
+    }
+
+    @Override
+    public List<String> getBackupRacs()
+    {
+        return Lists.newArrayList();
+    }
+    
     public int getMaxHintWindowInMS()
     {
-        // TODO Auto-generated method stub
         return 36000;
     }
 

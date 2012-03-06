@@ -2,7 +2,6 @@ package com.netflix.priam.backup;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
@@ -25,6 +24,8 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
+import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.aws.DataPart;
@@ -124,6 +125,33 @@ public class TestS3FileSystem
         Assert.assertEquals(1, MockS3PartUploader.compattempts);
     }
 
+    @Test
+    public void testCleanupAdd() throws Exception
+    {
+        MockAmazonS3Client.ruleAvailable = false;
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.cleanup();
+        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
+        logger.info(rule.getPrefix());
+        Assert.assertEquals("casstestbackup/fake-region/fake-app/", rule.getPrefix());
+        Assert.assertEquals(5, rule.getExpirationInDays());
+    }
+
+    @Test
+    public void testCleanupIgnore() throws Exception
+    {
+        MockAmazonS3Client.ruleAvailable = true;
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.cleanup();
+        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
+        logger.info(rule.getPrefix());
+        Assert.assertEquals("casstestbackup/fake-region/fake-app/", rule.getPrefix());
+        Assert.assertEquals(5, rule.getExpirationInDays());
+    }
+
+    
     // Mock Nodeprobe class
     @Ignore
     public static class MockS3PartUploader extends RetryableCallable<Void>
@@ -183,6 +211,8 @@ public class TestS3FileSystem
     @Ignore
     public static class MockAmazonS3Client
     {
+        public static boolean ruleAvailable = false;
+        public static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
         @Mock
         public void $init()
         {
@@ -193,5 +223,29 @@ public class TestS3FileSystem
         {
             return new InitiateMultipartUploadResult();
         }
+        
+        @Mock
+        public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName)
+        {
+            List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
+            if( ruleAvailable )
+            {
+                String clusterPath = "casstestbackup/fake-region/fake-app/";                
+                BucketLifecycleConfiguration.Rule rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(5).withPrefix(clusterPath);
+                rule.setStatus(BucketLifecycleConfiguration.ENABLED);
+                rule.setId(clusterPath);
+                rules.add(rule);
+                
+            }
+            bconf.setRules(rules);
+            return bconf;
+        }
+        
+        @Mock
+        public void setBucketLifecycleConfiguration(String bucketName,  BucketLifecycleConfiguration bucketLifecycleConfiguration)
+        {
+            bconf = bucketLifecycleConfiguration;
+        }
+
     }
 }

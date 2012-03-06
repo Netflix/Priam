@@ -31,6 +31,16 @@ public interface IConfiguration
      * @return Prefix that will be added to remote backup location
      */
     public String getBackupLocation();
+    
+    /** 
+     * @return Get Backup retention in days
+     */
+    public int getBackupRetentionDays();
+
+    /** 
+     * @return Get list of racs to backup. Backup all racs if empty
+     */
+    public List<String> getBackupRacs();
 
     /**
      * Bucket name in case of AWS

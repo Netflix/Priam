@@ -34,7 +34,6 @@ public class PriamServer
 
     public void intialize() throws Exception
     {     
-        id.init();
         if (id.getInstance().isOutOfService())
             return;
 

@@ -7,6 +7,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,6 +96,7 @@ public class InstanceIdentity
 
     private void populateRacMap()
     {
+        locMap.clear();
         for (PriamInstance ins : factory.getAllIds(config.getAppName()))
         {
             locMap.put(ins.getRac(), ins);
@@ -169,6 +171,16 @@ public class InstanceIdentity
     {
         populateRacMap();
         List<String> seeds = new LinkedList<String>();
+        // Handle single zone deployment
+        if (config.getRacs().size() == 1)
+        {
+            // Return empty list if all nodes are not up
+            if (membership.getRacMembershipSize() != locMap.get(myInstance.getRac()).size())
+                return seeds;
+            // If seed node, return the next node in the list
+            if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostName().equals(myInstance.getHostName()))
+                seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
+        }
         for (String loc : locMap.keySet())
             seeds.add(locMap.get(loc).get(0).getHostName());
         seeds.remove(myInstance.getHostName());

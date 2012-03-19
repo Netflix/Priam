@@ -13,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
-import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -40,20 +39,19 @@ public class TuneCassandra extends Task
      * update the cassandra yaml file.
      */
     // there is no way we can have uncheck with snake's implementation.
-    @SuppressWarnings("unchecked")
-    public void updateYaml() throws IOException
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    public static void updateYaml(IConfiguration config, String yamlLocation, String hostname, String seedProvider) throws IOException
     {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
-        File yamlFile = new File(config.getCassHome() + "/conf/cassandra.yaml");
-        @SuppressWarnings("rawtypes")
+        File yamlFile = new File(yamlLocation);
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("rpc_port", config.getThriftPort());
-        map.put("listen_address", null);
-        map.put("rpc_address", null);
+        map.put("listen_address", hostname);
+        map.put("rpc_address", hostname);
         //Dont bootstrap in restore mode        
         map.put("auto_bootstrap", Restore.isRestoreEnabled(config));
         map.put("saved_caches_directory", config.getCacheLocation());
@@ -76,7 +74,7 @@ public class TuneCassandra extends Task
         {
             List<?> seedp = (List) map.get("seed_provider");
             Map<String, String> m = (Map<String, String>) seedp.get(0);
-            m.put("class_name", config.getSeedProviderName());
+            m.put("class_name", seedProvider);
         }
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
@@ -100,7 +98,7 @@ public class TuneCassandra extends Task
     @Override
     public void execute() throws IOException
     {
-        updateYaml();
+        TuneCassandra.updateYaml(config, config.getCassHome() + "/conf/cassandra.yaml", null, config.getSeedProviderName());
     }
 
     @Override

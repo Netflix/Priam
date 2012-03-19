@@ -72,7 +72,7 @@ public class FakeConfiguration implements IConfiguration
     public String getCacheLocation()
     {
         // TODO Auto-generated method stub
-        return null;
+        return "cass/caches";
     }
 
     @Override
@@ -90,15 +90,13 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getThriftPort()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return 9160;
     }
 
     @Override
     public String getSnitch()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "org.apache.cassandra.locator.SimpleSnitch";
     }
 
     @Override
@@ -236,8 +234,7 @@ public class FakeConfiguration implements IConfiguration
 
 	@Override
 	public int getInMemoryCompactionLimit() {
-		// TODO Auto-generated method stub
-		return 0;
+		return 8;
 	}
 
 	@Override
@@ -316,7 +313,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getSeedProviderName()
     {
-        return "com.netflix.priam.cassandra.NFSeedProvider";
+        return "org.apache.cassandra.locator.SimpleSeedProvider";
     }
 
     @Override

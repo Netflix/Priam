@@ -221,4 +221,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         }
     }
 
+    @Override
+    public String toString()
+    {
+        return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();
+    }
 }

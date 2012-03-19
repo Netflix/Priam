@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -18,6 +21,8 @@ import com.sun.jersey.spi.container.servlet.ServletContainer;
 
 public class InjectedWebListener extends GuiceServletContextListener
 {
+    protected static final Logger logger = LoggerFactory.getLogger(InjectedWebListener.class);
+    
     @Override
     protected Injector getInjector()
     {
@@ -32,6 +37,7 @@ public class InjectedWebListener extends GuiceServletContextListener
         }
         catch (Exception e)
         {
+            logger.error(e.getMessage(),e);
             throw new RuntimeException(e.getMessage(), e);
         }
         return injector;

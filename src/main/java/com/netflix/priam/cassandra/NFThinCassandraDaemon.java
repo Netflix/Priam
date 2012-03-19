@@ -30,10 +30,10 @@ public class NFThinCassandraDaemon extends CassandraDaemon
 
             if (token != null && seeds != null)
                 break;
-            // sleep for 1 sec and try again.
+            // sleep for 5 sec and try again.
             try
             {
-                Thread.sleep(1 * 1000);
+                Thread.sleep(5 * 1000);
             }
             catch (InterruptedException e1)
             {

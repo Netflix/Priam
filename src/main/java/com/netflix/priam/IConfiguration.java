@@ -254,4 +254,8 @@ public interface IConfiguration
      */
     public String getSeedProviderName();
 
+    /**
+     * @return Get Memtable throughput settings
+     */
+    public int getMemtableTotalSpaceMB();
 }

@@ -568,4 +568,13 @@ public class PriamConfiguration implements IConfiguration
 
     }
 
+    @Override
+    /**
+     * Defaults to 0, means dont set it in yaml
+     */
+    public int getMemtableTotalSpaceMB()
+    {
+        return 0;
+    }
+
 }

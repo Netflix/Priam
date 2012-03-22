@@ -340,4 +340,10 @@ public class FakeConfiguration implements IConfiguration
         return 0;
     }
 
+    @Override
+    public int getMemtableTotalSpaceMB()
+    {
+        return 0;
+    }
+
 }

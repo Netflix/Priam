@@ -336,7 +336,8 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public long getBackupChunkSize()
     {
-        return config.getLong(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
+        long size = config.getLong(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
+        return size*1024*1024L;
     }
 
     @Override

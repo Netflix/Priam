@@ -53,7 +53,7 @@ public class TuneCassandra extends Task
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         //Dont bootstrap in restore mode        
-        map.put("auto_bootstrap", Restore.isRestoreEnabled(config));
+        map.put("auto_bootstrap", !Restore.isRestoreEnabled(config));
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));

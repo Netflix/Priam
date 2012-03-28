@@ -61,6 +61,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_HINT_DELAY = PRIAM_PRE + ".hint.delay";
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
+    private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -575,7 +576,7 @@ public class PriamConfiguration implements IConfiguration
      */
     public int getMemtableTotalSpaceMB()
     {
-        return 0;
+        return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 0);
     }
 
 }

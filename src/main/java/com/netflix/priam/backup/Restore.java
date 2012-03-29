@@ -101,7 +101,7 @@ public class Restore extends AbstractRestore
         // Try and read the Meta file.
         List<AbstractBackupPath> metas = Lists.newArrayList();
         String prefix = "";
-        if (!"".equals(config.getRestorePrefix()))
+        if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
         else
             prefix = config.getBackupPrefix();

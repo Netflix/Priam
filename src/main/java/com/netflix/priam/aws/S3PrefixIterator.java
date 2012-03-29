@@ -5,6 +5,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
         this.s3Client = s3Client;
         this.date = date;
         String path = "";
-        if (!"".equals(config.getRestorePrefix()))
+        if (StringUtils.isNotBlank(config.getRestorePrefix()))
             path = config.getRestorePrefix();
         else
             path = config.getBackupPrefix();

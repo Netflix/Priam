@@ -43,7 +43,7 @@ public class SDBInstanceData
     }
     public static final String DOMAIN = "InstanceIdentity";
     public static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-    public static String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' " + Attributes.INSTANCE_ID + "='%d'";
+    public static String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.INSTANCE_ID + "='%d'";
 
     private final ICredential provider;
     

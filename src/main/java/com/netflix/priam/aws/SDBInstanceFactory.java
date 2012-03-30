@@ -69,8 +69,9 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
                             dao.deregisterInstance(oldData);
                     }
                 }
-                catch (AmazonServiceException ex)
+                catch (Exception ex)
                 {
+                    //Do nothing
                     logger.error(ex.getMessage(), ex);
                 }
             }

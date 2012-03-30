@@ -67,6 +67,8 @@ public class SDBInstanceData
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, id));
         SelectResult result = simpleDBClient.select(request);
+        if (result.getItems().size() == 0)
+            return null;
         return transform(result.getItems().get(0));
     }
 

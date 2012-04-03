@@ -584,7 +584,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getStreamingThroughputMB()
     {
-        return config.getInteger(CONFIG_STREAMING_THROUGHPUT_MB, 0);
+        return config.getInteger(CONFIG_STREAMING_THROUGHPUT_MB, 400);
     }
 
     @Override

@@ -578,7 +578,7 @@ public class PriamConfiguration implements IConfiguration
      */
     public int getMemtableTotalSpaceMB()
     {
-        return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 0);
+        return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
     }
 
     @Override

@@ -346,4 +346,16 @@ public class FakeConfiguration implements IConfiguration
         return 0;
     }
 
+    @Override
+    public int getStreamingThroughputMB()
+    {
+        return 400;
+    }
+
+    @Override
+    public boolean getMultithreadedCompaction()
+    {
+        return false;
+    }
+
 }

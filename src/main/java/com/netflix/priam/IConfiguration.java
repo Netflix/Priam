@@ -258,4 +258,14 @@ public interface IConfiguration
      * @return Get Memtable throughput settings
      */
     public int getMemtableTotalSpaceMB();
+    
+    /**
+     * @return stream_throughput_outbound_megabits_per_sec in yaml
+     */
+    public int getStreamingThroughputMB();
+    
+    /**
+     * @return multithreaded_compaction in yaml
+     */
+    public boolean getMultithreadedCompaction();
 }

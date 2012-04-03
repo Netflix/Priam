@@ -62,8 +62,14 @@ public class TuneCassandra extends Task
         map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
-        if (config.getMemtableTotalSpaceMB() > 0)
+        
+        // messy but needed it for backward and forward compatibilities.
+        if (null != map.get("memtable_total_space_in_mb"))
             map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
+        if(null != map.get("stream_throughput_outbound_megabits_per_sec"))
+            map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
+        if(null != map.get("multithreaded_compaction"))
+            map.put("multithreaded_compaction", config.getMultithreadedCompaction());
         if (null != map.get("max_hint_window_in_ms"))
         {
             map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());

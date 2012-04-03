@@ -78,6 +78,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
     private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
+    private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
+    private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -577,6 +579,18 @@ public class PriamConfiguration implements IConfiguration
     public int getMemtableTotalSpaceMB()
     {
         return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 0);
+    }
+
+    @Override
+    public int getStreamingThroughputMB()
+    {
+        return config.getInteger(CONFIG_STREAMING_THROUGHPUT_MB, 0);
+    }
+
+    @Override
+    public boolean getMultithreadedCompaction()
+    {
+        return config.getBoolean(CONFIG_MULTITHREADED_COMPACTION, false);
     }
 
 }

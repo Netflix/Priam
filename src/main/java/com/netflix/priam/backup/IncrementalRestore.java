@@ -1,15 +1,5 @@
 package com.netflix.priam.backup;
 
-import java.io.File;
-import java.math.BigInteger;
-import java.util.Calendar;
-import java.util.Iterator;
-
-import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
-import org.apache.cassandra.io.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -18,6 +8,15 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.Sleeper;
+import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
+import org.apache.cassandra.io.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.Calendar;
+import java.util.Iterator;
 
 /*
  * Incremental SSTable Restore using SSTable Loader
@@ -27,7 +26,7 @@ public class IncrementalRestore extends AbstractRestore
 {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalRestore.class);
     public static final String JOBNAME = "INCR_RESTORE_THREAD";
-    private File restoreDir;
+    private final File restoreDir;
     
     @Inject
     private SSTableLoaderWrapper loader;
@@ -36,11 +35,10 @@ public class IncrementalRestore extends AbstractRestore
     private PriamServer priamServer;
 
     @Inject
-    public IncrementalRestore(IConfiguration config)
+    public IncrementalRestore(IConfiguration config, Sleeper sleeper)
     {
-        super(config, JOBNAME);
-        String location = config.getDataFileLocation();
-        restoreDir = new File(location, "restore_incremental");
+        super(config, JOBNAME, sleeper);
+        this.restoreDir = new File(config.getDataFileLocation(), "restore_incremental");
     }
 
     @Override

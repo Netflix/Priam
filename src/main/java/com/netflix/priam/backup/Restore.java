@@ -1,16 +1,5 @@
 package com.netflix.priam.backup;
 
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -22,7 +11,18 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * Main class for restoring data from backup
@@ -42,9 +42,9 @@ public class Restore extends AbstractRestore
     private PriamServer priamServer;
 
     @Inject
-    public Restore(IConfiguration config)
+    public Restore(IConfiguration config, Sleeper sleeper)
     {
-        super(config, JOBNAME);
+        super(config, JOBNAME, sleeper);
     }
 
     @Override
@@ -73,7 +73,7 @@ public class Restore extends AbstractRestore
                         restore(startTime, endTime);
                         logger.info("Restore completed");
                         // Wait for other server init to complete
-                        Thread.sleep(30000);
+                        sleeper.sleep(30000);
                         return null;
                     }
                 }.call();

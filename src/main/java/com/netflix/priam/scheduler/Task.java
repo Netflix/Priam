@@ -1,18 +1,17 @@
 package com.netflix.priam.scheduler;
 
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
+import com.google.common.base.Throwables;
+import com.netflix.priam.IConfiguration;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.priam.IConfiguration;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Task class that should be implemented by all cron tasks. Jobconf will contain
@@ -34,27 +33,26 @@ public abstract class Task implements Job, TaskMBean
     private final AtomicInteger errors = new AtomicInteger();
     private final AtomicInteger executions = new AtomicInteger();
 
-    public Task(IConfiguration config)
+    protected Task(IConfiguration config)
     {
+        this(config, ManagementFactory.getPlatformMBeanServer());
+    }
+
+    protected Task(IConfiguration config, MBeanServer mBeanServer) {
         this.config = config;
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+        // TODO: don't do mbean registration here
         String mbeanName = "com.priam.scheduler:type=" + this.getClass().getName();
         try
         {
-            mbs.registerMBean(this, new ObjectName(mbeanName));
+            mBeanServer.registerMBean(this, new ObjectName(mbeanName));
             initialize();
         }
         catch (Exception e)
         {
-            logger.error("Error executing the task: ", e);
-            System.exit(100);
-        }
-        catch (Throwable th)
-        {
-            logger.error("Error executing the task: ", th);
-            System.exit(100);
+            throw Throwables.propagate(e);
         }
     }
+
     
     /**
      * This method has to be implemented and cannot thow any exception.

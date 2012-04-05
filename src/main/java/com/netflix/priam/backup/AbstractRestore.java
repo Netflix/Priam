@@ -1,5 +1,16 @@
 package com.netflix.priam.backup;
 
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
+import org.apache.cassandra.concurrent.JMXConfigurableThreadPoolExecutor;
+import org.apache.cassandra.concurrent.NamedThreadFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
@@ -8,17 +19,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import org.apache.cassandra.concurrent.JMXConfigurableThreadPoolExecutor;
-import org.apache.cassandra.concurrent.NamedThreadFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.RetryableCallable;
 
 public abstract class AbstractRestore extends Task
 {
@@ -36,10 +36,13 @@ public abstract class AbstractRestore extends Task
     protected IBackupFileSystem fs;
     public static BigInteger restoreToken;
     
-    public AbstractRestore(IConfiguration config, String name)
+    protected final Sleeper sleeper;
+    
+    public AbstractRestore(IConfiguration config, String name, Sleeper sleeper)
     {
         super(config);
         this.config = config;
+        this.sleeper = sleeper;
         executor = new JMXConfigurableThreadPoolExecutor(config.getMaxBackupDownloadThreads(), 
                                                          1000, 
                                                          TimeUnit.MILLISECONDS, 
@@ -87,11 +90,12 @@ public abstract class AbstractRestore extends Task
         {
             try
             {
-                Thread.sleep(1000);
+                sleeper.sleep(1000);
             }
             catch (InterruptedException e)
             {
                 logger.error("Interrupted: ", e);
+                Thread.currentThread().interrupt();
             }
         }
     }

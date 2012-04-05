@@ -1,46 +1,47 @@
 package com.netflix.priam.scheduler;
 
-import junit.framework.Assert;
-
-import org.junit.Ignore;
-import org.junit.Test;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.TestModule;
-import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
+import junit.framework.Assert;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import javax.management.MBeanServerFactory;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 public class TestScheduler
 {
+    // yuck, but marginally better than using Thread.sleep
+    private static CountDownLatch latch;
 
-    private  static boolean setToFalse;
-    
     @Test
     public void testSchedule() throws Exception
     {
-        setToFalse = true;
+        latch = new CountDownLatch(1);
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 10000));
-        Thread.sleep(1000);
+        scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 10));
+        // verify the task has run or fail in 1s
+        latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
-        Assert.assertEquals(false, setToFalse);
     }
 
     @Test
     public void testSingleInstanceSchedule() throws Exception
     {
+        latch = new CountDownLatch(3);
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
         scheduler.addTask("test2", SingleTestTask.class, SingleTestTask.getTimer());
-        Thread.sleep(15*1000);
+        // verify 3 tasks run or fail in 1s
+        latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
         Assert.assertEquals(3, SingleTestTask.count);
     }
@@ -51,13 +52,14 @@ public class TestScheduler
         @Inject
         public TestTask(IConfiguration config)
         {
-            super(config);
+            // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate registrations
+            super(config, MBeanServerFactory.newMBeanServer());
         }
 
         @Override
         public void execute()
         {
-            setToFalse = false;
+            latch.countDown();
         }
 
         @Override
@@ -67,7 +69,7 @@ public class TestScheduler
         }
 
     }
-    
+
     @Ignore
     @Singleton
     public static class SingleTestTask extends Task
@@ -75,7 +77,7 @@ public class TestScheduler
         @Inject
         public SingleTestTask(IConfiguration config)
         {
-            super(config);
+            super(config, MBeanServerFactory.newMBeanServer());
         }
 
         public static int count =0;
@@ -83,9 +85,11 @@ public class TestScheduler
         public void execute()
         {
             ++count;
+            latch.countDown();
             try
             {
-                Thread.sleep(5000);//5sec
+                // todo : why is this sleep important?
+                Thread.sleep(55);//5sec
             }
             catch (InterruptedException e)
             {
@@ -99,13 +103,10 @@ public class TestScheduler
         {
             return "test2";
         }
-        
+
         public static TaskTimer getTimer()
         {
-            return new SimpleTimer("test2", 1000L);
+            return new SimpleTimer("test2", 11L);
         }
-
-
     }
-
 }

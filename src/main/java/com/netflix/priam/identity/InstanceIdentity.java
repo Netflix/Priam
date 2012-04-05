@@ -1,16 +1,5 @@
 package com.netflix.priam.identity;
 
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Random;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.base.Supplier;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -19,8 +8,14 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.UnknownHostException;
+import java.util.*;
 
 /**
  * This class provides the central place to create and consume the identity of
@@ -31,25 +26,29 @@ import com.netflix.priam.utils.TokenManager;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
-    private ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
+    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
     {
         public List<PriamInstance> get()
         {
             return Lists.newArrayList();
         }
     });
-    private IPriamInstanceFactory factory;
+    private final IPriamInstanceFactory factory;
+    private final IMembership membership;
+    private final IConfiguration config;
+    private final Sleeper sleeper;
+
     private PriamInstance myInstance;
-    private IMembership membership;
-    private IConfiguration config;
     private boolean isReplace = false;
 
     @Inject
-    public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config) throws Exception
+    public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
+            Sleeper sleeper) throws Exception
     {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
+        this.sleeper = sleeper;
         init();
     }
 
@@ -111,7 +110,7 @@ public class InstanceIdentity
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
             // Sleep random interval - upto 15 sec
-            Thread.sleep(new Random().nextInt(5000) + 10000);
+            sleeper.sleep(new Random().nextInt(5000) + 10000);
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
@@ -142,7 +141,7 @@ public class InstanceIdentity
         public PriamInstance retriableCall() throws Exception
         {
             // Sleep random interval - upto 15 sec
-            Thread.sleep(new Random().nextInt(15000));
+            sleeper.sleep(new Random().nextInt(15000));
             int hash = SystemUtils.hash(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.

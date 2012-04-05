@@ -9,6 +9,7 @@ import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import org.apache.commons.collections.CollectionUtils;
@@ -23,13 +24,15 @@ public class PriamServer
     private final PriamScheduler scheduler;
     private final IConfiguration config;
     private final InstanceIdentity id;
+    private final Sleeper sleeper;
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id)
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper)
     {
         this.config = config;
         this.scheduler = scheduler;
         this.id = id;
+        this.sleeper = sleeper;
     }
 
     public void intialize() throws Exception
@@ -46,7 +49,7 @@ public class PriamServer
             scheduler.runTaskNow(UpdateSecuritySettings.class);
             // sleep for 60 sec for the SG update to happen.
             if (UpdateSecuritySettings.firstTimeUpdated)
-                Thread.sleep(60 * 1000);
+                sleeper.sleep(60 * 1000);
             scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
         }
 

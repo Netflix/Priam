@@ -1,17 +1,18 @@
 package com.netflix.priam.backup.identity;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.junit.Before;
-import org.junit.Ignore;
-
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.Sleeper;
+import org.junit.Before;
+import org.junit.Ignore;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Ignore
 public abstract class InstanceTestUtils
@@ -22,6 +23,7 @@ public abstract class InstanceTestUtils
     FakeConfiguration config;
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
+    Sleeper sleeper;
 
     @Before
     public void setup()
@@ -39,45 +41,28 @@ public abstract class InstanceTestUtils
         membership = new FakeMembership(instances);
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
+        sleeper = new FakeSleeper();
     }
 
     public void createInstances() throws Exception
     {
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az1";
-        config.instance_id = "fakeinstance2";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az1";
-        config.instance_id = "fakeinstance3";
-        identity = new InstanceIdentity(factory, membership, config);
-
+        createInstanceIdentity("az1", "fakeinstance1");
+        createInstanceIdentity("az1", "fakeinstance2");
+        createInstanceIdentity("az1", "fakeinstance3");
         // try next region
-        config.zone = "az2";
-        config.instance_id = "fakeinstance4";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az2";
-        config.instance_id = "fakeinstance5";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az2";
-        config.instance_id = "fakeinstance6";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        // next
-        config.zone = "az3";
-        config.instance_id = "fakeinstance7";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az3";
-        config.instance_id = "fakeinstance8";
-        identity = new InstanceIdentity(factory, membership, config);
-
-        config.zone = "az3";
-        config.instance_id = "fakeinstance9";
-        identity = new InstanceIdentity(factory, membership, config);
+        createInstanceIdentity("az2", "fakeinstance4");
+        createInstanceIdentity("az2", "fakeinstance5");
+        createInstanceIdentity("az2", "fakeinstance6");
+        // next region
+        createInstanceIdentity("az3", "fakeinstance7");
+        createInstanceIdentity("az3", "fakeinstance8");
+        createInstanceIdentity("az3", "fakeinstance9");
     }
-
+    
+    protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception
+    {
+        config.zone = zone;
+        config.instance_id = instanceId;
+        return new InstanceIdentity(factory, membership, config, sleeper);
+    }
 }

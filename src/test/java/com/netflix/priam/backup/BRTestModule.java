@@ -1,25 +1,20 @@
 package com.netflix.priam.backup;
 
-import java.util.Arrays;
-
-import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.FakeMembership;
-import com.netflix.priam.FakePriamInstanceFactory;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.*;
 import com.netflix.priam.aws.S3BackupPath;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.Sleeper;
+import org.junit.Ignore;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+
+import java.util.Arrays;
 @Ignore
 public class BRTestModule extends AbstractModule
 {
@@ -35,5 +30,6 @@ public class BRTestModule extends AbstractModule
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
+        bind(Sleeper.class).to(FakeSleeper.class);
     }
 }

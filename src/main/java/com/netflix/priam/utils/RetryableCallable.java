@@ -1,10 +1,10 @@
 package com.netflix.priam.utils;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 
 public abstract class RetryableCallable<T> implements Callable<T>
 {
@@ -16,8 +16,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
 
     public RetryableCallable()
     {
-        this.retrys = DEFAULT_NUMBER_OF_RETRIES;
-        this.waitTime = DEFAULT_WAIT_TIME;
+        this(DEFAULT_NUMBER_OF_RETRIES, DEFAULT_WAIT_TIME);
     }
 
     public RetryableCallable(int retrys, long waitTime)

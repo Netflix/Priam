@@ -1,15 +1,13 @@
 package com.netflix.priam.backup.identity;
 
-import static org.junit.Assert.assertEquals;
+import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.SystemUtils;
+import org.junit.Test;
 
 import java.util.List;
 
-import org.junit.Test;
-
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.SystemUtils;
+import static org.junit.Assert.assertEquals;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {
@@ -18,50 +16,34 @@ public class InstanceIdentityTest extends InstanceTestUtils
     public void testCreateToken() throws Exception
     {
 
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstance1");
         int hash = SystemUtils.hash(config.getDC());
         assertEquals(0, identity.getInstance().getId() - hash);
 
-        config.zone = "az1";
-        config.instance_id = "fakeinstance2";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstance2");
         assertEquals(3, identity.getInstance().getId() - hash);
 
-        config.zone = "az1";
-        config.instance_id = "fakeinstance3";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstance3");
         assertEquals(6, identity.getInstance().getId() - hash);
 
         // try next region
-        config.zone = "az2";
-        config.instance_id = "fakeinstance4";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az2", "fakeinstance4");
         assertEquals(1, identity.getInstance().getId() - hash);
 
-        config.zone = "az2";
-        config.instance_id = "fakeinstance5";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az2", "fakeinstance5");
         assertEquals(4, identity.getInstance().getId() - hash);
 
-        config.zone = "az2";
-        config.instance_id = "fakeinstance6";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az2", "fakeinstance6");
         assertEquals(7, identity.getInstance().getId() - hash);
 
         // next
-        config.zone = "az3";
-        config.instance_id = "fakeinstance7";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az3", "fakeinstance7");
         assertEquals(2, identity.getInstance().getId() - hash);
 
-        config.zone = "az3";
-        config.instance_id = "fakeinstance8";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az3", "fakeinstance8");
         assertEquals(5, identity.getInstance().getId() - hash);
 
-        config.zone = "az3";
-        config.instance_id = "fakeinstance9";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
     }
 
@@ -70,9 +52,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
         createInstances();
         instances.remove("fakeinstance4");
-        config.zone = "az2";
-        config.instance_id = "fakeinstancex";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az2", "fakeinstancex");
         int hash = SystemUtils.hash(config.getDC());
         assertEquals(1, identity.getInstance().getId() - hash);
     }
@@ -81,14 +61,10 @@ public class InstanceIdentityTest extends InstanceTestUtils
     public void testGetSeeds() throws Exception
     {
         createInstances();
-        config.zone = "az1";
-        config.instance_id = "fakeinstancex";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstancex");
         assertEquals(3, identity.getSeeds().size());
 
-        config.zone = "az1";
-        config.instance_id = "fakeinstance1";
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstance1");
         assertEquals(2, identity.getSeeds().size());
     }
 
@@ -119,7 +95,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         config.zone = "az1";
         config.instance_id = "fakeinstancex";
         int hash = SystemUtils.hash(config.getDC());
-        identity = new InstanceIdentity(factory, membership, config);
+        identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }
 

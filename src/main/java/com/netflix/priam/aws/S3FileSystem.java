@@ -103,7 +103,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
-            S3Object obj = getS3Client().getObject(getPrefix(), path.getRemotePath());
+            AmazonS3 client = getS3Client();
+            S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
             compress.decompressAndClose(obj.getObjectContent(), os);
             bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
         }

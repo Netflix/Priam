@@ -1,29 +1,38 @@
 package com.netflix.priam.utils;
 
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.List;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.Ordering;
 
 public class TokenManager
 {    
     public static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
     public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
 
-    public static BigInteger intialToken(int size, int position, int space)
+    /**
+     * Calculate a token for the given position, evenly spaced from other size-1 nodes.  See
+     * http://wiki.apache.org/cassandra/Operations.
+     *
+     * @param size number of slots by which the token space will be divided
+     * @param position slot number, multiplier
+     * @param offset added to token
+     * @return MAXIMUM_TOKEN / size * position + offset, if <= MAXIMUM_TOKEN, otherwise wrap around the MINIMUM_TOKEN
+     */
+    @VisibleForTesting static BigInteger initialToken(int size, int position, int offset)
     {
-        BigInteger decValue = MINIMUM_TOKEN;
-        // (Maximum * max_slots * my_slot) -1
-        if (position != 0)
-            decValue = MAXIMUM_TOKEN.divide(new BigInteger("" + size)).multiply(new BigInteger("" + position)).subtract(new BigInteger("" + 1));
-        // Add a Region/DC spacer to the token.
-        decValue = decValue.add(new BigInteger("" + space));
-        // if the space is bigger then rotate to min for the ring.
-        if (1 == decValue.compareTo(MAXIMUM_TOKEN))
-        {
-            BigInteger delta = decValue.subtract(MAXIMUM_TOKEN);
-            decValue = MINIMUM_TOKEN.add(delta);
-        }
-        return decValue;
+        Preconditions.checkArgument(size > 0, "size must be > 0");
+        Preconditions.checkArgument(offset >= 0, "offset must be >= 0");
+        /*
+         * TODO: Is this it valid to add "&& position < size" to the following precondition?  This currently causes
+         * unit test failures.
+         */
+        Preconditions.checkArgument(position >= 0, "position must be >= 0");
+        return MAXIMUM_TOKEN.divide(BigInteger.valueOf(size))
+                .multiply(BigInteger.valueOf(position))
+                .add(BigInteger.valueOf(offset));
     }
 
     /**
@@ -40,28 +49,36 @@ public class TokenManager
      */
     public static String createToken(int my_slot, int rac_count, int rac_size, String region)
     {
-        int space = SystemUtils.hash(region);
         int regionCount = rac_count * rac_size;
-        return intialToken(regionCount, my_slot, space).toString();
+        return initialToken(regionCount, my_slot, regionOffset(region)).toString();
     }
     
     public static String createToken(int my_slot, int totalCount, String region)
     {
-        int space = SystemUtils.hash(region);
-        return intialToken(totalCount, my_slot, space).toString();
+        return initialToken(totalCount, my_slot, regionOffset(region)).toString();
     }
     
     public static BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList)
     {
-        Collections.sort(tokenList);
-        int index = Collections.binarySearch(tokenList, tokenToSearch);
+        Preconditions.checkArgument(!tokenList.isEmpty(), "token list must not be empty");
+        List<BigInteger> sortedTokens = Ordering.natural().sortedCopy(tokenList);
+        int index = Ordering.natural().binarySearch(sortedTokens, tokenToSearch);
         if (index < 0)
         {
             int i = Math.abs(index) - 1;
-            if ((i >= tokenList.size()) || (i > 0 && tokenList.get(i).subtract(tokenToSearch).compareTo(tokenToSearch.subtract(tokenList.get(i - 1))) > 0))
+            if ((i >= sortedTokens.size()) || (i > 0 && sortedTokens.get(i).subtract(tokenToSearch)
+                    .compareTo(tokenToSearch.subtract(sortedTokens.get(i - 1))) > 0))
                 --i;
-            return tokenList.get(i);
+            return sortedTokens.get(i);
         }
-        return tokenList.get(index);
+        return sortedTokens.get(index);
+    }
+
+    /**
+     * Create an offset to add to token values by hashing the region name.
+     */
+    public static int regionOffset(String region)
+    {
+        return Math.abs(region.hashCode());
     }
 }

@@ -17,13 +17,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
-
 import javax.management.remote.JMXConnector;
-import org.apache.commons.lang.StringUtils;
+
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,6 +31,7 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import com.netflix.priam.IConfiguration;
+
 
 public class SystemUtils
 {
@@ -146,15 +147,6 @@ public class SystemUtils
         }
         else if (!dirFile.exists())
             dirFile.mkdirs();
-    }
-
-    /**
-     * Create a hash of the String which will be an absolute value...
-     */
-    public static int hash(String string)
-    {
-        int hash = string.hashCode();
-        return Math.abs(hash);
     }
 
     public static byte[] md5(byte[] buf)

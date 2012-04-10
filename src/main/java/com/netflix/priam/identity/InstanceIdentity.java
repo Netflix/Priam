@@ -9,7 +9,6 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,7 +141,7 @@ public class InstanceIdentity
         {
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(15000));
-            int hash = SystemUtils.hash(config.getDC());
+            int hash = TokenManager.regionOffset(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.
 

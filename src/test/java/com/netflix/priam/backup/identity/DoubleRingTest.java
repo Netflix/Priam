@@ -1,7 +1,5 @@
 package com.netflix.priam.backup.identity;
 
-import static org.junit.Assert.assertEquals;
-
 import java.util.List;
 
 import org.junit.Test;
@@ -9,8 +7,8 @@ import org.junit.Test;
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
+import static org.junit.Assert.assertEquals;
 
 public class DoubleRingTest extends InstanceTestUtils
 {
@@ -41,7 +39,7 @@ public class DoubleRingTest extends InstanceTestUtils
         {
             PriamInstance ins = doubled.get(i);
             assertEquals(validator.get(i), ins.getToken());
-            int id = ins.getId() - SystemUtils.hash(config.getDC());
+            int id = ins.getId() - TokenManager.regionOffset(config.getDC());
             System.out.println(ins);
             if (0 != id % 2)
                 assertEquals(ins.getInstanceId(), "new_slot");

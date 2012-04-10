@@ -2,7 +2,7 @@ package com.netflix.priam.backup.identity;
 
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TokenManager;
 import org.junit.Test;
 
 import java.util.List;
@@ -17,7 +17,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
-        int hash = SystemUtils.hash(config.getDC());
+        int hash = TokenManager.regionOffset(config.getDC());
         assertEquals(0, identity.getInstance().getId() - hash);
 
         identity = createInstanceIdentity("az1", "fakeinstance2");
@@ -53,7 +53,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         createInstances();
         instances.remove("fakeinstance4");
         identity = createInstanceIdentity("az2", "fakeinstancex");
-        int hash = SystemUtils.hash(config.getDC());
+        int hash = TokenManager.regionOffset(config.getDC());
         assertEquals(1, identity.getInstance().getId() - hash);
     }
 
@@ -94,7 +94,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         new DoubleRing(config, factory).doubleSlots();
         config.zone = "az1";
         config.instance_id = "fakeinstancex";
-        int hash = SystemUtils.hash(config.getDC());
+        int hash = TokenManager.regionOffset(config.getDC());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }

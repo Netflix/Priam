@@ -1,5 +1,9 @@
 package com.netflix.priam;
 
+import org.junit.Ignore;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
@@ -11,9 +15,6 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
-import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
 
 @Ignore
 public class TestModule extends AbstractModule
@@ -23,7 +24,7 @@ public class TestModule extends AbstractModule
     protected void configure()
     {
         bind(IConfiguration.class).toInstance(
-                new FakeConfiguration("fake-region", "fake-app", "fake-zone", "fakeInstance1"));
+                new FakeConfiguration("fake-region", "fake-app", "az1", "fakeInstance1"));
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(

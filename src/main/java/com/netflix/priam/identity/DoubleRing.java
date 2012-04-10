@@ -17,7 +17,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
 
 /**
@@ -50,7 +49,7 @@ public class DoubleRing
         for (PriamInstance data : local)
             factory.delete(data);
 
-        int hash = SystemUtils.hash(config.getDC());
+        int hash = TokenManager.regionOffset(config.getDC());
         // move existing slots.
         for (PriamInstance data : local)
         {

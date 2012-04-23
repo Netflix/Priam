@@ -66,7 +66,9 @@ public class TuneCassandra extends Task
         // messy but needed it for backward and forward compatibilities.
         if (null != map.get("memtable_total_space_in_mb"))
             map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
-        if(null != map.get("stream_throughput_outbound_megabits_per_sec"))
+        // the default for stream_throughput_outbound_megabits_per_sec is 7 ms and not in yaml.
+        // TODO fixme: currently memtable_total_space_in_mb is used to verify if it is >1.0.7.
+        if(null != map.get("memtable_total_space_in_mb"))
             map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
         if(null != map.get("multithreaded_compaction"))
             map.put("multithreaded_compaction", config.getMultithreadedCompaction());

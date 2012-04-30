@@ -225,6 +225,10 @@ public class BackupServlet
         return TokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }
 
+    /*
+     * TODO: decouple the servlet, config, and restorer. this should not rely on a side
+     *       effect of a list mutation on the config object (treating it as global var).
+     */
     private void setRestoreKeyspaces(String keyspaces)
     {
         List<String> list = config.getRestoreKeySpaces();

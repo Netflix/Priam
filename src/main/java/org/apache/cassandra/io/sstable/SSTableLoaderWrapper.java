@@ -36,7 +36,7 @@ import com.netflix.priam.utils.TuneCassandra;
 public class SSTableLoaderWrapper
 {
     private static final Logger logger = LoggerFactory.getLogger(SSTableLoaderWrapper.class);
-    private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS);
+    private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
 
     @Inject
     public SSTableLoaderWrapper(IConfiguration config) throws IOException

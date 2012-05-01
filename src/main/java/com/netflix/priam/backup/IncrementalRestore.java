@@ -60,7 +60,10 @@ public class IncrementalRestore extends AbstractRestore
         FileUtils.createDirectory(restoreDir); // create restore dir.
         while (incrementals.hasNext())
         {
-            latest = incrementals.next();
+            AbstractBackupPath temp = incrementals.next();
+            if (latest.compareTo(temp) == 0)
+                continue;
+            latest = temp;
             // skip System informations.
             if (latest.getType() != BackupFileType.SST || latest.getKeyspace().equalsIgnoreCase("System"))
                 continue;

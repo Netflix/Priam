@@ -1,6 +1,8 @@
 package com.netflix.priam.identity;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
@@ -25,6 +27,7 @@ import java.util.*;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
+
     private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
     {
         public List<PriamInstance> get()
@@ -36,6 +39,13 @@ public class InstanceIdentity
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
+
+    private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
+      @Override
+      public boolean apply(PriamInstance instance) {
+        return !instance.getHostName().equals(myInstance.getHostName());
+      }
+    };
 
     private PriamInstance myInstance;
     private boolean isReplace = false;
@@ -180,8 +190,11 @@ public class InstanceIdentity
                 seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
         }
         for (String loc : locMap.keySet())
-            seeds.add(locMap.get(loc).get(0).getHostName());
-        seeds.remove(myInstance.getHostName());
+        {
+            PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
+            if (instance != null)
+                seeds.add(instance.getHostName());
+        }
         return seeds;
     }
 

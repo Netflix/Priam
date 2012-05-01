@@ -40,10 +40,10 @@ public class InstanceIdentity
     private final IConfiguration config;
     private final Sleeper sleeper;
 
-    private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
+    private final Predicate<String> differentRack = new Predicate<String>() {
       @Override
-      public boolean apply(PriamInstance instance) {
-        return !instance.getHostName().equals(myInstance.getHostName());
+      public boolean apply(String rack) {
+        return !rack.equals(myInstance.getRac());
       }
     };
 
@@ -189,12 +189,8 @@ public class InstanceIdentity
             if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostName().equals(myInstance.getHostName()))
                 seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
         }
-        for (String loc : locMap.keySet())
-        {
-            PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
-            if (instance != null)
-                seeds.add(instance.getHostName());
-        }
+        for (String loc : Iterables.filter(locMap.keySet(), differentRack))
+            seeds.add(locMap.get(loc).get(0).getHostName());
         return seeds;
     }
 

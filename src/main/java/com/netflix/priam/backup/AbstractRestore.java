@@ -4,6 +4,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.concurrent.JMXConfigurableThreadPoolExecutor;
@@ -24,9 +25,9 @@ public abstract class AbstractRestore extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String SYSTEM_KEYSPACE = "system";
-    // keeps track of the last download which was executed.
-    protected static volatile AbstractBackupPath latest;
-
+    // keeps track of the last few download which was executed.
+    // TODO fix the magic number of 100 => the idea of 100 is 10% of 1000 files limit per s3 query
+    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(100);
     private AtomicInteger count = new AtomicInteger();
     
     protected IConfiguration config;
@@ -56,9 +57,11 @@ public abstract class AbstractRestore extends Task
     {
         while (fsIterator.hasNext())
         {
-            latest = fsIterator.next();
-            if (latest.getType() == filter)
-                download(latest, latest.newRestoreFile());
+            AbstractBackupPath temp = fsIterator.next();
+            if (temp.type == BackupFileType.SST && tracker.contains(temp))
+                continue;
+            if (temp.getType() == filter)
+                download(temp, temp.newRestoreFile());
         }
         waitToComplete();
     }
@@ -78,6 +81,7 @@ public abstract class AbstractRestore extends Task
             {
                 logger.info("Downloading file: " + path);
                 fs.download(path, new FileOutputStream(restoreLocation));
+                tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
                 return count.decrementAndGet();
             }

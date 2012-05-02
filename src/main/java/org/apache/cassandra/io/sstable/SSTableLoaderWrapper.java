@@ -9,13 +9,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.cassandra.config.DatabaseDescriptor;
-import org.apache.cassandra.dht.IPartitioner;
-import org.apache.cassandra.dht.Range;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.sstable.SSTableLoader.OutputHandler;
 import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.service.StorageService;
 import org.apache.cassandra.streaming.FileStreamTask;
 import org.apache.cassandra.streaming.OperationType;
 import org.apache.cassandra.streaming.PendingFile;
@@ -58,12 +54,12 @@ public class SSTableLoaderWrapper
             logger.debug(msg + "\n");
         }
     };
-    public Collection<PendingFile> pendingDeletion = Lists.newArrayList();
 
     /**
      * Not multi-threaded intentionally.
+     * @return 
      */
-    public void stream(File directory) throws IOException, InterruptedException
+    public Collection<PendingFile> stream(File directory) throws IOException, InterruptedException
     {
         Client client = new Client()
         {
@@ -77,8 +73,8 @@ public class SSTableLoaderWrapper
             }
         };
         SSTableLoader loader = new SSTableLoader(directory, client, options);
-        Collection<SSTableReader> sstables = loader.openSSTables();
-        for (SSTableReader sstable : sstables)
+        Collection<PendingFile> pendingFiles = Lists.newArrayList();
+        for (SSTableReader sstable : loader.openSSTables())
         {
             Descriptor desc = sstable.descriptor;
             List<Pair<Long, Long>> sections = Lists.newArrayList(new Pair<Long, Long>(0L, sstable.onDiskLength()));
@@ -87,15 +83,17 @@ public class SSTableLoaderWrapper
             logger.info("Streaming to {}", InetAddress.getLocalHost());
             new FileStreamTask(header, InetAddress.getLocalHost()).run();
             logger.info("Done Streaming: " + pending.toString());
-            pendingDeletion.add(pending);
+            sstable.releaseReference();
+            pendingFiles.add(pending);
         }
+        return pendingFiles;
     }
 
-    public void deleteCompleted() throws IOException
+    public void deleteCompleted(Collection<PendingFile> sstables) throws IOException
     {
-        logger.info("Restored SST's Now Deleting: " + StringUtils.join(pendingDeletion, ","));
-        for (PendingFile file : pendingDeletion)
+        logger.info("Restored SST's Now Deleting: " + StringUtils.join(sstables, ","));
+        for (PendingFile file : sstables)
             for (Component component : allComponents)
-                FileUtils.delete(file.desc.filenameFor(component));
+                FileUtils.delete(file.sstable.descriptor.filenameFor(component));
     }
 }

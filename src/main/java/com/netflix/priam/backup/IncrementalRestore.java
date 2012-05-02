@@ -11,11 +11,13 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
+import org.apache.cassandra.streaming.PendingFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Iterator;
 
 /*
@@ -56,31 +58,30 @@ public class IncrementalRestore extends AbstractRestore
             priamServer.getId().getInstance().setToken(restoreToken.toString());
         }
 
-        Iterator<AbstractBackupPath> incrementals = fs.list(prefix, latest.time, Calendar.getInstance().getTime());
+        Iterator<AbstractBackupPath> incrementals = fs.list(prefix, tracker.first().time, Calendar.getInstance().getTime());
         FileUtils.createDirectory(restoreDir); // create restore dir.
         while (incrementals.hasNext())
         {
             AbstractBackupPath temp = incrementals.next();
-            if (latest.compareTo(temp) == 0)
+            if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
-            latest = temp;
+            if (temp.getType() != BackupFileType.SST)
+                continue;
             // skip System informations.
-            if (latest.getType() != BackupFileType.SST || latest.getKeyspace().equalsIgnoreCase("System"))
+            if (temp.getKeyspace().equalsIgnoreCase("System"))
                 continue;
-            
-            File keyspaceDir = new File(restoreDir, latest.keyspace);
+            File keyspaceDir = new File(restoreDir, temp.keyspace);
             FileUtils.createDirectory(keyspaceDir);
-            download(latest, new File(keyspaceDir, latest.fileName));
+            download(temp, new File(keyspaceDir, temp.fileName));
         }
         // wait for all the downloads in this batch to complete.
         waitToComplete();
-        
         // stream the SST's in the dir
         for (File keyspaceDir : restoreDir.listFiles())
         {
-            loader.stream(keyspaceDir);
+            Collection<PendingFile> streamedSSTs = loader.stream(keyspaceDir);
             // cleanup the dir which where streamed.
-            loader.deleteCompleted();
+            loader.deleteCompleted(streamedSSTs);
         }
     }
 
@@ -89,7 +90,7 @@ public class IncrementalRestore extends AbstractRestore
      */
     public static TaskTimer getTimer()
     {
-        return new SimpleTimer(JOBNAME, 10L * 1000);
+        return new SimpleTimer(JOBNAME, 20L * 1000);
     }
 
     @Override

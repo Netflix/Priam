@@ -114,10 +114,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     @Override
     public int compareTo(AbstractBackupPath o)
     {
-        if (time.compareTo(o.time) == 0)
-            return fileName.compareTo(o.fileName);
-        else
-            return time.compareTo(o.time);
+        return time.compareTo(o.time);
     }
 
     /**

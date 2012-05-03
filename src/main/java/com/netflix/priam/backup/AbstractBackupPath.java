@@ -12,6 +12,7 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.EqualsBuilder;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -118,6 +119,19 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (timecompare == 0)
             return fileName.compareTo(fileName);
         return timecompare;
+    }
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        if (!obj.getClass().equals(this.getClass()))
+            return false;
+        AbstractBackupPath other = (AbstractBackupPath) obj;
+        EqualsBuilder builder = new EqualsBuilder().append(token, other.token)
+                                                   .append(keyspace, other.keyspace)
+                                                   .append(fileName, other.fileName)
+                                                   .append(time, other.time);
+        return builder.isEquals();
     }
 
     /**

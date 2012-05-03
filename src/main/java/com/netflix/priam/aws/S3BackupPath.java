@@ -147,5 +147,16 @@ public class S3BackupPath extends AbstractBackupPath
 
         return buff.toString();
     }
+    
+    @Override
+    public boolean equals(Object obj)
+    {
+        return super.equals(obj);
+    }
 
+    @Override
+    public int compareTo(AbstractBackupPath o)
+    {
+        return super.compareTo(o);
+    }
 }

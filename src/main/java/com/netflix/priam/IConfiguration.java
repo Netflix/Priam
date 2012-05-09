@@ -16,6 +16,11 @@ public interface IConfiguration
     public String getCassHome();
 
     /**
+     * @return Path to the conf dir for Cassandra
+     */
+    public String getCassConfigDir();
+
+    /**
      * @return Path to Cassandra startup script
      */
     public String getCassStartupScript();

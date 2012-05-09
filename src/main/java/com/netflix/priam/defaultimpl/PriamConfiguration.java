@@ -37,6 +37,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String PRIAM_PRE = "priam";
 
     private static final String CONFIG_CASS_HOME_DIR = PRIAM_PRE + ".cass.home";
+    private static final String CONFIG_CASS_CONF_DIR = PRIAM_PRE + ".cass.conf";
     private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";
     private static final String CONFIG_CASS_STOP_SCRIPT = PRIAM_PRE + ".cass.stopscript";
     private static final String CONFIG_CLUSTER_NAME = PRIAM_PRE + ".clustername";
@@ -102,6 +103,7 @@ public class PriamConfiguration implements IConfiguration
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
+    private final String DEFAULT_CASS_CONF_DIR = "/etc/cassandra/conf";
     private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
     private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
     private final String DEFAULT_BACKUP_LOCATION = "backup";
@@ -274,6 +276,12 @@ public class PriamConfiguration implements IConfiguration
     public String getCassHome()
     {
         return config.getProperty(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
+    }
+
+    @Override
+    public String getCassConfigDir()
+    {
+        return config.getProperty(CONFIG_CASS_CONF_DIR, DEFAULT_CASS_CONF_DIR);
     }
 
     @Override

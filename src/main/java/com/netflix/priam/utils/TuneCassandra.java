@@ -95,7 +95,7 @@ public class TuneCassandra extends Task
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
-        File yamlFile = new File(config.getCassHome() + "/conf/cassandra.yaml");
+        File yamlFile = new File(config.getCassConfigDir() + "/cassandra.yaml");
         @SuppressWarnings("rawtypes")
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         //Dont bootstrap in restore mode
@@ -107,7 +107,7 @@ public class TuneCassandra extends Task
     @Override
     public void execute() throws IOException
     {
-        TuneCassandra.updateYaml(config, config.getCassHome() + "/conf/cassandra.yaml", null, config.getSeedProviderName());
+        TuneCassandra.updateYaml(config, config.getCassConfigDir() + "/cassandra.yaml", null, config.getSeedProviderName());
     }
 
     @Override

@@ -115,10 +115,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     @Override
     public int compareTo(AbstractBackupPath o)
     {
-        int timecompare = time.compareTo(o.time);
-        if (timecompare == 0)
-            return fileName.compareTo(fileName);
-        return timecompare;
+        return getRemotePath().compareTo(o.getRemotePath());
     }
     
     @Override
@@ -126,12 +123,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         if (!obj.getClass().equals(this.getClass()))
             return false;
-        AbstractBackupPath other = (AbstractBackupPath) obj;
-        EqualsBuilder builder = new EqualsBuilder().append(token, other.token)
-                                                   .append(keyspace, other.keyspace)
-                                                   .append(fileName, other.fileName)
-                                                   .append(time, other.time);
-        return builder.isEquals();
+        return getRemotePath().equals(((AbstractBackupPath)obj).getRemotePath());
     }
 
     /**

@@ -12,10 +12,18 @@ public interface IPriamInstanceFactory
 {
     /**
      * Return a list of all Cassandra server nodes registered.
-     * @param appName
-     * @return
+     * @param appName the cluster name
+     * @return a list of all nodes in {@code appName}
      */
     public List<PriamInstance> getAllIds(String appName);
+
+    /**
+     * Return the Cassandra server node with the given {@code id}.
+     * @param appName the cluster name
+     * @param id the node id
+     * @return the node with the given {@code id}, or {@code null} if none found
+     */
+    public PriamInstance getInstance(String appName, int id);
 
     /**
      * Create/Register an instance of the server with its info.
@@ -26,26 +34,26 @@ public interface IPriamInstanceFactory
      * @param ip
      * @param rac
      * @param volumes
-     * @param payload
-     * @return
+     * @param token
+     * @return the new node
      */
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload);
+    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
 
     /**
      * Delete the server node from the registry
-     * @param inst
+     * @param inst the node to delete
      */
     public void delete(PriamInstance inst);
 
     /**
      * Update the details of the server node in registry
-     * @param inst
+     * @param inst the node to update
      */
     public void update(PriamInstance inst);
 
     /**
      * Sort the list by instance ID
-     * @param return_
+     * @param return_ the list of nodes to sort
      */
     public void sort(List<PriamInstance> return_);
 

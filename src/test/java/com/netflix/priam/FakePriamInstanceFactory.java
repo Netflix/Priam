@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
+import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -13,8 +14,8 @@ import com.netflix.priam.identity.PriamInstance;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory
 {
-    List<PriamInstance> instances = new ArrayList<PriamInstance>();
-    private IConfiguration config;
+    private final Map<Integer,PriamInstance> instances = Maps.newHashMap();
+    private final IConfiguration config;
 
     @Inject
     public FakePriamInstanceFactory(IConfiguration config)
@@ -25,9 +26,14 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
     @Override
     public List<PriamInstance> getAllIds(String appName)
     {
-        return new ArrayList<PriamInstance>(instances);
+        return new ArrayList<PriamInstance>(instances.values());
     }
     
+    @Override
+    public PriamInstance getInstance(String appName, int id) {
+      return instances.get(id);
+    }
+
     @Override
     public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload)
     {
@@ -40,20 +46,20 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
         ins.setToken(payload);
         ins.setVolumes(volumes);
         ins.setDC(config.getDC());
-        instances.add(ins);
+        instances.put(id, ins);
         return ins;
     }
 
     @Override
     public void delete(PriamInstance inst)
     {
-        instances.remove(inst);
+        instances.remove(inst.getId());
     }
 
     @Override
     public void update(PriamInstance inst)
     {
-        instances.add(inst);
+        instances.put(inst.getId(), inst);
     }
 
     @Override

@@ -42,8 +42,8 @@ public class SDBInstanceData
         public final static String HOSTNAME = "hostname";
     }
     public static final String DOMAIN = "InstanceIdentity";
-    public static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-    public static String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
+    public static final String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
+    public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
 
     private final ICredential provider;
     
@@ -56,11 +56,9 @@ public class SDBInstanceData
     /**
      * Get the instance details from SimpleDB
      * 
-     * @param app
-     *            Cluster name
-     * @param id
-     *            Node ID
-     * @return
+     * @param app Cluster name
+     * @param id Node ID
+     * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
     public PriamInstance getInstance(String app, int id)
     {
@@ -73,11 +71,10 @@ public class SDBInstanceData
     }
 
     /**
-     * Get a list of all nodes in the cluster
+     * Get the set of all nodes in the cluster
      * 
-     * @param app
-     *            Cluster name
-     * @return
+     * @param app Cluster name
+     * @return the set of all instances in the given {@code app}
      */
     public Set<PriamInstance> getAllIds(String app)
     {

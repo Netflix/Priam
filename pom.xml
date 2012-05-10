@@ -3,8 +3,8 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.netflix.priam</groupId>
 	<artifactId>priam</artifactId>
-	<packaging>war</packaging>
-	<version>0.0.5-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<version>1.1-dev</version>
 
 	<parent>
 		<groupId>org.sonatype.oss</groupId>

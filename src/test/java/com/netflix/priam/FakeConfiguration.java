@@ -265,6 +265,13 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getCassConfigDir()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public String getCassStartupScript()
     {
         // TODO Auto-generated method stub

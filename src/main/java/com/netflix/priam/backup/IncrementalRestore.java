@@ -18,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 
 /*
@@ -58,12 +59,13 @@ public class IncrementalRestore extends AbstractRestore
             priamServer.getId().getInstance().setToken(restoreToken.toString());
         }
 
-        Iterator<AbstractBackupPath> incrementals = fs.list(prefix, tracker.first().time, Calendar.getInstance().getTime());
+        Date start = tracker.first().time;
+        Iterator<AbstractBackupPath> incrementals = fs.list(prefix, start, Calendar.getInstance().getTime());
         FileUtils.createDirectory(restoreDir); // create restore dir.
         while (incrementals.hasNext())
         {
             AbstractBackupPath temp = incrementals.next();
-            if (temp.type == BackupFileType.SST && tracker.contains(temp))
+            if (tracker.contains(temp) || start.compareTo(temp.time) >= 0)
                 continue;
             if (temp.getType() != BackupFileType.SST)
                 continue;

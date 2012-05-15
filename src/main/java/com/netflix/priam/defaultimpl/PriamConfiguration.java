@@ -568,14 +568,22 @@ public class PriamConfiguration implements IConfiguration
         {
             if (getProperty(prop) == null)
                 return Lists.newArrayList();
-            return Arrays.asList(getProperty(prop).split(","));
+            return getTrimmedStringList(getProperty(prop).split(","));
         }
 
         public List<String> getList(String prop, String defaultValue)
         {
             if (getProperty(prop) == null)
-                return Lists.newArrayList(defaultValue.split(","));
+                return getTrimmedStringList(defaultValue.split(","));
             return getList(prop);
+        }
+
+        private List<String> getTrimmedStringList(String[] strings) {
+            List<String> list = Lists.newArrayList();
+            for(String s : strings) {
+                list.add(StringUtils.strip(s));
+            }
+            return list;
         }
 
     }

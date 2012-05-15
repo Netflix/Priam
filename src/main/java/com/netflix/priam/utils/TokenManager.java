@@ -30,9 +30,19 @@ public class TokenManager
          * unit test failures.
          */
         Preconditions.checkArgument(position >= 0, "position must be >= 0");
-        return MAXIMUM_TOKEN.divide(BigInteger.valueOf(size))
-                .multiply(BigInteger.valueOf(position))
-                .add(BigInteger.valueOf(offset));
+        BigInteger decValue = MINIMUM_TOKEN;
+        // (Maximum * max_slots * my_slot) -1
+        if (position != 0)
+            decValue = MAXIMUM_TOKEN.divide(new BigInteger("" + size)).multiply(new BigInteger("" + position)).subtract(new BigInteger("" + 1));
+        // Add a Region/DC spacer to the token.
+        decValue = decValue.add(new BigInteger("" + offset));
+        // if the space is bigger then rotate to min for the ring.
+        if (1 == decValue.compareTo(MAXIMUM_TOKEN))
+        {
+            BigInteger delta = decValue.subtract(MAXIMUM_TOKEN);
+            decValue = MINIMUM_TOKEN.add(delta);
+        }
+        return decValue;
     }
 
     /**

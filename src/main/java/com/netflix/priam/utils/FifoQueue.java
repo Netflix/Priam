@@ -21,12 +21,16 @@ public class FifoQueue<E extends Comparable<E>> extends TreeSet<E>
         this.capacity = capacity;
     }
 
+    public FifoQueue(int capacity, Comparator<E> comparator)
+    {
+        super(comparator);
+        this.capacity = capacity;
+    }
+
     public synchronized void adjustAndAdd(E e)
     {
-        if (capacity <= size())
-        {
-            remove(first());
-        }
         add(e);
+        if (capacity < size())
+            pollFirst();
     }
 }

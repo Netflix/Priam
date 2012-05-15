@@ -46,6 +46,8 @@ public class NFThinCassandraDaemon extends CassandraDaemon
         String token = null;
         String seeds = null;
         boolean isReplace = false;
+        int tryCount = 1;
+        int sleepTime = 5 * 1000;
         while (true)
         {
             try
@@ -56,7 +58,12 @@ public class NFThinCassandraDaemon extends CassandraDaemon
             }
             catch (Exception e)
             {
-                logger.error("Failed to obtain a token from a pre-defined list, we can not start!", e);
+                if (tryCount++ < 5) {
+                    logger.info("Could not obtain a token from Priam (Try {} - it's probably not available yet). Retrying in a while ...", tryCount);
+                }
+                else {
+                    logger.error("Failed to obtain a token from a pre-defined list, we can not start!", e);
+                }
             }
   
             if (token != null && seeds != null)
@@ -64,7 +71,7 @@ public class NFThinCassandraDaemon extends CassandraDaemon
             // sleep for 5 sec and try again.
             try
             {
-                Thread.sleep(5 * 1000);
+                Thread.sleep(sleepTime);
             }
             catch (InterruptedException e1)
             {

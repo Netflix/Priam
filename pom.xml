@@ -4,7 +4,7 @@
 	<groupId>com.netflix.priam</groupId>
 	<artifactId>priam</artifactId>
 	<packaging>war</packaging>
-	<version>0.0.5-SNAPSHOT</version>
+	<version>0.0.5-SNAPSHOT-k20120514</version>
 
 	<parent>
 		<groupId>org.sonatype.oss</groupId>
@@ -78,12 +78,12 @@
 		<dependency>
 			<groupId>com.sun.jersey.contribs</groupId>
 			<artifactId>jersey-multipart</artifactId>
-			<version>1.1.4.1</version>
+			<version>1.13-b01</version>
 		</dependency>
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-json</artifactId>
-			<version>1.9.1</version>
+			<version>1.13-b01</version>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
@@ -103,12 +103,12 @@
 		<dependency>
 			<groupId>com.sun.jersey</groupId>
 			<artifactId>jersey-bundle</artifactId>
-			<version>1.9.1</version>
+			<version>1.13-b01</version>
 		</dependency>
 		<dependency>
 			<groupId>com.sun.jersey.contribs</groupId>
 			<artifactId>jersey-guice</artifactId>
-			<version>1.9.1</version>
+			<version>1.13-b01</version>
 		</dependency>
 		<dependency>
 			<groupId>com.google.inject.extensions</groupId>

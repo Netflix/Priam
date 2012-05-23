@@ -220,7 +220,8 @@ public class PriamConfiguration implements IConfiguration
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);
         String nextToken = null;
-        String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.lastIndexOf('-')): ASG_NAME;
+        String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.indexOf('-')): ASG_NAME;
+        logger.info(String.format("appid used to fetch properties is: %s",appid));
         do
         {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));

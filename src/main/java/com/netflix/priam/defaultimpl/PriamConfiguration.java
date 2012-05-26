@@ -85,6 +85,7 @@ public class PriamConfiguration implements IConfiguration
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
+    private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
     private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
@@ -92,7 +93,7 @@ public class PriamConfiguration implements IConfiguration
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type");
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
-
+    
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
@@ -193,7 +194,7 @@ public class PriamConfiguration implements IConfiguration
         }
         return null;
     }
-    
+
     /**
      * Get the fist 3 available zones in the region 
      */
@@ -483,6 +484,12 @@ public class PriamConfiguration implements IConfiguration
     public String getASGName()
     {
         return config.getProperty(CONFIG_ASG_NAME, "");
+    }
+    
+    @Override
+    public String getACLGroupName()
+    {
+    	return config.getProperty(CONFIG_ACL_GROUP_NAME, this.getAppName());
     }
 
     @Override

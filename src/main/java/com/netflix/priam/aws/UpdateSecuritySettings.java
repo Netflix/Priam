@@ -69,7 +69,8 @@ public class UpdateSecuritySettings extends Task
         }
         if (add.size() > 0)
         {
-            membership.addACL(add, 7103, 7103);
+            int port = config.getStoragePort();
+            membership.addACL(add, port, port);
             firstTimeUpdated = true;
         }
 
@@ -88,7 +89,8 @@ public class UpdateSecuritySettings extends Task
                 remove.add(acl);
         if (remove.size() > 0)
         {
-            membership.removeACL(remove, 7103, 7103);
+            int port = config.getStoragePort(); 
+            membership.removeACL(remove, port, port);
             firstTimeUpdated = true;
         }
     }

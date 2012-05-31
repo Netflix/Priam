@@ -53,6 +53,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = PRIAM_PRE + ".direct.memory.size.";
     private static final String CONFIG_THRIFT_LISTERN_PORT_NAME = PRIAM_PRE + ".thrift.port";
     private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".storage.port";
+    private static final String CONFIG_SSL_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".ssl.storage.port";
     private static final String CONFIG_CL_BK_LOCATION = PRIAM_PRE + ".backup.commitlog.location";
     private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = PRIAM_PRE + ".upload.throttle";
     private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = PRIAM_PRE + ".memory.compaction.limit";
@@ -113,7 +114,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
-    private final int DEFAULT_STORAGE_PORT = 7000;
+    private final int DEFAULT_STORAGE_PORT = 7101;
+    private final int DEFAULT_SSL_STORAGE_PORT = 7101;
     private final int DEFAULT_BACKUP_HOUR = 12;
     private final int DEFAULT_BACKUP_THREADS = 2;
     private final int DEFAULT_RESTORE_THREADS = 8;
@@ -365,6 +367,12 @@ public class PriamConfiguration implements IConfiguration
     public int getStoragePort()
     {
         return config.getInteger(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
+    }
+
+    @Override
+    public int getSSLStoragePort()
+    {
+        return config.getInteger(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
     }
 
     @Override

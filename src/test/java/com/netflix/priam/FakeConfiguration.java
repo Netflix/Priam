@@ -307,7 +307,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getStoragePort()
     {
-        return 7000;
+        return 7101;
     }
 
     @Override
@@ -356,6 +356,13 @@ public class FakeConfiguration implements IConfiguration
     public boolean getMultithreadedCompaction()
     {
         return false;
+    }
+
+    @Override
+    public int getSSLStoragePort()
+    {
+        // TODO Auto-generated method stub
+        return 7103;
     }
 
 }

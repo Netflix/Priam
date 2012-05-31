@@ -49,10 +49,11 @@ public class TuneCassandra extends Task
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
+        map.put("ssl_storage_port", config.getSSLStoragePort());
         map.put("rpc_port", config.getThriftPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
-        //Dont bootstrap in restore mode        
+        //Dont bootstrap in restore mode
         map.put("auto_bootstrap", !Restore.isRestoreEnabled(config));
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());

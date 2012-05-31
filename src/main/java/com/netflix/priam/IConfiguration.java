@@ -103,6 +103,8 @@ public interface IConfiguration
      * @return
      */
     public int getStoragePort();
+    
+    public int getSSLStoragePort();
 
     /**
      * @return Cassandra's thrift port

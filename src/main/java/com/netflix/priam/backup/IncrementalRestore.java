@@ -20,6 +20,7 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 /*
  * Incremental SSTable Restore using SSTable Loader
@@ -29,6 +30,10 @@ public class IncrementalRestore extends AbstractRestore
 {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalRestore.class);
     public static final String JOBNAME = "INCR_RESTORE_THREAD";
+
+    /* Marked public for testing */
+    public static final Pattern SECONDRY_INDEX_PATTERN = Pattern.compile("^[a-zA-Z_0-9-]+\\.[a-zA-Z_0-9-]+\\.[a-z1-9]{2,4}$");
+
     private final File restoreDir;
     
     @Inject
@@ -66,11 +71,14 @@ public class IncrementalRestore extends AbstractRestore
         {
             AbstractBackupPath temp = incrementals.next();
             if (tracker.contains(temp) || start.compareTo(temp.time) >= 0)
-                continue;
+                continue; // ignore the ones which where already downloaded.
             if (temp.getType() != BackupFileType.SST)
-                continue;
-            // skip System informations.
+                continue; // download SST's only.
+            // skip System Keyspace, else you will run into concurrent schema issues.
             if (temp.getKeyspace().equalsIgnoreCase("System"))
+                continue;
+            /* Cassandra will rebuild Secondary index's after streaming is complete so we can ignore those */
+            if (SECONDRY_INDEX_PATTERN.matcher(temp.fileName).matches()) // Make this use the constant from 1.1
                 continue;
             File keyspaceDir = new File(restoreDir, temp.keyspace);
             FileUtils.createDirectory(keyspaceDir);
@@ -88,7 +96,7 @@ public class IncrementalRestore extends AbstractRestore
     }
 
     /**
-     * Run every 10 Sec
+     * Run every 20 Sec
      */
     public static TaskTimer getTimer()
     {

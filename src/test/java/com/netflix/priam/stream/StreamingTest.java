@@ -17,6 +17,7 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FifoQueue;
 
@@ -78,7 +79,18 @@ public class StreamingTest
 
         path.parseRemote("test_backup/fake-region/fakecluster/123456/201108260000/SNAP/ks1/f326.db To: cass/data/ks1/f326.db");
         Assert.assertEquals(path, queue.first());
-        // for (AbstractBackupPath p : queue)
-        // System.out.println(p);
     }
+
+    @Test
+    public void testIgnoreIndexFiles()
+    {
+        String[] testInputs = new String[] { "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Digest.sha1",
+                "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Filter.db", "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Data.db",
+                "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Statistics.db", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Filter.db",
+                "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Digest.sha1", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Statistics.db", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Data.db" };
+        Assert.assertFalse(IncrementalRestore.SECONDRY_INDEX_PATTERN.matcher("cfname_test_name_idx-hc.db").matches());
+        for (String input : testInputs)
+            Assert.assertTrue(IncrementalRestore.SECONDRY_INDEX_PATTERN.matcher(input).matches());
+    }
+
 }

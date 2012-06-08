@@ -200,6 +200,11 @@ public interface IConfiguration
      * Amazon specific setting to query ASG Membership
      */
     public String getASGName();
+    
+    /**
+     * Get the security group associated with nodes in this cluster
+     */
+    public String getACLGroupName();
 
     /**
      * @return true if incremental backups are enabled

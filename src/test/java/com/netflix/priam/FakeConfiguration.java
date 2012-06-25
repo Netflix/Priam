@@ -153,6 +153,12 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getACLGroupName()
+    {
+        return this.getAppName();
+    }
+
+    @Override
     public int getMaxBackupUploadThreads()
     {
         // TODO Auto-generated method stub

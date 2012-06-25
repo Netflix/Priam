@@ -13,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -23,6 +24,7 @@ import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.db.compaction.CompactionInfo;
+import org.apache.cassandra.db.compaction.OperationType;
 import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
 import org.apache.commons.lang.StringUtils;
@@ -97,12 +99,12 @@ public class CassandraAdmin
     }
 
     @GET
-    @Path("/ring")
-    public Response cassRing() throws IOException, InterruptedException, JSONException
+    @Path("/ring/{id}")
+    public Response cassRing(@PathParam("id") String keyspace) throws IOException, InterruptedException, JSONException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(config);
         logger.info("node tool ring being called");
-        return Response.ok(nodetool.ring(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(nodetool.ring(keyspace), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
@@ -137,11 +139,11 @@ public class CassandraAdmin
 
     @GET
     @Path("/repair")
-    public Response cassRepair() throws IOException, ExecutionException, InterruptedException
+    public Response cassRepair(@QueryParam("sequential") boolean isSequential) throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(config);
         logger.info("node tool repair being called");
-        nodetool.repair();
+        nodetool.repair(isSequential);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 
@@ -195,16 +197,16 @@ public class CassandraAdmin
         CompactionManagerMBean cm = nodetool.getCompactionManagerProxy();
         rootObj.put("pending tasks", cm.getPendingTasks());
         JSONArray compStats = new JSONArray();
-        for (CompactionInfo c : cm.getCompactions())
+        for (Map<String, String> c : cm.getCompactions())
         {
             JSONObject cObj = new JSONObject();
-            cObj.put("compaction type", c.getTaskType());
-            cObj.put("keyspace", c.getKeyspace());
-            cObj.put("column family", c.getColumnFamily());
-            cObj.put("bytes compacted", c.getBytesComplete());
-            cObj.put("bytes total", c.getTotalBytes());
-
-            String percentComplete = c.getTotalBytes() == 0 ? "n/a" : new DecimalFormat("0.00").format((double) c.getBytesComplete() / c.getTotalBytes() * 100) + "%";
+            cObj.put("id", c.get("id"));
+            cObj.put("keyspace", c.get("keyspace"));
+            cObj.put("columnfamily", c.get("columnfamily"));
+            cObj.put("bytesComplete", c.get("bytesComplete"));
+            cObj.put("totalBytes", c.get("totalBytes"));
+            cObj.put("taskType", c.get("taskType"));
+            String percentComplete = new Long(c.get("totalBytes")) == 0 ? "n/a" : new DecimalFormat("0.00").format((double) new Long(c.get("bytesComplete")) / new Long(c.get("totalBytes")) * 100) + "%";
             cObj.put("progress", percentComplete);
             compStats.put(cObj);
         }

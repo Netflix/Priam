@@ -6,10 +6,8 @@ import java.lang.management.MemoryUsage;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -18,12 +16,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import org.apache.cassandra.cache.InstrumentingCacheMBean;
+import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
-import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.tools.NodeProbe;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -44,9 +40,6 @@ import com.netflix.priam.IConfiguration;
 public class JMXNodeTool extends NodeProbe
 {
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
-    private static String keyCacheObjFmt = "org.apache.cassandra.db:type=Caches,keyspace=%s,cache=%sKeyCache";
-    private static String rowCacheObjFmt = "org.apache.cassandra.db:type=Caches,keyspace=%s,cache=%sRowCache";
-
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
 
@@ -180,13 +173,12 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONArray ring() throws JSONException
+    public JSONArray ring(String keyspace) throws JSONException
     {
         logger.info("JMX ring being called");
         JSONArray ring = new JSONArray();
-        Map<Token, String> tokenToEndpoint = getTokenToEndpointMap();
-        List<Token> sortedTokens = new ArrayList<Token>(tokenToEndpoint.keySet());
-        Collections.sort(sortedTokens);
+        Map<String, String> tokenToEndpoint = getTokenToEndpointMap();
+        List<String> sortedTokens = new ArrayList<String>(tokenToEndpoint.keySet());
 
         Collection<String> liveNodes = getLiveNodes();
         Collection<String> deadNodes = getUnreachableNodes();
@@ -194,10 +186,21 @@ public class JMXNodeTool extends NodeProbe
         Collection<String> leavingNodes = getLeavingNodes();
         Collection<String> movingNodes = getMovingNodes();
         Map<String, String> loadMap = getLoadMap();
-        // Calculate per-token ownership of the ring
-        Map<Token, Float> ownerships = getOwnership();
 
-        for (Token token : sortedTokens)
+        String format = "%-16s%-12s%-12s%-7s%-8s%-16s%-20s%-44s%n";
+
+        // Calculate per-token ownership of the ring
+        Map<String, Float> ownerships;
+        try
+        {
+            ownerships = effectiveOwnership(keyspace);
+        }
+        catch (ConfigurationException ex)
+        {
+            ownerships = getOwnership();
+        }
+
+        for (String token : sortedTokens)
         {
             String primaryEndpoint = tokenToEndpoint.get(token);
             String dataCenter;
@@ -218,7 +221,11 @@ public class JMXNodeTool extends NodeProbe
             {
                 rack = "Unknown";
             }
-            String status = liveNodes.contains(primaryEndpoint) ? "Up" : deadNodes.contains(primaryEndpoint) ? "Down" : "?";
+            String status = liveNodes.contains(primaryEndpoint)
+                            ? "Up"
+                            : deadNodes.contains(primaryEndpoint)
+                              ? "Down"
+                              : "?";
 
             String state = "Normal";
 
@@ -229,15 +236,17 @@ public class JMXNodeTool extends NodeProbe
             else if (movingNodes.contains(primaryEndpoint))
                 state = "Moving";
 
-            String load = loadMap.containsKey(primaryEndpoint) ? loadMap.get(primaryEndpoint) : "?";
-            String owns = new DecimalFormat("##0.00%").format(ownerships.get(token));
+            String load = loadMap.containsKey(primaryEndpoint)
+                          ? loadMap.get(primaryEndpoint)
+                          : "?";
+            String owns = new DecimalFormat("##0.00%").format(ownerships.get(token) == null ? 0.0F : ownerships.get(token));
             ring.put(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
         }
         logger.info(ring.toString());
         return ring;
     }
 
-    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, Token token) throws JSONException
+    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, String token) throws JSONException
     {
         JSONObject object = new JSONObject();
         object.put("endpoint", primaryEndpoint);
@@ -257,10 +266,10 @@ public class JMXNodeTool extends NodeProbe
             forceTableCompaction(keyspace, new String[0]);
     }
 
-    public void repair() throws IOException, ExecutionException, InterruptedException
+    public void repair(boolean isSequential) throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces())
-            forceTableRepair(keyspace, new String[0]);
+            forceTableRepair(keyspace, isSequential, new String[0]);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException
@@ -296,81 +305,6 @@ public class JMXNodeTool extends NodeProbe
         {
             tool = null;
             super.close();
-        }
-    }
-
-    public Iterator<Map.Entry<String, InstrumentingCacheMBean>> getKeyCacheMBeanProxies(IConfiguration config)
-    {
-        try
-        {
-            return new CacheMBeanIterator(mbeanServerConn, keyCacheObjFmt);
-        }
-        catch (MalformedObjectNameException e)
-        {
-            throw new RuntimeException("Invalid ObjectName", e);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Could not retrieve list of stat mbeans.", e);
-        }
-    }
-
-    public Iterator<Map.Entry<String, InstrumentingCacheMBean>> getRowCacheMBeanProxies(IConfiguration config)
-    {
-        try
-        {
-            return new CacheMBeanIterator(mbeanServerConn, rowCacheObjFmt);
-        }
-        catch (MalformedObjectNameException e)
-        {
-            throw new RuntimeException("Invalid ObjectName.", e);
-        }
-        catch (IOException e)
-        {
-            throw new RuntimeException("Could not retrieve list of stat mbeans.", e);
-        }
-    }
-
-    class CacheMBeanIterator implements Iterator<Map.Entry<String, InstrumentingCacheMBean>>
-    {
-        private Iterator<ObjectName> resIter;
-        private MBeanServerConnection mbeanServerConn;
-        private String cachePath;
-
-        public CacheMBeanIterator(MBeanServerConnection mbeanServerConn, String cachePath) throws MalformedObjectNameException, NullPointerException, IOException
-        {
-            ObjectName query = new ObjectName("org.apache.cassandra.db:type=ColumnFamilies,*");
-            resIter = mbeanServerConn.queryNames(query, null).iterator();
-            this.mbeanServerConn = mbeanServerConn;
-            this.cachePath = cachePath;
-        }
-
-        public boolean hasNext()
-        {
-            return resIter.hasNext();
-        }
-
-        public Entry<String, InstrumentingCacheMBean> next()
-        {
-            ObjectName objectName = resIter.next();
-            String tableName = objectName.getKeyProperty("keyspace");
-            String cfName = objectName.getKeyProperty("columnfamily");
-            String keyCachePath = String.format(cachePath, tableName, cfName);
-            InstrumentingCacheMBean cacheProxy = null;
-            try
-            {
-                cacheProxy = JMX.newMBeanProxy(mbeanServerConn, new ObjectName(keyCachePath), InstrumentingCacheMBean.class);
-            }
-            catch (Exception e)
-            {
-                logger.error("Cannot get cache MBean", e);
-            }
-            return new AbstractMap.SimpleImmutableEntry<String, InstrumentingCacheMBean>(tableName + "_" + cfName, cacheProxy);
-        }
-
-        public void remove()
-        {
-            throw new UnsupportedOperationException();
         }
     }
 }

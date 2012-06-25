@@ -92,7 +92,7 @@ public class SnapshotBackup extends AbstractBackup
             public Void retriableCall() throws Exception
             {
                 JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.takeSnapshot(snapshotName);
+                nodetool.takeSnapshot(snapshotName, null, new String[0]);
                 return null;
             }
         }.call();

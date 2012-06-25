@@ -143,7 +143,7 @@ public class TestBackup
         }
 
         @Mock
-        public void takeSnapshot(String snapshotName, String... keyspaces) throws IOException
+        public void takeSnapshot(String snapshotName, String columnFamily, String... keyspaces) throws IOException
         {
             File tmp = new File("cass/data/");
             if (tmp.exists())

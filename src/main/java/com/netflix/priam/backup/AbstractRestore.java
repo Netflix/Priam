@@ -26,8 +26,8 @@ public abstract class AbstractRestore extends Task
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String SYSTEM_KEYSPACE = "system";
     // keeps track of the last few download which was executed.
-    // TODO fix the magic number of 100 => the idea of 100 is 10% of 1000 files limit per s3 query
-    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(100);
+    // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
+    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
     
     protected IConfiguration config;

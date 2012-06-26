@@ -51,7 +51,7 @@ public interface IMembership
      * 
      * @return
      */
-    public List<String> listACL();
+    public List<String> listACL(int from, int to);
 
     /**
      * Expand the membership size by 1.

@@ -56,7 +56,8 @@ public class UpdateSecuritySettings extends Task
     public void execute()
     {
         // if seed dont execute.
-        List<String> acls = membership.listACL();
+        int port = config.getSSLStoragePort();
+        List<String> acls = membership.listACL(port, port);
         List<PriamInstance> instances = factory.getAllIds(config.getAppName());
 
         // iterate to add...
@@ -69,7 +70,6 @@ public class UpdateSecuritySettings extends Task
         }
         if (add.size() > 0)
         {
-            int port = config.getSSLStoragePort();
             membership.addACL(add, port, port);
             firstTimeUpdated = true;
         }
@@ -89,7 +89,6 @@ public class UpdateSecuritySettings extends Task
                 remove.add(acl);
         if (remove.size() > 0)
         {
-            int port = config.getSSLStoragePort(); 
             membership.removeACL(remove, port, port);
             firstTimeUpdated = true;
         }

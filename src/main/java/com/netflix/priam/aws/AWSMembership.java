@@ -144,7 +144,7 @@ public class AWSMembership implements IMembership
     /**
      * List SG ACL's
      */
-    public List<String> listACL()
+    public List<String> listACL(int from, int to)
     {
         AmazonEC2 client = null;
         try
@@ -155,7 +155,8 @@ public class AWSMembership implements IMembership
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups())
                 for (IpPermission perm : group.getIpPermissions())
-                    ipPermissions.addAll(perm.getIpRanges());
+                    if (perm.getFromPort() == from && perm.getToPort() == to)
+                        ipPermissions.addAll(perm.getIpRanges());
 
             return ipPermissions;
         }

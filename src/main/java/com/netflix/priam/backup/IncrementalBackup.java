@@ -35,10 +35,13 @@ public class IncrementalBackup extends AbstractBackup
         logger.debug("Scanning for backup in: " + dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles())
         {
-            File backupDir = new File(keyspaceDir, "backups");
-            if (!isValidBackupDir(keyspaceDir, backupDir))
-                continue;
-            upload(backupDir, BackupFileType.SST);
+            for (File columnFamilyDir : keyspaceDir.listFiles())
+            {
+                File backupDir = new File(columnFamilyDir, "backups");
+                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir))
+                    continue;
+                upload(backupDir, BackupFileType.SST);
+            }
         }
     }
 

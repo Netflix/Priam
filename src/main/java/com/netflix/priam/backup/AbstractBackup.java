@@ -48,9 +48,6 @@ public abstract class AbstractBackup extends Task
         {
             final AbstractBackupPath bp = pathFactory.get();
             bp.parseLocal(file, type);
-            String[] cfPrefix = bp.fileName.split("-");
-            if (cfPrefix.length > 1 && FILTER_COLUMN_FAMILY.contains(cfPrefix[0]))
-                continue;
             upload(bp);
             bps.add(bp);
             file.delete();
@@ -77,12 +74,15 @@ public abstract class AbstractBackup extends Task
     /**
      * Filters unwanted keyspaces and column families
      */
-    public boolean isValidBackupDir(File keyspaceDir, File backupDir)
+    public boolean isValidBackupDir(File keyspaceDir, File columnFamilyDir, File backupDir)
     {
         if (!backupDir.isDirectory() && !backupDir.exists())
             return false;
         String keyspaceName = keyspaceDir.getName();
         if (FILTER_KEYSPACE.contains(keyspaceName))
+            return false;
+        String columnFamilyName = columnFamilyDir.getName();
+        if (FILTER_COLUMN_FAMILY.contains(columnFamilyName))
             return false;
         return true;
     }

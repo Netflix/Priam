@@ -49,16 +49,18 @@ public class SnapshotBackup extends AbstractBackup
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
             File dataDir = new File(config.getDataFileLocation());
-            File[] keyspaceDirs = dataDir.listFiles();
-            for (File keyspaceDir : keyspaceDirs)
+            for (File keyspaceDir : dataDir.listFiles())
             {
-                File snpDir = new File(keyspaceDir, "snapshots");
-                if (!isValidBackupDir(keyspaceDir, snpDir))
-                    continue;
-                File snapshotDir = getValidSnapshot(keyspaceDir, snpDir, snapshotName);
-                // Add files to this dir
-                if (null != snapshotDir)
-                    bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
+                for (File columnFamilyDir : keyspaceDir.listFiles())
+                {
+                    File snpDir = new File(columnFamilyDir, "snapshots");
+                    if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir))
+                        continue;
+                    File snapshotDir = getValidSnapshot(columnFamilyDir, snpDir, snapshotName);
+                    // Add files to this dir
+                    if (null != snapshotDir)
+                        bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
+                }
             }
             // Upload meta file
             metaData.set(bps, snapshotName);
@@ -77,7 +79,7 @@ public class SnapshotBackup extends AbstractBackup
         }
     }
 
-    private File getValidSnapshot(File keyspaceDir, File snpDir, String snapshotName)
+    private File getValidSnapshot(File columnFamilyDir, File snpDir, String snapshotName)
     {
         for (File snapshotDir : snpDir.listFiles())
             if (snapshotDir.getName().matches(snapshotName))

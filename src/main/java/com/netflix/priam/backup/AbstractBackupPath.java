@@ -74,7 +74,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (type != BackupFileType.META && type != BackupFileType.CL)
             this.keyspace = elements[0];
         if (type == BackupFileType.SNAP)
-            time = DAY_FORMAT.parse(elements[2]);
+            time = DAY_FORMAT.parse(elements[3]);
         if (type == BackupFileType.SST || type == BackupFileType.CL)
             time = new Date(file.lastModified());
         this.fileName = file.getName();

@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.builder.EqualsBuilder;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -20,7 +19,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
     public static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
-    public static final char PATH_SEP = '/';
+    public static final char PATH_SEP = File.separatorChar;
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
     public static enum BackupFileType

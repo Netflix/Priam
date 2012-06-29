@@ -29,10 +29,10 @@ public class TestBackupFile
     public static void setup() throws IOException
     {
         injector = Guice.createInjector(new BRTestModule());
-        File file = new File("cass/data/ks1/", "f1.db");
+        File file = new File("target/data/Keyspace1/Standard1/", "Keyspace1-Standard1-ia-5-Data.db");
         if (!file.exists())
         {
-            File dir1 = new File("cass/data/ks1/");
+            File dir1 = new File("target/data/Keyspace1/Standard1/");
             if (!dir1.exists())
                 dir1.mkdirs();
             byte b = 8;
@@ -53,7 +53,7 @@ public class TestBackupFile
     @AfterClass
     public static void cleanup() throws IOException
     {
-        File file = new File("cass/data/ks1/f1.db");
+        File file = new File("Keyspace1-Standard1-ia-5-Data.db");
         FileUtils.deleteQuietly(file);
     }
 
@@ -61,33 +61,33 @@ public class TestBackupFile
     public void testBackupFileCreation() throws ParseException
     {
         // Test snapshot file
-        String snapshotfile = "cass/data/ks1/snapshots/201108082320/f1.db";
+        String snapshotfile = "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
-        Assert.assertEquals("ks1", backupfile.keyspace);
+        Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals("fake-region", backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/SNAP/ks1/f1.db", backupfile.getRemotePath());
+        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/SNAP/Keyspace1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 
     @Test
     public void testIncBackupFileCreation() throws ParseException
     {
         // Test incremental file        
-        File bfile = new File("cass/data/ks1/f1.db");
+        File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.SST);
         Assert.assertEquals(BackupFileType.SST, backupfile.type);
-        Assert.assertEquals("ks1", backupfile.keyspace);
+        Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals("fake-region", backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
         String datestr = AbstractBackupPath.DAY_FORMAT.format(new Date(bfile.lastModified()));
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/" + datestr + "/SST/ks1/f1.db", backupfile.getRemotePath());
+        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/" + datestr + "/SST/Keyspace1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 
     @Test

@@ -65,7 +65,7 @@ public class FakeConfiguration implements IConfiguration
     public String getDataFileLocation()
     {
         // TODO Auto-generated method stub
-        return "cass/data";
+        return "target/data";
     }
 
     @Override

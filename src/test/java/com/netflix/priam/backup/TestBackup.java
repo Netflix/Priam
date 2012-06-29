@@ -51,7 +51,7 @@ public class TestBackup
     @AfterClass
     public static void cleanup() throws IOException
     {
-        File file = new File("cass");
+        File file = new File("target/data");
         FileUtils.deleteQuietly(file);
     }
 
@@ -90,15 +90,15 @@ public class TestBackup
 
     public static void generateIncrementalFiles()
     {
-        File tmp = new File("cass/data/");
+        File tmp = new File("target/data/");
         if (tmp.exists())
             cleanup(tmp);
         // Setup
         Set<String> files = new HashSet<String>();
-        files.add("cass/data/ks1/backups/f1.db");
-        files.add("cass/data/ks1/backups/f11.db");
-        files.add("cass/data/ks2/backups/f2.db");
-        files.add("cass/data/ks3/backups/f3.db");
+        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Data.db");
+        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
+        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
+        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
 
         expectedFiles.clear();
         for (String filePath : files)
@@ -145,21 +145,21 @@ public class TestBackup
         @Mock
         public void takeSnapshot(String snapshotName, String columnFamily, String... keyspaces) throws IOException
         {
-            File tmp = new File("cass/data/");
+            File tmp = new File("target/data/");
             if (tmp.exists())
                 cleanup(tmp);
             // Setup
             Set<String> files = new HashSet<String>();
-            files.add("cass/data/ks1/snapshots/" + snapshotName + "/f1.db");
-            files.add("cass/data/ks1/snapshots/201101081230/f2.db");
-            files.add("cass/data/ks2/snapshots/" + snapshotName + "/f3.db");
+            files.add("target/data/Keyspace1/Standard1/snapshots/" + snapshotName + "/Keyspace1-Standard1-ia-5-Data.db");
+            files.add("target/data/Keyspace1/Standard1/snapshots/201101081230/Keyspace1-Standard1-ia-6-Data.db");
+            files.add("target/data/Keyspace1/Standard1/snapshots/" + snapshotName + "/Keyspace1-Standard1-ia-7-Data.db");
 
             expectedFiles.clear();
             for (String filePath : files)
             {
                 File file = new File(filePath);
                 genTestFile(file);
-                if (filePath.indexOf("f2.db") == -1)// skip
+                if (filePath.indexOf("Keyspace1-Standard1-ia-6-Data.db") == -1)// skip
                     expectedFiles.add(file.getAbsolutePath());
             }
         }
@@ -172,7 +172,7 @@ public class TestBackup
         @Mock
         public void clearSnapshot(String tag, String... keyspaces) throws IOException
         {
-            cleanup(new File("cass"));
+            cleanup(new File("target/data"));
         }
     }
 

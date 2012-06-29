@@ -53,7 +53,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public List<String> listACL()
+    public List<String> listACL(int from, int to)
     {
         // TODO Auto-generated method stub
         return null;

@@ -6,7 +6,7 @@ Priam is a process/tool that runs alongside Apache Cassandra to automate the fol
 
 Apache Cassandra is a highly available, column oriented database: http://cassandra.apache.org.
 
-The name 'Priam' refers to King of Troy in Greek mythology, who the father of Cassandra. 
+The name 'Priam' refers to the King of Troy in Greek mythology, who was the father of Cassandra. 
 
 Priam is actively developed and used at Netflix. 
 

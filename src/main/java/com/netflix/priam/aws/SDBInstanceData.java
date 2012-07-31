@@ -1,18 +1,10 @@
 package com.netflix.priam.aws;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.DeleteAttributesRequest;
+import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.PutAttributesRequest;
 import com.amazonaws.services.simpledb.model.ReplaceableAttribute;
 import com.amazonaws.services.simpledb.model.SelectRequest;
@@ -22,6 +14,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.PriamInstance;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * DAO for handling Instance identity information such as token, zone, region
@@ -213,6 +212,6 @@ public class SDBInstanceData
     
     private AmazonSimpleDBClient getSimpleDBClient(){
         //Create per request
-        return new AmazonSimpleDBClient(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        return new AmazonSimpleDBClient(provider.getCredentials());
     }
 }

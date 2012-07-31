@@ -1,5 +1,7 @@
 package com.netflix.priam;
 
+import com.amazonaws.auth.AWSCredentials;
+
 /**
  * Credential file interface for services supporting 
  * Access ID and key authentication
@@ -7,13 +9,8 @@ package com.netflix.priam;
 public interface ICredential
 {
     /**
-     * @return Access ID
+     * Returns AWS credentials instance.  The credentials may change, so call
+     * this method each time they're used.
      */
-    public String getAccessKeyId();
-
-    /**
-     * @return Secret key
-     */
-    public String getSecretAccessKey();
-
+    public AWSCredentials getCredentials();
 }

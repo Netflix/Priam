@@ -1,12 +1,14 @@
 package com.netflix.priam.defaultimpl;
 
-import java.io.FileInputStream;
-import java.util.Properties;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
+import com.netflix.priam.ICredential;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.priam.ICredential;
+import java.io.FileInputStream;
+import java.util.Properties;
 
 /**
  * This is a basic implementation of ICredentials. User should prefer to
@@ -21,7 +23,8 @@ public class ClearCredential implements ICredential
 {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
     public static String CRED_FILE = "/etc/awscredential.properties";
-    private Properties props;
+
+    private final AWSCredentials credentials;
 
     public ClearCredential()
     {
@@ -29,8 +32,11 @@ public class ClearCredential implements ICredential
         try
         {
             fis = new FileInputStream(CRED_FILE);
-            props = new Properties();
+            Properties props = new Properties();
             props.load(fis);
+            String accessId = props.getProperty("AWSACCESSID");
+            String awsKey = props.getProperty("AWSKEY");
+            credentials = new BasicAWSCredentials(accessId, awsKey);
         }
         catch (Exception e)
         {
@@ -41,19 +47,10 @@ public class ClearCredential implements ICredential
         {
             FileUtils.closeQuietly(fis);
         }
-
     }
 
     @Override
-    public String getAccessKeyId()
-    {
-        return props.getProperty("AWSACCESSID");
+    public AWSCredentials getCredentials() {
+        return credentials;
     }
-
-    @Override
-    public String getSecretAccessKey()
-    {
-        return props.getProperty("AWSKEY");
-    }
-
 }

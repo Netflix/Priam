@@ -1,6 +1,5 @@
 package com.netflix.priam.aws;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
 import com.amazonaws.services.autoscaling.model.*;
@@ -192,16 +191,14 @@ public class AWSMembership implements IMembership
 
     protected AmazonAutoScaling getAutoScalingClient()
     {
-        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        AmazonAutoScaling client = new AmazonAutoScalingClient(cred);
+        AmazonAutoScaling client = new AmazonAutoScalingClient(provider.getCredentials());
         client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
         return client;
     }
 
     protected AmazonEC2 getEc2Client()
     {
-        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        AmazonEC2 client = new AmazonEC2Client(cred);
+        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
         client.setEndpoint("ec2." + config.getDC() + ".amazonaws.com");
         return client;
     }

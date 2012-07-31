@@ -241,7 +241,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 
     private AmazonS3 getS3Client()
     {
-        return new AmazonS3Client(new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey()));
+        return new AmazonS3Client(cred.getCredentials());
     }
 
     /**

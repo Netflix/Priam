@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
-import org.apache.cassandra.io.sstable.SSTableLoader.OutputHandler;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
 import org.apache.cassandra.streaming.OperationType;
 import org.apache.cassandra.streaming.PendingFile;
 import org.apache.cassandra.streaming.StreamHeader;
 import org.apache.cassandra.utils.Pair;
+import org.apache.cassandra.utils.OutputHandler;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +52,16 @@ public class SSTableLoaderWrapper
         public void debug(String msg)
         {
             logger.debug(msg + "\n");
+        }
+
+        public void warn(String msg)
+        {
+            logger.warn(msg + "\n");
+        }
+
+        public void warn(String msg, Throwable th)
+        {
+            logger.warn(msg, th);
         }
     };
 

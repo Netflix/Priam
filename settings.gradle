@@ -1,1 +1,2 @@
-include 'template-client','template-server'
+rootProject.name = 'priam-root'
+include 'priam-core','priam-war'

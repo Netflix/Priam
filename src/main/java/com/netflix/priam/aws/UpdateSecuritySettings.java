@@ -6,7 +6,7 @@ import java.util.Random;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -38,11 +38,13 @@ public class UpdateSecuritySettings extends Task
     private static final Random ran = new Random();
     private final IMembership membership;
     private final IPriamInstanceFactory factory;
+    private final CassandraConfiguration cassandraConfiguration;
 
     @Inject
-    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
+    public UpdateSecuritySettings(CassandraConfiguration cassandraConfiguration, IMembership membership, IPriamInstanceFactory factory)
     {
-        super(config);
+        super();
+        this.cassandraConfiguration = cassandraConfiguration;
         this.membership = membership;
         this.factory = factory;
     }
@@ -56,13 +58,13 @@ public class UpdateSecuritySettings extends Task
     public void execute()
     {
         // if seed dont execute.
-        int port = config.getSSLStoragePort();
+        int port = cassandraConfiguration.getSslStoragePort();
         List<String> acls = membership.listACL(port, port);
-        List<PriamInstance> instances = factory.getAllIds(config.getAppName());
+        List<PriamInstance> instances = factory.getAllIds(cassandraConfiguration.getClusterName());
 
         // iterate to add...
         List<String> add = Lists.newArrayList();
-        for (PriamInstance instance : factory.getAllIds(config.getAppName()))
+        for (PriamInstance instance : factory.getAllIds(cassandraConfiguration.getClusterName()))
         {
             String range = instance.getHostIP() + "/32";
             if (!acls.contains(range))

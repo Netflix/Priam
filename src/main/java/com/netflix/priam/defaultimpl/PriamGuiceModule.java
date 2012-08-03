@@ -1,10 +1,13 @@
 package com.netflix.priam.defaultimpl;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.config.PriamConfiguration;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
 import com.google.inject.AbstractModule;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.S3BackupPath;
@@ -21,11 +24,21 @@ import com.netflix.priam.utils.ThreadSleeper;
 
 public class PriamGuiceModule extends AbstractModule
 {
+    private final PriamConfiguration priamConfiguration;
+
+    public PriamGuiceModule(PriamConfiguration priamConfiguration)
+    {
+        this.priamConfiguration = priamConfiguration;
+    }
+
     @Override
     protected void configure()
     {
+        bind(CassandraConfiguration.class).toInstance(priamConfiguration.getCassandraConfiguration());
+        bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
+        bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());
+
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
-        bind(IConfiguration.class).to(PriamConfiguration.class).asEagerSingleton();
         bind(IPriamInstanceFactory.class).to(SDBInstanceFactory.class);
         bind(IMembership.class).to(AWSMembership.class);
         bind(ICredential.class).to(InstanceProfileCredential.class);

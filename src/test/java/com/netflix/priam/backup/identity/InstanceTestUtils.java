@@ -1,8 +1,10 @@
 package com.netflix.priam.backup.identity;
 
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
+import com.netflix.priam.TestAmazonConfiguration;
+import com.netflix.priam.TestBackupConfiguration;
+import com.netflix.priam.TestCassandraConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -20,7 +22,9 @@ public abstract class InstanceTestUtils
 
     List<String> instances = new ArrayList<String>();
     IMembership membership;
-    FakeConfiguration config;
+    TestCassandraConfiguration cassandraConfiguration;
+    TestAmazonConfiguration amazonConfiguration;
+    TestBackupConfiguration backupConfiguration;
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
     Sleeper sleeper;
@@ -39,8 +43,10 @@ public abstract class InstanceTestUtils
         instances.add("fakeinstance9");
 
         membership = new FakeMembership(instances);
-        config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
-        factory = new FakePriamInstanceFactory(config);
+        cassandraConfiguration = new TestCassandraConfiguration("fake-app");
+        amazonConfiguration = new TestAmazonConfiguration("fake-app", "fake", "az1", "fakeinstance1");
+        backupConfiguration = new TestBackupConfiguration();
+        factory = new FakePriamInstanceFactory(amazonConfiguration);
         sleeper = new FakeSleeper();
     }
 
@@ -61,8 +67,8 @@ public abstract class InstanceTestUtils
     
     protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception
     {
-        config.zone = zone;
-        config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper);
+        amazonConfiguration.setAvailabilityZone(zone);
+        amazonConfiguration.setInstanceID(instanceId);
+        return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, factory, membership, sleeper);
     }
 }

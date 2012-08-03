@@ -9,12 +9,14 @@ import javax.ws.rs.core.Response;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
@@ -33,7 +35,10 @@ import static org.junit.Assert.assertEquals;
 public class BackupServletTest
 {
     private @NonStrict PriamServer priamServer;
-    private @NonStrict IConfiguration config;
+    private @NonStrict CassandraConfiguration cassandraConfiguration;
+    private @NonStrict AmazonConfiguration amazonConfiguration;
+    private @NonStrict
+    BackupConfiguration backupConfiguration;
     private @Mocked IBackupFileSystem fs;
     private @Mocked Restore restoreObj;
     private @Mocked Provider<AbstractBackupPath> pathProvider;
@@ -45,7 +50,7 @@ public class BackupServletTest
     @Before
     public void setUp()
     {
-        resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
+        resource = new BackupServlet(priamServer, cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
             tuneCassandra, snapshotBackup, factory);
     }
 
@@ -78,16 +83,16 @@ public class BackupServletTest
             PriamInstance instance;
   
             {
-                config.getDC(); result = oldRegion;
+                amazonConfiguration.getRegionName(); result = oldRegion;
                 priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
-                config.isRestoreClosestToken(); result = false;
+                backupConfiguration.isRestoreClosestToken(); result = false;
   
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
-                config.setDC(oldRegion);
+
+                amazonConfiguration.setRegionName(oldRegion);
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -121,18 +126,18 @@ public class BackupServletTest
                 pathProvider.get(); result = backupPath;
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
-                config.getDC(); result = oldRegion;
+                amazonConfiguration.getRegionName(); result = oldRegion;
                 priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
-                config.isRestoreClosestToken(); result = false;
+                backupConfiguration.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore(
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
-  
-                config.setDC(oldRegion);
+
+                amazonConfiguration.setRegionName(oldRegion);
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -164,16 +169,16 @@ public class BackupServletTest
 //            @NonStrict PriamInstance instance1, instance2, instance3;
 //  
 //            {
-//                config.getDC(); result = oldRegion;
+//                cassandraConfiguration.getDC(); result = oldRegion;
 //                priamServer.getId(); result = identity; times = 3;
 //                identity.getInstance(); result = instance; times = 3;
 //                instance.getToken(); result = oldToken;
 //
-//                config.isRestoreClosestToken(); result = false;
+//                cassandraConfiguration.isRestoreClosestToken(); result = false;
 //                
-//                config.setDC(newRegion);
+//                cassandraConfiguration.setDC(newRegion);
 //                instance.getToken(); result = oldToken;
-//                config.getAppName(); result = appName;
+//                cassandraConfiguration.getAppName(); result = appName;
 //                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
 //                instance.getDC();  result = oldRegion;
 //                instance.getToken(); result = oldToken;
@@ -187,7 +192,7 @@ public class BackupServletTest
 //
 //                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 //  
-//                config.setDC(oldRegion);
+//                cassandraConfiguration.setDC(oldRegion);
 //                instance.setToken(oldToken);
 //                tuneCassandra.updateYaml(false);
 //            }
@@ -217,17 +222,17 @@ public class BackupServletTest
             PriamInstance instance;
   
             {
-                config.getDC(); result = oldRegion;
+                amazonConfiguration.getRegionName(); result = oldRegion;
                 priamServer.getId(); result = identity; times = 3;
                 identity.getInstance(); result = instance; times = 3;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
 
-                config.isRestoreClosestToken(); result = false;
+                backupConfiguration.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
-                config.setDC(oldRegion);
+
+                amazonConfiguration.setRegionName(oldRegion);
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -257,21 +262,21 @@ public class BackupServletTest
             PriamInstance instance;
   
             {
-                config.getDC(); result = oldRegion;
+                amazonConfiguration.getRegionName(); result = oldRegion;
                 priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
-                config.isRestoreClosestToken(); result = false;
+                backupConfiguration.isRestoreClosestToken(); result = false;
   
                 List<String> restoreKeyspaces = Lists.newArrayList();
-                config.getRestoreKeySpaces(); result = restoreKeyspaces;
+                backupConfiguration.getRestoreKeyspaces(); result = restoreKeyspaces;
                 restoreKeyspaces.clear();
                 restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
-                config.setDC(oldRegion);
+
+                amazonConfiguration.setRegionName(oldRegion);
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -308,15 +313,15 @@ public class BackupServletTest
                 pathProvider.get(); result = backupPath;
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
-                config.getDC(); result = oldRegion; times = 2;
+                amazonConfiguration.getRegionName(); result = oldRegion; times = 2;
                 priamServer.getId(); result = identity; times = 5;
                 identity.getInstance(); result = instance; times = 5;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
 
-                config.isRestoreClosestToken(); result = true;
+                backupConfiguration.isRestoreClosestToken(); result = true;
                 instance.getToken(); result = oldToken;
-                config.getAppName(); result = appName;
+                cassandraConfiguration.getClusterName(); result = appName;
                 factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
                 instance.getDC();  result = oldRegion;
                 instance.getToken(); result = oldToken;
@@ -332,7 +337,7 @@ public class BackupServletTest
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
   
-                config.setDC(oldRegion);
+                amazonConfiguration.setRegionName(oldRegion);
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -349,15 +354,15 @@ public class BackupServletTest
     // TODO: create CassandraController interface and inject, instead of static util method
     private Expectations expectCassandraStartup() {
         return new Expectations() {{
-            config.getCassStartupScript(); result = "/usr/bin/false";
-            config.getHeapNewSize(); result = "2G";
-            config.getHeapSize(); result = "8G";
-            config.getDataFileLocation(); result = "/var/lib/cassandra/data";
-            config.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
-            config.getBackupLocation(); result = "backup";
-            config.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
-            config.getJmxPort(); result = 7199;
-            config.getMaxDirectMemory(); result = "50G";
+            cassandraConfiguration.getCassStartScript(); result = "/usr/bin/false";
+            cassandraConfiguration.getMaxNewGenHeapSize().get(amazonConfiguration.getInstanceType()); result = "2G";
+            cassandraConfiguration.getMaxHeapSize().get(amazonConfiguration.getInstanceType()); result = "8G";
+            cassandraConfiguration.getDataLocation(); result = "/var/lib/cassandra/data";
+            backupConfiguration.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
+            backupConfiguration.getS3BaseDir(); result = "backup";
+            cassandraConfiguration.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
+            cassandraConfiguration.getJmxPort(); result = 7199;
+            cassandraConfiguration.getDirectMaxHeapSize().get(amazonConfiguration.getInstanceType()); result = "50G";
         }};
     }
 }

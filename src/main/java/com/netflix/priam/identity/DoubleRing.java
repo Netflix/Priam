@@ -10,13 +10,14 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.List;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.TokenManager;
 
 /**
@@ -26,13 +27,15 @@ public class DoubleRing
 {
     private static final Logger logger = LoggerFactory.getLogger(DoubleRing.class);
     private static File TMP_BACKUP_FILE;
-    private final IConfiguration config;
+    private final CassandraConfiguration cassandraConfiguration;
+    private final AmazonConfiguration amazonConfiguration;
     private final IPriamInstanceFactory factory;
 
     @Inject
-    public DoubleRing(IConfiguration config, IPriamInstanceFactory factory)
+    public DoubleRing(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceFactory factory)
     {
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
         this.factory = factory;
     }
 
@@ -43,13 +46,13 @@ public class DoubleRing
      */
     public void doubleSlots()
     {
-        List<PriamInstance> local = filteredRemote(factory.getAllIds(config.getAppName()));
+        List<PriamInstance> local = filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName()));
 
         // delete all
         for (PriamInstance data : local)
             factory.delete(data);
 
-        int hash = TokenManager.regionOffset(config.getDC());
+        int hash = TokenManager.regionOffset(amazonConfiguration.getRegionName());
         // move existing slots.
         for (PriamInstance data : local)
         {
@@ -58,13 +61,13 @@ public class DoubleRing
         }
 
         int new_ring_size = local.size() * 2;
-        for (PriamInstance data : filteredRemote(factory.getAllIds(config.getAppName())))
+        for (PriamInstance data : filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName())))
         {
             // if max then rotate.
             int currentSlot = data.getId() - hash;
             int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
-            String token = TokenManager.createToken(new_slot, new_ring_size, config.getDC());
-            factory.create(data.getApp(), new_slot + hash, "new_slot", config.getHostname(), config.getHostIP(), data.getRac(), null, token);
+            String token = TokenManager.createToken(new_slot, new_ring_size, amazonConfiguration.getRegionName());
+            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPublicHostName(), amazonConfiguration.getPublicIP(), data.getRac(), null, token);
         }
     }
 
@@ -73,7 +76,7 @@ public class DoubleRing
     {
         List<PriamInstance> local = Lists.newArrayList();
         for (PriamInstance data : lst)
-            if (data.getDC().equals(config.getDC()))
+            if (data.getDC().equals(amazonConfiguration.getRegionName()))
                 local.add(data);
         return local;
     }
@@ -89,7 +92,7 @@ public class DoubleRing
         ObjectOutputStream stream = new ObjectOutputStream(out);
         try
         {
-            stream.writeObject(filteredRemote(factory.getAllIds(config.getAppName())));
+            stream.writeObject(filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName())));
             logger.info("Wrote the backup of the instances to: " + TMP_BACKUP_FILE.getAbsolutePath());
         }
         finally
@@ -107,7 +110,7 @@ public class DoubleRing
      */
     public void restore() throws IOException, ClassNotFoundException
     {
-        for (PriamInstance data : filteredRemote(factory.getAllIds(config.getAppName())))
+        for (PriamInstance data : filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName())))
             factory.delete(data);
 
         // read from the file.

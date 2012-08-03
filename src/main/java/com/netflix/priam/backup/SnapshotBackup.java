@@ -5,6 +5,8 @@ import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
 
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +14,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -29,11 +30,13 @@ public class SnapshotBackup extends AbstractBackup
     
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
+    private final CassandraConfiguration cassandraConfiguration;
 
     @Inject
-    public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
+    public SnapshotBackup(CassandraConfiguration cassandraConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
     {
-        super(config, fs, pathFactory);
+        super(fs, pathFactory);
+        this.cassandraConfiguration = cassandraConfiguration;
         this.metaData = metaData;
     }
 
@@ -48,7 +51,7 @@ public class SnapshotBackup extends AbstractBackup
             takeSnapshot(snapshotName);
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
-            File dataDir = new File(config.getDataFileLocation());
+            File dataDir = new File(cassandraConfiguration.getDataLocation());
             for (File keyspaceDir : dataDir.listFiles())
             {
                 for (File columnFamilyDir : keyspaceDir.listFiles())
@@ -93,7 +96,7 @@ public class SnapshotBackup extends AbstractBackup
         {
             public Void retriableCall() throws Exception
             {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
                 nodetool.takeSnapshot(snapshotName, null, new String[0]);
                 return null;
             }
@@ -106,7 +109,7 @@ public class SnapshotBackup extends AbstractBackup
         {
             public Void retriableCall() throws Exception
             {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
                 nodetool.clearSnapshot(snapshotTag);
                 return null;
             }
@@ -119,9 +122,9 @@ public class SnapshotBackup extends AbstractBackup
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer(IConfiguration config)
+    public static TaskTimer getTimer(BackupConfiguration config)
     {
-        int hour = config.getBackupHour();
+        int hour = config.getHour();
         return new CronTimer(hour, 1, 0);
     }
 }

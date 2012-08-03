@@ -19,7 +19,7 @@ public interface IMembership
     /**
      * @return Size of current RAC
      */
-    public int getRacMembershipSize();
+    public int getAvailabilityZoneMembershipSize();
 
     /**
      * Number of RACs
@@ -58,5 +58,5 @@ public interface IMembership
      * 
      * @param count
      */
-    public void expandRacMembership(int count);
+    public void expandAvailabilityZoneMembership(int count);
 }

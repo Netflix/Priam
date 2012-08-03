@@ -3,9 +3,10 @@ package com.netflix.priam.backup;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
@@ -35,31 +36,29 @@ public class IncrementalRestore extends AbstractRestore
     public static final Pattern SECONDRY_INDEX_PATTERN = Pattern.compile("^[a-zA-Z_0-9-]+\\.[a-zA-Z_0-9-]+\\.[a-z1-9]{2,4}$");
 
     private final File restoreDir;
-    
-    @Inject
     private SSTableLoaderWrapper loader;
-    
-    @Inject
     private PriamServer priamServer;
 
     @Inject
-    public IncrementalRestore(IConfiguration config, Sleeper sleeper)
+    public IncrementalRestore(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, Sleeper sleeper, SSTableLoaderWrapper loader, PriamServer priamServer)
     {
-        super(config, JOBNAME, sleeper);
-        this.restoreDir = new File(config.getDataFileLocation(), "restore_incremental");
+        super(backupConfiguration, JOBNAME, sleeper);
+        this.restoreDir = new File(cassandraConfiguration.getDataLocation(), "restore_incremental");
+        this.loader = loader;
+        this.priamServer = priamServer;
     }
 
     @Override
     public void execute() throws Exception
     {
-        String prefix = config.getRestorePrefix();
+        String prefix = backupConfiguration.getRestorePrefix();
         if (Strings.isNullOrEmpty(prefix))
         {
             logger.error("Restore prefix is not set, skipping incremental restore to avoid looping over the incremental backups. Plz check the configurations");
             return; // No point in restoring the files which was just backedup.
         }
 
-        if (config.isRestoreClosestToken())
+        if (backupConfiguration.isRestoreClosestToken())
         {
             priamServer.getId().getInstance().setToken(restoreToken.toString());
         }

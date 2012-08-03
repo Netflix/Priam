@@ -1,6 +1,5 @@
 package com.netflix.priam.aws;
 
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
@@ -21,9 +20,9 @@ public class UpdateCleanupPolicy extends Task
     private final IBackupFileSystem fs;
 
     @Inject
-    public UpdateCleanupPolicy(IConfiguration config, IBackupFileSystem fs)
+    public UpdateCleanupPolicy(IBackupFileSystem fs)
     {
-        super(config);
+        super();
         this.fs = fs;
 
     }

@@ -7,13 +7,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.netflix.priam.config.AmazonConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonServiceException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
@@ -26,13 +26,13 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
-    private final IConfiguration config;
+    private final AmazonConfiguration amazonConfiguration;
     private final SDBInstanceData dao;
 
     @Inject
-    public SDBInstanceFactory(IConfiguration config, SDBInstanceData dao)
+    public SDBInstanceFactory(AmazonConfiguration amazonConfiguration, SDBInstanceData dao)
     {
-        this.config = config;
+        this.amazonConfiguration = amazonConfiguration;
         this.dao = dao;
     }
 
@@ -149,7 +149,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
         ins.setHostIP(ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);
-        ins.setDC(config.getDC());
+        ins.setDC(amazonConfiguration.getRegionName());
         ins.setToken(token);
         ins.setVolumes(v);
         return ins;

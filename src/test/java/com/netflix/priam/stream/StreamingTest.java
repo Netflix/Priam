@@ -4,6 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import com.netflix.priam.TestAmazonConfiguration;
+import com.netflix.priam.TestBackupConfiguration;
+import com.netflix.priam.TestCassandraConfiguration;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import junit.framework.Assert;
 
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
@@ -12,8 +18,6 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
@@ -25,7 +29,12 @@ public class StreamingTest
 {
     public void teststream() throws IOException, InterruptedException
     {
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id"));
+        Injector injector = Guice.createInjector(new BRTestModule());
+        CassandraConfiguration cassandraConfiguration = injector.getInstance(TestCassandraConfiguration.class);
+        AmazonConfiguration amazonConfiguration = injector.getInstance(TestAmazonConfiguration.class);
+        BackupConfiguration backupConfiguration = injector.getInstance(TestBackupConfiguration.class);
+
+        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(cassandraConfiguration, backupConfiguration, amazonConfiguration);
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);
     }
@@ -44,32 +53,34 @@ public class StreamingTest
     public void testAbstractPath()
     {
         Injector injector = Guice.createInjector(new BRTestModule());
-        IConfiguration conf = injector.getInstance(IConfiguration.class);
+        CassandraConfiguration cassandraConfiguration = injector.getInstance(TestCassandraConfiguration.class);
+        AmazonConfiguration amazonConfiguration = injector.getInstance(TestAmazonConfiguration.class);
+        BackupConfiguration backupConfiguration = injector.getInstance(TestBackupConfiguration.class);
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
 
         FifoQueue<AbstractBackupPath> queue = new FifoQueue<AbstractBackupPath>(10);
         for (int i = 10; i < 30; i++)
         {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            S3BackupPath path = new S3BackupPath(cassandraConfiguration, amazonConfiguration, backupConfiguration, factory);
             path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/f1" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            S3BackupPath path = new S3BackupPath(cassandraConfiguration, amazonConfiguration, backupConfiguration, factory);
             path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/f2" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            S3BackupPath path = new S3BackupPath(cassandraConfiguration, amazonConfiguration, backupConfiguration, factory);
             path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/f3" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
-        S3BackupPath path = new S3BackupPath(conf, factory);
+        S3BackupPath path = new S3BackupPath(cassandraConfiguration, amazonConfiguration, backupConfiguration, factory);
         path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/f129.db");
         Assert.assertTrue(queue.contains(path));
         path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/f229.db");

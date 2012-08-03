@@ -5,6 +5,9 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +18,6 @@ import com.amazonaws.services.s3.model.ObjectListing;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 
 /**
@@ -26,7 +28,9 @@ import com.netflix.priam.backup.AbstractBackupPath;
 public class S3PrefixIterator implements Iterator<AbstractBackupPath>
 {
     private static final Logger logger = LoggerFactory.getLogger(S3PrefixIterator.class);
-    private final IConfiguration config;
+    private final CassandraConfiguration cassandraConfiguration;
+    private final AmazonConfiguration amazonConfiguration;
+    private final BackupConfiguration backupConfiguration;
     private final AmazonS3 s3Client;
     private final Provider<AbstractBackupPath> pathProvider;
     private Iterator<AbstractBackupPath> iterator;
@@ -38,17 +42,19 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
     Date date;
 
     @Inject
-    public S3PrefixIterator(IConfiguration config, Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, Date date)
+    public S3PrefixIterator(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration, Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, Date date)
     {
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
+        this.backupConfiguration = backupConfiguration;
         this.pathProvider = pathProvider;
         this.s3Client = s3Client;
         this.date = date;
         String path = "";
-        if (StringUtils.isNotBlank(config.getRestorePrefix()))
-            path = config.getRestorePrefix();
+        if (StringUtils.isNotBlank(backupConfiguration.getRestorePrefix()))
+            path = backupConfiguration.getRestorePrefix();
         else
-            path = config.getBackupPrefix();
+            path = backupConfiguration.getS3BucketName();
 
         String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
         bucket = paths[0];
@@ -124,9 +130,9 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1)
         {
-            buff.append(config.getBackupLocation()).append(S3BackupPath.PATH_SEP);
-            buff.append(config.getDC()).append(S3BackupPath.PATH_SEP);
-            buff.append(config.getAppName()).append(S3BackupPath.PATH_SEP);
+            buff.append(backupConfiguration.getS3BaseDir()).append(S3BackupPath.PATH_SEP);
+            buff.append(amazonConfiguration.getRegionName()).append(S3BackupPath.PATH_SEP);
+            buff.append(cassandraConfiguration.getClusterName()).append(S3BackupPath.PATH_SEP);
         }
         else
         {

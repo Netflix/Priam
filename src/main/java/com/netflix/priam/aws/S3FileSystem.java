@@ -1,45 +1,42 @@
 package com.netflix.priam.aws;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
 import com.netflix.priam.utils.Throttle;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.management.ManagementFactory;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Implementation of IBackupFileSystem for S3
@@ -53,7 +50,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
-    private final IConfiguration config;
+    private final BackupConfiguration backupConfiguration;
+    private final CassandraConfiguration cassandraConfiguration;
+    private final AmazonConfiguration amazonConfiguration;
     private final ICredential cred;
     private Throttle throttle;
     private CustomizedThreadPoolExecutor executor;
@@ -64,20 +63,22 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private AtomicInteger downloadCount = new AtomicInteger();
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred)
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final BackupConfiguration backupConfiguration, CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, ICredential cred)
     {
         this.pathProvider = pathProvider;
         this.compress = compress;
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.backupConfiguration = backupConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
         this.cred = cred;
-        int threads = config.getMaxBackupUploadThreads();
+        int threads = backupConfiguration.getBackupThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
         this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
         {
             public int targetThroughput()
             {
-                int throttleLimit = config.getUploadThrottle();
+                int throttleLimit = backupConfiguration.getStreamingThroughputMbps();
                 if (throttleLimit < 1)
                     return 0;
                 int totalBytesPerMS = (throttleLimit * 1024 * 1024) / 1000;
@@ -119,11 +120,11 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         uploadCount.incrementAndGet();
         AmazonS3 s3Client = getS3Client();
-        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
+        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(backupConfiguration.getS3BucketName(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
-        DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
+        DataPart part = new DataPart(backupConfiguration.getS3BucketName(), path.getRemotePath(), initResponse.getUploadId());
         List<PartETag> partETags = Lists.newArrayList();
-        long chunkSize = config.getBackupChunkSize();
+        long chunkSize = backupConfiguration.getChunkSizeMB();
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
         logger.info(String.format("Uploading to %s with chunk size %d", path.getRemotePath(), chunkSize));
@@ -136,7 +137,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             {
                 byte[] chunk = chunks.next();
                 throttle.throttle(chunk.length);
-                DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
+                DataPart dp = new DataPart(++partNum, chunk, backupConfiguration.getS3BucketName(), path.getRemotePath(), initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 executor.submit(partUploader);
                 bytesUploaded.addAndGet(chunk.length);
@@ -168,7 +169,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     @Override
     public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {
-        return new S3PrefixIterator(config, pathProvider, getS3Client(), date);
+        return new S3PrefixIterator(cassandraConfiguration, amazonConfiguration, backupConfiguration, pathProvider, getS3Client(), date);
     }
 
     /**
@@ -180,7 +181,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         AmazonS3 s3Client = getS3Client();
         String clusterPath = pathProvider.get().clusterPrefix("");
-        BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(config.getBackupPrefix());
+        BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(backupConfiguration.getS3BucketName());
         if (lifeConfig == null)
         {
             lifeConfig = new BucketLifecycleConfiguration();
@@ -192,10 +193,10 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             if( rules.size() > 0 ){
                 lifeConfig.setRules(rules);
-                s3Client.setBucketLifecycleConfiguration(config.getBackupPrefix(), lifeConfig);
+                s3Client.setBucketLifecycleConfiguration(backupConfiguration.getS3BucketName(), lifeConfig);
             }
             else
-                s3Client.deleteBucketLifecycleConfiguration(config.getBackupPrefix());
+                s3Client.deleteBucketLifecycleConfiguration(backupConfiguration.getS3BucketName());
         }
     }
 
@@ -210,9 +211,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
                 break;
             }
         }
-        if (rule == null && config.getBackupRetentionDays() <= 0)
+        if (rule == null && backupConfiguration.getRetentionDays() <= 0)
             return false;
-        if (rule != null && rule.getExpirationInDays() == config.getBackupRetentionDays())
+        if (rule != null && rule.getExpirationInDays() == backupConfiguration.getRetentionDays())
         {
             logger.info("Cleanup rule already set");
             return false;
@@ -220,16 +221,16 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         if (rule == null)
         {
             // Create a new rule
-            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays()).withPrefix(prefix);
+            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(backupConfiguration.getRetentionDays()).withPrefix(prefix);
             rule.setStatus(BucketLifecycleConfiguration.ENABLED);
             rule.setId(prefix);
             rules.add(rule);
             logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
         }
-        else if (config.getBackupRetentionDays() > 0)
+        else if (backupConfiguration.getRetentionDays() > 0)
         {
-            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), config.getBackupRetentionDays()));
-            rule.setExpirationInDays(config.getBackupRetentionDays());
+            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), backupConfiguration.getRetentionDays()));
+            rule.setExpirationInDays(backupConfiguration.getRetentionDays());
         }
         else
         {
@@ -250,10 +251,10 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     public String getPrefix()
     {
         String prefix = "";
-        if (StringUtils.isNotBlank(config.getRestorePrefix()))
-            prefix = config.getRestorePrefix();
+        if (StringUtils.isNotBlank(backupConfiguration.getRestorePrefix()))
+            prefix = backupConfiguration.getRestorePrefix();
         else
-            prefix = config.getBackupPrefix();
+            prefix = backupConfiguration.getS3BucketName();
 
         String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
         return paths[0];

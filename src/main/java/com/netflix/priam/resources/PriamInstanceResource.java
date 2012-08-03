@@ -15,7 +15,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
@@ -31,13 +31,13 @@ public class PriamInstanceResource
 {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
-    private final IConfiguration config;
+    private final CassandraConfiguration cassandraConfiguration;
     private final IPriamInstanceFactory factory;
 
     @Inject
-    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory)
+    public PriamInstanceResource(CassandraConfiguration cassandraConfiguration, IPriamInstanceFactory factory)
     {
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
         this.factory = factory;
     }
 
@@ -49,7 +49,7 @@ public class PriamInstanceResource
     public String getInstances()
     {
         StringBuilder response = new StringBuilder();
-        for (PriamInstance node : factory.getAllIds(config.getAppName()))
+        for (PriamInstance node : factory.getAllIds(cassandraConfiguration.getClusterName()))
         {
             response.append(node.toString());
             response.append("\n");
@@ -86,7 +86,7 @@ public class PriamInstanceResource
     {
         log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
             new Object[]{ id, instanceID, hostname, ip, rack, token });
-        PriamInstance instance = factory.create(config.getAppName(), id, instanceID, hostname, ip, rack, null, token);
+        PriamInstance instance = factory.create(cassandraConfiguration.getClusterName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();
     }
@@ -117,7 +117,7 @@ public class PriamInstanceResource
      */
     private PriamInstance getByIdIfFound(int id)
     {
-        PriamInstance instance = factory.getInstance(config.getAppName(), id);
+        PriamInstance instance = factory.getInstance(cassandraConfiguration.getClusterName(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
         }

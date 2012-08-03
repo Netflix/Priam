@@ -1,7 +1,6 @@
 package com.netflix.priam.scheduler;
 
 import com.google.common.base.Throwables;
-import com.netflix.priam.IConfiguration;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -27,19 +26,16 @@ public abstract class Task implements Job, TaskMBean
     {
         ERROR, RUNNING, DONE
     }
-    protected final IConfiguration config;
-    
     private static final Logger logger = LoggerFactory.getLogger(Task.class);
     private final AtomicInteger errors = new AtomicInteger();
     private final AtomicInteger executions = new AtomicInteger();
 
-    protected Task(IConfiguration config)
+    protected Task()
     {
-        this(config, ManagementFactory.getPlatformMBeanServer());
+        this(ManagementFactory.getPlatformMBeanServer());
     }
 
-    protected Task(IConfiguration config, MBeanServer mBeanServer) {
-        this.config = config;
+    protected Task(MBeanServer mBeanServer) {
         // TODO: don't do mbean registration here
         String mbeanName = "com.priam.scheduler:type=" + this.getClass().getName();
         try

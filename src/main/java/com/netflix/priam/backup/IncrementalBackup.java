@@ -2,13 +2,13 @@ package com.netflix.priam.backup;
 
 import java.io.File;
 
+import com.netflix.priam.config.CassandraConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -21,17 +21,19 @@ public class IncrementalBackup extends AbstractBackup
 {
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
+    private final CassandraConfiguration cassandraConfiguration;
 
     @Inject
-    public IncrementalBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
+    public IncrementalBackup(CassandraConfiguration cassandraConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
     {
-        super(config, fs, pathFactory);
+        super(fs, pathFactory);
+        this.cassandraConfiguration = cassandraConfiguration;
     }
 
     @Override
     public void execute() throws Exception
     {
-        File dataDir = new File(config.getDataFileLocation());
+        File dataDir = new File(cassandraConfiguration.getDataLocation());
         logger.debug("Scanning for backup in: " + dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles())
         {

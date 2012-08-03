@@ -6,8 +6,10 @@ import java.util.List;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 
 /**
@@ -16,9 +18,9 @@ import com.netflix.priam.identity.InstanceIdentity;
 public class S3BackupPath extends AbstractBackupPath
 {
     @Inject
-    public S3BackupPath(IConfiguration config, InstanceIdentity factory)
+    public S3BackupPath(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration, InstanceIdentity factory)
     {
-        super(config, factory);
+        super(cassandraConfiguration, amazonConfiguration, backupConfiguration, factory);
     }
 
     /**
@@ -101,9 +103,9 @@ public class S3BackupPath extends AbstractBackupPath
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1)
         {
-            baseDir = config.getBackupLocation();
-            region = config.getDC();
-            clusterName = config.getAppName();
+            baseDir = backupConfiguration.getS3BaseDir();
+            region = amazonConfiguration.getRegionName();
+            clusterName = cassandraConfiguration.getClusterName();
         }
         else
         {
@@ -130,9 +132,9 @@ public class S3BackupPath extends AbstractBackupPath
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1)
         {
-            baseDir = config.getBackupLocation();
-            region = config.getDC();
-            clusterName = config.getAppName();
+            baseDir = backupConfiguration.getS3BaseDir();
+            region = amazonConfiguration.getRegionName();
+            clusterName = cassandraConfiguration.getClusterName();
         }
         else
         {

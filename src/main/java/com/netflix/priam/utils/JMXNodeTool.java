@@ -18,20 +18,19 @@ import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-//import org.json.simple.JSONArray;
-//import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+
 
 /**
  * Class to get data out of Cassandra JMX
@@ -57,22 +56,22 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @Inject
-    public JMXNodeTool(IConfiguration config) throws IOException, InterruptedException
+    public JMXNodeTool(CassandraConfiguration cassandraConfiguration) throws IOException, InterruptedException
     {
-        super("localhost", config.getJmxPort());
+        super("localhost", cassandraConfiguration.getJmxPort());
     }
 
     /**
      * try to create if it is null.
      */
-    public static JMXNodeTool instance(IConfiguration config)
+    public static JMXNodeTool instance(CassandraConfiguration config)
     {
         if (!testConnection())
             tool = connect(config);
         return tool;
     }
 
-    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean)
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, CassandraConfiguration config, boolean mxbean)
     {
         try
         {
@@ -111,7 +110,7 @@ public class JMXNodeTool extends NodeProbe
         return true;
     }
 
-    public static synchronized JMXNodeTool connect(final IConfiguration config)
+    public static synchronized JMXNodeTool connect(final CassandraConfiguration config)
     {
         return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>()
         {

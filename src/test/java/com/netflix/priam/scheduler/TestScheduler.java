@@ -4,7 +4,6 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.TestModule;
 import junit.framework.Assert;
 import org.junit.Ignore;
@@ -50,10 +49,10 @@ public class TestScheduler
     public static class TestTask extends Task
     {
         @Inject
-        public TestTask(IConfiguration config)
+        public TestTask()
         {
             // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate registrations
-            super(config, MBeanServerFactory.newMBeanServer());
+            super(MBeanServerFactory.newMBeanServer());
         }
 
         @Override
@@ -75,9 +74,9 @@ public class TestScheduler
     public static class SingleTestTask extends Task
     {
         @Inject
-        public SingleTestTask(IConfiguration config)
+        public SingleTestTask()
         {
-            super(config, MBeanServerFactory.newMBeanServer());
+            super(MBeanServerFactory.newMBeanServer());
         }
 
         public static int count =0;

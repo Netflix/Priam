@@ -1,9 +1,9 @@
 package com.netflix.priam;
 
+import com.netflix.priam.identity.IMembership;
+
 import java.util.Collection;
 import java.util.List;
-
-import com.netflix.priam.identity.IMembership;
 
 public class FakeMembership implements IMembership
 {
@@ -27,7 +27,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public int getRacMembershipSize()
+    public int getAvailabilityZoneMembershipSize()
     {
         return 3;
     }
@@ -60,7 +60,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public void expandRacMembership(int count)
+    public void expandAvailabilityZoneMembership(int count)
     {
         // TODO Auto-generated method stub
         

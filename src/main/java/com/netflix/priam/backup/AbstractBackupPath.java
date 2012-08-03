@@ -9,11 +9,13 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
 
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
@@ -38,13 +40,17 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected long size;
 
     protected final InstanceIdentity factory;
-    protected final IConfiguration config;
+    protected final CassandraConfiguration cassandraConfiguration;
+    protected final AmazonConfiguration amazonConfiguration;
+    protected final BackupConfiguration backupConfiguration;
     protected File backupFile;
 
-    public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
+    public AbstractBackupPath(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration, InstanceIdentity factory)
     {
         this.factory = factory;
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
+        this.backupConfiguration = backupConfiguration;
     }
 
     public SimpleDateFormat getFormat()
@@ -63,11 +69,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         // TODO cleanup.
         this.backupFile = file;
 
-        String rpath = new File(config.getDataFileLocation()).toURI().relativize(file.toURI()).getPath();
+        String rpath = new File(cassandraConfiguration.getDataLocation()).toURI().relativize(file.toURI()).getPath();
         String[] elements = rpath.split("" + PATH_SEP);
-        this.clusterName = config.getAppName();
-        this.baseDir = config.getBackupLocation();
-        this.region = config.getDC();
+        this.clusterName = cassandraConfiguration.getClusterName();
+        this.baseDir = backupConfiguration.getS3BaseDir();
+        this.region = amazonConfiguration.getRegionName();
         this.token = factory.getInstance().getToken();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL)
@@ -100,7 +106,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public File newRestoreFile()
     {
         StringBuffer buff = new StringBuffer();
-        buff.append(config.getDataFileLocation()).append(PATH_SEP);
+        buff.append(cassandraConfiguration.getDataLocation()).append(PATH_SEP);
         if (type != BackupFileType.META)
             buff.append(keyspace).append(PATH_SEP);
         buff.append(fileName);

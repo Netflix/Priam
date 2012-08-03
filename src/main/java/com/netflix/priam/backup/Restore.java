@@ -5,9 +5,11 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
@@ -32,35 +34,34 @@ public class Restore extends AbstractRestore
 {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
-    @Inject
-    private Provider<AbstractBackupPath> pathProvider;
-    @Inject
-    private RestoreTokenSelector tokenSelector;
-    @Inject
-    private MetaData metaData;
-    @Inject
-    private PriamServer priamServer;
+
+    @Inject private Provider<AbstractBackupPath> pathProvider;
+    @Inject private RestoreTokenSelector tokenSelector;
+    @Inject private MetaData metaData;
+    @Inject private PriamServer priamServer;
+    @Inject private CassandraConfiguration cassandraConfiguration;
+    @Inject private AmazonConfiguration amazonConfiguration;
 
     @Inject
-    public Restore(IConfiguration config, Sleeper sleeper)
+    public Restore(BackupConfiguration backupConfiguration, Sleeper sleeper)
     {
-        super(config, JOBNAME, sleeper);
+        super(backupConfiguration, JOBNAME, sleeper);
     }
 
     @Override
     public void execute() throws Exception
     {
-        if (isRestoreEnabled(config))
+        if (isRestoreEnabled(backupConfiguration, amazonConfiguration.getAvailabilityZone()))
         {
-            logger.info("Starting restore for " + config.getRestoreSnapshot());
-            String[] restore = config.getRestoreSnapshot().split(",");
+            logger.info("Starting restore for " + backupConfiguration.getAutoRestoreSnapshotName());
+            String[] restore = backupConfiguration.getAutoRestoreSnapshotName().split(",");
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
             String origToken = priamServer.getId().getInstance().getToken();
             try
             {
-                if (config.isRestoreClosestToken())
+                if (backupConfiguration.isRestoreClosestToken())
                 {
                     restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
                     priamServer.getId().getInstance().setToken(restoreToken.toString());
@@ -83,7 +84,7 @@ public class Restore extends AbstractRestore
                 priamServer.getId().getInstance().setToken(origToken);
             }
         }
-        SystemUtils.startCassandra(true, config);
+        SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());
     }
 
     /**
@@ -92,19 +93,15 @@ public class Restore extends AbstractRestore
     public void restore(Date startTime, Date endTime) throws Exception
     {
         // Stop cassandra if its running and restoring all keyspaces
-        if (config.getRestoreKeySpaces().size() == 0)
-            SystemUtils.stopCassandra(config);
+        if (backupConfiguration.getRestoreKeyspaces().size() == 0)
+            SystemUtils.stopCassandra(cassandraConfiguration);
 
         // Cleanup local data
-        SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
+        SystemUtils.cleanupDir(cassandraConfiguration.getDataLocation(), backupConfiguration.getRestoreKeyspaces());
 
         // Try and read the Meta file.
         List<AbstractBackupPath> metas = Lists.newArrayList();
-        String prefix = "";
-        if (StringUtils.isNotBlank(config.getRestorePrefix()))
-            prefix = config.getRestorePrefix();
-        else
-            prefix = config.getBackupPrefix();
+        String prefix = StringUtils.isNotBlank(backupConfiguration.getRestorePrefix()) ? backupConfiguration.getRestorePrefix() : backupConfiguration.getS3BucketName();
         logger.info("Looking for meta file here:  " + prefix);
         Iterator<AbstractBackupPath> backupfiles = fs.list(prefix, startTime, endTime);
         while (backupfiles.hasNext())
@@ -145,10 +142,10 @@ public class Restore extends AbstractRestore
         return (executor == null) ? 0 : executor.getActiveCount();
     }
 
-    public static boolean isRestoreEnabled(IConfiguration conf)
+    public static boolean isRestoreEnabled(BackupConfiguration conf, String availabilityZone)
     {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
+        boolean isRestoreMode = StringUtils.isNotBlank(conf.getAutoRestoreSnapshotName());
+        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getAvailabilityZonesToBackup()) || conf.getAvailabilityZonesToBackup().contains(availabilityZone));
         return (isRestoreMode && isBackedupRac);
     }
 

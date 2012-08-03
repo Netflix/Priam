@@ -2,9 +2,9 @@ package com.netflix.priam.dropwizard;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredential;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.defaultimpl.PriamGuiceModule;
 import com.netflix.priam.resources.BackupServlet;
 import com.netflix.priam.resources.CassandraAdmin;
@@ -32,10 +32,11 @@ public class PriamService extends Service<PriamConfiguration>
     @Override
     protected void initialize(PriamConfiguration priamConfiguration, Environment environment) throws Exception
     {
-        Injector injector = Guice.createInjector(new PriamGuiceModule());
+
+        Injector injector = Guice.createInjector(new PriamGuiceModule(priamConfiguration));
         try
         {
-            injector.getInstance(IConfiguration.class).intialize();
+            priamConfiguration.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));
             environment.manage(injector.getInstance(PriamServer.class));
 
             environment.addResource(injector.getInstance(BackupServlet.class));

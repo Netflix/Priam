@@ -1,8 +1,8 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
@@ -30,7 +30,7 @@ public abstract class AbstractRestore extends Task
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
     
-    protected IConfiguration config;
+    protected BackupConfiguration backupConfiguration;
     protected ThreadPoolExecutor executor;
     
     @Inject
@@ -39,12 +39,12 @@ public abstract class AbstractRestore extends Task
     
     protected final Sleeper sleeper;
     
-    public AbstractRestore(IConfiguration config, String name, Sleeper sleeper)
+    public AbstractRestore(BackupConfiguration backupConfiguration, String name, Sleeper sleeper)
     {
-        super(config);
-        this.config = config;
+        super();
+        this.backupConfiguration = backupConfiguration;
         this.sleeper = sleeper;
-        executor = new JMXConfigurableThreadPoolExecutor(config.getMaxBackupDownloadThreads(), 
+        executor = new JMXConfigurableThreadPoolExecutor(backupConfiguration.getRestoreThreads(),
                                                          1000, 
                                                          TimeUnit.MILLISECONDS, 
                                                          new LinkedBlockingQueue<Runnable>(), 
@@ -71,7 +71,7 @@ public abstract class AbstractRestore extends Task
      */
     public void download(final AbstractBackupPath path, final File restoreLocation) throws Exception
     {
-        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
+        if (backupConfiguration.getRestoreKeyspaces().size() != 0 && (!backupConfiguration.getRestoreKeyspaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
             return;
         count.incrementAndGet();
         executor.submit(new RetryableCallable<Integer>()

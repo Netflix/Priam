@@ -1,0 +1,74 @@
+cassandra:
+  bootstrapClusterName:                       # Bootstrap cluster name (depends on another cass cluster)
+  multiRegionEnabled: false                   # true if it is a multi regional cluster.  Needs to be changed in conjunction with endpointSnitch
+  endpointSnitch: "org.apache.cassandra.locator.Ec2Snitch"  # Snitch to be used in cassandra.yaml
+                                                            # Needs to be changed in conjunction with multiRegionEnabled
+  cassHome: "/etc/cassandra"                  # Path to the home dir of Cassandra
+  cassStartScript: "service cassandra start"  # Path to Cassandra startup script
+  cassStopScript: "service cassandra stop"    # Path to Cassandra stop script
+  clusterName: "cass_cluster"                 # Cluster name (or App) name
+  dataLocation: "/var/lib/cassandra/data"     # Location of the local data dir
+  sslStoragePort: 7101                        # Cassandra storage/cluster SSL communication port
+  storagePort: 7101                           # Cassandra storage/cluster communication port
+  thriftPort: 9160                            # Cassandra's thrift port
+  jmxPort: 7199
+  compactionThroughputMBPerSec:               # Compaction throughput in MB/sec
+  inMemoryCompactionLimitMB: 128              # In memory compaction limit in MB
+  directMaxHeapSize:
+    m1.small: 10G
+    m1.medium: 25G
+    m1.large: 40G
+    m1.xlarge: 50G
+  maxHeapSize:
+    m1.small: 1G
+    m1.medium: 2G
+    m1.large: 3G
+    m1.xlarge: 8G
+  maxNewGenHeapSize:
+    m1.small: 256M
+    m1.medium: 500M
+    m1.large: 1G
+    m1.xlarge: 2G
+  memTableTotalSpaceMB: 1024                        # Total memory to use for memtables.  Cassandra will flush the largest memtable when this much memory is used.
+  hintedHandoffThrottleDelayMS: 1                   # Sleep this long after delivering each hint
+  maxHintWindowMS: 3600000                          # this defines the maximum amount of time a dead host will have hints generated.  After it has been dead this long, hints will be dropped.
+  localBootstrapEnable: false                       # true if Priam should local config file for tokens and seeds
+  cacheLocation: "/var/lib/cassandra/saved_caches"  # Location of local cache
+  seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
+
+
+amazon:
+  # These properties below should be retrievable from the AWS instance metadata API.  Any setting
+  #     provided here will override what can be discovered from the instance metadata API.
+  # usableAvailabilityZones:                    # List of all availability zones used for the cluster.  If empty, region will be queried for first three "available" zones.
+  # autoScaleGroupName:
+  # regionName:
+  # securityGroupName:
+  # availabilityZone:
+  # publicHostName:
+  # publicIP:
+  # instanceID:
+  # instanceType:
+
+
+backup:
+  autoRestoreSnapshotName:           # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
+  chunkSizeMB: 10                    # Preferred data part size for multi part uploads to s3
+  hour: 2                            # Backup hour for snapshot backups (0 - 23)
+  availabilityZonesToBackup:         # Get list of availability zones to backup. Backup all zones if empty
+  retentionDays: 0                   # Get Backup retention in days. Set to 0 to avoid any expiration of the backups from S3
+  backupThreads: 2                   # Number of backup threads for uploading
+  restoreThreads: 8                  # Number of restore threads for downloading
+  s3BucketName: "cassandra-archive"  # S3 bucket for storing backups
+  s3BaseDir: "backup"                # Folder within the S3 bucket for backups
+  commitLogEnabled: false            # true if commit log backup is enabled
+  commitLogLocation:                 # Remote commit log location for backups
+  incrementalEnabled: true           # true if incremental backups are enabled
+  multiThreadedCompaction: false     # When enabled, each compaction will use up to one thread per core, plus one thread per sstable being merged.
+                                     # This is usually only useful for SSD-based hardware: otherwise, your concern is usually to get compaction to do LESS i/o
+  restoreClosestToken: false         #    true if restore should search for nearest token if current token is not found
+  restoreKeyspaces:                  # List of keyspaces to restore. If none, all keyspaces are restored.
+  restorePrefix:                     # Location containing backup files. Typically bucket name followed by path to the clusters backup
+  streamingThroughputMbps: 400       # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
+                                     #    can lead to saturating the network connection and degrading rpc performance.
+  uploadThrottleBytesPerSec: 2147483648  # Bytes per second to throttle for backups

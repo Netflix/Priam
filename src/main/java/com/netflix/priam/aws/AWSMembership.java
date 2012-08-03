@@ -9,8 +9,8 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.IMembership;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -28,13 +28,13 @@ import java.util.List;
 public class AWSMembership implements IMembership
 {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
-    private final IConfiguration config;
+    private final AmazonConfiguration amazonConfiguration;
     private final ICredential provider;    
 
     @Inject
-    public AWSMembership(IConfiguration config, ICredential provider)
+    public AWSMembership(AmazonConfiguration amazonConfiguration, ICredential provider)
     {
-        this.config = config;
+        this.amazonConfiguration = amazonConfiguration;
         this.provider = provider;        
     }
 
@@ -45,7 +45,7 @@ public class AWSMembership implements IMembership
         try
         {
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(amazonConfiguration.getAutoScaleGroupName());
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
             List<String> instanceIds = Lists.newArrayList();
@@ -56,7 +56,7 @@ public class AWSMembership implements IMembership
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", amazonConfiguration.getAvailabilityZone(), StringUtils.join(instanceIds, ",")));
             return instanceIds;
         }
         finally
@@ -70,13 +70,13 @@ public class AWSMembership implements IMembership
      * Actual membership AWS source of truth...
      */
     @Override
-    public int getRacMembershipSize()
+    public int getAvailabilityZoneMembershipSize()
     {
         AmazonAutoScaling client = null;
         try
         {
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(amazonConfiguration.getAutoScaleGroupName());
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
             int size = 0;
             for (AutoScalingGroup asg : res.getAutoScalingGroups())
@@ -96,7 +96,7 @@ public class AWSMembership implements IMembership
     @Override
     public int getRacCount()
     {
-        return config.getRacs().size();
+        return amazonConfiguration.getUsableAvailabilityZones().size();
     }
 
     /**
@@ -110,7 +110,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(amazonConfiguration.getSecurityGroupName(), ipPermissions));
             logger.info("Done adding ACL to: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -131,7 +131,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(amazonConfiguration.getSecurityGroupName(), ipPermissions));
         }
         finally
         {
@@ -150,7 +150,7 @@ public class AWSMembership implements IMembership
         {
             client = getEc2Client();
             List<String> ipPermissions = new ArrayList<String>();
-            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Arrays.asList(config.getACLGroupName()));
+            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Arrays.asList(amazonConfiguration.getSecurityGroupName()));
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups())
                 for (IpPermission perm : group.getIpPermissions())
@@ -166,13 +166,13 @@ public class AWSMembership implements IMembership
     }
 
     @Override
-    public void expandRacMembership(int count)
+    public void expandAvailabilityZoneMembership(int count)
     {
         AmazonAutoScaling client = null;
         try
         {
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(amazonConfiguration.getAutoScaleGroupName());
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
             AutoScalingGroup asg = res.getAutoScalingGroups().get(0);
             UpdateAutoScalingGroupRequest ureq = new UpdateAutoScalingGroupRequest();
@@ -192,14 +192,14 @@ public class AWSMembership implements IMembership
     protected AmazonAutoScaling getAutoScalingClient()
     {
         AmazonAutoScaling client = new AmazonAutoScalingClient(provider.getCredentials());
-        client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
+        client.setEndpoint("autoscaling." + amazonConfiguration.getRegionName() + ".amazonaws.com");
         return client;
     }
 
     protected AmazonEC2 getEc2Client()
     {
         AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
-        client.setEndpoint("ec2." + config.getDC() + ".amazonaws.com");
+        client.setEndpoint("ec2." + amazonConfiguration.getRegionName() + ".amazonaws.com");
         return client;
     }
 }

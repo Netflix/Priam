@@ -6,7 +6,7 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
@@ -24,14 +24,15 @@ public class PriamInstanceResourceTest
     private static final String APP_NAME = "myApp";
     private static final int NODE_ID = 3;
 
-    private @Mocked IConfiguration config;
+    private @Mocked
+    CassandraConfiguration cassandraConfiguration;
     private @Mocked IPriamInstanceFactory factory;
     private PriamInstanceResource resource;
 
     @Before
     public void setUp()
     {
-        resource = new PriamInstanceResource(config, factory);
+        resource = new PriamInstanceResource(cassandraConfiguration, factory);
     }
 
     @Test
@@ -42,7 +43,7 @@ public class PriamInstanceResourceTest
             List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
 
             {
-                config.getAppName(); result = APP_NAME;
+                cassandraConfiguration.getClusterName(); result = APP_NAME;
                 factory.getAllIds(APP_NAME); result = instances;
                 instance1.toString(); result = "instance1";
                 instance2.toString(); result = "instance2";
@@ -61,7 +62,7 @@ public class PriamInstanceResourceTest
             PriamInstance instance;
 
             {
-                config.getAppName(); result = APP_NAME;
+                cassandraConfiguration.getClusterName(); result = APP_NAME;
                 factory.getInstance(APP_NAME, NODE_ID); result = instance;
                 instance.toString(); result = expected;
             }
@@ -74,7 +75,7 @@ public class PriamInstanceResourceTest
     public void getInstance_notFound()
     {
         new Expectations() {{
-            config.getAppName(); result = APP_NAME;
+            cassandraConfiguration.getClusterName(); result = APP_NAME;
             factory.getInstance(APP_NAME, NODE_ID); result = null;
         }};
 
@@ -102,7 +103,7 @@ public class PriamInstanceResourceTest
           PriamInstance instance;
 
           {
-              config.getAppName(); result = APP_NAME;
+              cassandraConfiguration.getClusterName(); result = APP_NAME;
               factory.create(APP_NAME, NODE_ID, instanceID, hostname, ip, rack, null, token); result = instance;
               instance.getId(); result = NODE_ID;
           }
@@ -120,7 +121,7 @@ public class PriamInstanceResourceTest
           PriamInstance instance;
 
           {
-              config.getAppName(); result = APP_NAME;
+              cassandraConfiguration.getClusterName(); result = APP_NAME;
               factory.getInstance(APP_NAME, NODE_ID); result = instance;
               factory.delete(instance);
           }
@@ -134,7 +135,7 @@ public class PriamInstanceResourceTest
     public void deleteInstance_notFound()
     {
         new Expectations() {{
-            config.getAppName(); result = APP_NAME;
+            cassandraConfiguration.getClusterName(); result = APP_NAME;
             factory.getInstance(APP_NAME, NODE_ID); result = null;
         }};
 

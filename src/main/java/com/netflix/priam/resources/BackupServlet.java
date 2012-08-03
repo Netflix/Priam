@@ -12,6 +12,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
@@ -27,7 +30,6 @@ import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
@@ -50,28 +52,41 @@ public class BackupServlet
     private static final String REST_KEYSPACES = "keyspaces";
 
     private PriamServer priamServer;
-    private IConfiguration config;
     private IBackupFileSystem fs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
     private TuneCassandra tuneCassandra;
     private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory factory;
-    @Inject
-    private PriamScheduler scheduler;
+    private IPriamInstanceFactory priamInstanceFactory;
+    @Inject private PriamScheduler scheduler;
+
+    private CassandraConfiguration cassandraConfiguration;
+    private AmazonConfiguration amazonConfiguration;
+    private BackupConfiguration backupConfiguration;
+
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory)
+    public BackupServlet(PriamServer priamServer,
+                         CassandraConfiguration cassandraConfiguration,
+                         AmazonConfiguration amazonConfiguration,
+                         BackupConfiguration backupConfiguration,
+                         IBackupFileSystem fs,
+                         Restore restoreObj,
+                         Provider<AbstractBackupPath> pathProvider,
+                         TuneCassandra tunecassandra,
+                         SnapshotBackup snapshotBackup,
+                         IPriamInstanceFactory priamInstanceFactory)
     {
         this.priamServer = priamServer;
-        this.config = config;
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
+        this.backupConfiguration = backupConfiguration;
         this.fs = fs;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
         this.tuneCassandra = tunecassandra;
         this.snapshotBackup = snapshotBackup;
-        this.factory = factory;
+        this.priamInstanceFactory = priamInstanceFactory;
     }
 
     @GET
@@ -134,7 +149,7 @@ public class BackupServlet
             startTime = path.getFormat().parse(restore[0]);
             endTime = path.getFormat().parse(restore[1]);
         }
-        Iterator<AbstractBackupPath> it = fs.list(config.getBackupPrefix(), startTime, endTime);
+        Iterator<AbstractBackupPath> it = fs.list(backupConfiguration.getS3BucketName(), startTime, endTime);
         JSONObject object = new JSONObject();
         while (it.hasNext())
         {
@@ -179,17 +194,17 @@ public class BackupServlet
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
     {
-        String origRegion = config.getDC();
+        String origRegion = amazonConfiguration.getRegionName();
         String origToken = priamServer.getId().getInstance().getToken();
         if (StringUtils.isNotBlank(token))
             priamServer.getId().getInstance().setToken(token);
 
-        if( config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+        if(backupConfiguration.isRestoreClosestToken())
+            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), origRegion));
         
         if (StringUtils.isNotBlank(region))
         {
-            config.setDC(region);
+            amazonConfiguration.setRegionName(region);
             logger.info("Restoring from region " + region);
             priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
             logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
@@ -203,11 +218,11 @@ public class BackupServlet
         }
         finally
         {
-            config.setDC(origRegion);
+            amazonConfiguration.setRegionName(origRegion);
             priamServer.getId().getInstance().setToken(origToken);
         }
         tuneCassandra.updateYaml(false);
-        SystemUtils.startCassandra(true, config);
+        SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());
     }
 
     /**
@@ -215,7 +230,7 @@ public class BackupServlet
      */
     private String closestToken(String token, String region)
     {
-        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
+        List<PriamInstance> plist = priamInstanceFactory.getAllIds(cassandraConfiguration.getClusterName());
         List<BigInteger> tokenList = Lists.newArrayList();
         for (PriamInstance ins : plist)
         {
@@ -231,7 +246,7 @@ public class BackupServlet
      */
     private void setRestoreKeyspaces(String keyspaces)
     {
-        List<String> list = config.getRestoreKeySpaces();
+        List<String> list = backupConfiguration.getRestoreKeyspaces();
         list.clear();
         if (keyspaces != null)
         {

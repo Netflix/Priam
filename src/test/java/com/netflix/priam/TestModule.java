@@ -1,5 +1,8 @@
 package com.netflix.priam;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -23,12 +26,12 @@ public class TestModule extends AbstractModule
     @Override
     protected void configure()
     {
-        bind(IConfiguration.class).toInstance(
-                new FakeConfiguration("fake-region", "fake-app", "az1", "fakeInstance1"));
+        bind(CassandraConfiguration.class).toInstance(new TestCassandraConfiguration("fake-app"));
+        bind(AmazonConfiguration.class).toInstance(new TestAmazonConfiguration("fake-app", "fake-region", "az1", "fakeInstance1"));
+        bind(BackupConfiguration.class).toInstance(new TestBackupConfiguration());
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
-        bind(IMembership.class).toInstance(new FakeMembership(
-                ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
+        bind(IMembership.class).toInstance(new FakeMembership(ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);

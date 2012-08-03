@@ -19,6 +19,8 @@ import java.util.Map;
 import java.util.TimeZone;
 import javax.management.remote.JMXConnector;
 
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -30,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
-import com.netflix.priam.IConfiguration;
 
 
 public class SystemUtils
@@ -41,7 +42,7 @@ public class SystemUtils
     /**
      * Start Cassandra process from this co-process.
      */
-    public static void startCassandra(boolean join_ring, IConfiguration config) throws IOException, InterruptedException
+    public static void startCassandra(boolean join_ring, CassandraConfiguration cassandraConfig, BackupConfiguration backupConfig, String instanceType) throws IOException, InterruptedException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
 
@@ -51,20 +52,21 @@ public class SystemUtils
             command.add(SUDO_STRING);
             command.add("-E");
         }
-        for(String param : config.getCassStartupScript().split(" ")){
-            if( StringUtils.isNotBlank(param))
+        for(String param : cassandraConfig.getCassStartScript().split(" ")){
+            if( StringUtils.isNotBlank(param)) {
                 command.add(param);
+            }
         }
         ProcessBuilder startCass = new ProcessBuilder(command);
         Map<String, String> env = startCass.environment();
-        env.put("HEAP_NEWSIZE", config.getHeapNewSize());
-        env.put("MAX_HEAP_SIZE", config.getHeapSize());
-        env.put("DATA_DIR", config.getDataFileLocation());
-        env.put("COMMIT_LOG_DIR", config.getCommitLogLocation());
-        env.put("LOCAL_BACKUP_DIR", config.getBackupLocation());
-        env.put("CACHE_DIR", config.getCacheLocation());
-        env.put("JMX_PORT", "" + config.getJmxPort());
-        env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
+        env.put("HEAP_NEWSIZE", cassandraConfig.getMaxNewGenHeapSize().get(instanceType));
+        env.put("MAX_HEAP_SIZE", cassandraConfig.getMaxHeapSize().get(instanceType));
+        env.put("DATA_DIR", cassandraConfig.getDataLocation());
+        env.put("COMMIT_LOG_DIR", backupConfig.getCommitLogLocation());
+        env.put("LOCAL_BACKUP_DIR", backupConfig.getS3BaseDir());
+        env.put("CACHE_DIR", cassandraConfig.getCacheLocation());
+        env.put("JMX_PORT", "" + cassandraConfig.getJmxPort());
+        env.put("MAX_DIRECT_MEMORY", cassandraConfig.getDirectMaxHeapSize().get(instanceType));
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
@@ -75,7 +77,7 @@ public class SystemUtils
     /**
      * Stop Cassandra process from this co-process.
      */
-    public static void stopCassandra(IConfiguration config) throws IOException
+    public static void stopCassandra(CassandraConfiguration config) throws IOException
     {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();

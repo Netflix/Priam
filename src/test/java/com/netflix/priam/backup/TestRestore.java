@@ -6,6 +6,8 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
@@ -15,10 +17,6 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.Restore;
 
 public class TestRestore
 {
@@ -26,16 +24,16 @@ public class TestRestore
     private static FakeBackupFileSystem filesystem;
     private static ArrayList<String> fileList;
     private static Calendar cal;    
-    private static IConfiguration conf;
+    private static CassandraConfiguration cassandraConfiguration;
     
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
     {
         injector = Guice.createInjector(new BRTestModule());
         filesystem = (FakeBackupFileSystem)injector.getInstance(IBackupFileSystem.class);
-        conf = injector.getInstance(IConfiguration.class);
+        cassandraConfiguration = injector.getInstance(CassandraConfiguration.class);
         fileList = new ArrayList<String>();
-        File cassdir = new File(conf.getDataFileLocation());
+        File cassdir = new File(cassandraConfiguration.getDataLocation());
         cassdir.mkdirs();
         cal = Calendar.getInstance();
     }
@@ -65,7 +63,7 @@ public class TestRestore
     public void testRestore() throws Exception 
     {
         populateBackupFileSystem("test_backup");
-        File tmpdir = new File(conf.getDataFileLocation() + "/test");
+        File tmpdir = new File(cassandraConfiguration.getDataLocation() + "/test");
         tmpdir.mkdir();
         Assert.assertTrue(tmpdir.exists());
         Restore restore = injector.getInstance(Restore.class);
@@ -80,7 +78,7 @@ public class TestRestore
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        tmpdir = new File(conf.getDataFileLocation() + "/test");
+        tmpdir = new File(cassandraConfiguration.getDataLocation() + "/test");
         Assert.assertFalse(tmpdir.exists());
     }
 
@@ -131,8 +129,8 @@ public class TestRestore
     public void testRestoreFromDiffCluster() throws Exception 
     {
         populateBackupFileSystem("test_backup_new");
-        FakeConfiguration conf = (FakeConfiguration)injector.getInstance(IConfiguration.class);
-        conf.setRestorePrefix("RESTOREBUCKET/test_backup_new/fake-region/fakecluster");
+        BackupConfiguration backupConfiguration = injector.getInstance(BackupConfiguration.class);
+        backupConfiguration.setRestorePrefix("RESTOREBUCKET/test_backup_new/fake-region/fakecluster");
         Restore restore = injector.getInstance(Restore.class);
         cal.set(2011, 7, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
@@ -145,6 +143,6 @@ public class TestRestore
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        conf.setRestorePrefix("");
+        backupConfiguration.setRestorePrefix("");
     }
 }

@@ -9,8 +9,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
-import org.apache.cassandra.io.sstable.SSTableLoader.OutputHandler;
+import org.apache.cassandra.utils.OutputHandler;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
 import org.apache.cassandra.streaming.OperationType;
@@ -25,7 +28,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.TuneCassandra;
 
 @Singleton
@@ -35,11 +37,11 @@ public class SSTableLoaderWrapper
     private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
 
     @Inject
-    public SSTableLoaderWrapper(IConfiguration config) throws IOException
+    public SSTableLoaderWrapper(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, AmazonConfiguration amazonConfiguration) throws IOException
     {
         URL url = this.getClass().getClassLoader().getResource("cassandra.yaml");
         logger.info("Trying to load the yaml file from: " + url);
-        TuneCassandra.updateYaml(config, url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
+        TuneCassandra.updateYaml(cassandraConfiguration, backupConfiguration, amazonConfiguration.getAvailabilityZone(), url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
     }
 
     private final OutputHandler options = new OutputHandler()
@@ -52,6 +54,16 @@ public class SSTableLoaderWrapper
         public void debug(String msg)
         {
             logger.debug(msg + "\n");
+        }
+
+        public void warn(String msg)
+        {
+            logger.warn(msg + "\n");
+        }
+
+        public void warn(String msg, Throwable th)
+        {
+            logger.warn(msg + "\n", th);
         }
     };
 

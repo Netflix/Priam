@@ -12,6 +12,7 @@ import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
+import com.yammer.dropwizard.lifecycle.Managed;
 import org.apache.commons.collections.CollectionUtils;
 
 /**
@@ -19,7 +20,7 @@ import org.apache.commons.collections.CollectionUtils;
  * Incremental backup
  */
 @Singleton
-public class PriamServer
+public class PriamServer implements Managed
 {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
@@ -35,7 +36,8 @@ public class PriamServer
         this.sleeper = sleeper;
     }
 
-    public void intialize() throws Exception
+    @Override
+    public void start() throws Exception
     {     
         if (id.getInstance().isOutOfService())
             return;
@@ -75,6 +77,12 @@ public class PriamServer
         
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
+    }
+
+    @Override
+    public void stop() throws Exception
+    {
+        scheduler.shutdown();
     }
 
     public InstanceIdentity getId()

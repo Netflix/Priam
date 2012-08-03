@@ -1,4 +1,4 @@
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.config;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -19,6 +19,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
+import com.yammer.dropwizard.config.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,60 +30,62 @@ import java.util.List;
 import java.util.Properties;
 
 @Singleton
-public class PriamConfiguration implements IConfiguration
+public class PriamConfiguration extends Configuration implements IConfiguration
 {
-    private static final String PRIAM_PRE = "priam";
 
-    private static final String CONFIG_CASS_HOME_DIR = PRIAM_PRE + ".cass.home";
-    private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";
-    private static final String CONFIG_CASS_STOP_SCRIPT = PRIAM_PRE + ".cass.stopscript";
-    private static final String CONFIG_CLUSTER_NAME = PRIAM_PRE + ".clustername";
-    private static final String CONFIG_SEED_PROVIDER_NAME = PRIAM_PRE + ".seed.provider";
-    private static final String CONFIG_LOAD_LOCAL_PROPERTIES = PRIAM_PRE + ".localbootstrap.enable";
-    private static final String CONFIG_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.size.";
-    private static final String CONFIG_DATA_LOCATION = PRIAM_PRE + ".data.location";
-    private static final String CONFIG_MR_ENABLE = PRIAM_PRE + ".multiregion.enable";
-    private static final String CONFIG_CL_LOCATION = PRIAM_PRE + ".commitlog.location";
-    private static final String CONFIG_JMX_LISTERN_PORT_NAME = PRIAM_PRE + ".jmx.port";
-    private static final String CONFIG_AVAILABILITY_ZONES = PRIAM_PRE + ".zones.available";
-    private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
-    private static final String CONFIG_NEW_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.newgen.size.";
-    private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = PRIAM_PRE + ".direct.memory.size.";
-    private static final String CONFIG_THRIFT_LISTERN_PORT_NAME = PRIAM_PRE + ".thrift.port";
-    private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".storage.port";
-    private static final String CONFIG_SSL_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".ssl.storage.port";
-    private static final String CONFIG_CL_BK_LOCATION = PRIAM_PRE + ".backup.commitlog.location";
-    private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = PRIAM_PRE + ".upload.throttle";
-    private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = PRIAM_PRE + ".memory.compaction.limit";
-    private static final String CONFIG_COMPACTION_THROUHPUT = PRIAM_PRE + ".compaction.throughput";
-    private static final String CONFIG_MAX_HINT_WINDOW_IN_MS = PRIAM_PRE + ".hint.window";
-    private static final String CONFIG_HINT_DELAY = PRIAM_PRE + ".hint.delay";
-    private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
-    private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
-    private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
+    private CassandraConfiguration
+
+    private static final String CONFIG_AVAILABILITY_ZONES = "priam.zones.available";
+    private static final String CONFIG_BOOTCLUSTER_NAME = "priam.bootcluster";
+    private static final String CONFIG_CASS_HOME_DIR = "priam.cass.home";
+    private static final String CONFIG_CASS_START_SCRIPT = "priam.cass.startscript";
+    private static final String CONFIG_CASS_STOP_SCRIPT = "priam.cass.stopscript";
+    private static final String CONFIG_CL_BK_LOCATION = "priam.backup.commitlog.location";
+    private static final String CONFIG_CL_LOCATION = "priam.commitlog.location";
+    private static final String CONFIG_CLUSTER_NAME = "priam.clustername";
+    private static final String CONFIG_COMPACTION_THROUHPUT = "priam.compaction.throughput";
+    private static final String CONFIG_DATA_LOCATION = "priam.data.location";
+    private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = "priam.direct.memory.size.";
+    private static final String CONFIG_ENDPOINT_SNITCH = "priam.endpoint_snitch";
+    private static final String CONFIG_HINT_DELAY = "priam.hint.delay";
+    private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = "priam.memory.compaction.limit";
+    private static final String CONFIG_JMX_LISTERN_PORT_NAME = "priam.jmx.port";
+    private static final String CONFIG_LOAD_LOCAL_PROPERTIES = "priam.localbootstrap.enable";
+    private static final String CONFIG_MAX_HEAP_SIZE = "priam.heap.size.";
+    private static final String CONFIG_MAX_HINT_WINDOW_IN_MS = "priam.hint.window";
+    private static final String CONFIG_MEMTABLE_TOTAL_SPACE = "priam.memtabletotalspace";
+    private static final String CONFIG_MR_ENABLE = "priam.multiregion.enable";
+    private static final String CONFIG_NEW_MAX_HEAP_SIZE = "priam.heap.newgen.size.";
+    private static final String CONFIG_SAVE_CACHE_LOCATION = "priam.cache.location";
+    private static final String CONFIG_SEED_PROVIDER_NAME = "priam.seed.provider";
+    private static final String CONFIG_SSL_STORAGE_LISTERN_PORT_NAME = "priam.ssl.storage.port";
+    private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = "priam.storage.port";
+    private static final String CONFIG_THRIFT_LISTERN_PORT_NAME = "priam.thrift.port";
+    private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = "priam.upload.throttle";
 
     // Backup and Restore
-    private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
-    private static final String CONFIG_RESTORE_PREFIX = PRIAM_PRE + ".restore.prefix";
-    private static final String CONFIG_INCR_BK_ENABLE = PRIAM_PRE + ".backup.incremental.enable";
-    private static final String CONFIG_CL_BK_ENABLE = PRIAM_PRE + ".backup.commitlog.enable";
-    private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = PRIAM_PRE + ".restore.snapshot";
-    private static final String CONFIG_BUCKET_NAME = PRIAM_PRE + ".s3.bucket";
-    private static final String CONFIG_BACKUP_HOUR = PRIAM_PRE + ".backup.hour";
-    private static final String CONFIG_S3_BASE_DIR = PRIAM_PRE + ".s3.base_dir";
-    private static final String CONFIG_RESTORE_THREADS = PRIAM_PRE + ".restore.threads";
-    private static final String CONFIG_RESTORE_CLOSEST_TOKEN = PRIAM_PRE + ".restore.closesttoken";
-    private static final String CONFIG_RESTORE_KEYSPACES = PRIAM_PRE + ".restore.keyspaces";
-    private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
-    private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
-    private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
-    private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
-    private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
+    private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = "priam.restore.snapshot";
+    private static final String CONFIG_BACKUP_CHUNK_SIZE = "priam.backup.chunksizemb";
+    private static final String CONFIG_BACKUP_HOUR = "priam.backup.hour";
+    private static final String CONFIG_BACKUP_RACS = "priam.backup.racs";
+    private static final String CONFIG_BACKUP_RETENTION = "priam.backup.retention";
+    private static final String CONFIG_BACKUP_THREADS = "priam.backup.threads";
+    private static final String CONFIG_BUCKET_NAME = "priam.s3.bucket";
+    private static final String CONFIG_CL_BK_ENABLE = "priam.backup.commitlog.enable";
+    private static final String CONFIG_INCR_BK_ENABLE = "priam.backup.incremental.enable";
+    private static final String CONFIG_MULTITHREADED_COMPACTION = "priam.multithreaded.compaction";
+    private static final String CONFIG_RESTORE_CLOSEST_TOKEN = "priam.restore.closesttoken";
+    private static final String CONFIG_RESTORE_KEYSPACES = "priam.restore.keyspaces";
+    private static final String CONFIG_RESTORE_PREFIX = "priam.restore.prefix";
+    private static final String CONFIG_RESTORE_THREADS = "priam.restore.threads";
+    private static final String CONFIG_S3_BASE_DIR = "priam.s3.base_dir";
+    private static final String CONFIG_STREAMING_THROUGHPUT_MB = "priam.streaming.throughput.mb";
+
 
     // Amazon specific
-    private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
-    private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
-    private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
+    private static final String CONFIG_ASG_NAME = "priam.az.asgname";
+    private static final String CONFIG_REGION_NAME = "priam.az.region";
+    private static final String CONFIG_ACL_GROUP_NAME = "priam.acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
     private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");

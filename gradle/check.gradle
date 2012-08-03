@@ -9,10 +9,19 @@ subprojects {
 
     // FindBugs
     apply plugin: 'findbugs'
+    findbugs {
+        ignoreFailures = true
+    }
     //tasks.withType(Findbugs) { reports.html.enabled true }
 
     // PMD
     apply plugin: 'pmd'
-    //tasks.withType(Pmd) { reports.html.enabled true }
+    pmd {
+        ignoreFailures = true
+    }
 
+    tasks.withType(Pmd) { 
+        ignoreFailures = true
+        reports.html.enabled true
+    }
 }

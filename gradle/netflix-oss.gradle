@@ -1,1 +1,24 @@
 apply from: 'http://artifacts.netflix.com/gradle-netflix-local/artifactory.gradle'
+
+rootProject {
+    afterProject {  project ->
+        def compileConf = project.configurations.findByName('compile')
+        if (compileConf==null) {
+            return
+        }
+        def deps = compileConf.dependencies
+        def awsDep = deps.find { it.group == 'com.amazonaws' && it.name == 'aws-java-sdk' }
+        if (awsDep != null) {
+            def version = awsDep.version
+            deps.remove(awsDep)
+            project.dependencies.add('compile', "com.amazon:aws-java-sdk:${version}")
+        }
+
+        //org.apache.cassandra, module:cassandra-all, version:1.1.1.
+        def cassDep = deps.find { it.group == 'org.apache.cassandra' && it.name == 'cassandra-all' }
+        if (cassDep != null) {
+            deps.remove(cassDep)
+            project.dependencies.add('compile', 'apache-cassandra:apache-cassandra:1.1.1.13') // 1.1.2 no longer has OutputHandler
+        }
+    }
+}

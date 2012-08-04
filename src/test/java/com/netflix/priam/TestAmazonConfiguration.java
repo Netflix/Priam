@@ -10,6 +10,7 @@ public class TestAmazonConfiguration extends AmazonConfiguration {
         setRegionName(region);
         setAvailabilityZone(zone);
         setInstanceID(instanceId);
+        setInstanceType("m1.xlarge");
         setUsableAvailabilityZones(Arrays.asList("az1", "az2", "az3"));
         setPublicHostName(instanceId);
         setSecurityGroupName(clusterName);

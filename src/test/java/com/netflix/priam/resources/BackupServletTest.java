@@ -7,9 +7,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.TestAmazonConfiguration;
+import com.netflix.priam.TestBackupConfiguration;
+import com.netflix.priam.TestCassandraConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
@@ -35,10 +39,9 @@ import static org.junit.Assert.assertEquals;
 public class BackupServletTest
 {
     private @NonStrict PriamServer priamServer;
-    private @NonStrict CassandraConfiguration cassandraConfiguration;
-    private @NonStrict AmazonConfiguration amazonConfiguration;
-    private @NonStrict
-    BackupConfiguration backupConfiguration;
+    private @NonStrict TestCassandraConfiguration cassandraConfiguration;
+    private @NonStrict TestAmazonConfiguration amazonConfiguration;
+    private @NonStrict TestBackupConfiguration backupConfiguration;
     private @Mocked IBackupFileSystem fs;
     private @Mocked Restore restoreObj;
     private @Mocked Provider<AbstractBackupPath> pathProvider;
@@ -313,7 +316,7 @@ public class BackupServletTest
                 pathProvider.get(); result = backupPath;
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
-                amazonConfiguration.getRegionName(); result = oldRegion; times = 2;
+                amazonConfiguration.getRegionName(); result = oldRegion; times = 1;
                 priamServer.getId(); result = identity; times = 5;
                 identity.getInstance(); result = instance; times = 5;
                 instance.getToken(); result = oldToken;
@@ -354,15 +357,16 @@ public class BackupServletTest
     // TODO: create CassandraController interface and inject, instead of static util method
     private Expectations expectCassandraStartup() {
         return new Expectations() {{
+            amazonConfiguration.getInstanceType(); result = "m1.xlarge";
             cassandraConfiguration.getCassStartScript(); result = "/usr/bin/false";
-            cassandraConfiguration.getMaxNewGenHeapSize().get(amazonConfiguration.getInstanceType()); result = "2G";
-            cassandraConfiguration.getMaxHeapSize().get(amazonConfiguration.getInstanceType()); result = "8G";
+            cassandraConfiguration.getMaxNewGenHeapSize(); result = ImmutableMap.of("m1.xlarge", "2G");
+            cassandraConfiguration.getMaxHeapSize(); result = ImmutableMap.of("m1.xlarge", "8G");
             cassandraConfiguration.getDataLocation(); result = "/var/lib/cassandra/data";
             backupConfiguration.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
             backupConfiguration.getS3BaseDir(); result = "backup";
             cassandraConfiguration.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
             cassandraConfiguration.getJmxPort(); result = 7199;
-            cassandraConfiguration.getDirectMaxHeapSize().get(amazonConfiguration.getInstanceType()); result = "50G";
+            cassandraConfiguration.getDirectMaxHeapSize(); result = ImmutableMap.of("m1.xlarge", "50G");
         }};
     }
 }

@@ -53,9 +53,9 @@ public class StreamingTest
     public void testAbstractPath()
     {
         Injector injector = Guice.createInjector(new BRTestModule());
-        CassandraConfiguration cassandraConfiguration = injector.getInstance(TestCassandraConfiguration.class);
-        AmazonConfiguration amazonConfiguration = injector.getInstance(TestAmazonConfiguration.class);
-        BackupConfiguration backupConfiguration = injector.getInstance(TestBackupConfiguration.class);
+        CassandraConfiguration cassandraConfiguration = new TestCassandraConfiguration("fake-app");
+        AmazonConfiguration amazonConfiguration = new TestAmazonConfiguration("fake-app", "fake-region", "az1", "fakeInstance1");
+        BackupConfiguration backupConfiguration = new TestBackupConfiguration();
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
 
         FifoQueue<AbstractBackupPath> queue = new FifoQueue<AbstractBackupPath>(10);

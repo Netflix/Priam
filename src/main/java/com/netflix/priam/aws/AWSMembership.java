@@ -156,6 +156,7 @@ public class AWSMembership implements IMembership
                 for (IpPermission perm : group.getIpPermissions())
                     if (perm.getFromPort() == from && perm.getToPort() == to)
                         ipPermissions.addAll(perm.getIpRanges());
+
             return ipPermissions;
         }
         finally

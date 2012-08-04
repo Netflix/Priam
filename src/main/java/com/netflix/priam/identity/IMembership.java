@@ -48,8 +48,6 @@ public interface IMembership
 
     /**
      * List all ACLs
-     * 
-     * @return
      */
     public List<String> listACL(int from, int to);
 

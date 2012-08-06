@@ -40,15 +40,15 @@ cassandra:
 amazon:
   # These properties below should be retrievable from the AWS instance metadata API.  Any setting
   #     provided here will override what can be discovered from the instance metadata API.
-  # usableAvailabilityZones:                    # List of all availability zones used for the cluster.  If empty, region will be queried for first three "available" zones.
-  # autoScaleGroupName:
-  # regionName:
-  # securityGroupName:
-  # availabilityZone:
-  # publicHostName:
-  # publicIP:
-  # instanceID:
-  # instanceType:
+  usableAvailabilityZones:                    # List of all availability zones used for the cluster.  If empty, region will be queried for first three "available" zones.
+  autoScaleGroupName:
+  regionName:
+  securityGroupName:
+  availabilityZone:
+  publicHostName:
+  publicIP:
+  instanceID:
+  instanceType:
 
 
 backup:

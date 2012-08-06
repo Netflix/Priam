@@ -62,7 +62,7 @@ public class TestBackup
         SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
         backup.execute();
         Assert.assertEquals(3, filesystem.uploadedFiles.size());
-        System.out.println(filesystem.uploadedFiles.size());
+        //System.out.println(filesystem.uploadedFiles.size());
         boolean metafile = false;
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));

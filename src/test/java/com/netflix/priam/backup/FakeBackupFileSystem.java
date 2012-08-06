@@ -96,7 +96,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
                 }
             }
             downloadedFiles.add(path.getRemotePath());
-            System.out.println("Downloading " + path.getRemotePath());
+            //System.out.println("Downloading " + path.getRemotePath());
         }
         catch (IOException io)
         {

@@ -41,9 +41,9 @@ public class TestDoublingLogic
 
     public void printNodes(List<String> nodes)
     {
-        System.out.println("=== Printing - Array of Size :" + nodes.size());
-        System.out.println(StringUtils.join(nodes, "\n"));
-        System.out.println("=====================Completed doubling===============================" + nodes.size());
+        //System.out.println("=== Printing - Array of Size :" + nodes.size());
+        //System.out.println(StringUtils.join(nodes, "\n"));
+        //System.out.println("=====================Completed doubling===============================" + nodes.size());
     }
 
     private void validate(List<String> newNodes, List<String> nodes)
@@ -59,7 +59,7 @@ public class TestDoublingLogic
             
             if (count == 2)
             {
-                System.out.println("Found an issue.....");
+                //System.out.println("Found an issue.....");
                 throw new RuntimeException();
             }
             temp = node;   

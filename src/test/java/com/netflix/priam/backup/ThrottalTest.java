@@ -26,10 +26,10 @@ public class ThrottalTest
         for (int i = 0; i < 10; i++)
         {
             long simulated = ran.nextInt(10) * 1024 * 1024;
-            System.out.println("Simulating upload of "+ simulated  + " @ " + System.currentTimeMillis());
+            //System.out.println("Simulating upload of "+ simulated  + " @ " + System.currentTimeMillis());
             throttle.throttle(simulated);
         }
         
-        System.out.println("Completed in: " + (System.currentTimeMillis() - start));
+        //System.out.println("Completed in: " + (System.currentTimeMillis() - start));
     }
 }

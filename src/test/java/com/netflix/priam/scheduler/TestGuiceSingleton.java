@@ -39,7 +39,7 @@ public class TestGuiceSingleton
 
         public String print()
         {
-            System.out.println(this.toString());
+            //System.out.println(this.toString());
             return this.toString();
         }
     }

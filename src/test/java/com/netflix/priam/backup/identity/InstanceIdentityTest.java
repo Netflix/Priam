@@ -79,7 +79,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         factory.sort(lst);
         for (int i = 0; i < lst.size(); i++)
         {
-            System.out.println(lst.get(i));
+            //System.out.println(lst.get(i));
             if (0 == i % 2)
                 continue;
             assertEquals("new_slot", lst.get(i).getInstanceId());
@@ -101,8 +101,8 @@ public class InstanceIdentityTest extends InstanceTestUtils
 
     public void printInstance(PriamInstance ins, int hash)
     {
-        System.out.println("ID: " + (ins.getId() - hash));
-        System.out.println("PayLoad: " + ins.getToken());
+        //System.out.println("ID: " + (ins.getId() - hash));
+        //System.out.println("PayLoad: " + ins.getToken());
 
     }
 

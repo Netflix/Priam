@@ -40,7 +40,7 @@ public class DoubleRingTest extends InstanceTestUtils
             PriamInstance ins = doubled.get(i);
             assertEquals(validator.get(i), ins.getToken());
             int id = ins.getId() - TokenManager.regionOffset(amazonConfiguration.getRegionName());
-            System.out.println(ins);
+            //System.out.println(ins);
             if (0 != id % 2)
                 assertEquals(ins.getInstanceId(), "new_slot");
         }

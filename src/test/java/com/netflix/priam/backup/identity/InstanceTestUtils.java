@@ -69,7 +69,7 @@ public abstract class InstanceTestUtils
     {
         amazonConfiguration.setAvailabilityZone(zone);
         amazonConfiguration.setInstanceID(instanceId);
-        amazonConfiguration.setPublicHostName(instanceId);
+        amazonConfiguration.setPrivateHostName(instanceId);
         return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, factory, membership, sleeper);
     }
 }

@@ -30,10 +30,8 @@ import java.util.Random;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
-    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
-    {
-        public List<PriamInstance> get()
-        {
+    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>() {
+        public List<PriamInstance> get() {
             return Lists.newArrayList();
         }
     });
@@ -129,7 +127,7 @@ public class InstanceIdentity
                 isReplace = true;
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
-                return factory.create(cassandraConfiguration.getClusterName(), markAsDead.getId(), amazonConfiguration.getInstanceID(), amazonConfiguration.getPublicHostName(), amazonConfiguration.getPublicIP(), amazonConfiguration.getAvailabilityZone(), markAsDead.getVolumes(), payLoad);
+                return factory.create(cassandraConfiguration.getClusterName(), markAsDead.getId(), amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), markAsDead.getVolumes(), payLoad);
             }
             return null;
         }
@@ -162,7 +160,7 @@ public class InstanceIdentity
                 my_slot = amazonConfiguration.getUsableAvailabilityZones().size() + maxSlot;
 
             String payload = TokenManager.createToken(my_slot, membership.getRacCount(), membership.getAvailabilityZoneMembershipSize(), amazonConfiguration.getRegionName());
-            return factory.create(cassandraConfiguration.getClusterName(), my_slot + hash, amazonConfiguration.getInstanceID(), amazonConfiguration.getPublicHostName(), amazonConfiguration.getPublicIP(), amazonConfiguration.getAvailabilityZone(), null, payload);
+            return factory.create(cassandraConfiguration.getClusterName(), my_slot + hash, amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), null, payload);
         }
 
         public void forEachExecution()

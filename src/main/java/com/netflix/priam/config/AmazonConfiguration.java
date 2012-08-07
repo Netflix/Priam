@@ -32,12 +32,6 @@ public class AmazonConfiguration
     private String availabilityZone;
 
     @JsonProperty
-    private String publicHostName;
-
-    @JsonProperty
-    private String publicIP;
-
-    @JsonProperty
     private String privateHostName;
 
     @JsonProperty
@@ -51,6 +45,9 @@ public class AmazonConfiguration
 
     @JsonProperty
     private List<String> usableAvailabilityZones;
+
+    @JsonProperty
+    private String simpleDbDomain;
 
 
     public String getAutoScaleGroupName()
@@ -71,16 +68,6 @@ public class AmazonConfiguration
     public String getAvailabilityZone()
     {
         return availabilityZone;
-    }
-
-    public String getPublicHostName()
-    {
-        return publicHostName;
-    }
-
-    public String getPublicIP()
-    {
-        return publicIP;
     }
 
     public String getPrivateHostName()
@@ -108,6 +95,11 @@ public class AmazonConfiguration
         return usableAvailabilityZones;
     }
 
+    public String getSimpleDbDomain()
+    {
+        return simpleDbDomain;
+    }
+
     public void setAutoScaleGroupName(String autoScaleGroupName)
     {
         this.autoScaleGroupName = autoScaleGroupName;
@@ -126,16 +118,6 @@ public class AmazonConfiguration
     public void setAvailabilityZone(String availabilityZone)
     {
         this.availabilityZone = availabilityZone;
-    }
-
-    public void setPublicHostName(String publicHostName)
-    {
-        this.publicHostName = publicHostName;
-    }
-
-    public void setPublicIP(String publicIP)
-    {
-        this.publicIP = publicIP;
     }
 
     public void setPrivateHostName(String privateHostName)
@@ -163,6 +145,11 @@ public class AmazonConfiguration
         this.usableAvailabilityZones = usableAvailabilityZones;
     }
 
+    public void setSimpleDbDomain(String simpleDbDomain)
+    {
+        this.simpleDbDomain = simpleDbDomain;
+    }
+
 
     public void discoverConfiguration(ICredential credentialProvider)
     {
@@ -180,12 +167,6 @@ public class AmazonConfiguration
         }
         if (StringUtils.isBlank(instanceType)) {
             instanceType = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type");
-        }
-        if (StringUtils.isBlank(publicHostName)) {
-            publicHostName = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
-        }
-        if (StringUtils.isBlank(publicIP)) {
-            publicIP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
         }
         if (StringUtils.isBlank(privateHostName)) {
             privateHostName = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname");

@@ -12,8 +12,8 @@ public class TestAmazonConfiguration extends AmazonConfiguration {
         setInstanceID(instanceId);
         setInstanceType("m1.xlarge");
         setUsableAvailabilityZones(Arrays.asList("az1", "az2", "az3"));
-        setPublicHostName(instanceId);
+        setPrivateHostName(instanceId);
         setSecurityGroupName(clusterName);
-        setPublicIP(null);
+        setPrivateIP(null);
     }
 }

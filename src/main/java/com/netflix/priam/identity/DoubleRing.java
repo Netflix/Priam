@@ -67,7 +67,7 @@ public class DoubleRing
             int currentSlot = data.getId() - hash;
             int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
             String token = TokenManager.createToken(new_slot, new_ring_size, amazonConfiguration.getRegionName());
-            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPublicHostName(), amazonConfiguration.getPublicIP(), data.getRac(), null, token);
+            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), data.getRac(), null, token);
         }
     }
 

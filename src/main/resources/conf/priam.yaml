@@ -45,10 +45,11 @@ amazon:
   regionName:
   securityGroupName:
   availabilityZone:
-  publicHostName:
-  publicIP:
+  privateHostName:
+  privateIP:
   instanceID:
   instanceType:
+  simpleDbDomain: "InstanceIdentity"
 
 
 backup:

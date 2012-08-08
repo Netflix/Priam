@@ -42,9 +42,9 @@ public class CassandraConfig
     {
         try
         {
-            if (CollectionUtils.isNotEmpty(priamServer.getId().getSeeds()))
-                return Response.ok(StringUtils.join(priamServer.getId().getSeeds(), ',')).build();
-            logger.error("Cannot find the Seeds " + priamServer.getId().getSeeds());
+            if (CollectionUtils.isNotEmpty(priamServer.getInstanceIdentity().getSeeds()))
+                return Response.ok(StringUtils.join(priamServer.getInstanceIdentity().getSeeds(), ',')).build();
+            logger.error("Cannot find the Seeds " + priamServer.getInstanceIdentity().getSeeds());
         }
         catch (Exception e)
         {
@@ -60,8 +60,8 @@ public class CassandraConfig
     {
         try
         {
-            if (StringUtils.isNotBlank(priamServer.getId().getInstance().getToken()))
-                return Response.ok(priamServer.getId().getInstance().getToken()).build();
+            if (StringUtils.isNotBlank(priamServer.getInstanceIdentity().getInstance().getToken()))
+                return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken()).build();
             logger.error("Cannot find token for this instance.");
         }
         catch (Exception e)
@@ -79,7 +79,7 @@ public class CassandraConfig
     {
         try
         {
-            return Response.ok(String.valueOf(priamServer.getId().isReplace())).build();
+            return Response.ok(String.valueOf(priamServer.getInstanceIdentity().isReplace())).build();
         }
         catch (Exception e)
         {

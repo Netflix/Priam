@@ -18,9 +18,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.config.BackupConfiguration;
-import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
@@ -87,7 +84,7 @@ public class BackupServletTest
   
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
@@ -130,7 +127,7 @@ public class BackupServletTest
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
@@ -173,7 +170,7 @@ public class BackupServletTest
 //  
 //            {
 //                cassandraConfiguration.getDC(); result = oldRegion;
-//                priamServer.getId(); result = identity; times = 3;
+//                priamServer.getInstanceIdentity(); result = identity; times = 3;
 //                identity.getInstance(); result = instance; times = 3;
 //                instance.getToken(); result = oldToken;
 //
@@ -226,7 +223,7 @@ public class BackupServletTest
   
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getId(); result = identity; times = 3;
+                priamServer.getInstanceIdentity(); result = identity; times = 3;
                 identity.getInstance(); result = instance; times = 3;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
@@ -266,7 +263,7 @@ public class BackupServletTest
   
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
@@ -317,7 +314,7 @@ public class BackupServletTest
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
                 amazonConfiguration.getRegionName(); result = oldRegion; times = 1;
-                priamServer.getId(); result = identity; times = 5;
+                priamServer.getInstanceIdentity(); result = identity; times = 5;
                 identity.getInstance(); result = instance; times = 5;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);

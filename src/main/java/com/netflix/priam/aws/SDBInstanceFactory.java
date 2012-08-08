@@ -144,7 +144,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
         Map<String, Object> v = (volumes == null) ? new HashMap<String, Object>() : volumes;
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
-        ins.setRac(rac);
+        ins.setAvailabilityZone(rac);
         ins.setHost(hostname);
         ins.setHostIP(ip);
         ins.setId(id);

@@ -180,7 +180,7 @@ public class SDBInstanceData
         attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getToken(), true));
         attrs.add(new ReplaceableAttribute(Attributes.APP_ID, instance.getApp(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ID, Integer.toString(instance.getId()), true));
-        attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getRac(), true));
+        attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getAvailabilityZone(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ELASTIC_IP, instance.getHostIP(), true));
         attrs.add(new ReplaceableAttribute(Attributes.HOSTNAME, instance.getHostName(), true));
         attrs.add(new ReplaceableAttribute(Attributes.LOCATION, instance.getDC(), true));
@@ -195,7 +195,7 @@ public class SDBInstanceData
         attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
         attrs.add(new Attribute(Attributes.APP_ID, instance.getApp()));
         attrs.add(new Attribute(Attributes.ID, Integer.toString(instance.getId())));
-        attrs.add(new Attribute(Attributes.AVAILABILITY_ZONE, instance.getRac()));
+        attrs.add(new Attribute(Attributes.AVAILABILITY_ZONE, instance.getAvailabilityZone()));
         attrs.add(new Attribute(Attributes.ELASTIC_IP, instance.getHostIP()));
         attrs.add(new Attribute(Attributes.HOSTNAME, instance.getHostName()));
         attrs.add(new Attribute(Attributes.LOCATION, instance.getDC()));
@@ -225,7 +225,7 @@ public class SDBInstanceData
             else if (att.getName().equals(Attributes.ID))
                 ins.setId(Integer.parseInt(att.getValue()));
             else if (att.getName().equals(Attributes.AVAILABILITY_ZONE))
-                ins.setRac(att.getValue());
+                ins.setAvailabilityZone(att.getValue());
             else if (att.getName().equals(Attributes.ELASTIC_IP))
                 ins.setHostIP(att.getValue());
             else if (att.getName().equals(Attributes.HOSTNAME))

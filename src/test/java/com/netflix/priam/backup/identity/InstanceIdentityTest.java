@@ -101,7 +101,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
 
     public void printInstance(PriamInstance ins, int hash)
     {
-        //System.out.println("ID: " + (ins.getId() - hash));
+        //System.out.println("ID: " + (ins.getInstanceIdentity() - hash));
         //System.out.println("PayLoad: " + ins.getToken());
 
     }

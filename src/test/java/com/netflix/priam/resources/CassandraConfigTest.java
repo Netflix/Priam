@@ -42,7 +42,7 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getSeeds(); result = seeds; times = 2;
             }
         };
@@ -60,7 +60,7 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getSeeds(); result = seeds; times = 2;
             }
         };
@@ -76,7 +76,7 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity;
+                priamServer.getInstanceIdentity(); result = identity;
                 identity.getSeeds(); result = new UnknownHostException();
             }
         };
@@ -94,7 +94,7 @@ public class CassandraConfigTest
             PriamInstance instance;
 
             {
-                priamServer.getId(); result = identity; times = 2;
+                priamServer.getInstanceIdentity(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = token; times = 2;
             }
@@ -114,7 +114,7 @@ public class CassandraConfigTest
             PriamInstance instance;
 
             {
-                priamServer.getId(); result = identity;
+                priamServer.getInstanceIdentity(); result = identity;
                 identity.getInstance(); result = instance;
                 instance.getToken(); result = token;
             }
@@ -132,7 +132,7 @@ public class CassandraConfigTest
             PriamInstance instance;
 
             {
-                priamServer.getId(); result = identity;
+                priamServer.getInstanceIdentity(); result = identity;
                 identity.getInstance(); result = instance;
                 instance.getToken(); result = new RuntimeException();
             }
@@ -149,7 +149,7 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity;
+                priamServer.getInstanceIdentity(); result = identity;
                 identity.isReplace(); result = true;
             }
         };
@@ -166,7 +166,7 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity;
+                priamServer.getInstanceIdentity(); result = identity;
                 identity.isReplace(); result = new RuntimeException();
             }
         };

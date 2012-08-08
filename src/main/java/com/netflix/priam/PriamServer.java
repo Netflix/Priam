@@ -108,7 +108,7 @@ public class PriamServer implements Managed
         scheduler.shutdown();
     }
 
-    public InstanceIdentity getId()
+    public InstanceIdentity getInstanceIdentity()
     {
         return id;
     }

@@ -18,13 +18,12 @@ import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.tools.NodeProbe;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,8 +65,9 @@ public class JMXNodeTool extends NodeProbe
      */
     public static JMXNodeTool instance(CassandraConfiguration config)
     {
-        if (!testConnection())
+        if (!testConnection()) {
             tool = connect(config);
+        }
         return tool;
     }
 
@@ -75,10 +75,11 @@ public class JMXNodeTool extends NodeProbe
     {
         try
         {
-            if (mxbean)
+            if (mxbean) {
                 return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
-            else
+            } else {
                 return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
+            }
         }
         catch (Exception e)
         {
@@ -95,8 +96,9 @@ public class JMXNodeTool extends NodeProbe
     private static boolean testConnection()
     {
         // connecting first time hence return false.
-        if (tool == null)
+        if (tool == null) {
             return false;
+        }
         
         try
         {
@@ -121,8 +123,9 @@ public class JMXNodeTool extends NodeProbe
                 Field fields[] = NodeProbe.class.getDeclaredFields();
                 for (int i = 0; i < fields.length; i++)
                 {
-                    if (!fields[i].getName().equals("mbeanServerConn"))
+                    if (!fields[i].getName().equals("mbeanServerConn")) {
                         continue;
+                    }
                     fields[i].setAccessible(true);
                     nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
                 }
@@ -136,10 +139,10 @@ public class JMXNodeTool extends NodeProbe
      * tokens out of the server. TODO code it.
      */
     @SuppressWarnings("unchecked")
-    public JSONObject estimateKeys() throws JSONException
+    public Map<String, Object> estimateKeys()
     {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = Maps.newHashMap();
         while (it.hasNext())
         {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
@@ -151,10 +154,10 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONObject info() throws JSONException
+    public Map<String, Object> info()
     {
         logger.info("JMX info being called");
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = Maps.newHashMap();
         object.put("gossip_active", isInitialized());
         object.put("thrift_active", isThriftServerRunning());
         object.put("token", getToken());
@@ -172,10 +175,10 @@ public class JMXNodeTool extends NodeProbe
     }
 
     @SuppressWarnings("unchecked")
-    public JSONArray ring(String keyspace) throws JSONException
+    public List<Map<String, Object>> ring(String keyspace)
     {
         logger.info("JMX ring being called");
-        JSONArray ring = new JSONArray();
+        List<Map<String, Object>> ring = Lists.newArrayList();
         Map<String, String> tokenToEndpoint = getTokenToEndpointMap();
         List<String> sortedTokens = new ArrayList<String>(tokenToEndpoint.keySet());
 
@@ -228,26 +231,27 @@ public class JMXNodeTool extends NodeProbe
 
             String state = "Normal";
 
-            if (joiningNodes.contains(primaryEndpoint))
+            if (joiningNodes.contains(primaryEndpoint)) {
                 state = "Joining";
-            else if (leavingNodes.contains(primaryEndpoint))
+            } else if (leavingNodes.contains(primaryEndpoint)) {
                 state = "Leaving";
-            else if (movingNodes.contains(primaryEndpoint))
+            } else if (movingNodes.contains(primaryEndpoint)) {
                 state = "Moving";
+            }
 
             String load = loadMap.containsKey(primaryEndpoint)
                           ? loadMap.get(primaryEndpoint)
                           : "?";
             String owns = new DecimalFormat("##0.00%").format(ownerships.get(token) == null ? 0.0F : ownerships.get(token));
-            ring.put(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
+            ring.add(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
         }
         logger.info(ring.toString());
         return ring;
     }
 
-    private JSONObject createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, String token) throws JSONException
+    private Map<String, Object> createJson(String primaryEndpoint, String dataCenter, String rack, String status, String state, String load, String owns, String token)
     {
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = Maps.newHashMap();
         object.put("endpoint", primaryEndpoint);
         object.put("dc", dataCenter);
         object.put("rack", rack);
@@ -261,26 +265,30 @@ public class JMXNodeTool extends NodeProbe
 
     public void compact() throws IOException, ExecutionException, InterruptedException
     {
-        for (String keyspace : getKeyspaces())
+        for (String keyspace : getKeyspaces()) {
             forceTableCompaction(keyspace, new String[0]);
+        }
     }
 
     public void repair(boolean isSequential) throws IOException, ExecutionException, InterruptedException
     {
-        for (String keyspace : getKeyspaces())
+        for (String keyspace : getKeyspaces()) {
             forceTableRepair(keyspace, isSequential, new String[0]);
+        }
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException
     {
-        for (String keyspace : getKeyspaces())
+        for (String keyspace : getKeyspaces()) {
             forceTableCleanup(keyspace, new String[0]);
+        }
     }
 
     public void flush() throws IOException, ExecutionException, InterruptedException
     {
-        for (String keyspace : getKeyspaces())
+        for (String keyspace : getKeyspaces()) {
             forceTableFlush(keyspace, new String[0]);
+        }
     }
 
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException

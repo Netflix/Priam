@@ -30,7 +30,7 @@ import java.util.Random;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
-    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>() {
+    private final ListMultimap<String, PriamInstance> instancesByAvailabilityZoneMultiMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>() {
         public List<PriamInstance> get() {
             return Lists.newArrayList();
         }
@@ -96,12 +96,12 @@ public class InstanceIdentity
         logger.info("My token: " + myInstance.getToken());
     }
 
-    private void populateRacMap()
+    private void populateInstancesByAvailabilityZoneMultiMap()
     {
-        locMap.clear();
+        instancesByAvailabilityZoneMultiMap.clear();
         for (PriamInstance ins : factory.getAllIds(cassandraConfiguration.getClusterName()))
         {
-            locMap.put(ins.getRac(), ins);
+            instancesByAvailabilityZoneMultiMap.put(ins.getAvailabilityZone(), ins);
         }
     }
 
@@ -117,16 +117,16 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(amazonConfiguration.getAvailabilityZone()) || asgInstances.contains(dead.getInstanceId()))
+                if (!dead.getAvailabilityZone().equals(amazonConfiguration.getAvailabilityZone()) || asgInstances.contains(dead.getInstanceId()))
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
-                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
+                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getAvailabilityZone(), dead.getVolumes(),
                         dead.getToken());
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
                 String payLoad = markAsDead.getToken();
-                logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
+                logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getAvailabilityZone());
                 return factory.create(cassandraConfiguration.getClusterName(), markAsDead.getId(), amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), markAsDead.getVolumes(), payLoad);
             }
             return null;
@@ -134,7 +134,7 @@ public class InstanceIdentity
 
         public void forEachExecution()
         {
-            populateRacMap();
+            populateInstancesByAvailabilityZoneMultiMap();
         }
     }
 
@@ -151,10 +151,10 @@ public class InstanceIdentity
 
             int max = hash;
             for (PriamInstance data : factory.getAllIds(cassandraConfiguration.getClusterName()))
-                max = (data.getRac().equals(amazonConfiguration.getAvailabilityZone()) && (data.getId() > max)) ? data.getId() : max;
+                max = (data.getAvailabilityZone().equals(amazonConfiguration.getAvailabilityZone()) && (data.getId() > max)) ? data.getId() : max;
             int maxSlot = max - hash;
             int my_slot = 0;
-            if (hash == max && locMap.get(amazonConfiguration.getAvailabilityZone()).size() == 0)
+            if (hash == max && instancesByAvailabilityZoneMultiMap.get(amazonConfiguration.getAvailabilityZone()).size() == 0)
                 my_slot = amazonConfiguration.getUsableAvailabilityZones().indexOf(amazonConfiguration.getAvailabilityZone()) + maxSlot;
             else
                 my_slot = amazonConfiguration.getUsableAvailabilityZones().size() + maxSlot;
@@ -165,36 +165,42 @@ public class InstanceIdentity
 
         public void forEachExecution()
         {
-            populateRacMap();
+            populateInstancesByAvailabilityZoneMultiMap();
         }
     }
 
     public List<String> getSeeds() throws UnknownHostException
     {
-        populateRacMap();
+        populateInstancesByAvailabilityZoneMultiMap();
         List<String> seeds = new LinkedList<String>();
         // Handle single zone deployment
         if (amazonConfiguration.getUsableAvailabilityZones().size() == 1)
         {
             // Return empty list if all nodes are not up
-            if (membership.getAvailabilityZoneMembershipSize() != locMap.get(myInstance.getRac()).size())
+            if (membership.getAvailabilityZoneMembershipSize() != instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).size())
                 return seeds;
             // If seed node, return the next node in the list
-            if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostName().equals(myInstance.getHostName()))
-                seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
+            if (instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).size() > 1 && instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostName().equals(myInstance.getHostName()))
+                seeds.add(instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(1).getHostName());
         }
-        logger.info("Retrieved seeds. My hostname: {}, LOCMap: {}", myInstance.getHostName(), locMap);
-        for (String loc : locMap.keySet())
-            seeds.add(locMap.get(loc).get(0).getHostName());
-        seeds.remove(myInstance.getHostName());
+        logger.info("Retrieved seeds. My hostname: {}, AZ-To-Instance-MultiMap: {}", myInstance.getHostName(), instancesByAvailabilityZoneMultiMap);
+
+        for (String loc : instancesByAvailabilityZoneMultiMap.keySet())
+        {
+            seeds.add(instancesByAvailabilityZoneMultiMap.get(loc).get(0).getHostName());
+        }
+
+        //TODO: [mbogner] Removing this instance from the seed list seems odd and makes it difficult to test out a single node cluster during dev/test.  Commenting out for now.
+        //seeds.remove(myInstance.getHostName());
+
         return seeds;
     }
 
     public boolean isSeed()
     {
-        populateRacMap();
-        String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
-        return myInstance.getHostName().equals(ip);
+        populateInstancesByAvailabilityZoneMultiMap();
+        String seedHostNameForAvailabilityZone = instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostName();
+        return myInstance.getHostName().equals(seedHostNameForAvailabilityZone);
     }
     
     public boolean isReplace(){

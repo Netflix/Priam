@@ -58,13 +58,13 @@ public class Restore extends AbstractRestore
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            String origToken = priamServer.getId().getInstance().getToken();
+            String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
             try
             {
                 if (backupConfiguration.isRestoreClosestToken())
                 {
                     restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    priamServer.getId().getInstance().setToken(restoreToken.toString());
+                    priamServer.getInstanceIdentity().getInstance().setToken(restoreToken.toString());
                 }
                 new RetryableCallable<Void>()
                 {
@@ -81,7 +81,7 @@ public class Restore extends AbstractRestore
             }
             finally
             {
-                priamServer.getId().getInstance().setToken(origToken);
+                priamServer.getInstanceIdentity().getInstance().setToken(origToken);
             }
         }
         SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());

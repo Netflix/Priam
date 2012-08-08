@@ -57,7 +57,7 @@ public class DoubleRing
         for (PriamInstance data : local)
         {
             int slot = (data.getId() - hash) * 2;
-            factory.create(data.getApp(), hash + slot, data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getRac(), data.getVolumes(), data.getToken());
+            factory.create(data.getApp(), hash + slot, data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
         }
 
         int new_ring_size = local.size() * 2;
@@ -67,7 +67,7 @@ public class DoubleRing
             int currentSlot = data.getId() - hash;
             int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
             String token = TokenManager.createToken(new_slot, new_ring_size, amazonConfiguration.getRegionName());
-            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), data.getRac(), null, token);
+            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), data.getAvailabilityZone(), null, token);
         }
     }
 
@@ -121,7 +121,7 @@ public class DoubleRing
             @SuppressWarnings("unchecked")
             List<PriamInstance> allInstances = (List<PriamInstance>) stream.readObject();
             for (PriamInstance data : allInstances)
-                factory.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getRac(), data.getVolumes(), data.getToken());
+                factory.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
             logger.info("Sucecsfully restored the Instances from the backup: " + TMP_BACKUP_FILE.getAbsolutePath());
         }
         finally

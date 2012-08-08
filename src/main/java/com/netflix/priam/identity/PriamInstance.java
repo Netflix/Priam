@@ -50,12 +50,12 @@ public class PriamInstance implements Serializable
         this.instanceId = instanceId;
     }
 
-    public String getRac()
+    public String getAvailabilityZone()
     {
         return availabilityZone;
     }
 
-    public void setRac(String availabilityZone)
+    public void setAvailabilityZone(String availabilityZone)
     {
         this.availabilityZone = availabilityZone;
     }
@@ -109,7 +109,7 @@ public class PriamInstance implements Serializable
     @Override
     public String toString()
     {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(),
+        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getDC(), getId(),
                 getToken());
     }
 

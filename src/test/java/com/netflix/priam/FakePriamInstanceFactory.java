@@ -39,7 +39,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
     {
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
-        ins.setRac(rac);
+        ins.setAvailabilityZone(rac);
         ins.setHost(hostname, ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);

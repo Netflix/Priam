@@ -19,6 +19,9 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
@@ -26,14 +29,9 @@ import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
-import org.apache.cassandra.db.compaction.CompactionInfo;
-import org.apache.cassandra.db.compaction.OperationType;
 import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.codehaus.jettison.json.JSONArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +50,7 @@ public class CassandraAdmin
     private static final String REST_HEADER_KEYSPACES = "keyspaces";
     private static final String REST_HEADER_CFS = "cfnames";
     private static final String REST_HEADER_TOKEN = "token";
-    private static final String REST_SUCCESS = "[\"ok\"]";
+    private static final Map<String, String> REST_SUCCESS = ImmutableMap.of("result", "ok");
 
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
 
@@ -70,7 +68,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/start")
-    public Response cassStart() throws IOException, InterruptedException, JSONException
+    public Response cassStart() throws IOException, InterruptedException
     {
         SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -78,7 +76,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/stop")
-    public Response cassStop() throws IOException, InterruptedException, JSONException
+    public Response cassStop() throws IOException, InterruptedException
     {
         SystemUtils.stopCassandra(cassandraConfiguration);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -86,7 +84,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/refresh")
-    public Response cassRefresh(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces) throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response cassRefresh(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces) throws IOException, ExecutionException, InterruptedException
     {
         logger.info("node tool refresh is being called");
         if (StringUtils.isBlank(keyspaces))
@@ -99,7 +97,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/info")
-    public Response cassInfo() throws IOException, InterruptedException, JSONException
+    public Response cassInfo() throws IOException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         logger.info("node tool info being called");
@@ -108,7 +106,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/ring/{id}")
-    public Response cassRing(@PathParam("id") String keyspace) throws IOException, InterruptedException, JSONException
+    public Response cassRing(@PathParam("id") String keyspace) throws IOException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         logger.info("node tool ring being called");
@@ -160,36 +158,36 @@ public class CassandraAdmin
     public Response version() throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
-        return Response.ok(new JSONArray().put(nodetool.getReleaseVersion()), MediaType.APPLICATION_JSON).build();
+        return Response.ok(ImmutableMap.of("version", nodetool.getReleaseVersion()), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path("/tpstats")
-    public Response tpstats() throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response tpstats() throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         Iterator<Map.Entry<String, JMXEnabledThreadPoolExecutorMBean>> threads = nodetool.getThreadPoolMBeanProxies();
-        JSONArray threadPoolArray = new JSONArray();
+        List<Map<String, Object>> threadPoolArray = Lists.newArrayList();
         while (threads.hasNext())
         {
             Entry<String, JMXEnabledThreadPoolExecutorMBean> thread = threads.next();
             JMXEnabledThreadPoolExecutorMBean threadPoolProxy = thread.getValue();
-            JSONObject tpObj = new JSONObject();// "Pool Name", "Active",
-                                                // "Pending", "Completed",
-                                                // "Blocked", "All time blocked"
+            Map<String, Object> tpObj = Maps.newHashMap();  // "Pool Name", "Active",
+                                                            // "Pending", "Completed",
+                                                            // "Blocked", "All time blocked"
             tpObj.put("pool name", thread.getKey());
             tpObj.put("active", threadPoolProxy.getActiveCount());
             tpObj.put("pending", threadPoolProxy.getPendingTasks());
             tpObj.put("completed", threadPoolProxy.getCompletedTasks());
             tpObj.put("blocked", threadPoolProxy.getCurrentlyBlockedTasks());
             tpObj.put("total blocked", threadPoolProxy.getTotalBlockedTasks());
-            threadPoolArray.put(tpObj);
+            threadPoolArray.add(tpObj);
         }
-        JSONObject droppedMsgs = new JSONObject();
+        Map<String, Object> droppedMsgs = Maps.newHashMap();
         for (Entry<String, Integer> entry : nodetool.getDroppedMessages().entrySet())
             droppedMsgs.put(entry.getKey(), entry.getValue());
 
-        JSONObject rootObj = new JSONObject();
+        Map<String, Object> rootObj = Maps.newHashMap();
         rootObj.put("thread pool", threadPoolArray);
         rootObj.put("dropped messages", droppedMsgs);
 
@@ -198,16 +196,16 @@ public class CassandraAdmin
 
     @GET
     @Path("/compactionstats")
-    public Response compactionStats() throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response compactionStats() throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
-        JSONObject rootObj = new JSONObject();
+        Map<String, Object> rootObj = Maps.newHashMap();
         CompactionManagerMBean cm = nodetool.getCompactionManagerProxy();
         rootObj.put("pending tasks", cm.getPendingTasks());
-        JSONArray compStats = new JSONArray();
+        List<Map<String, Object>> compStats = Lists.newArrayList();
         for (Map<String, String> c : cm.getCompactions())
         {
-            JSONObject cObj = new JSONObject();
+            Map<String, Object> cObj = Maps.newHashMap();
             cObj.put("id", c.get("id"));
             cObj.put("keyspace", c.get("keyspace"));
             cObj.put("columnfamily", c.get("columnfamily"));
@@ -216,7 +214,7 @@ public class CassandraAdmin
             cObj.put("taskType", c.get("taskType"));
             String percentComplete = new Long(c.get("totalBytes")) == 0 ? "n/a" : new DecimalFormat("0.00").format((double) new Long(c.get("bytesComplete")) / new Long(c.get("totalBytes")) * 100) + "%";
             cObj.put("progress", percentComplete);
-            compStats.put(cObj);
+            compStats.add(cObj);
         }
         rootObj.put("compaction stats", compStats);
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
@@ -260,24 +258,24 @@ public class CassandraAdmin
 
     @GET
     @Path("/statusthrift")
-    public Response statusthrift() throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response statusthrift() throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
-        return Response.ok(new JSONObject().put("status", (nodetool.isThriftServerRunning() ? "running" : "not running")), MediaType.APPLICATION_JSON).build();
+        return Response.ok(ImmutableMap.of("status", (nodetool.isThriftServerRunning() ? "running" : "not running")), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path("/gossipinfo")
-    public Response gossipinfo() throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response gossipinfo() throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
-        JSONObject rootObj = new JSONObject();
+        Map<String, Object> rootObj = Maps.newHashMap();
         String[] ginfo = nodetool.getGossipInfo().split("/");
         for (String info : ginfo)
         {
             String[] data = info.split("\n");
             String key = "";
-            JSONObject obj = new JSONObject();
+            Map<String, Object> obj = Maps.newHashMap();
             for (String element : data)
             {
                 String[] kv = element.split(":");
@@ -294,10 +292,10 @@ public class CassandraAdmin
 
     @GET
     @Path("/netstats")
-    public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException, JSONException
+    public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
-        JSONObject rootObj = new JSONObject();
+        Map<String, Object> rootObj = Maps.newHashMap();
         rootObj.put("mode", nodetool.getOperationMode());
         final InetAddress addr = (hostname == null) ? null : InetAddress.getByName(hostname);
         Set<InetAddress> hosts = addr == null ? nodetool.getStreamDestinations() : new HashSet<InetAddress>()
@@ -309,7 +307,7 @@ public class CassandraAdmin
         if (hosts.size() == 0)
             rootObj.put("sending", "Not sending any streams.");
 
-        JSONObject hostSendStats = new JSONObject();
+        Map<String, Object> hostSendStats = Maps.newHashMap();
         for (InetAddress host : hosts)
         {
             try
@@ -317,9 +315,9 @@ public class CassandraAdmin
                 List<String> files = nodetool.getFilesDestinedFor(host);
                 if (files.size() > 0)
                 {
-                    JSONArray fObj = new JSONArray();
+                    List<String> fObj = Lists.newArrayList();
                     for (String file : files)
-                        fObj.put(file);
+                        fObj.add(file);
                     hostSendStats.put(host.getHostAddress(), fObj);
                 }
             }
@@ -339,7 +337,7 @@ public class CassandraAdmin
         if (hosts.size() == 0)
             rootObj.put("receiving", "Not receiving any streams.");
 
-        JSONObject hostRecvStats = new JSONObject();
+        Map<String, Object> hostRecvStats = Maps.newHashMap();
         for (InetAddress host : hosts)
         {
             try
@@ -347,9 +345,9 @@ public class CassandraAdmin
                 List<String> files = nodetool.getIncomingFiles(host);
                 if (files.size() > 0)
                 {
-                    JSONArray fObj = new JSONArray();
+                    List<String> fObj = Lists.newArrayList();
                     for (String file : files)
-                        fObj.put(file);
+                        fObj.add(file);
                     hostRecvStats.put(host.getHostAddress(), fObj);
                 }
             }
@@ -369,7 +367,7 @@ public class CassandraAdmin
         completed = 0;
         for (long n : ms.getCommandCompletedTasks().values())
             completed += n;
-        JSONObject cObj = new JSONObject();
+        Map<String, Object> cObj = Maps.newHashMap();
         cObj.put("active", "n/a");
         cObj.put("pending", pending);
         cObj.put("completed", completed);
@@ -381,7 +379,7 @@ public class CassandraAdmin
         completed = 0;
         for (long n : ms.getResponseCompletedTasks().values())
             completed += n;
-        JSONObject rObj = new JSONObject();
+        Map<String, Object> rObj = Maps.newHashMap();
         rObj.put("active", "n/a");
         rObj.put("pending", pending);
         rObj.put("completed", completed);
@@ -400,8 +398,8 @@ public class CassandraAdmin
 
     @GET
     @Path("/scrub")
-    public Response scrub(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces, @QueryParam(REST_HEADER_CFS) String cfnames) throws IOException, ExecutionException, InterruptedException,
-            ConfigurationException
+    public Response scrub(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces, @QueryParam(REST_HEADER_CFS) String cfnames)
+            throws IOException, ExecutionException, InterruptedException, ConfigurationException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         String[] cfs = null;
@@ -416,8 +414,8 @@ public class CassandraAdmin
 
     @GET
     @Path("/cfhistograms")
-    public Response cfhistograms(@QueryParam(REST_HEADER_KEYSPACES) String keyspace, @QueryParam(REST_HEADER_CFS) String cfname) throws IOException, ExecutionException, InterruptedException,
-            JSONException
+    public Response cfhistograms(@QueryParam(REST_HEADER_KEYSPACES) String keyspace, @QueryParam(REST_HEADER_CFS) String cfname)
+            throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         if (StringUtils.isBlank(keyspace) || StringUtils.isBlank(cfname))
@@ -428,32 +426,26 @@ public class CassandraAdmin
         // default is 90 offsets
         long[] offsets = new EstimatedHistogram().getBucketOffsets();
 
-        long[] rrlh = store.getRecentReadLatencyHistogramMicros();
-        long[] rwlh = store.getRecentWriteLatencyHistogramMicros();
-        long[] sprh = store.getRecentSSTablesPerReadHistogram();
-        long[] ersh = store.getEstimatedRowSizeHistogram();
-        long[] ecch = store.getEstimatedColumnCountHistogram();
+        long[] recentReadLatencyHistMicros = store.getRecentReadLatencyHistogramMicros();
+        long[] recentWriteLatencyHistMicros = store.getRecentWriteLatencyHistogramMicros();
+        long[] recentSSTablesPerReadHist = store.getRecentSSTablesPerReadHistogram();
+        long[] estimatedRowSizeHist = store.getEstimatedRowSizeHistogram();
+        long[] estimatedColumnCountHist = store.getEstimatedColumnCountHistogram();
 
-        JSONObject rootObj = new JSONObject();
-        JSONArray columns = new JSONArray();
-        columns.put("offset");
-        columns.put("sstables");
-        columns.put("write latency");
-        columns.put("read latency");
-        columns.put("row size");
-        columns.put("column count");
+        Map<String, Object> rootObj = Maps.newHashMap();
+        List<String> columns = ImmutableList.of("offset", "sstables", "write latency", "read latency", "row size", "column count");
         rootObj.put("columns", columns);
-        JSONArray values = new JSONArray();
+        List<Object> values = Lists.newArrayList();
         for (int i = 0; i < offsets.length; i++)
         {
-            JSONArray row = new JSONArray();
-            row.put(offsets[i]);
-            row.put(i < sprh.length ? sprh[i] : "");
-            row.put(i < rwlh.length ? rwlh[i] : "");
-            row.put(i < rrlh.length ? rrlh[i] : "");
-            row.put(i < ersh.length ? ersh[i] : "");
-            row.put(i < ecch.length ? ecch[i] : "");
-            values.put(row);
+            List<Object> row = Lists.newArrayList();
+            row.add(offsets[i]);
+            row.add(i < recentSSTablesPerReadHist.length ? recentSSTablesPerReadHist[i] : "");
+            row.add(i < recentWriteLatencyHistMicros.length ? recentWriteLatencyHistMicros[i] : "");
+            row.add(i < recentReadLatencyHistMicros.length ? recentReadLatencyHistMicros[i] : "");
+            row.add(i < estimatedRowSizeHist.length ? estimatedRowSizeHist[i] : "");
+            row.add(i < estimatedColumnCountHist.length ? estimatedColumnCountHist[i] : "");
+            values.add(row);
         }
         rootObj.put("values", values);
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();

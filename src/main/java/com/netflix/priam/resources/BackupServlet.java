@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -12,11 +13,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.google.common.collect.Maps;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -150,7 +151,7 @@ public class BackupServlet
             endTime = path.getFormat().parse(restore[1]);
         }
         Iterator<AbstractBackupPath> it = fs.list(backupConfiguration.getS3BucketName(), startTime, endTime);
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = Maps.newHashMap();
         while (it.hasNext())
         {
             AbstractBackupPath p = it.next();
@@ -158,7 +159,7 @@ public class BackupServlet
                 continue;
             object.put(p.getRemotePath(), p.getFormat().format(p.getTime()));
         }
-        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(object, MediaType.APPLICATION_JSON).build();
     }
 
     @GET
@@ -169,12 +170,12 @@ public class BackupServlet
         logger.debug("Thread counts for backup is: %d", restoreTCount);
         int backupTCount = fs.getActivecount();
         logger.debug("Thread counts for restore is: %d", backupTCount);
-        JSONObject object = new JSONObject();
+        Map<String, Object> object = Maps.newHashMap();
         object.put("Restore", new Integer(restoreTCount));
         object.put("Status", restoreObj.state().toString());
         object.put("Backup", new Integer(backupTCount));
         object.put("Status", snapshotBackup.state().toString());
-        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(object, MediaType.APPLICATION_JSON).build();
     }
 
     /**
@@ -195,19 +196,19 @@ public class BackupServlet
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
     {
         String origRegion = amazonConfiguration.getRegionName();
-        String origToken = priamServer.getId().getInstance().getToken();
+        String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
         if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+            priamServer.getInstanceIdentity().getInstance().setToken(token);
 
         if(backupConfiguration.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), origRegion));
+            priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), origRegion));
         
         if (StringUtils.isNotBlank(region))
         {
             amazonConfiguration.setRegionName(region);
             logger.info("Restoring from region " + region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
+            priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), region));
+            logger.info("Restore will use token " + priamServer.getInstanceIdentity().getInstance().getToken());
         }
 
         setRestoreKeyspaces(keyspaces);
@@ -219,7 +220,7 @@ public class BackupServlet
         finally
         {
             amazonConfiguration.setRegionName(origRegion);
-            priamServer.getId().getInstance().setToken(origToken);
+            priamServer.getInstanceIdentity().getInstance().setToken(origToken);
         }
         tuneCassandra.updateYaml(false);
         SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());

@@ -183,6 +183,7 @@ public class InstanceIdentity
             if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostName().equals(myInstance.getHostName()))
                 seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
         }
+        logger.info("Retrieved seeds. My hostname: {}, LOCMap: {}", myInstance.getHostName(), locMap);
         for (String loc : locMap.keySet())
             seeds.add(locMap.get(loc).get(0).getHostName());
         seeds.remove(myInstance.getHostName());

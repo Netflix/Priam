@@ -53,23 +53,23 @@ amazon:
 
 
 backup:
-  autoRestoreSnapshotName:           # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
-  chunkSizeMB: 10                    # Preferred data part size for multi part uploads to s3
-  hour: 2                            # Backup hour for snapshot backups (0 - 23)
-  availabilityZonesToBackup:         # Get list of availability zones to backup. Backup all zones if empty
-  retentionDays: 0                   # Get Backup retention in days. Set to 0 to avoid any expiration of the backups from S3
-  backupThreads: 2                   # Number of backup threads for uploading
-  restoreThreads: 8                  # Number of restore threads for downloading
-  s3BucketName: "cassandra-archive"  # S3 bucket for storing backups
-  s3BaseDir: "backup"                # Folder within the S3 bucket for backups
-  commitLogEnabled: false            # true if commit log backup is enabled
-  commitLogLocation:                 # Remote commit log location for backups
-  incrementalEnabled: true           # true if incremental backups are enabled
-  multiThreadedCompaction: false     # When enabled, each compaction will use up to one thread per core, plus one thread per sstable being merged.
-                                     # This is usually only useful for SSD-based hardware: otherwise, your concern is usually to get compaction to do LESS i/o
-  restoreClosestToken: false         #    true if restore should search for nearest token if current token is not found
-  restoreKeyspaces:                  # List of keyspaces to restore. If none, all keyspaces are restored.
-  restorePrefix:                     # Location containing backup files. Typically bucket name followed by path to the clusters backup
-  streamingThroughputMbps: 400       # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
-                                     #    can lead to saturating the network connection and degrading rpc performance.
-  uploadThrottleBytesPerSec: 2147483648  # Bytes per second to throttle for backups
+  autoRestoreSnapshotName:                          # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
+  chunkSizeMB: 10                                   # Preferred data part size for multi part uploads to s3
+  hour: 2                                           # Backup hour for snapshot backups (0 - 23)
+  availabilityZonesToBackup:                        # Get list of availability zones to backup. Backup all zones if empty
+  retentionDays: 0                                  # Get Backup retention in days. Set to 0 to avoid any expiration of the backups from S3
+  backupThreads: 2                                  # Number of backup threads for uploading
+  restoreThreads: 8                                 # Number of restore threads for downloading
+  s3BucketName: "cassandra-archive"                 # S3 bucket for storing backups
+  s3BaseDir: "dev/backup"                           # Folder within the S3 bucket for backups
+  commitLogEnabled: false                           # true if commit log backup is enabled
+  commitLogLocation: /var/lib/cassandra/commitlog   # Remote commit log location for backups
+  incrementalEnabled: true                          # true if incremental backups are enabled
+  multiThreadedCompaction: false                    # When enabled, each compaction will use up to one thread per core, plus one thread per sstable being merged.
+                                                    # This is usually only useful for SSD-based hardware: otherwise, your concern is usually to get compaction to do LESS i/o
+  restoreClosestToken: false                        #    true if restore should search for nearest token if current token is not found
+  restoreKeyspaces:                                 # List of keyspaces to restore. If none, all keyspaces are restored.
+  restorePrefix:                                    # Location containing backup files. Typically bucket name followed by path to the clusters backup
+  streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
+                                                    #    can lead to saturating the network connection and degrading rpc performance.
+  uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups

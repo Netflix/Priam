@@ -17,6 +17,7 @@ import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -50,9 +51,11 @@ public class PriamServer implements Managed
 
     @Override
     public void start() throws Exception
-    {     
+    {
         if (id.getInstance().isOutOfService())
+        {
             return;
+        }
 
         // start to schedule jobs
         scheduler.start();
@@ -73,7 +76,7 @@ public class PriamServer implements Managed
         scheduler.runTaskNow(TuneCassandra.class);
 
         // restore from backup else start cassandra.
-        if (!backupConfig.getAutoRestoreSnapshotName().equals(""))
+        if (StringUtils.isNotBlank(backupConfig.getAutoRestoreSnapshotName()))
         {
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
         }

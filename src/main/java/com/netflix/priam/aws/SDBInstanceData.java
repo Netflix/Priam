@@ -16,6 +16,8 @@ import com.google.inject.Singleton;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.PriamInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Date;
@@ -43,6 +45,8 @@ public class SDBInstanceData
         public final static String HOSTNAME = "hostname";
     }
 
+    private static final Logger logger = LoggerFactory.getLogger(SDBInstanceData.class);
+
     private final ICredential provider;
     private final AmazonConfiguration amazonConfiguration;
     
@@ -67,6 +71,7 @@ public class SDBInstanceData
 
     private void createDomain()
     {
+        logger.info("Creating SimpleDB domain '{}'", amazonConfiguration.getSimpleDbDomain());
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         CreateDomainRequest request = new CreateDomainRequest(amazonConfiguration.getSimpleDbDomain());
         simpleDBClient.createDomain(request);
@@ -86,7 +91,9 @@ public class SDBInstanceData
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0)
             return null;
-        return transform(result.getItems().get(0));
+        PriamInstance priamInstance = transform(result.getItems().get(0));
+        logger.info("Retrieved instance from SimpleDB: {}", priamInstance);
+        return priamInstance;
     }
 
     /**
@@ -110,7 +117,9 @@ public class SDBInstanceData
             Iterator<Item> itemiter = result.getItems().iterator();
             while (itemiter.hasNext())
             {
-                inslist.add(transform(itemiter.next()));
+                PriamInstance priamInstance = transform(itemiter.next());
+                logger.info("Retrieved PriamInstance from app '{}': {}", app, priamInstance);
+                inslist.add(priamInstance);
             }
 
         } while (nextToken != null);
@@ -125,6 +134,7 @@ public class SDBInstanceData
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException
     {
+        logger.info("Creating PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
@@ -138,6 +148,7 @@ public class SDBInstanceData
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException
     {
+        logger.info("Registering PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
@@ -155,12 +166,13 @@ public class SDBInstanceData
      */
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException
     {
+        logger.info("De-Registering PriamInstance from SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         DeleteAttributesRequest delReq = new DeleteAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 
-    protected List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance)
+    private List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance)
     {
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
@@ -176,7 +188,7 @@ public class SDBInstanceData
         return attrs;
     }
 
-    protected List<Attribute> createAttributesToDeRegister(PriamInstance instance)
+    private List<Attribute> createAttributesToDeRegister(PriamInstance instance)
     {
         List<Attribute> attrs = new ArrayList<Attribute>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
@@ -197,7 +209,7 @@ public class SDBInstanceData
      * @param item
      * @return
      */
-    public PriamInstance transform(Item item)
+    private PriamInstance transform(Item item)
     {
         PriamInstance ins = new PriamInstance();
         Iterator<Attribute> attrs = item.getAttributes().iterator();

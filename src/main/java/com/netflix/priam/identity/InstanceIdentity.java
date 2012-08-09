@@ -132,8 +132,7 @@ public class InstanceIdentity {
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(15000));
             int hash = TokenManager.regionOffset(amazonConfiguration.getRegionName());
-            // use this hash so that the nodes are spred far away from the other
-            // regions.
+            // use this hash so that the nodes are spread far away from the other regions.
 
             int max = hash;
             for (PriamInstance data : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {

@@ -7,7 +7,7 @@ import java.util.Map;
  * Interface for managing Cassandra instance data. Provides functionality
  * to register, update, delete or list instances from the registry
  */
-public interface IPriamInstanceFactory {
+public interface IPriamInstanceRegistry {
     /**
      * Return a list of all Cassandra server nodes registered.
      *

@@ -1,12 +1,12 @@
 package com.netflix.priam.backup.identity;
 
 import com.netflix.priam.FakeMembership;
-import com.netflix.priam.FakePriamInstanceFactory;
+import com.netflix.priam.FakePriamInstanceRegistry;
 import com.netflix.priam.TestAmazonConfiguration;
 import com.netflix.priam.TestBackupConfiguration;
 import com.netflix.priam.TestCassandraConfiguration;
 import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
@@ -25,7 +25,7 @@ public abstract class InstanceTestUtils
     TestCassandraConfiguration cassandraConfiguration;
     TestAmazonConfiguration amazonConfiguration;
     TestBackupConfiguration backupConfiguration;
-    IPriamInstanceFactory factory;
+    IPriamInstanceRegistry instanceRegistry;
     InstanceIdentity identity;
     Sleeper sleeper;
 
@@ -46,7 +46,7 @@ public abstract class InstanceTestUtils
         cassandraConfiguration = new TestCassandraConfiguration("fake-app");
         amazonConfiguration = new TestAmazonConfiguration("fake-app", "fake", "az1", "fakeinstance1");
         backupConfiguration = new TestBackupConfiguration();
-        factory = new FakePriamInstanceFactory(amazonConfiguration);
+        instanceRegistry = new FakePriamInstanceRegistry(amazonConfiguration);
         sleeper = new FakeSleeper();
     }
 
@@ -70,6 +70,6 @@ public abstract class InstanceTestUtils
         amazonConfiguration.setAvailabilityZone(zone);
         amazonConfiguration.setInstanceID(instanceId);
         amazonConfiguration.setPrivateHostName(instanceId);
-        return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, factory, membership, sleeper);
+        return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, instanceRegistry, membership, sleeper);
     }
 }

@@ -18,7 +18,7 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.TuneCassandra;
@@ -44,14 +44,14 @@ public class BackupServletTest
     private @Mocked Provider<AbstractBackupPath> pathProvider;
     private @Mocked TuneCassandra tuneCassandra;
     private @Mocked SnapshotBackup snapshotBackup;
-    private @Mocked IPriamInstanceFactory factory;
+    private @Mocked IPriamInstanceRegistry instanceRegistry;
     private BackupServlet resource;
 
     @Before
     public void setUp()
     {
         resource = new BackupServlet(priamServer, cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup, factory);
+            tuneCassandra, snapshotBackup, instanceRegistry);
     }
 
     @Test
@@ -169,22 +169,22 @@ public class BackupServletTest
 //            @NonStrict PriamInstance instance1, instance2, instance3;
 //  
 //            {
-//                cassandraConfiguration.getDC(); result = oldRegion;
+//                cassandraConfiguration.getRegionName(); result = oldRegion;
 //                priamServer.getInstanceIdentity(); result = identity; times = 3;
 //                identity.getInstance(); result = instance; times = 3;
 //                instance.getToken(); result = oldToken;
 //
 //                cassandraConfiguration.isRestoreClosestToken(); result = false;
 //                
-//                cassandraConfiguration.setDC(newRegion);
+//                cassandraConfiguration.setRegionName(newRegion);
 //                instance.getToken(); result = oldToken;
 //                cassandraConfiguration.getAppName(); result = appName;
-//                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
-//                instance.getDC();  result = oldRegion;
+//                instanceRegistry.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
+//                instance.getRegionName();  result = oldRegion;
 //                instance.getToken(); result = oldToken;
-//                instance1.getDC(); result = oldRegion;
-//                instance2.getDC(); result = oldRegion;
-//                instance3.getDC(); result = oldRegion;
+//                instance1.getRegionName(); result = oldRegion;
+//                instance2.getRegionName(); result = oldRegion;
+//                instance3.getRegionName(); result = oldRegion;
 //                instance1.getToken(); result = "1234";
 //                instance2.getToken(); result = "5678";
 //                instance3.getToken(); result = "9000";
@@ -192,7 +192,7 @@ public class BackupServletTest
 //
 //                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 //  
-//                cassandraConfiguration.setDC(oldRegion);
+//                cassandraConfiguration.setRegionName(oldRegion);
 //                instance.setToken(oldToken);
 //                tuneCassandra.updateYaml(false);
 //            }
@@ -322,12 +322,12 @@ public class BackupServletTest
                 backupConfiguration.isRestoreClosestToken(); result = true;
                 instance.getToken(); result = oldToken;
                 cassandraConfiguration.getClusterName(); result = appName;
-                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
-                instance.getDC();  result = oldRegion;
+                instanceRegistry.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
+                instance.getRegionName();  result = oldRegion;
                 instance.getToken(); result = oldToken;
-                instance1.getDC(); result = oldRegion;
-                instance2.getDC(); result = oldRegion;
-                instance3.getDC(); result = oldRegion;
+                instance1.getRegionName(); result = oldRegion;
+                instance2.getRegionName(); result = oldRegion;
+                instance3.getRegionName(); result = oldRegion;
                 instance1.getToken(); result = "1234";
                 instance2.getToken(); result = "5678";
                 instance3.getToken(); result = "9000";

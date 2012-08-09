@@ -14,7 +14,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.SystemUtils;
@@ -55,7 +55,7 @@ public class BackupServlet {
     private Provider<AbstractBackupPath> pathProvider;
     private TuneCassandra tuneCassandra;
     private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory priamInstanceFactory;
+    private IPriamInstanceRegistry instanceRegistry;
     @Inject
     private PriamScheduler scheduler;
 
@@ -74,7 +74,7 @@ public class BackupServlet {
                          Provider<AbstractBackupPath> pathProvider,
                          TuneCassandra tunecassandra,
                          SnapshotBackup snapshotBackup,
-                         IPriamInstanceFactory priamInstanceFactory) {
+                         IPriamInstanceRegistry instanceRegistry) {
         this.priamServer = priamServer;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
@@ -84,7 +84,7 @@ public class BackupServlet {
         this.pathProvider = pathProvider;
         this.tuneCassandra = tunecassandra;
         this.snapshotBackup = snapshotBackup;
-        this.priamInstanceFactory = priamInstanceFactory;
+        this.instanceRegistry = instanceRegistry;
     }
 
     @GET
@@ -208,10 +208,10 @@ public class BackupServlet {
      * Find closest token in the specified region
      */
     private String closestToken(String token, String region) {
-        List<PriamInstance> plist = priamInstanceFactory.getAllIds(cassandraConfiguration.getClusterName());
+        List<PriamInstance> plist = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
         List<BigInteger> tokenList = Lists.newArrayList();
         for (PriamInstance ins : plist) {
-            if (ins.getDC().equalsIgnoreCase(region)) {
+            if (ins.getRegionName().equalsIgnoreCase(region)) {
                 tokenList.add(new BigInteger(ins.getToken()));
             }
         }

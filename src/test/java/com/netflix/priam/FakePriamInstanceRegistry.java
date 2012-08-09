@@ -9,16 +9,16 @@ import java.util.Map;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.PriamInstance;
 
-public class FakePriamInstanceFactory implements IPriamInstanceFactory
+public class FakePriamInstanceRegistry implements IPriamInstanceRegistry
 {
     private final Map<Integer,PriamInstance> instances = Maps.newHashMap();
     private final AmazonConfiguration config;
 
     @Inject
-    public FakePriamInstanceFactory(AmazonConfiguration config)
+    public FakePriamInstanceRegistry(AmazonConfiguration config)
     {
         this.config = config;
     }
@@ -45,7 +45,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
         ins.setInstanceId(instanceID);
         ins.setToken(payload);
         ins.setVolumes(volumes);
-        ins.setDC(config.getRegionName());
+        ins.setRegionName(config.getRegionName());
         instances.put(id, ins);
         return ins;
     }

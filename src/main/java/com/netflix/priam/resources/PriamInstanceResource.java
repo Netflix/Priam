@@ -2,7 +2,7 @@ package com.netflix.priam.resources;
 
 import com.google.inject.Inject;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.PriamInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,12 +29,12 @@ public class PriamInstanceResource {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final CassandraConfiguration cassandraConfiguration;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceRegistry instanceRegistry;
 
     @Inject
-    public PriamInstanceResource(CassandraConfiguration cassandraConfiguration, IPriamInstanceFactory factory) {
+    public PriamInstanceResource(CassandraConfiguration cassandraConfiguration, IPriamInstanceRegistry instanceRegistry) {
         this.cassandraConfiguration = cassandraConfiguration;
-        this.factory = factory;
+        this.instanceRegistry = instanceRegistry;
     }
 
     /**
@@ -45,7 +45,7 @@ public class PriamInstanceResource {
     @GET
     public String getInstances() {
         StringBuilder response = new StringBuilder();
-        for (PriamInstance node : factory.getAllIds(cassandraConfiguration.getClusterName())) {
+        for (PriamInstance node : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
             response.append(node.toString());
             response.append("\n");
         }
@@ -79,7 +79,7 @@ public class PriamInstanceResource {
             @QueryParam ("rack") String rack, @QueryParam ("token") String token) {
         log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
                 new Object[] {id, instanceID, hostname, ip, rack, token});
-        PriamInstance instance = factory.create(cassandraConfiguration.getClusterName(), id, instanceID, hostname, ip, rack, null, token);
+        PriamInstance instance = instanceRegistry.create(cassandraConfiguration.getClusterName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();
     }
@@ -95,7 +95,7 @@ public class PriamInstanceResource {
     @Path ("{id}")
     public Response deleteInstance(@PathParam ("id") int id) {
         PriamInstance instance = getByIdIfFound(id);
-        factory.delete(instance);
+        instanceRegistry.delete(instance);
         return Response.noContent().build();
     }
 
@@ -108,7 +108,7 @@ public class PriamInstanceResource {
      * @throws WebApplicationException (400)
      */
     private PriamInstance getByIdIfFound(int id) {
-        PriamInstance instance = factory.getInstance(cassandraConfiguration.getClusterName(), id);
+        PriamInstance instance = instanceRegistry.getInstance(cassandraConfiguration.getClusterName(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
         }

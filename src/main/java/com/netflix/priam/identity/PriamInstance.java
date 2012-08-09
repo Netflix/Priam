@@ -13,8 +13,8 @@ public class PriamInstance implements Serializable {
     private int Id;
     private String instanceId;
     private String availabilityZone;
-    private String publicip;
-    private String location;
+    private String hostIp;
+    private String regionName;
     private String token;
     //Handles Storage objects
     private Map<String, Object> volumes;
@@ -56,20 +56,20 @@ public class PriamInstance implements Serializable {
     }
 
     public String getHostIP() {
-        return publicip;
+        return hostIp;
     }
 
-    public void setHost(String hostname, String publicip) {
+    public void setHost(String hostname, String hostIp) {
         this.hostname = hostname;
-        this.publicip = publicip;
+        this.hostIp = hostIp;
     }
 
     public void setHost(String hostname) {
         this.hostname = hostname;
     }
 
-    public void setHostIP(String publicip) {
-        this.publicip = publicip;
+    public void setHostIP(String hostIp) {
+        this.hostIp = hostIp;
     }
 
     public String getToken() {
@@ -90,16 +90,16 @@ public class PriamInstance implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getDC(), getId(),
+        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getRegionName(), getId(),
                 getToken());
     }
 
-    public String getDC() {
-        return location;
+    public String getRegionName() {
+        return regionName;
     }
 
-    public void setDC(String location) {
-        this.location = location;
+    public void setRegionName(String regionName) {
+        this.regionName = regionName;
     }
 
     public long getUpdatetime() {

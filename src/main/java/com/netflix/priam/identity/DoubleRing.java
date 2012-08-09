@@ -27,13 +27,13 @@ public class DoubleRing {
     private static File TMP_BACKUP_FILE;
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceRegistry instanceRegistry;
 
     @Inject
-    public DoubleRing(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceFactory factory) {
+    public DoubleRing(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceRegistry instanceRegistry) {
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
-        this.factory = factory;
+        this.instanceRegistry = instanceRegistry;
     }
 
     /**
@@ -42,36 +42,51 @@ public class DoubleRing {
      * assigned per token logic.
      */
     public void doubleSlots() {
-        List<PriamInstance> local = filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName()));
+        List<PriamInstance> instancesInRegion = filteredRemote(instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()));
 
-        // delete all
-        for (PriamInstance data : local) {
-            factory.delete(data);
+        // Remove all instances in this region from the registry
+        for (PriamInstance priamInstance : instancesInRegion) {
+            instanceRegistry.delete(priamInstance);
         }
 
-        int hash = TokenManager.regionOffset(amazonConfiguration.getRegionName());
+        int regionOffsetHash = TokenManager.regionOffset(amazonConfiguration.getRegionName());
+
         // move existing slots.
-        for (PriamInstance data : local) {
-            int slot = (data.getId() - hash) * 2;
-            factory.create(data.getApp(), hash + slot, data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
+        for (PriamInstance priamInstance : instancesInRegion) {
+            int slot = (priamInstance.getId() - regionOffsetHash) * 2;
+            instanceRegistry.create(priamInstance.getApp(),
+                                    regionOffsetHash + slot,
+                                    priamInstance.getInstanceId(),
+                                    priamInstance.getHostName(),
+                                    priamInstance.getHostIP(),
+                                    priamInstance.getAvailabilityZone(),
+                                    priamInstance.getVolumes(),
+                                    priamInstance.getToken());
         }
 
-        int new_ring_size = local.size() * 2;
-        for (PriamInstance data : filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName()))) {
+        int newRingSize = instancesInRegion.size() * 2;
+        for (PriamInstance data : filteredRemote(instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()))) {
             // if max then rotate.
-            int currentSlot = data.getId() - hash;
-            int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
-            String token = TokenManager.createToken(new_slot, new_ring_size, amazonConfiguration.getRegionName());
-            factory.create(data.getApp(), new_slot + hash, "new_slot", amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), data.getAvailabilityZone(), null, token);
+            int currentSlot = data.getId() - regionOffsetHash;
+            int newSlot = currentSlot + 3 > newRingSize ? (currentSlot + 3) - newRingSize : currentSlot + 3;
+            String token = TokenManager.createToken(newSlot, newRingSize, amazonConfiguration.getRegionName());
+            instanceRegistry.create(data.getApp(),
+                                    newSlot + regionOffsetHash,
+                                    "new_slot",
+                                    amazonConfiguration.getPrivateHostName(),
+                                    amazonConfiguration.getPrivateIP(),
+                                    data.getAvailabilityZone(),
+                                    null,
+                                    token);
         }
     }
 
     // filter other DC's
-    private List<PriamInstance> filteredRemote(List<PriamInstance> lst) {
+    private List<PriamInstance> filteredRemote(List<PriamInstance> priamInstances) {
         List<PriamInstance> local = Lists.newArrayList();
-        for (PriamInstance data : lst) {
-            if (data.getDC().equals(amazonConfiguration.getRegionName())) {
-                local.add(data);
+        for (PriamInstance priamInstance : priamInstances) {
+            if (priamInstance.getRegionName().equals(amazonConfiguration.getRegionName())) {
+                local.add(priamInstance);
             }
         }
         return local;
@@ -86,7 +101,7 @@ public class DoubleRing {
         OutputStream out = new FileOutputStream(TMP_BACKUP_FILE);
         ObjectOutputStream stream = new ObjectOutputStream(out);
         try {
-            stream.writeObject(filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName())));
+            stream.writeObject(filteredRemote(instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())));
             logger.info("Wrote the backup of the instances to: " + TMP_BACKUP_FILE.getAbsolutePath());
         } finally {
             IOUtils.closeQuietly(stream);
@@ -101,8 +116,8 @@ public class DoubleRing {
      * @throws ClassNotFoundException
      */
     public void restore() throws IOException, ClassNotFoundException {
-        for (PriamInstance data : filteredRemote(factory.getAllIds(cassandraConfiguration.getClusterName()))) {
-            factory.delete(data);
+        for (PriamInstance data : filteredRemote(instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()))) {
+            instanceRegistry.delete(data);
         }
 
         // read from the file.
@@ -112,7 +127,7 @@ public class DoubleRing {
             @SuppressWarnings ("unchecked")
             List<PriamInstance> allInstances = (List<PriamInstance>) stream.readObject();
             for (PriamInstance data : allInstances) {
-                factory.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
+                instanceRegistry.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
             }
             logger.info("Sucecsfully restored the Instances from the backup: " + TMP_BACKUP_FILE.getAbsolutePath());
         } finally {

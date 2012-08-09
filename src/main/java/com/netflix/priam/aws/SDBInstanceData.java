@@ -170,7 +170,7 @@ public class SDBInstanceData {
         attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getAvailabilityZone(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ELASTIC_IP, instance.getHostIP(), true));
         attrs.add(new ReplaceableAttribute(Attributes.HOSTNAME, instance.getHostName(), true));
-        attrs.add(new ReplaceableAttribute(Attributes.LOCATION, instance.getDC(), true));
+        attrs.add(new ReplaceableAttribute(Attributes.LOCATION, instance.getRegionName(), true));
         attrs.add(new ReplaceableAttribute(Attributes.UPDATE_TS, Long.toString(instance.getUpdatetime()), true));
         return attrs;
     }
@@ -184,7 +184,7 @@ public class SDBInstanceData {
         attrs.add(new Attribute(Attributes.AVAILABILITY_ZONE, instance.getAvailabilityZone()));
         attrs.add(new Attribute(Attributes.ELASTIC_IP, instance.getHostIP()));
         attrs.add(new Attribute(Attributes.HOSTNAME, instance.getHostName()));
-        attrs.add(new Attribute(Attributes.LOCATION, instance.getDC()));
+        attrs.add(new Attribute(Attributes.LOCATION, instance.getRegionName()));
         attrs.add(new Attribute(Attributes.UPDATE_TS, Long.toString(instance.getUpdatetime())));
         return attrs;
     }
@@ -215,7 +215,7 @@ public class SDBInstanceData {
             } else if (att.getName().equals(Attributes.HOSTNAME)) {
                 ins.setHost(att.getValue());
             } else if (att.getName().equals(Attributes.LOCATION)) {
-                ins.setDC(att.getValue());
+                ins.setRegionName(att.getValue());
             } else if (att.getName().equals(Attributes.UPDATE_TS)) {
                 ins.setUpdatetime(Long.parseLong(att.getValue()));
             }

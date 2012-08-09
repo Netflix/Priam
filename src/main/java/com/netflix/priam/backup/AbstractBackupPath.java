@@ -38,14 +38,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected Date time;
     protected long size;
 
-    protected final InstanceIdentity factory;
+    protected final InstanceIdentity instanceIdentity;
     protected final CassandraConfiguration cassandraConfiguration;
     protected final AmazonConfiguration amazonConfiguration;
     protected final BackupConfiguration backupConfiguration;
     protected File backupFile;
 
-    public AbstractBackupPath(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration, InstanceIdentity factory) {
-        this.factory = factory;
+    public AbstractBackupPath(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration, InstanceIdentity instanceIdentity) {
+        this.instanceIdentity = instanceIdentity;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.backupConfiguration = backupConfiguration;
@@ -69,7 +69,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.clusterName = cassandraConfiguration.getClusterName();
         this.baseDir = backupConfiguration.getS3BaseDir();
         this.region = amazonConfiguration.getRegionName();
-        this.token = factory.getInstance().getToken();
+        this.token = instanceIdentity.getInstance().getToken();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL) {
             this.keyspace = elements[0];

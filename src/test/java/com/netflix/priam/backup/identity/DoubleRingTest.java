@@ -17,10 +17,10 @@ public class DoubleRingTest extends InstanceTestUtils
     public void testDouble() throws Exception
     {
         createInstances();
-        int originalSize = factory.getAllIds(cassandraConfiguration.getClusterName()).size();
-        new DoubleRing(cassandraConfiguration, amazonConfiguration, factory).doubleSlots();
-        List<PriamInstance> doubled = factory.getAllIds(cassandraConfiguration.getClusterName());
-        factory.sort(doubled);
+        int originalSize = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size();
+        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry).doubleSlots();
+        List<PriamInstance> doubled = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
+        instanceRegistry.sort(doubled);
 
         assertEquals(originalSize * 2, doubled.size());
         validate(doubled);
@@ -50,12 +50,12 @@ public class DoubleRingTest extends InstanceTestUtils
     public void testBR() throws Exception
     {
         createInstances();
-        int intialSize = factory.getAllIds(cassandraConfiguration.getClusterName()).size();
-        DoubleRing ring = new DoubleRing(cassandraConfiguration, amazonConfiguration, factory);
+        int intialSize = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size();
+        DoubleRing ring = new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry);
         ring.backup();
         ring.doubleSlots();
-        assertEquals(intialSize * 2, factory.getAllIds(cassandraConfiguration.getClusterName()).size());
+        assertEquals(intialSize * 2, instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size());
         ring.restore();
-        assertEquals(intialSize, factory.getAllIds(cassandraConfiguration.getClusterName()).size());
+        assertEquals(intialSize, instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size());
     }
 }

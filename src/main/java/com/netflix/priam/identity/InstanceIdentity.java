@@ -33,7 +33,7 @@ public class InstanceIdentity {
             return Lists.newArrayList();
         }
     });
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceRegistry instanceRegistry;
     private final IMembership membership;
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
@@ -43,8 +43,8 @@ public class InstanceIdentity {
     private boolean isReplace = false;
 
     @Inject
-    public InstanceIdentity(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceFactory factory, IMembership membership, Sleeper sleeper) throws Exception {
-        this.factory = factory;
+    public InstanceIdentity(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceRegistry instanceRegistry, IMembership membership, Sleeper sleeper) throws Exception {
+        this.instanceRegistry = instanceRegistry;
         this.membership = membership;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
@@ -62,14 +62,14 @@ public class InstanceIdentity {
             @Override
             public PriamInstance retriableCall() throws Exception {
                 // Check if this node is decomissioned
-                for (PriamInstance ins : factory.getAllIds(cassandraConfiguration.getClusterName() + "-dead")) {
+                for (PriamInstance ins : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName() + "-dead")) {
                     logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
                     if (ins.getInstanceId().equals(amazonConfiguration.getInstanceID())) {
                         ins.setOutOfService(true);
                         return ins;
                     }
                 }
-                for (PriamInstance ins : factory.getAllIds(cassandraConfiguration.getClusterName())) {
+                for (PriamInstance ins : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
                     logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
                     if (ins.getInstanceId().equals(amazonConfiguration.getInstanceID())) {
                         return ins;
@@ -91,7 +91,7 @@ public class InstanceIdentity {
 
     private void populateInstancesByAvailabilityZoneMultiMap() {
         instancesByAvailabilityZoneMultiMap.clear();
-        for (PriamInstance ins : factory.getAllIds(cassandraConfiguration.getClusterName())) {
+        for (PriamInstance ins : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
             instancesByAvailabilityZoneMultiMap.put(ins.getAvailabilityZone(), ins);
         }
     }
@@ -99,7 +99,7 @@ public class InstanceIdentity {
     public class GetDeadToken extends RetryableCallable<PriamInstance> {
         @Override
         public PriamInstance retriableCall() throws Exception {
-            final List<PriamInstance> allIds = factory.getAllIds(cassandraConfiguration.getClusterName());
+            final List<PriamInstance> allIds = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
             List<String> asgInstances = membership.getRacMembership();
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(5000) + 10000);
@@ -109,14 +109,14 @@ public class InstanceIdentity {
                     continue;
                 }
                 logger.info("Found dead instances: " + dead.getInstanceId());
-                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getAvailabilityZone(), dead.getVolumes(),
+                PriamInstance markAsDead = instanceRegistry.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getAvailabilityZone(), dead.getVolumes(),
                         dead.getToken());
                 // remove it as we marked it down...
-                factory.delete(dead);
+                instanceRegistry.delete(dead);
                 isReplace = true;
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getAvailabilityZone());
-                return factory.create(cassandraConfiguration.getClusterName(), markAsDead.getId(), amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), markAsDead.getVolumes(), payLoad);
+                return instanceRegistry.create(cassandraConfiguration.getClusterName(), markAsDead.getId(), amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), markAsDead.getVolumes(), payLoad);
             }
             return null;
         }
@@ -136,7 +136,7 @@ public class InstanceIdentity {
             // regions.
 
             int max = hash;
-            for (PriamInstance data : factory.getAllIds(cassandraConfiguration.getClusterName())) {
+            for (PriamInstance data : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
                 max = (data.getAvailabilityZone().equals(amazonConfiguration.getAvailabilityZone()) && (data.getId() > max)) ? data.getId() : max;
             }
             int maxSlot = max - hash;
@@ -148,7 +148,7 @@ public class InstanceIdentity {
             }
 
             String payload = TokenManager.createToken(my_slot, membership.getRacCount(), membership.getAvailabilityZoneMembershipSize(), amazonConfiguration.getRegionName());
-            return factory.create(cassandraConfiguration.getClusterName(), my_slot + hash, amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), null, payload);
+            return instanceRegistry.create(cassandraConfiguration.getClusterName(), my_slot + hash, amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), null, payload);
         }
 
         public void forEachExecution() {

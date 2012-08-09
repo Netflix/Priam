@@ -5,7 +5,7 @@ import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
-import com.netflix.priam.aws.SDBInstanceFactory;
+import com.netflix.priam.aws.SDBInstanceRegistry;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
@@ -15,7 +15,7 @@ import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
 import org.quartz.SchedulerFactory;
@@ -35,7 +35,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());
 
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
-        bind(IPriamInstanceFactory.class).to(SDBInstanceFactory.class);
+        bind(IPriamInstanceRegistry.class).to(SDBInstanceRegistry.class);
         bind(IMembership.class).to(AWSMembership.class);
         bind(ICredential.class).to(InstanceProfileCredential.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);

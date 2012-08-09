@@ -4,7 +4,7 @@ import com.amazonaws.AmazonServiceException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.PriamInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,14 +21,14 @@ import java.util.Map;
  * created ahead
  */
 @Singleton
-public class SDBInstanceFactory implements IPriamInstanceFactory {
-    private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
+public class SDBInstanceRegistry implements IPriamInstanceRegistry {
+    private static final Logger logger = LoggerFactory.getLogger(SDBInstanceRegistry.class);
 
     private final AmazonConfiguration amazonConfiguration;
     private final SDBInstanceData dao;
 
     @Inject
-    public SDBInstanceFactory(AmazonConfiguration amazonConfiguration, SDBInstanceData dao) {
+    public SDBInstanceRegistry(AmazonConfiguration amazonConfiguration, SDBInstanceData dao) {
         this.amazonConfiguration = amazonConfiguration;
         this.dao = dao;
     }
@@ -122,7 +122,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory {
         ins.setHostIP(ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);
-        ins.setDC(amazonConfiguration.getRegionName());
+        ins.setRegionName(amazonConfiguration.getRegionName());
         ins.setToken(token);
         ins.setVolumes(v);
         return ins;

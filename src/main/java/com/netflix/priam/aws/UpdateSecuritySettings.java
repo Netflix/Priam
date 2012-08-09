@@ -5,7 +5,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -23,7 +23,7 @@ import java.util.Random;
  * other. 2) Nodes in other regions needs to be able to talk to the others in
  * the other region.
  * <p/>
- * Assumption: 1) IPriamInstanceFactory will provide the membership... and will
+ * Assumption: 1) IPriamInstanceRegistry will provide the membership... and will
  * be visible across the regions 2) IMembership amazon or any other
  * implementation which can tell if the instance is part of the group (ASG in
  * amazons case).
@@ -35,15 +35,15 @@ public class UpdateSecuritySettings extends Task {
 
     private static final Random ran = new Random();
     private final IMembership membership;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceRegistry instanceRegistry;
     private final CassandraConfiguration cassandraConfiguration;
 
     @Inject
-    public UpdateSecuritySettings(CassandraConfiguration cassandraConfiguration, IMembership membership, IPriamInstanceFactory factory) {
+    public UpdateSecuritySettings(CassandraConfiguration cassandraConfiguration, IMembership membership, IPriamInstanceRegistry instanceRegistry) {
         super();
         this.cassandraConfiguration = cassandraConfiguration;
         this.membership = membership;
-        this.factory = factory;
+        this.instanceRegistry = instanceRegistry;
     }
 
     /**
@@ -56,11 +56,11 @@ public class UpdateSecuritySettings extends Task {
         // if seed dont execute.
         int port = cassandraConfiguration.getSslStoragePort();
         List<String> acls = membership.listACL(port, port);
-        List<PriamInstance> instances = factory.getAllIds(cassandraConfiguration.getClusterName());
+        List<PriamInstance> instances = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
 
         // iterate to add...
         List<String> add = Lists.newArrayList();
-        for (PriamInstance instance : factory.getAllIds(cassandraConfiguration.getClusterName())) {
+        for (PriamInstance instance : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
             String range = instance.getHostIP() + "/32";
             if (!acls.contains(range)) {
                 add.add(range);

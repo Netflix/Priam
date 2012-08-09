@@ -165,26 +165,26 @@ public class InstanceIdentity {
                 return seeds;
             }
             // If seed node, return the next node in the list
-            if (instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).size() > 1 && instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostName().equals(myInstance.getHostName())) {
-                seeds.add(instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(1).getHostName());
+            if (instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).size() > 1 && instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostIP().equals(myInstance.getHostIP())) {
+                seeds.add(instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(1).getHostIP());
             }
         }
-        logger.info("Retrieved seeds. My hostname: {}, AZ-To-Instance-MultiMap: {}", myInstance.getHostName(), instancesByAvailabilityZoneMultiMap);
+        logger.info("Retrieved seeds. My IP: {}, AZ-To-Instance-MultiMap: {}", myInstance.getHostIP(), instancesByAvailabilityZoneMultiMap);
 
         for (String loc : instancesByAvailabilityZoneMultiMap.keySet()) {
-            seeds.add(instancesByAvailabilityZoneMultiMap.get(loc).get(0).getHostName());
+            seeds.add(instancesByAvailabilityZoneMultiMap.get(loc).get(0).getHostIP());
         }
 
         //TODO: [mbogner] Removing this instance from the seed list seems odd and makes it difficult to test out a single node cluster during dev/test.  Commenting out for now.
-        //seeds.remove(myInstance.getHostName());
+        //seeds.remove(myInstance.getHostIP());
 
         return seeds;
     }
 
     public boolean isSeed() {
         populateInstancesByAvailabilityZoneMultiMap();
-        String seedHostNameForAvailabilityZone = instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostName();
-        return myInstance.getHostName().equals(seedHostNameForAvailabilityZone);
+        String seedHostIPForAvailabilityZone = instancesByAvailabilityZoneMultiMap.get(myInstance.getAvailabilityZone()).get(0).getHostIP();
+        return myInstance.getHostIP().equals(seedHostIPForAvailabilityZone);
     }
 
     public boolean isReplace() {

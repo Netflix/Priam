@@ -1,5 +1,7 @@
 package com.netflix.priam.utils;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -41,7 +43,7 @@ public class TuneCassandra extends Task {
      */
     // there is no way we can have uncheck with snake's implementation.
     @SuppressWarnings ({"unchecked", "rawtypes"})
-    public static void updateYaml(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, String availabilityZone, String yamlLocation, String hostname, String seedProvider) throws IOException {
+    public static void updateYaml(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, String availabilityZone, String yamlLocation, String hostIp, String seedProvider) throws IOException {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
 
@@ -55,8 +57,8 @@ public class TuneCassandra extends Task {
         map.put("storage_port", cassandraConfiguration.getStoragePort());
         map.put("ssl_storage_port", cassandraConfiguration.getSslStoragePort());
         map.put("rpc_port", cassandraConfiguration.getThriftPort());
-        map.put("listen_address", hostname);
-        map.put("rpc_address", hostname);
+        map.put("listen_address", hostIp);
+        map.put("rpc_address", hostIp);
         map.put("auto_bootstrap", !Restore.isRestoreEnabled(backupConfiguration, availabilityZone)); //Dont bootstrap in restore mode
         map.put("saved_caches_directory", cassandraConfiguration.getCacheLocation());
         map.put("commitlog_directory", backupConfiguration.getCommitLogLocation());
@@ -87,8 +89,9 @@ public class TuneCassandra extends Task {
         // this is only for 0.8 so check before set.
         if (null != map.get("seed_provider")) {
             List<?> seedp = (List) map.get("seed_provider");
-            Map<String, String> m = (Map<String, String>) seedp.get(0);
+            Map<String, Object> m = (Map<String, Object>) seedp.get(0);
             m.put("class_name", seedProvider);
+            m.put("parameters", ImmutableList.of(ImmutableMap.of("seeds", "127.0.0.1," + hostIp)));
         }
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
@@ -110,7 +113,7 @@ public class TuneCassandra extends Task {
 
     @Override
     public void execute() throws IOException {
-        TuneCassandra.updateYaml(cassandraConfiguration, backupConfiguration, amazonConfiguration.getAvailabilityZone(), cassandraConfiguration.getCassHome() + "/conf/cassandra.yaml", null, cassandraConfiguration.getSeedProviderClassName());
+        TuneCassandra.updateYaml(cassandraConfiguration, backupConfiguration, amazonConfiguration.getAvailabilityZone(), cassandraConfiguration.getCassHome() + "/conf/cassandra.yaml", amazonConfiguration.getPrivateIP(), cassandraConfiguration.getSeedProviderClassName());
     }
 
     @Override

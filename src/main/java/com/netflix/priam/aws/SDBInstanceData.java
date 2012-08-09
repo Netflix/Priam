@@ -46,28 +46,28 @@ public class SDBInstanceData {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceData.class);
 
     private final ICredential provider;
-    private final AmazonConfiguration amazonConfiguration;
+    private final String simpleDbDomain;
 
     @Inject
     public SDBInstanceData(ICredential provider, AmazonConfiguration amazonConfiguration) {
         this.provider = provider;
-        this.amazonConfiguration = amazonConfiguration;
+        this.simpleDbDomain = amazonConfiguration.getSimpleDbDomain();
 
         createDomain();  // This is idempotent and won't affect the domain if it already exists
     }
 
     private String getAllQuery() {
-        return "select * from " + amazonConfiguration.getSimpleDbDomain() + " where " + Attributes.APP_ID + "='%s'";
+        return "select * from " + simpleDbDomain + " where " + Attributes.APP_ID + "='%s'";
     }
 
     private String getInstanceQuery() {
-        return "select * from " + amazonConfiguration.getSimpleDbDomain() + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
+        return "select * from " + simpleDbDomain + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
     }
 
     private void createDomain() {
-        logger.info("Creating SimpleDB domain '{}'", amazonConfiguration.getSimpleDbDomain());
+        logger.info("Creating SimpleDB domain '{}'", simpleDbDomain);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
-        CreateDomainRequest request = new CreateDomainRequest(amazonConfiguration.getSimpleDbDomain());
+        CreateDomainRequest request = new CreateDomainRequest(simpleDbDomain);
         simpleDBClient.createDomain(request);
     }
 
@@ -126,7 +126,7 @@ public class SDBInstanceData {
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("Creating PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq = new PutAttributesRequest(simpleDbDomain, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
 
@@ -139,7 +139,7 @@ public class SDBInstanceData {
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("Registering PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq = new PutAttributesRequest(simpleDbDomain, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
         expected.setExists(false);
@@ -156,7 +156,7 @@ public class SDBInstanceData {
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("De-Registering PriamInstance from SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
-        DeleteAttributesRequest delReq = new DeleteAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToDeRegister(instance));
+        DeleteAttributesRequest delReq = new DeleteAttributesRequest(simpleDbDomain, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 

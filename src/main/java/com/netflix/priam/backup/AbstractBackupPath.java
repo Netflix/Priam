@@ -24,9 +24,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public static enum BackupFileType {
         SNAP, SST, CL, META
-    }
-
-    ;
+    };
 
     protected BackupFileType type;
     protected String clusterName;

@@ -37,18 +37,18 @@ public class TokenManager {
     /**
      * Creates a token given the following parameter
      *
-     * @param my_slot   -- Slot where this instance has to be.
-     * @param rac_count -- Rac count is the numeber of RAC's
-     * @param rac_size  -- number of memberships in the rac
+     * @param mySlot   -- Slot where this instance has to be.
+     * @param availabilityZones -- The number of AvailabilityZones
+     * @param availabilityZoneMembershipSize  -- number of members in the availabilityZone
      * @param region    -- name of the DC where it this token is created.
      */
-    public static String createToken(int my_slot, int rac_count, int rac_size, String region) {
-        int regionCount = rac_count * rac_size;
-        return initialToken(regionCount, my_slot, regionOffset(region)).toString();
+    public static String createToken(int mySlot, int availabilityZones, int availabilityZoneMembershipSize, String region) {
+        int regionCount = availabilityZones * availabilityZoneMembershipSize;
+        return initialToken(regionCount, mySlot, regionOffset(region)).toString();
     }
 
-    public static String createToken(int my_slot, int totalCount, String region) {
-        return initialToken(totalCount, my_slot, regionOffset(region)).toString();
+    public static String createToken(int mySlot, int totalCount, String region) {
+        return initialToken(totalCount, mySlot, regionOffset(region)).toString();
     }
 
     public static BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList) {

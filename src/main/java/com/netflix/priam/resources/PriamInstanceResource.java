@@ -1,6 +1,11 @@
 package com.netflix.priam.resources;
 
-import java.net.URI;
+import com.google.inject.Inject;
+import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.PriamInstance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -13,44 +18,34 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-
-import com.google.inject.Inject;
-import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.net.URI;
 
 /**
  * Resource for manipulating priam instances.
  */
-@Path("/v1/instances")
-@Produces(MediaType.TEXT_PLAIN)
-public class PriamInstanceResource
-{
+@Path ("/v1/instances")
+@Produces (MediaType.TEXT_PLAIN)
+public class PriamInstanceResource {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final CassandraConfiguration cassandraConfiguration;
     private final IPriamInstanceFactory factory;
 
     @Inject
-    public PriamInstanceResource(CassandraConfiguration cassandraConfiguration, IPriamInstanceFactory factory)
-    {
+    public PriamInstanceResource(CassandraConfiguration cassandraConfiguration, IPriamInstanceFactory factory) {
         this.cassandraConfiguration = cassandraConfiguration;
         this.factory = factory;
     }
 
     /**
      * Get the list of all priam instances
+     *
      * @return the list of all priam instances
      */
     @GET
-    public String getInstances()
-    {
+    public String getInstances() {
         StringBuilder response = new StringBuilder();
-        for (PriamInstance node : factory.getAllIds(cassandraConfiguration.getClusterName()))
-        {
+        for (PriamInstance node : factory.getAllIds(cassandraConfiguration.getClusterName())) {
             response.append(node.toString());
             response.append("\n");
         }
@@ -59,15 +54,14 @@ public class PriamInstanceResource
 
     /**
      * Returns an individual priam instance by id
-     * 
+     *
      * @param id the node id
      * @return the priam instance
      * @throws WebApplicationException(404) if no priam instance found with {@code id}
      */
     @GET
-    @Path("{id}")
-    public String getInstance(@PathParam("id") int id)
-    {
+    @Path ("{id}")
+    public String getInstance(@PathParam ("id") int id) {
         PriamInstance node = getByIdIfFound(id);
         return node.toString();
     }
@@ -80,12 +74,11 @@ public class PriamInstanceResource
      */
     @POST
     public Response createInstance(
-        @QueryParam("id") int id, @QueryParam("instanceID") String instanceID,
-        @QueryParam("hostname") String hostname, @QueryParam("ip") String ip,
-        @QueryParam("rack") String rack, @QueryParam("token") String token)
-    {
+            @QueryParam ("id") int id, @QueryParam ("instanceID") String instanceID,
+            @QueryParam ("hostname") String hostname, @QueryParam ("ip") String ip,
+            @QueryParam ("rack") String rack, @QueryParam ("token") String token) {
         log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
-            new Object[]{ id, instanceID, hostname, ip, rack, token });
+                new Object[] {id, instanceID, hostname, ip, rack, token});
         PriamInstance instance = factory.create(cassandraConfiguration.getClusterName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();
@@ -93,15 +86,14 @@ public class PriamInstanceResource
 
     /**
      * Deletes the instance with the given {@code id}.
-     * 
+     *
      * @param id the node id
      * @return Response (204) if the instance was deleted
      * @throws WebApplicationException (404) if no priam instance found with {@code id}
      */
     @DELETE
-    @Path("{id}")
-    public Response deleteInstance(@PathParam("id") int id)
-    {
+    @Path ("{id}")
+    public Response deleteInstance(@PathParam ("id") int id) {
         PriamInstance instance = getByIdIfFound(id);
         factory.delete(instance);
         return Response.noContent().build();
@@ -110,13 +102,12 @@ public class PriamInstanceResource
     /**
      * Returns the PriamInstance with the given {@code id}, or
      * throws a WebApplicationException if none found.
-     * 
+     *
      * @param id the node id
      * @return PriamInstance with the given {@code id}
      * @throws WebApplicationException (400)
      */
-    private PriamInstance getByIdIfFound(int id)
-    {
+    private PriamInstance getByIdIfFound(int id) {
         PriamInstance instance = factory.getInstance(cassandraConfiguration.getClusterName(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
@@ -124,8 +115,7 @@ public class PriamInstanceResource
         return instance;
     }
 
-    private static WebApplicationException notFound(String message)
-    {
+    private static WebApplicationException notFound(String message) {
         return new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(message).build());
     }
 }

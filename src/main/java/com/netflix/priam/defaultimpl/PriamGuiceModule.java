@@ -1,12 +1,5 @@
 package com.netflix.priam.defaultimpl;
 
-import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.config.BackupConfiguration;
-import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.config.PriamConfiguration;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-
 import com.google.inject.AbstractModule;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
@@ -17,23 +10,26 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
+import com.netflix.priam.config.AmazonConfiguration;
+import com.netflix.priam.config.BackupConfiguration;
+import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
 
-public class PriamGuiceModule extends AbstractModule
-{
+public class PriamGuiceModule extends AbstractModule {
     private final PriamConfiguration priamConfiguration;
 
-    public PriamGuiceModule(PriamConfiguration priamConfiguration)
-    {
+    public PriamGuiceModule(PriamConfiguration priamConfiguration) {
         this.priamConfiguration = priamConfiguration;
     }
 
     @Override
-    protected void configure()
-    {
+    protected void configure() {
         bind(CassandraConfiguration.class).toInstance(priamConfiguration.getCassandraConfiguration());
         bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
         bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());

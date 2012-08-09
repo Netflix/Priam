@@ -17,8 +17,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;
 
-public class AmazonConfiguration
-{
+public class AmazonConfiguration {
     @JsonProperty
     private String autoScaleGroupName;
 
@@ -50,109 +49,88 @@ public class AmazonConfiguration
     private String simpleDbDomain;
 
 
-    public String getAutoScaleGroupName()
-    {
+    public String getAutoScaleGroupName() {
         return autoScaleGroupName;
     }
 
-    public String getRegionName()
-    {
+    public String getRegionName() {
         return regionName;
     }
 
-    public String getSecurityGroupName()
-    {
+    public String getSecurityGroupName() {
         return securityGroupName;
     }
 
-    public String getAvailabilityZone()
-    {
+    public String getAvailabilityZone() {
         return availabilityZone;
     }
 
-    public String getPrivateHostName()
-    {
+    public String getPrivateHostName() {
         return privateHostName;
     }
 
-    public String getPrivateIP()
-    {
+    public String getPrivateIP() {
         return privateIP;
     }
 
-    public String getInstanceID()
-    {
+    public String getInstanceID() {
         return instanceID;
     }
 
-    public String getInstanceType()
-    {
+    public String getInstanceType() {
         return instanceType;
     }
 
-    public List<String> getUsableAvailabilityZones()
-    {
+    public List<String> getUsableAvailabilityZones() {
         return usableAvailabilityZones;
     }
 
-    public String getSimpleDbDomain()
-    {
+    public String getSimpleDbDomain() {
         return simpleDbDomain;
     }
 
-    public void setAutoScaleGroupName(String autoScaleGroupName)
-    {
+    public void setAutoScaleGroupName(String autoScaleGroupName) {
         this.autoScaleGroupName = autoScaleGroupName;
     }
 
-    public void setRegionName(String regionName)
-    {
+    public void setRegionName(String regionName) {
         this.regionName = regionName;
     }
 
-    public void setSecurityGroupName(String securityGroupName)
-    {
+    public void setSecurityGroupName(String securityGroupName) {
         this.securityGroupName = securityGroupName;
     }
 
-    public void setAvailabilityZone(String availabilityZone)
-    {
+    public void setAvailabilityZone(String availabilityZone) {
         this.availabilityZone = availabilityZone;
     }
 
-    public void setPrivateHostName(String privateHostName)
-    {
+    public void setPrivateHostName(String privateHostName) {
         this.privateHostName = privateHostName;
     }
 
-    public void setPrivateIP(String privateIP)
-    {
+    public void setPrivateIP(String privateIP) {
         this.privateIP = privateIP;
     }
 
-    public void setInstanceID(String instanceID)
-    {
+    public void setInstanceID(String instanceID) {
         this.instanceID = instanceID;
     }
 
-    public void setInstanceType(String instanceType)
-    {
+    public void setInstanceType(String instanceType) {
         this.instanceType = instanceType;
     }
 
-    public void setUsableAvailabilityZones(List<String> usableAvailabilityZones)
-    {
+    public void setUsableAvailabilityZones(List<String> usableAvailabilityZones) {
         this.usableAvailabilityZones = usableAvailabilityZones;
     }
 
-    public void setSimpleDbDomain(String simpleDbDomain)
-    {
+    public void setSimpleDbDomain(String simpleDbDomain) {
         this.simpleDbDomain = simpleDbDomain;
     }
 
 
-    public void discoverConfiguration(ICredential credentialProvider)
-    {
+    public void discoverConfiguration(ICredential credentialProvider) {
         if (StringUtils.isBlank(availabilityZone)) {
             availabilityZone = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
         }
@@ -185,21 +163,16 @@ public class AmazonConfiguration
     private String populateSecurityGroup(ICredential credentialProvider) {
         AmazonEC2 client = new AmazonEC2Client(credentialProvider.getCredentials());
         client.setEndpoint("ec2." + regionName + ".amazonaws.com");
-        try
-        {
+        try {
             String securityGroupNameOnEachLine = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/security-groups");
-            if (StringUtils.isNotBlank(securityGroupNameOnEachLine))
-            {
+            if (StringUtils.isNotBlank(securityGroupNameOnEachLine)) {
                 String[] securityGroupNames = StringUtils.split(securityGroupNameOnEachLine, "\n");
                 if (securityGroupNames.length >= 1) {
                     return securityGroupNames[0];
                 }
             }
-        }
-        finally
-        {
-            if (client != null)
-            {
+        } finally {
+            if (client != null) {
                 client.shutdown();
             }
         }
@@ -207,35 +180,26 @@ public class AmazonConfiguration
     }
 
 
-
     /**
      * Query amazon to get ASG name. Currently not available as part of instance info api.
      */
-    private String populateASGName(ICredential credentialProvider, String region, String instanceId)
-    {
+    private String populateASGName(ICredential credentialProvider, String region, String instanceId) {
         AmazonEC2 client = new AmazonEC2Client(credentialProvider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
-        try
-        {
+        try {
             DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
             DescribeInstancesResult res = client.describeInstances(desc);
 
-            for (Reservation resr : res.getReservations())
-            {
-                for (Instance ins : resr.getInstances())
-                {
-                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
-                    {
-                        if (tag.getKey().equals("aws:autoscaling:groupName"))
-                        {
+            for (Reservation resr : res.getReservations()) {
+                for (Instance ins : resr.getInstances()) {
+                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags()) {
+                        if (tag.getKey().equals("aws:autoscaling:groupName")) {
                             return tag.getValue();
                         }
                     }
                 }
             }
-        }
-        finally
-        {
+        } finally {
             client.shutdown();
         }
         return null;
@@ -244,25 +208,21 @@ public class AmazonConfiguration
     /**
      * Get the fist 3 availability zones in the region
      */
-    private List<String> defineUsableAvailabilityZones(ICredential credentialProvider, String region){
+    private List<String> defineUsableAvailabilityZones(ICredential credentialProvider, String region) {
         List<String> zone = Lists.newArrayList();
         AmazonEC2 client = new AmazonEC2Client(credentialProvider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
-        try
-        {
+        try {
             DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
-            for(AvailabilityZone reg : res.getAvailabilityZones())
-            {
-                if(reg.getState().equals("available")) {
+            for (AvailabilityZone reg : res.getAvailabilityZones()) {
+                if (reg.getState().equals("available")) {
                     zone.add(reg.getZoneName());
                 }
-                if(zone.size() == 3) {
+                if (zone.size() == 3) {
                     break;
                 }
             }
-        }
-        finally
-        {
+        } finally {
             client.shutdown();
         }
         return zone;

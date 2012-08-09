@@ -4,8 +4,10 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.Map;
 
-public class CassandraConfiguration
-{
+public class CassandraConfiguration {
+    @JsonProperty
+    private String partitionerClassName;
+
     @JsonProperty
     private String bootstrapClusterName;
 
@@ -76,235 +78,195 @@ public class CassandraConfiguration
     private String seedProviderClassName;
 
 
+    public String getPartitionerClassName() {
+        return partitionerClassName;
+    }
 
-
-    public String getBootstrapClusterName()
-    {
+    public String getBootstrapClusterName() {
         return bootstrapClusterName;
     }
 
-    public boolean isMultiRegionEnabled()
-    {
+    public boolean isMultiRegionEnabled() {
         return multiRegionEnabled;
     }
 
-    public String getEndpointSnitch()
-    {
+    public String getEndpointSnitch() {
         return endpointSnitch;
     }
 
-    public String getCassHome()
-    {
+    public String getCassHome() {
         return cassHome;
     }
 
-    public String getCassStartScript()
-    {
+    public String getCassStartScript() {
         return cassStartScript;
     }
 
-    public String getCassStopScript()
-    {
+    public String getCassStopScript() {
         return cassStopScript;
     }
 
-    public String getClusterName()
-    {
+    public String getClusterName() {
         return clusterName;
     }
 
-    public String getDataLocation()
-    {
+    public String getDataLocation() {
         return dataLocation;
     }
 
-    public int getSslStoragePort()
-    {
+    public int getSslStoragePort() {
         return sslStoragePort;
     }
 
-    public int getStoragePort()
-    {
+    public int getStoragePort() {
         return storagePort;
     }
 
-    public int getThriftPort()
-    {
+    public int getThriftPort() {
         return thriftPort;
     }
 
-    public int getJmxPort()
-    {
+    public int getJmxPort() {
         return jmxPort;
     }
 
-    public int getCompactionThroughputMBPerSec()
-    {
+    public int getCompactionThroughputMBPerSec() {
         return compactionThroughputMBPerSec;
     }
 
-    public int getInMemoryCompactionLimitMB()
-    {
+    public int getInMemoryCompactionLimitMB() {
         return inMemoryCompactionLimitMB;
     }
 
-    public Map<String, String> getDirectMaxHeapSize()
-    {
+    public Map<String, String> getDirectMaxHeapSize() {
         return directMaxHeapSize;
     }
 
-    public Map<String, String> getMaxHeapSize()
-    {
+    public Map<String, String> getMaxHeapSize() {
         return maxHeapSize;
     }
 
-    public Map<String, String> getMaxNewGenHeapSize()
-    {
+    public Map<String, String> getMaxNewGenHeapSize() {
         return maxNewGenHeapSize;
     }
 
-    public int getMemTableTotalSpaceMB()
-    {
+    public int getMemTableTotalSpaceMB() {
         return memTableTotalSpaceMB;
     }
 
-    public long getHintedHandoffThrottleDelayMS()
-    {
+    public long getHintedHandoffThrottleDelayMS() {
         return hintedHandoffThrottleDelayMS;
     }
 
-    public long getMaxHintWindowMS()
-    {
+    public long getMaxHintWindowMS() {
         return maxHintWindowMS;
     }
 
-    public boolean isLocalBootstrapEnable()
-    {
+    public boolean isLocalBootstrapEnable() {
         return localBootstrapEnable;
     }
 
-    public String getCacheLocation()
-    {
+    public String getCacheLocation() {
         return cacheLocation;
     }
 
-    public String getSeedProviderClassName()
-    {
+    public String getSeedProviderClassName() {
         return seedProviderClassName;
     }
 
-    public void setBootstrapClusterName(String bootstrapClusterName)
-    {
+    public void setPartitionerClassName(String partitionerClassName) {
+        this.partitionerClassName = partitionerClassName;
+    }
+
+    public void setBootstrapClusterName(String bootstrapClusterName) {
         this.bootstrapClusterName = bootstrapClusterName;
     }
 
-    public void setMultiRegionEnabled(boolean multiRegionEnabled)
-    {
+    public void setMultiRegionEnabled(boolean multiRegionEnabled) {
         this.multiRegionEnabled = multiRegionEnabled;
     }
 
-    public void setEndpointSnitch(String endpointSnitch)
-    {
+    public void setEndpointSnitch(String endpointSnitch) {
         this.endpointSnitch = endpointSnitch;
     }
 
-    public void setCassHome(String cassHome)
-    {
+    public void setCassHome(String cassHome) {
         this.cassHome = cassHome;
     }
 
-    public void setCassStartScript(String cassStartScript)
-    {
+    public void setCassStartScript(String cassStartScript) {
         this.cassStartScript = cassStartScript;
     }
 
-    public void setCassStopScript(String cassStopScript)
-    {
+    public void setCassStopScript(String cassStopScript) {
         this.cassStopScript = cassStopScript;
     }
 
-    public void setClusterName(String clusterName)
-    {
+    public void setClusterName(String clusterName) {
         this.clusterName = clusterName;
     }
 
-    public void setDataLocation(String dataLocation)
-    {
+    public void setDataLocation(String dataLocation) {
         this.dataLocation = dataLocation;
     }
 
-    public void setSslStoragePort(int sslStoragePort)
-    {
+    public void setSslStoragePort(int sslStoragePort) {
         this.sslStoragePort = sslStoragePort;
     }
 
-    public void setStoragePort(int storagePort)
-    {
+    public void setStoragePort(int storagePort) {
         this.storagePort = storagePort;
     }
 
-    public void setThriftPort(int thriftPort)
-    {
+    public void setThriftPort(int thriftPort) {
         this.thriftPort = thriftPort;
     }
 
-    public void setJmxPort(int jmxPort)
-    {
+    public void setJmxPort(int jmxPort) {
         this.jmxPort = jmxPort;
     }
 
-    public void setCompactionThroughputMBPerSec(int compactionThroughputMBPerSec)
-    {
+    public void setCompactionThroughputMBPerSec(int compactionThroughputMBPerSec) {
         this.compactionThroughputMBPerSec = compactionThroughputMBPerSec;
     }
 
-    public void setInMemoryCompactionLimitMB(int inMemoryCompactionLimitMB)
-    {
+    public void setInMemoryCompactionLimitMB(int inMemoryCompactionLimitMB) {
         this.inMemoryCompactionLimitMB = inMemoryCompactionLimitMB;
     }
 
-    public void setDirectMaxHeapSize(Map<String, String> directMaxHeapSize)
-    {
+    public void setDirectMaxHeapSize(Map<String, String> directMaxHeapSize) {
         this.directMaxHeapSize = directMaxHeapSize;
     }
 
-    public void setMaxHeapSize(Map<String, String> maxHeapSize)
-    {
+    public void setMaxHeapSize(Map<String, String> maxHeapSize) {
         this.maxHeapSize = maxHeapSize;
     }
 
-    public void setMaxNewGenHeapSize(Map<String, String> maxNewGenHeapSize)
-    {
+    public void setMaxNewGenHeapSize(Map<String, String> maxNewGenHeapSize) {
         this.maxNewGenHeapSize = maxNewGenHeapSize;
     }
 
-    public void setMemTableTotalSpaceMB(int memTableTotalSpaceMB)
-    {
+    public void setMemTableTotalSpaceMB(int memTableTotalSpaceMB) {
         this.memTableTotalSpaceMB = memTableTotalSpaceMB;
     }
 
-    public void setHintedHandoffThrottleDelayMS(long hintedHandoffThrottleDelayMS)
-    {
+    public void setHintedHandoffThrottleDelayMS(long hintedHandoffThrottleDelayMS) {
         this.hintedHandoffThrottleDelayMS = hintedHandoffThrottleDelayMS;
     }
 
-    public void setMaxHintWindowMS(long maxHintWindowMS)
-    {
+    public void setMaxHintWindowMS(long maxHintWindowMS) {
         this.maxHintWindowMS = maxHintWindowMS;
     }
 
-    public void setLocalBootstrapEnable(boolean localBootstrapEnable)
-    {
+    public void setLocalBootstrapEnable(boolean localBootstrapEnable) {
         this.localBootstrapEnable = localBootstrapEnable;
     }
 
-    public void setCacheLocation(String cacheLocation)
-    {
+    public void setCacheLocation(String cacheLocation) {
         this.cacheLocation = cacheLocation;
     }
 
-    public void setSeedProviderClassName(String seedProviderClassName)
-    {
+    public void setSeedProviderClassName(String seedProviderClassName) {
         this.seedProviderClassName = seedProviderClassName;
     }
 

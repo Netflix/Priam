@@ -7,11 +7,10 @@ import java.util.List;
  * Interface to manage membership meta information such as size of RAC, list of
  * nodes in RAC etc. Also perform ACL updates used in multi-regional clusters
  */
-public interface IMembership
-{
+public interface IMembership {
     /**
      * Get a list of Instances in the current RAC
-     * 
+     *
      * @return
      */
     public List<String> getRacMembership();
@@ -23,14 +22,14 @@ public interface IMembership
 
     /**
      * Number of RACs
-     * 
+     *
      * @return
      */
     public int getRacCount();
 
     /**
      * Add security group ACLs
-     * 
+     *
      * @param listIPs
      * @param from
      * @param to
@@ -39,7 +38,7 @@ public interface IMembership
 
     /**
      * Remove security group ACLs
-     * 
+     *
      * @param listIPs
      * @param from
      * @param to
@@ -53,7 +52,7 @@ public interface IMembership
 
     /**
      * Expand the membership size by 1.
-     * 
+     *
      * @param count
      */
     public void expandAvailabilityZoneMembership(int count);

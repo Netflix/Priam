@@ -24,8 +24,7 @@ import org.apache.commons.lang.StringUtils;
  * Incremental backup
  */
 @Singleton
-public class PriamServer implements Managed
-{
+public class PriamServer implements Managed {
     private final PriamScheduler scheduler;
     private final CassandraConfiguration cassandraConfig;
     private final BackupConfiguration backupConfig;
@@ -39,8 +38,7 @@ public class PriamServer implements Managed
                        AmazonConfiguration amazonConfig,
                        PriamScheduler scheduler,
                        InstanceIdentity id,
-                       Sleeper sleeper)
-    {
+                       Sleeper sleeper) {
         this.cassandraConfig = cassandraConfig;
         this.backupConfig = backupConfig;
         this.amazonConfig = amazonConfig;
@@ -50,10 +48,8 @@ public class PriamServer implements Managed
     }
 
     @Override
-    public void start() throws Exception
-    {
-        if (id.getInstance().isOutOfService())
-        {
+    public void start() throws Exception {
+        if (id.getInstance().isOutOfService()) {
             return;
         }
 
@@ -61,12 +57,10 @@ public class PriamServer implements Managed
         scheduler.start();
 
         // update security settings.
-        if (cassandraConfig.isMultiRegionEnabled())
-        {
+        if (cassandraConfig.isMultiRegionEnabled()) {
             scheduler.runTaskNow(UpdateSecuritySettings.class);
             // sleep for 60 sec for the SG update to happen.
-            if (UpdateSecuritySettings.firstTimeUpdated)
-            {
+            if (UpdateSecuritySettings.firstTimeUpdated) {
                 sleeper.sleep(60 * 1000);
             }
             scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
@@ -76,45 +70,37 @@ public class PriamServer implements Managed
         scheduler.runTaskNow(TuneCassandra.class);
 
         // restore from backup else start cassandra.
-        if (StringUtils.isNotBlank(backupConfig.getAutoRestoreSnapshotName()))
-        {
+        if (StringUtils.isNotBlank(backupConfig.getAutoRestoreSnapshotName())) {
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
-        }
-        else
-        {
+        } else {
             SystemUtils.startCassandra(true, cassandraConfig, backupConfig, amazonConfig.getInstanceType()); // Start cassandra.
         }
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)
-        if (backupConfig.getHour() >= 0 && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone())))
-        {
+        if (backupConfig.getHour() >= 0 && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(backupConfig));
 
             // Start the Incremental backup schedule if enabled
-            if (backupConfig.isIncrementalEnabled())
-            {
+            if (backupConfig.isIncrementalEnabled()) {
                 scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
             }
         }
-        
+
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
 
     @Override
-    public void stop() throws Exception
-    {
+    public void stop() throws Exception {
         scheduler.shutdown();
     }
 
-    public InstanceIdentity getInstanceIdentity()
-    {
+    public InstanceIdentity getInstanceIdentity() {
         return id;
     }
 
-    public PriamScheduler getScheduler()
-    {
+    public PriamScheduler getScheduler() {
         return scheduler;
     }
 }

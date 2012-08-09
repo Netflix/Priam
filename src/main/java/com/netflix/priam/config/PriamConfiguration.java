@@ -8,29 +8,30 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
 
 @Singleton
-public class PriamConfiguration extends Configuration
-{
-    @JsonProperty @NotNull @Valid
+public class PriamConfiguration extends Configuration {
+    @JsonProperty
+    @NotNull
+    @Valid
     private CassandraConfiguration cassandra = new CassandraConfiguration();
 
-    @JsonProperty @Valid
+    @JsonProperty
+    @Valid
     private AmazonConfiguration amazon = new AmazonConfiguration();
 
-    @JsonProperty @NotNull @Valid
+    @JsonProperty
+    @NotNull
+    @Valid
     private BackupConfiguration backup = new BackupConfiguration();
 
-    public CassandraConfiguration getCassandraConfiguration()
-    {
+    public CassandraConfiguration getCassandraConfiguration() {
         return cassandra;
     }
 
-    public AmazonConfiguration getAmazonConfiguration()
-    {
+    public AmazonConfiguration getAmazonConfiguration() {
         return amazon;
     }
 
-    public BackupConfiguration getBackupConfiguration()
-    {
+    public BackupConfiguration getBackupConfiguration() {
         return backup;
     }
 }

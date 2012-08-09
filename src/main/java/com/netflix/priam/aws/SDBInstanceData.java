@@ -30,10 +30,8 @@ import java.util.Set;
  * DAO for handling Instance identity information such as token, zone, region
  */
 @Singleton
-public class SDBInstanceData
-{
-    public static class Attributes
-    {
+public class SDBInstanceData {
+    public static class Attributes {
         public final static String APP_ID = "appId";
         public final static String ID = "id";
         public final static String INSTANCE_ID = "instanceId";
@@ -49,28 +47,24 @@ public class SDBInstanceData
 
     private final ICredential provider;
     private final AmazonConfiguration amazonConfiguration;
-    
+
     @Inject
-    public SDBInstanceData(ICredential provider, AmazonConfiguration amazonConfiguration)
-    {
+    public SDBInstanceData(ICredential provider, AmazonConfiguration amazonConfiguration) {
         this.provider = provider;
         this.amazonConfiguration = amazonConfiguration;
 
         createDomain();  // This is idempotent and won't affect the domain if it already exists
     }
 
-    private String getAllQuery()
-    {
+    private String getAllQuery() {
         return "select * from " + amazonConfiguration.getSimpleDbDomain() + " where " + Attributes.APP_ID + "='%s'";
     }
 
-    private String getInstanceQuery()
-    {
+    private String getInstanceQuery() {
         return "select * from " + amazonConfiguration.getSimpleDbDomain() + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
     }
 
-    private void createDomain()
-    {
+    private void createDomain() {
         logger.info("Creating SimpleDB domain '{}'", amazonConfiguration.getSimpleDbDomain());
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         CreateDomainRequest request = new CreateDomainRequest(amazonConfiguration.getSimpleDbDomain());
@@ -79,18 +73,18 @@ public class SDBInstanceData
 
     /**
      * Get the instance details from SimpleDB
-     * 
+     *
      * @param app Cluster name
-     * @param id Node ID
+     * @param id  Node ID
      * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
-    public PriamInstance getInstance(String app, int id)
-    {
+    public PriamInstance getInstance(String app, int id) {
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         SelectRequest request = new SelectRequest(String.format(getInstanceQuery(), app, id));
         SelectResult result = simpleDBClient.select(request);
-        if (result.getItems().size() == 0)
+        if (result.getItems().size() == 0) {
             return null;
+        }
         PriamInstance priamInstance = transform(result.getItems().get(0));
         logger.info("Retrieved instance from SimpleDB: {}", priamInstance);
         return priamInstance;
@@ -98,25 +92,22 @@ public class SDBInstanceData
 
     /**
      * Get the set of all nodes in the cluster
-     * 
+     *
      * @param app Cluster name
      * @return the set of all instances in the given {@code app}
      */
-    public Set<PriamInstance> getAllIds(String app)
-    {
+    public Set<PriamInstance> getAllIds(String app) {
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         Set<PriamInstance> inslist = new HashSet<PriamInstance>();
         String nextToken = null;
         String allQuery = getAllQuery();
-        do
-        {
+        do {
             SelectRequest request = new SelectRequest(String.format(allQuery, app));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
             Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext())
-            {
+            while (itemiter.hasNext()) {
                 PriamInstance priamInstance = transform(itemiter.next());
                 logger.info("Retrieved PriamInstance from app '{}': {}", app, priamInstance);
                 inslist.add(priamInstance);
@@ -128,12 +119,11 @@ public class SDBInstanceData
 
     /**
      * Create a new instance entry in SimpleDB
-     * 
+     *
      * @param instance
      * @throws AmazonServiceException
      */
-    public void createInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void createInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("Creating PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
@@ -142,12 +132,11 @@ public class SDBInstanceData
 
     /**
      * Register a new instance. Registration will fail if a prior entry exists
-     * 
+     *
      * @param instance
      * @throws AmazonServiceException
      */
-    public void registerInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("Registering PriamInstance in SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToRegister(instance));
@@ -160,20 +149,18 @@ public class SDBInstanceData
 
     /**
      * Deregister instance (same as delete)
-     * 
+     *
      * @param instance
      * @throws AmazonServiceException
      */
-    public void deregisterInstance(PriamInstance instance) throws AmazonServiceException
-    {
+    public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
         logger.info("De-Registering PriamInstance from SimpleDB: {}", instance);
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
         DeleteAttributesRequest delReq = new DeleteAttributesRequest(amazonConfiguration.getSimpleDbDomain(), getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 
-    private List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance)
-    {
+    private List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance) {
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
         attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
@@ -188,8 +175,7 @@ public class SDBInstanceData
         return attrs;
     }
 
-    private List<Attribute> createAttributesToDeRegister(PriamInstance instance)
-    {
+    private List<Attribute> createAttributesToDeRegister(PriamInstance instance) {
         List<Attribute> attrs = new ArrayList<Attribute>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
         attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
@@ -205,45 +191,43 @@ public class SDBInstanceData
 
     /**
      * Convert a simpledb item to PriamInstance
-     * 
+     *
      * @param item
      * @return
      */
-    private PriamInstance transform(Item item)
-    {
+    private PriamInstance transform(Item item) {
         PriamInstance ins = new PriamInstance();
         Iterator<Attribute> attrs = item.getAttributes().iterator();
-        while (attrs.hasNext())
-        {
+        while (attrs.hasNext()) {
             Attribute att = attrs.next();
-            if (att.getName().equals(Attributes.INSTANCE_ID))
+            if (att.getName().equals(Attributes.INSTANCE_ID)) {
                 ins.setInstanceId(att.getValue());
-            else if (att.getName().equals(Attributes.TOKEN))
+            } else if (att.getName().equals(Attributes.TOKEN)) {
                 ins.setToken(att.getValue());
-            else if (att.getName().equals(Attributes.APP_ID))
+            } else if (att.getName().equals(Attributes.APP_ID)) {
                 ins.setApp(att.getValue());
-            else if (att.getName().equals(Attributes.ID))
+            } else if (att.getName().equals(Attributes.ID)) {
                 ins.setId(Integer.parseInt(att.getValue()));
-            else if (att.getName().equals(Attributes.AVAILABILITY_ZONE))
+            } else if (att.getName().equals(Attributes.AVAILABILITY_ZONE)) {
                 ins.setAvailabilityZone(att.getValue());
-            else if (att.getName().equals(Attributes.ELASTIC_IP))
+            } else if (att.getName().equals(Attributes.ELASTIC_IP)) {
                 ins.setHostIP(att.getValue());
-            else if (att.getName().equals(Attributes.HOSTNAME))
+            } else if (att.getName().equals(Attributes.HOSTNAME)) {
                 ins.setHost(att.getValue());
-            else if (att.getName().equals(Attributes.LOCATION))
+            } else if (att.getName().equals(Attributes.LOCATION)) {
                 ins.setDC(att.getValue());
-            else if (att.getName().equals(Attributes.UPDATE_TS))
+            } else if (att.getName().equals(Attributes.UPDATE_TS)) {
                 ins.setUpdatetime(Long.parseLong(att.getValue()));
+            }
         }
         return ins;
     }
 
-    private String getKey(PriamInstance instance)
-    {
+    private String getKey(PriamInstance instance) {
         return instance.getApp() + instance.getId();
     }
-    
-    private AmazonSimpleDBClient getSimpleDBClient(){
+
+    private AmazonSimpleDBClient getSimpleDBClient() {
         //Create per request
         return new AmazonSimpleDBClient(provider.getCredentials());
     }

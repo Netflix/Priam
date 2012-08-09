@@ -42,8 +42,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * Implementation of IBackupFileSystem for S3
  */
 @Singleton
-public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
-{
+public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
@@ -63,8 +62,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private AtomicInteger downloadCount = new AtomicInteger();
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final BackupConfiguration backupConfiguration, CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, ICredential cred)
-    {
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final BackupConfiguration backupConfiguration, CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, ICredential cred) {
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.cassandraConfiguration = cassandraConfiguration;
@@ -74,50 +72,41 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         int threads = backupConfiguration.getBackupThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
-        this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
-        {
-            public int targetThroughput()
-            {
+        this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction() {
+            public int targetThroughput() {
                 int throttleLimit = backupConfiguration.getStreamingThroughputMbps();
-                if (throttleLimit < 1)
+                if (throttleLimit < 1) {
                     return 0;
+                }
                 int totalBytesPerMS = (throttleLimit * 1024 * 1024) / 1000;
                 return totalBytesPerMS;
             }
         });
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = MBEAN_NAME;
-        try
-        {
+        try {
             mbs.registerMBean(this, new ObjectName(mbeanName));
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
-    {
-        try
-        {
+    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
+        try {
             logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
             AmazonS3 client = getS3Client();
             S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
             compress.decompressAndClose(obj.getObjectContent(), os);
             bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             throw new BackupRestoreException(e.getMessage(), e);
         }
     }
 
     @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
-    {
+    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException {
         uploadCount.incrementAndGet();
         AmazonS3 s3Client = getS3Client();
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(backupConfiguration.getS3BucketName(), path.getRemotePath());
@@ -125,16 +114,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         DataPart part = new DataPart(backupConfiguration.getS3BucketName(), path.getRemotePath(), initResponse.getUploadId());
         List<PartETag> partETags = Lists.newArrayList();
         long chunkSize = backupConfiguration.getChunkSizeMB();
-        if (path.getSize() > 0)
+        if (path.getSize() > 0) {
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
+        }
         logger.info(String.format("Uploading to %s with chunk size %d", path.getRemotePath(), chunkSize));
-        try
-        {
+        try {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
             // Upload parts.
             int partNum = 0;
-            while (chunks.hasNext())
-            {
+            while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 throttle.throttle(chunk.length);
                 DataPart dp = new DataPart(++partNum, chunk, backupConfiguration.getS3BucketName(), path.getRemotePath(), initResponse.getUploadId());
@@ -143,32 +131,28 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
                 bytesUploaded.addAndGet(chunk.length);
             }
             executor.sleepTillEmpty();
-            if (partNum != partETags.size())
+            if (partNum != partETags.size()) {
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
+            }
             new S3PartUploader(s3Client, part, partETags).completeUpload();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             new S3PartUploader(s3Client, part, partETags).abortUpload();
             throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         }
     }
 
     @Override
-    public int getActivecount()
-    {
+    public int getActivecount() {
         return executor.getActiveCount();
     }
 
     @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till)
-    {
+    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
         return new S3FileIterator(pathProvider, getS3Client(), path, start, till);
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date)
-    {
+    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
         return new S3PrefixIterator(cassandraConfiguration, amazonConfiguration, backupConfiguration, pathProvider, getS3Client(), date);
     }
 
@@ -177,110 +161,94 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
      * set. Removes the rule is set to 0.
      */
     @Override
-    public void cleanup()
-    {
+    public void cleanup() {
         AmazonS3 s3Client = getS3Client();
         String clusterPath = pathProvider.get().clusterPrefix("");
         BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(backupConfiguration.getS3BucketName());
-        if (lifeConfig == null)
-        {
+        if (lifeConfig == null) {
             lifeConfig = new BucketLifecycleConfiguration();
             List<Rule> rules = Lists.newArrayList();
             lifeConfig.setRules(rules);
         }
         List<Rule> rules = lifeConfig.getRules();
-        if (updateLifecycleRule(rules, clusterPath))
-        {
-            if( rules.size() > 0 ){
+        if (updateLifecycleRule(rules, clusterPath)) {
+            if (rules.size() > 0) {
                 lifeConfig.setRules(rules);
                 s3Client.setBucketLifecycleConfiguration(backupConfiguration.getS3BucketName(), lifeConfig);
-            }
-            else
+            } else {
                 s3Client.deleteBucketLifecycleConfiguration(backupConfiguration.getS3BucketName());
+            }
         }
     }
 
-    private boolean updateLifecycleRule(List<Rule> rules, String prefix)
-    {
+    private boolean updateLifecycleRule(List<Rule> rules, String prefix) {
         Rule rule = null;
-        for (BucketLifecycleConfiguration.Rule lcRule : rules)
-        {
-            if (lcRule.getPrefix().equals(prefix))
-            {
+        for (BucketLifecycleConfiguration.Rule lcRule : rules) {
+            if (lcRule.getPrefix().equals(prefix)) {
                 rule = lcRule;
                 break;
             }
         }
-        if (rule == null && backupConfiguration.getRetentionDays() <= 0)
+        if (rule == null && backupConfiguration.getRetentionDays() <= 0) {
             return false;
-        if (rule != null && rule.getExpirationInDays() == backupConfiguration.getRetentionDays())
-        {
+        }
+        if (rule != null && rule.getExpirationInDays() == backupConfiguration.getRetentionDays()) {
             logger.info("Cleanup rule already set");
             return false;
         }
-        if (rule == null)
-        {
+        if (rule == null) {
             // Create a new rule
             rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(backupConfiguration.getRetentionDays()).withPrefix(prefix);
             rule.setStatus(BucketLifecycleConfiguration.ENABLED);
             rule.setId(prefix);
             rules.add(rule);
             logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
-        }
-        else if (backupConfiguration.getRetentionDays() > 0)
-        {
+        } else if (backupConfiguration.getRetentionDays() > 0) {
             logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), backupConfiguration.getRetentionDays()));
             rule.setExpirationInDays(backupConfiguration.getRetentionDays());
-        }
-        else
-        {
+        } else {
             logger.info(String.format("Removing cleanup rule for %s", rule.getPrefix()));
             rules.remove(rule);
         }
         return true;
     }
 
-    private AmazonS3 getS3Client()
-    {
+    private AmazonS3 getS3Client() {
         return new AmazonS3Client(cred.getCredentials());
     }
 
     /**
      * Get S3 prefix which will be used to locate S3 files
      */
-    public String getPrefix()
-    {
+    public String getPrefix() {
         String prefix = "";
-        if (StringUtils.isNotBlank(backupConfiguration.getRestorePrefix()))
+        if (StringUtils.isNotBlank(backupConfiguration.getRestorePrefix())) {
             prefix = backupConfiguration.getRestorePrefix();
-        else
+        } else {
             prefix = backupConfiguration.getS3BucketName();
+        }
 
         String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
         return paths[0];
     }
 
     @Override
-    public int downloadCount()
-    {
+    public int downloadCount() {
         return downloadCount.get();
     }
 
     @Override
-    public int uploadCount()
-    {
+    public int uploadCount() {
         return uploadCount.get();
     }
 
     @Override
-    public long bytesUploaded()
-    {
+    public long bytesUploaded() {
         return bytesUploaded.get();
     }
 
     @Override
-    public long bytesDownloaded()
-    {
+    public long bytesDownloaded() {
         return bytesDownloaded.get();
     }
 

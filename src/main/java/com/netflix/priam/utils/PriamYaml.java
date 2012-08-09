@@ -1,5 +1,4 @@
 package com.netflix.priam.utils;
 
-public class PriamYaml
-{
+public class PriamYaml {
 }

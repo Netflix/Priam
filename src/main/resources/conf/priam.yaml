@@ -1,4 +1,5 @@
 cassandra:
+  partitionerClassName: "org.apache.cassandra.dht.RandomPartitioner" # The partitioner responsible for distributing rows (by key) across nodes in the cluster
   bootstrapClusterName:                       # Bootstrap cluster name (depends on another cass cluster)
   multiRegionEnabled: false                   # true if it is a multi regional cluster.  Needs to be changed in conjunction with endpointSnitch
   endpointSnitch: "org.apache.cassandra.locator.Ec2Snitch"  # Snitch to be used in cassandra.yaml
@@ -32,7 +33,7 @@ cassandra:
   memTableTotalSpaceMB: 1024                        # Total memory to use for memtables.  Cassandra will flush the largest memtable when this much memory is used.
   hintedHandoffThrottleDelayMS: 1                   # Sleep this long after delivering each hint
   maxHintWindowMS: 3600000                          # this defines the maximum amount of time a dead host will have hints generated.  After it has been dead this long, hints will be dropped.
-  localBootstrapEnable: false                       # true if Priam should local config file for tokens and seeds
+  localBootstrapEnable: false                       # true if Priam should use local config file for tokens and seeds
   cacheLocation: "/var/lib/cassandra/saved_caches"  # Location of local cache
   seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
 

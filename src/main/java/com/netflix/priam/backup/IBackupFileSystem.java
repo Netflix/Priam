@@ -8,8 +8,7 @@ import java.util.Iterator;
 /**
  * Interface representing a backup storage as a file system
  */
-public interface IBackupFileSystem
-{
+public interface IBackupFileSystem {
     /**
      * Write the contents of the specified remote path to the output stream and
      * close
@@ -26,7 +25,7 @@ public interface IBackupFileSystem
      * List all files in the backup location for the specified time range.
      */
     public Iterator<AbstractBackupPath> list(String path, Date start, Date till);
-    
+
     /**
      * Get a list of prefixes for the cluster available in backup for the specified date
      */
@@ -36,7 +35,7 @@ public interface IBackupFileSystem
      * Runs cleanup or set retention
      */
     public void cleanup();
-    
+
     /**
      * Get number of active upload or downloads
      */

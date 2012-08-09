@@ -4,8 +4,7 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;
 
-public class BackupConfiguration
-{
+public class BackupConfiguration {
     @JsonProperty
     private String autoRestoreSnapshotName;
 
@@ -61,183 +60,147 @@ public class BackupConfiguration
     private long uploadThrottleBytesPerSec;
 
 
-    public String getAutoRestoreSnapshotName()
-    {
+    public String getAutoRestoreSnapshotName() {
         return autoRestoreSnapshotName;
     }
 
-    public long getChunkSizeMB()
-    {
+    public long getChunkSizeMB() {
         return chunkSizeMB * 1024L * 1024L;
     }
 
-    public int getHour()
-    {
+    public int getHour() {
         return hour;
     }
 
-    public List<String> getAvailabilityZonesToBackup()
-    {
+    public List<String> getAvailabilityZonesToBackup() {
         return availabilityZonesToBackup;
     }
 
-    public int getRetentionDays()
-    {
+    public int getRetentionDays() {
         return retentionDays;
     }
 
-    public int getBackupThreads()
-    {
+    public int getBackupThreads() {
         return backupThreads;
     }
 
-    public int getRestoreThreads()
-    {
+    public int getRestoreThreads() {
         return restoreThreads;
     }
 
-    public String getS3BucketName()
-    {
+    public String getS3BucketName() {
         return s3BucketName;
     }
 
-    public String getS3BaseDir()
-    {
+    public String getS3BaseDir() {
         return s3BaseDir;
     }
 
-    public boolean isCommitLogEnabled()
-    {
+    public boolean isCommitLogEnabled() {
         return commitLogEnabled;
     }
 
-    public String getCommitLogLocation()
-    {
+    public String getCommitLogLocation() {
         return commitLogLocation;
     }
 
-    public boolean isIncrementalEnabled()
-    {
+    public boolean isIncrementalEnabled() {
         return incrementalEnabled;
     }
 
-    public boolean isMultiThreadedCompaction()
-    {
+    public boolean isMultiThreadedCompaction() {
         return multiThreadedCompaction;
     }
 
-    public boolean isRestoreClosestToken()
-    {
+    public boolean isRestoreClosestToken() {
         return restoreClosestToken;
     }
 
-    public List<String> getRestoreKeyspaces()
-    {
+    public List<String> getRestoreKeyspaces() {
         return restoreKeyspaces;
     }
 
-    public String getRestorePrefix()
-    {
+    public String getRestorePrefix() {
         return restorePrefix;
     }
 
-    public int getStreamingThroughputMbps()
-    {
+    public int getStreamingThroughputMbps() {
         return streamingThroughputMbps;
     }
 
-    public long getUploadThrottleBytesPerSec()
-    {
+    public long getUploadThrottleBytesPerSec() {
         return uploadThrottleBytesPerSec;
     }
 
-    public void setAutoRestoreSnapshotName(String autoRestoreSnapshotName)
-    {
+    public void setAutoRestoreSnapshotName(String autoRestoreSnapshotName) {
         this.autoRestoreSnapshotName = autoRestoreSnapshotName;
     }
 
-    public void setChunkSizeMB(int chunkSizeMB)
-    {
+    public void setChunkSizeMB(int chunkSizeMB) {
         this.chunkSizeMB = chunkSizeMB;
     }
 
-    public void setHour(int hour)
-    {
+    public void setHour(int hour) {
         this.hour = hour;
     }
 
-    public void setAvailabilityZonesToBackup(List<String> availabilityZonesToBackup)
-    {
+    public void setAvailabilityZonesToBackup(List<String> availabilityZonesToBackup) {
         this.availabilityZonesToBackup = availabilityZonesToBackup;
     }
 
-    public void setRetentionDays(int retentionDays)
-    {
+    public void setRetentionDays(int retentionDays) {
         this.retentionDays = retentionDays;
     }
 
-    public void setBackupThreads(int backupThreads)
-    {
+    public void setBackupThreads(int backupThreads) {
         this.backupThreads = backupThreads;
     }
 
-    public void setRestoreThreads(int restoreThreads)
-    {
+    public void setRestoreThreads(int restoreThreads) {
         this.restoreThreads = restoreThreads;
     }
 
-    public void setS3BucketName(String s3BucketName)
-    {
+    public void setS3BucketName(String s3BucketName) {
         this.s3BucketName = s3BucketName;
     }
 
-    public void setS3BaseDir(String s3BaseDir)
-    {
+    public void setS3BaseDir(String s3BaseDir) {
         this.s3BaseDir = s3BaseDir;
     }
 
-    public void setCommitLogEnabled(boolean commitLogEnabled)
-    {
+    public void setCommitLogEnabled(boolean commitLogEnabled) {
         this.commitLogEnabled = commitLogEnabled;
     }
 
-    public void setCommitLogLocation(String commitLogLocation)
-    {
+    public void setCommitLogLocation(String commitLogLocation) {
         this.commitLogLocation = commitLogLocation;
     }
 
-    public void setIncrementalEnabled(boolean incrementalEnabled)
-    {
+    public void setIncrementalEnabled(boolean incrementalEnabled) {
         this.incrementalEnabled = incrementalEnabled;
     }
 
-    public void setMultiThreadedCompaction(boolean multiThreadedCompaction)
-    {
+    public void setMultiThreadedCompaction(boolean multiThreadedCompaction) {
         this.multiThreadedCompaction = multiThreadedCompaction;
     }
 
-    public void setRestoreClosestToken(boolean restoreClosestToken)
-    {
+    public void setRestoreClosestToken(boolean restoreClosestToken) {
         this.restoreClosestToken = restoreClosestToken;
     }
 
-    public void setRestoreKeyspaces(List<String> restoreKeyspaces)
-    {
+    public void setRestoreKeyspaces(List<String> restoreKeyspaces) {
         this.restoreKeyspaces = restoreKeyspaces;
     }
 
-    public void setRestorePrefix(String restorePrefix)
-    {
+    public void setRestorePrefix(String restorePrefix) {
         this.restorePrefix = restorePrefix;
     }
 
-    public void setStreamingThroughputMbps(int streamingThroughputMbps)
-    {
+    public void setStreamingThroughputMbps(int streamingThroughputMbps) {
         this.streamingThroughputMbps = streamingThroughputMbps;
     }
 
-    public void setUploadThrottleBytesPerSec(long uploadThrottleBytesPerSec)
-    {
+    public void setUploadThrottleBytesPerSec(long uploadThrottleBytesPerSec) {
         this.uploadThrottleBytesPerSec = uploadThrottleBytesPerSec;
     }
 

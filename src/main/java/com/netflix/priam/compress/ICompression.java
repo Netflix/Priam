@@ -5,8 +5,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
-public interface ICompression
-{
+public interface ICompression {
     /**
      * Uncompress the input stream and write to the output stream.
      * Closes both input and output streams

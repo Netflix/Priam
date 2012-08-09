@@ -1,53 +1,46 @@
 package com.netflix.priam.resources;
 
-import java.io.IOException;
+import com.google.inject.Inject;
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.identity.DoubleRing;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.identity.DoubleRing;
+import java.io.IOException;
 
 /**
  * This servlet will provide the configuration API service as and when Cassandra
  * requests for it.
  */
-@Path("/v1/cassconfig")
-@Produces(MediaType.TEXT_PLAIN)
-public class CassandraConfig
-{
+@Path ("/v1/cassconfig")
+@Produces (MediaType.TEXT_PLAIN)
+public class CassandraConfig {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
     private PriamServer priamServer;
     private DoubleRing doubleRing;
 
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing)
-    {
+    public CassandraConfig(PriamServer server, DoubleRing doubleRing) {
         this.priamServer = server;
         this.doubleRing = doubleRing;
     }
 
     @GET
-    @Path("/get_seeds")
-    public Response getSeeds()
-    {
-        try
-        {
-            if (CollectionUtils.isNotEmpty(priamServer.getInstanceIdentity().getSeeds()))
+    @Path ("/get_seeds")
+    public Response getSeeds() {
+        try {
+            if (CollectionUtils.isNotEmpty(priamServer.getInstanceIdentity().getSeeds())) {
                 return Response.ok(StringUtils.join(priamServer.getInstanceIdentity().getSeeds(), ',')).build();
+            }
             logger.error("Cannot find the Seeds " + priamServer.getInstanceIdentity().getSeeds());
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             logger.error("Error while executing get_seeds", e);
             return Response.serverError().build();
         }
@@ -55,17 +48,14 @@ public class CassandraConfig
     }
 
     @GET
-    @Path("/get_token")
-    public Response getToken()
-    {
-        try
-        {
-            if (StringUtils.isNotBlank(priamServer.getInstanceIdentity().getInstance().getToken()))
+    @Path ("/get_token")
+    public Response getToken() {
+        try {
+            if (StringUtils.isNotBlank(priamServer.getInstanceIdentity().getInstance().getToken())) {
                 return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken()).build();
+            }
             logger.error("Cannot find token for this instance.");
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             // TODO: can this ever happen? if so, what conditions would cause an exception here?
             logger.error("Error while executing get_token", e);
             return Response.serverError().build();
@@ -74,15 +64,11 @@ public class CassandraConfig
     }
 
     @GET
-    @Path("/is_replace_token")
-    public Response isReplaceToken()
-    {
-        try
-        {
+    @Path ("/is_replace_token")
+    public Response isReplaceToken() {
+        try {
             return Response.ok(String.valueOf(priamServer.getInstanceIdentity().isReplace())).build();
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             // TODO: can this ever happen? if so, what conditions would cause an exception here?
             logger.error("Error while executing is_replace_token", e);
             return Response.serverError().build();
@@ -90,16 +76,12 @@ public class CassandraConfig
     }
 
     @GET
-    @Path("/double_ring")
-    public Response doubleRing() throws IOException, ClassNotFoundException
-    {
-        try
-        {
+    @Path ("/double_ring")
+    public Response doubleRing() throws IOException, ClassNotFoundException {
+        try {
             doubleRing.backup();
             doubleRing.doubleSlots();
-        }
-        catch (Throwable th)
-        {
+        } catch (Throwable th) {
             logger.error("Error in doubling the ring...", th);
             doubleRing.restore();
             // rethrow

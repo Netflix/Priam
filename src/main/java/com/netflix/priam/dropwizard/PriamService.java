@@ -15,27 +15,22 @@ import com.yammer.dropwizard.config.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PriamService extends Service<PriamConfiguration>
-{
+public class PriamService extends Service<PriamConfiguration> {
     protected static final Logger logger = LoggerFactory.getLogger(PriamService.class);
 
-    public static void main(String[] args) throws Exception
-    {
+    public static void main(String[] args) throws Exception {
         new PriamService().run(args);
     }
 
-    public PriamService()
-    {
+    public PriamService() {
         super("priam");
     }
 
     @Override
-    protected void initialize(PriamConfiguration priamConfiguration, Environment environment) throws Exception
-    {
+    protected void initialize(PriamConfiguration priamConfiguration, Environment environment) throws Exception {
 
         Injector injector = Guice.createInjector(new PriamGuiceModule(priamConfiguration));
-        try
-        {
+        try {
             priamConfiguration.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));
             environment.manage(injector.getInstance(PriamServer.class));
 
@@ -43,10 +38,8 @@ public class PriamService extends Service<PriamConfiguration>
             environment.addResource(injector.getInstance(CassandraAdmin.class));
             environment.addResource(injector.getInstance(CassandraConfig.class));
             environment.addResource(injector.getInstance(PriamInstanceResource.class));
-        }
-        catch (Exception e)
-        {
-            logger.error(e.getMessage(),e);
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         }
     }

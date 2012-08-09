@@ -24,11 +24,10 @@ import org.slf4j.LoggerFactory;
 /**
  * Encapsulates the timing/state required to throttle a caller to a target throughput in
  * bytes per millisecond, when periodically passed an absolute count of bytes.
- * 
+ * <p/>
  * TODO TODO TODO: remove this.... this is a copy from 1.0 source code.
  */
-public class Throttle
-{
+public class Throttle {
     private static Logger logger = LoggerFactory.getLogger(Throttle.class);
 
     private final String name;
@@ -42,29 +41,33 @@ public class Throttle
     // current target bytes of throughput per millisecond
     private int targetBytesPerMS = -1;
 
-    public Throttle(String name, ThroughputFunction fun)
-    {
+    public Throttle(String name, ThroughputFunction fun) {
         this.name = name;
         this.fun = fun;
     }
 
-    /** @param currentBytes Bytes of throughput since the beginning of the task. */
-    public void throttle(long currentBytes)
-    {
+    /**
+     * @param currentBytes Bytes of throughput since the beginning of the task.
+     */
+    public void throttle(long currentBytes) {
         throttleDelta(currentBytes - bytesAtLastDelay);
     }
 
-    /** @param bytesDelta Bytes of throughput since the last call to throttle*(). */
-    public void throttleDelta(long bytesDelta)
-    {
+    /**
+     * @param bytesDelta Bytes of throughput since the last call to throttle*().
+     */
+    public void throttleDelta(long bytesDelta) {
         int newTargetBytesPerMS = fun.targetThroughput();
         if (newTargetBytesPerMS < 1)
-            // throttling disabled
+        // throttling disabled
+        {
             return;
+        }
 
         // if the target changed, log
-        if (newTargetBytesPerMS != targetBytesPerMS)
+        if (newTargetBytesPerMS != targetBytesPerMS) {
             logger.debug("{} target throughput now {} bytes/ms.", this, newTargetBytesPerMS);
+        }
         targetBytesPerMS = newTargetBytesPerMS;
 
         // time passed since last delay
@@ -74,17 +77,14 @@ public class Throttle
 
         // the time to delay to recap the deficit
         long timeToDelay = excessBytes / Math.max(1, targetBytesPerMS);
-        if (timeToDelay > 0)
-        {
-            if (logger.isTraceEnabled())
+        if (timeToDelay > 0) {
+            if (logger.isTraceEnabled()) {
                 logger.trace(String.format("%s actual throughput was %d bytes in %d ms: throttling for %d ms",
-                                           this, bytesDelta, msSinceLast, timeToDelay));
-            try
-            {
-                Thread.sleep(timeToDelay);
+                        this, bytesDelta, msSinceLast, timeToDelay));
             }
-            catch (InterruptedException e)
-            {
+            try {
+                Thread.sleep(timeToDelay);
+            } catch (InterruptedException e) {
                 throw new AssertionError(e);
             }
         }
@@ -93,16 +93,14 @@ public class Throttle
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return "Throttle(for=" + name + ")";
     }
-    
-    public interface ThroughputFunction
-    {
+
+    public interface ThroughputFunction {
         /**
          * @return The instantaneous target throughput in bytes per millisecond. Targets less
-         * than or equal to zero will disable throttling.
+         *         than or equal to zero will disable throttling.
          */
         public int targetThroughput();
     }

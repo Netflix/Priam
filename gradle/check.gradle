@@ -1,0 +1,27 @@
+subprojects {
+    // Checkstyle
+    apply plugin: 'checkstyle'
+    tasks.withType(Checkstyle) { ignoreFailures = true }
+    checkstyle {
+        ignoreFailures = true // Waiting on GRADLE-2163
+        configFile = rootProject.file('codequality/checkstyle.xml')
+    }
+
+    // FindBugs
+    apply plugin: 'findbugs'
+    findbugs {
+        ignoreFailures = true
+    }
+    //tasks.withType(Findbugs) { reports.html.enabled true }
+
+    // PMD
+    apply plugin: 'pmd'
+    pmd {
+        ignoreFailures = true
+    }
+
+    tasks.withType(Pmd) { 
+        ignoreFailures = true
+        reports.html.enabled true
+    }
+}

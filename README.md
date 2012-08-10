@@ -77,6 +77,10 @@ You'll need to copy a few files to each Cassandra node.  Ensure that the files a
 Open the /usr/share/cassandra/priam.yaml file that you just copied and make any edits to the settings that you desire.  The primary
 setting you'll want to change is the "cassandra.clusterName" property, although this isn't strictly necessary just to evaluate Priam.
 
+Change the Cassandra startup script's (/usr/sbin/cassandra) main class:
+
+    $ sed -i '' 's/org.apache.cassandra.thrift.CassandraDaemon/com.netflix.priam.cassandra.NFThinCassandraDaemon/g' /usr/sbin/cassandra
+
 AWS Account Setup
 -----------------
 There are a few things that need to be set up in your AWS account in order to use Priam before it can be started.

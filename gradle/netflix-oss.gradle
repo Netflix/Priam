@@ -21,7 +21,7 @@ rootProject {
             project.dependencies.add('compile', 'apache-cassandra:apache-cassandra:1.0.9.23')
             project.dependencies.add('compile', 'edu.stanford.ppl:snaptree:0.1') 
             project.dependencies.add('compile', 'com.yammer.metrics:metrics-core:2.0.3') 
-            project.dependencies.add('compile', 'libthrift:libthrift:0.7.0') 
+            project.dependencies.add('compile', 'libthrift:libthrift:0.6.1') 
         }
     }
 }

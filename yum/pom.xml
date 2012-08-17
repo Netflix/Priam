@@ -35,7 +35,7 @@
                                     <goal>create-update</goal>
                                 </goals>
                                 <configuration>
-                                    <repositoryPath>${yumrepo.s3RepositoryPath}</repositoryPath>
+                                    <s3RepositoryPath>${yumrepo.s3RepositoryPath}</s3RepositoryPath>
                                     <artifactItems>
                                         <artifactItem>
                                             <groupId>com.netflix.priam</groupId>

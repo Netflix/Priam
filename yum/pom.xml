@@ -16,8 +16,6 @@
     <properties>
         <!-- note: the *bucket* is the root of the repo -->
         <yumrepo.s3RepositoryPath>s3://emodb-artifacts/yum-repo</yumrepo.s3RepositoryPath>
-        <!-- do not try to deploy to bazaarvoice *maven* repositories -->
-        <maven.deploy.skip>true</maven.deploy.skip>
     </properties>
 
     <profiles>

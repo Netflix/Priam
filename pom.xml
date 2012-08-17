@@ -12,6 +12,7 @@
 
     <artifactId>priam-complete</artifactId>
     <packaging>pom</packaging>
+
     <name>Priam Reactor</name>
 
     <scm>

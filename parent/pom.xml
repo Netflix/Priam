@@ -219,7 +219,7 @@
                 <plugin>
                     <groupId>com.bazaarvoice.maven.plugins</groupId>
                     <artifactId>s3repo-maven-plugin</artifactId>
-                    <version>1.0</version>
+                    <version>1.2</version>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -62,7 +62,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
         createInstances();
         identity = createInstanceIdentity("az1", "fakeinstancex");
-        assertEquals(2, identity.getSeeds().size());
+        assertEquals(3, identity.getSeeds().size());
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
         assertEquals(3, identity.getSeeds().size());

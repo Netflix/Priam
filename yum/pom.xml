@@ -28,7 +28,8 @@
                         <artifactId>s3repo-maven-plugin</artifactId>
                         <executions>
                             <execution>
-                                <phase>site</phase>
+                                <!-- use install phase so we don't have to go through standard lifecycle that includes deploy -->
+                                <phase>install</phase>
                                 <goals>
                                     <goal>create-update</goal>
                                 </goals>

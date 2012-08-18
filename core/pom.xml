@@ -312,8 +312,8 @@
                             <copyright>Other/Proprietary</copyright>
                             <defaultDirmode>755</defaultDirmode>
                             <defaultFilemode>755</defaultFilemode>
-                            <defaultUsername>emoadmin</defaultUsername>
-                            <defaultGroupname>emoadmin</defaultGroupname>
+                            <defaultUsername>cassandra</defaultUsername>
+                            <defaultGroupname>cassandra</defaultGroupname>
                             <mappings>
                                 <mapping>
                                     <directory>/usr/share/cassandra/</directory>

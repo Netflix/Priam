@@ -1,6 +1,8 @@
 package com.netflix.priam.cli;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Guice;
+import com.google.inject.Injector;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
@@ -10,6 +12,7 @@ import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.SDBInstanceFactory;
+import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -32,5 +35,22 @@ class LightGuiceModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
+    }
+}
+
+class Application
+{
+    static final Injector injector = Guice.createInjector(new LightGuiceModule());
+
+    static void initialize()
+    {
+        IConfiguration conf = injector.getInstance(IConfiguration.class);
+        conf.intialize();
+    }
+
+    static void shutdownAdditionalThreads()
+    {
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.shutdown();
     }
 }

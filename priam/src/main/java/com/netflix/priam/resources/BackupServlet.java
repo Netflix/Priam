@@ -1,9 +1,27 @@
 package com.netflix.priam.resources;
 
-import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalRestore;
+import com.netflix.priam.backup.Restore;
+import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TuneCassandra;
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONObject;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -11,30 +29,10 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IncrementalRestore;
-import com.netflix.priam.backup.Restore;
-import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.SystemUtils;
-import com.netflix.priam.utils.TokenManager;
-import com.netflix.priam.utils.TuneCassandra;
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -57,12 +55,13 @@ public class BackupServlet
     private TuneCassandra tuneCassandra;
     private SnapshotBackup snapshotBackup;
     private IPriamInstanceFactory factory;
+    private final ITokenManager tokenManager;
     @Inject
     private PriamScheduler scheduler;
 
     @Inject
     public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory)
+            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager)
     {
         this.priamServer = priamServer;
         this.config = config;
@@ -72,6 +71,7 @@ public class BackupServlet
         this.tuneCassandra = tunecassandra;
         this.snapshotBackup = snapshotBackup;
         this.factory = factory;
+        this.tokenManager = tokenManager;
     }
 
     @GET
@@ -222,7 +222,7 @@ public class BackupServlet
             if (ins.getDC().equalsIgnoreCase(region))
                 tokenList.add(new BigInteger(ins.getToken()));
         }
-        return TokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
+        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }
 
     /*

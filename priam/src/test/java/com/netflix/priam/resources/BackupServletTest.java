@@ -1,11 +1,5 @@
 package com.netflix.priam.resources;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
@@ -18,15 +12,20 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
-
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrict;
-
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -40,13 +39,14 @@ public class BackupServletTest
     private @Mocked TuneCassandra tuneCassandra;
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
+    private final ITokenManager tokenManager = new TokenManager();
     private BackupServlet resource;
 
     @Before
     public void setUp()
     {
         resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup, factory);
+            tuneCassandra, snapshotBackup, factory, tokenManager);
     }
 
     @Test

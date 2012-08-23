@@ -1,5 +1,7 @@
 package com.netflix.priam.defaultimpl;
 
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TokenManager;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -33,5 +35,6 @@ public class PriamGuiceModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
+        bind(ITokenManager.class).to(TokenManager.class);
     }
 }

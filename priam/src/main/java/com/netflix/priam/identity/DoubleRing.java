@@ -1,5 +1,13 @@
 package com.netflix.priam.identity;
 
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.ITokenManager;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -10,15 +18,6 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.TokenManager;
-
 /**
  * Class providing functionality for doubling the ring
  */
@@ -28,12 +27,14 @@ public class DoubleRing
     private static File TMP_BACKUP_FILE;
     private final IConfiguration config;
     private final IPriamInstanceFactory factory;
+    private final ITokenManager tokenManager;
 
     @Inject
-    public DoubleRing(IConfiguration config, IPriamInstanceFactory factory)
+    public DoubleRing(IConfiguration config, IPriamInstanceFactory factory, ITokenManager tokenManager)
     {
         this.config = config;
         this.factory = factory;
+        this.tokenManager = tokenManager;
     }
 
     /**
@@ -49,7 +50,7 @@ public class DoubleRing
         for (PriamInstance data : local)
             factory.delete(data);
 
-        int hash = TokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(config.getDC());
         // move existing slots.
         for (PriamInstance data : local)
         {
@@ -63,7 +64,7 @@ public class DoubleRing
             // if max then rotate.
             int currentSlot = data.getId() - hash;
             int new_slot = currentSlot + 3 > new_ring_size ? (currentSlot + 3) - new_ring_size : currentSlot + 3;
-            String token = TokenManager.createToken(new_slot, new_ring_size, config.getDC());
+            String token = tokenManager.createToken(new_slot, new_ring_size, config.getDC());
             factory.create(data.getApp(), new_slot + hash, "new_slot", config.getHostname(), config.getHostIP(), data.getRac(), null, token);
         }
     }

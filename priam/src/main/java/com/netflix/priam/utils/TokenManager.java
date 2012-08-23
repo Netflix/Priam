@@ -7,7 +7,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
 
-public class TokenManager
+public class TokenManager implements ITokenManager
 {    
     public static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
     public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
@@ -21,7 +21,7 @@ public class TokenManager
      * @param offset added to token
      * @return MAXIMUM_TOKEN / size * position + offset, if <= MAXIMUM_TOKEN, otherwise wrap around the MINIMUM_TOKEN
      */
-    @VisibleForTesting static BigInteger initialToken(int size, int position, int offset)
+    @VisibleForTesting BigInteger initialToken(int size, int position, int offset)
     {
         Preconditions.checkArgument(size > 0, "size must be > 0");
         Preconditions.checkArgument(offset >= 0, "offset must be >= 0");
@@ -47,18 +47,21 @@ public class TokenManager
      * @param region
      *            -- name of the DC where it this token is created.
      */
-    public static String createToken(int my_slot, int rac_count, int rac_size, String region)
+    @Override
+    public String createToken(int my_slot, int rac_count, int rac_size, String region)
     {
         int regionCount = rac_count * rac_size;
         return initialToken(regionCount, my_slot, regionOffset(region)).toString();
     }
     
-    public static String createToken(int my_slot, int totalCount, String region)
+    @Override
+    public String createToken(int my_slot, int totalCount, String region)
     {
         return initialToken(totalCount, my_slot, regionOffset(region)).toString();
     }
     
-    public static BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList)
+    @Override
+    public BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList)
     {
         Preconditions.checkArgument(!tokenList.isEmpty(), "token list must not be empty");
         List<BigInteger> sortedTokens = Ordering.natural().sortedCopy(tokenList);
@@ -77,7 +80,8 @@ public class TokenManager
     /**
      * Create an offset to add to token values by hashing the region name.
      */
-    public static int regionOffset(String region)
+    @Override
+    public int regionOffset(String region)
     {
         return Math.abs(region.hashCode());
     }

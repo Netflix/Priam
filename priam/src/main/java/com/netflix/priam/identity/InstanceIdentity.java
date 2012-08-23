@@ -7,14 +7,18 @@ import com.google.common.collect.Multimaps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.TokenManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Random;
 
 /**
  * This class provides the central place to create and consume the identity of
@@ -36,18 +40,20 @@ public class InstanceIdentity
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
+    private final ITokenManager tokenManager;
 
     private PriamInstance myInstance;
     private boolean isReplace = false;
 
     @Inject
     public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
-            Sleeper sleeper) throws Exception
+            Sleeper sleeper, ITokenManager tokenManager) throws Exception
     {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
         this.sleeper = sleeper;
+        this.tokenManager = tokenManager;
         init();
     }
 
@@ -141,7 +147,7 @@ public class InstanceIdentity
         {
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(15000));
-            int hash = TokenManager.regionOffset(config.getDC());
+            int hash = tokenManager.regionOffset(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.
 
@@ -155,7 +161,7 @@ public class InstanceIdentity
             else
                 my_slot = config.getRacs().size() + maxSlot;
 
-            String payload = TokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
+            String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
             return factory.create(config.getAppName(), my_slot + hash, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, payload);
         }
 

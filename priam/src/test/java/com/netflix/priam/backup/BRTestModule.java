@@ -2,6 +2,8 @@ package com.netflix.priam.backup;
 
 import java.util.Arrays;
 
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TokenManager;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -36,5 +38,6 @@ public class BRTestModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(FakeSleeper.class);
+        bind(ITokenManager.class).to(TokenManager.class);
     }
 }

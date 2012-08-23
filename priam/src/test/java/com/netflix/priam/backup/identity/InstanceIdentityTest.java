@@ -2,6 +2,7 @@ package com.netflix.priam.backup.identity;
 
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
 import org.junit.Test;
 
@@ -11,13 +12,14 @@ import static org.junit.Assert.assertEquals;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {
+    private static final ITokenManager tokenManager = new TokenManager();
 
     @Test
     public void testCreateToken() throws Exception
     {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
-        int hash = TokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(config.getDC());
         assertEquals(0, identity.getInstance().getId() - hash);
 
         identity = createInstanceIdentity("az1", "fakeinstance2");
@@ -53,7 +55,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         createInstances();
         instances.remove("fakeinstance4");
         identity = createInstanceIdentity("az2", "fakeinstancex");
-        int hash = TokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(config.getDC());
         assertEquals(1, identity.getInstance().getId() - hash);
     }
 
@@ -73,7 +75,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
         createInstances();
         int before = factory.getAllIds("fake-app").size();
-        new DoubleRing(config, factory).doubleSlots();
+        new DoubleRing(config, factory, tokenManager).doubleSlots();
         List<PriamInstance> lst = factory.getAllIds(config.getAppName());
         // sort it so it will look good if you want to print it.
         factory.sort(lst);
@@ -91,10 +93,10 @@ public class InstanceIdentityTest extends InstanceTestUtils
     public void testDoubleGrap() throws Exception
     {
         createInstances();
-        new DoubleRing(config, factory).doubleSlots();
+        new DoubleRing(config, factory, tokenManager).doubleSlots();
         config.zone = "az1";
         config.instance_id = "fakeinstancex";
-        int hash = TokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(config.getDC());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }

@@ -8,6 +8,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.TokenManager;
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -63,6 +64,6 @@ public abstract class InstanceTestUtils
     {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper);
+        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager());
     }
 }

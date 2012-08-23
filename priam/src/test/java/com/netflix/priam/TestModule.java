@@ -1,5 +1,7 @@
 package com.netflix.priam;
 
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TokenManager;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -33,5 +35,6 @@ public class TestModule extends AbstractModule
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(Sleeper.class).to(FakeSleeper.class);
+        bind(ITokenManager.class).to(TokenManager.class);
     }
 }

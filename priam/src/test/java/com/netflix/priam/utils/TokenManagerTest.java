@@ -14,39 +14,41 @@ import static org.junit.Assert.assertFalse;
 
 public class TokenManagerTest
 {
+    private static final TokenManager tokenManager = new TokenManager();
+    
     @Test(expected = IllegalArgumentException.class)
     public void initialToken_zeroSize()
     {
-        TokenManager.initialToken(0, 0, 1);
+        tokenManager.initialToken(0, 0, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void initialToken_negativePosition()
     {
-        TokenManager.initialToken(1, -1, 1);
+        tokenManager.initialToken(1, -1, 1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void initialToken_negativeOffset()
     {
-        TokenManager.initialToken(1, 0, -1);
+        tokenManager.initialToken(1, 0, -1);
     }
 
     @Test
     public void initialToken_positionZero()
     {
-        assertEquals(MINIMUM_TOKEN, TokenManager.initialToken(1, 0, 0));
-        assertEquals(MINIMUM_TOKEN, TokenManager.initialToken(10, 0, 0));
-        assertEquals(MINIMUM_TOKEN, TokenManager.initialToken(133, 0, 0));
+        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(1, 0, 0));
+        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(10, 0, 0));
+        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(133, 0, 0));
     }
 
     @Test
     public void initialToken_offsets_zeroPosition()
     {
-        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(7)), TokenManager.initialToken(1, 0, 7));
-        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(11)), TokenManager.initialToken(2, 0, 11));
+        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(7)), tokenManager.initialToken(1, 0, 7));
+        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(11)), tokenManager.initialToken(2, 0, 11));
         assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(Integer.MAX_VALUE)),
-                TokenManager.initialToken(256, 0, Integer.MAX_VALUE));
+                tokenManager.initialToken(256, 0, Integer.MAX_VALUE));
     }
     
     @Test
@@ -54,7 +56,7 @@ public class TokenManagerTest
         final int maxRingSize = Integer.MAX_VALUE;
         final int maxPosition = maxRingSize - 1;
         final int maxOffset = Integer.MAX_VALUE;
-        assertEquals(1, MAXIMUM_TOKEN.compareTo(TokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
+        assertEquals(1, MAXIMUM_TOKEN.compareTo(tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
     }
 
     @Test
@@ -62,41 +64,41 @@ public class TokenManagerTest
     {
         assertEquals(MAXIMUM_TOKEN.divide(BigInteger.valueOf(8 * 32))
                 .multiply(BigInteger.TEN)
-                .add(BigInteger.valueOf(TokenManager.regionOffset("region")))
+                .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
                 .toString(),
-                TokenManager.createToken(10, 8, 32, "region"));
+                tokenManager.createToken(10, 8, 32, "region"));
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void findClosestToken_emptyTokenList()
     {
-        TokenManager.findClosestToken(BigInteger.ZERO, Collections.<BigInteger>emptyList());
+        tokenManager.findClosestToken(BigInteger.ZERO, Collections.<BigInteger>emptyList());
     }
 
     @Test
     public void findClosestToken_singleTokenList()
     {
         final BigInteger onlyToken = BigInteger.valueOf(100);
-        assertEquals(onlyToken, TokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
+        assertEquals(onlyToken, tokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
     }
 
     @Test
     public void findClosestToken_multipleTokenList()
     {
         List<BigInteger> tokenList = ImmutableList.of(BigInteger.ONE, BigInteger.TEN, BigInteger.valueOf(100));
-        assertEquals(BigInteger.ONE, TokenManager.findClosestToken(BigInteger.ONE, tokenList));
-        assertEquals(BigInteger.TEN, TokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
-        assertEquals(BigInteger.TEN, TokenManager.findClosestToken(BigInteger.TEN, tokenList));
-        assertEquals(BigInteger.TEN, TokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
-        assertEquals(BigInteger.TEN, TokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
-        assertEquals(BigInteger.valueOf(100), TokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
-        assertEquals(BigInteger.valueOf(100), TokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
+        assertEquals(BigInteger.ONE, tokenManager.findClosestToken(BigInteger.ONE, tokenList));
+        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
+        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.TEN, tokenList));
+        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
+        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
+        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
+        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
     }
 
     @Test
     public void findClosestToken_tieGoesToLargerToken()
     {
-        assertEquals(BigInteger.TEN, TokenManager.findClosestToken(BigInteger.valueOf(5),
+        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(5),
                 ImmutableList.of(BigInteger.ZERO, BigInteger.TEN)));
     }
 
@@ -109,7 +111,7 @@ public class TokenManagerTest
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
-            assertEquals(new BigInteger(tokens[i]), TokenManager.initialToken(splits, i, 0));
+            assertEquals(new BigInteger(tokens[i]), tokenManager.initialToken(splits, i, 0));
     }
 
     @Test
@@ -126,7 +128,7 @@ public class TokenManagerTest
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
-            assertEquals(new BigInteger(tokens[i]), TokenManager.initialToken(splits, i, 0));
+            assertEquals(new BigInteger(tokens[i]), tokenManager.initialToken(splits, i, 0));
     }
 
     @Test
@@ -140,25 +142,25 @@ public class TokenManagerTest
                 if (region1.equals(region2))
                     continue;
                 assertFalse("Diffrence seems to be low",
-                        Math.abs(TokenManager.regionOffset(region1) - TokenManager.regionOffset(region2)) < 100);
+                        Math.abs(tokenManager.regionOffset(region1) - tokenManager.regionOffset(region2)) < 100);
             }
     }
 
     @Test
     public void testMultiToken()
     {
-        int h1 = TokenManager.regionOffset("vijay");
-        int h2 = TokenManager.regionOffset("vijay2");
-        BigInteger t1 = TokenManager.initialToken(100, 10, h1);
-        BigInteger t2 = TokenManager.initialToken(100, 10, h2);
+        int h1 = tokenManager.regionOffset("vijay");
+        int h2 = tokenManager.regionOffset("vijay2");
+        BigInteger t1 = tokenManager.initialToken(100, 10, h1);
+        BigInteger t2 = tokenManager.initialToken(100, 10, h2);
 
         BigInteger tokendistance = t1.subtract(t2).abs();
         int hashDiffrence = h1 - h2;
 
         assertEquals(new BigInteger("" + hashDiffrence).abs(), tokendistance);
 
-        BigInteger t3 = TokenManager.initialToken(100, 99, h1);
-        BigInteger t4 = TokenManager.initialToken(100, 99, h2);
+        BigInteger t3 = tokenManager.initialToken(100, 99, h1);
+        BigInteger t4 = tokenManager.initialToken(100, 99, h2);
         tokendistance = t3.subtract(t4).abs();
 
         assertEquals(new BigInteger("" + hashDiffrence).abs(), tokendistance);

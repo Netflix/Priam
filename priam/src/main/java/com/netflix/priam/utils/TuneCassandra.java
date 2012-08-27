@@ -63,7 +63,7 @@ public class TuneCassandra extends Task
         map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
-	    map.put("partitioner", config.getPartitioner());
+	    map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
         
         // messy but needed it for backward and forward compatibilities.
         if (null != map.get("memtable_total_space_in_mb"))
@@ -89,6 +89,19 @@ public class TuneCassandra extends Task
         }
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
+    }
+
+    static String derivePartitioner(String fromYaml, String fromConfig)
+    {
+        if(fromYaml == null || fromYaml.isEmpty())
+            return fromConfig;
+        //this check is to prevent against overwriting an existing yaml file that has
+        // a partitioner not RandomPartitioner or (as of cass 1.2) Murmur3Partitioner.
+        //basically we don't want to hose existing deployments by changing the partitioner unexpectedly on them
+        final String lowerCase = fromYaml.toLowerCase();
+        if(lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
+            return fromConfig;
+        return fromYaml;
     }
 
     @SuppressWarnings("unchecked")

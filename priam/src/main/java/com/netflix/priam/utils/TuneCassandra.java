@@ -62,6 +62,7 @@ public class TuneCassandra extends Task
         map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
+        map.put("partitioner", config.getPartitioner());
         
         // messy but needed it for backward and forward compatibilities.
         if (null != map.get("memtable_total_space_in_mb"))

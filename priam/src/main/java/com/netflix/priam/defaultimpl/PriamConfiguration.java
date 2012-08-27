@@ -81,6 +81,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
+    private static final String CONFIG_PARTITIONER = PRIAM_PRE + ".partitioner";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -101,6 +102,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
+    private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
@@ -607,6 +609,11 @@ public class PriamConfiguration implements IConfiguration
     public boolean getMultithreadedCompaction()
     {
         return config.getBoolean(CONFIG_MULTITHREADED_COMPACTION, false);
+    }
+
+    public String getPartitioner()
+    {
+        return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
     }
 
 }

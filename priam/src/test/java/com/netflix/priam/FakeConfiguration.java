@@ -364,6 +364,11 @@ public class FakeConfiguration implements IConfiguration
         return false;
     }
 
+    public String getPartitioner()
+    {
+        return "org.apache.cassandra.dht.RandomPartitioner";
+    }
+
     @Override
     public int getSSLStoragePort()
     {

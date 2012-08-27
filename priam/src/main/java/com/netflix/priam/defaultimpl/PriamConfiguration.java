@@ -1,19 +1,9 @@
 package com.netflix.priam.defaultimpl;
 
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesRequest;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -24,12 +14,20 @@ import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
 import com.amazonaws.services.simpledb.model.SelectResult;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.common.collect.Lists;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -80,6 +78,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
+    private static final String CONFIG_PARTITIONER = PRIAM_PRE + ".partitioner";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -99,6 +98,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
+    private static final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
@@ -119,6 +119,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
+
 
     private PriamProperties config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
@@ -593,4 +594,8 @@ public class PriamConfiguration implements IConfiguration
         return config.getBoolean(CONFIG_MULTITHREADED_COMPACTION, false);
     }
 
+    public String getPartitioner()
+    {
+        return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
+    }
 }

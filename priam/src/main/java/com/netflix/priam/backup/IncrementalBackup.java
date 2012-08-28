@@ -32,7 +32,12 @@ public class IncrementalBackup extends AbstractBackup
     public void execute() throws Exception
     {
         File dataDir = new File(config.getDataFileLocation());
-        logger.debug("Scanning for backup in: " + dataDir.getAbsolutePath());
+        if (!dataDir.exists())
+        {
+            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
+                    + config.getDataFileLocation());
+        }
+        logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles())
         {
             for (File columnFamilyDir : keyspaceDir.listFiles())

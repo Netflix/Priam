@@ -41,7 +41,7 @@ public class SystemUtils {
      * Start Cassandra process from this co-process.
      */
     public static void startCassandra(boolean join_ring, CassandraConfiguration cassandraConfig, BackupConfiguration backupConfig, String instanceType) throws IOException, InterruptedException {
-        logger.info("Starting cassandra server ....Join ring=" + join_ring);
+        logger.info("Starting cassandra server ....join_ring={}, user.name={}", join_ring, System.getProperty("user.name"));
 
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name"))) {

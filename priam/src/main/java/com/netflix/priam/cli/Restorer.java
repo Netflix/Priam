@@ -32,7 +32,7 @@ public class Restorer
             }
             try
             {
-                AbstractBackupPath path = Application.injector.getInstance(AbstractBackupPath.class);
+                AbstractBackupPath path = Application.getInjector().getInstance(AbstractBackupPath.class);
                 startTime = path.getFormat().parse(args[0]);
                 endTime = path.getFormat().parse(args[1]);
             } catch (ParseException e)
@@ -42,7 +42,7 @@ public class Restorer
                 return;
             }
 
-            Restore restorer = Application.injector.getInstance(Restore.class);
+            Restore restorer = Application.getInjector().getInstance(Restore.class);
             try
             {
                 restorer.restore(startTime, endTime);

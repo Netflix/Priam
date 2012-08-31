@@ -43,17 +43,24 @@ class LightGuiceModule extends AbstractModule
 
 class Application
 {
-    static final Injector injector = Guice.createInjector(new LightGuiceModule());
+    static Injector getInjector()
+    {
+        if (injector == null)
+            injector = Guice.createInjector(new LightGuiceModule());
+        return injector;
+    }
 
     static void initialize()
     {
-        IConfiguration conf = injector.getInstance(IConfiguration.class);
+        IConfiguration conf = getInjector().getInstance(IConfiguration.class);
         conf.intialize();
     }
 
     static void shutdownAdditionalThreads()
     {
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        S3FileSystem fs = getInjector().getInstance(S3FileSystem.class);
         fs.shutdown();
     }
+
+    static private Injector injector;
 }

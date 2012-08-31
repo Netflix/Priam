@@ -14,7 +14,7 @@ public class Backuper
         try
         {
             Application.initialize();
-            SnapshotBackup backuper = Application.injector.getInstance(SnapshotBackup.class);
+            SnapshotBackup backuper = Application.getInjector().getInstance(SnapshotBackup.class);
             try
             {
                 backuper.execute();

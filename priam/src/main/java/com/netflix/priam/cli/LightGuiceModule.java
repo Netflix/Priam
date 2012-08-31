@@ -21,6 +21,8 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TokenManager;
 
 class LightGuiceModule extends AbstractModule
 {
@@ -35,6 +37,7 @@ class LightGuiceModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
+        bind(ITokenManager.class).to(TokenManager.class);
     }
 }
 

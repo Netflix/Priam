@@ -5,8 +5,8 @@ cassandra:
   endpointSnitch: "org.apache.cassandra.locator.Ec2Snitch"  # Snitch to be used in cassandra.yaml
                                                             # Needs to be changed in conjunction with multiRegionEnabled
   cassHome: "/etc/cassandra"                  # Path to the home dir of Cassandra
-  cassStartScript: "service cassandra start"  # Path to Cassandra startup script
-  cassStopScript: "service cassandra stop"    # Path to Cassandra stop script
+  cassStartScript: "/etc/init.d/cassandra start"  # Path to Cassandra startup script
+  cassStopScript: "/etc/init.d/cassandra stop"    # Path to Cassandra stop script
   clusterName: "cass_cluster"                 # Cluster name (or App) name
   dataLocation: "/var/lib/cassandra/data"     # Location of the local data dir
   sslStoragePort: 7101                        # Cassandra storage/cluster SSL communication port

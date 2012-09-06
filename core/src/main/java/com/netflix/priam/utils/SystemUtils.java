@@ -41,7 +41,7 @@ public class SystemUtils {
      * Start Cassandra process from this co-process.
      */
     public static void startCassandra(boolean join_ring, CassandraConfiguration cassandraConfig, BackupConfiguration backupConfig, String instanceType) throws IOException, InterruptedException {
-        logger.info("Starting cassandra server ....Join ring=" + join_ring);
+        logger.info("Starting cassandra server ....join_ring={}, user.name={}", join_ring, System.getProperty("user.name"));
 
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name"))) {
@@ -64,6 +64,7 @@ public class SystemUtils {
         env.put("JMX_PORT", "" + cassandraConfig.getJmxPort());
         env.put("MAX_DIRECT_MEMORY", cassandraConfig.getDirectMaxHeapSize().get(instanceType));
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
+        logger.info("Adding environment: {}", env);
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
         startCass.start();

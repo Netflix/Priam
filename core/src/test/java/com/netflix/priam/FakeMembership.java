@@ -21,7 +21,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public List<String> getRacMembership()
+    public List<String> getAutoScaleGroupMembership()
     {
         return instances;
     }
@@ -33,7 +33,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public int getRacCount()
+    public int getUsableAvailabilityZones()
     {
         return 3;
     }

@@ -51,23 +51,7 @@ public class SDBInstanceRegistry implements IPriamInstanceRegistry {
     @Override
     public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
         try {
-            PriamInstance ins = makePriamInstance(app, id, instanceID, hostname, ip, rac, volumes, token);
-            // remove old data node which are dead.
-            if (app.endsWith("-dead")) {
-                try {
-                    PriamInstance oldData = dao.getInstance(app, id);
-                    // clean up a very old data...
-                    if (null != oldData) {
-                        // delete after 3 min.
-                        if (oldData.getUpdatetime() < (System.currentTimeMillis() - (3 * 60 * 1000))) {
-                            dao.deregisterInstance(oldData);
-                        }
-                    }
-                } catch (Exception ex) {
-                    //Do nothing
-                    logger.error(ex.getMessage(), ex);
-                }
-            }
+            PriamInstance ins = PriamInstance.from(app, id, instanceID, hostname, ip, rac, volumes, token, amazonConfiguration.getRegionName());
             dao.registerInstance(ins);
             return ins;
         } catch (Exception e) {
@@ -113,18 +97,5 @@ public class SDBInstanceRegistry implements IPriamInstanceRegistry {
         // TODO Auto-generated method stub
     }
 
-    private PriamInstance makePriamInstance(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
-        Map<String, Object> v = (volumes == null) ? new HashMap<String, Object>() : volumes;
-        PriamInstance ins = new PriamInstance();
-        ins.setApp(app);
-        ins.setAvailabilityZone(rac);
-        ins.setHost(hostname);
-        ins.setHostIP(ip);
-        ins.setId(id);
-        ins.setInstanceId(instanceID);
-        ins.setRegionName(amazonConfiguration.getRegionName());
-        ins.setToken(token);
-        ins.setVolumes(v);
-        return ins;
-    }
+
 }

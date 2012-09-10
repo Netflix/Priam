@@ -9,11 +9,11 @@ import java.util.List;
  */
 public interface IMembership {
     /**
-     * Get a list of Instances in the current RAC
+     * Get a list of Instances in the current Auto Scale Group
      *
      * @return
      */
-    public List<String> getRacMembership();
+    public List<String> getAutoScaleGroupMembership();
 
     /**
      * @return Size of current RAC
@@ -21,34 +21,11 @@ public interface IMembership {
     public int getAvailabilityZoneMembershipSize();
 
     /**
-     * Number of RACs
+     * Number of Availability Zones
      *
      * @return
      */
-    public int getRacCount();
-
-    /**
-     * Add security group ACLs
-     *
-     * @param listIPs
-     * @param from
-     * @param to
-     */
-    public void addACL(Collection<String> listIPs, int from, int to);
-
-    /**
-     * Remove security group ACLs
-     *
-     * @param listIPs
-     * @param from
-     * @param to
-     */
-    public void removeACL(Collection<String> listIPs, int from, int to);
-
-    /**
-     * List all ACLs
-     */
-    public List<String> listACL(int from, int to);
+    public int getUsableAvailabilityZones();
 
     /**
      * Expand the membership size by 1.

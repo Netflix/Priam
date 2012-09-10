@@ -1,6 +1,7 @@
 package com.netflix.priam.identity;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.Map;
 
 public class PriamInstance implements Serializable {
@@ -18,6 +19,22 @@ public class PriamInstance implements Serializable {
     private String token;
     //Handles Storage objects
     private Map<String, Object> volumes;
+
+    public static PriamInstance from(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token, String regionName) {
+        Map<String, Object> v = (volumes == null) ? new HashMap<String, Object>() : volumes;
+        PriamInstance ins = new PriamInstance();
+        ins.setApp(app);
+        ins.setAvailabilityZone(rac);
+        ins.setHost(hostname);
+        ins.setHostIP(ip);
+        ins.setId(id);
+        ins.setInstanceId(instanceID);
+        ins.setRegionName(regionName);
+        ins.setToken(token);
+        ins.setVolumes(v);
+        return ins;
+    }
+
 
     public String getApp() {
         return app;

@@ -45,7 +45,7 @@ public class AWSMembership implements IMembership {
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public List<String> getAutoScaleGroupMembership() {
         AmazonAutoScaling client = null;
         try {
             client = getAutoScalingClient();
@@ -61,7 +61,7 @@ public class AWSMembership implements IMembership {
                     }
                 }
             }
-            logger.info(String.format("Querying Amazon returned the following instances in the ASG: %s --> %s", amazonConfiguration.getAvailabilityZone(), StringUtils.join(instanceIds, ",")));
+            logger.info(String.format("Querying Amazon returned the following instances in the ASG: %s --> %s", amazonConfiguration.getAutoScaleGroupName(), StringUtils.join(instanceIds, ",")));
             return instanceIds;
         } finally {
             if (client != null) {
@@ -94,7 +94,7 @@ public class AWSMembership implements IMembership {
     }
 
     @Override
-    public int getRacCount() {
+    public int getUsableAvailabilityZones() {
         return amazonConfiguration.getUsableAvailabilityZones().size();
     }
 

@@ -3,7 +3,6 @@ package com.netflix.priam;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
-import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
@@ -55,16 +54,6 @@ public class PriamServer implements Managed {
 
         // start to schedule jobs
         scheduler.start();
-
-        // update security settings.
-        if (cassandraConfig.isMultiRegionEnabled()) {
-            scheduler.runTaskNow(UpdateSecuritySettings.class);
-            // sleep for 60 sec for the SG update to happen.
-            if (UpdateSecuritySettings.firstTimeUpdated) {
-                sleeper.sleep(60 * 1000);
-            }
-            scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
-        }
 
         // Run the task to tune Cassandra
         scheduler.runTaskNow(TuneCassandra.class);

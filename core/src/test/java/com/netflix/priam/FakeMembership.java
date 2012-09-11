@@ -39,27 +39,6 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public void addACL(Collection<String> listIPs, int from, int to)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void removeACL(Collection<String> listIPs, int from, int to)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public List<String> listACL(int from, int to)
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public void expandAvailabilityZoneMembership(int count)
     {
         // TODO Auto-generated method stub

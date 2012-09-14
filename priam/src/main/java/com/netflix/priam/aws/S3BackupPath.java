@@ -23,7 +23,7 @@ public class S3BackupPath extends AbstractBackupPath
 
     /**
      * Format of backup path:
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE
+     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
      */
     @Override
     public String getRemotePath()
@@ -36,7 +36,7 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(getFormat().format(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
         if (type != BackupFileType.META && type != BackupFileType.CL)
-            buff.append(keyspace).append(S3BackupPath.PATH_SEP);
+            buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
         buff.append(fileName);
         return buff.toString();
     }
@@ -65,6 +65,7 @@ public class S3BackupPath extends AbstractBackupPath
             if (type != BackupFileType.META && type != BackupFileType.CL)
             {
                 keyspace = pieces.get(6);
+                columnFamily = pieces.get(7);
             }
             // append the rest
             fileName = pieces.get(pieces.size() - 1);

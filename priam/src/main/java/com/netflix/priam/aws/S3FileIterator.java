@@ -34,7 +34,7 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
         this.till = till;
         this.pathProvider = pathProvider;
         ListObjectsRequest listReq = new ListObjectsRequest();
-        String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));        
+        String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
         listReq.setBucketName(paths[0]);
         listReq.setPrefix(pathProvider.get().remotePrefix(start, till, path));
         this.s3Client = s3Client;
@@ -53,7 +53,7 @@ public class S3FileIterator implements Iterator<AbstractBackupPath>
         {
             while(objectListing.isTruncated() && !iterator.hasNext()) 
             {
-                objectListing = s3Client.listNextBatchOfObjects(objectListing);                
+                objectListing = s3Client.listNextBatchOfObjects(objectListing);
                 iterator = createIterator();
             }
 

@@ -30,6 +30,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected BackupFileType type;
     protected String clusterName;
     protected String keyspace;
+    protected String columnFamily;
     protected String fileName;
     protected String baseDir;
     protected String token;
@@ -71,7 +72,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.token = factory.getInstance().getToken();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL)
+        {
             this.keyspace = elements[0];
+            this.columnFamily = elements[1];
+        }
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[3]);
         if (type == BackupFileType.SST || type == BackupFileType.CL)
@@ -102,7 +106,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         StringBuffer buff = new StringBuffer();
         buff.append(config.getDataFileLocation()).append(PATH_SEP);
         if (type != BackupFileType.META)
-            buff.append(keyspace).append(PATH_SEP);
+            buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
         buff.append(fileName);
         File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());
@@ -164,6 +168,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public String getKeyspace()
     {
         return keyspace;
+    }
+
+    public String getColumnFamily()
+    {
+        return columnFamily;
     }
 
     public String getFileName()

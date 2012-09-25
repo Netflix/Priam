@@ -1,5 +1,7 @@
 package com.netflix.priam.config;
 
+import com.google.common.base.Objects;
+import com.google.common.collect.Lists;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;
@@ -117,7 +119,7 @@ public class BackupConfiguration {
     }
 
     public List<String> getRestoreKeyspaces() {
-        return restoreKeyspaces;
+        return Objects.firstNonNull(restoreKeyspaces, Lists.<String>newArrayList());
     }
 
     public String getRestorePrefix() {

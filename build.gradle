@@ -1,5 +1,4 @@
-// Establish version and status
-ext.releaseVersion = '0.0.5.3'
+ext.releaseVersion = '0.0.5.4'
 ext.githubProjectName = 'Priam'
 
 buildscript {

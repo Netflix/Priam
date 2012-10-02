@@ -1,11 +1,10 @@
 package com.netflix.priam;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -356,6 +355,11 @@ public class FakeConfiguration implements IConfiguration
     public boolean getMultithreadedCompaction()
     {
         return false;
+    }
+
+    public String getPartitioner()
+    {
+        return "org.apache.cassandra.dht.RandomPartitioner";
     }
 
 }

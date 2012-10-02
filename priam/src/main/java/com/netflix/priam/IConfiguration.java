@@ -268,4 +268,11 @@ public interface IConfiguration
      * @return multithreaded_compaction in yaml
      */
     public boolean getMultithreadedCompaction();
+
+    /**
+     * Retrieve the partitioner in use.
+     *
+     * @return fully-qualified java class name of partitioner.
+     */
+    public String getPartitioner();
 }

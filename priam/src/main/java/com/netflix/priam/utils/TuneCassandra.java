@@ -87,8 +87,37 @@ public class TuneCassandra extends Task
             Map<String, String> m = (Map<String, String>) seedp.get(0);
             m.put("class_name", seedProvider);
         }
+
+        configureGlobalCaches(config, map);
+
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
+    }
+
+    /**
+     * Setup the cassandra 1.1 global cache values
+     */
+    private static void configureGlobalCaches(IConfiguration config, Map yaml)
+    {
+        final String keyCacheSize = config.getKeyCacheSizeInMB();
+        if(keyCacheSize != null)
+        {
+            yaml.put("key_cache_size_in_mb", keyCacheSize);
+
+            final String keyCount = config.getKeyCacheKeysToSave();
+            if(keyCount != null)
+                yaml.put("key_cache_keys_to_save", keyCount);
+        }
+
+        final String rowCacheSize = config.getRowCacheSizeInMB();
+        if(rowCacheSize != null)
+        {
+            yaml.put("row_cache_size_in_mb", rowCacheSize);
+
+            final String rowCount = config.getRowCacheKeysToSave();
+            if(rowCount != null)
+                yaml.put("row_cache_keys_to_save", rowCount);
+        }
     }
 
     static String derivePartitioner(String fromYaml, String fromConfig)

@@ -78,16 +78,16 @@ public class CassandraConfiguration {
     private String seedProviderClassName;
 
     @JsonProperty
-    private Integer keyCacheSizeInMB;
+    private String keyCacheSizeInMB;
 
     @JsonProperty
-    private Integer keyCacheKeysToSave;
+    private String keyCacheKeysToSave;
 
     @JsonProperty
-    private Integer rowCacheSizeInMB;
+    private String rowCacheSizeInMB;
 
     @JsonProperty
-    private Integer rowCacheKeysToSave;
+    private String rowCacheKeysToSave;
 
     public String getPartitionerClassName() {
         return partitionerClassName;
@@ -185,19 +185,19 @@ public class CassandraConfiguration {
         return seedProviderClassName;
     }
 
-    public Integer getKeyCacheSizeInMB() {
+    public String getKeyCacheSizeInMB() {
         return keyCacheSizeInMB;
     }
 
-    public Integer getKeyCacheKeysToSave() {
+    public String getKeyCacheKeysToSave() {
         return keyCacheKeysToSave;
     }
 
-    public Integer getRowCacheSizeInMB() {
+    public String getRowCacheSizeInMB() {
         return rowCacheSizeInMB;
     }
 
-    public Integer getRowCacheKeysToSave() {
+    public String getRowCacheKeysToSave() {
         return rowCacheKeysToSave;
     }
 
@@ -297,19 +297,19 @@ public class CassandraConfiguration {
         this.seedProviderClassName = seedProviderClassName;
     }
 
-    public void setKeyCacheSizeInMB(Integer keyCacheSizeInMB) {
+    public void setKeyCacheSizeInMB(String keyCacheSizeInMB) {
         this.keyCacheSizeInMB = keyCacheSizeInMB;
     }
 
-    public void setKeyCacheKeysToSave(Integer keyCacheKeysToSave) {
+    public void setKeyCacheKeysToSave(String keyCacheKeysToSave) {
         this.keyCacheKeysToSave = keyCacheKeysToSave;
     }
 
-    public void setRowCacheSizeInMB(Integer rowCacheSizeInMB) {
+    public void setRowCacheSizeInMB(String rowCacheSizeInMB) {
         this.rowCacheSizeInMB = rowCacheSizeInMB;
     }
 
-    public void setRowCacheKeysToSave(Integer rowCacheKeysToSave) {
+    public void setRowCacheKeysToSave(String rowCacheKeysToSave) {
         this.rowCacheKeysToSave = rowCacheKeysToSave;
     }
 

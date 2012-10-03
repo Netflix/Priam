@@ -82,6 +82,11 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
     private static final String CONFIG_PARTITIONER = PRIAM_PRE + ".partitioner";
+    private static final String CONFIG_KEYCACHE_SIZE = PRIAM_PRE + ".keyCache.size";
+    private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
+    private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
+    private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
+
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -616,4 +621,23 @@ public class PriamConfiguration implements IConfiguration
         return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
     }
 
+    public String getKeyCacheSizeInMB()
+    {
+        return config.getProperty(CONFIG_KEYCACHE_SIZE, null);
+    }
+
+    public String getKeyCacheKeysToSave()
+    {
+        return config.getProperty(CONFIG_KEYCACHE_COUNT, null);
+    }
+
+    public String getRowCacheSizeInMB()
+    {
+        return config.getProperty(CONFIG_ROWCACHE_SIZE, null);
+    }
+
+    public String getRowCacheKeysToSave()
+    {
+        return config.getProperty(CONFIG_ROWCACHE_COUNT, null);
+    }
 }

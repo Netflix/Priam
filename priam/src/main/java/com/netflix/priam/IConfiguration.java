@@ -282,4 +282,24 @@ public interface IConfiguration
      * @return the fully-qualified name of the partitioner class
      */
     public String getPartitioner();
+
+    /**
+     * Support for c* 1.1 global key cache size
+     */
+    public String getKeyCacheSizeInMB();
+
+    /**
+     * Support for limiting the total number of keys in c* 1.1 global key cache.
+     */
+    public String getKeyCacheKeysToSave();
+
+    /**
+     * Support for c* 1.1 global row cache size
+     */
+    public String getRowCacheSizeInMB();
+
+    /**
+     * Support for limiting the total number of rows in c* 1.1 global row cache.
+     */
+    public String getRowCacheKeysToSave();
 }

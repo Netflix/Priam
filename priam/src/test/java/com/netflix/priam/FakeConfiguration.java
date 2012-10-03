@@ -376,4 +376,23 @@ public class FakeConfiguration implements IConfiguration
         return 7103;
     }
 
+    public String getKeyCacheSizeInMB()
+    {
+        return "16";
+    }
+
+    public String getKeyCacheKeysToSave()
+    {
+        return "32";
+    }
+
+    public String getRowCacheSizeInMB()
+    {
+        return "4";
+    }
+
+    public String getRowCacheKeysToSave()
+    {
+        return "4";
+    }
 }

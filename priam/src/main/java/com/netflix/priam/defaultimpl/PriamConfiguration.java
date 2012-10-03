@@ -82,6 +82,11 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
     private static final String CONFIG_PARTITIONER = PRIAM_PRE + ".partitioner";
+    private static final String CONFIG_KEYCACHE_SIZE = PRIAM_PRE + ".keyCache.size";
+    private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
+    private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
+    private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
+
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -117,8 +122,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
-    private final int DEFAULT_STORAGE_PORT = 7101;
-    private final int DEFAULT_SSL_STORAGE_PORT = 7101;
+    private final int DEFAULT_STORAGE_PORT = 7000;
+    private final int DEFAULT_SSL_STORAGE_PORT = 7001;
     private final int DEFAULT_BACKUP_HOUR = 12;
     private final int DEFAULT_BACKUP_THREADS = 2;
     private final int DEFAULT_RESTORE_THREADS = 8;
@@ -616,4 +621,23 @@ public class PriamConfiguration implements IConfiguration
         return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
     }
 
+    public String getKeyCacheSizeInMB()
+    {
+        return config.getProperty(CONFIG_KEYCACHE_SIZE, null);
+    }
+
+    public String getKeyCacheKeysToSave()
+    {
+        return config.getProperty(CONFIG_KEYCACHE_COUNT, null);
+    }
+
+    public String getRowCacheSizeInMB()
+    {
+        return config.getProperty(CONFIG_ROWCACHE_SIZE, null);
+    }
+
+    public String getRowCacheKeysToSave()
+    {
+        return config.getProperty(CONFIG_ROWCACHE_COUNT, null);
+    }
 }

@@ -117,8 +117,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
-    private final int DEFAULT_STORAGE_PORT = 7101;
-    private final int DEFAULT_SSL_STORAGE_PORT = 7101;
+    private final int DEFAULT_STORAGE_PORT = 7000;
+    private final int DEFAULT_SSL_STORAGE_PORT = 7001;
     private final int DEFAULT_BACKUP_HOUR = 12;
     private final int DEFAULT_BACKUP_THREADS = 2;
     private final int DEFAULT_RESTORE_THREADS = 8;

@@ -77,6 +77,17 @@ public class CassandraConfiguration {
     @JsonProperty
     private String seedProviderClassName;
 
+    @JsonProperty
+    private Integer keyCacheSizeInMB;
+
+    @JsonProperty
+    private Integer keyCacheKeysToSave;
+
+    @JsonProperty
+    private Integer rowCacheSizeInMB;
+
+    @JsonProperty
+    private Integer rowCacheKeysToSave;
 
     public String getPartitionerClassName() {
         return partitionerClassName;
@@ -174,6 +185,22 @@ public class CassandraConfiguration {
         return seedProviderClassName;
     }
 
+    public Integer getKeyCacheSizeInMB() {
+        return keyCacheSizeInMB;
+    }
+
+    public Integer getKeyCacheKeysToSave() {
+        return keyCacheKeysToSave;
+    }
+
+    public Integer getRowCacheSizeInMB() {
+        return rowCacheSizeInMB;
+    }
+
+    public Integer getRowCacheKeysToSave() {
+        return rowCacheKeysToSave;
+    }
+
     public void setPartitionerClassName(String partitionerClassName) {
         this.partitionerClassName = partitionerClassName;
     }
@@ -268,6 +295,22 @@ public class CassandraConfiguration {
 
     public void setSeedProviderClassName(String seedProviderClassName) {
         this.seedProviderClassName = seedProviderClassName;
+    }
+
+    public void setKeyCacheSizeInMB(Integer keyCacheSizeInMB) {
+        this.keyCacheSizeInMB = keyCacheSizeInMB;
+    }
+
+    public void setKeyCacheKeysToSave(Integer keyCacheKeysToSave) {
+        this.keyCacheKeysToSave = keyCacheKeysToSave;
+    }
+
+    public void setRowCacheSizeInMB(Integer rowCacheSizeInMB) {
+        this.rowCacheSizeInMB = rowCacheSizeInMB;
+    }
+
+    public void setRowCacheKeysToSave(Integer rowCacheKeysToSave) {
+        this.rowCacheKeysToSave = rowCacheKeysToSave;
     }
 
 }

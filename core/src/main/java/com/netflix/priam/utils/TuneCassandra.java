@@ -93,8 +93,34 @@ public class TuneCassandra extends Task {
             m.put("class_name", seedProvider);
             m.put("parameters", ImmutableList.of(ImmutableMap.of("seeds", "127.0.0.1," + hostIp)));
         }
+
+        configureGlobalCaches(cassandraConfiguration, map);
+
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
+    }
+
+    /**
+     * Setup the cassandra 1.1 global cache values
+     */
+    private static void configureGlobalCaches(CassandraConfiguration cassandraConfiguration, Map yaml) {
+        final Integer keyCacheSize = cassandraConfiguration.getKeyCacheSizeInMB();
+        if(keyCacheSize != null) {
+            yaml.put("key_cache_size_in_mb", keyCacheSize);
+            final Integer keyCount = cassandraConfiguration.getKeyCacheKeysToSave();
+            if (keyCount != null) {
+                yaml.put("key_cache_keys_to_save", keyCount);
+            }
+        }
+
+        final Integer rowCacheSize = cassandraConfiguration.getRowCacheSizeInMB();
+        if (rowCacheSize != null) {
+            yaml.put("row_cache_size_in_mb", rowCacheSize);
+            final Integer rowCount = cassandraConfiguration.getRowCacheKeysToSave();
+            if (rowCount != null) {
+                yaml.put("row_cache_keys_to_save", rowCount);
+            }
+        }
     }
 
     @SuppressWarnings ("unchecked")

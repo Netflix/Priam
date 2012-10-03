@@ -15,6 +15,10 @@ cassandra:
   jmxPort: 7199
   compactionThroughputMBPerSec:               # Compaction throughput in MB/sec
   inMemoryCompactionLimitMB: 128              # In memory compaction limit in MB
+  keyCacheSizeInMB: null                      # If used, should be an Integer like "16"
+  keyCacheKeysToSave:                         # If used, should be an Integer like "32"
+  rowCacheSizeInMB: 0                         # If used, should be an Integer like "16"
+  rowCacheKeysToSave:
   directMaxHeapSize:
     m1.small: 10G
     m1.medium: 25G

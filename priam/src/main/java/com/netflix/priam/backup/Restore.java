@@ -6,7 +6,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.PriamServer;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -39,7 +39,7 @@ public class Restore extends AbstractRestore
     @Inject
     private MetaData metaData;
     @Inject
-    private PriamServer priamServer;
+    private InstanceIdentity id;
 
     @Inject
     public Restore(IConfiguration config, Sleeper sleeper)
@@ -57,13 +57,13 @@ public class Restore extends AbstractRestore
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            String origToken = priamServer.getId().getInstance().getToken();
+            String origToken = id.getInstance().getToken();
             try
             {
                 if (config.isRestoreClosestToken())
                 {
                     restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    priamServer.getId().getInstance().setToken(restoreToken.toString());
+                    id.getInstance().setToken(restoreToken.toString());
                 }
                 new RetryableCallable<Void>()
                 {
@@ -80,7 +80,7 @@ public class Restore extends AbstractRestore
             }
             finally
             {
-                priamServer.getId().getInstance().setToken(origToken);
+                id.getInstance().setToken(origToken);
             }
         }
         SystemUtils.startCassandra(true, config);

@@ -38,6 +38,7 @@ public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
+    private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 1000;
 
     /**
      * Start Cassandra process from this co-process.
@@ -72,7 +73,7 @@ public class SystemUtils
         startCass.redirectErrorStream(true);
         Process starter = startCass.start();
         logger.info("Starting cassandra server ....");
-        Thread.sleep(100);
+        Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
         try
         {
             int code = starter.exitValue();
@@ -109,7 +110,7 @@ public class SystemUtils
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);
         Process stopper = stopCass.start();
-        Thread.sleep(100);
+        Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
         try
         {
             int code = stopper.exitValue();
@@ -127,11 +128,20 @@ public class SystemUtils
 
     static void logProcessOutput(Process p) throws IOException
     {
-        InputStream source = p.getInputStream();
-        byte[] buffer = new byte[source.available()];
-        new DataInputStream(source).readFully(buffer);
-        String text = new String(buffer);
-        logger.info("Output: {}", text);
+        final String stdOut = readProcessStream(p.getInputStream());
+        final String stdErr = readProcessStream(p.getErrorStream());
+        logger.info("std_out: {}", stdOut);
+        logger.info("std_err: {}", stdErr);
+    }
+
+    private static String readProcessStream(InputStream inputStream) throws IOException
+    {
+        final byte[] buffer = new byte[512];
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream(buffer.length);
+        int cnt;
+        while ((cnt = inputStream.read(buffer)) != -1)
+            baos.write(buffer, 0, cnt);
+        return baos.toString();
     }
 
     public static String getDataFromUrl(String url)

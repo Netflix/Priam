@@ -79,7 +79,7 @@ public class TestScheduler
             super(MBeanServerFactory.newMBeanServer());
         }
 
-        public static int count =0;
+        public static volatile int count =0;
         @Override
         public void execute()
         {

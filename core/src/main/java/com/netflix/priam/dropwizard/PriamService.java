@@ -10,6 +10,7 @@ import com.netflix.priam.resources.BackupServlet;
 import com.netflix.priam.resources.CassandraAdmin;
 import com.netflix.priam.resources.CassandraConfig;
 import com.netflix.priam.resources.PriamInstanceResource;
+import com.netflix.priam.zookeeper.ZooKeeperRegistration;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.config.Environment;
 import org.slf4j.Logger;
@@ -33,6 +34,7 @@ public class PriamService extends Service<PriamConfiguration> {
         try {
             priamConfiguration.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));
             environment.manage(injector.getInstance(PriamServer.class));
+            environment.manage(injector.getInstance(ZooKeeperRegistration.class));
 
             environment.addResource(injector.getInstance(BackupServlet.class));
             environment.addResource(injector.getInstance(CassandraAdmin.class));

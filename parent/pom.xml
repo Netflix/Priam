@@ -32,11 +32,23 @@
     </scm>
 
     <properties>
-        <dropwizard.version>0.4.4</dropwizard.version>
+        <dropwizard.version>0.5.1</dropwizard.version>
+        <soa.version>1.2.1</soa.version>
+        <zookeeper-common.version>0.0.8</zookeeper-common.version>
     </properties>
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.bazaarvoice.soa</groupId>
+                <artifactId>soa-core</artifactId>
+                <version>${soa.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.bazaarvoice.zookeeper</groupId>
+                <artifactId>zookeeper-dropwizard</artifactId>
+                <version>${zookeeper-common.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.yammer.dropwizard</groupId>
                 <artifactId>dropwizard-core</artifactId>

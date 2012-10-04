@@ -11,7 +11,6 @@ import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import com.yammer.dropwizard.lifecycle.Managed;
@@ -29,21 +28,18 @@ public class PriamServer implements Managed {
     private final BackupConfiguration backupConfig;
     private final AmazonConfiguration amazonConfig;
     private final InstanceIdentity id;
-    private final Sleeper sleeper;
 
     @Inject
     public PriamServer(CassandraConfiguration cassandraConfig,
                        BackupConfiguration backupConfig,
                        AmazonConfiguration amazonConfig,
                        PriamScheduler scheduler,
-                       InstanceIdentity id,
-                       Sleeper sleeper) {
+                       InstanceIdentity id) {
         this.cassandraConfig = cassandraConfig;
         this.backupConfig = backupConfig;
         this.amazonConfig = amazonConfig;
         this.scheduler = scheduler;
         this.id = id;
-        this.sleeper = sleeper;
     }
 
     @Override
@@ -87,9 +83,5 @@ public class PriamServer implements Managed {
 
     public InstanceIdentity getInstanceIdentity() {
         return id;
-    }
-
-    public PriamScheduler getScheduler() {
-        return scheduler;
     }
 }

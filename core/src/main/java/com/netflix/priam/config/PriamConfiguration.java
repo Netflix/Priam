@@ -23,6 +23,11 @@ public class PriamConfiguration extends Configuration {
     @Valid
     private BackupConfiguration backup = new BackupConfiguration();
 
+    @JsonProperty
+    @NotNull
+    @Valid
+    private ZooKeeperConfiguration zooKeeper = new ZooKeeperConfiguration();
+
     public CassandraConfiguration getCassandraConfiguration() {
         return cassandra;
     }
@@ -33,5 +38,9 @@ public class PriamConfiguration extends Configuration {
 
     public BackupConfiguration getBackupConfiguration() {
         return backup;
+    }
+
+    public ZooKeeperConfiguration getZooKeeperConfiguration() {
+        return zooKeeper;
     }
 }

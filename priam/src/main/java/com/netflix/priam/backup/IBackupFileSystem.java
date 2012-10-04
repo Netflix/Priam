@@ -41,4 +41,9 @@ public interface IBackupFileSystem
      * Get number of active upload or downloads
      */
     public int getActivecount();
+
+    /**
+     * Give the file system a chance to terminate any thread pools, etc.
+     */
+    public void shutdown();
 }

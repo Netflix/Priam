@@ -24,6 +24,11 @@ public class NullBackupFileSystem implements IBackupFileSystem
         return 0;
     }
 
+    public void shutdown()
+    {
+        //NOP
+    }
+
     @Override
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
     {

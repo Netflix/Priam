@@ -183,7 +183,7 @@ public class PriamConfiguration implements IConfiguration
      */
     private String populateASGName(String region, String instanceId)
     {
-        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
         DescribeInstancesResult res = client.describeInstances(desc);
@@ -206,7 +206,7 @@ public class PriamConfiguration implements IConfiguration
      * Get the fist 3 available zones in the region 
      */
     public void setDefaultRACList(String region){
-        AmazonEC2 client = new AmazonEC2Client(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
         List<String> zone = Lists.newArrayList(); 
@@ -223,7 +223,7 @@ public class PriamConfiguration implements IConfiguration
     private void populateProps()
     {
         // End point is us-east-1
-        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
         config = new PriamProperties();
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);

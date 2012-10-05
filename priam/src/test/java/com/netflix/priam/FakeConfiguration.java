@@ -204,7 +204,12 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return null;
     }
-    
+
+    public String getACLGroupName()
+    {
+        return this.getAppName();
+    }
+
     @Override
     public boolean isIncrBackup()
     {

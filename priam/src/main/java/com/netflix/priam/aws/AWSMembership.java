@@ -111,7 +111,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getAppName(), ipPermissions));
+            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
             logger.info("Done adding ACL to: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -132,7 +132,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getAppName(), ipPermissions));
+            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
             logger.info("Done removing from ACL: " + StringUtils.join(listIPs, ","));
         }
         finally

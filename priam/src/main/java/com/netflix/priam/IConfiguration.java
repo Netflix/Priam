@@ -200,6 +200,11 @@ public interface IConfiguration
     public String getASGName();
 
     /**
+     * Get the security group associated with nodes in this cluster
+     */
+    public String getACLGroupName();
+
+    /**
      * @return true if incremental backups are enabled
      */
     boolean isIncrBackup();

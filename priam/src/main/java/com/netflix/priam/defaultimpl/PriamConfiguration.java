@@ -83,6 +83,7 @@ public class PriamConfiguration implements IConfiguration
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
+    private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
     private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
@@ -475,6 +476,11 @@ public class PriamConfiguration implements IConfiguration
     public String getASGName()
     {
         return config.getProperty(CONFIG_ASG_NAME, "");
+    }
+
+    public String getACLGroupName()
+    {
+    	return config.getProperty(CONFIG_ACL_GROUP_NAME, this.getAppName());
     }
 
     @Override

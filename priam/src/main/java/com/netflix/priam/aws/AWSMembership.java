@@ -133,6 +133,7 @@ public class AWSMembership implements IMembership
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
             client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getAppName(), ipPermissions));
+            logger.info("Done removing from ACL: " + StringUtils.join(listIPs, ","));
         }
         finally
         {

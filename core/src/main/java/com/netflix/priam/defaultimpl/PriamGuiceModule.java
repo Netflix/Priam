@@ -1,6 +1,5 @@
 package com.netflix.priam.defaultimpl;
 
-import com.bazaarvoice.zookeeper.ZooKeeperConfiguration;
 import com.google.inject.AbstractModule;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
@@ -15,6 +14,7 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
+import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.Sleeper;

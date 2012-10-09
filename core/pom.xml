@@ -329,6 +329,11 @@
                                         <source>
                                             <location>${basedir}/target/${project.artifactId}-${project.version}-shaded.jar</location>
                                         </source>
+                                        <!-- Create a symbolic link without the version number for use by supervisord. -->
+                                        <softlinkSource>
+                                            <location>${project.artifactId}-${project.version}-shaded.jar</location>
+                                            <destination>${project.artifactId}-shaded.jar</destination>
+                                        </softlinkSource>
                                     </sources>
                                 </mapping>
                                 <mapping>

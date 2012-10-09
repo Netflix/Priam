@@ -29,6 +29,14 @@
 
      <dependencies>
             <dependency>
+                <groupId>com.bazaarvoice.soa</groupId>
+                <artifactId>soa-core</artifactId>
+            </dependency>
+            <dependency>
+                <groupId>com.bazaarvoice.zookeeper</groupId>
+                <artifactId>zookeeper-dropwizard</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>com.yammer.dropwizard</groupId>
                 <artifactId>dropwizard-core</artifactId>
             </dependency>

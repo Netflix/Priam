@@ -104,19 +104,19 @@ public class TuneCassandra extends Task {
      * Setup the cassandra 1.1 global cache values
      */
     private static void configureGlobalCaches(CassandraConfiguration cassandraConfiguration, Map yaml) {
-        final Integer keyCacheSize = cassandraConfiguration.getKeyCacheSizeInMB();
+        final String keyCacheSize = cassandraConfiguration.getKeyCacheSizeInMB();
         if(keyCacheSize != null) {
             yaml.put("key_cache_size_in_mb", keyCacheSize);
-            final Integer keyCount = cassandraConfiguration.getKeyCacheKeysToSave();
+            final String keyCount = cassandraConfiguration.getKeyCacheKeysToSave();
             if (keyCount != null) {
                 yaml.put("key_cache_keys_to_save", keyCount);
             }
         }
 
-        final Integer rowCacheSize = cassandraConfiguration.getRowCacheSizeInMB();
+        final String rowCacheSize = cassandraConfiguration.getRowCacheSizeInMB();
         if (rowCacheSize != null) {
             yaml.put("row_cache_size_in_mb", rowCacheSize);
-            final Integer rowCount = cassandraConfiguration.getRowCacheKeysToSave();
+            final String rowCount = cassandraConfiguration.getRowCacheKeysToSave();
             if (rowCount != null) {
                 yaml.put("row_cache_keys_to_save", rowCount);
             }

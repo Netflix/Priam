@@ -80,3 +80,16 @@ backup:
   streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
                                                     #    can lead to saturating the network connection and degrading rpc performance.
   uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups
+
+zooKeeper:
+  # Priam will register the Cassandra node in ZooKeeper using the BV SOA (Ostrich) library under "<clusterName>-cassandra".
+  enabled: false                     # Whether or not ZooKeeper registration is enabled.
+  #connectString: localhost:2181     # Comma-separated list of ZooKeeper servers, eg. "host:port,host:port,..."
+  #namespace:                        # Root namespace in ZooKeeper, eg. "/us-east-1"
+
+# Configure Logback logging
+logging:
+  level: INFO
+  loggers:
+    "org.apache.zookeeper": OFF
+    "com.netflix.curator": WARN

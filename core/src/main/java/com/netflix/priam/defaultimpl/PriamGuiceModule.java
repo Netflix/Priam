@@ -14,10 +14,12 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
+import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
+import com.netflix.priam.zookeeper.ZooKeeperRegistration;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -33,6 +35,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(CassandraConfiguration.class).toInstance(priamConfiguration.getCassandraConfiguration());
         bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
         bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());
+        bind(ZooKeeperConfiguration.class).toInstance(priamConfiguration.getZooKeeperConfiguration());
 
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
         bind(IPriamInstanceRegistry.class).to(SDBInstanceRegistry.class);
@@ -42,5 +45,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
+        bind(ZooKeeperRegistration.class).asEagerSingleton();
     }
 }

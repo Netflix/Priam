@@ -27,6 +27,7 @@ public class PriamConfiguration extends Configuration {
     @NotNull
     @Valid
     private NodeRepairConfiguration nodeRepair = new NodeRepairConfiguration();
+    private ZooKeeperConfiguration zooKeeper = new ZooKeeperConfiguration();
 
     public CassandraConfiguration getCassandraConfiguration() {
         return cassandra;
@@ -42,5 +43,9 @@ public class PriamConfiguration extends Configuration {
 
     public NodeRepairConfiguration getNodeRepairConfiguration() {
         return nodeRepair;
+    }
+
+    public ZooKeeperConfiguration getZooKeeperConfiguration() {
+        return zooKeeper;
     }
 }

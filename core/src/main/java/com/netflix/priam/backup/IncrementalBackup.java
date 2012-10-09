@@ -7,10 +7,17 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
+import org.quartz.SimpleScheduleBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+
+
 
 /*
  * Incremental/SSTable backup
@@ -52,6 +59,22 @@ public class IncrementalBackup extends AbstractBackup {
     @Override
     public String getName() {
         return JOBNAME;
+    }
+
+    public static JobDetail getJobDetail(){
+        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+                .withIdentity("priam-scheduler", "incremental-backup")
+                .build();
+        return jobDetail;
+    }
+
+    public static Trigger getTrigger(){
+        Trigger trigger = TriggerBuilder
+                .newTrigger()
+                .withIdentity("priam-scheduler", "incremental-backup-trigger")
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(10L * 1000).repeatForever())
+                .build();
+        return trigger;
     }
 
 }

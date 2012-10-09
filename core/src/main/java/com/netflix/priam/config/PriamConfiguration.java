@@ -23,6 +23,11 @@ public class PriamConfiguration extends Configuration {
     @Valid
     private BackupConfiguration backup = new BackupConfiguration();
 
+    @JsonProperty
+    @NotNull
+    @Valid
+    private NodeRepairConfiguration nodeRepair = new NodeRepairConfiguration();
+
     public CassandraConfiguration getCassandraConfiguration() {
         return cassandra;
     }
@@ -33,5 +38,9 @@ public class PriamConfiguration extends Configuration {
 
     public BackupConfiguration getBackupConfiguration() {
         return backup;
+    }
+
+    public NodeRepairConfiguration getNodeRepairConfiguration() {
+        return nodeRepair;
     }
 }

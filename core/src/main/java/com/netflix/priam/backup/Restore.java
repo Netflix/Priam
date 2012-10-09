@@ -17,6 +17,12 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.Job;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,4 +147,19 @@ public class Restore extends AbstractRestore {
         return (isRestoreMode && isBackedupRac);
     }
 
+    public static JobDetail getJobDetail(){
+        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+                .withIdentity("priam-scheduler", "restore")
+                .build();
+        return jobDetail;
+    }
+
+    public static Trigger getTrigger(){
+        Trigger trigger = TriggerBuilder
+                .newTrigger()
+                .withIdentity("priam-scheduler", "restore-trigger")
+                .startNow()
+                .build();
+        return trigger;
+    }
 }

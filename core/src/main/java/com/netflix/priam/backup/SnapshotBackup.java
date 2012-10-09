@@ -11,6 +11,11 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,5 +114,21 @@ public class SnapshotBackup extends AbstractBackup {
     public static TaskTimer getTimer(BackupConfiguration config) {
         int hour = config.getHour();
         return new CronTimer(hour, 1, 0);
+    }
+
+    public static JobDetail getJobDetail(){
+        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+                .withIdentity("priam-scheduler", "snapshotbackup")
+                .build();
+        return jobDetail;
+    }
+
+    public static Trigger getTrigger(BackupConfiguration config){
+        Trigger trigger = TriggerBuilder
+                .newTrigger()
+                .withIdentity("priam-scheduler", "snapshotbackup-trigger")
+                .withSchedule(CronScheduleBuilder.cronSchedule("0" + " " + "1" + " " +config.getHour()  + " * * ?"))
+                .build();
+        return trigger;
     }
 }

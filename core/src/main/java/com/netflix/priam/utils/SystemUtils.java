@@ -47,6 +47,7 @@ public class SystemUtils {
         if (!"root".equals(System.getProperty("user.name"))) {
             command.add(SUDO_STRING);
             command.add("-E");
+            command.add("-u cassandra");
         }
         for (String param : cassandraConfig.getCassStartScript().split(" ")) {
             if (StringUtils.isNotBlank(param)) {
@@ -80,6 +81,7 @@ public class SystemUtils {
         if (!"root".equals(System.getProperty("user.name"))) {
             command.add(SUDO_STRING);
             command.add("-E");
+            command.add("-u cassandra");
         }
         for (String param : config.getCassStopScript().split(" ")) {
             if (StringUtils.isNotBlank(param)) {

@@ -1,8 +1,10 @@
 package com.netflix.priam.scheduler;
 
+import org.quartz.CronScheduleBuilder;
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 
 import java.text.ParseException;
 
@@ -45,6 +47,10 @@ public class CronTimer implements TaskTimer {
     }
 
     public Trigger getTrigger() throws ParseException {
-        return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
+        //return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
+        return TriggerBuilder
+                .newTrigger()
+                .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))
+                .build();
     }
 }

@@ -1,11 +1,5 @@
 package com.netflix.priam.resources;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -22,14 +16,17 @@ import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.TuneCassandra;
-
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrict;
-
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
+
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Date;
+import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
@@ -362,6 +359,7 @@ public class BackupServletTest
             backupConfiguration.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
             backupConfiguration.getS3BaseDir(); result = "backup";
             cassandraConfiguration.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
+            cassandraConfiguration.getHeapDumpLocation(); result = "/var/log/cassandra/heaps";
             cassandraConfiguration.getJmxPort(); result = 7199;
             cassandraConfiguration.getDirectMaxHeapSize(); result = ImmutableMap.of("m1.xlarge", "50G");
         }};

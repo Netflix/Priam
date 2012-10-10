@@ -244,6 +244,20 @@ public class CassandraAdmin {
     }
 
     @GET
+    @Path ("/pingthrift")
+    public Response pingthrift() throws IOException {
+        try {
+            JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
+            if (nodetool.isThriftServerRunning()) {
+                return Response.ok().build();
+            }
+        } catch (Exception e) {
+            // Fall through
+        }
+        return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+    }
+
+    @GET
     @Path ("/gossipinfo")
     public Response gossipinfo() throws IOException, ExecutionException, InterruptedException {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);

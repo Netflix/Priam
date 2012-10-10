@@ -29,6 +29,10 @@
 
      <dependencies>
             <dependency>
+                <groupId>com.bazaarvoice.badger</groupId>
+                <artifactId>badger-core</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>com.bazaarvoice.soa</groupId>
                 <artifactId>soa-core</artifactId>
             </dependency>

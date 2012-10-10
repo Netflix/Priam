@@ -32,6 +32,7 @@
     </scm>
 
     <properties>
+        <badger.version>0.2.5</badger.version>
         <dropwizard.version>0.5.1</dropwizard.version>
         <soa.version>1.2.1</soa.version>
         <zookeeper-common.version>0.0.8</zookeeper-common.version>
@@ -39,6 +40,11 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.bazaarvoice.badger</groupId>
+                <artifactId>badger-core</artifactId>
+                <version>${badger.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.bazaarvoice.soa</groupId>
                 <artifactId>soa-core</artifactId>

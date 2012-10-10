@@ -61,6 +61,7 @@ public class SystemUtils {
         env.put("COMMIT_LOG_DIR", backupConfig.getCommitLogLocation());
         env.put("LOCAL_BACKUP_DIR", backupConfig.getS3BaseDir());
         env.put("CACHE_DIR", cassandraConfig.getCacheLocation());
+        env.put("CASSANDRA_HEAPDUMP_DIR", cassandraConfig.getHeapDumpLocation());
         env.put("JMX_PORT", "" + cassandraConfig.getJmxPort());
         env.put("MAX_DIRECT_MEMORY", cassandraConfig.getDirectMaxHeapSize().get(instanceType));
         env.put("cassandra.join_ring", join_ring ? "true" : "false");

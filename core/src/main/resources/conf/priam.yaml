@@ -34,6 +34,7 @@ cassandra:
     m1.medium: 500M
     m1.large: 1G
     m1.xlarge: 2G
+  heapDumpLocation: "/var/log/cassandra"            # Directory where heap dumps will go when the JVM runs out of memory.
   memTableTotalSpaceMB: 1024                        # Total memory to use for memtables.  Cassandra will flush the largest memtable when this much memory is used.
   hintedHandoffThrottleDelayMS: 1                   # Sleep this long after delivering each hint
   maxHintWindowMS: 3600000                          # this defines the maximum amount of time a dead host will have hints generated.  After it has been dead this long, hints will be dropped.

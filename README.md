@@ -160,6 +160,7 @@ Cassandra Administration
 General Info
 ============
 Example:
+    
     curl -s "http://localhost:8080/v1/cassadmin/info" | python -mjson.tool
     {
         "data_center": "us-east",
@@ -177,6 +178,7 @@ Flush
 ============
 Flushes all keyspaces and column families to disk.
 Example:
+
     curl -s "http://localhost:8080/v1/cassadmin/flush" | python -mjson.tool
     {
         "result": "ok"
@@ -187,6 +189,7 @@ Backup
 Status of Current Operations
 ============================
 Example:
+
     curl -s "http://localhost:8080/v1/backup/status" | python -mjson.tool
     {
         "Backup": {
@@ -225,6 +228,7 @@ Available query parameters:
 </table>
 
 Example:
+
     curl -s "http://localhost:8080/v1/backup/list" | python -mjson.tool
     {
         "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/META/meta.json": "201210101656",
@@ -248,6 +252,7 @@ Example:
 Perform Full Snapshot
 =====================
 Example:
+
     curl -s "http://localhost:8080/v1/backup/do_snapshot" | python -mjson.tool
     {
         "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/META/meta.json": "201210101656",

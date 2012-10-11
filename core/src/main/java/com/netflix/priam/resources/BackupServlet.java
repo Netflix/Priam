@@ -1,5 +1,6 @@
 package com.netflix.priam.resources;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -42,12 +43,7 @@ import java.util.Map;
 public class BackupServlet {
     private static final Logger logger = LoggerFactory.getLogger(BackupServlet.class);
 
-    private static final String REST_SUCCESS = "[\"ok\"]";
-    private static final String REST_HEADER_RANGE = "daterange";
-    private static final String REST_HEADER_FILTER = "filter";
-    private static final String REST_HEADER_TOKEN = "token";
-    private static final String REST_HEADER_REGION = "region";
-    private static final String REST_KEYSPACES = "keyspaces";
+    private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
 
     private PriamServer priamServer;
     private IBackupFileSystem fs;
@@ -91,52 +87,52 @@ public class BackupServlet {
     @Path ("/do_snapshot")
     public Response backup() throws Exception {
         snapshotBackup.execute();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+        return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path ("/restore")
-    public Response restore(@QueryParam (REST_HEADER_RANGE) String daterange, @QueryParam (REST_HEADER_REGION) String region, @QueryParam (REST_HEADER_TOKEN) String token,
-                            @QueryParam (REST_KEYSPACES) String keyspaces) throws Exception {
-        Date startTime;
-        Date endTime;
+    public Response restore(@QueryParam ("daterange") String daterange,
+                            @QueryParam ("region") String region,
+                            @QueryParam ("token") String token,
+                            @QueryParam ("keyspaces") String keyspaces,
+                            @QueryParam ("restoreprefix") String restorePrefix) throws Exception {
 
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        } else {
+        Date startTime = new DateTime().minusDays(1).toDate();
+        Date endTime = new DateTime().toDate();
+
+        if (StringUtils.isNotBlank(daterange) && !daterange.equalsIgnoreCase("default")) {
             String[] restore = daterange.split(",");
             AbstractBackupPath path = pathProvider.get();
             startTime = path.getFormat().parse(restore[0]);
             endTime = path.getFormat().parse(restore[1]);
         }
-        restore(token, region, startTime, endTime, keyspaces);
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+        restore(token, region, startTime, endTime, keyspaces, restorePrefix);
+        return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 
     @GET
     @Path ("/incremental_restore")
     public Response restoreIncrementals() throws Exception {
         scheduler.addTask(IncrementalRestore.JOBNAME, IncrementalRestore.class, IncrementalRestore.getTimer());
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+        return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
-
 
     @GET
     @Path ("/list")
-    public Response list(@QueryParam (REST_HEADER_RANGE) String daterange, @QueryParam (REST_HEADER_FILTER) String filter) throws Exception {
-        Date startTime;
-        Date endTime;
+    public Response list(@QueryParam ("daterange") String daterange,
+                         @QueryParam ("filter") String filter) throws Exception {
 
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        } else {
+        Date startTime = new DateTime().minusDays(1).toDate();
+        Date endTime = new DateTime().toDate();
+
+        if (StringUtils.isNotBlank(daterange) && !daterange.equalsIgnoreCase("default")) {
             String[] restore = daterange.split(",");
             AbstractBackupPath path = pathProvider.get();
             startTime = path.getFormat().parse(restore[0]);
             endTime = path.getFormat().parse(restore[1]);
         }
+
         Iterator<AbstractBackupPath> it = fs.list(backupConfiguration.getS3BucketName(), startTime, endTime);
         Map<String, Object> object = Maps.newHashMap();
         while (it.hasNext()) {
@@ -153,14 +149,15 @@ public class BackupServlet {
     @Path ("/status")
     public Response status() throws Exception {
         int restoreTCount = restoreObj.getActiveCount();
-        logger.debug("Thread counts for backup is: %d", restoreTCount);
         int backupTCount = fs.getActivecount();
+
+        logger.debug("Thread counts for backup is: %d", restoreTCount);
         logger.debug("Thread counts for restore is: %d", backupTCount);
+
         Map<String, Object> object = Maps.newHashMap();
-        object.put("Restore", new Integer(restoreTCount));
-        object.put("Status", restoreObj.state().toString());
-        object.put("Backup", new Integer(backupTCount));
-        object.put("Status", snapshotBackup.state().toString());
+        object.put("Restore", ImmutableMap.of("Status", restoreObj.state().toString(), "Threads", new Integer(restoreTCount)));
+        object.put("Backup", ImmutableMap.of("Status", snapshotBackup.state().toString(), "Threads", new Integer(backupTCount)));
+
         return Response.ok(object, MediaType.APPLICATION_JSON).build();
     }
 
@@ -174,31 +171,36 @@ public class BackupServlet {
      * @param keyspaces Comma seperated list of keyspaces to restore
      * @throws Exception
      */
-    private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {
+    private void restore(String token, String region, Date startTime, Date endTime, String keyspaces, String restorePrefix) throws Exception {
         String origRegion = amazonConfiguration.getRegionName();
         String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
-        if (StringUtils.isNotBlank(token)) {
-            priamServer.getInstanceIdentity().getInstance().setToken(token);
-        }
-
-        if (backupConfiguration.isRestoreClosestToken()) {
-            priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), origRegion));
-        }
-
-        if (StringUtils.isNotBlank(region)) {
-            amazonConfiguration.setRegionName(region);
-            logger.info("Restoring from region " + region);
-            priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getInstanceIdentity().getInstance().getToken());
-        }
-
-        setRestoreKeyspaces(keyspaces);
+        String origRestorePrefix = backupConfiguration.getRestorePrefix();
 
         try {
+            if (StringUtils.isNotBlank(token)) {
+                priamServer.getInstanceIdentity().getInstance().setToken(token);
+            }
+            if (backupConfiguration.isRestoreClosestToken()) {
+                priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), origRegion));
+            }
+            if (StringUtils.isNotBlank(restorePrefix)) {
+                backupConfiguration.setRestorePrefix(restorePrefix);
+            }
+            if (StringUtils.isNotBlank(region)) {
+                amazonConfiguration.setRegionName(region);
+                logger.info("Restoring from region " + region);
+                priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), region));
+                logger.info("Restore will use token " + priamServer.getInstanceIdentity().getInstance().getToken());
+            }
+
+            setRestoreKeyspaces(keyspaces);
+
             restoreObj.restore(startTime, endTime);
+
         } finally {
             amazonConfiguration.setRegionName(origRegion);
             priamServer.getInstanceIdentity().getInstance().setToken(origToken);
+            backupConfiguration.setRestorePrefix(origRestorePrefix);
         }
         tuneCassandra.updateYaml(false);
         SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());

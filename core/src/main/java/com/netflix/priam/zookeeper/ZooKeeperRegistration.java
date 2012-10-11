@@ -67,7 +67,7 @@ public class ZooKeeperRegistration implements Managed {
                 .withServiceName(casConfiguration.getClusterName() + "-cassandra")
                 .withId(host.toString())
                 .build();
-        logger.debug("ZooKeeper end point: {}", endPoint);
+        logger.info("ZooKeeper end point: {}", endPoint);
 
         // Connect to ZooKeeper
         zkRegistry = new ZooKeeperServiceRegistry(zkConnection.get());
@@ -90,18 +90,18 @@ public class ZooKeeperRegistration implements Managed {
         try {
             alive = JMXNodeTool.instance(casConfiguration).isThriftServerRunning();
         } catch (Exception e) {
-            logger.debug("Unable to use JMX to determine Cassandra thrift server status.", e);
+            logger.info("Unable to use JMX to determine Cassandra thrift server status.", e);
             alive = false;
         }
         if (alive) {
             if (!registered) {
-                logger.debug("Registering Cassandra end point with ZooKeeper: {}", endPoint);
+                logger.info("Registering Cassandra end point with ZooKeeper: {}", endPoint);
                 zkRegistry.register(endPoint);
                 registered = true;
             }
         } else {
             if (registered) {
-                logger.debug("Unregistering Cassandra end point with ZooKeeper: {}", endPoint);
+                logger.info("Unregistering Cassandra end point with ZooKeeper: {}", endPoint);
                 zkRegistry.unregister(endPoint);
                 registered = false;
             }

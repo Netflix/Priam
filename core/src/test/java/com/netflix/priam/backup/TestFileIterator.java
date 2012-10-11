@@ -169,10 +169,10 @@ public class TestFileIterator
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(3, files.size());
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
         Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/f3.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
     }
 
     @Test
@@ -190,14 +190,14 @@ public class TestFileIterator
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(5, files.size());
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
         Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/f3.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
 
     }
 
@@ -216,14 +216,14 @@ public class TestFileIterator
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(2, files.size());
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110030/SNAP/ks1/f1.db"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110430/SST/ks1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110430/SST/ks1/cf1/f2.db"));
         Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110600/SST/ks1/f3.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201107110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
         
     }
 
@@ -245,14 +245,14 @@ public class TestFileIterator
             files.add(fileIterator.next().getRemotePath());
 
         Assert.assertEquals(5, files.size());
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
         Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/f3.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
 
     }
 
@@ -260,13 +260,13 @@ public class TestFileIterator
     {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/f2.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/f3.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db");
         list.add(summary);
         summary = new S3ObjectSummary();
         summary.setKey("test_backup/fake-region/fakecluster/123456/201108110030/META/meta.json");
@@ -284,13 +284,13 @@ public class TestFileIterator
     {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f1.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/f2.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/f3.db");
+        summary.setKey("test_backup/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db");
         list.add(summary);
         return list;
     }

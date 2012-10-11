@@ -6,12 +6,12 @@ import org.junit.Test;
 
 import com.netflix.priam.utils.Throttle;
 
-public class ThrottalTest
+public class ThrottleTest
 {
     protected static final int THROTTAL_MB_PER_SEC = 1;
 
     @Test
-    public void throttalTest()
+    public void throttleTest()
     {
         Throttle throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
         {

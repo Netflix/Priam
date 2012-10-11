@@ -27,11 +27,13 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class BackupServletTest
-{
+public class BackupServletTest {
+    private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
+
     private @NonStrict PriamServer priamServer;
     private @NonStrict TestCassandraConfiguration cassandraConfiguration;
     private @NonStrict TestAmazonConfiguration amazonConfiguration;
@@ -45,28 +47,25 @@ public class BackupServletTest
     private BackupServlet resource;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         resource = new BackupServlet(priamServer, cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
             tuneCassandra, snapshotBackup, instanceRegistry);
     }
 
     @Test
-    public void backup() throws Exception
-    {
+    public void backup() throws Exception {
         new Expectations() {{
             snapshotBackup.execute();
         }};
 
         Response response = resource.backup();
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
     @Test
-    public void restore_minimal() throws Exception
-    {
+    public void restore_minimal() throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = null;
@@ -97,15 +96,14 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
     @Test
-    public void restore_withDateRange() throws Exception
-    {
+    public void restore_withDateRange() throws Exception {
         final String dateRange = "201101010000,201112312359";
         final String newRegion = null;
         final String newToken = null;
@@ -142,9 +140,9 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
@@ -199,13 +197,12 @@ public class BackupServletTest
 //
 //        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
 //        assertEquals(200, response.getStatus());
-//        assertEquals("[\"ok\"]", response.getEntity());
+//        assertEquals(RESULT_OK, response.getEntity());
 //        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
 //    }
 
     @Test
-    public void restore_withToken() throws Exception
-    {
+    public void restore_withToken() throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = "myNewToken";
@@ -237,15 +234,14 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
     @Test
-    public void restore_withKeyspaces() throws Exception
-    {
+    public void restore_withKeyspaces() throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = null;
@@ -281,16 +277,15 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
     // TODO: this should also set/test newRegion and keyspaces
     @Test
-    public void restore_maximal() throws Exception
-    {
+    public void restore_maximal() throws Exception {
         final String dateRange = "201101010000,201112312359";
         final String newRegion = null;
         final String newToken = "5678";
@@ -342,9 +337,9 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
-        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(RESULT_OK, response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 

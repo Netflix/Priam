@@ -75,7 +75,7 @@ public abstract class AbstractRestore extends Task {
         executor.submit(new RetryableCallable<Integer>() {
             @Override
             public Integer retriableCall() throws Exception {
-                logger.info("Downloading file: " + path);
+                logger.info("Downloading file: " + path + " to: " + restoreLocation);
                 fs.download(path, new FileOutputStream(restoreLocation));
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?

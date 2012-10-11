@@ -255,20 +255,5 @@ Example:
 
     curl -s "http://localhost:8080/v1/backup/do_snapshot" | python -mjson.tool
     {
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/META/meta.json": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Data.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Digest.sha1": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Filter.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Index.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Statistics.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Data.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Digest.sha1": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Filter.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Index.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Statistics.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Data.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Digest.sha1": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Filter.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Index.db": "201210101656",
-        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Statistics.db": "201210101656"
+        "result": "ok"
     }

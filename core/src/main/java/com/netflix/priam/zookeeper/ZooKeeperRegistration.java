@@ -5,13 +5,13 @@ import com.bazaarvoice.soa.ServiceEndPointBuilder;
 import com.bazaarvoice.soa.ServiceRegistry;
 import com.bazaarvoice.soa.registry.ZooKeeperServiceRegistry;
 import com.bazaarvoice.zookeeper.ZooKeeperConnection;
+import com.google.common.base.Optional;
 import com.google.common.io.Closeables;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
@@ -36,20 +36,19 @@ public class ZooKeeperRegistration implements Managed {
 
     private final CassandraConfiguration casConfiguration;
     private final AmazonConfiguration awsConfiguration;
-    private final ZooKeeperConfiguration zkConfiguration;
+    private final Optional<ZooKeeperConnection> zkConnection;
     private final ScheduledExecutorService executor;
     private ServiceEndPoint endPoint;
-    private ZooKeeperConnection zkConnection;
     private ServiceRegistry zkRegistry;
     private boolean registered;
 
     @Inject
     public ZooKeeperRegistration(CassandraConfiguration casConfiguration,
                                  AmazonConfiguration awsConfiguration,
-                                 ZooKeeperConfiguration zkConfiguration) {
+                                 Optional<ZooKeeperConnection> zkConnection) {
         this.casConfiguration = casConfiguration;
         this.awsConfiguration = awsConfiguration;
-        this.zkConfiguration = zkConfiguration;
+        this.zkConnection = zkConnection;
 
         String nameFormat = "ZooKeeperRegistration-%d";
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(nameFormat).setDaemon(true).build();
@@ -58,7 +57,7 @@ public class ZooKeeperRegistration implements Managed {
 
     @Override
     public synchronized void start() {
-        if (!zkConfiguration.isEnabled()) {
+        if (!zkConnection.isPresent()) {
             return;
         }
 
@@ -71,8 +70,7 @@ public class ZooKeeperRegistration implements Managed {
         logger.debug("ZooKeeper end point: {}", endPoint);
 
         // Connect to ZooKeeper
-        zkConnection = zkConfiguration.connect();
-        zkRegistry = new ZooKeeperServiceRegistry(zkConnection);
+        zkRegistry = new ZooKeeperServiceRegistry(zkConnection.get());
 
         // Ping Cassandra every few seconds and register/deregister Cassandra when the thrift API is available.
         executor.scheduleWithFixedDelay(new Runnable() {
@@ -119,6 +117,5 @@ public class ZooKeeperRegistration implements Managed {
             // Ignore
         }
         Closeables.closeQuietly(zkRegistry);
-        Closeables.closeQuietly(zkConnection);
     }
 }

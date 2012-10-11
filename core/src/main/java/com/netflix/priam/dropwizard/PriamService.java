@@ -2,8 +2,11 @@ package com.netflix.priam.dropwizard;
 
 import com.bazaarvoice.badger.api.BadgerRegistrationBuilder;
 import com.bazaarvoice.zookeeper.ZooKeeperConnection;
+import com.google.common.base.Optional;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.TypeLiteral;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.config.PriamConfiguration;
@@ -32,11 +35,11 @@ public class PriamService extends Service<PriamConfiguration> {
     }
 
     @Override
-    protected void initialize(PriamConfiguration configuration, Environment environment) throws Exception {
+    protected void initialize(PriamConfiguration config, Environment environment) throws Exception {
 
-        Injector injector = Guice.createInjector(new PriamGuiceModule(configuration));
+        Injector injector = Guice.createInjector(new PriamGuiceModule(config));
         try {
-            configuration.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));
+            config.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));
             environment.manage(injector.getInstance(PriamServer.class));
             environment.manage(injector.getInstance(ZooKeeperRegistration.class));
 
@@ -44,15 +47,21 @@ public class PriamService extends Service<PriamConfiguration> {
             environment.addResource(injector.getInstance(CassandraAdmin.class));
             environment.addResource(injector.getInstance(CassandraConfig.class));
             environment.addResource(injector.getInstance(PriamInstanceResource.class));
+
+            // If ZooKeeper is configured, start Badger external monitoring
+            Optional<ZooKeeperConnection> zkConnection =
+                    injector.getInstance(Key.get(new TypeLiteral<Optional<ZooKeeperConnection>>() {}));
+            if (zkConnection.isPresent()) {
+                String badgerServiceName = format("cassandra.%s", config.getCassandraConfiguration().getClusterName());
+                new BadgerRegistrationBuilder(zkConnection.get(), badgerServiceName)
+                        .withVerificationPath(config.getHttpConfiguration().getPort(), "/v1/cassadmin/pingthrift")
+                        .register();
+                environment.manage(new ManagedCloseable(zkConnection.get()));
+            }
+
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);
         }
-
-        // Start Badger external monitoring
-        String badgerServiceName = format("cassandra.%s", configuration.getCassandraConfiguration().getClusterName());
-        new BadgerRegistrationBuilder(injector.getInstance(ZooKeeperConnection.class), badgerServiceName)
-                .withVerificationPath(configuration.getHttpConfiguration().getPort(), "/v1/cassadmin/pingthrift")
-                .register();
     }
 }

@@ -156,9 +156,9 @@ You want to start priam with the same user that is ordinarily configured to star
     java -jar priam-x.y-SNAPSHOT.jar server priam.yaml
 
 Cassandra Administration
---------------------------------------------
+========================
 General Info
-============
+------------
 Example:
     
     curl -s "http://localhost:8080/v1/cassadmin/info" | python -mjson.tool
@@ -175,7 +175,7 @@ Example:
     }
 
 Flush
-============
+-----
 Flushes all keyspaces and column families to disk.
 Example:
 
@@ -185,9 +185,9 @@ Example:
     }
 
 Backup
---------------------------------------------
+======
 Status of Current Operations
-============================
+----------------------------
 Example:
 
     curl -s "http://localhost:8080/v1/backup/status" | python -mjson.tool
@@ -203,7 +203,7 @@ Example:
     }
 
 List available Backups
-======================
+----------------------
 Available query parameters:
 
 <table>
@@ -250,7 +250,7 @@ Example:
     }
 
 Perform Full Snapshot
-=====================
+---------------------
 Example:
 
     curl -s "http://localhost:8080/v1/backup/do_snapshot" | python -mjson.tool

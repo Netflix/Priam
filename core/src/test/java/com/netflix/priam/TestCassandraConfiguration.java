@@ -7,6 +7,7 @@ public class TestCassandraConfiguration extends CassandraConfiguration {
     public TestCassandraConfiguration(String clusterName) {
         setClusterName(clusterName);
         setDataLocation("target/data");
+        setHeapDumpLocation("target/heaps");
         setCacheLocation("cass/caches");
         setJmxPort(7199);
         setThriftPort(9160);

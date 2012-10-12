@@ -155,3 +155,105 @@ You want to start priam with the same user that is ordinarily configured to star
     cd /usr/share/cassandra
     java -jar priam-x.y-SNAPSHOT.jar server priam.yaml
 
+Cassandra Administration
+========================
+General Info
+------------
+Example:
+    
+    curl -s "http://localhost:8080/v1/cassadmin/info" | python -mjson.tool
+    {
+        "data_center": "us-east",
+        "generation_no": 1349814122,
+        "gossip_active": true,
+        "heap_memory_mb": "1454.5359420776367/7987.25",
+        "load": "34.31 KB",
+        "rack": "1a",
+        "thrift_active": true,
+        "token": "Token(bytes[1808575600])",
+        "uptime": 84308
+    }
+
+Flush
+-----
+Flushes all keyspaces and column families to disk.
+Example:
+
+    curl -s "http://localhost:8080/v1/cassadmin/flush" | python -mjson.tool
+    {
+        "result": "ok"
+    }
+
+Backup
+======
+Status of Current Operations
+----------------------------
+Example:
+
+    curl -s "http://localhost:8080/v1/backup/status" | python -mjson.tool
+    {
+        "Backup": {
+            "Status": "DONE",
+            "Threads": 0
+        },
+        "Restore": {
+            "Status": "DONE",
+            "Threads": 0
+        }
+    }
+
+List available Backups
+----------------------
+Available query parameters:
+
+<table>
+    <tr>
+        <th>Query Param</th>
+        <th>Format</th>
+        <th>Required?</th>
+        <th>Default</th>
+    </tr>
+    <tr>
+        <td>daterange</td>
+        <td>default, or "yyyyMMddHHmm,yyyyMMddHHmm"</td>
+        <td>No</td>
+        <td>One day in the past from right now</td>
+    </tr>
+    <tr>
+        <td>filter</td>
+        <td>SNAP, SST, CL or META</td>
+        <td>No</td>
+        <td>(no filtering)</td>
+    </tr>
+</table>
+
+Example:
+
+    curl -s "http://localhost:8080/v1/backup/list" | python -mjson.tool
+    {
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/META/meta.json": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Data.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Digest.sha1": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Filter.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Index.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-Versions-hd-1-Statistics.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Data.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Digest.sha1": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Filter.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Index.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_columnfamilies-hd-1-Statistics.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Data.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Digest.sha1": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Filter.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Index.db": "201210101656",
+        "backup_ci_mbogner/us-east-1/ci_mbogner_sor_ugc_default/1808575600/201210101656/SNAP/system/system-schema_keyspaces-hd-1-Statistics.db": "201210101656"
+    }
+
+Perform Full Snapshot
+---------------------
+Example:
+
+    curl -s "http://localhost:8080/v1/backup/do_snapshot" | python -mjson.tool
+    {
+        "result": "ok"
+    }

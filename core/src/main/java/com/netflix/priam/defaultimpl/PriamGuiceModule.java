@@ -1,6 +1,10 @@
 package com.netflix.priam.defaultimpl;
 
+import com.bazaarvoice.zookeeper.ZooKeeperConnection;
+import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
+import com.google.inject.Singleton;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.S3BackupPath;
@@ -46,5 +50,14 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
         bind(ZooKeeperRegistration.class).asEagerSingleton();
+    }
+
+    @Provides @Singleton
+    Optional<ZooKeeperConnection> provideZooKeeperConnection() {
+        ZooKeeperConfiguration zkConfiguration = priamConfiguration.getZooKeeperConfiguration();
+        if (!zkConfiguration.isEnabled()) {
+            return Optional.absent();
+        }
+        return Optional.of(zkConfiguration.connect());
     }
 }

@@ -48,11 +48,11 @@ public class TestRestore
     public static void populateBackupFileSystem(String baseDir){
         fileList.clear();
         fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/META/meta.json");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f2.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f2.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110530/SST/ks2/f3.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110600/SST/ks2/f4.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f2.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f2.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
         filesystem.baseDir = baseDir;
         filesystem.region = "fake-region";
         filesystem.clusterName = "fakecluster";

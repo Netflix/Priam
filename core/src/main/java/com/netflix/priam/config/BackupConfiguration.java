@@ -6,6 +6,8 @@ import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkState;
+
 public class BackupConfiguration {
     @JsonProperty
     private String autoRestoreSnapshotName;
@@ -167,6 +169,7 @@ public class BackupConfiguration {
     }
 
     public void setS3BaseDir(String s3BaseDir) {
+        checkState(!s3BaseDir.contains("/"), "The S3 base dir can not contain multiple directories");
         this.s3BaseDir = s3BaseDir;
     }
 

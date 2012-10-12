@@ -60,6 +60,9 @@ public class CassandraConfiguration {
     private Map<String, String> maxNewGenHeapSize;
 
     @JsonProperty
+    private String heapDumpLocation;
+
+    @JsonProperty
     private int memTableTotalSpaceMB;
 
     @JsonProperty
@@ -165,6 +168,10 @@ public class CassandraConfiguration {
 
     public Map<String, String> getMaxNewGenHeapSize() {
         return maxNewGenHeapSize;
+    }
+
+    public String getHeapDumpLocation() {
+        return heapDumpLocation;
     }
 
     public int getMemTableTotalSpaceMB() {
@@ -285,6 +292,10 @@ public class CassandraConfiguration {
 
     public void setMaxNewGenHeapSize(Map<String, String> maxNewGenHeapSize) {
         this.maxNewGenHeapSize = maxNewGenHeapSize;
+    }
+
+    public void setHeapDumpLocation(String heapDumpLocation) {
+        this.heapDumpLocation = heapDumpLocation;
     }
 
     public void setMemTableTotalSpaceMB(int memTableTotalSpaceMB) {

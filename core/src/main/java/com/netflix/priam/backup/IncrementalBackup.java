@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileFilter;
 
 
 
@@ -38,7 +39,13 @@ public class IncrementalBackup extends AbstractBackup {
     public void execute() throws Exception {
         File dataDir = new File(cassandraConfiguration.getDataLocation());
         logger.debug("Scanning for backup in: " + dataDir.getAbsolutePath());
-        for (File keyspaceDir : dataDir.listFiles()) {
+        File[] keyspaceDirs = dataDir.listFiles(new FileFilter() {
+            @Override
+            public boolean accept(File pathname) {
+                return pathname.isDirectory();
+            }
+        });
+        for (File keyspaceDir : keyspaceDirs) {
             for (File columnFamilyDir : keyspaceDir.listFiles()) {
                 File backupDir = new File(columnFamilyDir, "backups");
                 if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {

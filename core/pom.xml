@@ -29,6 +29,10 @@
 
      <dependencies>
             <dependency>
+                <groupId>com.bazaarvoice.badger</groupId>
+                <artifactId>badger-core</artifactId>
+            </dependency>
+            <dependency>
                 <groupId>com.bazaarvoice.soa</groupId>
                 <artifactId>soa-core</artifactId>
             </dependency>
@@ -319,31 +323,30 @@
                             <group>BV/Priam</group>
                             <copyright>Other/Proprietary</copyright>
                             <defaultDirmode>755</defaultDirmode>
-                            <defaultFilemode>755</defaultFilemode>
-                            <defaultUsername>cassandra</defaultUsername>
-                            <defaultGroupname>cassandra</defaultGroupname>
+                            <defaultFilemode>644</defaultFilemode>
+                            <defaultUsername>root</defaultUsername>
+                            <defaultGroupname>root</defaultGroupname>
                             <mappings>
+                                <!-- Main Priam server jar. -->
                                 <mapping>
                                     <directory>/usr/share/cassandra/</directory>
                                     <sources>
                                         <source>
                                             <location>${basedir}/target/${project.artifactId}-${project.version}-shaded.jar</location>
                                         </source>
+                                        <!-- Create a symbolic link without the version number for use by supervisord. -->
+                                        <softlinkSource>
+                                            <location>${project.artifactId}-${project.version}-shaded.jar</location>
+                                            <destination>${project.artifactId}-shaded.jar</destination>
+                                        </softlinkSource>
                                     </sources>
                                 </mapping>
+                                <!-- Helper jar that gets added to Cassandra's classpath and wraps its main() method. -->
                                 <mapping>
                                     <directory>/usr/share/cassandra/lib</directory>
                                     <sources>
                                         <source>
                                             <location>${basedir}/target/${project.artifactId}-${project.version}.jar</location>
-                                        </source>
-                                    </sources>
-                                </mapping>
-                                <mapping>
-                                    <directory>/usr/share/cassandra/</directory>
-                                    <sources>
-                                        <source>
-                                            <location>${basedir}/src/main/resources/conf/priam.yaml</location>
                                         </source>
                                     </sources>
                                 </mapping>

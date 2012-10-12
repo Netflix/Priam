@@ -14,11 +14,6 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.noderepair.NodeRepairScheduler;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.PriamScheduler;
-<<<<<<< HEAD
-import com.netflix.priam.noderepair.NodeRepair;
-import com.netflix.priam.utils.Sleeper;
-=======
->>>>>>> ff033837eba69489296e25c3d0d3497163125aba
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import com.yammer.dropwizard.lifecycle.Managed;
@@ -43,14 +38,11 @@ public class PriamServer implements Managed {
     private final AmazonConfiguration amazonConfig;
     private final NodeRepairConfiguration nodeRepairConfig;
     private final InstanceIdentity id;
-<<<<<<< HEAD
-    private final Sleeper sleeper;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     private static final Boolean NODEREPAIR = true;
-    private Scheduler repairScheduler;
-=======
->>>>>>> ff033837eba69489296e25c3d0d3497163125aba
+
+    @Inject private NodeRepairScheduler nodeRepairScheduler;
 
     @Inject
     public PriamServer(CassandraConfiguration cassandraConfig,
@@ -108,7 +100,7 @@ public class PriamServer implements Managed {
         //Do it a bit differently because we need to build schedule for each keyspace separately by passing keyspace name as an argument
         if(NODEREPAIR){
             try{
-                new NodeRepairScheduler().scheduleNodeRepair();
+                nodeRepairScheduler.scheduleNodeRepair();
             } catch (Exception e) {
                 logger.error("%s", e.getMessage());
             }

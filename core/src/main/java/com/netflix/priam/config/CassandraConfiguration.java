@@ -89,6 +89,12 @@ public class CassandraConfiguration {
     @JsonProperty
     private String rowCacheKeysToSave;
 
+    @JsonProperty
+    private String nodeRepairSorPolloi;
+
+    @JsonProperty
+    private String nodeRepairDatabus;
+
     public String getPartitionerClassName() {
         return partitionerClassName;
     }
@@ -199,6 +205,14 @@ public class CassandraConfiguration {
 
     public String getRowCacheKeysToSave() {
         return rowCacheKeysToSave;
+    }
+
+    public String getNodeRepairSorPolloi() {
+        return nodeRepairDatabus;
+    }
+
+    public String getNodeRepairDatabus() {
+        return nodeRepairDatabus;
     }
 
     public void setPartitionerClassName(String partitionerClassName) {

@@ -9,8 +9,8 @@ import org.quartz.JobExecutionException;
 public final class NodeRepairAdapter implements Job {
     private final NodeRepair nodeRepair;
 
-    public NodeRepairAdapter(String keyspace, CassandraConfiguration cassandraConfig, AmazonConfiguration amazonConfig) {
-        this.nodeRepair = new NodeRepair(keyspace, cassandraConfig);
+    public NodeRepairAdapter(CassandraConfiguration cassandraConfig) {
+        this.nodeRepair = new NodeRepair(cassandraConfig);
     }
 
     @Override

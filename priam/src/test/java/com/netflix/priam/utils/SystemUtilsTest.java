@@ -14,7 +14,7 @@ public class SystemUtilsTest
         Process p = null;
         try
         {
-            p = new ProcessBuilder("cd", "/tmppppp").start();
+            p = new ProcessBuilder("ls", "/tmppppp").start();
             Thread.sleep(100);
             Assert.assertFalse(0 == p.exitValue());
             SystemUtils.logProcessOutput(p);

@@ -21,7 +21,8 @@ public class SystemUtilsTest
         }
         catch(IOException ioe)
         {
-            SystemUtils.logProcessOutput(p);
+            if(p!=null)
+                SystemUtils.logProcessOutput(p);
         }
     }
 

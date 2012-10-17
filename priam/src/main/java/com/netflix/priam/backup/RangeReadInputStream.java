@@ -34,8 +34,8 @@ public class RangeReadInputStream extends InputStream
 
     public int read(final byte b[], final int off, final int len) throws IOException
     {
-//        logger.info(String.format("incoming buf req's size = %d, off = %d, len to read = %d, on size size %d, cur offset = %d",
-//                b.length, off, len, path.getSize(), offset));
+        logger.info(String.format("incoming buf req's size = %d, off = %d, len to read = %d, on size size %d, cur offset = %d",
+                b.length, off, len, path.getSize(), offset));
         final long fileSize = path.getSize();
         if(fileSize > 0 && offset >= fileSize)
             return -1;
@@ -46,7 +46,7 @@ public class RangeReadInputStream extends InputStream
         //need to subtract one as the call to getRange is inclusive
         //meaning if you want to download the first 10 bytes of a file, request bytes 0..9
         final long endByte = curEndByte - 1;
-//        logger.info(String.format("start byte = %d, end byte = %d", firstByte, endByte));
+        logger.info(String.format("start byte = %d, end byte = %d", firstByte, endByte));
         try
         {
             Integer cnt = new RetryableCallable<Integer>()
@@ -69,7 +69,7 @@ public class RangeReadInputStream extends InputStream
                             System.arraycopy(readBuf, 0, b, incomingOffet, rCnt);
                             readTotal += rCnt;
                             incomingOffet += rCnt;
-//                            logger.info("    local read cnt = " + rCnt);
+                            logger.info("    local read cnt = " + rCnt + "Current Thread Name = "+Thread.currentThread().getName());
                         }
                         offset += readTotal;
                         return Integer.valueOf(readTotal);
@@ -81,7 +81,7 @@ public class RangeReadInputStream extends InputStream
                     }
                 }
             }.call();
-//            logger.info("read cnt = " + cnt);
+            logger.info("read cnt = " + cnt);
             return cnt.intValue();
         }
         catch(Exception e)

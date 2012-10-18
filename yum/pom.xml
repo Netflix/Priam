@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netflix.priam</groupId>
+        <groupId>com.bazaarvoice.priam</groupId>
         <artifactId>priam-parent</artifactId>
         <version>1.1-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>

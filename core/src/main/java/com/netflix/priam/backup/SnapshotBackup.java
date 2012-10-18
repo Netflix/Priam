@@ -45,7 +45,7 @@ public class SnapshotBackup extends AbstractBackup {
             logger.info("Starting snapshot " + snapshotName);
             takeSnapshot(snapshotName);
             // Collect all snapshot dir's under keyspace dir's
-            List<AbstractBackupPath> bps = Lists.newArrayList();
+            List<AbstractBackupPath> backupPaths = Lists.newArrayList();
             File dataDir = new File(cassandraConfiguration.getDataLocation());
             for (File keyspaceDir : dataDir.listFiles()) {
                 for (File columnFamilyDir : keyspaceDir.listFiles()) {
@@ -56,12 +56,12 @@ public class SnapshotBackup extends AbstractBackup {
                     File snapshotDir = getValidSnapshot(columnFamilyDir, snpDir, snapshotName);
                     // Add files to this dir
                     if (null != snapshotDir) {
-                        bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
+                        backupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP));
                     }
                 }
             }
             // Upload meta file
-            metaData.set(bps, snapshotName);
+            metaData.set(backupPaths, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
         } finally {
             try {

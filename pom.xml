@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netflix.priam</groupId>
+        <groupId>com.bazaarvoice.priam</groupId>
         <artifactId>priam-parent</artifactId>
         <version>1.1-SNAPSHOT</version>
         <relativePath>parent/pom.xml</relativePath>
@@ -13,12 +13,12 @@
     <artifactId>priam-complete</artifactId>
     <packaging>pom</packaging>
 
-    <name>Priam Reactor</name>
+    <name>Bazaarvoice Priam</name>
 
     <scm>
-        <connection>scm:git:git@github.com:Netflix/Priam.git</connection>
-        <url>scm:git:git@github.com:Netflix/Priam.git</url>
-        <developerConnection>scm:git:git@github.com:Netflix/Priam.git</developerConnection>
+        <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
+        <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
+        <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
     </scm>
 
     <modules>

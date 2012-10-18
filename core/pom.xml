@@ -4,7 +4,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netflix.priam</groupId>
+        <groupId>com.bazaarvoice.priam</groupId>
         <artifactId>priam-parent</artifactId>
         <version>1.1-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
@@ -16,9 +16,9 @@
     <name>Priam Service</name>
 
     <scm>
-        <connection>scm:git:git@github.com:Netflix/Priam.git</connection>
-        <url>scm:git:git@github.com:Netflix/Priam.git</url>
-        <developerConnection>scm:git:git@github.com:Netflix/Priam.git</developerConnection>
+        <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
+        <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
+        <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
     </scm>
 
     <properties>
@@ -141,10 +141,10 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
             </dependency>
-            <dependency>
-                <groupId>com.ning</groupId>
-                <artifactId>compress-lzf</artifactId>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>com.ning</groupId>-->
+                <!--<artifactId>compress-lzf</artifactId>-->
+            <!--</dependency>-->
      </dependencies>
 
 

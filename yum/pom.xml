@@ -37,7 +37,7 @@
                                     <s3RepositoryPath>${yumrepo.s3RepositoryPath}</s3RepositoryPath>
                                     <artifactItems>
                                         <artifactItem>
-                                            <groupId>com.netflix.priam</groupId>
+                                            <groupId>com.bazaarvoice.priam</groupId>
                                             <artifactId>priam-core</artifactId>
                                             <version>${project.version}</version>
                                             <type>rpm</type>

@@ -5,7 +5,7 @@
     <parent>
         <groupId>com.bazaarvoice.priam</groupId>
         <artifactId>priam-parent</artifactId>
-        <version>1.2</version>
+        <version>1.3-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -18,7 +18,7 @@
         <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
         <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
         <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
-      <tag>priam-complete-1.2</tag>
+      <tag>priam-complete-1.1</tag>
   </scm>
 
     <properties>

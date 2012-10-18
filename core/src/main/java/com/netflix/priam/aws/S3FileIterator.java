@@ -30,12 +30,15 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
         this.start = start;
         this.till = till;
         this.pathProvider = pathProvider;
+        this.s3Client = s3Client;
+
         ListObjectsRequest listReq = new ListObjectsRequest();
         String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
         listReq.setBucketName(paths[0]);
         listReq.setPrefix(pathProvider.get().remotePrefix(start, till, path));
-        this.s3Client = s3Client;
+
         objectListing = s3Client.listObjects(listReq);
+
         iterator = createIterator();
     }
 
@@ -58,10 +61,10 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
         for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(summary.getKey());
-            logger.debug("New key " + summary.getKey() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.getTime());
+            // logger.debug("New key " + summary.getKey() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.getTime());
             if ((path.getTime().after(start) && path.getTime().before(till)) || path.getTime().equals(start)) {
                 temp.add(path);
-                logger.debug("Added key " + summary.getKey());
+                // logger.debug("Added key " + summary.getKey());
             }
         }
         return temp.iterator();

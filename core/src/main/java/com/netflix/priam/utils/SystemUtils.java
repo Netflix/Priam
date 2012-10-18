@@ -31,6 +31,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 
 public class SystemUtils {
@@ -41,11 +46,17 @@ public class SystemUtils {
      * Start Cassandra process from this co-process.
      */
     public static void startCassandra(boolean join_ring, CassandraConfiguration cassandraConfig, BackupConfiguration backupConfig, String instanceType) throws IOException, InterruptedException {
+        if (isCassandraRunning(cassandraConfig)) {
+            logger.info("Cassandra already running.  No need to start.");
+            return;
+        }
+
         logger.info("Starting cassandra server ....join_ring={}, user.name={}", join_ring, System.getProperty("user.name"));
 
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name"))) {
             command.add(SUDO_STRING);
+            command.add("-n");
             command.add("-E");
         }
         for (String param : cassandraConfig.getCassStartScript().split(" ")) {
@@ -72,6 +83,25 @@ public class SystemUtils {
         logger.info("Starting cassandra server ....");
     }
 
+    private static boolean isCassandraRunning(final CassandraConfiguration cassandraConfiguration) {
+        logger.info("Checking status of cassandra server...");
+        ExecutorService executor = Executors.newSingleThreadExecutor();
+        try {
+            Future<Long> uptimeFuture = executor.submit(new Callable<Long>() {
+                @Override
+                public Long call() throws Exception {
+                    return JMXNodeTool.instance(cassandraConfiguration).getUptime();
+                }
+            });
+            return  uptimeFuture.get(5, TimeUnit.SECONDS) > 0;
+        } catch (Exception e) {
+            logger.info("Unable to use JMX to determine Cassandra server status.  Assuming the server is not running...", e);
+        } finally {
+            executor.shutdownNow();
+        }
+        return false;
+    }
+
     /**
      * Stop Cassandra process from this co-process.
      */
@@ -80,6 +110,7 @@ public class SystemUtils {
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name"))) {
             command.add(SUDO_STRING);
+            command.add("-n");
             command.add("-E");
             command.add("-u cassandra");
         }
@@ -214,7 +245,9 @@ public class SystemUtils {
 
     public static <T> T retryForEver(RetryableCallable<T> retryableCallable) {
         try {
-            retryableCallable.set(Integer.MAX_VALUE, 1 * 1000);
+            retryableCallable.setRetries(Integer.MAX_VALUE);
+            retryableCallable.setWaitTime(1000L);
+
             return retryableCallable.call();
         } catch (Exception e) {
             // this might not happen because we are trying Integer.MAX_VALUE

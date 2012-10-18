@@ -100,7 +100,7 @@ public class JMXNodeTool extends NodeProbe {
     }
 
     public static synchronized JMXNodeTool connect(final CassandraConfiguration config) {
-        return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>() {
+        return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>(false) {
             @Override
             public JMXNodeTool retriableCall() throws Exception {
                 JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());

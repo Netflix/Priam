@@ -1,18 +1,17 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.sonatype.oss</groupId>
-        <artifactId>oss-parent</artifactId>
-        <version>7</version>
-        <relativePath/>
+        <groupId>com.bazaarvoice.commons</groupId>
+        <artifactId>bv-super-pom</artifactId>
+        <version>1.9</version>
+        <relativePath />
     </parent>
 
-    <groupId>com.netflix.priam</groupId>
+    <groupId>com.bazaarvoice.priam</groupId>
     <artifactId>priam-parent</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.4-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>Priam Parent</name>
@@ -26,10 +25,11 @@
     </licenses>
 
     <scm>
-        <connection>scm:git:git@github.com:Netflix/Priam.git</connection>
-        <url>scm:git:git@github.com:Netflix/Priam.git</url>
-        <developerConnection>scm:git:git@github.com:Netflix/Priam.git</developerConnection>
-    </scm>
+        <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
+        <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
+        <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
+      <tag>priam-complete-1.1</tag>
+  </scm>
 
     <properties>
         <badger.version>0.2.5</badger.version>
@@ -129,12 +129,12 @@
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
                 <artifactId>snappy-java</artifactId>
-                <version>1.0.3.1</version>
+                <version>1.0.4.1</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.cassandra</groupId>
                 <artifactId>cassandra-all</artifactId>
-                <version>1.1.2</version>
+                <version>1.1.5</version>
                 <exclusions>
                     <exclusion>
                         <groupId>org.slf4j</groupId>
@@ -184,11 +184,11 @@
                 <artifactId>httpcore</artifactId>
                 <version>4.2</version>
             </dependency>
-            <dependency>
-                <groupId>com.ning</groupId>
-                <artifactId>compress-lzf</artifactId>
-                <version>0.9.2</version>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>com.ning</groupId>-->
+                <!--<artifactId>compress-lzf</artifactId>-->
+                <!--<version>0.9.2</version>-->
+            <!--</dependency>-->
         </dependencies>
     </dependencyManagement>
 

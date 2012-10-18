@@ -1,12 +1,11 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>com.netflix.priam</groupId>
+        <groupId>com.bazaarvoice.priam</groupId>
         <artifactId>priam-parent</artifactId>
-        <version>1.1-SNAPSHOT</version>
+        <version>1.4-SNAPSHOT</version>
         <relativePath>../parent/pom.xml</relativePath>
     </parent>
 
@@ -16,10 +15,11 @@
     <name>Priam Service</name>
 
     <scm>
-        <connection>scm:git:git@github.com:Netflix/Priam.git</connection>
-        <url>scm:git:git@github.com:Netflix/Priam.git</url>
-        <developerConnection>scm:git:git@github.com:Netflix/Priam.git</developerConnection>
-    </scm>
+        <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
+        <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
+        <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
+      <tag>priam-complete-1.1</tag>
+  </scm>
 
     <properties>
         <exec.Xms>256m</exec.Xms>
@@ -141,10 +141,10 @@
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
             </dependency>
-            <dependency>
-                <groupId>com.ning</groupId>
-                <artifactId>compress-lzf</artifactId>
-            </dependency>
+            <!--<dependency>-->
+                <!--<groupId>com.ning</groupId>-->
+                <!--<artifactId>compress-lzf</artifactId>-->
+            <!--</dependency>-->
      </dependencies>
 
 
@@ -243,21 +243,6 @@
     </build>
 
     <profiles>
-        <profile>
-            <id>artifactory</id>
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>netflix-artifactory-snapshots</id>
-                    <name>Netflix Artifactory Snapshots</name>
-                    <url>http://artifacts/libs-snapshots-local</url>
-                </snapshotRepository>
-                <repository>
-                    <id>netflix-artifactory-releases</id>
-                    <name>Netflix Artifactory Releases</name>
-                    <url>http://artifacts/libs-releases-local</url>
-                </repository>
-            </distributionManagement>
-        </profile>
         <profile>
             <id>assemble</id>
             <build>

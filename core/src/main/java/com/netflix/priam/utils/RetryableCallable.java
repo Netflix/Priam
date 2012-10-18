@@ -10,19 +10,30 @@ public abstract class RetryableCallable<T> implements Callable<T> {
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
     public static final int DEFAULT_NUMBER_OF_RETRIES = 15;
     public static final long DEFAULT_WAIT_TIME = 100;
-    private int retrys;
+    private int retries;
     private long waitTime;
+    private boolean logErrors = true;
 
     public RetryableCallable() {
         this(DEFAULT_NUMBER_OF_RETRIES, DEFAULT_WAIT_TIME);
     }
 
-    public RetryableCallable(int retrys, long waitTime) {
-        set(retrys, waitTime);
+    public RetryableCallable(int retries, long waitTime) {
+        this.retries = retries;
+        this.waitTime = waitTime;
     }
 
-    public void set(int retrys, long waitTime) {
-        this.retrys = retrys;
+    public RetryableCallable(boolean logErrors) {
+        this(DEFAULT_NUMBER_OF_RETRIES, DEFAULT_WAIT_TIME);
+
+        this.logErrors = logErrors;
+    }
+
+    public void setRetries(int retries) {
+        this.retries = retries;
+    }
+
+    public void setWaitTime(long waitTime) {
         this.waitTime = waitTime;
     }
 
@@ -37,10 +48,12 @@ public abstract class RetryableCallable<T> implements Callable<T> {
                 throw e;
             } catch (Exception e) {
                 retry++;
-                if (retry == retrys) {
+                if (retry == retries) {
                     throw e;
                 }
-                logger.error(String.format("Retry #%d for: %s", retry, e.getMessage()));
+                if (logErrors) {
+                    logger.error(String.format("Retry #%d for: %s", retry, e.getMessage()));
+                }
                 Thread.sleep(waitTime);
             } finally {
                 forEachExecution();

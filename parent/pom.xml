@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -12,7 +11,7 @@
 
     <groupId>com.bazaarvoice.priam</groupId>
     <artifactId>priam-parent</artifactId>
-    <version>1.1-SNAPSHOT</version>
+    <version>1.1</version>
     <packaging>pom</packaging>
 
     <name>Priam Parent</name>
@@ -29,7 +28,8 @@
         <connection>scm:git:git@github.com:bazaarvoice/Priam.git</connection>
         <url>scm:git:git@github.com:bazaarvoice/Priam.git</url>
         <developerConnection>scm:git:git@github.com:bazaarvoice/Priam.git</developerConnection>
-    </scm>
+      <tag>priam-complete-1.1</tag>
+  </scm>
 
     <properties>
         <badger.version>0.2.5</badger.version>

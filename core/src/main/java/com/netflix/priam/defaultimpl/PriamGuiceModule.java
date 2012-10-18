@@ -5,6 +5,8 @@ import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.netflix.curator.framework.CuratorFramework;
+import com.netflix.curator.framework.recipes.leader.LeaderSelector;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.S3BackupPath;
@@ -21,14 +23,19 @@ import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
+import com.netflix.priam.noderepair.NodeRepair;
+import com.netflix.priam.noderepair.NodeRepairScheduler;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
 import com.netflix.priam.zookeeper.ZooKeeperRegistration;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PriamGuiceModule extends AbstractModule {
     private final PriamConfiguration priamConfiguration;
+    private static final Logger logger = LoggerFactory.getLogger(PriamGuiceModule.class);
 
     public PriamGuiceModule(PriamConfiguration priamConfiguration) {
         this.priamConfiguration = priamConfiguration;
@@ -50,10 +57,12 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
         bind(ZooKeeperRegistration.class).asEagerSingleton();
+        bind(NodeRepairScheduler.class).asEagerSingleton();
     }
 
     @Provides @Singleton
     Optional<ZooKeeperConnection> provideZooKeeperConnection() {
+        logger.info("Optional<ZooKeeperConnection> ");
         ZooKeeperConfiguration zkConfiguration = priamConfiguration.getZooKeeperConfiguration();
         if (!zkConfiguration.isEnabled()) {
             return Optional.absent();

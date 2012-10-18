@@ -41,8 +41,8 @@ cassandra:
   localBootstrapEnable: false                       # true if Priam should use local config file for tokens and seeds
   cacheLocation: "/var/lib/cassandra/saved_caches"  # Location of local cache
   seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
-  nodeRepairSorPolloi: "0 0 0 * * 1 ?"
-  nodeRepairDatabus: "0 0/5 0 * * * ?"
+  nodeRepairSorPolloi: "0 0/5 * * * ?"
+  nodeRepairDatabus: "0 0/5 * * * ?"
 
 
 amazon:

@@ -117,7 +117,7 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+        JobDetail jobDetail = JobBuilder.newJob(SnapshotBackup.class)
                 .withIdentity("priam-scheduler", "snapshotbackup")
                 .build();
         return jobDetail;

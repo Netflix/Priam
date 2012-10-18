@@ -114,7 +114,7 @@ public class BackupServlet {
     @GET
     @Path ("/incremental_restore")
     public Response restoreIncrementals() throws Exception {
-        scheduler.addTask(IncrementalRestore.JOBNAME, IncrementalRestore.class, IncrementalRestore.getTimer());
+        scheduler.addTask(IncrementalRestore.getJobDetail(),IncrementalRestore.getTrigger());
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 

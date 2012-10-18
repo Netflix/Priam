@@ -1,5 +1,6 @@
 package com.netflix.priam;
 
+import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
@@ -36,25 +37,21 @@ public class PriamServer implements Managed {
     private final CassandraConfiguration cassandraConfig;
     private final BackupConfiguration backupConfig;
     private final AmazonConfiguration amazonConfig;
-    private final NodeRepairConfiguration nodeRepairConfig;
+    private final NodeRepairScheduler nodeRepairScheduler;
     private final InstanceIdentity id;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
-
-    private static final Boolean NODEREPAIR = true;
-
-    @Inject private NodeRepairScheduler nodeRepairScheduler;
 
     @Inject
     public PriamServer(CassandraConfiguration cassandraConfig,
                        BackupConfiguration backupConfig,
                        AmazonConfiguration amazonConfig,
-                       NodeRepairConfiguration nodeRepairConfig,
+                       NodeRepairScheduler nodeRepairScheduler,
                        PriamScheduler scheduler,
                        InstanceIdentity id) {
         this.cassandraConfig = cassandraConfig;
         this.backupConfig = backupConfig;
         this.amazonConfig = amazonConfig;
-        this.nodeRepairConfig = nodeRepairConfig;
+        this.nodeRepairScheduler = nodeRepairScheduler;
         this.scheduler = scheduler;
         this.id = id;
     }
@@ -73,7 +70,6 @@ public class PriamServer implements Managed {
 
         // restore from backup else start cassandra.
         if (StringUtils.isNotBlank(backupConfig.getAutoRestoreSnapshotName())) {
-            //scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
             scheduler.addTask(Restore.getJobDetail(), Restore.getTrigger());
         } else {
             SystemUtils.startCassandra(true, cassandraConfig, backupConfig, amazonConfig.getInstanceType()); // Start cassandra.
@@ -81,28 +77,26 @@ public class PriamServer implements Managed {
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)
-        if (backupConfig.getHour() >= 0 && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
-            //scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(backupConfig));
+         if (backupConfig.getHour() >= 0 && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
             scheduler.addTask(SnapshotBackup.getJobDetail(), SnapshotBackup.getTrigger(backupConfig));
 
             // Start the Incremental backup schedule if enabled
             if (backupConfig.isIncrementalEnabled()) {
-                //scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
                 scheduler.addTask(IncrementalBackup.getJobDetail(), IncrementalBackup.getTrigger());
             }
         }
 
         //Set cleanup
-        //scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
         scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
 
         //Schedule Node Repair
-        //Do it a bit differently because we need to build schedule for each keyspace separately by passing keyspace name as an argument
-        if(NODEREPAIR){
+        //Do it a bit differently because we need to pass several arguments to the job executor which Quartz doesn't allow by default.
+        if(cassandraConfig.isNodeRepairEnabled()){
             try{
+                nodeRepairScheduler.setJobFactory();
                 nodeRepairScheduler.scheduleNodeRepair();
             } catch (Exception e) {
-                logger.error("%s", e.getMessage());
+                throw new RuntimeException(e);
             }
         }
     }

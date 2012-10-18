@@ -50,7 +50,7 @@ public class UpdateCleanupPolicy extends Task {
     }
 
     public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+        JobDetail jobDetail = JobBuilder.newJob(UpdateCleanupPolicy.class)
                 .withIdentity("priam-scheduler", "update-cleanup-policy")
                 .build();
         return jobDetail;

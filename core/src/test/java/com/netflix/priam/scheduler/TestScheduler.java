@@ -5,9 +5,12 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.priam.TestModule;
+import com.netflix.priam.backup.Restore;
 import junit.framework.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.quartz.JobBuilder;
+import org.quartz.JobDetail;
 
 import javax.management.MBeanServerFactory;
 import java.util.concurrent.CountDownLatch;
@@ -25,7 +28,7 @@ public class TestScheduler
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 10));
+        scheduler.addTask(TestTask.getJobDetail(), new SimpleTimer("testtask", 10).getTrigger());
         // verify the task has run or fail in 1s
         latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
@@ -38,7 +41,7 @@ public class TestScheduler
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test2", SingleTestTask.class, SingleTestTask.getTimer());
+        scheduler.addTask(SingleTestTask.getJobDetail(), new SimpleTimer("testSingleInstance", 11L).getTrigger());
         // verify 3 tasks run or fail in 1s
         latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
@@ -65,6 +68,13 @@ public class TestScheduler
         public String getName()
         {
             return "test";
+        }
+
+        public static JobDetail getJobDetail(){
+            JobDetail jobDetail = JobBuilder.newJob(TestTask.class)
+                    .withIdentity("priam-scheduler", "testTask")
+                    .build();
+            return jobDetail;
         }
 
     }
@@ -106,6 +116,13 @@ public class TestScheduler
         public static TaskTimer getTimer()
         {
             return new SimpleTimer("test2", 11L);
+        }
+
+        public static JobDetail getJobDetail(){
+            JobDetail jobDetail = JobBuilder.newJob(TestTask.class)
+                    .withIdentity("priam-scheduler", "singleTestTask")
+                    .build();
+            return jobDetail;
         }
     }
 }

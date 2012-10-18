@@ -47,7 +47,6 @@ public class CronTimer implements TaskTimer {
     }
 
     public Trigger getTrigger() throws ParseException {
-        //return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
         return TriggerBuilder
                 .newTrigger()
                 .withSchedule(CronScheduleBuilder.cronSchedule(cronExpression))

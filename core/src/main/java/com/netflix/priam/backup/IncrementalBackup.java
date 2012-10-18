@@ -69,7 +69,7 @@ public class IncrementalBackup extends AbstractBackup {
     }
 
     public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
+        JobDetail jobDetail = JobBuilder.newJob(IncrementalBackup.class)
                 .withIdentity("priam-scheduler", "incremental-backup")
                 .build();
         return jobDetail;

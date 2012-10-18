@@ -98,6 +98,12 @@ public class CassandraConfiguration {
     @JsonProperty
     private String nodeRepairDatabus;
 
+    @JsonProperty
+    private boolean nodeRepairEnabled;
+
+    @JsonProperty
+    private int lockAcquireTimeOut;
+
     public String getPartitionerClassName() {
         return partitionerClassName;
     }
@@ -215,11 +221,19 @@ public class CassandraConfiguration {
     }
 
     public String getNodeRepairSorPolloi() {
-        return nodeRepairDatabus;
+        return nodeRepairSorPolloi;
     }
 
     public String getNodeRepairDatabus() {
         return nodeRepairDatabus;
+    }
+
+    public boolean isNodeRepairEnabled() {
+        return nodeRepairEnabled;
+    }
+
+    public int getLockAcquireTimeOut() {
+        return lockAcquireTimeOut;
     }
 
     public void setPartitionerClassName(String partitionerClassName) {
@@ -336,6 +350,22 @@ public class CassandraConfiguration {
 
     public void setRowCacheKeysToSave(String rowCacheKeysToSave) {
         this.rowCacheKeysToSave = rowCacheKeysToSave;
+    }
+
+    public void setNodeRepairSorPolloi(String nodeRepairSorPolloi) {
+        this.nodeRepairSorPolloi = nodeRepairSorPolloi;
+    }
+
+    public void setNodeRepairDatabus(String nodeRepairDatabus) {
+        this.nodeRepairDatabus = nodeRepairDatabus;
+    }
+
+    public void setNodeRepairEnabled(boolean nodeRepairEnabled) {
+        this.nodeRepairEnabled = nodeRepairEnabled;
+    }
+
+    public void setLockAcquireTimeOut(int lockAcquireTimeOut) {
+        this.lockAcquireTimeOut = lockAcquireTimeOut;
     }
 
 }

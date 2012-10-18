@@ -18,7 +18,6 @@ public class SimpleTimer implements TaskTimer {
     private SimpleTrigger trigger;
 
     public SimpleTimer(String name, long interval) {
-        //this.trigger = new SimpleTriggerImpl(name, SimpleTrigger.REPEAT_INDEFINITELY, interval);
         this.trigger = (SimpleTrigger) TriggerBuilder.newTrigger().forJob(name).withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(interval).repeatForever().withMisfireHandlingInstructionFireNow()).build();
     }
 
@@ -26,7 +25,6 @@ public class SimpleTimer implements TaskTimer {
      * Run once at given time...
      */
     public SimpleTimer(String name, String group, long startTime) {
-        //this.trigger = new SimpleTrigger(name, group, new Date(startTime));
         this.trigger = (SimpleTrigger) TriggerBuilder.newTrigger().forJob(name,group).withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow()).startAt(new Date(startTime)).build();
     }
 
@@ -34,12 +32,10 @@ public class SimpleTimer implements TaskTimer {
      * Run immediatly and dont do that again.
      */
     public SimpleTimer(String name) {
-        //this.trigger = new SimpleTrigger(name, Scheduler.DEFAULT_GROUP);
-        this.trigger = (SimpleTrigger) TriggerBuilder.newTrigger().forJob(name).build();
+        this.trigger = (SimpleTrigger) TriggerBuilder.newTrigger().forJob(name).withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow()).startNow().build();
     }
 
     public Trigger getTrigger() throws ParseException {
-        // trigger.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW);
         return trigger;
     }
 }

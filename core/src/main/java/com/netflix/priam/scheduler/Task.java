@@ -19,9 +19,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  * NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to failure
  */
 public abstract class Task implements Job, TaskMBean {
-    public STATE status = STATE.DONE;
+    public State status = State.DONE;
 
-    public static enum STATE {
+    public static enum State {
         ERROR, RUNNING, DONE
     }
 
@@ -60,27 +60,27 @@ public abstract class Task implements Job, TaskMBean {
     public void execute(JobExecutionContext context) throws JobExecutionException {
         executions.incrementAndGet();
         try {
-            if (status == STATE.RUNNING) {
+            if (status == State.RUNNING) {
                 return;
             }
-            status = STATE.RUNNING;
+            status = State.RUNNING;
             execute();
 
         } catch (Exception e) {
-            status = STATE.ERROR;
+            status = State.ERROR;
             logger.error("Couldn't execute the task because of " + e.getMessage(), e);
             errors.incrementAndGet();
         } catch (Throwable e) {
-            status = STATE.ERROR;
+            status = State.ERROR;
             logger.error("Couldn't execute the task because of " + e.getMessage(), e);
             errors.incrementAndGet();
         }
-        if (status != STATE.ERROR) {
-            status = STATE.DONE;
+        if (status != State.ERROR) {
+            status = State.DONE;
         }
     }
 
-    public STATE state() {
+    public State state() {
         return status;
     }
 

@@ -40,11 +40,17 @@ public class S3PartUploader extends RetryableCallable<Void> {
         req.setPartSize(dataPart.getPartData().length);
         req.setMd5Digest(SystemUtils.toBase64(dataPart.getMd5()));
         req.setInputStream(new ByteArrayInputStream(dataPart.getPartData()));
+
+        // Perform the upload
         UploadPartResult res = client.uploadPart(req);
+
+        // Validate the MD5 of the uploaded part
         PartETag partETag = res.getPartETag();
         if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.getMd5()))) {
             throw new BackupRestoreException("Unable to match MD5 for part " + dataPart.getPartNo());
         }
+
+        // Keep track of the ETags so that we can complete the request once all parts have been uploaded
         partETags.add(partETag);
         return null;
     }
@@ -54,7 +60,6 @@ public class S3PartUploader extends RetryableCallable<Void> {
         client.completeMultipartUpload(compRequest);
     }
 
-    // Abort
     public void abortUpload() {
         AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID());
         client.abortMultipartUpload(abortRequest);

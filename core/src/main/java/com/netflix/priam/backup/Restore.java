@@ -113,6 +113,7 @@ public class Restore extends AbstractRestore {
         logger.info("Meta file for restore " + meta.getRemotePath());
 
         // Download snapshot which is listed in the meta file.
+        logger.info("Downloading full snapshot");
         List<AbstractBackupPath> snapshots = metaData.get(meta);
         download(snapshots.iterator(), BackupFileType.SNAP);
 

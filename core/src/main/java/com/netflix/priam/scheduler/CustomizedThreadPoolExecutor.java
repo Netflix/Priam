@@ -68,7 +68,7 @@ public class CustomizedThreadPoolExecutor extends ThreadPoolExecutor {
                 if (timeout <= giveupTime) {
                     Thread.sleep(DEFAULT_SLEEP);
                     timeout += DEFAULT_SLEEP;
-                    logger.debug("After Sleeping for empty: {}, Count: {}", +queue.size(), active.get());
+                    logger.debug("Awaiting completion: queue size {}, active tasks: {}", queue.size(), active.get());
                 } else {
                     throw new RuntimeException("Timed out because TPE is too busy...");
                 }

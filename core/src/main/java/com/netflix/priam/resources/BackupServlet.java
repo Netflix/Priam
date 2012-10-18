@@ -151,8 +151,8 @@ public class BackupServlet {
         int restoreTCount = restoreObj.getActiveCount();
         int backupTCount = fs.getActivecount();
 
-        logger.debug("Thread counts for backup is: %d", restoreTCount);
-        logger.debug("Thread counts for restore is: %d", backupTCount);
+        logger.debug("Thread counts for backup is: {}", restoreTCount);
+        logger.debug("Thread counts for restore is: {}", backupTCount);
 
         Map<String, Object> object = Maps.newHashMap();
         object.put("Restore", ImmutableMap.of("Status", restoreObj.state().toString(), "Threads", new Integer(restoreTCount)));

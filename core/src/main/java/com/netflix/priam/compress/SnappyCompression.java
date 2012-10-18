@@ -1,10 +1,15 @@
 package com.netflix.priam.compress;
 
+import com.google.common.io.CountingInputStream;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -15,7 +20,6 @@ import java.util.Iterator;
  * SnappyCompression
  */
 public class SnappyCompression implements ICompression {
-    private static final int BUFFER = 2 * 1024;
 
     @Override
     public Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException {
@@ -34,13 +38,11 @@ public class SnappyCompression implements ICompression {
 
     private void decompress(InputStream input, OutputStream output) throws IOException {
         SnappyInputStream is = new SnappyInputStream(new BufferedInputStream(input));
-        byte data[] = new byte[BUFFER];
-        BufferedOutputStream dest1 = new BufferedOutputStream(output, BUFFER);
+        BufferedOutputStream dest1 = new BufferedOutputStream(output);
         try {
-            int c;
-            while ((c = is.read(data, 0, BUFFER)) != -1) {
-                dest1.write(data, 0, c);
-            }
+            IOUtils.copyLarge(is, dest1);
+            dest1.flush();
+            output.flush();
         } finally {
             IOUtils.closeQuietly(dest1);
             IOUtils.closeQuietly(is);

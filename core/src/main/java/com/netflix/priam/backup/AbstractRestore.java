@@ -68,18 +68,24 @@ public abstract class AbstractRestore extends Task {
      * Download to specific location
      */
     public void download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        if (backupConfiguration.getRestoreKeyspaces().size() != 0 && (!backupConfiguration.getRestoreKeyspaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE))) {
+        if (backupConfiguration.getRestoreKeyspaces().size() != 0
+                && (!backupConfiguration.getRestoreKeyspaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE))) {
             return;
         }
         count.incrementAndGet();
         executor.submit(new RetryableCallable<Integer>() {
             @Override
             public Integer retriableCall() throws Exception {
-                logger.info("Downloading file: " + path + " to: " + restoreLocation);
+
+                logger.info("Downloading file: " + path);
                 fs.download(path, new FileOutputStream(restoreLocation));
                 tracker.adjustAndAdd(path);
-                // TODO: fix me -> if there is exception the why hang?
-                return count.decrementAndGet();
+
+                // Legitimately only want this to run when the download completes successfully - the effect of starting cassandra prematurely could involve data loss without knowing it.
+                count.decrementAndGet();
+                logger.info("Downloaded file (" + restoreLocation.length() + " bytes, " + count.get() + " files left to download):" + restoreLocation.getPath());
+
+                return 0;
             }
         });
     }

@@ -34,8 +34,8 @@ public class RangeReadInputStream extends InputStream
 
     public int read(final byte b[], final int off, final int len) throws IOException
     {
-        logger.info(String.format("incoming buf req's size = %d, off = %d, len to read = %d, on size size %d, cur offset = %d",
-                b.length, off, len, path.getSize(), offset));
+        logger.info(String.format("incoming buf req's size = %d, off = %d, len to read = %d, on file size %d, cur offset = %d path = %s",
+                b.length, off, len, path.getSize(), offset, path.getRemotePath()));
         final long fileSize = path.getSize();
         if(fileSize > 0 && offset >= fileSize)
             return -1;

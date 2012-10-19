@@ -2,6 +2,7 @@ package com.netflix.priam.config;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
+import com.sun.jersey.core.util.StringIgnoreCaseKeyComparator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;
@@ -62,6 +63,12 @@ public class BackupConfiguration {
 
     @JsonProperty
     private long uploadThrottleBytesPerSec;
+
+    @JsonProperty
+    private boolean snapShotBackUpEnabled;
+
+    @JsonProperty
+    private String snapShotBackUpCronTime;
 
 
     public String getAutoRestoreSnapshotName() {
@@ -136,6 +143,14 @@ public class BackupConfiguration {
         return uploadThrottleBytesPerSec;
     }
 
+    public boolean isSnapShotBackUpEnabled() {
+        return snapShotBackUpEnabled;
+    }
+
+    public String getSnapShotBackUpCronTime() {
+        return snapShotBackUpCronTime;
+    }
+
     public void setAutoRestoreSnapshotName(String autoRestoreSnapshotName) {
         this.autoRestoreSnapshotName = autoRestoreSnapshotName;
     }
@@ -207,6 +222,14 @@ public class BackupConfiguration {
 
     public void setUploadThrottleBytesPerSec(long uploadThrottleBytesPerSec) {
         this.uploadThrottleBytesPerSec = uploadThrottleBytesPerSec;
+    }
+
+    public void setSnapShotBackUpEnabled (boolean snapShotBackUpEnabled) {
+        this.snapShotBackUpEnabled = snapShotBackUpEnabled;
+    }
+
+    public void setSnapShotBackUpCronTime (String snapShotBackUpCronTime) {
+        this.snapShotBackUpCronTime = snapShotBackUpCronTime;
     }
 
 }

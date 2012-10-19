@@ -76,8 +76,8 @@ public class PriamServer implements Managed {
         }
 
         // Start the snapshot backup schedule - Always run this. (If you want to
-        // set it off, set backup hour to -1)
-         if (backupConfig.getHour() >= 0 && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
+        // set it off, set snapShotBackUpEnabled: false in priam.yaml)
+         if (backupConfig.isSnapShotBackUpEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
             scheduler.addTask(SnapshotBackup.getJobDetail(), SnapshotBackup.getTrigger(backupConfig));
 
             // Start the Incremental backup schedule if enabled
@@ -90,7 +90,7 @@ public class PriamServer implements Managed {
         scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
 
         //Schedule Node Repair
-        //Do it a bit differently because we need to pass several arguments to the job executor which Quartz doesn't allow by default.
+        //Create a separate scheduler for Node Repair because we need to pass several arguments to the job executor which Quartz doesn't allow by default.
         if(cassandraConfig.isNodeRepairEnabled()){
             try{
                 nodeRepairScheduler.setJobFactory();

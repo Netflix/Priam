@@ -21,7 +21,6 @@ import java.util.Queue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
-@Singleton
 public final class NodeRepair {
     private static final Logger logger = LoggerFactory.getLogger(NodeRepair.class);
     private static Duration lockAcquireTimeOut = Duration.standardMinutes(10);  //default time out
@@ -30,8 +29,6 @@ public final class NodeRepair {
     private CassandraConfiguration cassandraConfig;
     private Optional<ZooKeeperConnection> zooKeeperConnection;
     private AmazonConfiguration amazonConfiguration;
-
-    private JMXNodeTool jmxNodeTool;
 
     public NodeRepair(CassandraConfiguration cassandraConfig, Optional<ZooKeeperConnection> zooKeeperConnection, AmazonConfiguration amazonConfiguration){
         this.cassandraConfig = cassandraConfig;
@@ -42,16 +39,12 @@ public final class NodeRepair {
 
     public void execute()  {
         try {
-            synchronized (lock) {
-                if(!zooKeeperConnection.isPresent()){
-                    return;
-                }
-                if (jmxNodeTool == null) {
-                    jmxNodeTool = getJMXNodeTool();
-                }
-                jmxNodeTool.repair(true);
-                logger.info("successfully finished node repair");
+            if (!zooKeeperConnection.isPresent()) {
+                return;
             }
+            JMXNodeTool jmxNodeTool = getJMXNodeTool();
+            jmxNodeTool.repair(true);
+            logger.info("successfully finished node repair");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -63,27 +56,27 @@ public final class NodeRepair {
             public void repair(boolean isSequential) throws IOException, ExecutionException, InterruptedException {
                 logger.info("started node repairing");
                 Queue<String> keyspaceQueue = new LinkedList<String>();
-
                 keyspaceQueue.addAll(getKeyspaces());
                 logger.info("{} keyspaces are yet to repair", keyspaceQueue.size());
+
                 while (keyspaceQueue.size() > 0) {
                     String keyspace = keyspaceQueue.remove();
-                    //try to get Mutex
                     InterProcessMutex mutex = provideInMutex(zooKeeperConnection.get().withNamespace("/applications/priam/noderepair"), getMutexName(keyspace));
                     try {
-                        // try to acquire mutex for index within flush period
-                        logger.info("node repair is trying to get lock of keyspace {}", keyspace);
+                        logger.info("node repair is trying to get lock of keyspace {}, thread: {}", keyspace, Thread.currentThread().getId());
                         if (mutex.acquire(lockAcquireTimeOut.getStandardMinutes(), TimeUnit.MINUTES)) {
                             try {
-                                logger.info("starting node repair of keyspace {}", keyspace);
+                                logger.info("starting node repair of keyspace {}, thread: {}", keyspace, Thread.currentThread().getId());
                                 forceTableRepair(keyspace, isSequential, new String[0]);
                             } finally {
                                 mutex.release();
-                                logger.info("node repair of keyspace {} is done..lock released", keyspace);
+                                logger.info("node repair of keyspace {} is done..lock released, thread: {}", keyspace, Thread.currentThread().getId());
                             }
                         } else {
-                            logger.info("could not acquire lock for keyspace {} after {} minutes!!", lockAcquireTimeOut.getStandardMinutes());
+                            logger.info("time out occurred acquiring lock for keyspace {}, thread: {}", keyspace, Thread.currentThread().getId());
+                            mutex = null;
                             keyspaceQueue.add(keyspace);
+                            Thread.sleep(2000);
                         }
                     } catch (Exception e) {
                         throw Throwables.propagate(e);

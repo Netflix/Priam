@@ -41,8 +41,15 @@ cassandra:
   localBootstrapEnable: false                       # true if Priam should use local config file for tokens and seeds
   cacheLocation: "/var/lib/cassandra/saved_caches"  # Location of local cache
   seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
-  nodeRepairSorPolloi: "0 0/5 * * * ?"
-  nodeRepairDatabus: "0 0/5 * * * ?"
+
+  nodeRepairEnabled: true
+  nodeRepairSorPolloi:
+    us-east-1: "0 0 0 ? * 1"  # every sunday at 0:00 am
+    eu-west-1: "0 0 0 ? * 1"  # every moday at 0:00 am
+  nodeRepairDatabus:
+    us-east-1: "0 0 0 * * ?"  # every day at 0:00 am
+    eu-west-1: "0 0 0 * * ?"  # every day at 0:00 am
+  lockAcquireTimeOut: 20      # lock aquire time out
 
 
 amazon:
@@ -81,6 +88,9 @@ backup:
   streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
                                                     #    can lead to saturating the network connection and degrading rpc performance.
   uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups
+
+  snapShotBackUpEnabled: true
+  snapShotBackUpCronTime: "0 0 2 * * ?"
 
 zooKeeper:
   # Priam will register the Cassandra node in ZooKeeper using the BV SOA (Ostrich) library under "<clusterName>-cassandra".

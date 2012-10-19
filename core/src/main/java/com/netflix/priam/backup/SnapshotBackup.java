@@ -11,6 +11,7 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
+import com.sun.javadoc.ThrowsTag;
 import org.quartz.CronScheduleBuilder;
 import org.quartz.JobBuilder;
 import org.quartz.JobDetail;
@@ -35,8 +36,10 @@ public class SnapshotBackup extends AbstractBackup {
     private final MetaData metaData;
     private final CassandraConfiguration cassandraConfiguration;
 
+    private static String snapShotBackUpCronTime;
+
     @Inject
-    public SnapshotBackup(CassandraConfiguration cassandraConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
+    public SnapshotBackup(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
         super(fs, pathFactory);
         this.cassandraConfiguration = cassandraConfiguration;
         this.metaData = metaData;
@@ -52,7 +55,16 @@ public class SnapshotBackup extends AbstractBackup {
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> backupPaths = Lists.newArrayList();
             File dataDir = new File(cassandraConfiguration.getDataLocation());
+
+            if (dataDir.listFiles() == null) {
+                logger.error("no keyspace dir exists in casssandra data dir. Snapshot quits !!");
+                return;
+            }
+
             for (File keyspaceDir : dataDir.listFiles()) {
+                if (keyspaceDir.listFiles() == null) {
+                    continue;
+                }
                 for (File columnFamilyDir : keyspaceDir.listFiles()) {
                     File snpDir = new File(columnFamilyDir, "snapshots");
                     if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir)) {
@@ -70,9 +82,11 @@ public class SnapshotBackup extends AbstractBackup {
             logger.info("Snapshot upload complete for " + snapshotName);
         } finally {
             try {
+                logger.info("clearing snapshot {}", snapshotName);
                 clearSnapshot(snapshotName);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
+                e.printStackTrace();
             }
         }
     }
@@ -127,7 +141,7 @@ public class SnapshotBackup extends AbstractBackup {
         Trigger trigger = TriggerBuilder
                 .newTrigger()
                 .withIdentity("priam-scheduler", "snapshotbackup-trigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule("0" + " " + "1" + " " +config.getHour()  + " * * ?"))
+                .withSchedule(CronScheduleBuilder.cronSchedule(config.getSnapShotBackUpCronTime()))
                 .build();
         return trigger;
     }

@@ -24,16 +24,18 @@ import java.util.Properties;
 @Singleton
 public final class NodeRepairScheduler implements JobFactory {
 
-    private Scheduler scheduler;
     private final static Logger logger = LoggerFactory.getLogger(NodeRepairScheduler.class);
+    private static final String US_REGION = "us-east-1";
+    private static final String EU_REGION = "eu-west-1";
+    private NodeRepairAdapter nodeRepairAdapter;
+    private Trigger nodeRepairTrigger;
+    private Scheduler scheduler;
 
     @Inject private CassandraConfiguration cassandraConfig;
     @Inject private AmazonConfiguration amazonConfig;
     @Inject private Optional<ZooKeeperConnection> zooKeeperConnection;
 
-    private Trigger nodeRepairTrigger = null;
-
-    public NodeRepairScheduler(){
+    public NodeRepairScheduler() {
     }
 
     @Override
@@ -41,7 +43,10 @@ public final class NodeRepairScheduler implements JobFactory {
         if (bundle.getJobDetail().getJobClass() != NodeRepairAdapter.class) {
             throw new IllegalStateException("can't schedule arbtitrary Repair");
         }
-        return new NodeRepairAdapter(cassandraConfig, zooKeeperConnection, amazonConfig);
+        if(nodeRepairAdapter == null){
+            nodeRepairAdapter = new NodeRepairAdapter(cassandraConfig, zooKeeperConnection, amazonConfig);
+        }
+        return nodeRepairAdapter;
     }
 
     public synchronized void scheduleNodeRepair() {
@@ -49,9 +54,27 @@ public final class NodeRepairScheduler implements JobFactory {
 
         String clusterName = cassandraConfig.getClusterName();
         if (clusterName.matches(".*sor_cat.*") || clusterName.matches(".*sor_ugc.*") || clusterName.matches(".*polloi.*")) {
-            nodeRepairCronTime = cassandraConfig.getNodeRepairSorPolloi();
+            if (amazonConfig.getRegionName().matches("us-east.*")) {
+                logger.info("node repair will be done in us-east-1 region");
+                nodeRepairCronTime = cassandraConfig.getNodeRepairSorPolloi().get(US_REGION);
+            } else if (amazonConfig.getRegionName().matches("eu-west.*")) {
+                logger.info("node repair will be done in eu-west-1 region");
+                nodeRepairCronTime = cassandraConfig.getNodeRepairSorPolloi().get(EU_REGION);
+            } else {
+                logger.info("node repair will be done in some other region");
+                return;
+            }
         } else {
-            nodeRepairCronTime = cassandraConfig.getNodeRepairDatabus();
+            if (amazonConfig.getRegionName().matches("us-east.*")) {
+                logger.info("node repair will be done in us-east-1 region");
+                nodeRepairCronTime = cassandraConfig.getNodeRepairDatabus().get(US_REGION);
+            } else if (amazonConfig.getRegionName().matches("eu-west.*")) {
+                logger.info("node repair will be done in eu-west-1 region");
+                nodeRepairCronTime = cassandraConfig.getNodeRepairDatabus().get(EU_REGION);
+            } else {
+                logger.info("node repair will be done in some other region");
+                return;
+            }
         }
         logger.info("nodeRepairCronTime is {}", nodeRepairCronTime);
 
@@ -63,7 +86,7 @@ public final class NodeRepairScheduler implements JobFactory {
         }
     }
 
-    private void startScheduling(String cronTime){
+    private synchronized void startScheduling(String cronTime){
         JobDetail jobDetail = JobBuilder.newJob(NodeRepairAdapter.class)
                 .build();
 
@@ -79,7 +102,7 @@ public final class NodeRepairScheduler implements JobFactory {
         }
     }
 
-    public void setJobFactory(){
+    public synchronized void setJobFactory(){
         try {
             Properties properties = new Properties();
             properties.setProperty("org.quartz.scheduler.instanceName","nodeRepairScheduler");
@@ -92,6 +115,5 @@ public final class NodeRepairScheduler implements JobFactory {
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
-
     }
 }

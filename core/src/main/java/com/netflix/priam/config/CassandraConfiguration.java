@@ -93,10 +93,10 @@ public class CassandraConfiguration {
     private String rowCacheKeysToSave;
 
     @JsonProperty
-    private String nodeRepairSorPolloi;
+    private Map<String,String> nodeRepairSorPolloi;
 
     @JsonProperty
-    private String nodeRepairDatabus;
+    private Map<String,String> nodeRepairDatabus;
 
     @JsonProperty
     private boolean nodeRepairEnabled;
@@ -220,11 +220,11 @@ public class CassandraConfiguration {
         return rowCacheKeysToSave;
     }
 
-    public String getNodeRepairSorPolloi() {
+    public Map<String,String> getNodeRepairSorPolloi() {
         return nodeRepairSorPolloi;
     }
 
-    public String getNodeRepairDatabus() {
+    public Map<String,String> getNodeRepairDatabus() {
         return nodeRepairDatabus;
     }
 
@@ -352,11 +352,11 @@ public class CassandraConfiguration {
         this.rowCacheKeysToSave = rowCacheKeysToSave;
     }
 
-    public void setNodeRepairSorPolloi(String nodeRepairSorPolloi) {
+    public void setNodeRepairSorPolloi(Map<String,String> nodeRepairSorPolloi) {
         this.nodeRepairSorPolloi = nodeRepairSorPolloi;
     }
 
-    public void setNodeRepairDatabus(String nodeRepairDatabus) {
+    public void setNodeRepairDatabus(Map<String,String> nodeRepairDatabus) {
         this.nodeRepairDatabus = nodeRepairDatabus;
     }
 

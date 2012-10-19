@@ -83,5 +83,4 @@ public class IncrementalBackup extends AbstractBackup {
                 .build();
         return trigger;
     }
-
 }

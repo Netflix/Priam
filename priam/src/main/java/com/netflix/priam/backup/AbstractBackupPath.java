@@ -196,6 +196,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return size;
     }
 
+    public void setSize(long size)
+    {
+        this.size = size;
+    }
+
     public File getBackupFile()
     {
         return backupFile;

@@ -12,12 +12,15 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     public static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
     public static final char PATH_SEP = File.separatorChar;
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
@@ -75,6 +78,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         {
             this.keyspace = elements[0];
             this.columnFamily = elements[1];
+            logger.info("### Keyspace = ["+this.keyspace+"] ColumnFamily = ["+this.columnFamily+"]");
         }
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[3]);
@@ -106,7 +110,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         StringBuffer buff = new StringBuffer();
         buff.append(config.getDataFileLocation()).append(PATH_SEP);
         if (type != BackupFileType.META)
+        {
             buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
+            logger.info("000 Keyspace = ["+this.keyspace+"] ColumnFamily = ["+this.columnFamily+"]");
+        }
         buff.append(fileName);
         File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());

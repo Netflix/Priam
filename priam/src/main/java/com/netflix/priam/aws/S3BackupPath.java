@@ -4,6 +4,9 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
@@ -15,6 +18,8 @@ import com.netflix.priam.identity.InstanceIdentity;
  */
 public class S3BackupPath extends AbstractBackupPath
 {
+    private static final Logger logger = LoggerFactory.getLogger(S3BackupPath.class);
+
     @Inject
     public S3BackupPath(IConfiguration config, InstanceIdentity factory)
     {
@@ -46,6 +51,7 @@ public class S3BackupPath extends AbstractBackupPath
     {
         try
         {
+        		logger.info("^^^ RemoteFilePath = ["+remoteFilePath+"]");
             String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
             // parse out things which are empty
             List<String> pieces = Lists.newArrayList();
@@ -56,6 +62,7 @@ public class S3BackupPath extends AbstractBackupPath
                 pieces.add(ele);
             }
             assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
+            logger.info("^^^ elements length = ["+elements.length+"] pieces size = ["+pieces.size()+"]");
             baseDir = pieces.get(0);
             region = pieces.get(1);
             clusterName = pieces.get(2);
@@ -66,6 +73,7 @@ public class S3BackupPath extends AbstractBackupPath
             {
                 keyspace = pieces.get(6);
                 columnFamily = pieces.get(7);
+                logger.info("222 Keyspace = ["+keyspace+"] ColumnFamily = ["+columnFamily+"]");               
             }
             // append the rest
             fileName = pieces.get(pieces.size() - 1);

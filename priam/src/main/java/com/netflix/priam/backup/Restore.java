@@ -111,8 +111,12 @@ public class Restore extends AbstractRestore
         {
             AbstractBackupPath path = backupfiles.next();
             if (path.type == BackupFileType.META)
-                metas.add(path);
+            {
+            		metas.add(path);
+            		//path.parseLocal(file, BackupFileType.META);
+            }
         }
+        logger.info("metas.size() =  " + metas.size());
         assert metas.size() != 0 : "[cass_backup] No snapshots found, Restore Failed.";
 
         Collections.sort(metas);
@@ -121,6 +125,8 @@ public class Restore extends AbstractRestore
 
         // Download snapshot which is listed in the meta file.
         List<AbstractBackupPath> snapshots = metaData.get(meta);
+        for(AbstractBackupPath abPath: snapshots)
+        		logger.info("*** Snapshot --> "+abPath.getRemotePath());
         download(snapshots.iterator(), BackupFileType.SNAP);
 
         logger.info("Downloading incrementals");

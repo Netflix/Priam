@@ -274,7 +274,7 @@ public class FakeConfiguration implements IConfiguration
     public String getCassStartupScript()
     {
         // TODO Auto-generated method stub
-        return null;
+        return "true";
     }
 
     @Override
@@ -307,7 +307,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getCassStopScript()
     {
-        return "teststopscript";
+        return "yes";
     }
 
     @Override

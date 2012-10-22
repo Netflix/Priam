@@ -45,7 +45,7 @@ cassandra:
   nodeRepairEnabled: true
   nodeRepairSorPolloi:
     us-east-1: "0 0 0 ? * 1"  # every sunday at 0:00 am
-    eu-west-1: "0 0 0 ? * 1"  # every moday at 0:00 am
+    eu-west-1: "0 0 0 ? * 1"  # every monday at 0:00 am
   nodeRepairDatabus:
     us-east-1: "0 0 0 * * ?"  # every day at 0:00 am
     eu-west-1: "0 0 0 * * ?"  # every day at 0:00 am

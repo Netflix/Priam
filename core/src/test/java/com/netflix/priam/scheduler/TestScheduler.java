@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.priam.TestModule;
-import com.netflix.priam.backup.Restore;
 import junit.framework.Assert;
 import org.junit.Ignore;
 import org.junit.Test;

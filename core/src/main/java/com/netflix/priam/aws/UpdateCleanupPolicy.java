@@ -3,7 +3,6 @@ package com.netflix.priam.aws;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.Restore;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;

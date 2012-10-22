@@ -2,7 +2,6 @@ package com.netflix.priam.config;
 
 import com.google.common.base.Objects;
 import com.google.common.collect.Lists;
-import com.sun.jersey.core.util.StringIgnoreCaseKeyComparator;
 import org.codehaus.jackson.annotate.JsonProperty;
 
 import java.util.List;

@@ -1,9 +1,7 @@
 package com.netflix.priam.scheduler;
 
-import org.quartz.Scheduler;
 import org.quartz.SimpleTrigger;
 import org.quartz.TriggerBuilder;
-import org.quartz.impl.triggers.SimpleTriggerImpl;
 import org.quartz.Trigger;
 import org.quartz.SimpleScheduleBuilder;
 

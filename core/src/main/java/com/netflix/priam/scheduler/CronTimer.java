@@ -1,8 +1,6 @@
 package com.netflix.priam.scheduler;
 
 import org.quartz.CronScheduleBuilder;
-import org.quartz.CronTrigger;
-import org.quartz.Scheduler;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
 

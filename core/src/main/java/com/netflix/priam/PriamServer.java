@@ -1,6 +1,5 @@
 package com.netflix.priam;
 
-import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
@@ -10,22 +9,16 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.config.NodeRepairConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.noderepair.NodeRepairScheduler;
-import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.Scheduler;
-import org.quartz.impl.StdSchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -

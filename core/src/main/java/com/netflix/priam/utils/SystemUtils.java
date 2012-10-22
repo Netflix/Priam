@@ -112,7 +112,6 @@ public class SystemUtils {
             command.add(SUDO_STRING);
             command.add("-n");
             command.add("-E");
-            command.add("-u cassandra");
         }
         for (String param : config.getCassStopScript().split(" ")) {
             if (StringUtils.isNotBlank(param)) {

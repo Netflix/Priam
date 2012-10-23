@@ -1,38 +1,22 @@
 // Establish version and status
-ext.releaseVersion = '1.1.9'
 ext.githubProjectName = 'Priam'
 
 buildscript {
     repositories { mavenCentral() }
+    apply from: file('gradle/buildscript.gradle'), to: buildscript 
 }
 
 allprojects {
     repositories { mavenCentral() }
 }
 
-//apply from: file('gradle/release.gradle') // Not fully tested
 apply from: file('gradle/convention.gradle')
 apply from: file('gradle/maven.gradle')
 apply from: file('gradle/check.gradle')
-//apply from: file('gradle/license.gradle') // Waiting for re-release
+apply from: file('gradle/license.gradle')
+apply from: file('gradle/release.gradle')
 
 subprojects {
-    // Closure to configure all the POM with extra info, common to all projects
-    pom {
-        project {
-            url "https://github.com/Netflix/${rootProject.githubProjectName}"
-            scm {
-                connection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                url "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-                developerConnection "scm:git:git@github.com:Netflix/${rootProject.githubProjectName}.git"
-            }
-            issueManagement {
-                system 'github'
-                url "https://github.com/Netflix/${rootProject.githubProjectName}/issues"
-            }
-        }
-    }
-
     group = "com.netflix.${name}"
 
     configurations {

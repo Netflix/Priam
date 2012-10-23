@@ -34,6 +34,7 @@ Thumbs.db
 # Editor Files #
 ################
 *~
+*.swp
 
 # Gradle Files #
 ################
@@ -45,8 +46,8 @@ Thumbs.db
 /tmp
 /build
 */build
-#
-# # IntelliJ specific files/directories
+
+# IntelliJ specific files/directories
 out
 .idea
 *.ipr

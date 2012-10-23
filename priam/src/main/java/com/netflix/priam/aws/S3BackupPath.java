@@ -28,6 +28,9 @@ public class S3BackupPath extends AbstractBackupPath
 
     /**
      * Format of backup path:
+     * Cassandra 1.0
+     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE
+     * Cassandra 1.1
      * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
      */
     @Override
@@ -41,7 +44,12 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(getFormat().format(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
         if (type != BackupFileType.META && type != BackupFileType.CL)
-            buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
+        {
+        		if(isCassandra1_0)
+        			buff.append(keyspace).append(S3BackupPath.PATH_SEP);
+        		else
+        			buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
+        }
         buff.append(fileName);
         return buff.toString();
     }
@@ -51,7 +59,6 @@ public class S3BackupPath extends AbstractBackupPath
     {
         try
         {
-        		logger.info("^^^ RemoteFilePath = ["+remoteFilePath+"]");
             String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
             // parse out things which are empty
             List<String> pieces = Lists.newArrayList();
@@ -62,7 +69,8 @@ public class S3BackupPath extends AbstractBackupPath
                 pieces.add(ele);
             }
             assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
-            logger.info("^^^ elements length = ["+elements.length+"] pieces size = ["+pieces.size()+"]");
+            if(pieces.size() == 8)
+            		setCassandra1_0(true);
             baseDir = pieces.get(0);
             region = pieces.get(1);
             clusterName = pieces.get(2);
@@ -72,8 +80,8 @@ public class S3BackupPath extends AbstractBackupPath
             if (type != BackupFileType.META && type != BackupFileType.CL)
             {
                 keyspace = pieces.get(6);
-                columnFamily = pieces.get(7);
-                logger.info("222 Keyspace = ["+keyspace+"] ColumnFamily = ["+columnFamily+"]");               
+                if(!isCassandra1_0)
+                		columnFamily = pieces.get(7);
             }
             // append the rest
             fileName = pieces.get(pieces.size() - 1);

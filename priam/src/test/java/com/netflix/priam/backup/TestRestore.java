@@ -120,6 +120,8 @@ public class TestRestore
         }
         catch(java.lang.ArrayIndexOutOfBoundsException e){
             //We are ok
+        }catch(java.util.NoSuchElementException e){
+            //We are ok
         }
         catch (AssertionError e) {
             Assert.assertEquals("[cass_backup] No snapshots found, Restore Failed.", e.getMessage());

@@ -12,15 +12,12 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     public static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
     public static final char PATH_SEP = File.separatorChar;
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
@@ -40,8 +37,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String region;
     protected Date time;
     protected long size;
+    protected boolean isCassandra1_0;
 
-    protected final InstanceIdentity factory;
+	protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
 
@@ -77,8 +75,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (type != BackupFileType.META && type != BackupFileType.CL)
         {
             this.keyspace = elements[0];
-            this.columnFamily = elements[1];
-            logger.info("### Keyspace = ["+this.keyspace+"] ColumnFamily = ["+this.columnFamily+"]");
+            if(!isCassandra1_0)
+            		this.columnFamily = elements[1];
         }
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[3]);
@@ -111,8 +109,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         buff.append(config.getDataFileLocation()).append(PATH_SEP);
         if (type != BackupFileType.META)
         {
-            buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
-            logger.info("000 Keyspace = ["+this.keyspace+"] ColumnFamily = ["+this.columnFamily+"]");
+        		if(isCassandra1_0)
+        			buff.append(keyspace).append(PATH_SEP);
+        		else
+        			buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
         }
         buff.append(fileName);
         File return_ = new File(buff.toString());
@@ -221,6 +221,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         return backupFile;
     }
+
+    public boolean isCassandra1_0() {
+		return isCassandra1_0;
+	}
+
+	public void setCassandra1_0(boolean isCassandra1_0) {
+		this.isCassandra1_0 = isCassandra1_0;
+	}
 
     public static class RafInputStream extends InputStream
     {

@@ -102,7 +102,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         try
         {
-            logger.info("Downloading " + path.getRemotePath() + "with ___Size = "+path.getSize());
+            logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
             AmazonS3 client = getS3Client();
             S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
@@ -115,8 +115,6 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
             bytesDownloaded.addAndGet(contentLen);
-//          logger.info("**** Content Length = ["+contentLen+"] bufSize = <" + bufSize +">");
-//          bytesDownloaded.addAndGet(path.getSize());
         }
         catch (Exception e)
         {

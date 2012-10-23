@@ -140,6 +140,11 @@ public class FakeBackupFileSystem implements IBackupFileSystem
         return 0;
     }
 
+    public void shutdown()
+    {
+        //nop
+    }
+
     @Override
     public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {

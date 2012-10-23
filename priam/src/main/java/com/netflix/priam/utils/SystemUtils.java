@@ -7,6 +7,7 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.DataInputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -37,6 +38,7 @@ public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
+    private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 1000;
 
     /**
      * Start Cassandra process from this co-process.
@@ -49,6 +51,7 @@ public class SystemUtils
         if (!"root".equals(System.getProperty("user.name")))
         {
             command.add(SUDO_STRING);
+            command.add("-n");
             command.add("-E");
         }
         for(String param : config.getCassStartupScript().split(" ")){
@@ -68,20 +71,35 @@ public class SystemUtils
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
-        startCass.start();
+        Process starter = startCass.start();
         logger.info("Starting cassandra server ....");
+        Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
+        try
+        {
+            int code = starter.exitValue();
+            if (code == 0)
+                logger.info("Cassandra server has been started");
+            else
+            {
+                logger.error("Unable to start cassandra server. Error code: {}", code);
+                logProcessOutput(starter);
+            }
+        } catch (IllegalThreadStateException e)
+        {
+        }
     }
 
     /**
      * Stop Cassandra process from this co-process.
      */
-    public static void stopCassandra(IConfiguration config) throws IOException
+    public static void stopCassandra(IConfiguration config) throws IOException, InterruptedException
     {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))
         {
             command.add(SUDO_STRING);
+            command.add("-n");
             command.add("-E");
         }
         for(String param : config.getCassStopScript().split(" ")){
@@ -91,7 +109,39 @@ public class SystemUtils
         ProcessBuilder stopCass = new ProcessBuilder(command);
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);
-        stopCass.start();
+        Process stopper = stopCass.start();
+        Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
+        try
+        {
+            int code = stopper.exitValue();
+            if (code == 0)
+                logger.info("Cassandra server has been stopped");
+            else
+            {
+                logger.error("Unable to stop cassandra server. Error code: {}", code);
+                logProcessOutput(stopper);
+            }
+        } catch (IllegalThreadStateException e)
+        {
+        }
+    }
+
+    static void logProcessOutput(Process p) throws IOException
+    {
+        final String stdOut = readProcessStream(p.getInputStream());
+        final String stdErr = readProcessStream(p.getErrorStream());
+        logger.info("std_out: {}", stdOut);
+        logger.info("std_err: {}", stdErr);
+    }
+
+    private static String readProcessStream(InputStream inputStream) throws IOException
+    {
+        final byte[] buffer = new byte[512];
+        final ByteArrayOutputStream baos = new ByteArrayOutputStream(buffer.length);
+        int cnt;
+        while ((cnt = inputStream.read(buffer)) != -1)
+            baos.write(buffer, 0, cnt);
+        return baos.toString();
     }
 
     public static String getDataFromUrl(String url)

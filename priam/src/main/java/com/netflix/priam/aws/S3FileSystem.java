@@ -84,6 +84,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
                 return totalBytesPerMS;
             }
         });
+
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = MBEAN_NAME;
         try
@@ -241,7 +242,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 
     private AmazonS3 getS3Client()
     {
-        return new AmazonS3Client(new BasicAWSCredentials(cred.getAccessKeyId(), cred.getSecretAccessKey()));
+        return new AmazonS3Client(cred.getCredentials());
     }
 
     /**
@@ -257,6 +258,12 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 
         String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
         return paths[0];
+    }
+
+    public void shutdown()
+    {
+        if (executor != null)
+            executor.shutdown();
     }
 
     @Override

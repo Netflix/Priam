@@ -2,6 +2,9 @@ package com.netflix.priam.defaultimpl;
 
 import java.io.FileInputStream;
 import java.util.Properties;
+
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.BasicAWSCredentials;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,8 +23,8 @@ import com.netflix.priam.ICredential;
 public class ClearCredential implements ICredential
 {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
-    public static String CRED_FILE = "/etc/awscredential.properties";
-    private Properties props;
+    private static final String CRED_FILE = "/etc/awscredential.properties";
+    private final Properties props;
 
     public ClearCredential()
     {
@@ -56,4 +59,8 @@ public class ClearCredential implements ICredential
         return props.getProperty("AWSKEY");
     }
 
+    public AWSCredentials getCredentials()
+    {
+        return new BasicAWSCredentials(getAccessKeyId(), getSecretAccessKey());
+    }
 }

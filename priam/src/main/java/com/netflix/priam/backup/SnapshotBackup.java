@@ -51,8 +51,10 @@ public class SnapshotBackup extends AbstractBackup
             File dataDir = new File(config.getDataFileLocation());
             for (File keyspaceDir : dataDir.listFiles())
             {
+                logger.debug("Entering {} keyspace..", keyspaceDir.getName());
                 for (File columnFamilyDir : keyspaceDir.listFiles())
                 {
+                    logger.debug("Entering {} columnFamily..", columnFamilyDir.getName());
                     File snpDir = new File(columnFamilyDir, "snapshots");
                     if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir))
                         continue;
@@ -60,6 +62,8 @@ public class SnapshotBackup extends AbstractBackup
                     // Add files to this dir
                     if (null != snapshotDir)
                         bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
+                    else
+                        logger.warn("{} folder does not contain {} snapshots", snpDir, snapshotName);
                 }
             }
             // Upload meta file

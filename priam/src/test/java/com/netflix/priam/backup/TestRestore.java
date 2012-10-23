@@ -27,7 +27,7 @@ public class TestRestore
     private static ArrayList<String> fileList;
     private static Calendar cal;    
     private static IConfiguration conf;
-    
+
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
     {
@@ -50,19 +50,19 @@ public class TestRestore
     public static void populateBackupFileSystem(String baseDir){
         fileList.clear();
         fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/META/meta.json");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f1.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/f2.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks2/f2.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110530/SST/ks2/f3.db");
-        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110600/SST/ks2/f4.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks1/cf1/f2.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110030/SNAP/ks2/cf1/f2.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
+        fileList.add(baseDir + "/fake-region/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
         filesystem.baseDir = baseDir;
         filesystem.region = "fake-region";
         filesystem.clusterName = "fakecluster";
         filesystem.setupTest(fileList);
     }
-    
+
     @Test
-    public void testRestore() throws Exception 
+    public void testRestore() throws Exception
     {
         populateBackupFileSystem("test_backup");
         File tmpdir = new File(conf.getDataFileLocation() + "/test");
@@ -86,7 +86,7 @@ public class TestRestore
 
     //Pick latest file
     @Test 
-    public void testRestoreLatest() throws Exception 
+    public void testRestoreLatest() throws Exception
     {
         populateBackupFileSystem("test_backup");
         String metafile = "test_backup/fake-region/fakecluster/123456/201108110130/META/meta.json";
@@ -107,11 +107,11 @@ public class TestRestore
     }
 
     @Test
-    public void testNoSnapshots() throws Exception 
+    public void testNoSnapshots() throws Exception
     {
-        try {        
+        try {
             filesystem.setupTest(new ArrayList<String>());
-            Restore restore = injector.getInstance(Restore.class);            
+            Restore restore = injector.getInstance(Restore.class);
             cal.set(2011, 8, 11, 0, 30);
             Date startTime = cal.getTime();
             cal.add(Calendar.HOUR, 5);
@@ -119,6 +119,8 @@ public class TestRestore
             Assert.assertFalse(true);//No exception thrown
         }
         catch(java.lang.ArrayIndexOutOfBoundsException e){
+            //We are ok
+        }catch(java.util.NoSuchElementException e){
             //We are ok
         }
         catch (AssertionError e) {

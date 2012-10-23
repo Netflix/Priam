@@ -30,14 +30,16 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected BackupFileType type;
     protected String clusterName;
     protected String keyspace;
+    protected String columnFamily;
     protected String fileName;
     protected String baseDir;
     protected String token;
     protected String region;
     protected Date time;
     protected long size;
+    protected boolean isCassandra1_0;
 
-    protected final InstanceIdentity factory;
+	protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
 
@@ -71,7 +73,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.token = factory.getInstance().getToken();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL)
+        {
             this.keyspace = elements[0];
+            if(!isCassandra1_0)
+            		this.columnFamily = elements[1];
+        }
         if (type == BackupFileType.SNAP)
             time = DAY_FORMAT.parse(elements[3]);
         if (type == BackupFileType.SST || type == BackupFileType.CL)
@@ -102,7 +108,12 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         StringBuffer buff = new StringBuffer();
         buff.append(config.getDataFileLocation()).append(PATH_SEP);
         if (type != BackupFileType.META)
-            buff.append(keyspace).append(PATH_SEP);
+        {
+        		if(isCassandra1_0)
+        			buff.append(keyspace).append(PATH_SEP);
+        		else
+        			buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
+        }
         buff.append(fileName);
         File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());
@@ -166,6 +177,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return keyspace;
     }
 
+    public String getColumnFamily()
+    {
+        return columnFamily;
+    }
+
     public String getFileName()
     {
         return fileName;
@@ -196,10 +212,23 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return size;
     }
 
+    public void setSize(long size)
+    {
+        this.size = size;
+    }
+
     public File getBackupFile()
     {
         return backupFile;
     }
+
+    public boolean isCassandra1_0() {
+		return isCassandra1_0;
+	}
+
+	public void setCassandra1_0(boolean isCassandra1_0) {
+		this.isCassandra1_0 = isCassandra1_0;
+	}
 
     public static class RafInputStream extends InputStream
     {

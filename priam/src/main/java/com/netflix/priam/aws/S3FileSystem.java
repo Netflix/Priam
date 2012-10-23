@@ -1,13 +1,12 @@
 package com.netflix.priam.aws;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
@@ -23,11 +22,11 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3Object;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -37,6 +36,7 @@ import com.netflix.priam.ICredential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
 import com.netflix.priam.utils.Throttle;
@@ -50,6 +50,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
+    private static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
 
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
@@ -106,8 +107,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             downloadCount.incrementAndGet();
             AmazonS3 client = getS3Client();
             S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
-            compress.decompressAndClose(obj.getObjectContent(), os);
-            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
+//            compress.decompressAndClose(obj.getObjectContent(), os);
+//            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
+
+            long contentLen = obj.getObjectMetadata().getContentLength();
+            path.setSize(contentLen);
+            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
+            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
+            compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
+            bytesDownloaded.addAndGet(contentLen);
         }
         catch (Exception e)
         {

@@ -51,6 +51,8 @@ public class SnapshotBackup extends AbstractBackup
             File dataDir = new File(config.getDataFileLocation());
             for (File keyspaceDir : dataDir.listFiles())
             {
+                if (keyspaceDir.isFile())
+                		continue;
                 logger.debug("Entering {} keyspace..", keyspaceDir.getName());
                 for (File columnFamilyDir : keyspaceDir.listFiles())
                 {

@@ -36,6 +36,9 @@ public class PriamService extends Service<PriamConfiguration> {
 
     @Override
     protected void initialize(PriamConfiguration config, Environment environment) throws Exception {
+        // Protect from running multiple copies of Priam at the same time.  Jetty will enforce this because only one
+        // instance can listen on 8080, but that check doesn't occur until the end of initialization which is too late.
+        environment.manage(new ManagedCloseable(new JvmMutex(config.getJvmMutexPort())));
 
         Injector injector = Guice.createInjector(new PriamGuiceModule(config));
         try {

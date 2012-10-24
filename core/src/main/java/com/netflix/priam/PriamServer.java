@@ -10,7 +10,7 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.noderepair.NodeRepairScheduler;
+import com.netflix.priam.noderepair.NodeRepair;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
@@ -30,7 +30,6 @@ public class PriamServer implements Managed {
     private final CassandraConfiguration cassandraConfig;
     private final BackupConfiguration backupConfig;
     private final AmazonConfiguration amazonConfig;
-    private final NodeRepairScheduler nodeRepairScheduler;
     private final InstanceIdentity id;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
@@ -38,13 +37,11 @@ public class PriamServer implements Managed {
     public PriamServer(CassandraConfiguration cassandraConfig,
                        BackupConfiguration backupConfig,
                        AmazonConfiguration amazonConfig,
-                       NodeRepairScheduler nodeRepairScheduler,
                        PriamScheduler scheduler,
                        InstanceIdentity id) {
         this.cassandraConfig = cassandraConfig;
         this.backupConfig = backupConfig;
         this.amazonConfig = amazonConfig;
-        this.nodeRepairScheduler = nodeRepairScheduler;
         this.scheduler = scheduler;
         this.id = id;
     }
@@ -83,11 +80,9 @@ public class PriamServer implements Managed {
         scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
 
         //Schedule Node Repair
-        //Create a separate scheduler for Node Repair because we need to pass several arguments to the job executor which Quartz doesn't allow by default.
         if(cassandraConfig.isNodeRepairEnabled()){
             try{
-                nodeRepairScheduler.setJobFactory();
-                nodeRepairScheduler.scheduleNodeRepair();
+                scheduler.addTask(NodeRepair.getJobDetail(), NodeRepair.getTrigger(cassandraConfig));
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

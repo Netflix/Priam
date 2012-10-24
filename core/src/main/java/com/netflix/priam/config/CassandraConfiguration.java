@@ -93,16 +93,13 @@ public class CassandraConfiguration {
     private String rowCacheKeysToSave;
 
     @JsonProperty
-    private Map<String,String> nodeRepairSorPolloi;
-
-    @JsonProperty
-    private Map<String,String> nodeRepairDatabus;
+    private String nodeRepairTime;
 
     @JsonProperty
     private boolean nodeRepairEnabled;
 
     @JsonProperty
-    private int lockAcquireTimeOut;
+    private int nodeRepairMutexAcquireTimeOut;
 
     public String getPartitionerClassName() {
         return partitionerClassName;
@@ -220,20 +217,16 @@ public class CassandraConfiguration {
         return rowCacheKeysToSave;
     }
 
-    public Map<String,String> getNodeRepairSorPolloi() {
-        return nodeRepairSorPolloi;
-    }
-
-    public Map<String,String> getNodeRepairDatabus() {
-        return nodeRepairDatabus;
+    public String getNodeRepairTime() {
+        return nodeRepairTime;
     }
 
     public boolean isNodeRepairEnabled() {
         return nodeRepairEnabled;
     }
 
-    public int getLockAcquireTimeOut() {
-        return lockAcquireTimeOut;
+    public int getNodeRepairMutexAcquireTimeOut() {
+        return nodeRepairMutexAcquireTimeOut;
     }
 
     public void setPartitionerClassName(String partitionerClassName) {
@@ -352,20 +345,16 @@ public class CassandraConfiguration {
         this.rowCacheKeysToSave = rowCacheKeysToSave;
     }
 
-    public void setNodeRepairSorPolloi(Map<String,String> nodeRepairSorPolloi) {
-        this.nodeRepairSorPolloi = nodeRepairSorPolloi;
-    }
-
-    public void setNodeRepairDatabus(Map<String,String> nodeRepairDatabus) {
-        this.nodeRepairDatabus = nodeRepairDatabus;
-    }
-
     public void setNodeRepairEnabled(boolean nodeRepairEnabled) {
         this.nodeRepairEnabled = nodeRepairEnabled;
     }
 
-    public void setLockAcquireTimeOut(int lockAcquireTimeOut) {
-        this.lockAcquireTimeOut = lockAcquireTimeOut;
+    public void setNodeRepairMutexAcquireTimeOut(int nodeRepairMutexAcquireTimeOut) {
+        this.nodeRepairMutexAcquireTimeOut = nodeRepairMutexAcquireTimeOut;
+    }
+
+    public void setNodeRepairTime(String nodeRepairTime) {
+        this.nodeRepairTime = nodeRepairTime;
     }
 
 }

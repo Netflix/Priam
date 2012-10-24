@@ -35,8 +35,6 @@ public class SnapshotBackup extends AbstractBackup {
     private final MetaData metaData;
     private final CassandraConfiguration cassandraConfiguration;
 
-    private static String snapShotBackUpCronTime;
-
     @Inject
     public SnapshotBackup(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
         super(fs, pathFactory);
@@ -56,7 +54,7 @@ public class SnapshotBackup extends AbstractBackup {
             File dataDir = new File(cassandraConfiguration.getDataLocation());
 
             if (dataDir.listFiles() == null) {
-                logger.error("no keyspace dir exists in casssandra data dir. Snapshot quits !!");
+                logger.error("No keyspace directories exist in configured cassandra data directory. Unable to capture snapshot.");
                 return;
             }
 
@@ -85,7 +83,6 @@ public class SnapshotBackup extends AbstractBackup {
                 clearSnapshot(snapshotName);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
-                e.printStackTrace();
             }
         }
     }

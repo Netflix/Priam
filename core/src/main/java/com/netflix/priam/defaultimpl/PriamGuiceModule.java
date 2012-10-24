@@ -21,7 +21,6 @@ import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
-import com.netflix.priam.noderepair.NodeRepairScheduler;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
 import com.netflix.priam.zookeeper.ZooKeeperRegistration;
@@ -54,12 +53,10 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
         bind(ZooKeeperRegistration.class).asEagerSingleton();
-        bind(NodeRepairScheduler.class).asEagerSingleton();
     }
 
     @Provides @Singleton
     Optional<ZooKeeperConnection> provideZooKeeperConnection() {
-        logger.info("Optional<ZooKeeperConnection> ");
         ZooKeeperConfiguration zkConfiguration = priamConfiguration.getZooKeeperConfiguration();
         if (!zkConfiguration.isEnabled()) {
             return Optional.absent();

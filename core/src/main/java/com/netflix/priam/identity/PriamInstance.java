@@ -1,6 +1,7 @@
 package com.netflix.priam.identity;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -107,8 +108,9 @@ public class PriamInstance implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getRegionName(), getId(),
-                getToken());
+        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s:, Token: %s, Update: %s",
+                getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getRegionName(), getId(), getToken(),
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(getUpdatetime()));
     }
 
     public String getRegionName() {

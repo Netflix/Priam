@@ -48,6 +48,8 @@ public class AmazonConfiguration {
     @JsonProperty
     private String simpleDbDomain;
 
+    @JsonProperty
+    private String simpleDbRegion;   // Defaults to the current region.  Set explicitly for cross-dc rings.
 
     public String getAutoScaleGroupName() {
         return autoScaleGroupName;
@@ -87,6 +89,10 @@ public class AmazonConfiguration {
 
     public String getSimpleDbDomain() {
         return simpleDbDomain;
+    }
+
+    public String getSimpleDbRegion() {
+        return simpleDbRegion;
     }
 
     public void setAutoScaleGroupName(String autoScaleGroupName) {
@@ -129,6 +135,9 @@ public class AmazonConfiguration {
         this.simpleDbDomain = simpleDbDomain;
     }
 
+    public void setSimpleDbRegion(String simpleDbRegion) {
+        this.simpleDbRegion = simpleDbRegion;
+    }
 
     public void discoverConfiguration(ICredential credentialProvider) {
         if (StringUtils.isBlank(availabilityZone)) {
@@ -157,6 +166,9 @@ public class AmazonConfiguration {
         }
         if (StringUtils.isBlank(securityGroupName)) {
             securityGroupName = populateSecurityGroup(credentialProvider);
+        }
+        if (StringUtils.isBlank(simpleDbRegion)) {
+            simpleDbRegion = regionName;
         }
     }
 

@@ -1,6 +1,6 @@
 package com.netflix.priam.defaultimpl;
 
-import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
 import com.netflix.priam.ICredential;
 
@@ -14,7 +14,7 @@ public class InstanceProfileCredential implements ICredential {
             new InstanceProfileCredentialsProvider();
 
     @Override
-    public AWSCredentials getCredentials() {
-        return provider.getCredentials();
+    public AWSCredentialsProvider getCredentials() {
+        return provider;
     }
 }

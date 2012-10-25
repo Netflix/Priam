@@ -58,7 +58,7 @@ amazon:
   instanceID:
   instanceType:
   simpleDbDomain: "InstanceIdentity"
-  simpleDbRegion:                             # Defaults to current region.  This must be set explicitly for cross-region rings.
+  simpleDbRegion:                             # Defaults to us-east-1 for backward compatibility.  This can be set to the local region for better cross-region isolation.
 
 
 backup:

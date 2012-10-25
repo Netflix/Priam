@@ -1,5 +1,6 @@
 package com.netflix.priam.resources;
 
+import com.google.common.collect.Ordering;
 import com.google.inject.Inject;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
@@ -19,6 +20,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
 import java.net.URI;
+import java.util.List;
 
 /**
  * Resource for manipulating priam instances.
@@ -45,7 +47,8 @@ public class PriamInstanceResource {
     @GET
     public String getInstances() {
         StringBuilder response = new StringBuilder();
-        for (PriamInstance node : instanceRegistry.getAllIds(cassandraConfiguration.getClusterName())) {
+        List<PriamInstance> nodes = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
+        for (PriamInstance node : Ordering.natural().sortedCopy(nodes)) {
             response.append(node.toString());
             response.append("\n");
         }

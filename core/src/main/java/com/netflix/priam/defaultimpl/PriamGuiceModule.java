@@ -7,6 +7,7 @@ import com.google.inject.Provides;
 import com.google.inject.Singleton;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
+import com.netflix.priam.aws.DefaultCredentials;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.SDBInstanceRegistry;
@@ -46,7 +47,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
         bind(IPriamInstanceRegistry.class).to(SDBInstanceRegistry.class);
         bind(IMembership.class).to(AWSMembership.class);
-        bind(ICredential.class).to(InstanceProfileCredential.class);
+        bind(ICredential.class).to(DefaultCredentials.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);

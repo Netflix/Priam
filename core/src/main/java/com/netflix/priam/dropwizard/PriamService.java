@@ -40,6 +40,9 @@ public class PriamService extends Service<PriamConfiguration> {
         // instance can listen on 8080, but that check doesn't occur until the end of initialization which is too late.
         environment.manage(new ManagedCloseable(new JvmMutex(config.getJvmMutexPort())));
 
+        // Don't ping www.terracotta.org on startup.
+        System.setProperty("org.terracotta.quartz.skipUpdateCheck", "false");
+
         Injector injector = Guice.createInjector(new PriamGuiceModule(config));
         try {
             config.getAmazonConfiguration().discoverConfiguration(injector.getInstance(ICredential.class));

@@ -17,6 +17,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.PriamInstance;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +57,10 @@ public class SDBInstanceData {
         this.simpleDbRegion = amazonConfiguration.getSimpleDbRegion();
 
         createDomain();  // This is idempotent and won't affect the domain if it already exists
+    }
+
+    private String getAllApplicationsQuery() {
+        return "select " + Attributes.APP_ID + " from " + simpleDbDomain;
     }
 
     private String getAllQuery() {
@@ -160,6 +165,30 @@ public class SDBInstanceData {
         simpleDBClient.deleteAttributes(delReq);
     }
 
+    /**
+     * List all the applications in SimpleDB.
+     *
+     * @throws AmazonServiceException
+     */
+    public Set<String> getAllAppIds() throws AmazonServiceException {
+        logger.info("Listing all PriamInstance applications in SimpleDB.");
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
+        Set<String> appIds = new HashSet<String>();
+        String nextToken = null;
+        String allQuery = getAllApplicationsQuery();
+        do {
+            SelectRequest request = new SelectRequest(allQuery);
+            request.setNextToken(nextToken);
+            SelectResult result = simpleDBClient.select(request);
+            nextToken = result.getNextToken();
+            for (Item item : result.getItems()) {
+                PriamInstance priamInstance = transform(item);
+                appIds.add(priamInstance.getApp());
+            }
+        } while (nextToken != null);
+        return appIds;
+    }
+
     private List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance) {
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
@@ -216,7 +245,7 @@ public class SDBInstanceData {
         AmazonSimpleDB client = new AmazonSimpleDBClient(provider.getCredentials());
 
         // The endpoint for us-east-1 is a special case.  See http://docs.amazonwebservices.com/general/latest/gr/rande.html#sdb_region
-        if ("us-east-1".equals(simpleDbRegion)) {
+        if (StringUtils.isBlank(simpleDbRegion) || "us-east-1".equals(simpleDbRegion)) {
             client.setEndpoint("sdb.amazonaws.com");
         } else {
             client.setEndpoint("sdb." + simpleDbRegion + ".amazonaws.com");

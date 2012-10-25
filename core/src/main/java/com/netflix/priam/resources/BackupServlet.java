@@ -32,7 +32,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -52,6 +51,7 @@ public class BackupServlet {
     private TuneCassandra tuneCassandra;
     private SnapshotBackup snapshotBackup;
     private IPriamInstanceRegistry instanceRegistry;
+    private TokenManager tokenManager;
     @Inject
     private PriamScheduler scheduler;
 
@@ -70,7 +70,8 @@ public class BackupServlet {
                          Provider<AbstractBackupPath> pathProvider,
                          TuneCassandra tunecassandra,
                          SnapshotBackup snapshotBackup,
-                         IPriamInstanceRegistry instanceRegistry) {
+                         IPriamInstanceRegistry instanceRegistry,
+                         TokenManager tokenManager) {
         this.priamServer = priamServer;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
@@ -81,6 +82,7 @@ public class BackupServlet {
         this.tuneCassandra = tunecassandra;
         this.snapshotBackup = snapshotBackup;
         this.instanceRegistry = instanceRegistry;
+        this.tokenManager = tokenManager;
     }
 
     @GET
@@ -155,8 +157,8 @@ public class BackupServlet {
         logger.debug("Thread counts for restore is: {}", backupTCount);
 
         Map<String, Object> object = Maps.newHashMap();
-        object.put("Restore", ImmutableMap.of("Status", restoreObj.state().toString(), "Threads", new Integer(restoreTCount)));
-        object.put("Backup", ImmutableMap.of("Status", snapshotBackup.state().toString(), "Threads", new Integer(backupTCount)));
+        object.put("Restore", ImmutableMap.of("Status", restoreObj.state().toString(), "Threads", restoreTCount));
+        object.put("Backup", ImmutableMap.of("Status", snapshotBackup.state().toString(), "Threads", backupTCount));
 
         return Response.ok(object, MediaType.APPLICATION_JSON).build();
     }
@@ -211,13 +213,13 @@ public class BackupServlet {
      */
     private String closestToken(String token, String region) {
         List<PriamInstance> plist = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
-        List<BigInteger> tokenList = Lists.newArrayList();
+        List<String> tokenList = Lists.newArrayList();
         for (PriamInstance ins : plist) {
             if (ins.getRegionName().equalsIgnoreCase(region)) {
-                tokenList.add(new BigInteger(ins.getToken()));
+                tokenList.add(ins.getToken());
             }
         }
-        return TokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
+        return tokenManager.findClosestToken(token, tokenList);
     }
 
     /*

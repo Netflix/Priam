@@ -1,13 +1,14 @@
 package com.netflix.priam.backup;
 
-import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.netflix.priam.ICredential;
 
 public class FakeNullCredential implements ICredential
 {
     @Override
-    public AWSCredentials getCredentials() {
-        return new BasicAWSCredentials("testid", "testkey");
+    public AWSCredentialsProvider getCredentials() {
+        return new StaticCredentialsProvider(new BasicAWSCredentials("testid", "testkey"));
     }
 }

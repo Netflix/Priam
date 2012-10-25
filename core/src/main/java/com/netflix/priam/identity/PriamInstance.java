@@ -1,10 +1,13 @@
 package com.netflix.priam.identity;
 
+import org.apache.commons.lang.builder.CompareToBuilder;
+
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.Map;
 
-public class PriamInstance implements Serializable {
+public class PriamInstance implements Serializable, Comparable<PriamInstance> {
     private static final long serialVersionUID = 5606412386974488659L;
     private String hostname;
     private long updatetime;
@@ -107,8 +110,9 @@ public class PriamInstance implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getRegionName(), getId(),
-                getToken());
+        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC: %s, Location: %s, Id: %s, Token: %s, Updated: %s",
+                getHostName(), getInstanceId(), getApp(), getAvailabilityZone(), getRegionName(), getId(), getToken(),
+                new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS").format(getUpdatetime()));
     }
 
     public String getRegionName() {
@@ -135,5 +139,13 @@ public class PriamInstance implements Serializable {
         this.outOfService = outOfService;
     }
 
-
+    @Override
+    public int compareTo(PriamInstance o) {
+        return new CompareToBuilder()
+                .append(getRegionName(), o.getRegionName())
+                .append(getAvailabilityZone(), o.getAvailabilityZone())
+                .append(getId(), o.getId())
+                .append(getInstanceId(), o.getInstanceId())
+                .toComparison();
+    }
 }

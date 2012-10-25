@@ -1,7 +1,8 @@
 package com.netflix.priam.defaultimpl;
 
-import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.internal.StaticCredentialsProvider;
 import com.netflix.priam.ICredential;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
@@ -22,7 +23,7 @@ public class ClearCredential implements ICredential {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
     public static String CRED_FILE = "/etc/awscredential.properties";
 
-    private final AWSCredentials credentials;
+    private final AWSCredentialsProvider credentials;
 
     public ClearCredential() {
         FileInputStream fis = null;
@@ -32,7 +33,7 @@ public class ClearCredential implements ICredential {
             props.load(fis);
             String accessId = props.getProperty("AWSACCESSID");
             String awsKey = props.getProperty("AWSKEY");
-            credentials = new BasicAWSCredentials(accessId, awsKey);
+            credentials = new StaticCredentialsProvider(new BasicAWSCredentials(accessId, awsKey));
         } catch (Exception e) {
             logger.error("Exception with credential file ", e);
             throw new RuntimeException("Problem reading credential file. Cannot start.", e);
@@ -42,7 +43,7 @@ public class ClearCredential implements ICredential {
     }
 
     @Override
-    public AWSCredentials getCredentials() {
+    public AWSCredentialsProvider getCredentials() {
         return credentials;
     }
 }

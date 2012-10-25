@@ -1,5 +1,7 @@
 cassandra:
   partitionerClassName: "org.apache.cassandra.dht.RandomPartitioner" # The partitioner responsible for distributing rows (by key) across nodes in the cluster
+  minimumToken:                               # Ignored for random partitioner.  Defaults to "00" for byte ordered partitioner
+  maximumToken:                               # Ignored for random partitioner.  Defaults to "ffffffffffffffffffffffffffffffff" for byte ordered partitioner
   bootstrapClusterName:                       # Bootstrap cluster name (depends on another cass cluster)
   multiRegionEnabled: false                   # true if it is a multi regional cluster.  Needs to be changed in conjunction with endpointSnitch
   endpointSnitch: "org.apache.cassandra.locator.Ec2Snitch"  # Snitch to be used in cassandra.yaml
@@ -61,6 +63,7 @@ amazon:
   instanceID:
   instanceType:
   simpleDbDomain: "InstanceIdentity"
+  simpleDbRegion:                             # Defaults to us-east-1 for backward compatibility.  This can be set to the local region for better cross-region isolation.
 
 
 backup:

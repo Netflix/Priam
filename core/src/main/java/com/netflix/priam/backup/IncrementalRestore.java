@@ -60,7 +60,7 @@ public class IncrementalRestore extends AbstractRestore {
         }
 
         if (backupConfiguration.isRestoreClosestToken()) {
-            priamServer.getInstanceIdentity().getInstance().setToken(restoreToken.toString());
+            priamServer.getInstanceIdentity().getInstance().setToken(restoreToken);
         }
 
         Date start = tracker.first().time;

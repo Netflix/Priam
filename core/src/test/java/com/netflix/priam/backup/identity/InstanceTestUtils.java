@@ -9,7 +9,9 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.RandomPartitionerTokenManager;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.TokenManager;
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -27,6 +29,7 @@ public abstract class InstanceTestUtils
     TestBackupConfiguration backupConfiguration;
     IPriamInstanceRegistry instanceRegistry;
     InstanceIdentity identity;
+    TokenManager tokenManager;
     Sleeper sleeper;
 
     @Before
@@ -47,6 +50,7 @@ public abstract class InstanceTestUtils
         amazonConfiguration = new TestAmazonConfiguration("fake-app", "fake", "az1", "fakeinstance1");
         backupConfiguration = new TestBackupConfiguration();
         instanceRegistry = new FakePriamInstanceRegistry(amazonConfiguration);
+        tokenManager = new RandomPartitionerTokenManager();
         sleeper = new FakeSleeper();
     }
 
@@ -70,6 +74,6 @@ public abstract class InstanceTestUtils
         amazonConfiguration.setAvailabilityZone(zone);
         amazonConfiguration.setInstanceID(instanceId);
         amazonConfiguration.setPrivateHostName(instanceId);
-        return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, instanceRegistry, membership, sleeper);
+        return new InstanceIdentity(cassandraConfiguration, amazonConfiguration, instanceRegistry, membership, tokenManager, sleeper);
     }
 }

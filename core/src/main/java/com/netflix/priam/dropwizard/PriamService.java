@@ -15,6 +15,10 @@ import com.netflix.priam.resources.BackupServlet;
 import com.netflix.priam.resources.CassandraAdmin;
 import com.netflix.priam.resources.CassandraConfig;
 import com.netflix.priam.resources.PriamInstanceResource;
+import com.netflix.priam.tools.CopyInstanceData;
+import com.netflix.priam.tools.DeleteInstanceData;
+import com.netflix.priam.tools.ListClusters;
+import com.netflix.priam.tools.ListInstanceData;
 import com.netflix.priam.zookeeper.ZooKeeperRegistration;
 import com.yammer.dropwizard.Service;
 import com.yammer.dropwizard.config.Environment;
@@ -32,10 +36,20 @@ public class PriamService extends Service<PriamConfiguration> {
 
     public PriamService() {
         super("priam");
+        addCommand(new ListClusters());
+        addCommand(new ListInstanceData());
+        addCommand(new CopyInstanceData());
+        addCommand(new DeleteInstanceData());
     }
 
     @Override
     protected void initialize(PriamConfiguration config, Environment environment) throws Exception {
+        // Protect from running multiple copies of Priam at the same time.  Jetty will enforce this because only one
+        // instance can listen on 8080, but that check doesn't occur until the end of initialization which is too late.
+        environment.manage(new ManagedCloseable(new JvmMutex(config.getJvmMutexPort())));
+
+        // Don't ping www.terracotta.org on startup (Quartz).
+        System.setProperty("org.terracotta.quartz.skipUpdateCheck", "false");
 
         Injector injector = Guice.createInjector(new PriamGuiceModule(config));
         try {

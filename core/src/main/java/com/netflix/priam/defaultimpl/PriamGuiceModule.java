@@ -23,6 +23,8 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
+import com.netflix.priam.utils.TokenManager;
+import com.netflix.priam.utils.TokenManagerProvider;
 import com.netflix.priam.zookeeper.ZooKeeperRegistration;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -48,6 +50,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
+        bind(TokenManager.class).toProvider(TokenManagerProvider.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
         bind(ZooKeeperRegistration.class).asEagerSingleton();
     }

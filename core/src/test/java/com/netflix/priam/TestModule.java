@@ -4,6 +4,8 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
+import com.netflix.priam.utils.TokenManager;
+import com.netflix.priam.utils.TokenManagerProvider;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -33,6 +35,7 @@ public class TestModule extends AbstractModule
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
+        bind(TokenManager.class).toProvider(TokenManagerProvider.class);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(Sleeper.class).to(FakeSleeper.class);

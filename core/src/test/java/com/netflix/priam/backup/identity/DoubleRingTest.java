@@ -1,13 +1,13 @@
 package com.netflix.priam.backup.identity;
 
-import java.util.List;
-
-import org.junit.Test;
-
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.TokenManager;
+import org.junit.Test;
+
+import java.util.List;
+
 import static org.junit.Assert.assertEquals;
 
 public class DoubleRingTest extends InstanceTestUtils
@@ -18,7 +18,7 @@ public class DoubleRingTest extends InstanceTestUtils
     {
         createInstances();
         int originalSize = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size();
-        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry).doubleSlots();
+        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry, tokenManager).doubleSlots();
         List<PriamInstance> doubled = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
         instanceRegistry.sort(doubled);
 
@@ -31,7 +31,7 @@ public class DoubleRingTest extends InstanceTestUtils
         List<String> validator = Lists.newArrayList();
         for (int i = 0; i < doubled.size(); i++)
         {
-            validator.add(TokenManager.createToken(i, doubled.size(), amazonConfiguration.getRegionName()));
+            validator.add(tokenManager.createToken(i, doubled.size(), amazonConfiguration.getRegionName()));
             
         }
         
@@ -51,7 +51,7 @@ public class DoubleRingTest extends InstanceTestUtils
     {
         createInstances();
         int intialSize = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size();
-        DoubleRing ring = new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry);
+        DoubleRing ring = new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry, tokenManager);
         ring.backup();
         ring.doubleSlots();
         assertEquals(intialSize * 2, instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()).size());

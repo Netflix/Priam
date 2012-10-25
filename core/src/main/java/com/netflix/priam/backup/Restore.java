@@ -20,7 +20,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
@@ -63,8 +62,8 @@ public class Restore extends AbstractRestore {
             String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
             try {
                 if (backupConfiguration.isRestoreClosestToken()) {
-                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    priamServer.getInstanceIdentity().getInstance().setToken(restoreToken.toString());
+                    restoreToken = tokenSelector.getClosestToken(origToken, startTime);
+                    priamServer.getInstanceIdentity().getInstance().setToken(restoreToken);
                 }
                 new RetryableCallable<Void>() {
                     public Void retriableCall() throws Exception {

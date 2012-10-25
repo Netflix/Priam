@@ -73,7 +73,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
         createInstances();
         int before = instanceRegistry.getAllIds("fake-app").size();
-        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry).doubleSlots();
+        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry, tokenManager).doubleSlots();
         List<PriamInstance> lst = instanceRegistry.getAllIds(cassandraConfiguration.getClusterName());
         // sort it so it will look good if you want to print it.
         instanceRegistry.sort(lst);
@@ -91,7 +91,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     public void testDoubleGrap() throws Exception
     {
         createInstances();
-        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry).doubleSlots();
+        new DoubleRing(cassandraConfiguration, amazonConfiguration, instanceRegistry, tokenManager).doubleSlots();
         amazonConfiguration.setAvailabilityZone("az1");
         amazonConfiguration.setInstanceID("fakeinstancex");
         int hash = TokenManager.regionOffset(amazonConfiguration.getRegionName());

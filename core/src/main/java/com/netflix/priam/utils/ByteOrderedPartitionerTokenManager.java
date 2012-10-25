@@ -3,7 +3,6 @@ package com.netflix.priam.utils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.CharMatcher;
 import com.google.common.base.Objects;
-import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
 import com.google.inject.Inject;
 import com.netflix.priam.config.CassandraConfiguration;
@@ -15,6 +14,8 @@ import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
 
 public class ByteOrderedPartitionerTokenManager extends TokenManager {
     // The most minimum token is the empty byte array, but that look like blank token when stringified and can be
@@ -40,7 +41,7 @@ public class ByteOrderedPartitionerTokenManager extends TokenManager {
     ByteOrderedPartitionerTokenManager(String minimumToken, String maximumToken) {
         this.minimumToken = partitioner.getTokenFactory().fromString(minimumToken);
         this.maximumToken = partitioner.getTokenFactory().fromString(maximumToken);
-        Preconditions.checkArgument(this.minimumToken.compareTo(this.maximumToken) < 0,
+        checkArgument(this.minimumToken.compareTo(this.maximumToken) < 0,
                 "Minimum token must be < maximum token: %s %s", minimumToken, maximumToken);
     }
 
@@ -55,9 +56,9 @@ public class ByteOrderedPartitionerTokenManager extends TokenManager {
      */
     @VisibleForTesting
     Token<byte[]> initialToken(int size, int position, int offset) {
-        Preconditions.checkArgument(size > 0, "size must be > 0");
-        Preconditions.checkArgument(offset >= 0, "offset must be >= 0");
-        Preconditions.checkArgument(position >= 0, "position must be >= 0");
+        checkArgument(size > 0, "size must be > 0");
+        checkArgument(offset >= 0, "offset must be >= 0");
+        checkArgument(position >= 0, "position must be >= 0");
 
         // Assume keys are distributed evenly between the minimum and maximum token.  This is often a bad assumption
         // with the ByteOrderedPartitioner, but that's why everyone is discouraged from using it.
@@ -86,10 +87,10 @@ public class ByteOrderedPartitionerTokenManager extends TokenManager {
 
     @Override
     public String findClosestToken(String tokenToSearch, List<String> tokenList) {
-        Preconditions.checkArgument(!tokenList.isEmpty(), "token list must not be empty");
-        Preconditions.checkArgument(VALID_TOKEN.matchesAllOf(tokenToSearch), "token must be lowercase hex: %s", tokenToSearch);
+        checkArgument(!tokenList.isEmpty(), "token list must not be empty");
+        checkArgument(VALID_TOKEN.matchesAllOf(tokenToSearch), "token must be lowercase hex: %s", tokenToSearch);
         for (String token : tokenList) {
-            Preconditions.checkArgument(VALID_TOKEN.matchesAllOf(token), "token must be lowercase hex: %s", token);
+            checkArgument(VALID_TOKEN.matchesAllOf(token), "token must be lowercase hex: %s", token);
         }
 
         // Rely on the fact that hex-encoded strings sort in the same relative order as the BytesToken byte arrays.
@@ -120,11 +121,11 @@ public class ByteOrderedPartitionerTokenManager extends TokenManager {
 
     @VisibleForTesting
     Token<byte[]> numberToToken(BigInteger number, int tokenLength) {
-        Preconditions.checkArgument(number.signum() >= 0);  // Token math should never result in negative numbers.
+        checkArgument(number.signum() >= 0, "Token math should not yield negative numbers: %s", number);
         byte[] numberBytes = number.toByteArray();
         int numberOffset = numberBytes[0] != 0 ? 0 : 1;  // Ignore the first if it's zero ("sign byte") to ensure byte[] length <= tokenLength.
         int numberLength = numberBytes.length - numberOffset;
-        Preconditions.checkArgument(numberLength <= tokenLength);  // Token math should not yield tokens bigger than maxToken.
+        checkArgument(numberLength <= tokenLength, "Token math should not yield tokens bigger than maxToken (%s bytes): %s", tokenLength, number);
 
         // Trim trailing zeros that we likely added in tokenToNumber() when right-padding the number up to the token length.
         while (numberLength > 0 && numberBytes[numberOffset + numberLength - 1] == 0) {

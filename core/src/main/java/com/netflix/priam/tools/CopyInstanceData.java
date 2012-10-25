@@ -1,19 +1,16 @@
 package com.netflix.priam.tools;
 
-import ch.qos.logback.classic.Level;
 import com.google.common.collect.Ordering;
 import com.netflix.priam.aws.DefaultCredentials;
 import com.netflix.priam.aws.SDBInstanceData;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.PriamInstance;
-import com.yammer.dropwizard.config.LoggingConfiguration;
-import com.yammer.dropwizard.config.LoggingFactory;
+import com.yammer.dropwizard.AbstractService;
+import com.yammer.dropwizard.cli.Command;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 /**
  * Copy simple db data for a particular cluster from one AWS region to another.  This can be useful when migrating a
@@ -23,24 +20,32 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * AWS credentials can be supplied via environment variables "AWS_ACCESS_KEY_ID" and "AWS_SECRET_KEY" or JVM system
  * properties "aws.accessKeyId" and "aws.secretKey" or IAM instance profiles.
  */
-public class CopyInstanceData {
+public class CopyInstanceData extends Command {
 
-    public static void main(String[] args) throws ParseException {
-        LoggingConfiguration logConfig = new LoggingConfiguration();
-        logConfig.getConsoleConfiguration().setThreshold(Level.WARN);
-        new LoggingFactory(logConfig, "copyInstanceData").configure();
+    public CopyInstanceData() {
+        super("copy-instance-data", "Copies SimpleDB instance data from one region to another.");
+    }
 
+    @Override
+    public Options getOptions() {
         Options options = new Options();
         options.addOption("c", "cluster", true, "Cassandra cluster name");
         options.addOption("d", "domain", true, "AWS SimpleDB domain");
         options.addOption(null, "src-region", true, "AWS SimpleDB source region");
         options.addOption(null, "dest-region", true, "AWS SimpleDB destination region");
-        CommandLine cmdLine = new GnuParser().parse(options, args);
+        return options;
+    }
 
-        String cluster = checkNotNull(cmdLine.getOptionValue("cluster"), "--cluster is required");
-        String domain = checkNotNull(cmdLine.getOptionValue("domain"), "--domain is required");
-        String srcRegion = checkNotNull(cmdLine.getOptionValue("src-region"), "--src-region is required");
-        String destRegion = checkNotNull(cmdLine.getOptionValue("dest-region"), "--dest-region is required");
+    @Override
+    protected void run(AbstractService<?> service, CommandLine cmdLine) throws Exception {
+        if (!cmdLine.getArgList().isEmpty()) {
+            printHelp("Unexpected command-line argument.", service.getClass());
+            System.exit(2);
+        }
+        String cluster = getRequiredOption("cluster", cmdLine, service);
+        String domain = getRequiredOption("domain", cmdLine, service);
+        String srcRegion = getRequiredOption("src-region", cmdLine, service);
+        String destRegion = getRequiredOption("dest-region", cmdLine, service);
 
         SDBInstanceData srcSdb = getSimpleDB(domain, srcRegion);
         SDBInstanceData destSdb = getSimpleDB(domain, destRegion);
@@ -55,10 +60,18 @@ public class CopyInstanceData {
         }
     }
 
-    private static SDBInstanceData getSimpleDB(String domain, String region) {
+    private SDBInstanceData getSimpleDB(String domain, String region) {
         AmazonConfiguration awsConfig = new AmazonConfiguration();
         awsConfig.setSimpleDbDomain(domain);
         awsConfig.setSimpleDbRegion(region);
         return new SDBInstanceData(new DefaultCredentials(), awsConfig);
+    }
+
+    private String getRequiredOption(String name, CommandLine cmdLine, AbstractService<?> service) {
+        if (!cmdLine.hasOption(name)) {
+            printHelp(format("--%s argument is required.", name), service.getClass());
+            System.exit(2);
+        }
+        return cmdLine.getOptionValue(name);
     }
 }

@@ -1,19 +1,16 @@
 package com.netflix.priam.tools;
 
-import ch.qos.logback.classic.Level;
 import com.google.common.collect.Ordering;
 import com.netflix.priam.aws.DefaultCredentials;
 import com.netflix.priam.aws.SDBInstanceData;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.PriamInstance;
-import com.yammer.dropwizard.config.LoggingConfiguration;
-import com.yammer.dropwizard.config.LoggingFactory;
+import com.yammer.dropwizard.AbstractService;
+import com.yammer.dropwizard.cli.Command;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
+import static java.lang.String.format;
 
 /**
  * Print simple db data for a particular cluster to stdout.
@@ -21,21 +18,29 @@ import static com.google.common.base.Preconditions.checkNotNull;
  * AWS credentials can be supplied via environment variables "AWS_ACCESS_KEY_ID" and "AWS_SECRET_KEY" or JVM system
  * properties "aws.accessKeyId" and "aws.secretKey" or IAM instance profiles.
  */
-public class ListInstanceData {
+public class ListInstanceData extends Command {
 
-    public static void main(String[] args) throws ParseException {
-        LoggingConfiguration logConfig = new LoggingConfiguration();
-        logConfig.getConsoleConfiguration().setThreshold(Level.WARN);
-        new LoggingFactory(logConfig, "listInstanceData").configure();
+    public ListInstanceData() {
+        super("list-instance-data", "Lists SimpleDB instance data for a particular Cassandra cluster.");
+    }
 
+    @Override
+    public Options getOptions() {
         Options options = new Options();
         options.addOption("c", "cluster", true, "Cassandra cluster name");
         options.addOption("d", "domain", true, "AWS SimpleDB domain");
         options.addOption("r", "region", true, "AWS SimpleDB region");
-        CommandLine cmdLine = new GnuParser().parse(options, args);
+        return options;
+    }
 
-        String cluster = checkNotNull(cmdLine.getOptionValue("cluster"), "--cluster is required");
-        String domain = checkNotNull(cmdLine.getOptionValue("domain"), "--domain is required");
+    @Override
+    protected void run(AbstractService<?> service, CommandLine cmdLine) throws Exception {
+        if (!cmdLine.getArgList().isEmpty()) {
+            printHelp("Unexpected command-line argument.", service.getClass());
+            System.exit(2);
+        }
+        String cluster = getRequiredOption("cluster", cmdLine, service);
+        String domain = getRequiredOption("domain", cmdLine, service);
         String region = cmdLine.getOptionValue("region");
 
         SDBInstanceData sdb = getSimpleDB(domain, region);
@@ -50,5 +55,13 @@ public class ListInstanceData {
         awsConfig.setSimpleDbDomain(domain);
         awsConfig.setSimpleDbRegion(region);
         return new SDBInstanceData(new DefaultCredentials(), awsConfig);
+    }
+
+    private String getRequiredOption(String name, CommandLine cmdLine, AbstractService<?> service) {
+        if (!cmdLine.hasOption(name)) {
+            printHelp(format("--%s argument is required.", name), service.getClass());
+            System.exit(2);
+        }
+        return cmdLine.getOptionValue(name);
     }
 }

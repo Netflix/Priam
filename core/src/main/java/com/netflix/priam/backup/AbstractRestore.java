@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -34,7 +33,7 @@ public abstract class AbstractRestore extends Task {
 
     @Inject
     protected IBackupFileSystem fs;
-    public static BigInteger restoreToken;
+    public static String restoreToken;
 
     protected final Sleeper sleeper;
 

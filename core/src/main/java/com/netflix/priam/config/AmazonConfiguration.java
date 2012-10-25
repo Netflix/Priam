@@ -167,9 +167,6 @@ public class AmazonConfiguration {
         if (StringUtils.isBlank(securityGroupName)) {
             securityGroupName = populateSecurityGroup(credentialProvider);
         }
-        if (StringUtils.isBlank(simpleDbRegion)) {
-            simpleDbRegion = regionName;
-        }
     }
 
     private String populateSecurityGroup(ICredential credentialProvider) {

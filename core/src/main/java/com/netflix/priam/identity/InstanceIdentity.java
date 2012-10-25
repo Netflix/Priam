@@ -37,17 +37,20 @@ public class InstanceIdentity {
     private final IMembership membership;
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
+    private final TokenManager tokenManager;
     private final Sleeper sleeper;
 
     private PriamInstance myInstance;
     private boolean isReplace = false;
 
     @Inject
-    public InstanceIdentity(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceRegistry instanceRegistry, IMembership membership, Sleeper sleeper) throws Exception {
+    public InstanceIdentity(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration,
+                            IPriamInstanceRegistry instanceRegistry, IMembership membership, TokenManager tokenManager, Sleeper sleeper) throws Exception {
         this.instanceRegistry = instanceRegistry;
         this.membership = membership;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
+        this.tokenManager = tokenManager;
         this.sleeper = sleeper;
         init();
     }
@@ -179,7 +182,7 @@ public class InstanceIdentity {
                 mySlot = amazonConfiguration.getUsableAvailabilityZones().size() + maxSlot;
             }
 
-            String token = TokenManager.createToken(mySlot, membership.getUsableAvailabilityZones(), membership.getAvailabilityZoneMembershipSize(), amazonConfiguration.getRegionName());
+            String token = tokenManager.createToken(mySlot, membership.getUsableAvailabilityZones(), membership.getAvailabilityZoneMembershipSize(), amazonConfiguration.getRegionName());
             return instanceRegistry.create(cassandraConfiguration.getClusterName(), mySlot + hash, amazonConfiguration.getInstanceID(), amazonConfiguration.getPrivateHostName(), amazonConfiguration.getPrivateIP(), amazonConfiguration.getAvailabilityZone(), null, token);
         }
 

@@ -6,7 +6,13 @@ import java.util.Map;
 
 public class CassandraConfiguration {
     @JsonProperty
-    private String partitionerClassName;
+    private String partitionerClassName = "org.apache.cassandra.dht.RandomPartitioner";
+
+    @JsonProperty
+    private String minimumToken;
+
+    @JsonProperty
+    private String maximumToken;
 
     @JsonProperty
     private String bootstrapClusterName;
@@ -94,6 +100,14 @@ public class CassandraConfiguration {
 
     public String getPartitionerClassName() {
         return partitionerClassName;
+    }
+
+    public String getMinimumToken() {
+        return minimumToken;
+    }
+
+    public String getMaximumToken() {
+        return maximumToken;
     }
 
     public String getBootstrapClusterName() {
@@ -210,6 +224,14 @@ public class CassandraConfiguration {
 
     public void setPartitionerClassName(String partitionerClassName) {
         this.partitionerClassName = partitionerClassName;
+    }
+
+    public void setMinimumToken(String minimumToken) {
+        this.minimumToken = minimumToken;
+    }
+
+    public void setMaximumToken(String maximumToken) {
+        this.maximumToken = maximumToken;
     }
 
     public void setBootstrapClusterName(String bootstrapClusterName) {

@@ -25,15 +25,18 @@ import java.util.List;
 public class DoubleRing {
     private static final Logger logger = LoggerFactory.getLogger(DoubleRing.class);
     private static File TMP_BACKUP_FILE;
+
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
     private final IPriamInstanceRegistry instanceRegistry;
+    private final TokenManager tokenManager;
 
     @Inject
-    public DoubleRing(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceRegistry instanceRegistry) {
+    public DoubleRing(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, IPriamInstanceRegistry instanceRegistry, TokenManager tokenManager) {
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.instanceRegistry = instanceRegistry;
+        this.tokenManager = tokenManager;
     }
 
     /**
@@ -69,7 +72,7 @@ public class DoubleRing {
             // if max then rotate.
             int currentSlot = data.getId() - regionOffsetHash;
             int newSlot = currentSlot + 3 > newRingSize ? (currentSlot + 3) - newRingSize : currentSlot + 3;
-            String token = TokenManager.createToken(newSlot, newRingSize, amazonConfiguration.getRegionName());
+            String token = tokenManager.createToken(newSlot, newRingSize, amazonConfiguration.getRegionName());
             instanceRegistry.create(data.getApp(),
                                     newSlot + regionOffsetHash,
                                     "new_slot",

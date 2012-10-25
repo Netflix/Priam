@@ -3,7 +3,6 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.netflix.priam.utils.TokenManager;
 
-import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -14,10 +13,12 @@ import java.util.List;
  */
 public class RestoreTokenSelector {
     private final IBackupFileSystem fs;
+    private final TokenManager tokenManager;
 
     @Inject
-    public RestoreTokenSelector(IBackupFileSystem fs) {
+    public RestoreTokenSelector(IBackupFileSystem fs, TokenManager tokenManager) {
         this.fs = fs;
+        this.tokenManager = tokenManager;
     }
 
     /**
@@ -26,14 +27,14 @@ public class RestoreTokenSelector {
      *
      * @param tokenToSearch Token to search for
      * @param startDate     Date for which the backups are available
-     * @return Token as BigInteger
+     * @return Token as String
      */
-    public BigInteger getClosestToken(BigInteger tokenToSearch, Date startdate) {
-        List<BigInteger> tokenList = new ArrayList<BigInteger>();
-        Iterator<AbstractBackupPath> iter = fs.listPrefixes(startdate);
+    public String getClosestToken(String tokenToSearch, Date startDate) {
+        List<String> tokenList = new ArrayList<String>();
+        Iterator<AbstractBackupPath> iter = fs.listPrefixes(startDate);
         while (iter.hasNext()) {
-            tokenList.add(new BigInteger(iter.next().getToken()));
+            tokenList.add(iter.next().getToken());
         }
-        return TokenManager.findClosestToken(tokenToSearch, tokenList);
+        return tokenManager.findClosestToken(tokenToSearch, tokenList);
     }
 }

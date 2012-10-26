@@ -218,8 +218,8 @@ public class InstanceIdentity {
             seeds.add(instancesByAvailabilityZoneMultiMap.get(loc).get(0).getHostIP());
         }
 
-        //TODO: [mbogner] Removing this instance from the seed list seems odd and makes it difficult to test out a single node cluster during dev/test.  Commenting out for now.
-        //seeds.remove(myInstance.getHostIP());
+        // Remove this node from the seed list so Cassandra auto-bootstrap will kick in.
+        seeds.remove(myInstance.getHostIP());
 
         return seeds;
     }

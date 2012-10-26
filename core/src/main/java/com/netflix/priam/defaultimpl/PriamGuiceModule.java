@@ -27,14 +27,9 @@ import com.netflix.priam.utils.ThreadSleeper;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
 import com.netflix.priam.zookeeper.ZooKeeperRegistration;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class PriamGuiceModule extends AbstractModule {
     private final PriamConfiguration priamConfiguration;
-    private static final Logger logger = LoggerFactory.getLogger(PriamGuiceModule.class);
 
     public PriamGuiceModule(PriamConfiguration priamConfiguration) {
         this.priamConfiguration = priamConfiguration;
@@ -46,8 +41,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
         bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());
         bind(ZooKeeperConfiguration.class).toInstance(priamConfiguration.getZooKeeperConfiguration());
-
-        bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
         bind(IPriamInstanceRegistry.class).to(SDBInstanceRegistry.class);
         bind(IMembership.class).to(AWSMembership.class);
         bind(ICredential.class).to(DefaultCredentials.class);

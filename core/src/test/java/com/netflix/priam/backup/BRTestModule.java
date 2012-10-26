@@ -21,9 +21,6 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
 import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-
 import java.util.Arrays;
 @Ignore
 public class BRTestModule extends AbstractModule
@@ -36,7 +33,6 @@ public class BRTestModule extends AbstractModule
         bind(AmazonConfiguration.class).toInstance(new TestAmazonConfiguration("fake-app", "fake-region", "az1", "fakeInstance1"));
         bind(BackupConfiguration.class).toInstance(new TestBackupConfiguration());
         bind(IPriamInstanceRegistry.class).to(FakePriamInstanceRegistry.class);
-        bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);

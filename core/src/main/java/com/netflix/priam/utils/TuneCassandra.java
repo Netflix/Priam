@@ -9,9 +9,7 @@ import com.netflix.priam.backup.Restore;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
 import org.apache.cassandra.db.HintedHandOffManager;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -51,7 +49,7 @@ public class TuneCassandra extends Task {
         File yamlFile = new File(yamlLocation);
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
 
-        boolean enableIncremental = (backupConfiguration.getHour() >= 0 && backupConfiguration.isIncrementalEnabled()) && (CollectionUtils.isEmpty(backupConfiguration.getAvailabilityZonesToBackup()) || backupConfiguration.getAvailabilityZonesToBackup().contains(availabilityZone));
+        boolean enableIncremental = (backupConfiguration.isSnapShotBackUpEnabled() && backupConfiguration.isIncrementalEnabled()) && (CollectionUtils.isEmpty(backupConfiguration.getAvailabilityZonesToBackup()) || backupConfiguration.getAvailabilityZonesToBackup().contains(availabilityZone));
 
         map.put("cluster_name", cassandraConfiguration.getClusterName());
         map.put("storage_port", cassandraConfiguration.getStoragePort());
@@ -147,7 +145,7 @@ public class TuneCassandra extends Task {
         return "Tune-Cassandra";
     }
 
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
+    public String getTriggerName(){
+        return "tunecassandra-trigger";
     }
 }

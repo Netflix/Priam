@@ -50,6 +50,7 @@ public class BackupServlet {
     private Provider<AbstractBackupPath> pathProvider;
     private TuneCassandra tuneCassandra;
     private SnapshotBackup snapshotBackup;
+    private IncrementalRestore incrementalRestore;
     private IPriamInstanceRegistry instanceRegistry;
     private TokenManager tokenManager;
     @Inject
@@ -70,6 +71,7 @@ public class BackupServlet {
                          Provider<AbstractBackupPath> pathProvider,
                          TuneCassandra tunecassandra,
                          SnapshotBackup snapshotBackup,
+                         IncrementalRestore incrementalRestore,
                          IPriamInstanceRegistry instanceRegistry,
                          TokenManager tokenManager) {
         this.priamServer = priamServer;
@@ -81,6 +83,7 @@ public class BackupServlet {
         this.pathProvider = pathProvider;
         this.tuneCassandra = tunecassandra;
         this.snapshotBackup = snapshotBackup;
+        this.incrementalRestore = incrementalRestore;
         this.instanceRegistry = instanceRegistry;
         this.tokenManager = tokenManager;
     }
@@ -116,7 +119,7 @@ public class BackupServlet {
     @GET
     @Path ("/incremental_restore")
     public Response restoreIncrementals() throws Exception {
-        scheduler.addTask(IncrementalRestore.getJobDetail(),IncrementalRestore.getTrigger());
+        scheduler.addTask(incrementalRestore.getJobDetail(),incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 

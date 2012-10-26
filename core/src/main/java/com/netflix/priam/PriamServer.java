@@ -17,8 +17,6 @@ import com.netflix.priam.utils.TuneCassandra;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -30,19 +28,33 @@ public class PriamServer implements Managed {
     private final CassandraConfiguration cassandraConfig;
     private final BackupConfiguration backupConfig;
     private final AmazonConfiguration amazonConfig;
+    private final NodeRepair nodeRepair;
+    private final SnapshotBackup snapshotBackup;
+    private final IncrementalBackup incrementalBackup;
+    private final Restore restore;
+    private final UpdateCleanupPolicy updateCleanupPolicy;
     private final InstanceIdentity id;
-    private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
     public PriamServer(CassandraConfiguration cassandraConfig,
                        BackupConfiguration backupConfig,
                        AmazonConfiguration amazonConfig,
                        PriamScheduler scheduler,
+                       NodeRepair nodeRepair,
+                       SnapshotBackup snapshotBackup,
+                       IncrementalBackup incrementalBackup,
+                       Restore restore,
+                       UpdateCleanupPolicy updateCleanupPolicy,
                        InstanceIdentity id) {
         this.cassandraConfig = cassandraConfig;
         this.backupConfig = backupConfig;
         this.amazonConfig = amazonConfig;
         this.scheduler = scheduler;
+        this.nodeRepair = nodeRepair;
+        this.snapshotBackup = snapshotBackup;
+        this.incrementalBackup = incrementalBackup;
+        this.restore = restore;
+        this.updateCleanupPolicy = updateCleanupPolicy;
         this.id = id;
     }
 
@@ -60,7 +72,7 @@ public class PriamServer implements Managed {
 
         // restore from backup else start cassandra.
         if (StringUtils.isNotBlank(backupConfig.getAutoRestoreSnapshotName())) {
-            scheduler.addTask(Restore.getJobDetail(), Restore.getTrigger());
+            scheduler.addTask(restore.getJobDetail(),restore.getTriggerToStartNow());
         } else {
             SystemUtils.startCassandra(true, cassandraConfig, backupConfig, amazonConfig.getInstanceType()); // Start cassandra.
         }
@@ -68,24 +80,21 @@ public class PriamServer implements Managed {
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set snapShotBackUpEnabled: false in priam.yaml)
          if (backupConfig.isSnapShotBackUpEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
-            scheduler.addTask(SnapshotBackup.getJobDetail(), SnapshotBackup.getTrigger(backupConfig));
+             scheduler.addTask(snapshotBackup.getJobDetail(),snapshotBackup.getCronTimeTrigger());
 
             // Start the Incremental backup schedule if enabled
             if (backupConfig.isIncrementalEnabled()) {
-                scheduler.addTask(IncrementalBackup.getJobDetail(), IncrementalBackup.getTrigger());
+                scheduler.addTask(incrementalBackup.getJobDetail(),incrementalBackup.getTriggerToStartNowAndRepeatInMillisec());
             }
         }
 
         //Set cleanup
-        scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
+        //scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
+        scheduler.addTask(updateCleanupPolicy.getJobDetail(),updateCleanupPolicy.getTriggerToStartNow());
 
         //Schedule Node Repair
         if(cassandraConfig.isNodeRepairEnabled()){
-            try{
-                scheduler.addTask(NodeRepair.getJobDetail(), NodeRepair.getTrigger(cassandraConfig));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
+            scheduler.addTask(nodeRepair.getJobDetail(),nodeRepair.getCronTimeTrigger());
         }
     }
 

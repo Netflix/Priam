@@ -7,15 +7,8 @@ import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
-import org.quartz.CronScheduleBuilder;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,11 +27,13 @@ public class SnapshotBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
     private final CassandraConfiguration cassandraConfiguration;
+    private final BackupConfiguration backupConfiguration;
 
     @Inject
     public SnapshotBackup(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
         super(fs, pathFactory);
         this.cassandraConfiguration = cassandraConfiguration;
+        this.backupConfiguration = backupConfiguration;
         this.metaData = metaData;
     }
 
@@ -121,24 +116,13 @@ public class SnapshotBackup extends AbstractBackup {
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer(BackupConfiguration config) {
-        int hour = config.getHour();
-        return new CronTimer(hour, 1, 0);
+    public String getTriggerName(){
+        return "snapshotbackup-trigger";
     }
 
-    public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(SnapshotBackup.class)
-                .withIdentity("priam-scheduler", "snapshotbackup")
-                .build();
-        return jobDetail;
+    @Override
+    public String getCronTime(){
+        return backupConfiguration.getSnapShotBackUpCronTime();
     }
 
-    public static Trigger getTrigger(BackupConfiguration config){
-        Trigger trigger = TriggerBuilder
-                .newTrigger()
-                .withIdentity("priam-scheduler", "snapshotbackup-trigger")
-                .withSchedule(CronScheduleBuilder.cronSchedule(config.getSnapShotBackUpCronTime()))
-                .build();
-        return trigger;
-    }
 }

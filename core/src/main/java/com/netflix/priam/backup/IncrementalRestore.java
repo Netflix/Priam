@@ -7,17 +7,10 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.PendingFile;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -97,32 +90,17 @@ public class IncrementalRestore extends AbstractRestore {
         }
     }
 
-    /**
-     * Run every 20 Sec
-     */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME, 20L * 1000);
-    }
-
     @Override
     public String getName() {
         return JOBNAME;
     }
 
-    public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(IncrementalRestore.class)
-                .withIdentity("priam-scheduler", "incremental-restore")
-                .build();
-        return jobDetail;
+    public String getTriggerName(){
+        return "incremental-restore";
     }
 
-    public static Trigger getTrigger(){
-        Trigger trigger = TriggerBuilder
-                .newTrigger()
-                .withIdentity("priam-scheduler", "incremental-restore-trigger")
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(20L * 1000).repeatForever())
-                .build();
-        return trigger;
+    @Override
+    public long getIntervalInMilliseconds(){
+        return 20L * 1000;
     }
-
 }

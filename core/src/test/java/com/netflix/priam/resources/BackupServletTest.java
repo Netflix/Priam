@@ -10,6 +10,7 @@ import com.netflix.priam.TestBackupConfiguration;
 import com.netflix.priam.TestCassandraConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
@@ -44,6 +45,7 @@ public class BackupServletTest {
     private @Mocked Provider<AbstractBackupPath> pathProvider;
     private @Mocked TuneCassandra tuneCassandra;
     private @Mocked SnapshotBackup snapshotBackup;
+    private @Mocked IncrementalRestore incrementalRestore;
     private @Mocked IPriamInstanceRegistry instanceRegistry;
     private @Mocked
     TokenManager tokenManager;
@@ -52,7 +54,7 @@ public class BackupServletTest {
     @Before
     public void setUp() {
         resource = new BackupServlet(priamServer, cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup, instanceRegistry, tokenManager);
+            tuneCassandra, snapshotBackup, incrementalRestore, instanceRegistry, tokenManager);
     }
 
     @Test

@@ -11,7 +11,6 @@ public class TestBackupConfiguration extends BackupConfiguration {
         setS3BucketName("TEST-netflix.platform.S3");
         setCommitLogEnabled(false);
         setCommitLogLocation("cass/backup/cl/");
-        setHour(12);
         setBackupThreads(2);
         setRestoreThreads(3);
         setIncrementalEnabled(true);

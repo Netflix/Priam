@@ -5,8 +5,8 @@ import com.google.inject.Singleton;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.Trigger;
 import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.Trigger;
 
 import java.text.ParseException;
 
@@ -62,4 +62,5 @@ public class PriamScheduler {
             throw new RuntimeException(ex);
         }
     }
+
 }

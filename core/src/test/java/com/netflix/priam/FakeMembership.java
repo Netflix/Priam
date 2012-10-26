@@ -1,6 +1,5 @@
 package com.netflix.priam;
 
-import java.util.Collection;
 import java.util.List;
 
 import com.netflix.priam.identity.IMembership;

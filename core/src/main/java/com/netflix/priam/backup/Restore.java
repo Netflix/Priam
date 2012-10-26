@@ -10,17 +10,11 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
-import org.quartz.JobBuilder;
-import org.quartz.JobDetail;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -126,10 +120,6 @@ public class Restore extends AbstractRestore {
         download(incrementals, BackupFileType.SST);
     }
 
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
-    }
-
     @Override
     public String getName() {
         return JOBNAME;
@@ -145,19 +135,7 @@ public class Restore extends AbstractRestore {
         return (isRestoreMode && isBackedupRac);
     }
 
-    public static JobDetail getJobDetail(){
-        JobDetail jobDetail = JobBuilder.newJob(Restore.class)
-                .withIdentity("priam-scheduler", "restore")
-                .build();
-        return jobDetail;
-    }
-
-    public static Trigger getTrigger(){
-        Trigger trigger = TriggerBuilder
-                .newTrigger()
-                .withIdentity("priam-scheduler", "restore-trigger")
-                .startNow()
-                .build();
-        return trigger;
+    public String getTriggerName() {
+        return "restore-tigger";
     }
 }

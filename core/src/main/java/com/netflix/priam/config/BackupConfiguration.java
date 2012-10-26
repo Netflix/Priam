@@ -16,9 +16,6 @@ public class BackupConfiguration {
     private int chunkSizeMB;
 
     @JsonProperty
-    private int hour;
-
-    @JsonProperty
     private List<String> availabilityZonesToBackup;
 
     @JsonProperty
@@ -76,10 +73,6 @@ public class BackupConfiguration {
 
     public long getChunkSizeMB() {
         return chunkSizeMB * 1024L * 1024L;
-    }
-
-    public int getHour() {
-        return hour;
     }
 
     public List<String> getAvailabilityZonesToBackup() {
@@ -156,10 +149,6 @@ public class BackupConfiguration {
 
     public void setChunkSizeMB(int chunkSizeMB) {
         this.chunkSizeMB = chunkSizeMB;
-    }
-
-    public void setHour(int hour) {
-        this.hour = hour;
     }
 
     public void setAvailabilityZonesToBackup(List<String> availabilityZonesToBackup) {

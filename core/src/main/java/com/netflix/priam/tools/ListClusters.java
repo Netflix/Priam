@@ -1,20 +1,14 @@
 package com.netflix.priam.tools;
 
-import ch.qos.logback.classic.Level;
 import com.google.common.collect.Ordering;
 import com.netflix.priam.aws.DefaultCredentials;
 import com.netflix.priam.aws.SDBInstanceData;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.yammer.dropwizard.AbstractService;
 import com.yammer.dropwizard.cli.Command;
-import com.yammer.dropwizard.config.LoggingConfiguration;
-import com.yammer.dropwizard.config.LoggingFactory;
 import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.GnuParser;
 import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 
-import static com.google.common.base.Preconditions.checkNotNull;
 import static java.lang.String.format;
 
 /**

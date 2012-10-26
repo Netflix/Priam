@@ -135,10 +135,16 @@ public class CassandraAdmin {
 
     @GET
     @Path ("/repair")
-    public Response cassRepair(@QueryParam ("sequential") boolean isSequential) throws IOException, ExecutionException, InterruptedException {
+    public Response cassRepair(@QueryParam ("primary") boolean isPrimary,
+                               @QueryParam ("sequential") boolean isSequential)
+            throws IOException, ExecutionException, InterruptedException {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         logger.info("node tool repair being called");
-        nodetool.repair(isSequential);
+        if (isPrimary) {
+            nodetool.repairPrimaryRange(isSequential);
+        } else {
+            nodetool.repair(isSequential);
+        }
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 

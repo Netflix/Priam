@@ -227,19 +227,25 @@ public class JMXNodeTool extends NodeProbe {
         object.put("state", state);
         object.put("load", load);
         object.put("owns", owns);
-        object.put("token", token.toString());
+        object.put("token", token);
         return object;
     }
 
     public void compact() throws IOException, ExecutionException, InterruptedException {
         for (String keyspace : getKeyspaces()) {
-            forceTableCompaction(keyspace, new String[0]);
+            forceTableCompaction(keyspace);
         }
     }
 
-    public void repair(boolean isSequential) throws IOException, ExecutionException, InterruptedException {
+    public void repair(boolean isSequential) throws IOException {
         for (String keyspace : getKeyspaces()) {
-            forceTableRepair(keyspace, isSequential, new String[0]);
+            forceTableRepair(keyspace, isSequential);
+        }
+    }
+
+    public void repairPrimaryRange(boolean isSequential) throws IOException {
+        for (String keyspace : getKeyspaces()) {
+            forceTableRepairPrimaryRange(keyspace, isSequential);
         }
     }
 
@@ -251,17 +257,20 @@ public class JMXNodeTool extends NodeProbe {
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException {
         for (String keyspace : getKeyspaces()) {
-            forceTableCleanup(keyspace, new String[0]);
+            if ("system".equals(keyspace)) {
+                continue; // It is an error to attempt to cleanup the system column family.
+            }
+            forceTableCleanup(keyspace);
         }
     }
 
     public void flush() throws IOException, ExecutionException, InterruptedException {
         for (String keyspace : getKeyspaces()) {
-            forceTableFlush(keyspace, new String[0]);
+            forceTableFlush(keyspace);
         }
     }
 
-    public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException {
+    public void refresh(List<String> keyspaces) throws IOException {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
         while (it.hasNext()) {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();

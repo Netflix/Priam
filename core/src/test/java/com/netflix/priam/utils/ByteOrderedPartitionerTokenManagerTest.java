@@ -3,6 +3,7 @@ package com.netflix.priam.utils;
 import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.netflix.priam.config.CassandraConfiguration;
+import org.apache.cassandra.dht.ByteOrderedPartitioner;
 import org.apache.cassandra.dht.BytesToken;
 import org.apache.cassandra.dht.Token;
 import org.apache.cassandra.utils.Hex;
@@ -11,6 +12,7 @@ import org.junit.Test;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -217,7 +219,7 @@ public class ByteOrderedPartitionerTokenManagerTest
         assertEquals(toToken("01"), tokenManager.numberToToken(BigInteger.ONE, 1));
         assertEquals(toToken("ff"), tokenManager.numberToToken(BigInteger.valueOf(255), 1));
         assertEquals(toToken("01"), tokenManager.numberToToken(BigInteger.valueOf(256), 2));
-        assertEquals(toToken("ff"), tokenManager.numberToToken(BigInteger.valueOf(255*256), 2));
+        assertEquals(toToken("ff"), tokenManager.numberToToken(BigInteger.valueOf(255 * 256), 2));
 
         assertEquals(toToken("00000000000000000001"), tokenManager.numberToToken(BigInteger.ONE, 10));
 
@@ -240,7 +242,7 @@ public class ByteOrderedPartitionerTokenManagerTest
         assertEquals(BigInteger.ONE, tokenManager.tokenToNumber(toToken("01"), 1));
         assertEquals(BigInteger.valueOf(255), tokenManager.tokenToNumber(toToken("ff"), 1));
         assertEquals(BigInteger.valueOf(256), tokenManager.tokenToNumber(toToken("01"), 2));
-        assertEquals(BigInteger.valueOf(255*256), tokenManager.tokenToNumber(toToken("ff"), 2));
+        assertEquals(BigInteger.valueOf(255 * 256), tokenManager.tokenToNumber(toToken("ff"), 2));
 
         assertEquals(BigInteger.ONE, tokenManager.tokenToNumber(toToken("00000000000000000001"), 10));
 
@@ -250,6 +252,35 @@ public class ByteOrderedPartitionerTokenManagerTest
         assertEquals(BigInteger.valueOf(2).pow(63), tokenManager.tokenToNumber(toToken("000000000000000080"), 16));
         assertEquals(BigInteger.valueOf(2).pow(64), tokenManager.tokenToNumber(toToken("0000000000000001"), 16));
         assertEquals(BigInteger.valueOf(2).pow(127), tokenManager.tokenToNumber(toToken("80"), 16));
+    }
+
+    @Test
+    public void testLongMinMaxTokens() {
+        // First test with 18-byte min/max values, verify the token is created with the expected precision
+        ByteOrderedPartitionerTokenManager tokenManager1 = new ByteOrderedPartitionerTokenManager(
+                "555500112233445566778899aabbccddeeff",
+                "5555ffeeddccbbaa99887766554433221100");
+        assertEquals("55552ab616ccd838eefa5b111c7d49764ea4", tokenManager1.createToken(1, 3, 2, "eu-west-1"));
+
+        // Next, test with much longer min/max values.  Verify the extra precision is ignored as not necessary.
+        ByteOrderedPartitionerTokenManager tokenManager2 = new ByteOrderedPartitionerTokenManager(
+                "555500112233445566778899aabbccddeeff00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff",
+                "5555ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100ffeeddccbbaa99887766554433221100");
+        assertEquals("55552ab616ccd838eefa5b111c7d49764ea4", tokenManager2.createToken(1, 3, 2, "eu-west-1"));
+    }
+
+    @Test
+    public void testSanitizeToken() {
+        Random random = new Random();
+        byte[] bytes = new byte[random.nextInt(16)];
+        random.nextBytes(bytes);
+        BytesToken token = new BytesToken(bytes);
+
+        ByteOrderedPartitionerTokenManager tokenManager = new ByteOrderedPartitionerTokenManager(new CassandraConfiguration());
+        String string = tokenManager.sanitizeToken(token.toString());
+        assertTrue(string, string.matches("[0-9a-f]*"));
+
+        assertEquals(token, new ByteOrderedPartitioner().getTokenFactory().fromString(string));
     }
 
     private static BytesToken toToken(String string) {

@@ -142,8 +142,7 @@ public class PriamInstance implements Serializable, Comparable<PriamInstance> {
     @Override
     public int compareTo(PriamInstance o) {
         return new CompareToBuilder()
-                .append(getRegionName(), o.getRegionName())
-                .append(getAvailabilityZone(), o.getAvailabilityZone())
+                .append(getApp(), o.getApp())
                 .append(getId(), o.getId())
                 .append(getInstanceId(), o.getInstanceId())
                 .toComparison();

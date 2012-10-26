@@ -29,7 +29,7 @@ public class PriamConfiguration extends Configuration {
     private ZooKeeperConfiguration zooKeeper = new ZooKeeperConfiguration();
 
     @JsonProperty
-    private int jvmMutexPort = 8082;
+    private int jvmMutexPort = 8086;
 
     public CassandraConfiguration getCassandraConfiguration() {
         return cassandra;

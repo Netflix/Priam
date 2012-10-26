@@ -6,6 +6,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.netflix.priam.PriamServer;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
@@ -31,7 +32,6 @@ import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -49,12 +49,15 @@ public class CassandraAdmin {
 
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
 
-    private CassandraConfiguration cassandraConfiguration;
-    private AmazonConfiguration amazonConfiguration;
-    private BackupConfiguration backupConfiguration;
+    private final PriamServer priamServer;
+    private final CassandraConfiguration cassandraConfiguration;
+    private final AmazonConfiguration amazonConfiguration;
+    private final BackupConfiguration backupConfiguration;
 
     @Inject
-    public CassandraAdmin(CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration) {
+    public CassandraAdmin(PriamServer priamServer, CassandraConfiguration cassandraConfiguration,
+                          AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration) {
+        this.priamServer = priamServer;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.backupConfiguration = backupConfiguration;
@@ -373,6 +376,7 @@ public class CassandraAdmin {
     public Response moveToken(@QueryParam ("token") String newToken) throws IOException, ExecutionException, InterruptedException, ConfigurationException {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         nodetool.move(newToken);
+        priamServer.getInstanceIdentity().updateToken();
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 

@@ -1,12 +1,15 @@
 package com.netflix.priam.utils;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Ordering;
+import org.apache.cassandra.dht.BigIntegerToken;
 import org.apache.cassandra.dht.RandomPartitioner;
 import org.junit.Test;
 
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -168,5 +171,19 @@ public class RandomPartitionerTokenManagerTest
         tokenDistance = t3.subtract(t4).abs();
 
         assertEquals(new BigInteger("" + hashDifference).abs(), tokenDistance);
+    }
+
+    @Test
+    public void testSanitizeToken() {
+        Random random = new Random();
+        byte[] bytes = new byte[random.nextInt(16)];
+        random.nextBytes(bytes);
+        BigInteger number = new BigInteger(1, bytes);
+        BigIntegerToken token = new BigIntegerToken(Ordering.natural().min(number, MAXIMUM_TOKEN));
+
+        String string = tokenManager.sanitizeToken(token.toString());
+        assertTrue(string, string.matches("[0-9]*"));
+
+        assertEquals(token, new RandomPartitioner().getTokenFactory().fromString(string));
     }
 }

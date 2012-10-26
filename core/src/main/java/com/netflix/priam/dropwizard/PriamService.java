@@ -49,7 +49,7 @@ public class PriamService extends Service<PriamConfiguration> {
         environment.manage(new ManagedCloseable(new JvmMutex(config.getJvmMutexPort())));
 
         // Don't ping www.terracotta.org on startup (Quartz).
-        System.setProperty("org.terracotta.quartz.skipUpdateCheck", "false");
+        System.setProperty("org.terracotta.quartz.skipUpdateCheck", "true");
 
         Injector injector = Guice.createInjector(new PriamGuiceModule(config));
         try {

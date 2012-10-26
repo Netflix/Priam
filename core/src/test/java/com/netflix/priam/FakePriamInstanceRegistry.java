@@ -1,16 +1,15 @@
 package com.netflix.priam;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.PriamInstance;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
 public class FakePriamInstanceRegistry implements IPriamInstanceRegistry
 {
@@ -65,18 +64,7 @@ public class FakePriamInstanceRegistry implements IPriamInstanceRegistry
     @Override
     public void sort(List<PriamInstance> return_)
     {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>()
-        {
-
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2)
-            {
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
-        };
-        Collections.sort(return_, comparator);
+        Collections.sort(return_);
     }
 
     @Override

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
@@ -23,8 +24,9 @@ import java.io.IOException;
 @Produces (MediaType.TEXT_PLAIN)
 public class CassandraConfig {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
-    private PriamServer priamServer;
-    private DoubleRing doubleRing;
+
+    private final PriamServer priamServer;
+    private final DoubleRing doubleRing;
 
     @Inject
     public CassandraConfig(PriamServer server, DoubleRing doubleRing) {
@@ -71,6 +73,21 @@ public class CassandraConfig {
         } catch (Exception e) {
             // TODO: can this ever happen? if so, what conditions would cause an exception here?
             logger.error("Error while executing is_replace_token", e);
+            return Response.serverError().build();
+        }
+    }
+
+    /**
+     * Updates the Priam instance registry (SimpleDB) with the token currently in use by Cassandra.
+     */
+    @POST
+    @Path ("/update_token")
+    public Response updateToken() {
+        try {
+            priamServer.getInstanceIdentity().updateToken();
+            return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken()).build();
+        } catch (Exception e) {
+            logger.error("Error while executing update_token", e);
             return Response.serverError().build();
         }
     }

@@ -20,6 +20,11 @@ public abstract class TokenManager {
     public abstract String findClosestToken(String tokenToSearch, List<String> tokenList);
 
     /**
+     * Converts a token string returned by the JMX API into a token string that can be parsed by Cassandra.
+     */
+    public abstract String sanitizeToken(String jmxTokenString);
+
+    /**
      * Create an offset to add to token values by hashing the region name.
      */
     public static int regionOffset(String region) {

@@ -11,8 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -80,22 +78,11 @@ public class SDBInstanceRegistry implements IPriamInstanceRegistry {
 
     @Override
     public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>() {
-
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2) {
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
-        };
-        Collections.sort(return_, comparator);
+        Collections.sort(return_);
     }
 
     @Override
     public void attachVolumes(PriamInstance instance, String mountPath, String device) {
         // TODO Auto-generated method stub
     }
-
-
 }

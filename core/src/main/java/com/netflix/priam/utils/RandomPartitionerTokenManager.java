@@ -60,4 +60,10 @@ public class RandomPartitionerTokenManager extends TokenManager {
         }
         return sortedTokens.get(index).toString();
     }
+
+    @Override
+    public String sanitizeToken(String jmxTokenString) {
+        // BigIntegerToken.toString() returns BigInteger.toString() which is the format expected by the RandomPartitioner.
+        return jmxTokenString;
+    }
 }

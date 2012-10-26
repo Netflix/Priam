@@ -155,4 +155,14 @@ public class ByteOrderedPartitionerTokenManager extends TokenManager {
         }
         return length;
     }
+
+    @Override
+    public String sanitizeToken(String jmxTokenString) {
+        // BytesToken.toString() returns "Token(bytes[<hex>])" but ByteOrderedPartitioner expects just "<hex>".
+        String prefix = "Token(bytes[", suffix = "])";
+        if (jmxTokenString.startsWith(prefix) && jmxTokenString.endsWith(suffix)) {
+            jmxTokenString = jmxTokenString.substring(prefix.length(), jmxTokenString.length() - suffix.length());
+        }
+        return jmxTokenString;
+    }
 }

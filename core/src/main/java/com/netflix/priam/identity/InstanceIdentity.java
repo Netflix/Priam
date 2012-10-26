@@ -8,6 +8,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
@@ -218,8 +219,10 @@ public class InstanceIdentity {
             seeds.add(instancesByAvailabilityZoneMultiMap.get(loc).get(0).getHostIP());
         }
 
-        // Remove this node from the seed list so Cassandra auto-bootstrap will kick in.
-        seeds.remove(myInstance.getHostIP());
+        // Remove this node from the seed list so Cassandra auto-bootstrap will kick in.  Unless this is the only node in the cluster.
+        if (seeds.size() > 1) {
+            seeds.remove(myInstance.getHostIP());
+        }
 
         return seeds;
     }
@@ -232,5 +235,16 @@ public class InstanceIdentity {
 
     public boolean isReplace() {
         return isReplace;
+    }
+
+    /**
+     * Updates the Priam instance registry (SimpleDB) with the token currently in use by Cassandra.  Call this after
+     * moving a server to a new token or else the move may be reverted if/when the server is replaced and the
+     * replacement assigns the old token from SimpleDB.
+     */
+    public void updateToken() {
+        JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
+        myInstance.setToken(tokenManager.sanitizeToken(nodetool.getToken()));
+        instanceRegistry.update(myInstance);
     }
 }

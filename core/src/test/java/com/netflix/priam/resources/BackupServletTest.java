@@ -16,6 +16,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
 import mockit.Expectations;
@@ -47,14 +48,17 @@ public class BackupServletTest {
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IncrementalRestore incrementalRestore;
     private @Mocked IPriamInstanceRegistry instanceRegistry;
+    private @Mocked PriamScheduler priamScheduler;
+    private @Mocked InstanceIdentity id;
+
     private @Mocked
     TokenManager tokenManager;
     private BackupServlet resource;
 
     @Before
     public void setUp() {
-        resource = new BackupServlet(priamServer, cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup, incrementalRestore, instanceRegistry, tokenManager);
+        resource = new BackupServlet(cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
+            tuneCassandra, snapshotBackup, incrementalRestore, instanceRegistry, tokenManager, priamScheduler, id);
     }
 
     @Test

@@ -5,7 +5,6 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
@@ -16,6 +15,7 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.SystemUtils;
@@ -23,6 +23,7 @@ import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
+import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,7 +45,6 @@ public class BackupServlet {
 
     private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
 
-    private PriamServer priamServer;
     private IBackupFileSystem fs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
@@ -53,8 +53,8 @@ public class BackupServlet {
     private IncrementalRestore incrementalRestore;
     private IPriamInstanceRegistry instanceRegistry;
     private TokenManager tokenManager;
-    @Inject
     private PriamScheduler scheduler;
+    private InstanceIdentity id;
 
     private CassandraConfiguration cassandraConfiguration;
     private AmazonConfiguration amazonConfiguration;
@@ -62,8 +62,7 @@ public class BackupServlet {
 
 
     @Inject
-    public BackupServlet(PriamServer priamServer,
-                         CassandraConfiguration cassandraConfiguration,
+    public BackupServlet(CassandraConfiguration cassandraConfiguration,
                          AmazonConfiguration amazonConfiguration,
                          BackupConfiguration backupConfiguration,
                          IBackupFileSystem fs,
@@ -73,8 +72,9 @@ public class BackupServlet {
                          SnapshotBackup snapshotBackup,
                          IncrementalRestore incrementalRestore,
                          IPriamInstanceRegistry instanceRegistry,
-                         TokenManager tokenManager) {
-        this.priamServer = priamServer;
+                         TokenManager tokenManager,
+                         PriamScheduler scheduler,
+                         InstanceIdentity id) {
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.backupConfiguration = backupConfiguration;
@@ -86,6 +86,8 @@ public class BackupServlet {
         this.incrementalRestore = incrementalRestore;
         this.instanceRegistry = instanceRegistry;
         this.tokenManager = tokenManager;
+        this.scheduler = scheduler;
+        this.id = id;
     }
 
     @GET
@@ -119,7 +121,11 @@ public class BackupServlet {
     @GET
     @Path ("/incremental_restore")
     public Response restoreIncrementals() throws Exception {
-        scheduler.addTask(incrementalRestore.getJobDetail(),incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
+        if(! scheduler.getScheduler().checkExists(new JobKey("priam-scheduler", incrementalRestore.getName())) ){
+            scheduler.addTask(incrementalRestore.getJobDetail(), incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
+        } else {
+            incrementalRestore.execute();
+        }
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }
 
@@ -178,15 +184,15 @@ public class BackupServlet {
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces, String restorePrefix) throws Exception {
         String origRegion = amazonConfiguration.getRegionName();
-        String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
+        String origToken = id.getInstance().getToken();
         String origRestorePrefix = backupConfiguration.getRestorePrefix();
 
         try {
             if (StringUtils.isNotBlank(token)) {
-                priamServer.getInstanceIdentity().getInstance().setToken(token);
+                id.getInstance().setToken(token);
             }
             if (backupConfiguration.isRestoreClosestToken()) {
-                priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), origRegion));
+                id.getInstance().setToken(closestToken(id.getInstance().getToken(), origRegion));
             }
             if (StringUtils.isNotBlank(restorePrefix)) {
                 backupConfiguration.setRestorePrefix(restorePrefix);
@@ -194,8 +200,8 @@ public class BackupServlet {
             if (StringUtils.isNotBlank(region)) {
                 amazonConfiguration.setRegionName(region);
                 logger.info("Restoring from region " + region);
-                priamServer.getInstanceIdentity().getInstance().setToken(closestToken(priamServer.getInstanceIdentity().getInstance().getToken(), region));
-                logger.info("Restore will use token " + priamServer.getInstanceIdentity().getInstance().getToken());
+                id.getInstance().setToken(closestToken(id.getInstance().getToken(), region));
+                logger.info("Restore will use token " + id.getInstance().getToken());
             }
 
             setRestoreKeyspaces(keyspaces);
@@ -204,7 +210,7 @@ public class BackupServlet {
 
         } finally {
             amazonConfiguration.setRegionName(origRegion);
-            priamServer.getInstanceIdentity().getInstance().setToken(origToken);
+            id.getInstance().setToken(origToken);
             backupConfiguration.setRestorePrefix(origRestorePrefix);
         }
         tuneCassandra.updateYaml(false);

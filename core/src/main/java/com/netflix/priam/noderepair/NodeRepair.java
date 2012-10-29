@@ -5,6 +5,7 @@ import com.bazaarvoice.zookeeper.internal.CuratorConnection;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.curator.framework.recipes.locks.InterProcessMutex;
 import com.netflix.priam.config.AmazonConfiguration;
@@ -19,6 +20,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.TimeUnit;
 
+@Singleton
 public final class NodeRepair extends Task {
     public static String JOBNAME = "NodeRepair";
     private static final Logger logger = LoggerFactory.getLogger(NodeRepair.class);

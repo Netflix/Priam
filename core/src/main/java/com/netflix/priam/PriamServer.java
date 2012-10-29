@@ -20,7 +20,7 @@ import org.apache.commons.lang.StringUtils;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
- * Incremental backup
+ * Incremental backup - Node repair
  */
 @Singleton
 public class PriamServer implements Managed {
@@ -77,6 +77,7 @@ public class PriamServer implements Managed {
             SystemUtils.startCassandra(true, cassandraConfig, backupConfig, amazonConfig.getInstanceType()); // Start cassandra.
         }
 
+
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set snapShotBackUpEnabled: false in priam.yaml)
          if (backupConfig.isSnapShotBackUpEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
@@ -84,7 +85,7 @@ public class PriamServer implements Managed {
 
             // Start the Incremental backup schedule if enabled
             if (backupConfig.isIncrementalEnabled()) {
-                scheduler.addTask(incrementalBackup.getJobDetail(),incrementalBackup.getTriggerToStartNowAndRepeatInMillisec());
+               scheduler.addTask(incrementalBackup.getJobDetail(),incrementalBackup.getTriggerToStartNowAndRepeatInMillisec());
             }
         }
 

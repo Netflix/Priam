@@ -138,7 +138,7 @@ public abstract class Task implements Job, TaskMBean {
     public Trigger getTriggerToStartNowAndRepeatInMillisec(){
         Trigger trigger = TriggerBuilder
                 .newTrigger()
-                .withIdentity("priam-scheduler", "incremental-backup-trigger")
+                .withIdentity("priam-scheduler", getTriggerName())
                 .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(getIntervalInMilliseconds()).repeatForever().withMisfireHandlingInstructionFireNow())
                 .build();
         return trigger;

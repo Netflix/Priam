@@ -32,7 +32,6 @@ public class PriamScheduler {
     //This method should be used to add a Task
     public void addTask(JobDetail job, Trigger trigger) throws SchedulerException{
         scheduler.scheduleJob(job,trigger);
-
     }
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {

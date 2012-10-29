@@ -77,7 +77,6 @@ public class PriamServer implements Managed {
             SystemUtils.startCassandra(true, cassandraConfig, backupConfig, amazonConfig.getInstanceType()); // Start cassandra.
         }
 
-
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set snapShotBackUpEnabled: false in priam.yaml)
          if (backupConfig.isSnapShotBackUpEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {

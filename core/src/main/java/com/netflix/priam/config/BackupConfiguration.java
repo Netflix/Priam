@@ -66,7 +66,6 @@ public class BackupConfiguration {
     @JsonProperty
     private String snapShotBackUpCronTime;
 
-
     public String getAutoRestoreSnapshotName() {
         return autoRestoreSnapshotName;
     }

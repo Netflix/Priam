@@ -124,7 +124,7 @@ public class BackupServlet {
         if(! scheduler.getScheduler().checkExists(new JobKey("priam-scheduler", incrementalRestore.getName())) ){
             scheduler.addTask(incrementalRestore.getJobDetail(), incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
         } else {
-            incrementalRestore.execute();
+            scheduler.getScheduler().triggerJob(new JobKey("priam-scheduler", incrementalRestore.getName()));
         }
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }

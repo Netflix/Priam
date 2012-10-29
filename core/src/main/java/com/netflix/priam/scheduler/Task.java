@@ -148,5 +148,4 @@ public abstract class Task implements Job, TaskMBean {
     public long getIntervalInMilliseconds(){
         return -0L;
     }
-
 }

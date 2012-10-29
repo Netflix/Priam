@@ -3,6 +3,7 @@ package com.netflix.priam.scheduler;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.impl.StdSchedulerFactory;
@@ -40,6 +41,10 @@ public class PriamScheduler {
 
     public void deleteTask(JobDetail jobDetail) throws SchedulerException, ParseException {
         scheduler.deleteJob(jobDetail.getKey());
+    }
+
+    public boolean checkIfJobIsAlreadyScheduled(String jobName) throws Exception {
+        return this.getScheduler().checkExists(new JobKey("priam-scheduler", jobName)) ? true : false;
     }
 
     public final Scheduler getScheduler() {

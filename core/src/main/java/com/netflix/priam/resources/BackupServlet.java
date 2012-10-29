@@ -23,7 +23,6 @@ import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.DateTime;
-import org.quartz.JobKey;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,7 +120,7 @@ public class BackupServlet {
     @GET
     @Path ("/incremental_restore")
     public Response restoreIncrementals() throws Exception {
-        if(! scheduler.getScheduler().checkExists(new JobKey("priam-scheduler", incrementalRestore.getName())) ){
+        if(! scheduler.checkIfJobIsAlreadyScheduled(incrementalRestore.getName()) ){
             scheduler.addTask(incrementalRestore.getJobDetail(), incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
         } else {
            logger.info("incremental_restore has been already scheduled and is running in intervals");

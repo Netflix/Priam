@@ -124,7 +124,8 @@ public class BackupServlet {
         if(! scheduler.getScheduler().checkExists(new JobKey("priam-scheduler", incrementalRestore.getName())) ){
             scheduler.addTask(incrementalRestore.getJobDetail(), incrementalRestore.getTriggerToStartNowAndRepeatInMillisec());
         } else {
-            scheduler.getScheduler().triggerJob(new JobKey("priam-scheduler", incrementalRestore.getName()));
+           logger.info("incremental_restore has been already scheduled and is running in intervals");
+           return Response.ok(ImmutableMap.of("response", "incremental_restore has been already scheduled and is running in intervals"), MediaType.APPLICATION_JSON).build();
         }
         return Response.ok(RESULT_OK, MediaType.APPLICATION_JSON).build();
     }

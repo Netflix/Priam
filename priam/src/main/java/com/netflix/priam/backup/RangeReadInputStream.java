@@ -71,6 +71,8 @@ public class RangeReadInputStream extends InputStream
                             incomingOffet += rCnt;
 //                            logger.info("    local read cnt = " + rCnt + "Current Thread Name = "+Thread.currentThread().getName());
                         }
+                        if(readTotal == 0 && rCnt == -1)
+                        		return -1;
                         offset += readTotal;
                         return Integer.valueOf(readTotal);
                     }

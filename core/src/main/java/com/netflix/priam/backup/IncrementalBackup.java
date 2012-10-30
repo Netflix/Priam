@@ -5,11 +5,8 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileFilter;
 
@@ -49,16 +46,19 @@ public class IncrementalBackup extends AbstractBackup {
         }
     }
 
-    /**
-     * Run every 10 Sec
-     */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME, 10L * 1000);
-    }
 
     @Override
     public String getName() {
         return JOBNAME;
+    }
+
+    @Override
+    public long getIntervalInMilliseconds(){
+        return 10L * 1000;
+    }
+
+    public String getTriggerName(){
+        return "incrementalbackup-trigger";
     }
 
 }

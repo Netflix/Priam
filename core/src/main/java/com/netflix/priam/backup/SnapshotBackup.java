@@ -7,8 +7,6 @@ import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
@@ -29,11 +27,13 @@ public class SnapshotBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
     private final CassandraConfiguration cassandraConfiguration;
+    private final BackupConfiguration backupConfiguration;
 
     @Inject
-    public SnapshotBackup(CassandraConfiguration cassandraConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
+    public SnapshotBackup(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData) {
         super(fs, pathFactory);
         this.cassandraConfiguration = cassandraConfiguration;
+        this.backupConfiguration = backupConfiguration;
         this.metaData = metaData;
     }
 
@@ -47,7 +47,16 @@ public class SnapshotBackup extends AbstractBackup {
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> backupPaths = Lists.newArrayList();
             File dataDir = new File(cassandraConfiguration.getDataLocation());
+
+            if (dataDir.listFiles() == null) {
+                logger.error("No keyspace directories exist in configured cassandra data directory. Unable to capture snapshot.");
+                return;
+            }
+
             for (File keyspaceDir : dataDir.listFiles()) {
+                if (keyspaceDir.listFiles() == null) {
+                    continue;
+                }
                 for (File columnFamilyDir : keyspaceDir.listFiles()) {
                     File snpDir = new File(columnFamilyDir, "snapshots");
                     if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir)) {
@@ -65,6 +74,7 @@ public class SnapshotBackup extends AbstractBackup {
             logger.info("Snapshot upload complete for " + snapshotName);
         } finally {
             try {
+                logger.info("clearing snapshot {}", snapshotName);
                 clearSnapshot(snapshotName);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
@@ -106,8 +116,13 @@ public class SnapshotBackup extends AbstractBackup {
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer(BackupConfiguration config) {
-        int hour = config.getHour();
-        return new CronTimer(hour, 1, 0);
+    public String getTriggerName(){
+        return "snapshotbackup-trigger";
     }
+
+    @Override
+    public String getCronTime(){
+        return backupConfiguration.getSnapShotBackUpCronTime();
+    }
+
 }

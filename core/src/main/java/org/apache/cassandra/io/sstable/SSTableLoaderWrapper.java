@@ -2,12 +2,7 @@ package org.apache.cassandra.io.sstable;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.config.BackupConfiguration;
-import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.utils.TuneCassandra;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
@@ -23,7 +18,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,13 +27,6 @@ import java.util.Set;
 public class SSTableLoaderWrapper {
     private static final Logger logger = LoggerFactory.getLogger(SSTableLoaderWrapper.class);
     private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
-
-    @Inject
-    public SSTableLoaderWrapper(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, AmazonConfiguration amazonConfiguration) throws IOException {
-        URL url = this.getClass().getClassLoader().getResource("cassandra.yaml");
-        logger.info("Trying to load the yaml file from: " + url);
-        TuneCassandra.updateYaml(cassandraConfiguration, backupConfiguration, amazonConfiguration.getAvailabilityZone(), url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
-    }
 
     private final OutputHandler options = new OutputHandler() {
         public void output(String msg) {

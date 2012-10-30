@@ -3,12 +3,10 @@ package com.netflix.priam.backup;
 import com.google.common.base.Strings;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
@@ -36,14 +34,14 @@ public class IncrementalRestore extends AbstractRestore {
 
     private final File restoreDir;
     private SSTableLoaderWrapper loader;
-    private PriamServer priamServer;
+    private InstanceIdentity id;
 
     @Inject
-    public IncrementalRestore(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, Sleeper sleeper, SSTableLoaderWrapper loader, PriamServer priamServer) {
+    public IncrementalRestore(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, Sleeper sleeper, SSTableLoaderWrapper loader, InstanceIdentity id) {
         super(backupConfiguration, JOBNAME, sleeper);
         this.restoreDir = new File(cassandraConfiguration.getDataLocation(), "restore_incremental");
         this.loader = loader;
-        this.priamServer = priamServer;
+        this.id = id;
     }
 
     @Override
@@ -55,7 +53,7 @@ public class IncrementalRestore extends AbstractRestore {
         }
 
         if (backupConfiguration.isRestoreClosestToken()) {
-            priamServer.getInstanceIdentity().getInstance().setToken(restoreToken);
+            id.getInstance().setToken(restoreToken);
         }
 
         Date start = tracker.first().time;
@@ -92,16 +90,17 @@ public class IncrementalRestore extends AbstractRestore {
         }
     }
 
-    /**
-     * Run every 20 Sec
-     */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME, 20L * 1000);
-    }
-
     @Override
     public String getName() {
         return JOBNAME;
     }
 
+    public String getTriggerName(){
+        return "incremental-restore";
+    }
+
+    @Override
+    public long getIntervalInMilliseconds(){
+        return 20L * 1000;
+    }
 }

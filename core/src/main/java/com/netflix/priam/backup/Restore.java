@@ -5,13 +5,11 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
@@ -33,22 +31,22 @@ public class Restore extends AbstractRestore {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
 
-    @Inject
-    private Provider<AbstractBackupPath> pathProvider;
-    @Inject
-    private RestoreTokenSelector tokenSelector;
-    @Inject
-    private MetaData metaData;
-    @Inject
-    private PriamServer priamServer;
-    @Inject
     private CassandraConfiguration cassandraConfiguration;
-    @Inject
     private AmazonConfiguration amazonConfiguration;
+    private Provider<AbstractBackupPath> pathProvider;
+    private RestoreTokenSelector tokenSelector;
+    private MetaData metaData;
+    private InstanceIdentity id;
 
     @Inject
-    public Restore(BackupConfiguration backupConfiguration, Sleeper sleeper) {
+    public Restore(BackupConfiguration backupConfiguration, CassandraConfiguration cassandraConfiguration, AmazonConfiguration amazonConfiguration, Sleeper sleeper, Provider<AbstractBackupPath> pathProvider, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceIdentity id) {
         super(backupConfiguration, JOBNAME, sleeper);
+        this.cassandraConfiguration = cassandraConfiguration;
+        this.amazonConfiguration = amazonConfiguration;
+        this.pathProvider = pathProvider;
+        this.tokenSelector = tokenSelector;
+        this.metaData = metaData;
+        this.id = id;
     }
 
     @Override
@@ -59,11 +57,11 @@ public class Restore extends AbstractRestore {
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.getFormat().parse(restore[0]);
             final Date endTime = path.getFormat().parse(restore[1]);
-            String origToken = priamServer.getInstanceIdentity().getInstance().getToken();
+            String origToken = id.getInstance().getToken();
             try {
                 if (backupConfiguration.isRestoreClosestToken()) {
                     restoreToken = tokenSelector.getClosestToken(origToken, startTime);
-                    priamServer.getInstanceIdentity().getInstance().setToken(restoreToken);
+                    id.getInstance().setToken(restoreToken);
                 }
                 new RetryableCallable<Void>() {
                     public Void retriableCall() throws Exception {
@@ -76,7 +74,7 @@ public class Restore extends AbstractRestore {
                     }
                 }.call();
             } finally {
-                priamServer.getInstanceIdentity().getInstance().setToken(origToken);
+                id.getInstance().setToken(origToken);
             }
         }
         SystemUtils.startCassandra(true, cassandraConfiguration, backupConfiguration, amazonConfiguration.getInstanceType());
@@ -122,10 +120,6 @@ public class Restore extends AbstractRestore {
         download(incrementals, BackupFileType.SST);
     }
 
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
-    }
-
     @Override
     public String getName() {
         return JOBNAME;
@@ -141,4 +135,7 @@ public class Restore extends AbstractRestore {
         return (isRestoreMode && isBackedupRac);
     }
 
+    public String getTriggerName() {
+        return "restore-tigger";
+    }
 }

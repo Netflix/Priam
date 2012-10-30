@@ -44,6 +44,12 @@ cassandra:
   cacheLocation: "/var/lib/cassandra/saved_caches"  # Location of local cache
   seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
 
+  nodeRepairEnabled: false
+  nodeRepairTime:                                   # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
+                                                    # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
+  nodeRepairMutexAcquireTimeOut:                    # node repair mutex lock aquire time out (unit: minute)
+
+
 
 amazon:
   # These properties below should be retrievable from the AWS instance metadata API.  Any setting
@@ -64,7 +70,6 @@ amazon:
 backup:
   autoRestoreSnapshotName:                          # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
   chunkSizeMB: 10                                   # Preferred data part size for multi part uploads to s3
-  hour: 2                                           # Backup hour for snapshot backups (0 - 23)
   availabilityZonesToBackup:                        # Get list of availability zones to backup. Backup all zones if empty
   retentionDays: 0                                  # Get Backup retention in days. Set to 0 to avoid any expiration of the backups from S3
   backupThreads: 2                                  # Number of backup threads for uploading
@@ -82,6 +87,9 @@ backup:
   streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
                                                     #    can lead to saturating the network connection and degrading rpc performance.
   uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups
+  snapShotBackUpEnabled: false
+  snapShotBackUpCronTime:                           # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
+                                                    # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
 
 zooKeeper:
   # Priam will register the Cassandra node in ZooKeeper using the BV SOA (Ostrich) library under "<clusterName>-cassandra".

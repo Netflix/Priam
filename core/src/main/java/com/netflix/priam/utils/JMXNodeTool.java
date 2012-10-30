@@ -249,6 +249,12 @@ public class JMXNodeTool extends NodeProbe {
         }
     }
 
+    public void repair(String keyspace, boolean isSequential) throws IOException, ExecutionException, InterruptedException {
+        // Turns out that when a range is repaired, it is repaired on "all" replica. Therefore, it is redundant and in-efficient to do node repair on all ranges on all nodes.
+        // Only repairing the primary range on each node in the cluster will repair the whole cluster
+        forceTableRepairPrimaryRange(keyspace, isSequential, new String[0]);
+    }
+
     public void cleanup() throws IOException, ExecutionException, InterruptedException {
         for (String keyspace : getKeyspaces()) {
             if ("system".equals(keyspace)) {

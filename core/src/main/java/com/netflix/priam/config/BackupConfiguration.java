@@ -16,9 +16,6 @@ public class BackupConfiguration {
     private int chunkSizeMB;
 
     @JsonProperty
-    private int hour;
-
-    @JsonProperty
     private List<String> availabilityZonesToBackup;
 
     @JsonProperty
@@ -63,6 +60,11 @@ public class BackupConfiguration {
     @JsonProperty
     private long uploadThrottleBytesPerSec;
 
+    @JsonProperty
+    private boolean snapShotBackUpEnabled;
+
+    @JsonProperty
+    private String snapShotBackUpCronTime;
 
     public String getAutoRestoreSnapshotName() {
         return autoRestoreSnapshotName;
@@ -70,10 +72,6 @@ public class BackupConfiguration {
 
     public long getChunkSizeMB() {
         return chunkSizeMB * 1024L * 1024L;
-    }
-
-    public int getHour() {
-        return hour;
     }
 
     public List<String> getAvailabilityZonesToBackup() {
@@ -136,16 +134,20 @@ public class BackupConfiguration {
         return uploadThrottleBytesPerSec;
     }
 
+    public boolean isSnapShotBackUpEnabled() {
+        return snapShotBackUpEnabled;
+    }
+
+    public String getSnapShotBackUpCronTime() {
+        return snapShotBackUpCronTime;
+    }
+
     public void setAutoRestoreSnapshotName(String autoRestoreSnapshotName) {
         this.autoRestoreSnapshotName = autoRestoreSnapshotName;
     }
 
     public void setChunkSizeMB(int chunkSizeMB) {
         this.chunkSizeMB = chunkSizeMB;
-    }
-
-    public void setHour(int hour) {
-        this.hour = hour;
     }
 
     public void setAvailabilityZonesToBackup(List<String> availabilityZonesToBackup) {
@@ -207,6 +209,14 @@ public class BackupConfiguration {
 
     public void setUploadThrottleBytesPerSec(long uploadThrottleBytesPerSec) {
         this.uploadThrottleBytesPerSec = uploadThrottleBytesPerSec;
+    }
+
+    public void setSnapShotBackUpEnabled (boolean snapShotBackUpEnabled) {
+        this.snapShotBackUpEnabled = snapShotBackUpEnabled;
+    }
+
+    public void setSnapShotBackUpCronTime (String snapShotBackUpCronTime) {
+        this.snapShotBackUpCronTime = snapShotBackUpCronTime;
     }
 
 }

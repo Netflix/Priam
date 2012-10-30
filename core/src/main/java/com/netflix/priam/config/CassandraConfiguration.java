@@ -98,6 +98,15 @@ public class CassandraConfiguration {
     @JsonProperty
     private String rowCacheKeysToSave;
 
+    @JsonProperty
+    private String nodeRepairTime;
+
+    @JsonProperty
+    private boolean nodeRepairEnabled;
+
+    @JsonProperty
+    private int nodeRepairMutexAcquireTimeOut;
+
     public String getPartitionerClassName() {
         return partitionerClassName;
     }
@@ -222,6 +231,18 @@ public class CassandraConfiguration {
         return rowCacheKeysToSave;
     }
 
+    public String getNodeRepairTime() {
+        return nodeRepairTime;
+    }
+
+    public boolean isNodeRepairEnabled() {
+        return nodeRepairEnabled;
+    }
+
+    public int getNodeRepairMutexAcquireTimeOut() {
+        return nodeRepairMutexAcquireTimeOut;
+    }
+
     public void setPartitionerClassName(String partitionerClassName) {
         this.partitionerClassName = partitionerClassName;
     }
@@ -344,6 +365,18 @@ public class CassandraConfiguration {
 
     public void setRowCacheKeysToSave(String rowCacheKeysToSave) {
         this.rowCacheKeysToSave = rowCacheKeysToSave;
+    }
+
+    public void setNodeRepairEnabled(boolean nodeRepairEnabled) {
+        this.nodeRepairEnabled = nodeRepairEnabled;
+    }
+
+    public void setNodeRepairMutexAcquireTimeOut(int nodeRepairMutexAcquireTimeOut) {
+        this.nodeRepairMutexAcquireTimeOut = nodeRepairMutexAcquireTimeOut;
+    }
+
+    public void setNodeRepairTime(String nodeRepairTime) {
+        this.nodeRepairTime = nodeRepairTime;
     }
 
 }

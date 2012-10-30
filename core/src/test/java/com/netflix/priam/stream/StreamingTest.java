@@ -34,7 +34,7 @@ public class StreamingTest
         AmazonConfiguration amazonConfiguration = injector.getInstance(TestAmazonConfiguration.class);
         BackupConfiguration backupConfiguration = injector.getInstance(TestBackupConfiguration.class);
 
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(cassandraConfiguration, backupConfiguration, amazonConfiguration);
+        SSTableLoaderWrapper loader = new SSTableLoaderWrapper();
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);
     }

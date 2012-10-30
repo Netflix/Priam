@@ -3,9 +3,11 @@ package com.netflix.priam.scheduler;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import org.quartz.JobDetail;
+import org.quartz.JobKey;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+import org.quartz.Trigger;
 
 import java.text.ParseException;
 
@@ -18,9 +20,9 @@ public class PriamScheduler {
     private final GuiceJobFactory jobFactory;
 
     @Inject
-    public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory) {
+    public PriamScheduler(GuiceJobFactory jobFactory) {
         try {
-            this.scheduler = factory.getScheduler();
+            this.scheduler = new StdSchedulerFactory().getScheduler();
             this.scheduler.setJobFactory(jobFactory);
             this.jobFactory = jobFactory;
         } catch (SchedulerException e) {
@@ -28,21 +30,21 @@ public class PriamScheduler {
         }
     }
 
-    /**
-     * Add a task to the scheduler
-     */
-    public void addTask(String name, Class<? extends Task> taskclass, TaskTimer timer) throws SchedulerException, ParseException {
-        assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
-        JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
-        scheduler.scheduleJob(job, timer.getTrigger());
+    //This method should be used to add a Task
+    public void addTask(JobDetail job, Trigger trigger) throws SchedulerException{
+        scheduler.scheduleJob(job,trigger);
     }
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {
         jobFactory.guice.getInstance(taskclass).execute(null);
     }
 
-    public void deleteTask(String name) throws SchedulerException, ParseException {
-        scheduler.deleteJob(name, Scheduler.DEFAULT_GROUP);
+    public void deleteTask(JobDetail jobDetail) throws SchedulerException, ParseException {
+        scheduler.deleteJob(jobDetail.getKey());
+    }
+
+    public boolean checkIfJobIsAlreadyScheduled(String jobName) throws Exception {
+        return this.getScheduler().checkExists(new JobKey("priam-scheduler", jobName)) ? true : false;
     }
 
     public final Scheduler getScheduler() {
@@ -64,4 +66,5 @@ public class PriamScheduler {
             throw new RuntimeException(ex);
         }
     }
+
 }

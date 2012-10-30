@@ -7,8 +7,6 @@ import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
 import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
@@ -32,7 +30,6 @@ public class TestModule extends AbstractModule
         bind(AmazonConfiguration.class).toInstance(new TestAmazonConfiguration("fake-app", "fake-region", "az1", "fakeInstance1"));
         bind(BackupConfiguration.class).toInstance(new TestBackupConfiguration());
         bind(IPriamInstanceRegistry.class).to(FakePriamInstanceRegistry.class);
-        bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(TokenManager.class).toProvider(TokenManagerProvider.class);

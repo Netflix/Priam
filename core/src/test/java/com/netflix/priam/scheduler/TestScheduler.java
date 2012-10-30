@@ -25,7 +25,8 @@ public class TestScheduler
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test", TestTask.class, new SimpleTimer("testtask", 10));
+        TestTask testTask = new TestTask();
+        scheduler.addTask(testTask.getJobDetail(), testTask.getTriggerToStartNowAndRepeatInMillisec());
         // verify the task has run or fail in 1s
         latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
@@ -38,7 +39,8 @@ public class TestScheduler
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
         scheduler.start();
-        scheduler.addTask("test2", SingleTestTask.class, SingleTestTask.getTimer());
+        SingleTestTask singleTestTask = new SingleTestTask();
+        scheduler.addTask(singleTestTask.getJobDetail(), singleTestTask.getTriggerToStartNowAndRepeatInMillisec());
         // verify 3 tasks run or fail in 1s
         latch.await(1000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
@@ -46,6 +48,7 @@ public class TestScheduler
     }
 
     @Ignore
+    @Singleton
     public static class TestTask extends Task
     {
         @Inject
@@ -65,6 +68,15 @@ public class TestScheduler
         public String getName()
         {
             return "test";
+        }
+
+        public String getTriggerName(){
+            return "testTask-trigger";
+        }
+
+        @Override
+        public long getIntervalInMilliseconds(){
+            return 10L;
         }
 
     }
@@ -103,9 +115,13 @@ public class TestScheduler
             return "test2";
         }
 
-        public static TaskTimer getTimer()
-        {
-            return new SimpleTimer("test2", 11L);
+        public String getTriggerName(){
+            return "singletesttask-trigger";
+        }
+
+        @Override
+        public long getIntervalInMilliseconds(){
+            return 11L;
         }
     }
 }

@@ -3,9 +3,7 @@ package com.netflix.priam.aws;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 
 /**
@@ -40,8 +38,8 @@ public class UpdateCleanupPolicy extends Task {
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
+    public String getTriggerName(){
+        return "update-cleanup-policy-trigger";
     }
 
 }

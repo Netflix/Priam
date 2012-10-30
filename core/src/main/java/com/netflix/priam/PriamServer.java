@@ -89,7 +89,6 @@ public class PriamServer implements Managed {
         }
 
         //Set cleanup
-        //scheduler.addTask(UpdateCleanupPolicy.getJobDetail(), UpdateCleanupPolicy.getTrigger());
         scheduler.addTask(updateCleanupPolicy.getJobDetail(),updateCleanupPolicy.getTriggerToStartNow());
 
         //Schedule Node Repair

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import com.google.inject.Inject;
 import com.netflix.priam.TestAmazonConfiguration;
 import com.netflix.priam.TestBackupConfiguration;
 import com.netflix.priam.TestCassandraConfiguration;
@@ -34,7 +35,7 @@ public class StreamingTest
         AmazonConfiguration amazonConfiguration = injector.getInstance(TestAmazonConfiguration.class);
         BackupConfiguration backupConfiguration = injector.getInstance(TestBackupConfiguration.class);
 
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(cassandraConfiguration, backupConfiguration, amazonConfiguration);
+        SSTableLoaderWrapper loader = new SSTableLoaderWrapper();
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);
     }

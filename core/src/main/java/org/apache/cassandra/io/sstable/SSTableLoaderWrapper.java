@@ -32,17 +32,6 @@ public class SSTableLoaderWrapper {
     private static final Logger logger = LoggerFactory.getLogger(SSTableLoaderWrapper.class);
     private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
 
-    private CassandraConfiguration cassandraConfiguration;
-    private BackupConfiguration backupConfiguration;
-    private AmazonConfiguration amazonConfiguration;
-
-    @Inject
-    public SSTableLoaderWrapper(CassandraConfiguration cassandraConfiguration, BackupConfiguration backupConfiguration, AmazonConfiguration amazonConfiguration) throws IOException {
-        this.cassandraConfiguration = cassandraConfiguration;
-        this.backupConfiguration = backupConfiguration;
-        this.amazonConfiguration = amazonConfiguration;
-    }
-
     private final OutputHandler options = new OutputHandler() {
         public void output(String msg) {
             logger.info(msg + "\n");

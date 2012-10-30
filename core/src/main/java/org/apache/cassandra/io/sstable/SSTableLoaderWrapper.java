@@ -2,11 +2,7 @@ package org.apache.cassandra.io.sstable;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
-import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.AmazonConfiguration;
-import com.netflix.priam.config.BackupConfiguration;
-import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;

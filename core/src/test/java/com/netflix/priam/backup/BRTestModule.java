@@ -20,7 +20,6 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
-import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.junit.Ignore;
 import java.util.Arrays;
 @Ignore

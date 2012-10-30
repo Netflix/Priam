@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
-import com.google.inject.Inject;
 import com.netflix.priam.TestAmazonConfiguration;
 import com.netflix.priam.TestBackupConfiguration;
 import com.netflix.priam.TestCassandraConfiguration;

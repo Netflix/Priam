@@ -99,8 +99,8 @@ public class BackupServlet
         {
             String[] restore = daterange.split(",");
             AbstractBackupPath path = pathProvider.get();
-            startTime = path.getFormat().parse(restore[0]);
-            endTime = path.getFormat().parse(restore[1]);
+            startTime = path.parseDate(restore[0]);
+            endTime = path.parseDate(restore[1]);
         }
         restore(token, region, startTime, endTime, keyspaces);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -131,8 +131,8 @@ public class BackupServlet
         {
             String[] restore = daterange.split(",");
             AbstractBackupPath path = pathProvider.get();
-            startTime = path.getFormat().parse(restore[0]);
-            endTime = path.getFormat().parse(restore[1]);
+            startTime = path.parseDate(restore[0]);
+            endTime = path.parseDate(restore[1]);
         }
         Iterator<AbstractBackupPath> it = fs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
@@ -141,7 +141,7 @@ public class BackupServlet
             AbstractBackupPath p = it.next();
             if (filter != null && BackupFileType.valueOf(filter) != p.getType())
                 continue;
-            object.put(p.getRemotePath(), p.getFormat().format(p.getTime()));
+            object.put(p.getRemotePath(), p.formatDate(p.getTime()));
         }
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }

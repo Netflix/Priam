@@ -41,7 +41,7 @@ public class SnapshotBackup extends AbstractBackup
     public void execute() throws Exception
     {
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        String snapshotName = pathFactory.get().getFormat().format(cal.getTime());
+        String snapshotName = pathFactory.get().formatDate(cal.getTime());
         try
         {
             logger.info("Starting snapshot " + snapshotName);

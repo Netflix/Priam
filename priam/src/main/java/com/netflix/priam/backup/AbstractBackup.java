@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
@@ -17,6 +20,7 @@ import com.netflix.priam.utils.RetryableCallable;
  */
 public abstract class AbstractBackup extends Task
 {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final List<String> FILTER_COLUMN_FAMILY = Arrays.asList("LocationInfo");
     protected final Provider<AbstractBackupPath> pathFactory;
@@ -41,16 +45,36 @@ public abstract class AbstractBackup extends Task
      * @return
      * @throws Exception
      */
-    protected List<AbstractBackupPath> upload(File parent, BackupFileType type) throws Exception
+    protected List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception
     {
-        List<AbstractBackupPath> bps = Lists.newArrayList();
-        for (File file : parent.listFiles())
+        final List<AbstractBackupPath> bps = Lists.newArrayList();
+        for (final File file : parent.listFiles())
         {
-            final AbstractBackupPath bp = pathFactory.get();
-            bp.parseLocal(file, type);
-            upload(bp);
-            bps.add(bp);
-            file.delete();
+            try
+            {
+                AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME)
+                {
+                    public AbstractBackupPath retriableCall() throws Exception
+                    {
+
+                        final AbstractBackupPath bp = pathFactory.get();
+                        bp.parseLocal(file, type);
+                        String[] cfPrefix = bp.fileName.split("-");
+                        if (cfPrefix.length > 1 && FILTER_COLUMN_FAMILY.contains(cfPrefix[0]))
+                            return null;
+                        upload(bp);
+                        file.delete();
+                        return bp;
+                    }
+                }.call();
+
+                if(abp != null)
+                    bps.add(abp);
+            }
+            catch(Exception e)
+            {
+                logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.", file), e);
+            }
         }
         return bps;
     }

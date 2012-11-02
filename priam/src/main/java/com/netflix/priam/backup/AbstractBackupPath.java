@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.regex.Pattern;
 
@@ -15,10 +14,14 @@ import org.apache.commons.lang.StringUtils;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
+import org.joda.time.DateTime;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
-    public static final SimpleDateFormat DAY_FORMAT = new SimpleDateFormat("yyyyMMddHHmm");
+    private static final String FMT = "yyyyMMddHHmm";
+    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern(FMT);
     public static final char PATH_SEP = File.separatorChar;
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
@@ -49,9 +52,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.config = config;
     }
 
-    public SimpleDateFormat getFormat()
+    public String formatDate(Date d)
     {
-        return DAY_FORMAT;
+        return new DateTime(d).toString(FMT);
+    }
+
+    public Date parseDate(String s)
+    {
+        return DATE_FORMAT.parseDateTime(s).toDate();
     }
 
     public InputStream localReader() throws IOException
@@ -79,7 +87,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             		this.columnFamily = elements[1];
         }
         if (type == BackupFileType.SNAP)
-            time = DAY_FORMAT.parse(elements[3]);
+            time = parseDate(elements[3]);
         if (type == BackupFileType.SST || type == BackupFileType.CL)
             time = new Date(file.lastModified());
         this.fileName = file.getName();
@@ -92,8 +100,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      */
     public String match(Date start, Date end)
     {
-        String sString = DAY_FORMAT.format(start);
-        String eString = DAY_FORMAT.format(end);
+        String sString = formatDate(start);
+        String eString = formatDate(end);
         int diff = StringUtils.indexOfDifference(sString, eString);
         if (diff < 0)
             return sString;

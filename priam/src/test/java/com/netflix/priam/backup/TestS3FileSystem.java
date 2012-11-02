@@ -32,7 +32,6 @@ import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
-import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.RetryableCallable;
 
@@ -40,7 +39,7 @@ public class TestS3FileSystem
 {
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestBackup.class);
-    private static String FILE_PATH = "target/data/Keyspace1/Standard1/backups/1340995548037/Keyspace1-Standard1-ia-1-Data.db";
+    private static String FILE_PATH = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
@@ -49,7 +48,7 @@ public class TestS3FileSystem
         Mockit.setUpMock(AmazonS3Client.class, MockAmazonS3Client.class);
         injector = Guice.createInjector(new BRTestModule());
 
-        File dir1 = new File("target/data/Keyspace1/Standard1/backups/1340995548037");
+        File dir1 = new File("target/data/Keyspace1/Standard1/backups/201108082320");
         if (!dir1.exists())
             dir1.mkdirs();
         File file = new File(FILE_PATH);
@@ -75,7 +74,7 @@ public class TestS3FileSystem
     {
         MockS3PartUploader.setup();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        // String snapshotfile = "target/data/Keyspace1/Standard1/backups/1340995548037/Keyspace1-Standard1-ia-1-Data.db";
+        // String snapshotfile = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
         fs.upload(backupfile, backupfile.localReader());
@@ -88,7 +87,7 @@ public class TestS3FileSystem
         MockS3PartUploader.setup();
         MockS3PartUploader.partFailure = true;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile = "target/data/Keyspace1/Standard1/backups/1340995548037/Keyspace1-Standard1-ia-1-Data.db";
+        String snapshotfile = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try
@@ -109,7 +108,7 @@ public class TestS3FileSystem
         MockS3PartUploader.setup();
         MockS3PartUploader.completionFailure = true;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile = "target/data/Keyspace1/Standard1/backups/1340995548037/Keyspace1-Standard1-ia-1-Data.db";
+        String snapshotfile = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try

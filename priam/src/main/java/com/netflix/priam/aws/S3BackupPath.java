@@ -1,10 +1,10 @@
 package com.netflix.priam.aws;
 
-import java.text.ParseException;
 import java.util.Date;
 import java.util.List;
 
 import com.google.common.collect.Lists;
+
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -43,7 +43,7 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(region).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);// Cluster name
         buff.append(token).append(S3BackupPath.PATH_SEP);
-        buff.append(getFormat().format(time)).append(S3BackupPath.PATH_SEP);
+        buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
         if (type != BackupFileType.META && type != BackupFileType.CL)
         {
@@ -59,39 +59,32 @@ public class S3BackupPath extends AbstractBackupPath
     @Override
     public void parseRemote(String remoteFilePath)
     {
-        try
+        String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
+        // parse out things which are empty
+        List<String> pieces = Lists.newArrayList();
+        for (String ele : elements)
         {
-            String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
-            // parse out things which are empty
-            List<String> pieces = Lists.newArrayList();
-            for (String ele : elements)
-            {
-                if (ele.equals(""))
-                    continue;
-                pieces.add(ele);
-            }
-            assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
-            if(pieces.size() == NUM_PATH_ELEMENTS_CASS_1_0)
-            		setCassandra1_0(true);
-            baseDir = pieces.get(0);
-            region = pieces.get(1);
-            clusterName = pieces.get(2);
-            token = pieces.get(3);
-            time = getFormat().parse(pieces.get(4));
-            type = BackupFileType.valueOf(pieces.get(5));
-            if (type != BackupFileType.META && type != BackupFileType.CL)
-            {
-                keyspace = pieces.get(6);
-                if(!isCassandra1_0)
-                		columnFamily = pieces.get(7);
-            }
-            // append the rest
-            fileName = pieces.get(pieces.size() - 1);
+            if (ele.equals(""))
+                continue;
+            pieces.add(ele);
         }
-        catch (ParseException e)
+        assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
+        if(pieces.size() == NUM_PATH_ELEMENTS_CASS_1_0)
+                setCassandra1_0(true);
+        baseDir = pieces.get(0);
+        region = pieces.get(1);
+        clusterName = pieces.get(2);
+        token = pieces.get(3);
+        time = parseDate(pieces.get(4));
+        type = BackupFileType.valueOf(pieces.get(5));
+        if (type != BackupFileType.META && type != BackupFileType.CL)
         {
-            throw new RuntimeException();
+            keyspace = pieces.get(6);
+            if(!isCassandra1_0)
+                    columnFamily = pieces.get(7);
         }
+        // append the rest
+        fileName = pieces.get(pieces.size() - 1);
     }
 
     @Override

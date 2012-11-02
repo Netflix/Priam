@@ -55,7 +55,7 @@ public class MetaData
         }
         AbstractBackupPath backupfile = pathFactory.get();
         backupfile.parseLocal(metafile, BackupFileType.META);
-        backupfile.time = backupfile.getFormat().parse(snapshotName);
+        backupfile.time = backupfile.parseDate(snapshotName);
         try
         {
             upload(backupfile);

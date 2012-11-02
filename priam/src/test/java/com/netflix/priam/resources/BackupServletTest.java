@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
@@ -104,7 +105,7 @@ public class BackupServletTest
     @Test
     public void restore_withDateRange() throws Exception
     {
-        final String dateRange = "201101010000,201112312359";
+        final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
         final String newToken = null;
         final String keyspaces = null;
@@ -115,11 +116,12 @@ public class BackupServletTest
         new Expectations() {
             @NonStrict InstanceIdentity identity;
             PriamInstance instance;
-            AbstractBackupPath backupPath;
+            AbstractBackupPath backupPath = new S3BackupPath(null, null);
   
             {
                 pathProvider.get(); result = backupPath;
-                backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
+                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
                 config.getDC(); result = oldRegion;
                 priamServer.getId(); result = identity; times = 2;
@@ -289,7 +291,7 @@ public class BackupServletTest
     @Test
     public void restore_maximal() throws Exception
     {
-        final String dateRange = "201101010000,201112312359";
+        final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
         final String newToken = "5678";
         final String keyspaces = null;
@@ -306,7 +308,8 @@ public class BackupServletTest
 
             {
                 pathProvider.get(); result = backupPath;
-                backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
+                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
                 config.getDC(); result = oldRegion; times = 2;
                 priamServer.getId(); result = identity; times = 5;

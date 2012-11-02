@@ -55,8 +55,8 @@ public class Restore extends AbstractRestore
             logger.info("Starting restore for " + config.getRestoreSnapshot());
             String[] restore = config.getRestoreSnapshot().split(",");
             AbstractBackupPath path = pathProvider.get();
-            final Date startTime = path.getFormat().parse(restore[0]);
-            final Date endTime = path.getFormat().parse(restore[1]);
+            final Date startTime = path.parseDate(restore[0]);
+            final Date endTime = path.parseDate(restore[1]);
             String origToken = id.getInstance().getToken();
             try
             {

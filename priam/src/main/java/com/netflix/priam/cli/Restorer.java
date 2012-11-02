@@ -1,13 +1,12 @@
 package com.netflix.priam.cli;
 
 import java.util.Date;
-import java.text.ParseException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.Restore;
 
 public class Restorer
 {
@@ -30,17 +29,9 @@ public class Restorer
                 displayHelp();
                 return;
             }
-            try
-            {
-                AbstractBackupPath path = Application.getInjector().getInstance(AbstractBackupPath.class);
-                startTime = path.getFormat().parse(args[0]);
-                endTime = path.getFormat().parse(args[1]);
-            } catch (ParseException e)
-            {
-                logger.error("Unable to parse: ", e);
-                displayHelp();
-                return;
-            }
+            AbstractBackupPath path = Application.getInjector().getInstance(AbstractBackupPath.class);
+            startTime = path.parseDate(args[0]);
+            endTime = path.parseDate(args[1]);
 
             Restore restorer = Application.getInjector().getInstance(Restore.class);
             try

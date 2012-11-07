@@ -1,6 +1,7 @@
 package com.netflix.priam.resources;
 
 import java.io.IOException;
+import java.util.List;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -42,16 +43,17 @@ public class CassandraConfig
     {
         try
         {
-            if (CollectionUtils.isNotEmpty(priamServer.getId().getSeeds()))
-                return Response.ok(StringUtils.join(priamServer.getId().getSeeds(), ',')).build();
-            logger.error("Cannot find the Seeds " + priamServer.getId().getSeeds());
+            final List<String> seeds = priamServer.getId().getSeeds();
+            if (!seeds.isEmpty())
+                return Response.ok(StringUtils.join(seeds, ',')).build();
+            logger.error("Cannot find the Seeds");
         }
         catch (Exception e)
         {
             logger.error("Error while executing get_seeds", e);
             return Response.serverError().build();
         }
-        return Response.status(404).build();
+        return Response.status(500).build();
     }
 
     @GET
@@ -70,7 +72,7 @@ public class CassandraConfig
             logger.error("Error while executing get_token", e);
             return Response.serverError().build();
         }
-        return Response.status(404).build();
+        return Response.status(500).build();
     }
 
     @GET

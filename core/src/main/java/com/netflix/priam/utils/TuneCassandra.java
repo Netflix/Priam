@@ -49,7 +49,7 @@ public class TuneCassandra extends Task {
         File yamlFile = new File(yamlLocation);
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
 
-        boolean enableIncremental = (backupConfiguration.isSnapShotBackUpEnabled() && backupConfiguration.isIncrementalEnabled()) && (CollectionUtils.isEmpty(backupConfiguration.getAvailabilityZonesToBackup()) || backupConfiguration.getAvailabilityZonesToBackup().contains(availabilityZone));
+        boolean enableIncremental = (backupConfiguration.isSnapShotBackupEnabled() && backupConfiguration.isIncrementalBackupEnabled()) && (CollectionUtils.isEmpty(backupConfiguration.getAvailabilityZonesToBackup()) || backupConfiguration.getAvailabilityZonesToBackup().contains(availabilityZone));
 
         map.put("cluster_name", cassandraConfiguration.getClusterName());
         map.put("storage_port", cassandraConfiguration.getStoragePort());

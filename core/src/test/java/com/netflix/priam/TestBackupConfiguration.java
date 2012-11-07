@@ -13,7 +13,7 @@ public class TestBackupConfiguration extends BackupConfiguration {
         setCommitLogLocation("cass/backup/cl/");
         setBackupThreads(2);
         setRestoreThreads(3);
-        setIncrementalEnabled(true);
+        setIncrementalBackupEnabled(true);
         setUploadThrottleBytesPerSec(0);
         setRestoreKeyspaces(Lists.<String>newArrayList());
         setChunkSizeMB(5*1024*1024);

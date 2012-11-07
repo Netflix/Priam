@@ -78,12 +78,12 @@ public class PriamServer implements Managed {
         }
 
         // Start the snapshot backup schedule - Always run this. (If you want to
-        // set it off, set snapShotBackUpEnabled: false in priam.yaml)
-         if (backupConfig.isSnapShotBackUpEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
+        // set it off, set snapShotBackupEnabled: false in priam.yaml)
+         if (backupConfig.isSnapShotBackupEnabled() && (CollectionUtils.isEmpty(backupConfig.getAvailabilityZonesToBackup()) || backupConfig.getAvailabilityZonesToBackup().contains(amazonConfig.getAvailabilityZone()))) {
              scheduler.addTask(snapshotBackup.getJobDetail(),snapshotBackup.getCronTimeTrigger());
 
             // Start the Incremental backup schedule if enabled
-            if (backupConfig.isIncrementalEnabled()) {
+            if (backupConfig.isIncrementalBackupEnabled()) {
                scheduler.addTask(incrementalBackup.getJobDetail(),incrementalBackup.getTriggerToStartNowAndRepeatInMillisec());
             }
         }

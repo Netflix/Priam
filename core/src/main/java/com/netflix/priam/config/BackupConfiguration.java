@@ -40,7 +40,7 @@ public class BackupConfiguration {
     private String commitLogLocation;
 
     @JsonProperty
-    private boolean incrementalEnabled;
+    private boolean incrementalBackupEnabled;
 
     @JsonProperty
     private boolean multiThreadedCompaction;
@@ -61,10 +61,10 @@ public class BackupConfiguration {
     private long uploadThrottleBytesPerSec;
 
     @JsonProperty
-    private boolean snapShotBackUpEnabled;
+    private boolean snapShotBackupEnabled;
 
     @JsonProperty
-    private String snapShotBackUpCronTime;
+    private String snapShotBackupCronTime;
 
     public String getAutoRestoreSnapshotName() {
         return autoRestoreSnapshotName;
@@ -106,8 +106,8 @@ public class BackupConfiguration {
         return commitLogLocation;
     }
 
-    public boolean isIncrementalEnabled() {
-        return incrementalEnabled;
+    public boolean isIncrementalBackupEnabled() {
+        return incrementalBackupEnabled;
     }
 
     public boolean isMultiThreadedCompaction() {
@@ -134,12 +134,12 @@ public class BackupConfiguration {
         return uploadThrottleBytesPerSec;
     }
 
-    public boolean isSnapShotBackUpEnabled() {
-        return snapShotBackUpEnabled;
+    public boolean isSnapShotBackupEnabled() {
+        return snapShotBackupEnabled;
     }
 
-    public String getSnapShotBackUpCronTime() {
-        return snapShotBackUpCronTime;
+    public String getSnapShotBackupCronTime() {
+        return snapShotBackupCronTime;
     }
 
     public void setAutoRestoreSnapshotName(String autoRestoreSnapshotName) {
@@ -183,8 +183,8 @@ public class BackupConfiguration {
         this.commitLogLocation = commitLogLocation;
     }
 
-    public void setIncrementalEnabled(boolean incrementalEnabled) {
-        this.incrementalEnabled = incrementalEnabled;
+    public void setIncrementalBackupEnabled(boolean incrementalBackupEnabled) {
+        this.incrementalBackupEnabled = incrementalBackupEnabled;
     }
 
     public void setMultiThreadedCompaction(boolean multiThreadedCompaction) {
@@ -211,12 +211,12 @@ public class BackupConfiguration {
         this.uploadThrottleBytesPerSec = uploadThrottleBytesPerSec;
     }
 
-    public void setSnapShotBackUpEnabled (boolean snapShotBackUpEnabled) {
-        this.snapShotBackUpEnabled = snapShotBackUpEnabled;
+    public void setSnapShotBackupEnabled (boolean snapShotBackupEnabled) {
+        this.snapShotBackupEnabled = snapShotBackupEnabled;
     }
 
-    public void setSnapShotBackUpCronTime (String snapShotBackUpCronTime) {
-        this.snapShotBackUpCronTime = snapShotBackUpCronTime;
+    public void setSnapShotBackupCronTime (String snapShotBackupCronTime) {
+        this.snapShotBackupCronTime = snapShotBackupCronTime;
     }
 
 }

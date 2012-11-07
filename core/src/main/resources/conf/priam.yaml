@@ -68,6 +68,10 @@ amazon:
 
 
 backup:
+  incrementalBackupEnabled: true                    # true if incremental backups are enabled
+  snapShotBackupEnabled: false
+  snapShotBackupCronTime:                           # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
+                                                    # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
   autoRestoreSnapshotName:                          # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
   chunkSizeMB: 10                                   # Preferred data part size for multi part uploads to s3
   availabilityZonesToBackup:                        # Get list of availability zones to backup. Backup all zones if empty
@@ -78,7 +82,6 @@ backup:
   s3BaseDir: "dev/backup"                           # Folder within the S3 bucket for backups
   commitLogEnabled: false                           # true if commit log backup is enabled
   commitLogLocation: "/var/lib/cassandra/commitlog" # Remote commit log location for backups
-  incrementalEnabled: true                          # true if incremental backups are enabled
   multiThreadedCompaction: false                    # When enabled, each compaction will use up to one thread per core, plus one thread per sstable being merged.
                                                     # This is usually only useful for SSD-based hardware: otherwise, your concern is usually to get compaction to do LESS i/o
   restoreClosestToken: false                        #    true if restore should search for nearest token if current token is not found
@@ -87,9 +90,6 @@ backup:
   streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
                                                     #    can lead to saturating the network connection and degrading rpc performance.
   uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups
-  snapShotBackUpEnabled: false
-  snapShotBackUpCronTime:                           # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
-                                                    # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
 
 zooKeeper:
   # Priam will register the Cassandra node in ZooKeeper using the BV SOA (Ostrich) library under "<clusterName>-cassandra".

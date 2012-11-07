@@ -122,7 +122,7 @@ public class SnapshotBackup extends AbstractBackup {
 
     @Override
     public String getCronTime(){
-        return backupConfiguration.getSnapShotBackUpCronTime();
+        return backupConfiguration.getSnapShotBackupCronTime();
     }
 
 }

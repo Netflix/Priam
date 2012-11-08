@@ -9,11 +9,9 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesRequest;
 import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
 import com.amazonaws.services.ec2.model.DescribeInstancesResult;
@@ -105,7 +103,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
-    private final String DEFULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
+    private final String DEFAULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
     private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
 
@@ -387,7 +385,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getSnitch()
     {
-        return config.getProperty(CONFIG_ENDPOINT_SNITCH, DEFULT_ENDPOINT_SNITCH);
+        return config.getProperty(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
     }
 
     @Override

@@ -14,14 +14,15 @@ public class SystemUtilsTest
         Process p = null;
         try
         {
-            p = new ProcessBuilder("cd", "/tmppppp").start();
-            Thread.sleep(100);
-            Assert.assertFalse(0 == p.exitValue());
+            p = new ProcessBuilder("ls", "/tmppppp").start();
+            int exitValue = p.waitFor();
+            Assert.assertTrue(0 != exitValue);
             SystemUtils.logProcessOutput(p);
         }
         catch(IOException ioe)
         {
-            SystemUtils.logProcessOutput(p);
+            if(p!=null)
+                SystemUtils.logProcessOutput(p);
         }
     }
 
@@ -32,8 +33,8 @@ public class SystemUtilsTest
     public void logProcessOutput_GoodApp() throws IOException, InterruptedException
     {
         Process p = new ProcessBuilder("true").start();
-        Thread.sleep(100);
-        Assert.assertEquals(0, p.exitValue());
+        int exitValue = p.waitFor();
+        Assert.assertEquals(0, exitValue);
         SystemUtils.logProcessOutput(p);
     }
 }

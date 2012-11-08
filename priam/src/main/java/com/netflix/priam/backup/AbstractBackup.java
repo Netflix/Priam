@@ -50,13 +50,13 @@ public abstract class AbstractBackup extends Task
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         for (final File file : parent.listFiles())
         {
+            logger.debug(String.format("Uploading file %s for backup", file.getCanonicalFile()));
             try
             {
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME)
                 {
                     public AbstractBackupPath retriableCall() throws Exception
                     {
-
                         final AbstractBackupPath bp = pathFactory.get();
                         bp.parseLocal(file, type);
                         String[] cfPrefix = bp.fileName.split("-");

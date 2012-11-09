@@ -1,4 +1,2 @@
-//rootProject.name='gradle-template-multi' // TEMPLATE: Change this
 rootProject.name = 'priam-root'
-//include 'template-client','template-server'
 include 'priam','priam-web'

@@ -1,6 +1,8 @@
 package com.netflix.priam.identity;
 
+import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
+import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
@@ -42,6 +44,13 @@ public class InstanceIdentity
     private final Sleeper sleeper;
     private final ITokenManager tokenManager;
 
+    private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
+    		@Override
+    		public boolean apply(PriamInstance instance) {
+    			return !instance.getHostName().equals(myInstance.getHostName());
+    		}
+    };
+   
     private PriamInstance myInstance;
     private boolean isReplace = false;
 
@@ -73,7 +82,7 @@ public class InstanceIdentity
                 // Check if this node is decomissioned
                 for (PriamInstance ins : factory.getAllIds(config.getAppName() + "-dead"))
                 {
-                    logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
+                    logger.debug(String.format("[Dead] Iterating though the hosts: %s", ins.getInstanceId()));
                     if (ins.getInstanceId().equals(config.getInstanceName()))
                     {
                         ins.setOutOfService(true);
@@ -82,7 +91,7 @@ public class InstanceIdentity
                 }
                 for (PriamInstance ins : factory.getAllIds(config.getAppName()))
                 {
-                    logger.debug(String.format("Iterating though the hosts: %s", ins.getInstanceId()));
+                    logger.debug(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(),ins.getId()));
                     if (ins.getInstanceId().equals(config.getInstanceName()))
                         return ins;
                 }
@@ -103,7 +112,7 @@ public class InstanceIdentity
         locMap.clear();
         for (PriamInstance ins : factory.getAllIds(config.getAppName()))
         {
-            locMap.put(ins.getRac(), ins);
+        		locMap.put(ins.getRac(), ins);
         }
     }
 
@@ -186,8 +195,11 @@ public class InstanceIdentity
                 seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
         }
         for (String loc : locMap.keySet())
-            seeds.add(locMap.get(loc).get(0).getHostName());
-        seeds.remove(myInstance.getHostName());
+        {
+        		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
+        		if (instance != null)
+        			seeds.add(instance.getHostName());
+        }
         return seeds;
     }
 

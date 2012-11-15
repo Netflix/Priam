@@ -44,6 +44,28 @@ public class PriamScheduler
         scheduler.scheduleJob(job, timer.getTrigger());
     }
 
+    /**
+     * Add a delayed task to the scheduler
+     */
+    public void addTaskWithDelay(String name, Class<? extends Task> taskclass, final TaskTimer timer, final int delayInSeconds) throws SchedulerException, ParseException
+    {
+        assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
+        final JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
+        
+        //we know Priam doesn't do too many new tasks, so this is probably easy/safe/simple
+        new Thread(new Runnable(){
+            public void run()
+            {
+            		try { 
+            				Thread.sleep(delayInSeconds * 1000L);
+            				scheduler.scheduleJob(job, timer.getTrigger());  
+            		}catch(InterruptedException ignore) {} 
+            		catch (SchedulerException e) {} 
+            		catch (ParseException e) {}
+            }
+        }).start();
+    }
+    
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception
     {
         jobFactory.guice.getInstance(taskclass).execute(null);

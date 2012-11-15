@@ -17,6 +17,9 @@ apply from: file('gradle/license.gradle')
 apply from: file('gradle/release.gradle')
 
 subprojects {
+    apply plugin: 'eclipse'
+    apply plugin: 'java'
+
     group = "com.netflix.${name}"
 
     configurations {

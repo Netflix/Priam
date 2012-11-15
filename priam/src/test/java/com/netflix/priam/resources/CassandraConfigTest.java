@@ -42,8 +42,8 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity; times = 2;
-                identity.getSeeds(); result = seeds; times = 2;
+                priamServer.getId(); result = identity; times = 1;
+                identity.getSeeds(); result = seeds; times = 1;
             }
         };
 
@@ -60,13 +60,13 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getId(); result = identity; times = 2;
-                identity.getSeeds(); result = seeds; times = 2;
+                priamServer.getId(); result = identity; times = 1;
+                identity.getSeeds(); result = seeds; times = 1;
             }
         };
 
         Response response = resource.getSeeds();
-        assertEquals(404, response.getStatus());
+        assertEquals(500, response.getStatus());
     }
 
     @Test
@@ -121,7 +121,7 @@ public class CassandraConfigTest
         };
 
         Response response = resource.getToken();
-        assertEquals(404, response.getStatus());
+        assertEquals(500, response.getStatus());
     }
 
     @Test

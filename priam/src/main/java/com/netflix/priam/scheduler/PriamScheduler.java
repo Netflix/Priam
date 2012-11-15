@@ -64,7 +64,6 @@ public class PriamScheduler
             		catch (ParseException e) {}
             }
         }).start();
-
     }
     
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception

@@ -15,10 +15,8 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 
 /*
- * This class checks if Cassandra process is running or not
- * Task will run every 10 seconds 
+ * This task checks if the Cassandra process is running.
  */
-		
 @Singleton
 public class CassandraMonitor extends Task{
 
@@ -30,24 +28,17 @@ public class CassandraMonitor extends Task{
     @Inject
     protected CassandraMonitor(IConfiguration config) {
 		super(config);
-		// TODO Auto-generated constructor stub
 	}
 
 	@Override
 	public void execute() throws Exception {
 
-        String line;
-        /*
-         *  Run pgrep -f NFThinCassandraDaemon to check if Cassandra process is running
-         *  
-         *	This returns pid for the Cassandra process
-         *  
-         */
-        
         try
         {
-        		Process p = Runtime.getRuntime().exec("pgrep -f NFThinCassandraDaemon");
+                        //This returns pid for the Cassandra process
+        		Process p = Runtime.getRuntime().exec("pgrep -f " + CASSANDRA_PROCESS_NAME);
         		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                        String line;
         		if ((line = input.readLine()) != null&& !isCassadraStarted())
         		{
         			logger.debug("Setting Cassandra server started flag to true");
@@ -65,9 +56,6 @@ public class CassandraMonitor extends Task{
 		
 	}
 
-    /**
-     * Run every 10 Sec
-     */
     public static TaskTimer getTimer()
     {
         return new SimpleTimer(JOBNAME, 10L * 1000);

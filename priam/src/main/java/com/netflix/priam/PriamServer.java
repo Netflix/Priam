@@ -26,7 +26,7 @@ public class PriamServer
     private final IConfiguration config;
     private final InstanceIdentity id;
     private final Sleeper sleeper;
-    private static final int CASSANDRA_MONITORING_WAIT_TIME_SEC = 10;
+    private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
 
     @Inject
     public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper)
@@ -69,7 +69,7 @@ public class PriamServer
          *  If Restore option is chosen, then Running Cassandra instance is stopped 
          *  Hence waiting for Cassandra to stop
          */
-        scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME,CassandraMonitor.class, CassandraMonitor.getTimer(),CASSANDRA_MONITORING_WAIT_TIME_SEC);
+        scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME,CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)

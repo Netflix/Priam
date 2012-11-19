@@ -15,6 +15,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
+import java.util.List;
 
 /**
  * This servlet will provide the configuration API service as and when Cassandra
@@ -38,15 +39,16 @@ public class CassandraConfig {
     @Path ("/get_seeds")
     public Response getSeeds() {
         try {
-            if (CollectionUtils.isNotEmpty(priamServer.getInstanceIdentity().getSeeds())) {
-                return Response.ok(StringUtils.join(priamServer.getInstanceIdentity().getSeeds(), ',')).build();
+            final List<String> seeds = priamServer.getInstanceIdentity().getSeeds();
+            if (CollectionUtils.isNotEmpty(seeds)) {
+                return Response.ok(StringUtils.join(seeds, ',')).build();
             }
-            logger.error("Cannot find the Seeds " + priamServer.getInstanceIdentity().getSeeds());
+            logger.error("Cannot find the Seeds " + seeds);
         } catch (Exception e) {
             logger.error("Error while executing get_seeds", e);
             return Response.serverError().build();
         }
-        return Response.status(404).build();
+        return Response.status(500).build();
     }
 
     @GET
@@ -62,7 +64,7 @@ public class CassandraConfig {
             logger.error("Error while executing get_token", e);
             return Response.serverError().build();
         }
-        return Response.status(404).build();
+        return Response.status(500).build();
     }
 
     @GET

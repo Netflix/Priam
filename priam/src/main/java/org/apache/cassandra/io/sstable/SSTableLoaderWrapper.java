@@ -87,8 +87,8 @@ public class SSTableLoaderWrapper
         for (SSTableReader sstable : loader.openSSTables())
         {
             Descriptor desc = sstable.descriptor;
-            List<Pair<Long, Long>> sections = Lists.newArrayList(new Pair<Long, Long>(0L, sstable.onDiskLength()));
-            PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD, sstable.estimatedKeys());
+            List<Pair<Long, Long>> sections = Lists.newArrayList(Pair.create(0L, sstable.onDiskLength()));
+            PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD);
             StreamHeader header = new StreamHeader(directory.getName(), System.nanoTime(), pending, Collections.singleton(pending));
             logger.info("Streaming to {}", InetAddress.getLocalHost());
             new FileStreamTask(header, InetAddress.getLocalHost()).run();

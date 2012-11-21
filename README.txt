@@ -22,4 +22,4 @@ Features:
 - REST APIs for backup/restore and other operations
 
 Compatibility:
-The master branch of Priam is compatibile with Cassandra 1.1. If you are using Cassandra 1.0, please use the 1.0 branch of Priam.
+Please see https://github.com/Netflix/Priam/wiki/Compatibility for details.

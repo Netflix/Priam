@@ -29,7 +29,7 @@ subprojects {
     }
 
     dependencies {
-        compile "commons-lang:commons-lang:2.5"
+        compile "commons-lang:commons-lang:2.6"
         compile "commons-logging:commons-logging:1.1.1"
         compile "commons-collections:commons-collections:3.2.1"
         compile "commons-io:commons-io:2.0.1"
@@ -47,7 +47,7 @@ subprojects {
         compile "com.googlecode.json-simple:json-simple:1.1"
         compile "org.xerial.snappy:snappy-java:1.0.4.1"
         compile "org.yaml:snakeyaml:1.10"
-        compile "org.apache.cassandra:cassandra-all:[1.1.9,1.1.10["
+        compile "org.apache.cassandra:cassandra-all:1.2.1"
         compile "javax.ws.rs:jsr311-api:1.1.1"
         compile "joda-time:joda-time:2.0"
         compile "commons-configuration:commons-configuration:1.5"

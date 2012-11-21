@@ -34,6 +34,8 @@ import java.util.TimeZone;
 import javax.management.remote.JMXConnector;
 
 import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -41,7 +43,8 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.cassandra.config.ConfigurationException;
+import com.netflix.priam.IConfiguration;
+import org.apache.cassandra.exceptions.ConfigurationException;
 
 
 public class SystemUtils

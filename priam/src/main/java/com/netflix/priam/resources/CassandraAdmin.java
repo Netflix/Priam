@@ -43,7 +43,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
-import org.apache.cassandra.config.ConfigurationException;
+import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.net.MessagingServiceMBean;
@@ -153,11 +153,11 @@ public class CassandraAdmin
 
     @GET
     @Path("/repair")
-    public Response cassRepair(@QueryParam("sequential") boolean isSequential) throws IOException, ExecutionException, InterruptedException
+    public Response cassRepair(@QueryParam("sequential") boolean isSequential, @QueryParam("localDC") boolean localDCOnly) throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = JMXNodeTool.instance(config);
         logger.info("node tool repair being called");
-        nodetool.repair(isSequential);
+        nodetool.repair(isSequential, localDCOnly);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

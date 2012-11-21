@@ -2,7 +2,7 @@ package com.netflix.priam.cassandra;
 
 import java.io.IOException;
 
-import org.apache.cassandra.thrift.CassandraDaemon;
+import org.apache.cassandra.service.CassandraDaemon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -7,7 +7,6 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.DataInputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
@@ -20,7 +19,10 @@ import java.util.Map;
 import java.util.TimeZone;
 import javax.management.remote.JMXConnector;
 
-import org.apache.cassandra.config.ConfigurationException;
+import com.google.common.base.Charsets;
+import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
+import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
@@ -28,10 +30,8 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Charsets;
-import com.google.common.collect.Lists;
-import com.google.common.io.Files;
 import com.netflix.priam.IConfiguration;
+import org.apache.cassandra.exceptions.ConfigurationException;
 
 
 public class SystemUtils

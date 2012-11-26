@@ -149,6 +149,8 @@ public class SystemUtils
         try
         {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
+            conn.setConnectTimeout(1000);
+            conn.setReadTimeout(1000);
             conn.setRequestMethod("GET");
             if (conn.getResponseCode() != 200)
             {

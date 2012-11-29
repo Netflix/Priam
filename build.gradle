@@ -91,7 +91,6 @@ project(':priam-web') {
     apply plugin: 'jetty'
     dependencies {
         compile project(':priam')
-        compile project(':priam-agent')
         compile project(':priam-dse-extensions')
         compile project(':priam-cass-extensions')
     }

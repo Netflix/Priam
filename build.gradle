@@ -63,6 +63,14 @@ subprojects {
     }
 }
 
+project(':priam-cass-extensions') {
+    jar {
+        manifest { attributes 'Premain-Class': 'com.netflix.priam.cassandra.extensions.PriamStartupAgent' }
+    }
+    dependencies {
+    }
+}
+
 project(':priam') {
     dependencies {
     }
@@ -77,6 +85,7 @@ project(':priam-web') {
     apply plugin: 'jetty'
     dependencies {
         compile project(':priam')
+        compile project(':priam-cass-extensions')
     }
 }
 

@@ -1,4 +1,4 @@
-package com.netflix.priam.cassandra;
+package com.netflix.priam.cassandra.extensions;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -7,20 +7,18 @@ import java.util.Map;
 
 import org.apache.cassandra.locator.SeedProvider;
 
-import com.netflix.priam.utils.SystemUtils;
-
+/**
+ * Retrieves the list of seeds from Priam.
+ */
 public class NFSeedProvider implements SeedProvider
 {
     List<InetAddress> return_ = new ArrayList<InetAddress>();
 
-    /**
-     * Populates args with list of seeds queried from Priam
-     */
     public NFSeedProvider(Map<String, String> args)
     {
         try
         {
-            String seeds = SystemUtils.getDataFromUrl("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
+            String seeds = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
             for (String seed : seeds.split(","))
                 return_.add(InetAddress.getByName(seed));
         }

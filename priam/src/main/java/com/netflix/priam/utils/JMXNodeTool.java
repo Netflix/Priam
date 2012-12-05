@@ -212,7 +212,7 @@ public class JMXNodeTool extends NodeProbe
         {
             ownerships = effectiveOwnership(keyspace);
         }
-        catch (ConfigurationException ex)
+        catch (IllegalStateException ex)
         {
             ownerships = getOwnership();
         }

@@ -8,6 +8,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
@@ -89,7 +90,7 @@ public class SSTableLoaderWrapper
             Descriptor desc = sstable.descriptor;
             List<Pair<Long, Long>> sections = Lists.newArrayList(Pair.create(0L, sstable.onDiskLength()));
             PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD);
-            StreamHeader header = new StreamHeader(directory.getName(), System.nanoTime(), pending, Collections.singleton(pending));
+            StreamHeader header = new StreamHeader(directory.getName(), UUID.randomUUID(), pending, Collections.singleton(pending));
             logger.info("Streaming to {}", InetAddress.getLocalHost());
             new FileStreamTask(header, InetAddress.getLocalHost()).run();
             logger.info("Done Streaming: " + pending.toString());

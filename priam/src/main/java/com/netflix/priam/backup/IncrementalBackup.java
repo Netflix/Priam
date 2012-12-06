@@ -61,12 +61,7 @@ public class IncrementalBackup extends AbstractBackup
      		
         	if(incrementalRemotePaths.size() > 0)
         	{
-        		logger.info("Incremental Backup done and now calling notifyObservers. Remote Paths=["+incrementalRemotePaths.size()+"]");
         		notifyObservers();
-        	}
-        	else
-        	{
-        		logger.debug("Incremental Remote Paths are Zero, hence NOT calling notifyObservers");
         	}
 
     }

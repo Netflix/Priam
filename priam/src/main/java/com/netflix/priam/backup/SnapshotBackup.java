@@ -80,12 +80,7 @@ public class SnapshotBackup extends AbstractBackup
             
             if(snapshotRemotePaths.size() > 0)
             	{
-            		logger.info("Snapshot Backup done and now calling notifyObservers. Remote Paths=["+snapshotRemotePaths.size()+"]");
             		notifyObservers();
-            	}
-            	else
-            	{
-            		logger.debug("Snapshot Remote Paths are Zero, hence NOT calling notifyObservers");
             	}
         }
         finally

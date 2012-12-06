@@ -1,6 +1,7 @@
 package com.netflix.priam.backup;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 import java.util.TimeZone;
@@ -14,6 +15,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXNodeTool;
@@ -29,6 +31,8 @@ public class SnapshotBackup extends AbstractBackup
     
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
+    private final List<String> snapshotRemotePaths = new ArrayList<String>();
+    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
     public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
@@ -45,6 +49,8 @@ public class SnapshotBackup extends AbstractBackup
         try
         {
             logger.info("Starting snapshot " + snapshotName);
+            //Clearing remotePath List
+            snapshotRemotePaths.clear();
             takeSnapshot(snapshotName);
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
@@ -71,6 +77,11 @@ public class SnapshotBackup extends AbstractBackup
             // Upload meta file
             metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
+            
+            if(snapshotRemotePaths.size() > 0)
+            	{
+            		notifyObservers();
+            	}
         }
         finally
         {
@@ -130,4 +141,35 @@ public class SnapshotBackup extends AbstractBackup
         int hour = config.getBackupHour();
         return new CronTimer(hour, 1, 0);
     }
+
+   
+    public static void addObserver(IMessageObserver observer)
+    {
+    		observers.add(observer);
+    }
+    
+    public static void removeObserver(IMessageObserver observer)
+    {
+    		observers.remove(observer);
+    }
+    
+    public void notifyObservers()
+    {
+        for(IMessageObserver observer : observers)
+        {
+        		if(observer != null)
+        		{
+        			logger.debug("Updating snapshot observers now ...");
+        			observer.update(BACKUP_MESSAGE_TYPE.SNAPSHOT,snapshotRemotePaths);
+        		}
+        		else
+        			logger.info("Observer is Null, hence can not notify ...");
+        }
+    }
+
+	@Override
+	protected void addToRemotePath(String remotePath) {		
+		snapshotRemotePaths.add(remotePath);		
+	}
+
 }

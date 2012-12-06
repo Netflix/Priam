@@ -1,6 +1,8 @@
 package com.netflix.priam.backup;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -10,6 +12,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 
@@ -21,16 +24,21 @@ public class IncrementalBackup extends AbstractBackup
 {
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
+    private final List<String> incrementalRemotePaths = new ArrayList<String>();
+    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
     {
         super(config, fs, pathFactory);
     }
-
+    
     @Override
     public void execute() throws Exception
     {
+    		logger.info("Starting Incremental Backup ...");
+    		//Clearing remotePath List
+    		incrementalRemotePaths.clear();
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists())
         {
@@ -40,6 +48,8 @@ public class IncrementalBackup extends AbstractBackup
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles())
         {
+            if (keyspaceDir.isFile())
+        			continue;
             for (File columnFamilyDir : keyspaceDir.listFiles())
             {
                 File backupDir = new File(columnFamilyDir, "backups");
@@ -48,6 +58,17 @@ public class IncrementalBackup extends AbstractBackup
                 upload(backupDir, BackupFileType.SST);
             }
         }
+     		
+        	if(incrementalRemotePaths.size() > 0)
+        	{
+        		logger.info("Incremental Backup done and now calling notifyObservers. Remote Paths=["+incrementalRemotePaths.size()+"]");
+        		notifyObservers();
+        	}
+        	else
+        	{
+        		logger.debug("Incremental Remote Paths are Zero, hence NOT calling notifyObservers");
+        	}
+
     }
 
     /**
@@ -63,5 +84,34 @@ public class IncrementalBackup extends AbstractBackup
     {
         return JOBNAME;
     }
+   
+    public static void addObserver(IMessageObserver observer)
+    {
+    		observers.add(observer);
+    }
+    
+    public static void removeObserver(IMessageObserver observer)
+    {
+    		observers.remove(observer);
+    }
+    
+    public void notifyObservers()
+    {
+        for(IMessageObserver observer : observers)
+        {
+        		if(observer != null)
+        		{
+        			logger.debug("Updating incremental observers now ...");
+        			observer.update(BACKUP_MESSAGE_TYPE.INCREMENTAL,incrementalRemotePaths);
+        		}
+        		else
+        			logger.info("Observer is Null, hence can not notify ...");
+        }
+    }
+
+	@Override
+	protected void addToRemotePath(String remotePath) {
+		incrementalRemotePaths.add(remotePath);		
+	}
 
 }

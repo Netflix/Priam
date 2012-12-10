@@ -97,6 +97,10 @@ zooKeeper:
   #connectString: localhost:2181     # Comma-separated list of ZooKeeper servers, eg. "host:port,host:port,..."
   #namespace:                        # Root namespace in ZooKeeper, eg. "/us-east-1"
 
+monitoring:
+  defaultBadgerRegistrationState: true
+  badgerServiceName: cassandra.cass_cluster         # Should be cassandra.<clustername>
+
 # Configure Logback logging
 logging:
   level: INFO

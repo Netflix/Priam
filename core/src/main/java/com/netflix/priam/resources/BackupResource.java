@@ -39,8 +39,8 @@ import java.util.Map;
 
 @Path ("/v1/backup")
 @Produces (MediaType.APPLICATION_JSON)
-public class BackupServlet {
-    private static final Logger logger = LoggerFactory.getLogger(BackupServlet.class);
+public class BackupResource {
+    private static final Logger logger = LoggerFactory.getLogger(BackupResource.class);
 
     private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
 
@@ -61,19 +61,19 @@ public class BackupServlet {
 
 
     @Inject
-    public BackupServlet(CassandraConfiguration cassandraConfiguration,
-                         AmazonConfiguration amazonConfiguration,
-                         BackupConfiguration backupConfiguration,
-                         IBackupFileSystem fs,
-                         Restore restoreObj,
-                         Provider<AbstractBackupPath> pathProvider,
-                         TuneCassandra tunecassandra,
-                         SnapshotBackup snapshotBackup,
-                         IncrementalRestore incrementalRestore,
-                         IPriamInstanceRegistry instanceRegistry,
-                         TokenManager tokenManager,
-                         PriamScheduler scheduler,
-                         InstanceIdentity id) {
+    public BackupResource(CassandraConfiguration cassandraConfiguration,
+                          AmazonConfiguration amazonConfiguration,
+                          BackupConfiguration backupConfiguration,
+                          IBackupFileSystem fs,
+                          Restore restoreObj,
+                          Provider<AbstractBackupPath> pathProvider,
+                          TuneCassandra tunecassandra,
+                          SnapshotBackup snapshotBackup,
+                          IncrementalRestore incrementalRestore,
+                          IPriamInstanceRegistry instanceRegistry,
+                          TokenManager tokenManager,
+                          PriamScheduler scheduler,
+                          InstanceIdentity id) {
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.backupConfiguration = backupConfiguration;

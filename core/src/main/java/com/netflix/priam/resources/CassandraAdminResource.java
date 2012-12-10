@@ -44,10 +44,10 @@ import java.util.concurrent.ExecutionException;
  */
 @Path ("/v1/cassadmin")
 @Produces (MediaType.APPLICATION_JSON)
-public class CassandraAdmin {
+public class CassandraAdminResource {
     private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
 
-    private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
+    private static final Logger logger = LoggerFactory.getLogger(CassandraAdminResource.class);
 
     private final PriamServer priamServer;
     private final CassandraConfiguration cassandraConfiguration;
@@ -55,8 +55,8 @@ public class CassandraAdmin {
     private final BackupConfiguration backupConfiguration;
 
     @Inject
-    public CassandraAdmin(PriamServer priamServer, CassandraConfiguration cassandraConfiguration,
-                          AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration) {
+    public CassandraAdminResource(PriamServer priamServer, CassandraConfiguration cassandraConfiguration,
+                                  AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration) {
         this.priamServer = priamServer;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;

@@ -18,7 +18,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 @Singleton
-@Path("/monitoringenabled")
+@Path("/v1/monitoringenabled")
 @Produces (MediaType.APPLICATION_JSON)
 public class MonitoringEnablementResource {
     @Inject private ServiceMonitorManager monitoringManager;

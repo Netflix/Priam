@@ -58,6 +58,10 @@ public class PriamServer implements Managed {
         this.id = id;
     }
 
+    public InstanceIdentity getInstanceIdentity() {
+        return id;
+    }
+
     @Override
     public void start() throws Exception {
         if (id.getInstance().isOutOfService()) {
@@ -100,9 +104,5 @@ public class PriamServer implements Managed {
     @Override
     public void stop() throws Exception {
         scheduler.shutdown();
-    }
-
-    public InstanceIdentity getInstanceIdentity() {
-        return id;
     }
 }

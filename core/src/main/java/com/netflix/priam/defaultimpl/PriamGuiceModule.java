@@ -18,6 +18,7 @@ import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.config.MonitoringConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.netflix.priam.identity.IMembership;
@@ -26,7 +27,8 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
-import com.netflix.priam.zookeeper.ZooKeeperRegistration;
+import com.netflix.priam.dropwizard.managers.ServiceRegistryManager;
+import com.yammer.dropwizard.config.HttpConfiguration;
 
 public class PriamGuiceModule extends AbstractModule {
     private final PriamConfiguration priamConfiguration;
@@ -37,19 +39,26 @@ public class PriamGuiceModule extends AbstractModule {
 
     @Override
     protected void configure() {
+
+        // Configuration bindings
+        bind(HttpConfiguration.class).toInstance(priamConfiguration.getHttpConfiguration());
         bind(CassandraConfiguration.class).toInstance(priamConfiguration.getCassandraConfiguration());
         bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
         bind(BackupConfiguration.class).toInstance(priamConfiguration.getBackupConfiguration());
         bind(ZooKeeperConfiguration.class).toInstance(priamConfiguration.getZooKeeperConfiguration());
+        bind(MonitoringConfiguration.class).toInstance(priamConfiguration.getMonitoringConfiguration());
+
         bind(IPriamInstanceRegistry.class).to(SDBInstanceRegistry.class);
         bind(IMembership.class).to(AWSMembership.class);
         bind(ICredential.class).to(DefaultCredentials.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
+
         bind(ICompression.class).to(SnappyCompression.class);
         bind(TokenManager.class).toProvider(TokenManagerProvider.class);
         bind(Sleeper.class).to(ThreadSleeper.class);
-        bind(ZooKeeperRegistration.class).asEagerSingleton();
+
+        bind(ServiceRegistryManager.class).asEagerSingleton();
     }
 
     @Provides @Singleton

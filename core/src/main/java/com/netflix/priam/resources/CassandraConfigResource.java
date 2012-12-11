@@ -23,14 +23,14 @@ import java.util.List;
  */
 @Path ("/v1/cassconfig")
 @Produces (MediaType.TEXT_PLAIN)
-public class CassandraConfig {
-    private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
+public class CassandraConfigResource {
+    private static final Logger logger = LoggerFactory.getLogger(CassandraConfigResource.class);
 
     private final PriamServer priamServer;
     private final DoubleRing doubleRing;
 
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing) {
+    public CassandraConfigResource(PriamServer server, DoubleRing doubleRing) {
         this.priamServer = server;
         this.doubleRing = doubleRing;
     }

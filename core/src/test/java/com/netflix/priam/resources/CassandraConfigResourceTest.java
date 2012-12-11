@@ -22,16 +22,16 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-public class CassandraConfigTest
+public class CassandraConfigResourceTest
 {
     private @Mocked PriamServer priamServer;
     private @Mocked DoubleRing doubleRing;
-    private CassandraConfig resource;
+    private CassandraConfigResource resource;
 
     @Before
     public void setUp()
     {
-        resource = new CassandraConfig(priamServer, doubleRing);
+        resource = new CassandraConfigResource(priamServer, doubleRing);
     }
 
     @Test
@@ -42,8 +42,8 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getInstanceIdentity(); result = identity; times = 2;
-                identity.getSeeds(); result = seeds; times = 2;
+                priamServer.getInstanceIdentity(); result = identity;
+                identity.getSeeds(); result = seeds;
             }
         };
 
@@ -60,13 +60,13 @@ public class CassandraConfigTest
             InstanceIdentity identity;
 
             {
-                priamServer.getInstanceIdentity(); result = identity; times = 2;
-                identity.getSeeds(); result = seeds; times = 2;
+                priamServer.getInstanceIdentity(); result = identity;
+                identity.getSeeds(); result = seeds;
             }
         };
 
         Response response = resource.getSeeds();
-        assertEquals(404, response.getStatus());
+        assertEquals(500, response.getStatus());
     }
 
     @Test
@@ -121,7 +121,7 @@ public class CassandraConfigTest
         };
 
         Response response = resource.getToken();
-        assertEquals(404, response.getStatus());
+        assertEquals(500, response.getStatus());
     }
 
     @Test

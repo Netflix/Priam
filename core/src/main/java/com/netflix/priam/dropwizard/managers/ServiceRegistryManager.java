@@ -1,4 +1,4 @@
-package com.netflix.priam.zookeeper;
+package com.netflix.priam.dropwizard.managers;
 
 import com.bazaarvoice.soa.ServiceEndPoint;
 import com.bazaarvoice.soa.ServiceEndPointBuilder;
@@ -10,6 +10,7 @@ import com.google.common.io.Closeables;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
@@ -31,8 +32,9 @@ import java.util.concurrent.TimeUnit;
  * disabled (eg. via "nodetool disablethrift") but the Cassandra node is left running, the entry in ZooKeeper will be
  * removed.
  */
-public class ZooKeeperRegistration implements Managed {
-    private static final Logger logger = LoggerFactory.getLogger(ZooKeeperRegistration.class);
+@Singleton
+public class ServiceRegistryManager implements Managed {
+    private static final Logger logger = LoggerFactory.getLogger(ServiceRegistryManager.class);
 
     private final CassandraConfiguration casConfiguration;
     private final AmazonConfiguration awsConfiguration;
@@ -43,14 +45,14 @@ public class ZooKeeperRegistration implements Managed {
     private boolean registered;
 
     @Inject
-    public ZooKeeperRegistration(CassandraConfiguration casConfiguration,
-                                 AmazonConfiguration awsConfiguration,
-                                 Optional<ZooKeeperConnection> zkConnection) {
+    public ServiceRegistryManager(CassandraConfiguration casConfiguration,
+                                  AmazonConfiguration awsConfiguration,
+                                  Optional<ZooKeeperConnection> zkConnection) {
         this.casConfiguration = casConfiguration;
         this.awsConfiguration = awsConfiguration;
         this.zkConnection = zkConnection;
 
-        String nameFormat = "ZooKeeperRegistration-%d";
+        String nameFormat = "ServiceRegistryManager-%d";
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(nameFormat).setDaemon(true).build();
         executor = Executors.newScheduledThreadPool(1, threadFactory);
     }

@@ -34,7 +34,7 @@ import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
-public class BackupServletTest {
+public class BackupResourceTest {
     private static final Map<String, String> RESULT_OK = ImmutableMap.of("result", "ok");
 
     private @NonStrict PriamServer priamServer;
@@ -51,13 +51,12 @@ public class BackupServletTest {
     private @Mocked PriamScheduler priamScheduler;
     private @Mocked InstanceIdentity id;
 
-    private @Mocked
-    TokenManager tokenManager;
-    private BackupServlet resource;
+    private @Mocked TokenManager tokenManager;
+    private BackupResource resource;
 
     @Before
     public void setUp() {
-        resource = new BackupServlet(cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
+        resource = new BackupResource(cassandraConfiguration, amazonConfiguration, backupConfiguration, fs, restoreObj, pathProvider,
             tuneCassandra, snapshotBackup, incrementalRestore, instanceRegistry, tokenManager, priamScheduler, id);
     }
 
@@ -84,21 +83,21 @@ public class BackupServletTest {
         final String oldToken = "1234";
 
         new Expectations() {
-            @NonStrict InstanceIdentity identity;
             PriamInstance instance;
-  
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getInstanceIdentity(); result = identity; times = 2;
-                identity.getInstance(); result = instance; times = 2;
+                id.getInstance(); result = instance;
                 instance.getToken(); result = oldToken;
 
                 backupConfiguration.isRestoreClosestToken(); result = false;
   
-                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+                restoreObj.restore((Date) any, (Date) any);
 
                 amazonConfiguration.setRegionName(oldRegion);
+
+                id.getInstance(); result = instance;
                 instance.setToken(oldToken);
+
                 tuneCassandra.updateYaml(false);
             }
         };
@@ -122,7 +121,6 @@ public class BackupServletTest {
         final String oldToken = "1234";
 
         new Expectations() {
-            @NonStrict InstanceIdentity identity;
             PriamInstance instance;
             AbstractBackupPath backupPath;
   
@@ -131,8 +129,7 @@ public class BackupServletTest {
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getInstanceIdentity(); result = identity; times = 2;
-                identity.getInstance(); result = instance; times = 2;
+                id.getInstance(); result = instance;
                 instance.getToken(); result = oldToken;
 
                 backupConfiguration.isRestoreClosestToken(); result = false;
@@ -142,6 +139,7 @@ public class BackupServletTest {
                     new DateTime(2011, 12, 31, 23, 59).toDate());
 
                 amazonConfiguration.setRegionName(oldRegion);
+                id.getInstance(); result = instance;
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -221,14 +219,12 @@ public class BackupServletTest {
         final String oldToken = "1234";
 
         new Expectations() {
-            @NonStrict InstanceIdentity identity;
             PriamInstance instance;
-  
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getInstanceIdentity(); result = identity; times = 3;
-                identity.getInstance(); result = instance; times = 3;
+                id.getInstance(); result = instance;
                 instance.getToken(); result = oldToken;
+                id.getInstance(); result = instance;
                 instance.setToken(newToken);
 
                 backupConfiguration.isRestoreClosestToken(); result = false;
@@ -236,6 +232,7 @@ public class BackupServletTest {
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 
                 amazonConfiguration.setRegionName(oldRegion);
+                id.getInstance(); result = instance;
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -260,13 +257,10 @@ public class BackupServletTest {
         final String oldToken = "1234";
 
         new Expectations() {
-            @NonStrict InstanceIdentity identity;
             PriamInstance instance;
-  
             {
                 amazonConfiguration.getRegionName(); result = oldRegion;
-                priamServer.getInstanceIdentity(); result = identity; times = 2;
-                identity.getInstance(); result = instance; times = 2;
+                id.getInstance(); result = instance;
                 instance.getToken(); result = oldToken;
 
                 backupConfiguration.isRestoreClosestToken(); result = false;
@@ -276,9 +270,10 @@ public class BackupServletTest {
                 restoreKeyspaces.clear();
                 restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
 
-                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+                restoreObj.restore((Date) any, (Date) any);
 
                 amazonConfiguration.setRegionName(oldRegion);
+                id.getInstance(); result = instance;
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }
@@ -305,8 +300,7 @@ public class BackupServletTest {
         final String appName = "myApp";
 
         new Expectations() {
-            @NonStrict InstanceIdentity identity;
-            PriamInstance instance;
+            @NonStrict PriamInstance instance;
             @NonStrict PriamInstance instance1, instance2, instance3;
             AbstractBackupPath backupPath;
 
@@ -315,12 +309,13 @@ public class BackupServletTest {
                 backupPath.getFormat(); result = AbstractBackupPath.DAY_FORMAT; times = 2;
 
                 amazonConfiguration.getRegionName(); result = oldRegion; times = 1;
-                priamServer.getInstanceIdentity(); result = identity; times = 5;
-                identity.getInstance(); result = instance; times = 5;
+                id.getInstance(); result = instance;
                 instance.getToken(); result = oldToken;
+                id.getInstance(); result = instance;
                 instance.setToken(newToken);
 
                 backupConfiguration.isRestoreClosestToken(); result = true;
+                id.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
                 cassandraConfiguration.getClusterName(); result = appName;
                 instanceRegistry.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
@@ -339,6 +334,7 @@ public class BackupServletTest {
                     new DateTime(2011, 12, 31, 23, 59).toDate());
   
                 amazonConfiguration.setRegionName(oldRegion);
+                id.getInstance(); result = instance;
                 instance.setToken(oldToken);
                 tuneCassandra.updateYaml(false);
             }

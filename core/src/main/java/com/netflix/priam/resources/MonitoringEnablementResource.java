@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.dropwizard.managers.ServiceMonitorManager;
+import com.yammer.dropwizard.jersey.params.BooleanParam;
 import com.yammer.metrics.annotation.Timed;
 
 import javax.ws.rs.GET;
@@ -32,11 +33,10 @@ public class MonitoringEnablementResource {
     @POST
     @Path ("/{state}")
     @Timed
-    public Map<String, Object> setState(@PathParam ("state") String state) {
+    public Map<String, Object> setState(@PathParam ("state") BooleanParam state) {
         checkNotNull(state, "state");
-        checkArgument(state.equalsIgnoreCase("true") || state.equalsIgnoreCase("false"), "Provided state must be either 'true' or 'false'");
 
-        if (Boolean.valueOf(state)) {
+        if (state.get()) {
             monitoringManager.register();
         } else {
             monitoringManager.deregister();

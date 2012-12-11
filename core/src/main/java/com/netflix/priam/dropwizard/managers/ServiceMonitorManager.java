@@ -15,11 +15,17 @@ import static java.lang.String.format;
 @Singleton
 public class ServiceMonitorManager implements Managed {
 
-    @Inject private MonitoringConfiguration monitoringConfiguration;
-    @Inject private ZooKeeperConfiguration zooKeeperConfiguration;
-    @Inject private HttpConfiguration httpConfiguration;
-
+    private MonitoringConfiguration monitoringConfiguration;
+    private ZooKeeperConfiguration zooKeeperConfiguration;
+    private HttpConfiguration httpConfiguration;
     private ZooKeeperConnection zooKeeperConnection;
+
+    @Inject
+    public ServiceMonitorManager(MonitoringConfiguration monitoringConfiguration, ZooKeeperConfiguration zooKeeperConfiguration, HttpConfiguration httpConfiguration) {
+        this.monitoringConfiguration = monitoringConfiguration;
+        this.zooKeeperConfiguration = zooKeeperConfiguration;
+        this.httpConfiguration = httpConfiguration;
+    }
 
     @Override
     public void start() throws Exception {
@@ -40,10 +46,7 @@ public class ServiceMonitorManager implements Managed {
     }
 
     public synchronized boolean isRegistered() {
-        if (zooKeeperConnection != null) {
-            return true;
-        }
-        return false;
+        return zooKeeperConnection != null;
     }
 
     public synchronized void register() {

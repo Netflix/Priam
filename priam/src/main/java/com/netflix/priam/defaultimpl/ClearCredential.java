@@ -35,8 +35,8 @@ public class ClearCredential implements ICredential
             fis = new FileInputStream(CRED_FILE);
             props = new Properties();
             props.load(fis);
-            AWS_ACCESS_ID = props.getProperty("AWSACCESSID").trim();
-            AWS_KEY = props.getProperty("AWSKEY").trim();            
+            AWS_ACCESS_ID = props.getProperty("AWSACCESSID") != null ? props.getProperty("AWSACCESSID").trim() : "";
+            AWS_KEY = props.getProperty("AWSKEY") != null ? props.getProperty("AWSKEY").trim() : "";            
         }
         catch (Exception e)
         {

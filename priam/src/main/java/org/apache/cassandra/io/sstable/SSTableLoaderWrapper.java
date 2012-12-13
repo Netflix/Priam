@@ -37,9 +37,10 @@ public class SSTableLoaderWrapper
     @Inject
     public SSTableLoaderWrapper(IConfiguration config) throws IOException
     {
-        URL url = this.getClass().getClassLoader().getResource("cassandra.yaml");
+        URL url = this.getClass().getClassLoader().getResource("incr-restore-cassandra.yaml");
         logger.info("Trying to load the yaml file from: " + url);
         TuneCassandra.updateYaml(config, url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
+        System.setProperty("cassandra.config", "file:"+ url.getPath());
     }
 
     private final OutputHandler options = new OutputHandler()

@@ -11,6 +11,7 @@ import com.netflix.priam.dropwizard.managers.ServiceMonitorManager;
 import com.netflix.priam.resources.BackupResource;
 import com.netflix.priam.resources.CassandraAdminResource;
 import com.netflix.priam.resources.CassandraConfigResource;
+import com.netflix.priam.resources.MonitoringEnablementResource;
 import com.netflix.priam.resources.PriamInstanceResource;
 import com.netflix.priam.tools.CopyInstanceData;
 import com.netflix.priam.tools.DeleteInstanceData;
@@ -60,6 +61,7 @@ public class PriamService extends Service<PriamConfiguration> {
             environment.addResource(injector.getInstance(CassandraAdminResource.class));
             environment.addResource(injector.getInstance(CassandraConfigResource.class));
             environment.addResource(injector.getInstance(PriamInstanceResource.class));
+            environment.addResource(injector.getInstance(MonitoringEnablementResource.class));
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);

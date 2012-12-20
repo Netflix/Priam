@@ -33,7 +33,7 @@ public abstract class AbstractBackup extends Task
         this.fs = fs;
         this.pathFactory = pathFactory;
     }
-
+   
     /**
      * Upload files in the specified dir. Does not delete the file in case of
      * error
@@ -70,6 +70,8 @@ public abstract class AbstractBackup extends Task
 
                 if(abp != null)
                     bps.add(abp);
+                
+                addToRemotePath(abp.getRemotePath());
             }
             catch(Exception e)
             {
@@ -110,4 +112,10 @@ public abstract class AbstractBackup extends Task
             return false;
         return true;
     }
+    
+    /**
+     * Adds Remote path to the list of Remote Paths
+     */
+    protected abstract void addToRemotePath(String remotePath);
+    
 }

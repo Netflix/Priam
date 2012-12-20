@@ -16,8 +16,7 @@ import com.netflix.priam.ICredential;
  * implement their own versions for more secured access. This class requires
  * clear AWS key and access.
  * 
- * Set the folowing properties in "conf/awscredntial.properties" Eg: AWSACCESSID
- * = "..." AWSKEY = "..."
+ * Set the following properties in "conf/awscredntial.properties" 
  * 
  */
 public class ClearCredential implements ICredential
@@ -25,6 +24,8 @@ public class ClearCredential implements ICredential
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
     private static final String CRED_FILE = "/etc/awscredential.properties";
     private final Properties props;
+    private final String AWS_ACCESS_ID;
+    private final String AWS_KEY;
 
     public ClearCredential()
     {
@@ -34,6 +35,8 @@ public class ClearCredential implements ICredential
             fis = new FileInputStream(CRED_FILE);
             props = new Properties();
             props.load(fis);
+            AWS_ACCESS_ID = props.getProperty("AWSACCESSID") != null ? props.getProperty("AWSACCESSID").trim() : "";
+            AWS_KEY = props.getProperty("AWSKEY") != null ? props.getProperty("AWSKEY").trim() : "";            
         }
         catch (Exception e)
         {
@@ -50,13 +53,13 @@ public class ClearCredential implements ICredential
     @Override
     public String getAccessKeyId()
     {
-        return props.getProperty("AWSACCESSID");
+        return AWS_ACCESS_ID;
     }
 
     @Override
     public String getSecretAccessKey()
     {
-        return props.getProperty("AWSKEY");
+        return AWS_KEY;
     }
 
     public AWSCredentials getCredentials()

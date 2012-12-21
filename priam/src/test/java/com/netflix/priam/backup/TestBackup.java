@@ -85,8 +85,6 @@ public class TestBackup
         filesystem.setupTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
-        CassandraMonitor cassMon = injector.getInstance(CassandraMonitor.class);
-        cassMon.setIsCassadraStarted();
         backup.execute();
         Assert.assertEquals(4, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)

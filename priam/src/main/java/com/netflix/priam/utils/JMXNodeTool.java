@@ -113,23 +113,29 @@ public class JMXNodeTool extends NodeProbe
 
     public static synchronized JMXNodeTool connect(final IConfiguration config)
     {
-        return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>()
-        {
-            @Override
-            public JMXNodeTool retriableCall() throws Exception
-            {
-                JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
-                Field fields[] = NodeProbe.class.getDeclaredFields();
-                for (int i = 0; i < fields.length; i++)
-                {
-                    if (!fields[i].getName().equals("mbeanServerConn"))
-                        continue;
-                    fields[i].setAccessible(true);
-                    nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
-                }
-                return nodetool;
-            }
-        });
+    		JMXNodeTool jmxNodeTool = null;
+    		try {
+    				jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
+						{
+							@Override
+							public JMXNodeTool retriableCall() throws Exception
+							{
+								JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+								Field fields[] = NodeProbe.class.getDeclaredFields();
+								for (int i = 0; i < fields.length; i++)
+								{
+									if (!fields[i].getName().equals("mbeanServerConn"))
+										continue;
+									fields[i].setAccessible(true);
+									nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
+								}
+								return nodetool;
+							}
+						}.call();
+			} catch (Exception e) {
+				logger.error(e.getMessage(), e);
+			}
+    		return jmxNodeTool;
     }
 
     /**

@@ -21,7 +21,6 @@ import com.netflix.priam.scheduler.TaskTimer;
 public class CassandraMonitor extends Task{
 
 	public static final String JOBNAME = "CASS_MONITOR_THREAD";
-	public static final String CASSANDRA_PROCESS_NAME = "NFThinCassandraDaemon";
     private static final Logger logger = LoggerFactory.getLogger(CassandraMonitor.class);
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
 
@@ -36,7 +35,7 @@ public class CassandraMonitor extends Task{
         try
         {
         		//This returns pid for the Cassandra process
-        		Process p = Runtime.getRuntime().exec("pgrep -f " + CASSANDRA_PROCESS_NAME);
+        		Process p = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
         		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line = input.readLine();
         		if (line != null&& !isCassadraStarted())

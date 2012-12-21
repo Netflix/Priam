@@ -1,6 +1,7 @@
 package com.netflix.priam;
 
 import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
 
 /**
  * Credential file interface for services supporting 
@@ -28,5 +29,11 @@ public interface ICredential
      * Added this method to handle potential data races in calling {code}getAccessKeyId{code}
      * and {code}getSecretAccessKey{code} sequentially.
      */
+    @Deprecated
     AWSCredentials getCredentials();
+    
+    /**
+     * Retrieve AWS Credential Provider object 
+     */
+    AWSCredentialsProvider getAwsCredentialProvider();
 }

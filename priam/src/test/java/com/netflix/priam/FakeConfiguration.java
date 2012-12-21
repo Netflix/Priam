@@ -395,4 +395,9 @@ public class FakeConfiguration implements IConfiguration
     {
         return "4";
     }
+
+	@Override
+	public String getCassProcessName() {
+		return "CassandraDaemon";
+	}
 }

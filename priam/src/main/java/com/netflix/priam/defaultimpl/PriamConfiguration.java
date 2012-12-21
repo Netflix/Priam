@@ -61,6 +61,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
+    private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -114,6 +115,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_BACKUP_LOCATION = "backup";
     private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
     private String DEFAULT_AVAILABILITY_ZONES = "";
+    private final String DEFAULT_CASS_PROCESS_NAME = "CassandraDaemon";
 
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
     private final String DEFAULT_MAX_HEAP = "8G";
@@ -646,4 +648,9 @@ public class PriamConfiguration implements IConfiguration
     		}
     		return list;
     }
+
+	@Override
+	public String getCassProcessName() {
+        return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+	}
 }

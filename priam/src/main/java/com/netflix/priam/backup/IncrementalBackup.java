@@ -37,13 +37,6 @@ public class IncrementalBackup extends AbstractBackup
     @Override
     public void execute() throws Exception
     {   	
-        //If Cassandra is started then only start Incremental Backup
-    		if(!CassandraMonitor.isCassadraStarted())
-    		{
-        		logger.debug("Cassandra is not yet started, hence Incremental Backup will start later ...");
-    			return;
-    		}
-
     		//Clearing remotePath List
     		incrementalRemotePaths.clear();
         File dataDir = new File(config.getDataFileLocation());

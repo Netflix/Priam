@@ -21,7 +21,6 @@ import com.netflix.priam.scheduler.TaskTimer;
 public class CassandraMonitor extends Task{
 
 	public static final String JOBNAME = "CASS_MONITOR_THREAD";
-	public static final String CASSANDRA_PROCESS_NAME = "NFThinCassandraDaemon";
     private static final Logger logger = LoggerFactory.getLogger(CassandraMonitor.class);
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
 
@@ -35,21 +34,24 @@ public class CassandraMonitor extends Task{
 
         try
         {
-                        //This returns pid for the Cassandra process
-        		Process p = Runtime.getRuntime().exec("pgrep -f " + CASSANDRA_PROCESS_NAME);
+        		//This returns pid for the Cassandra process
+        		Process p = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
         		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                        String line;
-        		if ((line = input.readLine()) != null&& !isCassadraStarted())
+            String line = input.readLine();
+        		if (line != null&& !isCassadraStarted())
         		{
-        			logger.debug("Setting Cassandra server started flag to true");
         			//Setting cassandra flag to true
         			isCassandraStarted.set(true);
+        		}
+        		else if(line  == null&& isCassadraStarted())
+        		{
+        			//Setting cassandra flag to false
+        			isCassandraStarted.set(false);
         		}
         }
         catch(Exception e)
         {
         		logger.warn("Exception thrown while checking if Cassandra is running or not ", e);
-            logger.info("Setting Cassandra server started flag to false");
             //Setting Cassandra flag to false
             isCassandraStarted.set(false);
         }
@@ -72,4 +74,10 @@ public class CassandraMonitor extends Task{
         return isCassandraStarted.get();
     }
 
+    //Added for testing only
+    public static void setIsCassadraStarted()
+    {
+		//Setting cassandra flag to true
+		isCassandraStarted.set(true);
+	}
 }

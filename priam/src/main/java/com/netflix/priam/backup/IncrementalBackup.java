@@ -15,6 +15,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.CassandraMonitor;
 
 /*
  * Incremental/SSTable backup
@@ -35,8 +36,7 @@ public class IncrementalBackup extends AbstractBackup
     
     @Override
     public void execute() throws Exception
-    {
-    		logger.info("Starting Incremental Backup ...");
+    {   	
     		//Clearing remotePath List
     		incrementalRemotePaths.clear();
         File dataDir = new File(config.getDataFileLocation());

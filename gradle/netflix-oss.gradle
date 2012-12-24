@@ -11,7 +11,7 @@ rootProject {
         if (awsDep != null) {
             def version = awsDep.version
             deps.remove(awsDep)
-            project.dependencies.add('compile', "com.amazon:aws-java-sdk:${version}")
+            project.dependencies.add('compile', "com.amazonaws:aws-java-sdk:${version}")
         }
 
         def httpCoreDep = deps.find { it.group == 'org.apache.httpcomponents' && it.name == 'httpcore' }

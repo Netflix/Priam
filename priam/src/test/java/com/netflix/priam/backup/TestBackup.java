@@ -26,6 +26,7 @@ import com.google.inject.Injector;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.utils.CassandraMonitor;
 
 /**
  * Unit test case to test a snapshot backup and incremental backup
@@ -60,6 +61,8 @@ public class TestBackup
     {
         filesystem.setupTest();
         SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
+        CassandraMonitor cassMon = injector.getInstance(CassandraMonitor.class);
+        cassMon.setIsCassadraStarted();
         backup.execute();
         Assert.assertEquals(3, filesystem.uploadedFiles.size());
         System.out.println(filesystem.uploadedFiles.size());

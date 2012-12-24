@@ -302,4 +302,11 @@ public interface IConfiguration
      * Support for limiting the total number of rows in c* 1.1 global row cache.
      */
     public String getRowCacheKeysToSave();
+    
+    /**
+     * @return C* Process Name
+     */
+    public String getCassProcessName();
+
+
 }

@@ -18,8 +18,10 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.ThreadSleeper;
 
 /**
  * Task for running daily snapshots
@@ -33,6 +35,8 @@ public class SnapshotBackup extends AbstractBackup
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private final ThreadSleeper sleeper = new ThreadSleeper();
+    private final long WAIT_TIME_MS = 60 * 1000 * 10;
 
     @Inject
     public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
@@ -44,6 +48,13 @@ public class SnapshotBackup extends AbstractBackup
     @Override
     public void execute() throws Exception
     {
+        //If Cassandra is started then only start Snapshot Backup
+    		while(!CassandraMonitor.isCassadraStarted())
+    		{
+        		logger.debug("Cassandra is not yet started, hence Snapshot Backup will start after ["+WAIT_TIME_MS/1000+"] secs ...");
+    			sleeper.sleep(WAIT_TIME_MS);
+    		}
+
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
         String snapshotName = pathFactory.get().formatDate(cal.getTime());
         try

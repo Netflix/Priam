@@ -2,6 +2,9 @@ package com.netflix.priam.defaultimpl;
 
 import java.io.FileInputStream;
 import java.util.Properties;
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,8 +16,7 @@ import com.netflix.priam.ICredential;
  * implement their own versions for more secured access. This class requires
  * clear AWS key and access.
  * 
- * Set the folowing properties in "conf/awscredntial.properties" Eg: AWSACCESSID
- * = "..." AWSKEY = "..."
+ * Set the following properties in "conf/awscredntial.properties" 
  * 
  */
 public class ClearCredential implements ICredential
@@ -56,4 +58,22 @@ public class ClearCredential implements ICredential
         return props.getProperty("AWSKEY");
     }
 
+    public AWSCredentials getCredentials()
+    {
+        return new BasicAWSCredentials(getAccessKeyId(), getSecretAccessKey());
+    }
+
+	@Override
+	public AWSCredentialsProvider getAwsCredentialProvider() {
+		return new AWSCredentialsProvider(){
+			public AWSCredentials getCredentials(){
+				return getCredentials();				
+			}
+
+			@Override
+			public void refresh() {
+				// NOP				
+			}
+		};
+	}
 }

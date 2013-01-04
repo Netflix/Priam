@@ -59,6 +59,7 @@ public abstract class AbstractRestore extends Task
         this.fs = fs;
         this.sleeper = sleeper;
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
+        executor.allowCoreThreadTimeOut(true);
     }
 
     protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter) throws Exception

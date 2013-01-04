@@ -434,4 +434,8 @@ public class FakeConfiguration implements IConfiguration
 		return false;
 	}
 
+    public int getNumTokens()
+    {
+        return 1;
+    }
 }

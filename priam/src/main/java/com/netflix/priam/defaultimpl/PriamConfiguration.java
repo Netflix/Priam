@@ -84,6 +84,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
     private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
     private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
+    private static final String CONFIG_VNODE_NUM_TOKENS = PRIAM_PRE + ".vnodes.numTokens";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -153,6 +154,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
+    private final int DEFAULT_VNODE_NUM_TOKENS = 1;
 
     private final String BLANK = "";
     
@@ -758,4 +760,8 @@ public class PriamConfiguration implements IConfiguration
 		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
 
+    public int getNumTokens()
+    {
+        return config.getInteger(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
+    }
 }

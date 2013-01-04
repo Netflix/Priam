@@ -353,4 +353,8 @@ public interface IConfiguration
      */
     public boolean doesCassandraStartManually();
 
+    /**
+     * Get the number of tokens node uses; used as part of vnodes support
+     */
+    public int getNumTokens();
 }

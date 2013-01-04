@@ -400,4 +400,9 @@ public class FakeConfiguration implements IConfiguration
 	public String getCassProcessName() {
 		return "CassandraDaemon";
 	}
+
+    public int getNumTokens()
+    {
+        return 1;
+    }
 }

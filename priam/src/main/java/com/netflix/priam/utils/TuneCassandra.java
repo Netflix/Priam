@@ -104,13 +104,14 @@ public class TuneCassandra extends Task
         }
 
         configureGlobalCaches(config, map);
+        map.put("num_tokens", config.getNumTokens());
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
     }
 
     /**
-     * Setup the cassandra 1.1 global cache values
+     * Setup the cassandra global cache values
      */
     private static void configureGlobalCaches(IConfiguration config, Map yaml)
     {

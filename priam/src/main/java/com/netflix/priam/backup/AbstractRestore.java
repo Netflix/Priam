@@ -1,25 +1,23 @@
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.FifoQueue;
-import com.netflix.priam.utils.RetryableCallable;
-import com.netflix.priam.utils.Sleeper;
-import org.apache.cassandra.concurrent.JMXConfigurableThreadPoolExecutor;
-import org.apache.cassandra.concurrent.NamedThreadFactory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.Iterator;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.FifoQueue;
+import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
 
 public abstract class AbstractRestore extends Task
 {
@@ -30,9 +28,9 @@ public abstract class AbstractRestore extends Task
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
     
-    protected IConfiguration config;
-    protected ThreadPoolExecutor executor;
-    
+    protected final IConfiguration config;
+    protected final ThreadPoolExecutor executor;
+
     @Inject
     protected IBackupFileSystem fs;
     public static BigInteger restoreToken;
@@ -44,12 +42,7 @@ public abstract class AbstractRestore extends Task
         super(config);
         this.config = config;
         this.sleeper = sleeper;
-        executor = new JMXConfigurableThreadPoolExecutor(config.getMaxBackupDownloadThreads(), 
-                                                         1000, 
-                                                         TimeUnit.MILLISECONDS, 
-                                                         new LinkedBlockingQueue<Runnable>(), 
-                                                         new NamedThreadFactory(name), 
-                                                         name);
+        executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
         executor.allowCoreThreadTimeOut(true);
     }
 

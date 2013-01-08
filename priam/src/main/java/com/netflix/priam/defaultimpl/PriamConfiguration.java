@@ -160,7 +160,11 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
 
     private final String BLANK = "";
-    
+
+    private final int DEFAULT_VNODE_NUM_TOKENS = 1;
+    private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
+    private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
+
     private PriamProperties config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 

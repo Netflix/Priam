@@ -101,7 +101,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
     private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
     private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
-
+    private static final String CONFIG_MAX_HINT_THREADS = PRIAM_PRE + ".hints.maxThreads";
+    private static final String CONFIG_HINTS_THROTTLE_KB = PRIAM_PRE + ".hints.throttleKb";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -146,6 +147,8 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
     private final int DEFAULT_VNODE_NUM_TOKENS = 1;
+    private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
+    private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
 
     private PriamProperties config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
@@ -558,10 +561,14 @@ public class PriamConfiguration implements IConfiguration
         return config.getInteger(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
     }
 
-    @Override
-    public int getHintHandoffDelay()
+    public int getHintedHandoffThrottleKb()
     {
-        return config.getInteger(CONFIG_HINT_DELAY, 1);
+        return config.getInteger(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
+    }
+
+    public int getMaxHintThreads()
+    {
+        return config.getInteger(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
     }
 
     @Override

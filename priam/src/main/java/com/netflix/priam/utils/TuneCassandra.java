@@ -80,28 +80,18 @@ public class TuneCassandra extends Task
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
 	    map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
         
-        // messy but needed it for backward and forward compatibilities.
-        if (null != map.get("memtable_total_space_in_mb"))
-            map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
-        // the default for stream_throughput_outbound_megabits_per_sec is 7 ms and not in yaml.
-        // TODO fixme: currently memtable_total_space_in_mb is used to verify if it is >1.0.7.
-        if(null != map.get("memtable_total_space_in_mb"))
-            map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
-        if(null != map.get("multithreaded_compaction"))
-            map.put("multithreaded_compaction", config.getMultithreadedCompaction());
-        if (null != map.get("max_hint_window_in_ms"))
-        {
-            map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
-            map.put("hinted_handoff_throttle_delay_in_ms", config.getHintHandoffDelay());
-        }
+        map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
+        map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
 
-        // this is only for 0.8 so check before set.
-        if (null != map.get("seed_provider"))
-        {
-            List<?> seedp = (List) map.get("seed_provider");
-            Map<String, String> m = (Map<String, String>) seedp.get(0);
-            m.put("class_name", seedProvider);
-        }
+        map.put("multithreaded_compaction", config.getMultithreadedCompaction());
+
+        map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
+        map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());
+        map.put("max_hints_delivery_threads", config.getMaxHintThreads());
+
+        List<?> seedp = (List) map.get("seed_provider");
+        Map<String, String> m = (Map<String, String>) seedp.get(0);
+        m.put("class_name", seedProvider);
 
         configureGlobalCaches(config, map);
         map.put("num_tokens", config.getNumTokens());

@@ -67,8 +67,6 @@ public interface IConfiguration
     /**
      * Location containing backup files. Typically bucket name followed by path
      * to the clusters backup
-     * 
-     * @return
      */
     public String getRestorePrefix();
 
@@ -104,7 +102,7 @@ public interface IConfiguration
     public long getBackupChunkSize();
 
     /**
-     * @return trus if commit log backup is enabled
+     * @return true if commit log backup is enabled
      */
     public boolean isCommitLogBackup();
 
@@ -115,7 +113,6 @@ public interface IConfiguration
         
     /**
      * Cassandra storage/cluster communication port
-     * @return
      */
     public int getStoragePort();
     
@@ -257,10 +254,15 @@ public interface IConfiguration
     public int getMaxHintWindowInMS();
     
     /**
-     * @return hinted_handoff_throttle_delay_in_ms
+     * @return hinted_handoff_throttle_in_kb
      */
-    public int getHintHandoffDelay();
-    
+    public int getHintedHandoffThrottleKb();
+
+    /**
+     * @return max_hints_delivery_threads
+     */
+    public int getMaxHintThreads();
+
     /**
      * @return Size of Cassandra max direct memory
      */

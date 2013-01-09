@@ -88,7 +88,7 @@ public class ClearCredential implements ICredential
 	public AWSCredentialsProvider getAwsCredentialProvider() {
 		return new AWSCredentialsProvider(){
 			public AWSCredentials getCredentials(){
-				return getCredentials();				
+				return ClearCredential.this.getCredentials();
 			}
 
 			@Override

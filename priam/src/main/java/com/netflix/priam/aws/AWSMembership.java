@@ -193,16 +193,14 @@ public class AWSMembership implements IMembership
 
     protected AmazonAutoScaling getAutoScalingClient()
     {
-        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        AmazonAutoScaling client = new AmazonAutoScalingClient(cred);
+        AmazonAutoScaling client = new AmazonAutoScalingClient(provider.getAwsCredentialProvider());
         client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
         return client;
     }
 
     protected AmazonEC2 getEc2Client()
     {
-        BasicAWSCredentials cred = new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey());
-        AmazonEC2 client = new AmazonEC2Client(cred);
+        AmazonEC2 client = new AmazonEC2Client(provider.getAwsCredentialProvider());
         client.setEndpoint("ec2." + config.getDC() + ".amazonaws.com");
         return client;
     }

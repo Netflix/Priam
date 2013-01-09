@@ -216,6 +216,6 @@ public class SDBInstanceData
     
     private AmazonSimpleDBClient getSimpleDBClient(){
         //Create per request
-        return new AmazonSimpleDBClient(new BasicAWSCredentials(provider.getAccessKeyId(), provider.getSecretAccessKey()));
+        return new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
     }
 }

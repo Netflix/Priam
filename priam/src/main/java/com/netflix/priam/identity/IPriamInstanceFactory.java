@@ -49,10 +49,11 @@ public interface IPriamInstanceFactory
      * @param ip
      * @param rac
      * @param volumes
-     * @param token
+     * @param tokens
      * @return the new node
      */
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
+    public PriamInstance create(String app, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, List<String> tokens);
+//    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
 
     /**
      * Delete the server node from the registry

@@ -61,6 +61,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
+    private static final String CONFIG_YAML_LOCATION = PRIAM_PRE + ".yamlLocation";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -645,5 +646,10 @@ public class PriamConfiguration implements IConfiguration
     			list.add(StringUtils.strip(s));
     		}
     		return list;
+    }
+
+    public String getYamlLocation()
+    {
+        return config.getProperty(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
     }
 }

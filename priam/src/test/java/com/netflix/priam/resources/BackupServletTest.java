@@ -13,6 +13,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TuneCassandra;
@@ -37,7 +38,7 @@ public class BackupServletTest
     private @Mocked IBackupFileSystem fs;
     private @Mocked Restore restoreObj;
     private @Mocked Provider<AbstractBackupPath> pathProvider;
-    private @Mocked TuneCassandra tuneCassandra;
+    private @Mocked CassandraTuner tuner;
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
     private final ITokenManager tokenManager = new TokenManager();
@@ -47,7 +48,7 @@ public class BackupServletTest
     public void setUp()
     {
         resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup, factory, tokenManager);
+            tuner, snapshotBackup, factory, tokenManager);
     }
 
     @Test
@@ -90,7 +91,7 @@ public class BackupServletTest
   
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
-                tuneCassandra.updateYaml(false);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
 
@@ -136,7 +137,7 @@ public class BackupServletTest
   
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
-                tuneCassandra.updateYaml(false);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
 
@@ -231,7 +232,7 @@ public class BackupServletTest
   
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
-                tuneCassandra.updateYaml(false);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
 
@@ -275,7 +276,7 @@ public class BackupServletTest
   
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
-                tuneCassandra.updateYaml(false);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
 
@@ -337,7 +338,7 @@ public class BackupServletTest
   
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
-                tuneCassandra.updateYaml(false);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
 

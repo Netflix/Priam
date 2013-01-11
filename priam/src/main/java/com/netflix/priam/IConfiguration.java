@@ -15,6 +15,8 @@ public interface IConfiguration
      */
     public String getCassHome();
 
+    public String getYamlLocation();
+
     /**
      * @return Path to Cassandra startup script
      */

@@ -14,6 +14,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
@@ -52,7 +53,7 @@ public class BackupServlet
     private IBackupFileSystem fs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
-    private TuneCassandra tuneCassandra;
+    private CassandraTuner tuner;
     private SnapshotBackup snapshotBackup;
     private IPriamInstanceFactory factory;
     private final ITokenManager tokenManager;
@@ -60,7 +61,7 @@ public class BackupServlet
     private PriamScheduler scheduler;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
+    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager)
     {
         this.priamServer = priamServer;
@@ -68,7 +69,7 @@ public class BackupServlet
         this.fs = fs;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
-        this.tuneCassandra = tunecassandra;
+        this.tuner = tuner;
         this.snapshotBackup = snapshotBackup;
         this.factory = factory;
         this.tokenManager = tokenManager;
@@ -206,7 +207,7 @@ public class BackupServlet
             config.setDC(origRegion);
             priamServer.getId().getInstance().setToken(origToken);
         }
-        tuneCassandra.updateYaml(false);
+        tuner.updateAutoBootstrap(config.getYamlLocation(), false);
         SystemUtils.startCassandra(true, config);
     }
 

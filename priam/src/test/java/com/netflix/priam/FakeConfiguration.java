@@ -395,4 +395,9 @@ public class FakeConfiguration implements IConfiguration
     {
         return "4";
     }
+
+    public String getYamlLocation()
+    {
+        return "conf/cassandra.yaml";
+    }
 }

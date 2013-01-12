@@ -3,6 +3,7 @@ package com.netflix.priam.resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
+import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.aws.S3BackupPath;
@@ -41,6 +42,7 @@ public class BackupServletTest
     private @Mocked CassandraTuner tuner;
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
+    private @Mocked ICassandraProcess cassProcess;
     private final ITokenManager tokenManager = new TokenManager();
     private BackupServlet resource;
 
@@ -48,7 +50,7 @@ public class BackupServletTest
     public void setUp()
     {
         resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager);
+            tuner, snapshotBackup, factory, tokenManager, cassProcess);
     }
 
     @Test

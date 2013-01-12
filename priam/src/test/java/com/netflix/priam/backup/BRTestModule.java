@@ -2,6 +2,8 @@ package com.netflix.priam.backup;
 
 import java.util.Arrays;
 
+import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.defaultimpl.CassandraProcessManager;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
 import org.junit.Ignore;
@@ -39,5 +41,6 @@ public class BRTestModule extends AbstractModule
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
+        bind(ICassandraProcess.class).to(CassandraProcessManager.class);
     }
 }

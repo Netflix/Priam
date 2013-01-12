@@ -80,11 +80,18 @@ project(':priam') {
     }
 }
 
+project(':priam-dse-extensions') {
+    dependencies {
+        compile project(':priam')
+    }
+}
+
 project(':priam-web') {
     apply plugin: 'war'
     apply plugin: 'jetty'
     dependencies {
         compile project(':priam')
+        compile project(':priam-dse-extensions')
         compile project(':priam-cass-extensions')
     }
 }

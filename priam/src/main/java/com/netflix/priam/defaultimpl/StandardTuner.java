@@ -21,7 +21,7 @@ import org.yaml.snakeyaml.Yaml;
 public class StandardTuner implements CassandraTuner
 {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
-    private final IConfiguration config;
+    protected final IConfiguration config;
 
     public StandardTuner(IConfiguration config)
     {
@@ -48,7 +48,7 @@ public class StandardTuner implements CassandraTuner
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
         boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);
-        map.put("endpoint_snitch", config.getSnitch());
+        map.put("endpoint_snitch", getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
         map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
@@ -80,6 +80,16 @@ public class StandardTuner implements CassandraTuner
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
+    }
+
+    /**
+     * Overridable by derived classes to inject a wrapper snitch.
+     *
+     * @return Sntich to be used by this cluster
+     */
+    protected String getSnitch()
+    {
+        return config.getSnitch();
     }
 
     /**

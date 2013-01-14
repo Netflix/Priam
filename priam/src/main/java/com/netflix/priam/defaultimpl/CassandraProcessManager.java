@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -42,10 +43,8 @@ public class CassandraProcessManager implements ICassandraProcess
             command.add("-n");
             command.add("-E");
         }
-        for(String param : config.getCassStartupScript().split(" ")){
-            if( StringUtils.isNotBlank(param))
-                command.add(param);
-        }
+        command.addAll(getStartCommand());
+
         ProcessBuilder startCass = new ProcessBuilder(command);
         Map<String, String> env = startCass.environment();
         env.put("HEAP_NEWSIZE", config.getHeapNewSize());
@@ -75,6 +74,16 @@ public class CassandraProcessManager implements ICassandraProcess
         } catch (Exception e)
         {
         }
+    }
+
+    protected List<String> getStartCommand()
+    {
+        List<String> startCmd = new LinkedList<String>();
+        for(String param : config.getCassStartupScript().split(" ")){
+            if( StringUtils.isNotBlank(param))
+                startCmd.add(param);
+        }
+        return startCmd;
     }
 
     void logProcessOutput(Process p) throws IOException

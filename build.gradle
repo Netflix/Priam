@@ -47,7 +47,7 @@ subprojects {
         compile "com.google.inject.extensions:guice-servlet:3.0"
         compile "org.quartz-scheduler:quartz:1.7.3"
         compile "com.googlecode.json-simple:json-simple:1.1"
-        compile "org.xerial.snappy:snappy-java:1.0.4.1"
+        compile "org.xerial.snappy:snappy-java:1.0.5-M3"
         compile "org.yaml:snakeyaml:1.10"
         compile "org.apache.cassandra:cassandra-all:1.2.0"
         compile "javax.ws.rs:jsr311-api:1.1.1"

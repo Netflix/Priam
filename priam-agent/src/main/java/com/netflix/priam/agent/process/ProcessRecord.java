@@ -1,35 +1,34 @@
 package com.netflix.priam.agent.process;
 
+import com.google.common.collect.ImmutableList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.Future;
+
 public class ProcessRecord
 {
     private final String            name;
     private final String            id;
+    private final List<String>      arguments;
     private final long              startTimeMs = System.currentTimeMillis();
 
-    private volatile AgentProcess   process;
-    private volatile Executor       executor;
+    private volatile Future<Void>   executor;
 
-    ProcessRecord(String name, String id)
+    ProcessRecord(String name, String id, String[] arguments)
     {
         this.id = id;
-        this.process = null;
+        this.arguments = ImmutableList.copyOf(Arrays.asList(arguments));
         this.name = name;
     }
 
-    void setProcess(AgentProcess process, Executor executor)
+    void setExecutor(Future<Void> executor)
     {
-        this.process = process;
         this.executor = executor;
     }
 
-    Executor getExecutor()
+    Future<Void> getExecutor()
     {
         return executor;
-    }
-
-    public AgentProcess getProcess()
-    {
-        return process;
     }
 
     public String getName()
@@ -45,5 +44,10 @@ public class ProcessRecord
     public String getId()
     {
         return id;
+    }
+
+    public List<String> getArguments()
+    {
+        return arguments;
     }
 }

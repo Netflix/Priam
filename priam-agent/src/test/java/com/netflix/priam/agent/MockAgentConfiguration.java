@@ -37,6 +37,12 @@ public class MockAgentConfiguration implements AgentConfiguration
     }
 
     @Override
+    public int getMaxCompletedProcesses()
+    {
+        return 10;
+    }
+
+    @Override
     public String getThisHostName()
     {
         return thisHostname;

@@ -13,5 +13,7 @@ public interface AgentConfiguration
 
     public int                          getMaxProcessThreads();
 
+    public int                          getMaxCompletedProcesses();
+
     public String                       getThisHostName();
 }

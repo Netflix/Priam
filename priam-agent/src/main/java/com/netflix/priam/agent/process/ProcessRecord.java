@@ -12,7 +12,10 @@ public class ProcessRecord
     private final List<String>      arguments;
     private final long              startTimeMs = System.currentTimeMillis();
 
+    private volatile long           endTimeMs = -1;
+    private volatile long           stopAttemptMs = 0;
     private volatile Future<Void>   executor;
+    private volatile boolean wasForceStopped = false;
 
     ProcessRecord(String name, String id, String[] arguments)
     {
@@ -29,6 +32,18 @@ public class ProcessRecord
     Future<Void> getExecutor()
     {
         return executor;
+    }
+
+    void setEnd(boolean wasForceStopped)
+    {
+        executor = null;
+        endTimeMs = System.currentTimeMillis();
+        this.wasForceStopped = wasForceStopped;
+    }
+
+    void noteStopAttempt()
+    {
+        stopAttemptMs = System.currentTimeMillis();
     }
 
     public String getName()
@@ -49,5 +64,20 @@ public class ProcessRecord
     public List<String> getArguments()
     {
         return arguments;
+    }
+
+    public long getEndTimeMs()
+    {
+        return endTimeMs;
+    }
+
+    public long getStopAttemptMs()
+    {
+        return stopAttemptMs;
+    }
+
+    public boolean wasForceStopped()
+    {
+        return wasForceStopped;
     }
 }

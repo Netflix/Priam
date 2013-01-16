@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import org.codehaus.jettison.json.JSONObject;
 import javax.inject.Provider;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 
 public class MockNodeStatus implements NodeStatus, Provider<NodeStatus>
 {
@@ -16,6 +17,7 @@ public class MockNodeStatus implements NodeStatus, Provider<NodeStatus>
     private String operationMode = "";
     private String gossipInfo = "";
     private List<String> operations = Lists.newArrayList();
+    private final CountDownLatch flushLatch = new CountDownLatch(1);
 
     public List<String> getOperations()
     {
@@ -183,10 +185,17 @@ public class MockNodeStatus implements NodeStatus, Provider<NodeStatus>
         operations.add("move," + token);
     }
 
+    public CountDownLatch getFlushLatch()
+    {
+        return flushLatch;
+    }
+
     @Override
-    public void flush()
+    public void flush() throws InterruptedException
     {
         operations.add("flush");
+        flushLatch.countDown();
+        Thread.currentThread().join();  // NOTE: Block forever
     }
 
     @Override

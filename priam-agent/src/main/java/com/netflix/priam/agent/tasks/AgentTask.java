@@ -45,24 +45,45 @@ public class AgentTask
         json.put("operation_mode", nodeTool.getOperationMode());
         json.put("gossip_info", nodeTool.getGossipInfo());
         json.put("compaction_throughput", nodeTool.getCompactionThroughput());
-        json.put("agent-processes", getProcesses());
+        json.put("active_processes", getActiveProcesses());
+        json.put("completed_processes", getCompletedProcesses());
 
         storage.setValue(configuration, ROW_KEY, configuration.getThisHostName(), json.toString());
     }
 
-    private JSONArray getProcesses() throws JSONException
+    private JSONArray getCompletedProcesses() throws JSONException
+    {
+        JSONArray tab = new JSONArray();
+        for ( ProcessRecord processRecord : processManager.getCompletedProcesses() )
+        {
+            JSONObject json = new JSONObject();
+            addProcessCommon(processRecord, json);
+            json.put("end_time_ms", processRecord.getEndTimeMs());
+            json.put("was_force_stopped", processRecord.wasForceStopped());
+        }
+
+        return tab;
+    }
+
+    private JSONArray getActiveProcesses() throws JSONException
     {
         JSONArray tab = new JSONArray();
         for ( ProcessRecord processRecord : processManager.getActiveProcesses() )
         {
             JSONObject json = new JSONObject();
-            json.put("name", processRecord.getName());
-            json.put("id", processRecord.getId());
-            json.put("start_time_ms", processRecord.getStartTimeMs());
-            json.put("elapsed_time_ms", System.currentTimeMillis() - processRecord.getStartTimeMs());
-            json.put("arguments", Joiner.on(", ").join(processRecord.getArguments()));
+            addProcessCommon(processRecord, json);
+            json.put("stop_attempt_ms", processRecord.getStopAttemptMs());
         }
 
         return tab;
+    }
+
+    private void addProcessCommon(ProcessRecord processRecord, JSONObject json) throws JSONException
+    {
+        json.put("name", processRecord.getName());
+        json.put("id", processRecord.getId());
+        json.put("start_time_ms", processRecord.getStartTimeMs());
+        json.put("elapsed_time_ms", System.currentTimeMillis() - processRecord.getStartTimeMs());
+        json.put("arguments", Joiner.on(", ").join(processRecord.getArguments()));
     }
 }

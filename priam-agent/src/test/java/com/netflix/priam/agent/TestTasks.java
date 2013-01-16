@@ -29,16 +29,23 @@ public class TestTasks
 
         MockAgentConfiguration configuration = new MockAgentConfiguration("localhost");
         AgentProcessManager processManager = new AgentProcessManager(new AgentProcessMap(AgentProcessMap.buildDefaultMap()), configuration, nodeStatus);
-        AgentTask agentTask = new AgentTask(configuration, processManager, nodeStatus, storage);
-        agentTask.execute();
+        try
+        {
+            AgentTask agentTask = new AgentTask(configuration, processManager, nodeStatus, storage);
+            agentTask.execute();
 
-        String value = storage.getData().values().iterator().next();
-        JSONObject obj = new JSONObject(value);
-        JSONObject info = obj.getJSONObject("info");
-        Assert.assertNotNull(info);
-        Assert.assertEquals(info.get("a"), "a");
-        Assert.assertEquals(info.get("b"), "b");
-        Assert.assertEquals(info.get("c"), "c");
+            String value = storage.getData().values().iterator().next();
+            JSONObject obj = new JSONObject(value);
+            JSONObject info = obj.getJSONObject("info");
+            Assert.assertNotNull(info);
+            Assert.assertEquals(info.get("a"), "a");
+            Assert.assertEquals(info.get("b"), "b");
+            Assert.assertEquals(info.get("c"), "c");
+        }
+        finally
+        {
+            processManager.close();
+        }
     }
 
     @Test
@@ -67,6 +74,49 @@ public class TestTasks
         Assert.assertEquals(nodeStatus.getOperations().size(), 1);
         Assert.assertEquals(nodeStatus.getOperations().get(0), "compact");
 
+        Assert.assertEquals(processManager.getActiveProcesses().size(), 0);
+    }
+
+    @Test
+    public void testStuckProcessAndStop() throws Exception
+    {
+        JSONObject commandObject = new JSONObject();
+        commandObject.put(FIELD_COMMAND, COMMAND_START);
+        commandObject.put(FIELD_ID, "1");
+        commandObject.put(FIELD_NAME, "flush");
+        commandObject.put(FIELD_ARGUMENTS, new JSONArray());
+
+        JSONArray   commandTab = new JSONArray();
+        commandTab.put(commandObject);
+
+        MockAgentConfiguration configuration = new MockAgentConfiguration("localhost");
+
+        MockStorage storage = new MockStorage();
+        storage.setValue(configuration, ProcessTask.ROW_KEY, "localhost", commandTab.toString());
+
+        MockNodeStatus nodeStatus = new MockNodeStatus();
+        AgentProcessManager processManager = new AgentProcessManager(new AgentProcessMap(AgentProcessMap.buildDefaultMap()), configuration, nodeStatus);
+        ProcessTask processTask = new ProcessTask(configuration, processManager, storage);
+        processTask.execute();
+
+        Assert.assertTrue(nodeStatus.getFlushLatch().await(5, TimeUnit.SECONDS));
+
+        for ( int i = 0; i < 5; ++i )
+        {
+            Assert.assertEquals(nodeStatus.getOperations().size(), 1);
+            Assert.assertEquals(nodeStatus.getOperations().get(0), "flush");
+            TimeUnit.SECONDS.sleep(1);
+        }
+
+        commandObject = new JSONObject();
+        commandObject.put(FIELD_COMMAND, COMMAND_STOP);
+        commandObject.put(FIELD_ID, "1");
+        commandTab = new JSONArray();
+        commandTab.put(commandObject);
+        storage.setValue(configuration, ProcessTask.ROW_KEY, "localhost", commandTab.toString());
+        processTask.execute();
+
+        Assert.assertTrue(processManager.closeAndWaitForCompletion(5, TimeUnit.SECONDS));
         Assert.assertEquals(processManager.getActiveProcesses().size(), 0);
     }
 }

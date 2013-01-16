@@ -2,12 +2,15 @@ package com.netflix.priam.agent.process;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.priam.agent.AgentConfiguration;
 import com.netflix.priam.agent.NodeStatus;
 import javax.inject.Provider;
 import java.io.Closeable;
+import java.util.Deque;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,20 +21,33 @@ import java.util.concurrent.TimeUnit;
 public class AgentProcessManager implements Closeable
 {
     private final AgentProcessMap processMap;
+    private final AgentConfiguration configuration;
     private final Provider<NodeStatus> nodeToolProvider;
     private final ConcurrentMap<String, ProcessRecord> activeProcesses = Maps.newConcurrentMap();
     private final ExecutorService executorService;
 
-    public AgentProcessManager(AgentProcessMap processMap, AgentConfiguration agentConfiguration, Provider<NodeStatus> nodeToolProvider)
+    // guarded by sync
+    private final Deque<ProcessRecord> completedProcesses = Queues.newLinkedBlockingDeque();
+
+    public AgentProcessManager(AgentProcessMap processMap, AgentConfiguration configuration, Provider<NodeStatus> nodeToolProvider)
     {
         this.processMap = processMap;
+        this.configuration = configuration;
         this.nodeToolProvider = nodeToolProvider;
-        executorService = Executors.newFixedThreadPool(agentConfiguration.getMaxProcessThreads(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("AgentProcessManager-%d").build());
+        executorService = Executors.newFixedThreadPool(configuration.getMaxProcessThreads(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("AgentProcessManager-%d").build());
     }
 
     public List<ProcessRecord> getActiveProcesses()
     {
         return ImmutableList.copyOf(activeProcesses.values());
+    }
+
+    public List<ProcessRecord> getCompletedProcesses()
+    {
+        synchronized(completedProcesses)
+        {
+            return ImmutableList.copyOf(completedProcesses);
+        }
     }
 
     public boolean startProcess(String name, String id, String[] arguments) throws Exception
@@ -54,14 +70,16 @@ public class AgentProcessManager implements Closeable
 
     public void stopProcess(String id)
     {
-        final ProcessRecord processRecord = activeProcesses.remove(id);
+        final ProcessRecord processRecord = activeProcesses.get(id);
         if ( processRecord == null )
         {
             // TODO
             return;
         }
+
         synchronized(processRecord)
         {
+            processRecord.noteStopAttempt();
             Future<Void> executor = processRecord.getExecutor();
             if ( executor != null )
             {
@@ -80,5 +98,35 @@ public class AgentProcessManager implements Closeable
     public void close()
     {
         executorService.shutdownNow();
+    }
+
+    void removeProcess(String id, boolean wasForced)
+    {
+        final ProcessRecord processRecord = activeProcesses.remove(id);
+        if ( processRecord == null )
+        {
+            // TODO
+            return;
+        }
+        synchronized(processRecord)
+        {
+            processRecord.setEnd(wasForced);
+        }
+
+        synchronized(completedProcesses)
+        {
+            try
+            {
+                while ( completedProcesses.size() >= configuration.getMaxCompletedProcesses() )
+                {
+                    completedProcesses.removeLast();
+                }
+            }
+            catch ( NoSuchElementException ignore )
+            {
+                // ignore
+            }
+            completedProcesses.addFirst(processRecord);
+        }
     }
 }

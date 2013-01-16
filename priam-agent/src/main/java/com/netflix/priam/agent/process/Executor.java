@@ -1,42 +1,35 @@
 package com.netflix.priam.agent.process;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.agent.NodeStatus;
 import java.util.concurrent.Callable;
 
 class Executor implements Callable<Void>
 {
+    private final AgentProcessManager processManager;
+    private final String id;
     private final AgentProcess process;
-    private final IConfiguration configuration;
+    private final NodeStatus nodeTool;
     private final String[] arguments;
 
-    private volatile Thread     thread;
-
-    Executor(AgentProcess process, IConfiguration configuration, String[] arguments)
+    Executor(AgentProcessManager processManager, String id, AgentProcess process, NodeStatus nodeTool, String[] arguments)
     {
+        this.processManager = processManager;
+        this.id = id;
         this.process = process;
-        this.configuration = configuration;
+        this.nodeTool = nodeTool;
         this.arguments = arguments;
-    }
-
-    void    interruptTask()
-    {
-        if ( thread != null )
-        {
-            thread.interrupt();
-        }
     }
 
     @Override
     public Void call() throws Exception
     {
-        thread = Thread.currentThread();
         try
         {
-            process.performCommand(configuration, arguments);
+            process.performCommand(nodeTool, arguments);
         }
         finally
         {
-            thread = null;
+            processManager.stopProcess(id);
         }
         return null;
     }

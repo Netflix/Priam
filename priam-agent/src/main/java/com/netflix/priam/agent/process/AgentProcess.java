@@ -1,10 +1,10 @@
 package com.netflix.priam.agent.process;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.agent.NodeStatus;
 
 public interface AgentProcess
 {
-    public void performCommand(IConfiguration configuration, String[] arguments) throws Exception;
+    public void performCommand(NodeStatus nodeTool, String[] arguments) throws Exception;
 
     public String getHelpText();
 }

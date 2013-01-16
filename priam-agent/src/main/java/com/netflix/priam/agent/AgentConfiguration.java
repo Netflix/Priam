@@ -1,4 +1,4 @@
-package com.netflix.priam.agent.task;
+package com.netflix.priam.agent;
 
 import com.netflix.astyanax.Keyspace;
 import com.netflix.astyanax.model.ColumnFamily;

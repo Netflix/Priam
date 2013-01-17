@@ -12,12 +12,29 @@ public interface IDseConfiguration
      */
     public enum NodeType
     {
-        /** Vanilla Cassandra node */
-        REAL_TIME_QUERY,
+        /** vanilla Cassandra node */
+        REAL_TIME_QUERY("cassandra"),
         /** Hadoop node */
-        ANALYTIC,
+        ANALYTIC("hadoop"),
         /** Solr node */
-        SEARCH
+        SEARCH("solr");
+
+        private final String altName;
+
+        private NodeType(String altName)
+        {
+            this.altName = altName;
+        }
+
+        public static NodeType getByAltName(String altName)
+        {
+            for(NodeType nt : NodeType.values())
+            {
+                if(nt.altName.toLowerCase().equals(altName))
+                    return nt;
+            }
+            throw new IllegalArgumentException("Unknown node type: " + altName);
+        }
     };
 
     String getDseYamlLocation();

@@ -53,9 +53,11 @@ public class DoubleRing {
         }
 
         int regionOffsetHash = TokenManager.regionOffset(amazonConfiguration.getRegionName());
+        int newRingSize = instancesInRegion.size() * 2;
+        int numZones = amazonConfiguration.getUsableAvailabilityZones().size();
 
-        // move existing slots.
         for (PriamInstance priamInstance : instancesInRegion) {
+            // Move existing slots
             int slot = (priamInstance.getId() - regionOffsetHash) * 2;
             instanceRegistry.create(priamInstance.getApp(),
                                     regionOffsetHash + slot,
@@ -65,20 +67,16 @@ public class DoubleRing {
                                     priamInstance.getAvailabilityZone(),
                                     priamInstance.getVolumes(),
                                     priamInstance.getToken());
-        }
 
-        int newRingSize = instancesInRegion.size() * 2;
-        for (PriamInstance data : filteredRemote(instanceRegistry.getAllIds(cassandraConfiguration.getClusterName()))) {
-            // if max then rotate.
-            int currentSlot = data.getId() - regionOffsetHash;
-            int newSlot = currentSlot + 3 > newRingSize ? (currentSlot + 3) - newRingSize : currentSlot + 3;
+            // Add new slots
+            int newSlot = (slot + numZones) % newRingSize;
             String token = tokenManager.createToken(newSlot, newRingSize, amazonConfiguration.getRegionName());
-            instanceRegistry.create(data.getApp(),
-                                    newSlot + regionOffsetHash,
+            instanceRegistry.create(priamInstance.getApp(),
+                                    regionOffsetHash + newSlot,
                                     "new_slot",
                                     amazonConfiguration.getPrivateHostName(),
                                     amazonConfiguration.getPrivateIP(),
-                                    data.getAvailabilityZone(),
+                                    priamInstance.getAvailabilityZone(),
                                     null,
                                     token);
         }
@@ -132,7 +130,7 @@ public class DoubleRing {
             for (PriamInstance data : allInstances) {
                 instanceRegistry.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getAvailabilityZone(), data.getVolumes(), data.getToken());
             }
-            logger.info("Sucecsfully restored the Instances from the backup: " + TMP_BACKUP_FILE.getAbsolutePath());
+            logger.info("Successfully restored the Instances from the backup: " + TMP_BACKUP_FILE.getAbsolutePath());
         } finally {
             IOUtils.closeQuietly(stream);
             IOUtils.closeQuietly(in);

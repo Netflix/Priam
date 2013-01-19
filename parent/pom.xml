@@ -32,9 +32,9 @@
   </scm>
 
     <properties>
-        <badger.version>0.2.22</badger.version>
+        <badger.version>0.3.3</badger.version>
         <dropwizard.version>0.5.1</dropwizard.version>
-        <soa.version>1.3.1</soa.version>
+        <soa.version>1.3.2</soa.version>
         <zookeeper-common.version>0.0.14</zookeeper-common.version>
     </properties>
 

@@ -61,6 +61,7 @@ public class ServiceMonitorManager implements Managed {
         new BadgerRegistrationBuilder(zooKeeperConnection, badgerServiceName)
                 .withVerificationPath(httpConfiguration.getPort(), "/v1/cassadmin/pingthrift")
                 .withVersion(this.getClass().getPackage().getImplementationVersion())
+                .withAwsTags()
                 .register();
     }
 

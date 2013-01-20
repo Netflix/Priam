@@ -1,14 +1,16 @@
 package com.netflix.priam.dropwizard.managers;
 
+import com.bazaarvoice.badger.api.BadgerRegistration;
 import com.bazaarvoice.badger.api.BadgerRegistrationBuilder;
 import com.bazaarvoice.zookeeper.ZooKeeperConnection;
+import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.MonitoringConfiguration;
-import com.netflix.priam.config.ZooKeeperConfiguration;
 import com.yammer.dropwizard.config.HttpConfiguration;
 import com.yammer.dropwizard.lifecycle.Managed;
-import org.apache.commons.io.IOUtils;
+
+import java.util.concurrent.TimeUnit;
 
 import static java.lang.String.format;
 
@@ -16,21 +18,23 @@ import static java.lang.String.format;
 public class ServiceMonitorManager implements Managed {
 
     private MonitoringConfiguration monitoringConfiguration;
-    private ZooKeeperConfiguration zooKeeperConfiguration;
-    private HttpConfiguration httpConfiguration;
     private ZooKeeperConnection zooKeeperConnection;
+    private HttpConfiguration httpConfiguration;
+    private BadgerRegistration badgerRegistration;
 
     @Inject
-    public ServiceMonitorManager(MonitoringConfiguration monitoringConfiguration, ZooKeeperConfiguration zooKeeperConfiguration, HttpConfiguration httpConfiguration) {
+    public ServiceMonitorManager(MonitoringConfiguration monitoringConfiguration,
+                                 Optional<ZooKeeperConnection> zooKeeperConnection,
+                                 HttpConfiguration httpConfiguration) {
         this.monitoringConfiguration = monitoringConfiguration;
-        this.zooKeeperConfiguration = zooKeeperConfiguration;
+        this.zooKeeperConnection = zooKeeperConnection.orNull();
         this.httpConfiguration = httpConfiguration;
     }
 
     @Override
     public void start() throws Exception {
-        if (zooKeeperConfiguration.isEnabled()) {
-            return;
+        if (zooKeeperConnection == null) {
+            return;  // Disabled
         }
 
         if (monitoringConfiguration.getDefaultBadgerRegistrationState()) {
@@ -46,19 +50,17 @@ public class ServiceMonitorManager implements Managed {
     }
 
     public synchronized boolean isRegistered() {
-        return zooKeeperConnection != null;
+        return badgerRegistration != null;
     }
 
     public synchronized void register() {
-        if (zooKeeperConnection != null) {
-            return; // Already registered; nothing to do.
+        if (zooKeeperConnection == null || badgerRegistration != null) {
+            return;
         }
-
-        zooKeeperConnection = zooKeeperConfiguration.connect();
 
         // If ZooKeeper is configured, start Badger external monitoring
         String badgerServiceName = format(monitoringConfiguration.getBadgerServiceName());
-        new BadgerRegistrationBuilder(zooKeeperConnection, badgerServiceName)
+        badgerRegistration = new BadgerRegistrationBuilder(zooKeeperConnection, badgerServiceName)
                 .withVerificationPath(httpConfiguration.getPort(), "/v1/cassadmin/pingthrift")
                 .withVersion(this.getClass().getPackage().getImplementationVersion())
                 .withAwsTags()
@@ -66,11 +68,9 @@ public class ServiceMonitorManager implements Managed {
     }
 
     public synchronized void deregister() {
-        if (zooKeeperConnection == null) {
-            return; // Not registered; nothing to do.
+        if (badgerRegistration != null) {
+            badgerRegistration.unregister(10, TimeUnit.SECONDS);
+            badgerRegistration = null;
         }
-        IOUtils.closeQuietly(zooKeeperConnection);
-        zooKeeperConnection = null;
     }
-
 }

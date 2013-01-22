@@ -1,5 +1,5 @@
 // Establish version and status
-ext.githubProjectName = 'Priam_dse'
+ext.githubProjectName = 'Priam'
 
 buildscript {
     repositories { mavenCentral() }

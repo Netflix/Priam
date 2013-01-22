@@ -6,6 +6,7 @@ import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.priam.agent.AgentConfiguration;
 import com.netflix.priam.agent.NodeStatus;
+import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Provider;
 import java.io.Closeable;
 import java.util.Deque;
@@ -26,7 +27,7 @@ public class AgentProcessManager implements Closeable
     private final ConcurrentMap<String, ProcessRecord> activeProcesses = Maps.newConcurrentMap();
     private final ExecutorService executorService;
 
-    // guarded by sync
+    @GuardedBy("synchronized")
     private final Deque<ProcessRecord> completedProcesses = Queues.newLinkedBlockingDeque();
 
     public AgentProcessManager(AgentProcessMap processMap, AgentConfiguration configuration, Provider<NodeStatus> nodeToolProvider)

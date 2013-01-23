@@ -1,3 +1,7 @@
+*** NOTE: this is a completely experimental branch, exploring vnodes and new priam
+behaviors. Do not use this unless you are interested in bleeding edge experimentation.
+Possibly most of this will be scraped, or reworked severely. You have been warned. ***
+
 Priam is a process/tool that runs alongside Apache Cassandra to automate the following:
 - Backup and recovery (Complete and incremental)
 - Token management

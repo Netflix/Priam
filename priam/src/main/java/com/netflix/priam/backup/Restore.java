@@ -55,8 +55,6 @@ public class Restore extends AbstractRestore
     @Inject
     private Provider<AbstractBackupPath> pathProvider;
     @Inject
-    private RestoreTokenSelector tokenSelector;
-    @Inject
     private MetaData metaData;
     @Inject
     private InstanceIdentity id;
@@ -71,40 +69,41 @@ public class Restore extends AbstractRestore
     @Override
     public void execute() throws Exception
     {
-        if (isRestoreEnabled(config))
-        {
-            logger.info("Starting restore for " + config.getRestoreSnapshot());
-            String[] restore = config.getRestoreSnapshot().split(",");
-            AbstractBackupPath path = pathProvider.get();
-            final Date startTime = path.parseDate(restore[0]);
-            final Date endTime = path.parseDate(restore[1]);
-            String origToken = id.getInstance().getToken();
-            try
-            {
-                if (config.isRestoreClosestToken())
-                {
-                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    id.getInstance().setToken(restoreToken.toString());
-                }
-                new RetryableCallable<Void>()
-                {
-                    public Void retriableCall() throws Exception
-                    {
-                        logger.info("Attempting restore");
-                        restore(startTime, endTime);
-                        logger.info("Restore completed");
-                        // Wait for other server init to complete
-                        sleeper.sleep(30000);
-                        return null;
-                    }
-                }.call();
-            }
-            finally
-            {
-                id.getInstance().setToken(origToken);
-            }
-        }
-        cassProcess.start(true);
+        //TODO: punting on backup/restore now vnodes demo
+//        if (isRestoreEnabled(config))
+//        {
+//            logger.info("Starting restore for " + config.getRestoreSnapshot());
+//            String[] restore = config.getRestoreSnapshot().split(",");
+//            AbstractBackupPath path = pathProvider.get();
+//            final Date startTime = path.parseDate(restore[0]);
+//            final Date endTime = path.parseDate(restore[1]);
+//            String origToken = id.getInstance().getToken();
+//            try
+//            {
+//                if (config.isRestoreClosestToken())
+//                {
+//                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
+//                    id.getInstance().setToken(restoreToken.toString());
+//                }
+//                new RetryableCallable<Void>()
+//                {
+//                    public Void retriableCall() throws Exception
+//                    {
+//                        logger.info("Attempting restore");
+//                        restore(startTime, endTime);
+//                        logger.info("Restore completed");
+//                        // Wait for other server init to complete
+//                        sleeper.sleep(30000);
+//                        return null;
+//                    }
+//                }.call();
+//            }
+//            finally
+//            {
+//                id.getInstance().setToken(origToken);
+//            }
+//        }
+//        SystemUtils.startCassandra(true, config);
     }
 
     /**

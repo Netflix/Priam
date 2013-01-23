@@ -15,23 +15,19 @@
  */
 package com.netflix.priam.resources;
 
-import java.io.IOException;
 import java.util.List;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.identity.DoubleRing;
 
 /**
  * This servlet will provide the configuration API service as and when Cassandra
@@ -43,13 +39,11 @@ public class CassandraConfig
 {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
     private PriamServer priamServer;
-    private DoubleRing doubleRing;
 
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing)
+    public CassandraConfig(PriamServer server)
     {
         this.priamServer = server;
-        this.doubleRing = doubleRing;
     }
 
     @GET
@@ -75,19 +69,20 @@ public class CassandraConfig
     @Path("/get_token")
     public Response getToken()
     {
-        try
-        {
-            if (StringUtils.isNotBlank(priamServer.getId().getInstance().getToken()))
-                return Response.ok(priamServer.getId().getInstance().getToken()).build();
-            logger.error("Cannot find token for this instance.");
-        }
-        catch (Exception e)
-        {
-            // TODO: can this ever happen? if so, what conditions would cause an exception here?
-            logger.error("Error while executing get_token", e);
-            return Response.serverError().build();
-        }
-        return Response.status(500).build();
+//        try
+//        {
+//            if (StringUtils.isNotBlank(priamServer.getId().getInstance().getToken()))
+//                return Response.ok(priamServer.getId().getInstance().getToken()).build();
+//            logger.error("Cannot find token for this instance.");
+//        }
+//        catch (Exception e)
+//        {
+//            // TODO: can this ever happen? if so, what conditions would cause an exception here?
+//            logger.error("Error while executing get_token", e);
+//            return Response.serverError().build();
+//        }
+        //TODO: punting on tokens for now
+        return Response.status(200).build();
     }
 
     @GET
@@ -104,24 +99,5 @@ public class CassandraConfig
             logger.error("Error while executing is_replace_token", e);
             return Response.serverError().build();
         }
-    }
-
-    @GET
-    @Path("/double_ring")
-    public Response doubleRing() throws IOException, ClassNotFoundException
-    {
-        try
-        {
-            doubleRing.backup();
-            doubleRing.doubleSlots();
-        }
-        catch (Throwable th)
-        {
-            logger.error("Error in doubling the ring...", th);
-            doubleRing.restore();
-            // rethrow
-            throw new RuntimeException(th);
-        }
-        return Response.status(200).build();
     }
 }

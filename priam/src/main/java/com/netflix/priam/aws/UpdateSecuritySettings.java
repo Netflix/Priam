@@ -23,7 +23,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -52,14 +51,12 @@ public class UpdateSecuritySettings extends Task
 
     private static final Random ran = new Random();
     private final IMembership membership;
-    private final IPriamInstanceFactory factory;
 
     @Inject
-    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
+    public UpdateSecuritySettings(IConfiguration config, IMembership membership)
     {
         super(config);
         this.membership = membership;
-        this.factory = factory;
     }
 
     /**
@@ -73,11 +70,11 @@ public class UpdateSecuritySettings extends Task
         // if seed dont execute.
         int port = config.getSSLStoragePort();
         List<String> acls = membership.listACL(port, port);
-        List<PriamInstance> instances = factory.getAllIds(config.getAppName());
+        List<PriamInstance> instances = membership.getAllInstances(config.getAppName());
 
         // iterate to add...
         List<String> add = Lists.newArrayList();
-        for (PriamInstance instance : factory.getAllIds(config.getAppName()))
+        for (PriamInstance instance : membership.getAllInstances(config.getAppName()))
         {
             String range = instance.getHostIP() + "/32";
             if (!acls.contains(range))

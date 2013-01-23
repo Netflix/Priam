@@ -24,24 +24,14 @@ import java.util.List;
  */
 public interface IMembership
 {
-    /**
-     * Get a list of Instances in the current RAC
-     * 
-     * @return
-     */
-    public List<String> getRacMembership();
+    List<PriamInstance> getAllInstances(String appName);
+
+    PriamInstance getThisInstance();
 
     /**
      * @return Size of current RAC
      */
     public int getRacMembershipSize();
-
-    /**
-     * Number of RACs
-     * 
-     * @return
-     */
-    public int getRacCount();
 
     /**
      * Add security group ACLs
@@ -67,11 +57,4 @@ public interface IMembership
      * @return
      */
     public List<String> listACL(int from, int to);
-
-    /**
-     * Expand the membership size by 1.
-     * 
-     * @param count
-     */
-    public void expandRacMembership(int count);
 }

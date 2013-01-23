@@ -143,7 +143,7 @@ public class S3BackupPath extends AbstractBackupPath
         buff.append(region).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);
 
-        token = factory.getInstance().getToken();
+        token = "1234";  // vnodes hack   factory.getInstance().getToken();
         buff.append(token).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.
         buff.append(match(start, end));

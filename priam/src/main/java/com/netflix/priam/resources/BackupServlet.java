@@ -15,13 +15,9 @@
  */
 package com.netflix.priam.resources;
 
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -29,15 +25,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
@@ -52,11 +44,10 @@ import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.CassandraTuner;
-import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.TuneCassandra;
+import org.codehaus.jettison.json.JSONObject;
+import org.joda.time.DateTime;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -80,19 +71,14 @@ public class BackupServlet
     private Provider<AbstractBackupPath> pathProvider;
     private CassandraTuner tuner;
     private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory factory;
-    private final ITokenManager tokenManager;
-    private final ICassandraProcess cassProcess;
     @Inject
     private PriamScheduler scheduler;
     @Inject
     private MetaData metaData;
 
     @Inject
-
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
-
+    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
+            SnapshotBackup snapshotBackup)
     {
         this.priamServer = priamServer;
         this.config = config;
@@ -102,9 +88,6 @@ public class BackupServlet
         this.pathProvider = pathProvider;
         this.tuner = tuner;
         this.snapshotBackup = snapshotBackup;
-        this.factory = factory;
-        this.tokenManager = tokenManager;
-        this.cassProcess = cassProcess;
     }
 
     @GET
@@ -214,51 +197,53 @@ public class BackupServlet
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
     {
-        String origRegion = config.getDC();
-        String origToken = priamServer.getId().getInstance().getToken();
-        if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+//        String origRegion = config.getDC();
+//        String origToken = priamServer.getId().getInstance().getToken();
+//        if (StringUtils.isNotBlank(token))
+//            priamServer.getId().getInstance().setToken(token);
+//
+//        if( config.isRestoreClosestToken())
+//            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+//
+//        if (StringUtils.isNotBlank(region))
+//        {
+//            config.setDC(region);
+//            logger.info("Restoring from region " + region);
+//            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
+//            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
+//        }
+//
+//        setRestoreKeyspaces(keyspaces);
+//
+//        try
+//        {
+//            restoreObj.restore(startTime, endTime);
+//        }
+//        finally
+//        {
+//            config.setDC(origRegion);
+//            priamServer.getId().getInstance().setToken(origToken);
+//        }
+//        tuneCassandra.updateYaml(false);
+//        SystemUtils.startCassandra(true, config);
 
-        if( config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
-        
-        if (StringUtils.isNotBlank(region))
-        {
-            config.setDC(region);
-            logger.info("Restoring from region " + region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
-        }
-
-        setRestoreKeyspaces(keyspaces);
-
-        try
-        {
-            restoreObj.restore(startTime, endTime);
-        }
-        finally
-        {
-            config.setDC(origRegion);
-            priamServer.getId().getInstance().setToken(origToken);
-        }
-        tuner.updateAutoBootstrap(config.getYamlLocation(), false);
-        cassProcess.start(true);
+        //TODO: completely punting on backup/restore for this vnodes branch
     }
 
-    /**
-     * Find closest token in the specified region
-     */
-    private String closestToken(String token, String region)
-    {
-        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
-        List<BigInteger> tokenList = Lists.newArrayList();
-        for (PriamInstance ins : plist)
-        {
-            if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getToken()));
-        }
-        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
-    }
+//    /**
+//     * Find closest token in the specified region
+//     */
+//    private String closestToken(String token, String region)
+//    {
+//        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
+//        List<BigInteger> tokenList = Lists.newArrayList();
+//        for (PriamInstance ins : plist)
+//        {
+//            if (ins.getDC().equalsIgnoreCase(region))
+//                tokenList.add(new BigInteger(ins.getToken()));
+//        }
+//        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
+//    }
 
     /*
      * TODO: decouple the servlet, config, and restorer. this should not rely on a side

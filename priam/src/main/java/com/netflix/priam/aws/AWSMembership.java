@@ -28,6 +28,8 @@ import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.PriamInstance;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,33 +56,42 @@ public class AWSMembership implements IMembership
         this.provider = provider;        
     }
 
-    @Override
-    public List<String> getRacMembership()
+    public List<PriamInstance> getAllInstances(String appName)
     {
-        AmazonAutoScaling client = null;
-        try
-        {
-            client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
-
-            List<String> instanceIds = Lists.newArrayList();
-            for (AutoScalingGroup asg : res.getAutoScalingGroups())
-            {
-                for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
-                            .equalsIgnoreCase("Terminated")))
-                        instanceIds.add(ins.getInstanceId());
-            }
-            logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
-            return instanceIds;
-        }
-        finally
-        {
-            if (client != null)
-                client.shutdown();
-        }
+        return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
+
+    public PriamInstance getThisInstance()
+    {
+        return new PriamInstance(config);
+    }
+
+//    public List<String> getRacMembership()
+//    {
+//        AmazonAutoScaling client = null;
+//        try
+//        {
+//            client = getAutoScalingClient();
+//            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+//            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
+//
+//            List<String> instanceIds = Lists.newArrayList();
+//            for (AutoScalingGroup asg : res.getAutoScalingGroups())
+//            {
+//                for (Instance ins : asg.getInstances())
+//                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
+//                            .equalsIgnoreCase("Terminated")))
+//                        instanceIds.add(ins.getInstanceId());
+//            }
+//            logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+//            return instanceIds;
+//        }
+//        finally
+//        {
+//            if (client != null)
+//                client.shutdown();
+//        }
+//    }
 
     /**
      * Actual membership AWS source of truth...
@@ -107,12 +118,6 @@ public class AWSMembership implements IMembership
             if (client != null)
                 client.shutdown();
         }
-    }
-
-    @Override
-    public int getRacCount()
-    {
-        return config.getRacs().size();
     }
 
     /**
@@ -174,30 +179,6 @@ public class AWSMembership implements IMembership
                     if (perm.getFromPort() == from && perm.getToPort() == to)
                         ipPermissions.addAll(perm.getIpRanges());
             return ipPermissions;
-        }
-        finally
-        {
-            if (client != null)
-                client.shutdown();
-        }
-    }
-
-    @Override
-    public void expandRacMembership(int count)
-    {
-        AmazonAutoScaling client = null;
-        try
-        {
-            client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
-            AutoScalingGroup asg = res.getAutoScalingGroups().get(0);
-            UpdateAutoScalingGroupRequest ureq = new UpdateAutoScalingGroupRequest();
-            ureq.setAutoScalingGroupName(asg.getAutoScalingGroupName());
-            ureq.setMinSize(asg.getMinSize() + 1);
-            ureq.setMaxSize(asg.getMinSize() + 1);
-            ureq.setDesiredCapacity(asg.getMinSize() + 1);
-            client.updateAutoScalingGroup(ureq);
         }
         finally
         {

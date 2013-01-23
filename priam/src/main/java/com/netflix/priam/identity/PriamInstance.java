@@ -18,41 +18,35 @@ package com.netflix.priam.identity;
 import java.io.Serializable;
 import java.util.Map;
 
+import com.netflix.priam.IConfiguration;
+
 public class PriamInstance implements Serializable
 {
     private static final long serialVersionUID = 5606412386974488659L;
     private String hostname;
-    private long updatetime;
     private boolean outOfService;
 
-    private String app;
-    private int Id;
     private String instanceId;
-    private String availabilityZone;
+    private String rack;
     private String publicip;
-    private String location;
-    private String token;
-    //Handles Storage objects
-    private Map<String, Object> volumes;
-    
-    public String getApp()
+    private String datacenter;
+
+    public PriamInstance(String hostname, String instanceId, String datacenter, String rack, String publicip)
     {
-        return app;
+        this.hostname = hostname;
+        this.instanceId = instanceId;
+        this.datacenter = datacenter;
+        this.rack = rack;
+        this.publicip = publicip;
     }
 
-    public void setApp(String app)
+    public PriamInstance(IConfiguration config)
     {
-        this.app = app;
-    }
-
-    public int getId()
-    {
-        return Id;
-    }
-
-    public void setId(int id)
-    {
-        Id = id;
+        this.hostname = config.getHostname();
+        this.instanceId = config.getInstanceName();
+        this.datacenter = config.getDC();
+        this.rack = config.getRac();
+        this.publicip = config.getHostIP();
     }
 
     public String getInstanceId()
@@ -60,19 +54,9 @@ public class PriamInstance implements Serializable
         return instanceId;
     }
 
-    public void setInstanceId(String instanceId)
-    {
-        this.instanceId = instanceId;
-    }
-
     public String getRac()
     {
-        return availabilityZone;
-    }
-
-    public void setRac(String availabilityZone)
-    {
-        this.availabilityZone = availabilityZone;
+        return rack;
     }
 
     public String getHostName()
@@ -85,69 +69,16 @@ public class PriamInstance implements Serializable
         return publicip;
     }
 
-    public void setHost(String hostname, String publicip)
-    {
-        this.hostname = hostname;
-        this.publicip = publicip;
-    }
-
-    public void setHost(String hostname)
-    {
-        this.hostname = hostname;
-    }
-
-    public void setHostIP(String publicip)
-    {
-        this.publicip = publicip;
-    }
-
-    public String getToken()
-    {
-        return token;
-    }
-
-    public void setToken(String token)
-    {
-        this.token = token;
-    }
-
-    public Map<String, Object> getVolumes()
-    {
-        return volumes;
-    }
-
-    public void setVolumes(Map<String, Object> volumes)
-    {
-        this.volumes = volumes;
-    }
-
-    @Override
     public String toString()
     {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(),
-                getToken());
+        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, Rack : %s Datacenter %s", getHostName(), getInstanceId(), getRac(), getDC());
     }
 
     public String getDC()
     {
-        return location;
+        return datacenter;
     }
     
-    public void setDC(String location)
-    {
-        this.location = location;
-    }
-
-    public long getUpdatetime()
-    {
-        return updatetime;
-    }
-
-    public void setUpdatetime(long updatetime)
-    {
-        this.updatetime = updatetime;
-    }
-
     public boolean isOutOfService()
     {
         return outOfService;

@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+import com.netflix.priam.identity.PriamInstance;
 import org.apache.cassandra.io.util.FileUtils;
 
 import org.slf4j.Logger;
@@ -75,7 +76,6 @@ public class StaticMembership implements IMembership
         }
     }
 
-    @Override
     public List<String> getRacMembership()
     {
         return racMembership;
@@ -89,7 +89,6 @@ public class StaticMembership implements IMembership
         return racMembership.size();
     }
 
-    @Override
     public int getRacCount()
     {
         return racCount;
@@ -111,8 +110,13 @@ public class StaticMembership implements IMembership
         return null;
     }
 
-    @Override
-    public void expandRacMembership(int count)
+    public List<PriamInstance> getAllInstances(String appName)
     {
+        return null;
+    }
+
+    public PriamInstance getThisInstance()
+    {
+        return null;
     }
 }

@@ -85,10 +85,10 @@ public class IncrementalRestore extends AbstractRestore
             return; // No point in restoring the files which was just backedup.
         }
 
-        if (config.isRestoreClosestToken())
-        {
-            priamServer.getId().getInstance().setToken(restoreToken.toString());
-        }
+//        if (config.isRestoreClosestToken())
+//        {
+//            priamServer.getId().getInstance().setToken(restoreToken.toString());
+//        }
 
         Date start = tracker.first().time;
         Iterator<AbstractBackupPath> incrementals = fs.list(prefix, start, Calendar.getInstance().getTime());

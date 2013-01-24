@@ -12,7 +12,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.FakeCredentials;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
@@ -26,8 +25,7 @@ public class TestModule extends AbstractModule
     protected void configure()
     {
         bind(IConfiguration.class).toInstance(
-                new FakeConfiguration(FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
-        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
+                new FakeConfiguration("fake-region", "fake-app", "az1", "fakeInstance1"));
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(
                 ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
@@ -35,6 +33,5 @@ public class TestModule extends AbstractModule
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(Sleeper.class).to(FakeSleeper.class);
-        bind(ITokenManager.class).to(TokenManager.class);
     }
 }

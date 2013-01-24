@@ -1,9 +1,11 @@
 package com.netflix.priam;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.PriamInstance;
 
 public class FakeMembership implements IMembership
 {
@@ -21,19 +23,7 @@ public class FakeMembership implements IMembership
     }
 
     @Override
-    public List<String> getRacMembership()
-    {
-        return instances;
-    }
-
-    @Override
     public int getRacMembershipSize()
-    {
-        return 3;
-    }
-
-    @Override
-    public int getRacCount()
     {
         return 3;
     }
@@ -59,10 +49,13 @@ public class FakeMembership implements IMembership
         return null;
     }
 
-    @Override
-    public void expandRacMembership(int count)
+    public List<PriamInstance> getAllInstances(String appName)
     {
-        // TODO Auto-generated method stub
-        
+        return new ArrayList<PriamInstance>(0);
+    }
+
+    public PriamInstance getThisInstance()
+    {
+        return new PriamInstance("localhost", "ami-1234abcd", "us-east-1", "us-east-1a", "127.0.0.1");
     }
 }

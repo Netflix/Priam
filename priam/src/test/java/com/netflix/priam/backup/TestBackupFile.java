@@ -12,6 +12,7 @@ import junit.framework.Assert;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.inject.Guice;
@@ -21,6 +22,7 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
 
+@Ignore
 public class TestBackupFile
 {
     private static Injector injector;
@@ -47,7 +49,6 @@ public class TestBackupFile
             bos1.close();
         }
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        factory.getInstance().setToken("1234567");//Token
     }
 
     @AfterClass

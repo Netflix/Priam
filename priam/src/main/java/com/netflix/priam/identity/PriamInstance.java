@@ -24,12 +24,12 @@ public class PriamInstance implements Serializable
 {
     private static final long serialVersionUID = 5606412386974488659L;
     private String hostname;
-    private boolean outOfService;
-
     private String instanceId;
     private String rack;
     private String publicip;
     private String datacenter;
+
+    private boolean outOfService;
 
     public PriamInstance(String hostname, String instanceId, String datacenter, String rack, String publicip)
     {

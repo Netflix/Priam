@@ -3,10 +3,17 @@ package com.netflix.priam.agent.process;
 public class SimpleProcessMetaData implements ProcessMetaData
 {
     private final String helpText;
+    private final int minArguments;
 
     public SimpleProcessMetaData(String helpText)
     {
+        this(helpText, 0);
+    }
+
+    public SimpleProcessMetaData(String helpText, int minArguments)
+    {
         this.helpText = helpText;
+        this.minArguments = minArguments;
     }
 
     @Override
@@ -18,6 +25,6 @@ public class SimpleProcessMetaData implements ProcessMetaData
     @Override
     public int getMinArguments()
     {
-        return 0;
+        return minArguments;
     }
 }

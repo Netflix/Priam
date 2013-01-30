@@ -4,6 +4,7 @@ import com.google.common.collect.Sets;
 import com.netflix.priam.agent.NodeStatus;
 import com.netflix.priam.agent.process.AgentProcess;
 import com.netflix.priam.agent.process.ProcessMetaData;
+import com.netflix.priam.agent.process.SimpleProcessMetaData;
 import java.util.Arrays;
 import java.util.Set;
 
@@ -21,19 +22,6 @@ public class CommandRepair implements AgentProcess
     @Override
     public ProcessMetaData getMetaData()
     {
-        return new ProcessMetaData()
-        {
-            @Override
-            public String getHelpText()
-            {
-                return "Calls nodeTool.repair(sequential, localDataCenterOnly). If arguments contains \"sequential\", sequential is set to true. localDataCenterOnly is true if arguments contains \"local-dc-only\".";
-            }
-
-            @Override
-            public int getMinArguments()
-            {
-                return 0;
-            }
-        };
+        return new SimpleProcessMetaData("Calls nodeTool.repair(sequential, localDataCenterOnly). If arguments contains \"sequential\", sequential is set to true. localDataCenterOnly is true if arguments contains \"local-dc-only\".");
     }
 }

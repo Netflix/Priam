@@ -1,23 +1,62 @@
 package com.netflix.priam.agent.commands;
 
+import com.google.common.collect.Lists;
 import com.netflix.priam.agent.NodeStatus;
 import com.netflix.priam.agent.process.AgentProcess;
+import com.netflix.priam.agent.process.ArgumentMetaData;
+import com.netflix.priam.agent.process.ProcessMetaData;
+import java.util.List;
 
 public class CommandMove implements AgentProcess
 {
     @Override
     public void performCommand(NodeStatus nodeTool, String[] arguments) throws Exception
     {
-        if ( arguments.length == 0 )
-        {
-            throw new IllegalStateException("a token argument must be provided");
-        }
         nodeTool.move(arguments[0]);
     }
 
     @Override
-    public String getHelpText()
+    public ProcessMetaData getMetaData()
     {
-        return "Calls nodeTool.move(token). Argument is the token.";
+        return new ProcessMetaData()
+        {
+            @Override
+            public String getHelpText()
+            {
+                return "Calls nodeTool.move(token)";
+            }
+
+            @Override
+            public List<ArgumentMetaData> getArguments()
+            {
+                ArgumentMetaData token = new ArgumentMetaData()
+                {
+                    @Override
+                    public String getName()
+                    {
+                        return "token";
+                    }
+
+                    @Override
+                    public String getDescription()
+                    {
+                        return "The token to move";
+                    }
+
+                    @Override
+                    public boolean isVariableLength()
+                    {
+                        return false;
+                    }
+
+                    @Override
+                    public boolean isOptional()
+                    {
+                        return false;
+                    }
+                };
+                return Lists.newArrayList(token);
+            }
+        };
     }
 }

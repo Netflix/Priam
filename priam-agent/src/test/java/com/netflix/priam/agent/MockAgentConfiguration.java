@@ -39,7 +39,7 @@ public class MockAgentConfiguration implements AgentConfiguration
     @Override
     public int getMaxCompletedProcesses()
     {
-        return 10;
+        return 100;
     }
 
     @Override

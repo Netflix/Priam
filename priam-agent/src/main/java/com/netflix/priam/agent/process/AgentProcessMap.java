@@ -3,6 +3,7 @@ package com.netflix.priam.agent.process;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Maps;
 import com.netflix.priam.agent.commands.*;
 import javax.inject.Provider;
 import java.util.Map;
@@ -10,33 +11,38 @@ import java.util.Set;
 
 public class AgentProcessMap
 {
-    private final Map<String, Provider<? extends AgentProcess>>       nameToProvider;
+    private final Map<String, Provider<? extends AgentProcess>> nameToProvider = Maps.newConcurrentMap();
 
     public AgentProcessMap(Map<String, Provider<? extends AgentProcess>> nameToProvider)
     {
-        this.nameToProvider = ImmutableMap.copyOf(nameToProvider);
+        this.nameToProvider.putAll(nameToProvider);
     }
 
-    public AgentProcess     newProcess(String name)
+    public AgentProcess newProcess(String name)
     {
         Provider<? extends AgentProcess> provider = Preconditions.checkNotNull(nameToProvider.get(name), "No process found named: " + name);
         return provider.get();
     }
 
-    public Set<String>      getNames()
+    public Set<String> getNames()
     {
         return ImmutableSet.copyOf(nameToProvider.keySet());
     }
 
-    public String           getHelpText(String name)
+    public ProcessMetaData getProcessMetaData(String name)
     {
         Provider<? extends AgentProcess> provider = nameToProvider.get(name);
-        return (provider != null) ? provider.get().getHelpText() : "* not found *";
+        return (provider != null) ? provider.get().getMetaData() : null;
+    }
+
+    public void add(String name, Provider<? extends AgentProcess> provider)
+    {
+        nameToProvider.put(name, provider);
     }
 
     public static Map<String, Provider<? extends AgentProcess>> buildDefaultMap()
     {
-        ImmutableMap.Builder<String, Provider<? extends AgentProcess>>    builder = ImmutableMap.builder();
+        ImmutableMap.Builder<String, Provider<? extends AgentProcess>> builder = ImmutableMap.builder();
 
         builder.put("compact", SimpleProvider.of(CommandCompact.class));
         builder.put("cleanup", SimpleProvider.of(CommandCleanup.class));

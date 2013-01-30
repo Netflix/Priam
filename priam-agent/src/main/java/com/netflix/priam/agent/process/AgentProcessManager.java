@@ -61,6 +61,8 @@ public class AgentProcessManager implements Closeable
             if ( useProcessRecord.getExecutor() == null )
             {
                 AgentProcess    process = processMap.newProcess(name);
+                validateArguments(process, arguments);
+
                 Future<Void>    future = executorService.submit(new Executor(this, id, process, nodeToolProvider.get(), arguments));
                 useProcessRecord.setExecutor(future);
                 return true;
@@ -128,6 +130,23 @@ public class AgentProcessManager implements Closeable
                 // ignore
             }
             completedProcesses.addFirst(processRecord);
+        }
+    }
+
+    private void validateArguments(AgentProcess process, String[] arguments) throws IncorrectArgumentsException
+    {
+        ProcessMetaData metaData = process.getMetaData();
+        int requiredArgumentsQty = 0;
+        for ( ArgumentMetaData argumentMetaData : metaData.getArguments() )
+        {
+            if ( !argumentMetaData.isOptional() )
+            {
+                ++requiredArgumentsQty;
+            }
+        }
+        if ( arguments.length != requiredArgumentsQty )
+        {
+            throw new IncorrectArgumentsException("Expected at least " + requiredArgumentsQty + " arguments but was only provided " + arguments.length);
         }
     }
 }

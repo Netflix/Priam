@@ -2,6 +2,8 @@ package com.netflix.priam.agent.commands;
 
 import com.netflix.priam.agent.NodeStatus;
 import com.netflix.priam.agent.process.AgentProcess;
+import com.netflix.priam.agent.process.ProcessMetaData;
+import com.netflix.priam.agent.process.SimpleProcessMetaData;
 
 public class CommandStopThrift implements AgentProcess
 {
@@ -12,8 +14,8 @@ public class CommandStopThrift implements AgentProcess
     }
 
     @Override
-    public String getHelpText()
+    public ProcessMetaData getMetaData()
     {
-        return "Calls nodeTool.stopThriftServer()";
+        return new SimpleProcessMetaData("Calls nodeTool.stopThriftServer()");
     }
 }

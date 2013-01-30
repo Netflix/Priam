@@ -136,17 +136,9 @@ public class AgentProcessManager implements Closeable
     private void validateArguments(AgentProcess process, String[] arguments) throws IncorrectArgumentsException
     {
         ProcessMetaData metaData = process.getMetaData();
-        int requiredArgumentsQty = 0;
-        for ( ArgumentMetaData argumentMetaData : metaData.getArguments() )
+        if ( arguments.length < metaData.getMinArguments() )
         {
-            if ( !argumentMetaData.isOptional() )
-            {
-                ++requiredArgumentsQty;
-            }
-        }
-        if ( arguments.length != requiredArgumentsQty )
-        {
-            throw new IncorrectArgumentsException("Expected at least " + requiredArgumentsQty + " arguments but was only provided " + arguments.length);
+            throw new IncorrectArgumentsException("Expected at least " + metaData.getMinArguments() + " arguments but was only provided " + arguments.length);
         }
     }
 }

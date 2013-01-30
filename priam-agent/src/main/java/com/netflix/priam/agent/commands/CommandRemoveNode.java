@@ -1,11 +1,8 @@
 package com.netflix.priam.agent.commands;
 
-import com.google.common.collect.Lists;
 import com.netflix.priam.agent.NodeStatus;
 import com.netflix.priam.agent.process.AgentProcess;
-import com.netflix.priam.agent.process.ArgumentMetaData;
 import com.netflix.priam.agent.process.ProcessMetaData;
-import java.util.List;
 
 public class CommandRemoveNode implements AgentProcess
 {
@@ -23,39 +20,13 @@ public class CommandRemoveNode implements AgentProcess
             @Override
             public String getHelpText()
             {
-                return "Calls nodeTool.removeNode(token)";
+                return "Calls nodeTool.removeNode(token). Argument is the token to remove";
             }
 
             @Override
-            public List<ArgumentMetaData> getArguments()
+            public int getMinArguments()
             {
-                ArgumentMetaData metaData = new ArgumentMetaData()
-                {
-                    @Override
-                    public String getName()
-                    {
-                        return "token";
-                    }
-
-                    @Override
-                    public String getDescription()
-                    {
-                        return "Token to remove";
-                    }
-
-                    @Override
-                    public boolean isVariableLength()
-                    {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isOptional()
-                    {
-                        return false;
-                    }
-                };
-                return Lists.newArrayList(metaData);
+                return 1;
             }
         };
     }

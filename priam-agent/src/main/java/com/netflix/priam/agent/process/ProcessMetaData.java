@@ -6,5 +6,5 @@ public interface ProcessMetaData
 {
     public String getHelpText();
 
-    public List<ArgumentMetaData> getArguments();
+    public int getMinArguments();
 }

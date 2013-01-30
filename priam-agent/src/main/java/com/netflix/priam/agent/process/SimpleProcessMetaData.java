@@ -1,8 +1,5 @@
 package com.netflix.priam.agent.process;
 
-import com.google.common.collect.Lists;
-import java.util.List;
-
 public class SimpleProcessMetaData implements ProcessMetaData
 {
     private final String helpText;
@@ -19,8 +16,8 @@ public class SimpleProcessMetaData implements ProcessMetaData
     }
 
     @Override
-    public List<ArgumentMetaData> getArguments()
+    public int getMinArguments()
     {
-        return Lists.newArrayList();
+        return 0;
     }
 }

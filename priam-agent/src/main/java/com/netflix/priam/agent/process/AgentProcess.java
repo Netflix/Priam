@@ -6,5 +6,5 @@ public interface AgentProcess
 {
     public void performCommand(NodeStatus nodeTool, String[] arguments) throws Exception;
 
-    public String getHelpText();
+    public ProcessMetaData getMetaData();
 }

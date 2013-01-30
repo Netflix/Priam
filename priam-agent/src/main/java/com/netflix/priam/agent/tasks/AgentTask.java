@@ -19,6 +19,7 @@ public class AgentTask
     private final Storage storage;
 
     private static final String ROW_KEY = "com_instances";
+    private static final int VERSION = 0x00010001;
 
     public AgentTask(AgentConfiguration configuration, AgentProcessManager processManager, Provider<NodeStatus> nodeToolProvider, Storage storage)
     {
@@ -33,6 +34,7 @@ public class AgentTask
         JSONObject json = new JSONObject();
 
         NodeStatus nodeTool = nodeToolProvider.get();
+        json.put("version", VERSION);
         json.put("current_time_ms", System.currentTimeMillis());
         json.put("info", nodeTool.info());
         json.put("is_joined", nodeTool.isJoined());

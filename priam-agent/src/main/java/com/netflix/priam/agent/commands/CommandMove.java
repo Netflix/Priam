@@ -23,39 +23,13 @@ public class CommandMove implements AgentProcess
             @Override
             public String getHelpText()
             {
-                return "Calls nodeTool.move(token)";
+                return "Calls nodeTool.move(token). Argument is the token to move.";
             }
 
             @Override
-            public List<ArgumentMetaData> getArguments()
+            public int getMinArguments()
             {
-                ArgumentMetaData token = new ArgumentMetaData()
-                {
-                    @Override
-                    public String getName()
-                    {
-                        return "token";
-                    }
-
-                    @Override
-                    public String getDescription()
-                    {
-                        return "The token to move";
-                    }
-
-                    @Override
-                    public boolean isVariableLength()
-                    {
-                        return false;
-                    }
-
-                    @Override
-                    public boolean isOptional()
-                    {
-                        return false;
-                    }
-                };
-                return Lists.newArrayList(token);
+                return 1;
             }
         };
     }

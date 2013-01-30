@@ -3,6 +3,7 @@ package com.netflix.priam.agent.commands;
 import com.netflix.priam.agent.NodeStatus;
 import com.netflix.priam.agent.process.AgentProcess;
 import com.netflix.priam.agent.process.ProcessMetaData;
+import com.netflix.priam.agent.process.SimpleProcessMetaData;
 
 public class CommandRemoveNode implements AgentProcess
 {
@@ -15,19 +16,6 @@ public class CommandRemoveNode implements AgentProcess
     @Override
     public ProcessMetaData getMetaData()
     {
-        return new ProcessMetaData()
-        {
-            @Override
-            public String getHelpText()
-            {
-                return "Calls nodeTool.removeNode(token). Argument is the token to remove";
-            }
-
-            @Override
-            public int getMinArguments()
-            {
-                return 1;
-            }
-        };
+        return new SimpleProcessMetaData("Calls nodeTool.removeNode(token). Argument is the token to remove.", 1);
     }
 }

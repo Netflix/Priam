@@ -9,6 +9,9 @@ import org.codehaus.jettison.json.JSONObject;
 
 import static com.netflix.priam.agent.tasks.ProcessTaskConstants.*;
 
+/**
+ * Recurring task that starts/stops processes
+ */
 public class ProcessTask
 {
     private final AgentConfiguration configuration;

@@ -11,6 +11,9 @@ import org.codehaus.jettison.json.JSONObject;
 import org.json.simple.JSONArray;
 import javax.inject.Provider;
 
+/**
+ * Recurring task that writes out state info
+ */
 public class AgentTask
 {
     private final AgentConfiguration configuration;

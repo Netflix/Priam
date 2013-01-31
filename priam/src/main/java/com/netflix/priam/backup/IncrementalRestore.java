@@ -37,6 +37,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
+
 /*
  * Incremental SSTable Restore using SSTable Loader
  */
@@ -97,16 +98,21 @@ public class IncrementalRestore extends AbstractRestore
                 continue;
             File keyspaceDir = new File(restoreDir, temp.keyspace);
             FileUtils.createDirectory(keyspaceDir);
-            download(temp, new File(keyspaceDir, temp.fileName));
+            File columnFamilyDir = new File(keyspaceDir, temp.columnFamily);
+            FileUtils.createDirectory(columnFamilyDir);
+            download(temp, new File(columnFamilyDir, temp.fileName));
         }
         // wait for all the downloads in this batch to complete.
         waitToComplete();
         // stream the SST's in the dir
         for (File keyspaceDir : restoreDir.listFiles())
         {
-            Collection<PendingFile> streamedSSTs = loader.stream(keyspaceDir);
-            // cleanup the dir which where streamed.
-            loader.deleteCompleted(streamedSSTs);
+        		for(File columnFamilyDir : keyspaceDir.listFiles())
+        		{
+        			Collection<PendingFile> streamedSSTs = loader.stream(columnFamilyDir);
+        			// cleanup the dir which where streamed.
+        			loader.deleteCompleted(streamedSSTs);
+        		}
         }
     }
 

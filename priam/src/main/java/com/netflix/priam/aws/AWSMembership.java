@@ -93,6 +93,7 @@ public class AWSMembership implements IMembership
         {
             asgs.add(appName + "--" + racs.replaceAll("\\-", ""));
         }
+        logger.info(String.format("found ASGs for app %s = %s", appName, asgs.toString()));
         return asgs;
     }
 
@@ -108,6 +109,7 @@ public class AWSMembership implements IMembership
             List<String> instances = Lists.newLinkedList();
             for (AutoScalingGroup asg : res.getAutoScalingGroups())
             {
+                logger.info(String.format("in region/asg %s/%s, found instances = ", ec2Region, asg.getAutoScalingGroupName(), asg.getInstances()));
                 for (Instance ins : asg.getInstances())
                 {
                     if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
@@ -117,6 +119,7 @@ public class AWSMembership implements IMembership
                     }
                 }
             }
+            logger.info(String.format("found a total of %d live instances", instances.size()));
             return instances;
         }
         finally
@@ -132,14 +135,17 @@ public class AWSMembership implements IMembership
         DescribeInstancesResult res = getEc2Client(ec2Region).describeInstances(req);
 
         List<PriamInstance> realInstances = Lists.newLinkedList();
+        logger.info("found reservations = " + res.getReservations());
         for(Reservation r : res.getReservations())
         {
+            logger.info(String.format("reservation %s has these instances: %s", r.getReservationId(), r.getInstances()));
             for(com.amazonaws.services.ec2.model.Instance i : r.getInstances())
             {
                 realInstances.add(new PriamInstance(i.getPublicDnsName(), i.getInstanceId(),
                         ec2Region, i.getPlacement().getAvailabilityZone(), i.getPublicIpAddress()));
             }
         }
+        logger.info(String.format("expected instance cnt = %d, actual (via reservations) = %d", instanceIds.size(), realInstances.size()));
         return realInstances;
     }
 

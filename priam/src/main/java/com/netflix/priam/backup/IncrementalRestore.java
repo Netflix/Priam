@@ -23,9 +23,11 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
+import org.apache.cassandra.service.StorageServiceMBean;
 import org.apache.cassandra.streaming.PendingFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +38,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.regex.Pattern;
+
+import javax.management.ObjectName;
 
 /*
  * Incremental SSTable Restore using SSTable Loader
@@ -97,16 +101,21 @@ public class IncrementalRestore extends AbstractRestore
                 continue;
             File keyspaceDir = new File(restoreDir, temp.keyspace);
             FileUtils.createDirectory(keyspaceDir);
-            download(temp, new File(keyspaceDir, temp.fileName));
+            File columnFamilyDir = new File(keyspaceDir, temp.columnFamily);
+            FileUtils.createDirectory(columnFamilyDir);
+            download(temp, new File(columnFamilyDir, temp.fileName));
         }
         // wait for all the downloads in this batch to complete.
         waitToComplete();
         // stream the SST's in the dir
         for (File keyspaceDir : restoreDir.listFiles())
         {
-            Collection<PendingFile> streamedSSTs = loader.stream(keyspaceDir);
-            // cleanup the dir which where streamed.
-            loader.deleteCompleted(streamedSSTs);
+        		for(File columnFamilyDir : keyspaceDir.listFiles())
+        		{
+        			Collection<PendingFile> streamedSSTs = loader.stream(columnFamilyDir);
+        			// cleanup the dir which where streamed.
+        			loader.deleteCompleted(streamedSSTs);
+        		}
         }
     }
 

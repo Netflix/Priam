@@ -9,37 +9,81 @@ import javax.inject.Provider;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Maps process names to process providers
+ */
 public class AgentProcessMap
 {
     private final Map<String, Provider<? extends AgentProcess>> nameToProvider = Maps.newConcurrentMap();
 
+    /**
+     * Create an empty map
+     */
+    public AgentProcessMap()
+    {
+    }
+
+    /**
+     * Create a map with the given initial mappings
+     *
+     * @param nameToProvider mappings
+     */
     public AgentProcessMap(Map<String, Provider<? extends AgentProcess>> nameToProvider)
     {
         this.nameToProvider.putAll(nameToProvider);
     }
 
+    /**
+     * Create a new process for the given process name
+     *
+     * @param name name of the process
+     * @return the process
+     * @throws NullPointerException if there is no mapping for the given name
+     */
     public AgentProcess newProcess(String name)
     {
         Provider<? extends AgentProcess> provider = Preconditions.checkNotNull(nameToProvider.get(name), "No process found named: " + name);
         return provider.get();
     }
 
+    /**
+     * Return the names of the current mappings
+     *
+     * @return names
+     */
     public Set<String> getNames()
     {
         return ImmutableSet.copyOf(nameToProvider.keySet());
     }
 
+    /**
+     * Return the meta data for the given process
+     *
+     * @param name process name
+     * @return meta data or null
+     */
     public ProcessMetaData getProcessMetaData(String name)
     {
         Provider<? extends AgentProcess> provider = nameToProvider.get(name);
         return (provider != null) ? provider.get().getMetaData() : null;
     }
 
+    /**
+     * Add a new mapping
+     *
+     * @param name process name
+     * @param provider process provider
+     */
     public void add(String name, Provider<? extends AgentProcess> provider)
     {
         nameToProvider.put(name, provider);
     }
 
+    /**
+     * Build a map with the default mappings. Can be used as the argument to {@link AgentProcessMap#AgentProcessMap(Map)}
+     *
+     * @return map
+     */
     public static Map<String, Provider<? extends AgentProcess>> buildDefaultMap()
     {
         ImmutableMap.Builder<String, Provider<? extends AgentProcess>> builder = ImmutableMap.builder();

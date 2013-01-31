@@ -5,6 +5,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Future;
 
+/**
+ * Maintains state of a process
+ */
 public class ProcessRecord
 {
     private final String            name;
@@ -12,10 +15,9 @@ public class ProcessRecord
     private final List<String>      arguments;
     private final long              startTimeMs = System.currentTimeMillis();
 
-    private volatile long           endTimeMs = -1;
+    private volatile long           endTimeMs = 0;
     private volatile long           stopAttemptMs = 0;
     private volatile Future<Void>   executor;
-    private volatile boolean wasForceStopped = false;
 
     ProcessRecord(String name, String id, String[] arguments)
     {
@@ -34,11 +36,10 @@ public class ProcessRecord
         return executor;
     }
 
-    void setEnd(boolean wasForceStopped)
+    void setEnd()
     {
         executor = null;
         endTimeMs = System.currentTimeMillis();
-        this.wasForceStopped = wasForceStopped;
     }
 
     void noteStopAttempt()
@@ -46,38 +47,51 @@ public class ProcessRecord
         stopAttemptMs = System.currentTimeMillis();
     }
 
+    /**
+     * @return the process name
+     */
     public String getName()
     {
         return name;
     }
 
+    /**
+     * @return when the process was started
+     */
     public long getStartTimeMs()
     {
         return startTimeMs;
     }
 
+    /**
+     * @return the process's ID
+     */
     public String getId()
     {
         return id;
     }
 
+    /**
+     * @return the arguments
+     */
     public List<String> getArguments()
     {
         return arguments;
     }
 
+    /**
+     * @return when the process ended or 0
+     */
     public long getEndTimeMs()
     {
         return endTimeMs;
     }
 
+    /**
+     * @return when the process was attempted to be stopped or 0
+     */
     public long getStopAttemptMs()
     {
         return stopAttemptMs;
-    }
-
-    public boolean wasForceStopped()
-    {
-        return wasForceStopped;
     }
 }

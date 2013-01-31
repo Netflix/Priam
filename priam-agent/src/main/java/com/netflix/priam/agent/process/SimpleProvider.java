@@ -2,15 +2,27 @@ package com.netflix.priam.agent.process;
 
 import javax.inject.Provider;
 
+/**
+ * A class based provider
+ */
 public class SimpleProvider<T> implements Provider<T>
 {
     private final Class<T> clazz;
 
-    public static <T> SimpleProvider<T> of(Class<T> clazz)
+    /**
+     * Return a provider for the given class
+     *
+     * @param clazz class
+     * @return provider
+     */
+    public static <T> Provider<T> of(Class<T> clazz)
     {
         return new SimpleProvider<T>(clazz);
     }
 
+    /**
+     * @param clazz Provider class
+     */
     public SimpleProvider(Class<T> clazz)
     {
         this.clazz = clazz;

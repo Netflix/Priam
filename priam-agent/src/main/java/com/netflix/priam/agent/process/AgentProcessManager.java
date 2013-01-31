@@ -18,6 +18,9 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Manages running processes in the agent
+ */
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 public class AgentProcessManager implements Closeable
 {
@@ -30,6 +33,11 @@ public class AgentProcessManager implements Closeable
     @GuardedBy("synchronized")
     private final Deque<ProcessRecord> completedProcesses = Queues.newLinkedBlockingDeque();
 
+    /**
+     * @param processMap map from process name to process provider
+     * @param configuration config
+     * @param nodeToolProvider provider for the Node Tool operations
+     */
     public AgentProcessManager(AgentProcessMap processMap, AgentConfiguration configuration, Provider<NodeStatus> nodeToolProvider)
     {
         this.processMap = processMap;
@@ -38,11 +46,21 @@ public class AgentProcessManager implements Closeable
         executorService = Executors.newFixedThreadPool(configuration.getMaxProcessThreads(), new ThreadFactoryBuilder().setDaemon(true).setNameFormat("AgentProcessManager-%d").build());
     }
 
+    /**
+     * List of currently executing processes
+     *
+     * @return processes
+     */
     public List<ProcessRecord> getActiveProcesses()
     {
         return ImmutableList.copyOf(activeProcesses.values());
     }
 
+    /**
+     * List of completed processes
+     *
+     * @return processes
+     */
     public List<ProcessRecord> getCompletedProcesses()
     {
         synchronized(completedProcesses)
@@ -51,6 +69,15 @@ public class AgentProcessManager implements Closeable
         }
     }
 
+    /**
+     * Start a process
+     *
+     * @param name name of the process to start (must exist in the process map)
+     * @param id ID of the process. IDs must be unique. If there is already a process running with this ID this method will not start a new process.
+     * @param arguments arguments for the processes
+     * @return true if a new process was started
+     * @throws Exception errors
+     */
     public boolean startProcess(String name, String id, String[] arguments) throws Exception
     {
         ProcessRecord newProcessRecord = new ProcessRecord(name, id, arguments);
@@ -71,13 +98,18 @@ public class AgentProcessManager implements Closeable
         }
     }
 
-    public void stopProcess(String id)
+    /**
+     * Attempt to stop the process with the given ID
+     *
+     * @param id ID of the process to stop
+     * @return true if the process was found
+     */
+    public boolean stopProcess(String id)
     {
         final ProcessRecord processRecord = activeProcesses.get(id);
         if ( processRecord == null )
         {
-            // TODO
-            return;
+            return false;
         }
 
         synchronized(processRecord)
@@ -89,8 +121,17 @@ public class AgentProcessManager implements Closeable
                 executor.cancel(true);
             }
         }
+        return true;
     }
 
+    /**
+     * Stop all process and block until they complete or until time runs out
+     *
+     * @param timeout max time to wait for process completion
+     * @param unit time unit
+     * @return true if all processes terminated
+     * @throws InterruptedException if interrupted
+     */
     public boolean closeAndWaitForCompletion(long timeout, TimeUnit unit) throws InterruptedException
     {
         close();
@@ -103,17 +144,16 @@ public class AgentProcessManager implements Closeable
         executorService.shutdownNow();
     }
 
-    void removeProcess(String id, boolean wasForced)
+    void removeProcess(String id)
     {
         final ProcessRecord processRecord = activeProcesses.remove(id);
         if ( processRecord == null )
         {
-            // TODO
             return;
         }
         synchronized(processRecord)
         {
-            processRecord.setEnd(wasForced);
+            processRecord.setEnd();
         }
 
         synchronized(completedProcesses)

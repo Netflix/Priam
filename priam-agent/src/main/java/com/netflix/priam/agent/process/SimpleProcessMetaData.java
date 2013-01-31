@@ -1,5 +1,8 @@
 package com.netflix.priam.agent.process;
 
+/**
+ * Concrete imp for ProcessMetaData
+ */
 public class SimpleProcessMetaData implements ProcessMetaData
 {
     private final String helpText;

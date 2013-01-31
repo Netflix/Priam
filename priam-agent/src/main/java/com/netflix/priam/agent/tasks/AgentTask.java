@@ -61,7 +61,6 @@ public class AgentTask
             JSONObject json = new JSONObject();
             addProcessCommon(processRecord, json);
             json.put("end_time_ms", processRecord.getEndTimeMs());
-            json.put("was_force_stopped", processRecord.wasForceStopped());
         }
 
         return tab;

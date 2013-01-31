@@ -29,7 +29,7 @@ class Executor implements Callable<Void>
         }
         finally
         {
-            processManager.removeProcess(id, false);
+            processManager.removeProcess(id);
         }
         return null;
     }

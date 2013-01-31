@@ -23,11 +23,9 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.Sleeper;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.service.StorageServiceMBean;
 import org.apache.cassandra.streaming.PendingFile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +37,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.regex.Pattern;
 
-import javax.management.ObjectName;
 
 /*
  * Incremental SSTable Restore using SSTable Loader

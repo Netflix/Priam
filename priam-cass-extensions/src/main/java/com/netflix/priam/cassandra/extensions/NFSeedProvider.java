@@ -25,9 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.cassandra.locator.SeedProvider;
 
-/**
- * Retrieves the list of seeds from Priam.
- */
+/** Retrieves the list of seeds from Priam. */
 public class NFSeedProvider implements SeedProvider
 {
     private static final Logger logger = LoggerFactory.getLogger(NFSeedProvider.class);
@@ -35,27 +33,38 @@ public class NFSeedProvider implements SeedProvider
 
     public NFSeedProvider(Map<String, String> args)
     {
+        String seedString;
         try
         {
-            String seedString;
-            while(true)
+            while (true)
             {
+                try
+                {
+                    seedString = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
+                }
+                catch (Exception e)
+                {
+                    logger.info("Failed to retrieve the seed data; will retry shortly...", e);
+                    continue;
+                }
 
-                seedString = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
-                if(seedString != null && !seedString.isEmpty())
+                if (seedString == null || seedString.isEmpty())
+                {
+                    logger.info("didn't get seeds from Priam; sleeping...");
+                    Thread.sleep(1000);
+                } else
+                {
                     break;
-                logger.info("didn't get seeds from Priam; sleeping...");
-                Thread.sleep(1000);
+                }
+                logger.info("seed list = " + seedString);
+                for (String seed : seedString.split(","))
+                    seeds.add(InetAddress.getByName(seed));
             }
-            logger.info("seed list = " + seedString);
-            for (String seed : seedString.split(","))
-                seeds.add(InetAddress.getByName(seed));
         }
-        catch (Exception e)
+        catch(Exception e)
         {
-            logger.error("Failed to get seeds.");
+            logger.error("failed to read or parse seed list: " + seedString, e);
         }
-
     }
 
     @Override

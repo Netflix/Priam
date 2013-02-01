@@ -31,7 +31,7 @@ public class DataFetcher
         {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(1000);
-            conn.setReadTimeout(1000);
+            conn.setReadTimeout(10000);
             conn.setRequestMethod("GET");
             if (conn.getResponseCode() != 200)
                 throw new RuntimeException("Unable to get data for URL " + url);

@@ -33,7 +33,7 @@ public class NFSeedProvider implements SeedProvider
 
     public NFSeedProvider(Map<String, String> args)
     {
-        String seedString;
+        String seedString = null;
         try
         {
             while (true)
@@ -52,13 +52,14 @@ public class NFSeedProvider implements SeedProvider
                 {
                     logger.info("didn't get seeds from Priam; sleeping...");
                     Thread.sleep(1000);
-                } else
+                }
+                else
                 {
+                    logger.info("seed list = " + seedString);
+                    for (String seed : seedString.split(","))
+                        seeds.add(InetAddress.getByName(seed));
                     break;
                 }
-                logger.info("seed list = " + seedString);
-                for (String seed : seedString.split(","))
-                    seeds.add(InetAddress.getByName(seed));
             }
         }
         catch(Exception e)

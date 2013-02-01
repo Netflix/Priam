@@ -1,4 +1,4 @@
-ext.releaseVersion = '0.0.5.10'
+ext.releaseVersion = '0.0.5.11'
 ext.githubProjectName = 'Priam'
 
 buildscript {

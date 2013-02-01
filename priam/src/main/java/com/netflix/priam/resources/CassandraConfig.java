@@ -53,6 +53,7 @@ public class CassandraConfig
         try
         {
             final List<String> seeds = priamServer.getId().getSeeds();
+            logger.info("seeds to return:  " + StringUtils.join(seeds, ','));
             if (!seeds.isEmpty())
                 return Response.ok(StringUtils.join(seeds, ',')).build();
             logger.error("Cannot find the Seeds");

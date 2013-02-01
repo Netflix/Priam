@@ -90,6 +90,7 @@ public class InstanceIdentity
     public List<String> getSeeds() throws UnknownHostException
     {
         populateRacMap();
+        logger.info("size of reloaded locMap = " + locMap.size());
         List<String> seeds = new LinkedList<String>();
         // Handle single zone deployment
         if (config.getRacs().size() == 1)
@@ -107,6 +108,7 @@ public class InstanceIdentity
         		if (instance != null)
         			seeds.add(instance.getHostName());
         }
+        logger.info("size of seeds to return = " + seeds.size());
         return seeds;
     }
 

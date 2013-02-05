@@ -88,10 +88,25 @@ public class AWSMembership implements IMembership
 
     List<String> deriveAsgs(String appName)
     {
+
         List<String> asgs = new LinkedList<String>();
-        for(String racs : config.getRacs())
+        String baseAsgNAme = config.getASGName();
+
+        //TODO: clean this logic up
+        String curAsgZone = null;
+        for(String r : config.getRacs())
         {
-            asgs.add(appName + "--" + racs.replaceAll("\\-", ""));
+            if(baseAsgNAme.contains(r))
+            {
+                curAsgZone = r;
+                break;
+            }
+        }
+
+        for(String rac : config.getRacs())
+        {
+            asgs.add(baseAsgNAme.replaceAll(curAsgZone, rac));
+//            asgs.add(appName + "--" + rac.replaceAll("\\-", ""));
         }
         logger.info(String.format("found ASGs for app %s = %s", appName, asgs.toString()));
         return asgs;

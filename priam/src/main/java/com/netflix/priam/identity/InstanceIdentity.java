@@ -46,6 +46,8 @@ import java.util.Random;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
+    private static final String DUMMY_INSTANCE_ID = "new_slot";
+
     private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
     {
         public List<PriamInstance> get()
@@ -62,7 +64,7 @@ public class InstanceIdentity
     private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
     		@Override
     		public boolean apply(PriamInstance instance) {
-    			return !instance.getHostName().equals(myInstance.getHostName());
+    			return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostName().equals(myInstance.getHostName()));
     		}
     };
    

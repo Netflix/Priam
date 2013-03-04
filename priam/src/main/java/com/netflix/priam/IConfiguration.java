@@ -304,4 +304,14 @@ public interface IConfiguration
      * Support for limiting the total number of rows in c* 1.1 global row cache.
      */
     public String getRowCacheKeysToSave();
+
+    /**
+     * Defaults to 'allow all'.
+     */
+    public String getAuthenticator();
+
+    /**
+     * Defaults to 'allow all'.
+     */
+    public String getAuthorizer();
 }

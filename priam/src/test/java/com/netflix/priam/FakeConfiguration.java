@@ -6,6 +6,7 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.defaultimpl.PriamConfiguration;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -399,5 +400,15 @@ public class FakeConfiguration implements IConfiguration
     public String getYamlLocation()
     {
         return "conf/cassandra.yaml";
+    }
+
+    public String getAuthenticator()
+    {
+        return PriamConfiguration.DEFAULT_AUTHENTICATOR;
+    }
+
+    public String getAuthorizer()
+    {
+        return PriamConfiguration.DEFAULT_AUTHORIZER;
     }
 }

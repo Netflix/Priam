@@ -62,6 +62,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
     private static final String CONFIG_YAML_LOCATION = PRIAM_PRE + ".yamlLocation";
+    private static final String CONFIG_AUTHENTICATOR = PRIAM_PRE + ".authenticator";
+    private static final String CONFIG_AUTHORIZER = PRIAM_PRE + ".authorizer";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -107,6 +109,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.NFSeedProvider";
     private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
+    public static final String DEFAULT_AUTHENTICATOR = "org.apache.cassandra.auth.AllowAllAuthenticator";
+    public static final String DEFAULT_AUTHORIZER = "org.apache.cassandra.auth.AllowAllAuthority";
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
@@ -639,7 +643,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getProperty(CONFIG_ROWCACHE_COUNT, null);
     }
-    
+
     private List<String> getTrimmedStringList(String[] strings) {
     		List<String> list = Lists.newArrayList();
     		for(String s : strings) {
@@ -651,5 +655,15 @@ public class PriamConfiguration implements IConfiguration
     public String getYamlLocation()
     {
         return config.getProperty(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
+    }
+
+    public String getAuthenticator()
+    {
+        return config.getProperty(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
+    }
+
+    public String getAuthorizer()
+    {
+        return config.getProperty(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
     }
 }

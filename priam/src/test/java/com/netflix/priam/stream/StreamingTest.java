@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import com.netflix.priam.defaultimpl.StandardTuner;
 import junit.framework.Assert;
 
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
@@ -25,7 +26,8 @@ public class StreamingTest
 {
     public void teststream() throws IOException, InterruptedException
     {
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id"));
+        IConfiguration config = new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id");
+        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(config, new StandardTuner(config));
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);
     }

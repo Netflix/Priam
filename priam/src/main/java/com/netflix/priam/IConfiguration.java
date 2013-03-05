@@ -30,6 +30,8 @@ public interface IConfiguration
      */
     public String getCassHome();
 
+    public String getYamlLocation();
+
     /**
      * @return Path to Cassandra startup script
      */
@@ -317,11 +319,19 @@ public interface IConfiguration
      * Support for limiting the total number of rows in c* 1.1 global row cache.
      */
     public String getRowCacheKeysToSave();
-    
+
     /**
      * @return C* Process Name
      */
     public String getCassProcessName();
 
+    /**
+     * Defaults to 'allow all'.
+     */
+    public String getAuthenticator();
 
+    /**
+     * Defaults to 'allow all'.
+     */
+    public String getAuthorizer();
 }

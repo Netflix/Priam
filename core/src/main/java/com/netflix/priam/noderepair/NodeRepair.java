@@ -1,7 +1,5 @@
 package com.netflix.priam.noderepair;
 
-import com.bazaarvoice.zookeeper.ZooKeeperConnection;
-import com.bazaarvoice.zookeeper.internal.CuratorConnection;
 import com.google.common.base.Optional;
 import com.google.common.base.Throwables;
 import com.google.inject.Inject;
@@ -24,23 +22,23 @@ import java.util.concurrent.TimeUnit;
 public final class NodeRepair extends Task {
     public static String JOBNAME = "NodeRepair";
     private static final Logger logger = LoggerFactory.getLogger(NodeRepair.class);
-    private static Duration nodeRepairMutexAcquireTimeOut = Duration.standardMinutes(10);  //default time out
 
     private CassandraConfiguration cassandraConfig;
-    private Optional<ZooKeeperConnection> zooKeeperConnection;
+    private Optional<CuratorFramework> curator;
     private AmazonConfiguration amazonConfiguration;
+    private Duration nodeRepairMutexAcquireTimeOut;
 
     @Inject
-    public NodeRepair(CassandraConfiguration cassandraConfig, Optional<ZooKeeperConnection> zooKeeperConnection, AmazonConfiguration amazonConfiguration){
+    public NodeRepair(CassandraConfiguration cassandraConfig, Optional<CuratorFramework> curator, AmazonConfiguration amazonConfiguration){
         this.cassandraConfig = cassandraConfig;
-        this.zooKeeperConnection = zooKeeperConnection;
+        this.curator = curator;
         this.amazonConfiguration = amazonConfiguration;
         this.nodeRepairMutexAcquireTimeOut = Duration.standardMinutes(cassandraConfig.getNodeRepairMutexAcquireTimeOut());
     }
 
     public void execute()  {
         try {
-            if (!zooKeeperConnection.isPresent()) {
+            if (!curator.isPresent()) {
                 return;
             }
             JMXNodeTool jmxNodeTool = new JMXNodeTool(cassandraConfig);
@@ -54,7 +52,7 @@ public final class NodeRepair extends Task {
             while (keyspaceQueue.size() > 0) {
                 String keyspace = keyspaceQueue.remove();
                 //get mutex for the keyspace
-                InterProcessMutex mutex = provideInMutex(zooKeeperConnection.get().withNamespace("/applications/priam/noderepair"), getMutexName(keyspace));
+                InterProcessMutex mutex = new InterProcessMutex(curator.get(), getMutexPath(keyspace));
                 try {
                     logger.info("node repair is trying to get lock of keyspace {}, thread: {}", keyspace, Thread.currentThread().getId());
                     if (mutex.acquire(nodeRepairMutexAcquireTimeOut.getStandardMinutes(), TimeUnit.MINUTES)) {
@@ -71,7 +69,7 @@ public final class NodeRepair extends Task {
                     throw Throwables.propagate(e);
                 } finally {
                     //release the mutex regardless of mutex was acquired or not
-                    try { mutex.release(); } catch (Throwable e) { /* don't care */ };
+                    try { mutex.release(); } catch (Throwable e) { /* don't care */ }
                 }
             }
             logger.info("successfully finished node repair");
@@ -80,14 +78,8 @@ public final class NodeRepair extends Task {
         }
     }
 
-    private InterProcessMutex provideInMutex(ZooKeeperConnection connection, String mutexName){
-        CuratorFramework curator = ((CuratorConnection) connection).getCurator();
-        final InterProcessMutex mutex = new InterProcessMutex(curator, "/" + mutexName);
-        return mutex;
-    }
-
-    private String getMutexName(String keyspace){
-        return amazonConfiguration.getRegionName()+"/"+cassandraConfig.getClusterName()+"/"+keyspace;
+    private String getMutexPath(String keyspace){
+        return "/applications/priam/noderepair/" + amazonConfiguration.getRegionName() + "/" + cassandraConfig.getClusterName() + "/" + keyspace;
     }
 
     @Override

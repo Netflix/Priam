@@ -1,23 +1,26 @@
 package com.netflix.priam.dropwizard.managers;
 
-import com.bazaarvoice.soa.ServiceEndPoint;
-import com.bazaarvoice.soa.ServiceEndPointBuilder;
-import com.bazaarvoice.soa.ServiceRegistry;
-import com.bazaarvoice.soa.registry.ZooKeeperServiceRegistry;
-import com.bazaarvoice.zookeeper.ZooKeeperConnection;
+import com.bazaarvoice.ostrich.ServiceEndPoint;
+import com.bazaarvoice.ostrich.ServiceEndPointBuilder;
+import com.bazaarvoice.ostrich.ServiceRegistry;
+import com.bazaarvoice.ostrich.registry.zookeeper.ZooKeeperServiceRegistry;
 import com.google.common.base.Optional;
+import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.net.HostAndPort;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -25,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 
 /**
  * Monitors the Cassandra server and adds an entry for it in ZooKeeper in the place and format expected by the BV SOA
- * {@link com.bazaarvoice.soa.HostDiscovery} class.  Clients are encouraged to use these entries in ZooKeeper to get
+ * {@link com.bazaarvoice.ostrich.HostDiscovery} class.  Clients are encouraged to use these entries in ZooKeeper to get
  * their initial seed lists when connecting to Cassandra.
  * <p>
  * The host discovery entry is tied to the state of the Cassandra thrift interface.  If the thrift interface is
@@ -36,18 +39,21 @@ import java.util.concurrent.TimeUnit;
 public class ServiceRegistryManager implements Managed {
     private static final Logger logger = LoggerFactory.getLogger(ServiceRegistryManager.class);
 
+    private final PriamConfiguration priamConfiguration;
     private final CassandraConfiguration casConfiguration;
     private final AmazonConfiguration awsConfiguration;
-    private final Optional<ZooKeeperConnection> zkConnection;
+    private final Optional<CuratorFramework> zkConnection;
     private final ScheduledExecutorService executor;
-    private ServiceEndPoint endPoint;
+    private final List<ServiceEndPoint> endPoints = Lists.newArrayList();
     private ServiceRegistry zkRegistry;
     private boolean registered;
 
     @Inject
-    public ServiceRegistryManager(CassandraConfiguration casConfiguration,
+    public ServiceRegistryManager(PriamConfiguration priamConfiguration,
+                                  CassandraConfiguration casConfiguration,
                                   AmazonConfiguration awsConfiguration,
-                                  Optional<ZooKeeperConnection> zkConnection) {
+                                  Optional<CuratorFramework> zkConnection) {
+        this.priamConfiguration = priamConfiguration;
         this.casConfiguration = casConfiguration;
         this.awsConfiguration = awsConfiguration;
         this.zkConnection = zkConnection;
@@ -63,13 +69,16 @@ public class ServiceRegistryManager implements Managed {
             return;
         }
 
-        // Construct an SOA end point for this server.  The ID is the "host:port" that clients should use to connect.
+        // Construct Ostrich end points for this server.  The ID is the "host:port" that clients should use to connect.
         HostAndPort host = HostAndPort.fromParts(awsConfiguration.getPrivateIP(), casConfiguration.getThriftPort());
-        endPoint = new ServiceEndPointBuilder()
-                .withServiceName(casConfiguration.getClusterName() + "-cassandra")
-                .withId(host.toString())
-                .build();
-        logger.info("ZooKeeper end point: {}", endPoint);
+        for (String serviceName : priamConfiguration.getOstrichServiceNames()) {
+            ServiceEndPoint endPoint = new ServiceEndPointBuilder()
+                    .withServiceName(serviceName)
+                    .withId(host.toString())
+                    .build();
+            endPoints.add(endPoint);
+            logger.info("ZooKeeper end point: {}", endPoint);
+        }
 
         // Connect to ZooKeeper
         zkRegistry = new ZooKeeperServiceRegistry(zkConnection.get());
@@ -97,14 +106,18 @@ public class ServiceRegistryManager implements Managed {
         }
         if (alive) {
             if (!registered) {
-                logger.info("Registering Cassandra end point with ZooKeeper: {}", endPoint);
-                zkRegistry.register(endPoint);
+                for (ServiceEndPoint endPoint : endPoints) {
+                    logger.info("Registering Cassandra end point with ZooKeeper: {}", endPoint);
+                    zkRegistry.register(endPoint);
+                }
                 registered = true;
             }
         } else {
             if (registered) {
-                logger.info("Unregistering Cassandra end point with ZooKeeper: {}", endPoint);
-                zkRegistry.unregister(endPoint);
+                for (ServiceEndPoint endPoint : endPoints) {
+                    logger.info("Unregistering Cassandra end point with ZooKeeper: {}", endPoint);
+                    zkRegistry.unregister(endPoint);
+                }
                 registered = false;
             }
         }

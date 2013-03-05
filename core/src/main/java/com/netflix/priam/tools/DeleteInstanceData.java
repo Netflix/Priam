@@ -4,12 +4,12 @@ import com.netflix.priam.aws.DefaultCredentials;
 import com.netflix.priam.aws.SDBInstanceData;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.identity.PriamInstance;
-import com.yammer.dropwizard.AbstractService;
 import com.yammer.dropwizard.cli.Command;
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.Options;
+import com.yammer.dropwizard.config.Bootstrap;
+import net.sourceforge.argparse4j.inf.Namespace;
+import net.sourceforge.argparse4j.inf.Subparser;
 
-import static java.lang.String.format;
+import java.util.List;
 
 /**
  * Deletes simple db data based on the numeric priam instance IDs.
@@ -24,24 +24,19 @@ public class DeleteInstanceData extends Command {
     }
 
     @Override
-    public Options getOptions() {
-        Options options = new Options();
-        options.addOption("c", "cluster", true, "Cassandra cluster name");
-        options.addOption("d", "domain", true, "AWS SimpleDB domain");
-        options.addOption("r", "region", true, "AWS SimpleDB region");
-        return options;
+    public void configure(Subparser subparser) {
+        subparser.addArgument("-c", "--cluster").required(true).help("Cassandra cluster name");
+        subparser.addArgument("-d", "--domain").required(true).help("AWS SimpleDB domain");
+        subparser.addArgument("-r", "--region").required(false).help("AWS SimpleDB region");
+        subparser.addArgument("instance-id").nargs("+").help("Priam instance IDs");
     }
 
     @Override
-    protected void run(AbstractService<?> service, CommandLine cmdLine) throws Exception {
-        if (cmdLine.getArgList().isEmpty()) {
-            printHelp("Expected at least one Priam instance id.", service.getClass());
-            System.exit(2);
-        }
-        String cluster = getRequiredOption("cluster", cmdLine, service);
-        String domain = getRequiredOption("domain", cmdLine, service);
-        String region = cmdLine.getOptionValue("region");
-        String[] ids = cmdLine.getArgs();
+    public void run(Bootstrap<?> bootstrap, Namespace namespace) throws Exception {
+        String cluster = namespace.getString("cluster");
+        String domain = namespace.getString("domain");
+        String region = namespace.getString("region");
+        List<String> ids = namespace.getList("instance-id");
 
         SDBInstanceData sdb = getSimpleDB(domain, region);
 
@@ -61,13 +56,5 @@ public class DeleteInstanceData extends Command {
         awsConfig.setSimpleDbDomain(domain);
         awsConfig.setSimpleDbRegion(region);
         return new SDBInstanceData(new DefaultCredentials(), awsConfig);
-    }
-
-    private String getRequiredOption(String name, CommandLine cmdLine, AbstractService<?> service) {
-        if (!cmdLine.hasOption(name)) {
-            printHelp(format("--%s argument is required.", name), service.getClass());
-            System.exit(2);
-        }
-        return cmdLine.getOptionValue(name);
     }
 }

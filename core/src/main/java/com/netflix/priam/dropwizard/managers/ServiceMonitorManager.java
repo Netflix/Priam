@@ -2,10 +2,10 @@ package com.netflix.priam.dropwizard.managers;
 
 import com.bazaarvoice.badger.api.BadgerRegistration;
 import com.bazaarvoice.badger.api.BadgerRegistrationBuilder;
-import com.bazaarvoice.zookeeper.ZooKeeperConnection;
 import com.google.common.base.Optional;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.priam.config.MonitoringConfiguration;
 import com.yammer.dropwizard.config.HttpConfiguration;
 import com.yammer.dropwizard.lifecycle.Managed;
@@ -18,22 +18,22 @@ import static java.lang.String.format;
 public class ServiceMonitorManager implements Managed {
 
     private MonitoringConfiguration monitoringConfiguration;
-    private ZooKeeperConnection zooKeeperConnection;
+    private CuratorFramework curator;
     private HttpConfiguration httpConfiguration;
     private BadgerRegistration badgerRegistration;
 
     @Inject
     public ServiceMonitorManager(MonitoringConfiguration monitoringConfiguration,
-                                 Optional<ZooKeeperConnection> zooKeeperConnection,
+                                 Optional<CuratorFramework> curator,
                                  HttpConfiguration httpConfiguration) {
         this.monitoringConfiguration = monitoringConfiguration;
-        this.zooKeeperConnection = zooKeeperConnection.orNull();
+        this.curator = curator.orNull();
         this.httpConfiguration = httpConfiguration;
     }
 
     @Override
     public void start() throws Exception {
-        if (zooKeeperConnection == null) {
+        if (curator == null) {
             return;  // Disabled
         }
 
@@ -54,13 +54,13 @@ public class ServiceMonitorManager implements Managed {
     }
 
     public synchronized void register() {
-        if (zooKeeperConnection == null || badgerRegistration != null) {
+        if (curator == null || badgerRegistration != null) {
             return;
         }
 
         // If ZooKeeper is configured, start Badger external monitoring
         String badgerServiceName = format(monitoringConfiguration.getBadgerServiceName());
-        badgerRegistration = new BadgerRegistrationBuilder(zooKeeperConnection, badgerServiceName)
+        badgerRegistration = new BadgerRegistrationBuilder(curator, badgerServiceName)
                 .withVerificationPath(httpConfiguration.getPort(), "/v1/cassadmin/pingthrift")
                 .withVersion(this.getClass().getPackage().getImplementationVersion())
                 .withAwsTags()

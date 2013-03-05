@@ -1,8 +1,8 @@
 cassandra:
   partitionerClassName: "org.apache.cassandra.dht.RandomPartitioner" # The partitioner responsible for distributing rows (by key) across nodes in the cluster
-  minimumToken:                               # Ignored for random partitioner.  Defaults to "00" for byte ordered partitioner
-  maximumToken:                               # Ignored for random partitioner.  Defaults to "ffffffffffffffffffffffffffffffff" for byte ordered partitioner
-  bootstrapClusterName:                       # Bootstrap cluster name (depends on another cass cluster)
+  #minimumToken:                              # Ignored for random partitioner.  Defaults to "00" for byte ordered partitioner
+  #maximumToken:                              # Ignored for random partitioner.  Defaults to "ffffffffffffffffffffffffffffffff" for byte ordered partitioner
+  #bootstrapClusterName:                      # Bootstrap cluster name (depends on another cass cluster)
   multiRegionEnabled: false                   # true if it is a multi regional cluster.  Needs to be changed in conjunction with endpointSnitch
   endpointSnitch: "org.apache.cassandra.locator.Ec2Snitch"  # Snitch to be used in cassandra.yaml
                                                             # Needs to be changed in conjunction with multiRegionEnabled
@@ -15,27 +15,36 @@ cassandra:
   storagePort: 7101                           # Cassandra storage/cluster communication port
   thriftPort: 9160                            # Cassandra's thrift port
   jmxPort: 7199
-  compactionThroughputMBPerSec:               # Compaction throughput in MB/sec
+  #compactionThroughputMBPerSec:              # Compaction throughput in MB/sec
   inMemoryCompactionLimitMB: 128              # In memory compaction limit in MB
   keyCacheSizeInMB: null                      # If used, should be an Integer like "16"
-  keyCacheKeysToSave:                         # If used, should be an Integer like "32"
+  #keyCacheKeysToSave:                        # If used, should be an Integer like "32"
   rowCacheSizeInMB: 0                         # If used, should be an Integer like "16"
-  rowCacheKeysToSave:
+  #rowCacheKeysToSave:
   directMaxHeapSize:
     m1.small: 10G
     m1.medium: 25G
     m1.large: 40G
     m1.xlarge: 50G
+    m2.xlarge: 50G
+    m2.2xlarge: 50G
+    m2.4xlarge: 50G
   maxHeapSize:
     m1.small: 1G
     m1.medium: 2G
     m1.large: 3G
     m1.xlarge: 8G
+    m2.xlarge: 8G
+    m2.2xlarge: 8G
+    m2.4xlarge: 8G
   maxNewGenHeapSize:
     m1.small: 256M
     m1.medium: 500M
     m1.large: 1G
     m1.xlarge: 2G
+    m2.xlarge: 2G
+    m2.2xlarge: 2G
+    m2.4xlarge: 2G
   heapDumpLocation: "/var/log/cassandra"            # Directory where heap dumps will go when the JVM runs out of memory.
   memTableTotalSpaceMB: 1024                        # Total memory to use for memtables.  Cassandra will flush the largest memtable when this much memory is used.
   hintedHandoffThrottleDelayMS: 1                   # Sleep this long after delivering each hint
@@ -45,24 +54,24 @@ cassandra:
   seedProviderClassName: "com.netflix.priam.cassandra.NFSeedProvider"  # The name of seed provider
 
   nodeRepairEnabled: false
-  nodeRepairTime:                                   # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
+  #nodeRepairTime:                                  # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
                                                     # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
-  nodeRepairMutexAcquireTimeOut:                    # node repair mutex lock aquire time out (unit: minute)
+  #nodeRepairMutexAcquireTimeOut:                   # node repair mutex lock aquire time out (unit: minute)
 
 
 
 amazon:
   # These properties below should be retrievable from the AWS instance metadata API.  Any setting
   #     provided here will override what can be discovered from the instance metadata API.
-  usableAvailabilityZones:                    # List of all availability zones used for the cluster.  If empty, region will be queried for first three "available" zones.
-  autoScaleGroupName:
-  regionName:
-  securityGroupName:
-  availabilityZone:
-  privateHostName:
-  privateIP:
-  instanceID:
-  instanceType:
+  #usableAvailabilityZones:                    # List of all availability zones used for the cluster.  If empty, region will be queried for first three "available" zones.
+  #autoScaleGroupName:
+  #regionName:
+  #securityGroupName:
+  #availabilityZone:
+  #privateHostName:
+  #privateIP:
+  #instanceID:
+  #instanceType:
   simpleDbDomain: "InstanceIdentity"
   simpleDbRegion:                             # Defaults to us-east-1 for backward compatibility.  This can be set to the local region for better cross-region isolation.
 
@@ -70,32 +79,35 @@ amazon:
 backup:
   incrementalBackupEnabled: true                    # true if incremental backups are enabled
   snapShotBackupEnabled: false
-  snapShotBackupCronTime:                           # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
+  #snapShotBackupCronTime:                          # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
                                                     # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
-  autoRestoreSnapshotName:                          # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
+  #autoRestoreSnapshotName:          # Snapshot to be searched and restored.  Specifies the start and end time used for restoring data (yyyyMMddHHmm format) Eg: 201201132030,201201142030
   chunkSizeMB: 10                                   # Preferred data part size for multi part uploads to s3
-  availabilityZonesToBackup:                        # Get list of availability zones to backup. Backup all zones if empty
+  #availabilityZonesToBackup:        # Get list of availability zones to backup. Backup all zones if empty
   retentionDays: 0                                  # Get Backup retention in days. Set to 0 to avoid any expiration of the backups from S3
   backupThreads: 2                                  # Number of backup threads for uploading
   restoreThreads: 8                                 # Number of restore threads for downloading
   s3BucketName: "cassandra-archive"                 # S3 bucket for storing backups
-  s3BaseDir: "dev/backup"                           # Folder within the S3 bucket for backups
+  s3BaseDir: "dev-backup"                           # Folder within the S3 bucket for backups
   commitLogEnabled: false                           # true if commit log backup is enabled
   commitLogLocation: "/var/lib/cassandra/commitlog" # Remote commit log location for backups
   multiThreadedCompaction: false                    # When enabled, each compaction will use up to one thread per core, plus one thread per sstable being merged.
                                                     # This is usually only useful for SSD-based hardware: otherwise, your concern is usually to get compaction to do LESS i/o
   restoreClosestToken: false                        #    true if restore should search for nearest token if current token is not found
-  restoreKeyspaces:                                 # List of keyspaces to restore. If none, all keyspaces are restored.
-  restorePrefix:                                    # Location containing backup files. Typically bucket name followed by path to the clusters backup
+  #restoreKeyspaces:                                # List of keyspaces to restore. If none, all keyspaces are restored.
+  #restorePrefix:                                   # Location containing backup files. Typically bucket name followed by path to the clusters backup
   streamingThroughputMbps: 400                      # Throttles all outbound streaming file transfers on this node to the given total throughput in Mbps. This is necessary because Cassandra does mostly sequential IO when streaming data during bootstrap or repair, which
                                                     #    can lead to saturating the network connection and degrading rpc performance.
-  uploadThrottleBytesPerSec: 2147483648             # Bytes per second to throttle for backups
+  uploadThrottleBytesPerSec: 2147483647             # Bytes per second to throttle for backups
 
 zooKeeper:
-  # Priam will register the Cassandra node in ZooKeeper using the BV SOA (Ostrich) library under "<clusterName>-cassandra".
   enabled: false                     # Whether or not ZooKeeper registration is enabled.
   #connectString: localhost:2181     # Comma-separated list of ZooKeeper servers, eg. "host:port,host:port,..."
-  #namespace:                        # Root namespace in ZooKeeper, eg. "/us-east-1"
+  #namespace:                        # Root namespace in ZooKeeper, eg. "us-east-1"
+
+# Priam will register the Cassandra node in ZooKeeper using the BV Ostrich library under the specified service names.
+ostrichServiceNames:
+  - cass_cluster-cassandra
 
 monitoring:
   defaultBadgerRegistrationState: true

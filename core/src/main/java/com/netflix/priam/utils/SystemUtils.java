@@ -2,7 +2,9 @@ package com.netflix.priam.utils;
 
 import com.google.common.base.Charsets;
 import com.google.common.collect.Lists;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
+import com.google.common.primitives.Longs;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
@@ -189,17 +191,16 @@ public class SystemUtils {
      */
     public static String md5(File file) {
         try {
-            byte[] digest = Files.getDigest(file, MessageDigest.getInstance("MD5"));
-            return toHex(digest);
-        } catch (Exception e) {
+            return Files.hash(file, Hashing.md5()).toString();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
 
     public static String toHex(byte[] digest) {
-        StringBuffer sb = new StringBuffer(digest.length * 2);
-        for (int i = 0; i < digest.length; i++) {
-            String hex = Integer.toHexString(digest[i]);
+        StringBuilder sb = new StringBuilder(digest.length * 2);
+        for (byte b : digest) {
+            String hex = Integer.toHexString(b);
             if (hex.length() == 1) {
                 sb.append("0");
             } else if (hex.length() == 8) {
@@ -230,7 +231,7 @@ public class SystemUtils {
     public static File[] sortByLastModifiedTime(File[] files) {
         Arrays.sort(files, new Comparator<File>() {
             public int compare(File file1, File file2) {
-                return Long.valueOf(file2.lastModified()).compareTo(Long.valueOf(file1.lastModified()));
+                return Longs.compare(file2.lastModified(), file1.lastModified());
             }
         });
         return files;

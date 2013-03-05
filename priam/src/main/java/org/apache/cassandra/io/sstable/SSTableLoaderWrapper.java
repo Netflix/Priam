@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import com.netflix.priam.utils.CassandraTuner;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
@@ -50,11 +51,11 @@ public class SSTableLoaderWrapper
     private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
 
     @Inject
-    public SSTableLoaderWrapper(IConfiguration config) throws IOException
+    public SSTableLoaderWrapper(IConfiguration config, CassandraTuner tuner) throws IOException
     {
         URL url = this.getClass().getClassLoader().getResource("incr-restore-cassandra.yaml");
         logger.info("Trying to load the yaml file from: " + url);
-        TuneCassandra.updateYaml(config, url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
+        tuner.updateYaml(url.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
         System.setProperty("cassandra.config", "file:"+ url.getPath());
     }
 

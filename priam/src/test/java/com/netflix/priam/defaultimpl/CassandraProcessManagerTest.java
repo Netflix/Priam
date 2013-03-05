@@ -1,13 +1,25 @@
-package com.netflix.priam.utils;
+package com.netflix.priam.defaultimpl;
 
 import java.io.IOException;
 
+import org.junit.Before;
 import org.junit.Test;
 
+import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.IConfiguration;
 import junit.framework.Assert;
 
-public class SystemUtilsTest
+public class CassandraProcessManagerTest
 {
+    CassandraProcessManager cpm;
+
+    @Before
+    public void setup()
+    {
+        IConfiguration config = new FakeConfiguration("us-east-1", "test_cluster", "us-east-1a", "i-2378afd3");
+        cpm = new CassandraProcessManager(config);
+    }
+
     @Test
     public void logProcessOutput_BadApp() throws IOException, InterruptedException
     {
@@ -17,12 +29,12 @@ public class SystemUtilsTest
             p = new ProcessBuilder("ls", "/tmppppp").start();
             int exitValue = p.waitFor();
             Assert.assertTrue(0 != exitValue);
-            SystemUtils.logProcessOutput(p);
+            cpm.logProcessOutput(p);
         }
         catch(IOException ioe)
         {
             if(p!=null)
-                SystemUtils.logProcessOutput(p);
+                cpm.logProcessOutput(p);
         }
     }
 
@@ -35,6 +47,6 @@ public class SystemUtilsTest
         Process p = new ProcessBuilder("true").start();
         int exitValue = p.waitFor();
         Assert.assertEquals(0, exitValue);
-        SystemUtils.logProcessOutput(p);
+        cpm.logProcessOutput(p);
     }
 }

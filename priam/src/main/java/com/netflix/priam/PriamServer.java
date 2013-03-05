@@ -15,6 +15,8 @@
  */
 package com.netflix.priam;
 
+import org.apache.commons.collections.CollectionUtils;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
@@ -26,9 +28,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
-import org.apache.commons.collections.CollectionUtils;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -41,15 +41,17 @@ public class PriamServer
     private final IConfiguration config;
     private final InstanceIdentity id;
     private final Sleeper sleeper;
+    private final ICassandraProcess cassProcess;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper)
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess)
     {
         this.config = config;
         this.scheduler = scheduler;
         this.id = id;
         this.sleeper = sleeper;
+        this.cassProcess = cassProcess;
     }
 
     public void intialize() throws Exception
@@ -77,7 +79,7 @@ public class PriamServer
         if (!config.getRestoreSnapshot().equals(""))
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
         else
-            SystemUtils.startCassandra(true, config); // Start cassandra.
+            cassProcess.start(true);
 
         /*
          *  Run the delayed task (after 10 seconds) to Monitor Cassandra

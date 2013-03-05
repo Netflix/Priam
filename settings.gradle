@@ -1,2 +1,2 @@
 rootProject.name = 'priam-root'
-include 'priam','priam-web','priam-cass-extensions'
+include 'priam','priam-web','priam-cass-extensions','priam-dse-extensions'

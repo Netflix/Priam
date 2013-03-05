@@ -15,29 +15,31 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.RetryableCallable;
-import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.Singleton;
+import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.scheduler.SimpleTimer;
+import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Main class for restoring data from backup
@@ -47,6 +49,7 @@ public class Restore extends AbstractRestore
 {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
+    private final ICassandraProcess cassProcess;
     @Inject
     private Provider<AbstractBackupPath> pathProvider;
     @Inject
@@ -57,9 +60,10 @@ public class Restore extends AbstractRestore
     private InstanceIdentity id;
 
     @Inject
-    public Restore(IConfiguration config, Sleeper sleeper)
+    public Restore(IConfiguration config, Sleeper sleeper, ICassandraProcess cassProcess)
     {
         super(config, JOBNAME, sleeper);
+        this.cassProcess = cassProcess;
     }
 
     @Override
@@ -98,7 +102,7 @@ public class Restore extends AbstractRestore
                 id.getInstance().setToken(origToken);
             }
         }
-        SystemUtils.startCassandra(true, config);
+        cassProcess.start(true);
     }
 
     /**
@@ -108,7 +112,7 @@ public class Restore extends AbstractRestore
     {
         // Stop cassandra if its running and restoring all keyspaces
         if (config.getRestoreKeySpaces().size() == 0)
-            SystemUtils.stopCassandra(config);
+            cassProcess.stop();
 
         // Cleanup local data
         SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());

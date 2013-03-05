@@ -1,12 +1,12 @@
 package com.netflix.priam.config;
 
-import com.google.common.collect.Lists;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Singleton;
 import com.yammer.dropwizard.config.Configuration;
-import com.fasterxml.jackson.annotation.JsonProperty;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
 import java.util.List;
 
 @Singleton
@@ -36,7 +36,7 @@ public class PriamConfiguration extends Configuration {
     private MonitoringConfiguration monitoring = new MonitoringConfiguration();
 
     @JsonProperty
-    private List<String> ostrichServiceNames = Lists.newArrayList();
+    private List<String> ostrichServiceNames = Collections.emptyList();
 
     @JsonProperty
     private int jvmMutexPort = 8086;

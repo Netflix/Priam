@@ -73,7 +73,7 @@ amazon:
   #instanceID:
   #instanceType:
   simpleDbDomain: "InstanceIdentity"
-  simpleDbRegion:                             # Defaults to us-east-1 for backward compatibility.  This can be set to the local region for better cross-region isolation.
+  #simpleDbRegion:                             # Defaults to us-east-1 for backward compatibility.  This can be set to the local region for better cross-region isolation.
 
 
 backup:

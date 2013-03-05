@@ -21,7 +21,7 @@ subprojects {
     apply plugin: 'eclipse'
     apply plugin: 'java'
 
-    group = "com.netflix.priam.dse"
+    group = "com.netflix.priam"
 
     configurations {
         provided

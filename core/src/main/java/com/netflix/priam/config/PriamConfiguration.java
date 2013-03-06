@@ -1,11 +1,13 @@
 package com.netflix.priam.config;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.inject.Singleton;
 import com.yammer.dropwizard.config.Configuration;
-import org.codehaus.jackson.annotate.JsonProperty;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotNull;
+import java.util.Collections;
+import java.util.List;
 
 @Singleton
 public class PriamConfiguration extends Configuration {
@@ -34,6 +36,9 @@ public class PriamConfiguration extends Configuration {
     private MonitoringConfiguration monitoring = new MonitoringConfiguration();
 
     @JsonProperty
+    private List<String> ostrichServiceNames = Collections.emptyList();
+
+    @JsonProperty
     private int jvmMutexPort = 8086;
 
     public CassandraConfiguration getCassandraConfiguration() {
@@ -58,5 +63,9 @@ public class PriamConfiguration extends Configuration {
 
     public int getJvmMutexPort() {
         return jvmMutexPort;
+    }
+
+    public List<String> getOstrichServiceNames() {
+        return ostrichServiceNames;
     }
 }

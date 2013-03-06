@@ -1,10 +1,10 @@
 package com.netflix.priam.defaultimpl;
 
-import com.bazaarvoice.zookeeper.ZooKeeperConnection;
 import com.google.common.base.Optional;
 import com.google.inject.AbstractModule;
 import com.google.inject.Provides;
 import com.google.inject.Singleton;
+import com.netflix.curator.framework.CuratorFramework;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
 import com.netflix.priam.aws.DefaultCredentials;
@@ -21,26 +21,29 @@ import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.MonitoringConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.config.ZooKeeperConfiguration;
+import com.netflix.priam.dropwizard.managers.ServiceRegistryManager;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceRegistry;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
 import com.netflix.priam.utils.TokenManager;
 import com.netflix.priam.utils.TokenManagerProvider;
-import com.netflix.priam.dropwizard.managers.ServiceRegistryManager;
+import com.yammer.dropwizard.config.Environment;
 import com.yammer.dropwizard.config.HttpConfiguration;
 
 public class PriamGuiceModule extends AbstractModule {
     private final PriamConfiguration priamConfiguration;
+    private final Environment environment;
 
-    public PriamGuiceModule(PriamConfiguration priamConfiguration) {
+    public PriamGuiceModule(PriamConfiguration priamConfiguration, Environment environment) {
         this.priamConfiguration = priamConfiguration;
+        this.environment = environment;
     }
 
     @Override
     protected void configure() {
-
         // Configuration bindings
+        bind(PriamConfiguration.class).toInstance(priamConfiguration);
         bind(HttpConfiguration.class).toInstance(priamConfiguration.getHttpConfiguration());
         bind(CassandraConfiguration.class).toInstance(priamConfiguration.getCassandraConfiguration());
         bind(AmazonConfiguration.class).toInstance(priamConfiguration.getAmazonConfiguration());
@@ -62,11 +65,13 @@ public class PriamGuiceModule extends AbstractModule {
     }
 
     @Provides @Singleton
-    Optional<ZooKeeperConnection> provideZooKeeperConnection() {
+    Optional<CuratorFramework> provideCurator() {
         ZooKeeperConfiguration zkConfiguration = priamConfiguration.getZooKeeperConfiguration();
         if (!zkConfiguration.isEnabled()) {
             return Optional.absent();
         }
-        return Optional.of(zkConfiguration.connect());
+        CuratorFramework curator = zkConfiguration.newManagedCurator(environment);
+        curator.start();
+        return Optional.of(curator);
     }
 }

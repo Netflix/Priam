@@ -4,7 +4,9 @@ import com.bazaarvoice.ostrich.ServiceEndPoint;
 import com.bazaarvoice.ostrich.ServiceEndPointBuilder;
 import com.bazaarvoice.ostrich.ServiceRegistry;
 import com.bazaarvoice.ostrich.registry.zookeeper.ZooKeeperServiceRegistry;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Optional;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.common.io.Closeables;
 import com.google.common.net.HostAndPort;
@@ -17,10 +19,12 @@ import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.yammer.dropwizard.lifecycle.Managed;
+import org.apache.cassandra.utils.FBUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
@@ -64,10 +68,16 @@ public class ServiceRegistryManager implements Managed {
     }
 
     @Override
-    public synchronized void start() {
+    public synchronized void start() throws Exception {
         if (!zkConnection.isPresent()) {
             return;
         }
+
+        // Include the partitioner in the Ostrich end point data to support clients that need to know the
+        // partitioner type before they connect to the ring (eg. Astyanax).
+        Map<String, Object> payload = ImmutableMap.<String, Object>of(
+                "partitioner", FBUtilities.newPartitioner(casConfiguration.getPartitionerClassName()).getClass().getName());
+        String payloadString = new ObjectMapper().writeValueAsString(payload);
 
         // Construct Ostrich end points for this server.  The ID is the "host:port" that clients should use to connect.
         HostAndPort host = HostAndPort.fromParts(awsConfiguration.getPrivateIP(), casConfiguration.getThriftPort());
@@ -75,6 +85,7 @@ public class ServiceRegistryManager implements Managed {
             ServiceEndPoint endPoint = new ServiceEndPointBuilder()
                     .withServiceName(serviceName)
                     .withId(host.toString())
+                    .withPayload(payloadString)
                     .build();
             endPoints.add(endPoint);
             logger.info("ZooKeeper end point: {}", endPoint);

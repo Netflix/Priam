@@ -54,9 +54,9 @@ public class SnapshotBackup extends AbstractBackup
     private final long WAIT_TIME_MS = 60 * 1000 * 10;
 
     @Inject
-    public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
+    public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
     {
-        super(config, fs, pathFactory);
+        super(config, pathFactory);
         this.metaData = metaData;
     }
 

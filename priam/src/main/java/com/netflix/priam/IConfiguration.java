@@ -326,7 +326,7 @@ public interface IConfiguration
     public String getCassProcessName();
 
     /**
-     * Defaults to 'allow all'.
+    * Defaults to 'allow all'.
      */
     public String getAuthenticator();
 
@@ -334,4 +334,19 @@ public interface IConfiguration
      * Defaults to 'allow all'.
      */
     public String getAuthorizer();
+
+    /**
+     * @return New Keyspace Name on Target Cluster
+     */
+    public String getTargetKSName();
+    
+    /**
+     * @return New Column Family Name on Target Cluster
+     */
+    public String getTargetCFName();
+    
+    /**
+     * @return true/false, if Cassandra needs to be started manually
+     */
+    public boolean doesCassandraStartManually();
 }

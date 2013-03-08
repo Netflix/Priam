@@ -418,4 +418,19 @@ public class FakeConfiguration implements IConfiguration
     {
         return PriamConfiguration.DEFAULT_AUTHORIZER;
     }
+
+    @Override
+	public String getTargetKSName() {
+		return null;
+	}
+
+	@Override
+	public String getTargetCFName() {
+		return null;
+	}
+
+	@Override
+	public boolean doesCassandraStartManually() {
+		return false;
+	}
 }

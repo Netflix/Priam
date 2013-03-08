@@ -15,6 +15,8 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 
@@ -30,7 +32,7 @@ public class TestRestore
     public static void setup() throws InterruptedException, IOException
     {
         injector = Guice.createInjector(new BRTestModule());
-        filesystem = (FakeBackupFileSystem)injector.getInstance(IBackupFileSystem.class);
+        filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class,Names.named("incr_restore")));
         conf = injector.getInstance(IConfiguration.class);
         fileList = new ArrayList<String>();
         File cassdir = new File(conf.getDataFileLocation());

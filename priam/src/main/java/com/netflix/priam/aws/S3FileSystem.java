@@ -313,4 +313,33 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         return bytesDownloaded.get();
     }
 
+    /**
+     * This method does exactly as other download method.
+     * filePath parameter provides the diskPath of the downloaded file.
+     * This path can be used to correlate the files which are Streamed In 
+     * during Incremental Restores
+     */
+	@Override
+	public void download(AbstractBackupPath path, OutputStream os,
+			String filePath) throws BackupRestoreException {
+        try
+        {
+            logger.info("Downloading " + path.getRemotePath());
+            downloadCount.incrementAndGet();
+            AmazonS3 client = getS3Client();
+            S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
+
+            long contentLen = obj.getObjectMetadata().getContentLength();
+            path.setSize(contentLen);
+            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
+            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
+            compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
+            bytesDownloaded.addAndGet(contentLen);
+        }
+        catch (Exception e)
+        {
+            throw new BackupRestoreException(e.getMessage(), e);
+        }
+	}
+
 }

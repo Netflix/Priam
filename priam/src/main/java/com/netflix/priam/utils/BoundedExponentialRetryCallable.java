@@ -69,14 +69,14 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
             		if (delay < max && retry <= maxRetries)
                 {
             			delay *= 2;
-                    logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
+                    logger.error(String.format("Retry #%d for: %s",retry, ExceptionUtils.getFullStackTrace(e)));
                     if(++logCounter == 1)
                        logger.info("Exception --> "+ExceptionUtils.getFullStackTrace(e));
                     sleeper.sleep(delay);            			
                 }
             		else if(delay >= max && retry <= maxRetries)
             		{
-            			logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
+            			logger.error(String.format("Retry #%d for: %s",retry, ExceptionUtils.getFullStackTrace(e)));
             			sleeper.sleep(max); 
             		}
             		else

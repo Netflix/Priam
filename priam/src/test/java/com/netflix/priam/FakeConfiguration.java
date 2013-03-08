@@ -400,4 +400,22 @@ public class FakeConfiguration implements IConfiguration
 	public String getCassProcessName() {
 		return "CassandraDaemon";
 	}
+
+	@Override
+	public String getTargetKSName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getTargetCFName() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public boolean doesCassandraStartManually() {
+		// TODO Auto-generated method stub
+		return false;
+	}
 }

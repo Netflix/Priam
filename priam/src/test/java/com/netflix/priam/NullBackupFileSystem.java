@@ -51,4 +51,11 @@ public class NullBackupFileSystem implements IBackupFileSystem
         // TODO Auto-generated method stub
         
     }
+
+	@Override
+	public void download(AbstractBackupPath path, OutputStream os,
+			String filePath) throws BackupRestoreException {
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -44,20 +44,20 @@ public abstract class AbstractRestore extends Task
     // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
+    protected final IBackupFileSystem fs;
     
     protected IConfiguration config;
     protected ThreadPoolExecutor executor;
     
-    @Inject
-    protected IBackupFileSystem fs;
     public static BigInteger restoreToken;
     
     protected final Sleeper sleeper;
     
-    public AbstractRestore(IConfiguration config, String name, Sleeper sleeper)
+    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper)
     {
         super(config);
         this.config = config;
+        this.fs = fs;
         this.sleeper = sleeper;
         executor = new JMXConfigurableThreadPoolExecutor(config.getMaxBackupDownloadThreads(), 
                                                          1000, 
@@ -95,7 +95,7 @@ public abstract class AbstractRestore extends Task
             public Integer retriableCall() throws Exception
             {
                 logger.info("Downloading file: " + path + " to: " + restoreLocation);
-                fs.download(path, new FileOutputStream(restoreLocation));
+                fs.download(path, new FileOutputStream(restoreLocation),restoreLocation.getAbsolutePath());
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
                 return count.decrementAndGet();
@@ -117,5 +117,15 @@ public abstract class AbstractRestore extends Task
                 Thread.currentThread().interrupt();
             }
         }
+    }
+    
+    protected AtomicInteger getFileCount()
+    {
+    		return count;
+    }
+    
+    protected void setFileCount(int cnt)
+    {
+    		count.set(cnt);
     }
 }

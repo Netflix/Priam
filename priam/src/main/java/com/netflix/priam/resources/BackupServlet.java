@@ -18,11 +18,13 @@ package com.netflix.priam.resources;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
@@ -75,7 +77,7 @@ public class BackupServlet
     private PriamScheduler scheduler;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, TuneCassandra tunecassandra,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager)
     {
         this.priamServer = priamServer;
@@ -94,6 +96,14 @@ public class BackupServlet
     public Response backup() throws Exception
     {
         snapshotBackup.execute();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/incremental_backup")
+    public Response backupIncrementals() throws Exception
+    {
+        scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

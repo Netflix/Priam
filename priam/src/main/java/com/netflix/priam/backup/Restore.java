@@ -20,6 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -57,9 +58,9 @@ public class Restore extends AbstractRestore
     private InstanceIdentity id;
 
     @Inject
-    public Restore(IConfiguration config, Sleeper sleeper)
+    public Restore(IConfiguration config, @Named("backup")IBackupFileSystem fs,Sleeper sleeper)
     {
-        super(config, JOBNAME, sleeper);
+        super(config, fs, JOBNAME, sleeper);
     }
 
     @Override

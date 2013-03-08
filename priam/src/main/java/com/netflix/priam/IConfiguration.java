@@ -323,5 +323,18 @@ public interface IConfiguration
      */
     public String getCassProcessName();
 
-
+    /**
+     * @return New Keyspace Name on Target Cluster
+     */
+    public String getTargetKSName();
+    
+    /**
+     * @return New Column Family Name on Target Cluster
+     */
+    public String getTargetCFName();
+    
+    /**
+     * @return true/false, if Cassandra needs to be started manually
+     */
+    public boolean doesCassandraStartManually();
 }

@@ -252,6 +252,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 	public void setCassandra1_0(boolean isCassandra1_0) {
 		this.isCassandra1_0 = isCassandra1_0;
 	}
+	
+    public void setFileName(String fileName)
+    {
+        this.fileName = fileName;
+    }
 
     public static class RafInputStream extends InputStream
     {

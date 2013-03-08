@@ -15,7 +15,6 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -37,9 +36,9 @@ import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
 import com.amazonaws.services.simpledb.model.SelectResult;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.common.collect.Lists;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
@@ -77,6 +76,9 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
     private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
+    private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
+    private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
+    private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -667,5 +669,20 @@ public class PriamConfiguration implements IConfiguration
 	@Override
 	public String getCassProcessName() {
         return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+	}
+
+	@Override
+	public String getTargetKSName() {
+		return config.getProperty(CONFIG_TARGET_KEYSPACE_NAME, null);
+	}
+
+	@Override
+	public String getTargetCFName() {
+		return config.getProperty(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
+	}
+
+	@Override
+	public boolean doesCassandraStartManually() {
+		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
 }

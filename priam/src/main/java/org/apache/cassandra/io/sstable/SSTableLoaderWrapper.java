@@ -17,32 +17,22 @@ package org.apache.cassandra.io.sstable;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
-import javax.management.JMX;
-import javax.management.MBeanServerConnection;
-import javax.management.ObjectName;
-
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.net.MessagingService;
-import org.apache.cassandra.net.MessagingServiceMBean;
-import org.apache.cassandra.service.StorageServiceMBean;
 import org.apache.cassandra.streaming.FileStreamTask;
 import org.apache.cassandra.streaming.OperationType;
 import org.apache.cassandra.streaming.PendingFile;
 import org.apache.cassandra.streaming.StreamHeader;
-import org.apache.cassandra.utils.Pair;
 import org.apache.cassandra.utils.OutputHandler;
+import org.apache.cassandra.utils.Pair;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,9 +42,7 @@ import com.google.common.io.Files;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.scheduler.ExecutionException;
-import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.TuneCassandra;
+import com.netflix.priam.utils.CassandraTuner;
 
 @Singleton
 public class SSTableLoaderWrapper
@@ -62,24 +50,24 @@ public class SSTableLoaderWrapper
     private static final Logger logger = LoggerFactory.getLogger(SSTableLoaderWrapper.class);
     private static Set<Component> allComponents = Sets.newHashSet(Component.COMPRESSION_INFO, Component.DATA, Component.FILTER, Component.PRIMARY_INDEX, Component.STATS, Component.DIGEST);
     private final IConfiguration config;
+    
     @Inject
-    public SSTableLoaderWrapper(IConfiguration config) throws IOException
-    {        
-        String srcCassYamlFile =  config.getCassHome() + "/conf/cassandra.yaml";
-        String targetYamlLocation = "/tmp/";
-        
-        File sourceFile = new File(srcCassYamlFile);
-        File targetFile = new File(targetYamlLocation+"incr-restore-cassandra.yaml");
-        logger.info("Copying file : " + sourceFile.getName() +" to --> "+targetFile.getName());
-      
-        //copy file from one location to another
-        Files.copy(sourceFile, targetFile);
-        
+    public SSTableLoaderWrapper(IConfiguration config, CassandraTuner tuner) throws IOException
+    {
+    		this.config = config;
+		String srcCassYamlFile =  config.getCassHome() + "/conf/cassandra.yaml";
+		String targetYamlLocation = "/tmp/";
+    
+		File sourceFile = new File(srcCassYamlFile);
+		File targetFile = new File(targetYamlLocation+"incr-restore-cassandra.yaml");
+		logger.info("Copying file : " + sourceFile.getName() +" to --> "+targetFile.getName());
+  
+		//copy file from one location to another
+		Files.copy(sourceFile, targetFile);
+    
         logger.info("Trying to load the yaml file from: " + targetFile);
-        TuneCassandra.updateYaml(config, targetFile.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
+        tuner.updateYaml(targetFile.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
         System.setProperty("cassandra.config", "file:"+ targetFile.getPath());
-
-        this.config = config;
     }
 
     private final OutputHandler options = new OutputHandler()

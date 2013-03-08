@@ -21,7 +21,7 @@ subprojects {
     apply plugin: 'eclipse'
     apply plugin: 'java'
 
-    group = "com.netflix.${name}"
+    group = "com.netflix.priam"
 
     configurations {
         provided
@@ -47,7 +47,7 @@ subprojects {
         compile "com.googlecode.json-simple:json-simple:1.1"
         compile "org.xerial.snappy:snappy-java:1.0.4.1"
         compile "org.yaml:snakeyaml:1.10"
-        compile "org.apache.cassandra:cassandra-all:1.1.5"
+        compile "org.apache.cassandra:cassandra-all:[1.1.9,1.1.10["
         compile "javax.ws.rs:jsr311-api:1.1.1"
         compile "joda-time:joda-time:2.0"
         compile "commons-configuration:commons-configuration:1.5"
@@ -80,11 +80,18 @@ project(':priam') {
     }
 }
 
+project(':priam-dse-extensions') {
+    dependencies {
+        compile project(':priam')
+    }
+}
+
 project(':priam-web') {
     apply plugin: 'war'
     apply plugin: 'jetty'
     dependencies {
         compile project(':priam')
+        compile project(':priam-dse-extensions')
         compile project(':priam-cass-extensions')
     }
 }

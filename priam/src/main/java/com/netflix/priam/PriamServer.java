@@ -15,6 +15,10 @@
  */
 package com.netflix.priam;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
@@ -28,9 +32,6 @@ import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
-import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -43,16 +44,18 @@ public class PriamServer
     private final IConfiguration config;
     private final InstanceIdentity id;
     private final Sleeper sleeper;
+    private final ICassandraProcess cassProcess;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper)
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess)
     {
         this.config = config;
         this.scheduler = scheduler;
         this.id = id;
         this.sleeper = sleeper;
+        this.cassProcess = cassProcess;
     }
 
     public void intialize() throws Exception
@@ -82,7 +85,7 @@ public class PriamServer
         else
         {
         		if(!config.doesCassandraStartManually())
-        			SystemUtils.startCassandra(true, config); // Start cassandra.
+        			cassProcess.start(true);				 // Start cassandra.
         		else
         			logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         }

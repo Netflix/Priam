@@ -90,3 +90,10 @@ project(':priam-web') {
         compile project(':priam-cass-extensions')
     }
 }
+
+project(':priam-agent') {
+    dependencies {
+        compile project(':priam')
+        compile 'com.netflix.astyanax:astyanax:1.56.23'
+    }
+}

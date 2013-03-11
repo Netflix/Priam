@@ -21,7 +21,7 @@ public class AgentTask
     private final Provider<NodeStatus> nodeToolProvider;
     private final Storage storage;
 
-    private static final String ROW_KEY = "com_instances";
+    private static final String ROW_KEY = "priam_agent_instances";
     private static final int VERSION = 0x00010001;
 
     public AgentTask(AgentConfiguration configuration, AgentProcessManager processManager, Provider<NodeStatus> nodeToolProvider, Storage storage)

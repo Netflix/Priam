@@ -19,7 +19,7 @@ public class ProcessTask
     private final Storage storage;
 
     @VisibleForTesting
-    public static final String ROW_KEY = "com_commands";
+    public static final String ROW_KEY = "priam_agent_commands";
 
     public ProcessTask(AgentConfiguration configuration, AgentProcessManager processManager, Storage storage)
     {

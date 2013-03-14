@@ -49,7 +49,7 @@ public interface NodeStatus
 
     public void flush() throws Exception;
 
-    public void repair(boolean sequential, boolean localDataCenterOnly) throws Exception;
+    public void repair(boolean sequential) throws Exception;
 
     public void invalidateRowCache() throws Exception;
 

@@ -15,8 +15,7 @@ public class CommandRepair implements AgentProcess
     {
         Set<String>     argumentsSet = Sets.newHashSet(Arrays.asList(arguments));
         boolean         sequential = argumentsSet.contains("sequential");
-        boolean         localDataCenterOnly = argumentsSet.contains("local-dc-only");
-        nodeTool.repair(sequential, localDataCenterOnly);
+        nodeTool.repair(sequential);
     }
 
     @Override

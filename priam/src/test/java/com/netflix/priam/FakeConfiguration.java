@@ -11,6 +11,8 @@ import com.netflix.priam.IConfiguration;
 public class FakeConfiguration implements IConfiguration
 {
 
+	public static final String FAKE_REGION = "us-east-1";
+
     public String region;
     public String appName;
     public String zone;

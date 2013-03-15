@@ -2,7 +2,6 @@ package com.netflix.priam.agent.process;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.priam.agent.AgentConfiguration;
 import com.netflix.priam.agent.NodeStatus;
@@ -12,11 +11,7 @@ import java.io.Closeable;
 import java.util.Deque;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 /**
  * Manages running processes in the agent
@@ -31,7 +26,7 @@ public class AgentProcessManager implements Closeable
     private final ExecutorService executorService;
 
     @GuardedBy("synchronized")
-    private final Deque<ProcessRecord> completedProcesses = Queues.newLinkedBlockingDeque();
+    private final Deque<ProcessRecord> completedProcesses = new LinkedBlockingDeque<ProcessRecord>();
 
     /**
      * @param processMap map from process name to process provider

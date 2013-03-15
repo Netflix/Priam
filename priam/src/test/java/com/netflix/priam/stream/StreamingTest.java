@@ -51,33 +51,33 @@ public class StreamingTest
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f1" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f1" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f2" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f2" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f3" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f3" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         S3BackupPath path = new S3BackupPath(conf, factory);
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f129.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f129.db");
         Assert.assertTrue(queue.contains(path));
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f229.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f229.db");
         Assert.assertTrue(queue.contains(path));
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f329.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f329.db");
         Assert.assertTrue(queue.contains(path));
 
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
         Assert.assertEquals(path, queue.first());
     }
 

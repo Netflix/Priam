@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
 
+import junit.framework.Assert;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -14,10 +16,10 @@ import org.junit.Test;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
-import junit.framework.Assert;
 
 public class TestBackupFile
 {
@@ -67,9 +69,9 @@ public class TestBackupFile
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals("fake-region", backupfile.region);
+        Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
+        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 
     @Test
@@ -84,10 +86,10 @@ public class TestBackupFile
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals("fake-region", backupfile.region);
+        Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
         String datestr = backupfile.formatDate(new Date(bfile.lastModified()));
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/" + datestr + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
+        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/1234567/" + datestr + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 
     @Test
@@ -102,8 +104,8 @@ public class TestBackupFile
         Assert.assertEquals(BackupFileType.META, backupfile.type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals("fake-region", backupfile.region);
+        Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/1234567/201108082320/META/1234567.meta", backupfile.getRemotePath());
+        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/1234567/201108082320/META/1234567.meta", backupfile.getRemotePath());
     }
 }

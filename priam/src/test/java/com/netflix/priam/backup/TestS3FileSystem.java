@@ -21,13 +21,14 @@ import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
@@ -133,7 +134,7 @@ public class TestS3FileSystem
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -146,7 +147,7 @@ public class TestS3FileSystem
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/fake-region/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -229,7 +230,7 @@ public class TestS3FileSystem
             List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
             if( ruleAvailable )
             {
-                String clusterPath = "casstestbackup/fake-region/fake-app/";                
+                String clusterPath = "casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/";                
                 BucketLifecycleConfiguration.Rule rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(5).withPrefix(clusterPath);
                 rule.setStatus(BucketLifecycleConfiguration.ENABLED);
                 rule.setId(clusterPath);

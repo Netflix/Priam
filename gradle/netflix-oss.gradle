@@ -24,7 +24,7 @@ rootProject {
         if (cassDep != null) {
             project.dependencies.add('compile', 'edu.stanford.ppl:snaptree:0.1') 
             project.dependencies.add('compile', 'com.yammer.metrics:metrics-core:2.0.3') 
-            project.dependencies.add('compile', 'libthrift:libthrift:0.7.0') 
+            project.dependencies.add('compile', 'org.apache.thrift:libthrift:0.7.0') 
         }
     }
 }

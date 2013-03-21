@@ -89,8 +89,10 @@ public class BackupServlet
     private MetaData metaData;
 
     @Inject
+
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
+
     {
         this.priamServer = priamServer;
         this.config = config;
@@ -176,14 +178,6 @@ public class BackupServlet
         Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
         object = constructJsonResponse(object,it,filter);
-//        while (it.hasNext())
-//        {
-//            AbstractBackupPath p = it.next();
-//            if (filter != null && BackupFileType.valueOf(filter) != p.getType())
-//                continue;
-//            object = constructJsonResponse(object,p);
-////            object.put(p.getRemotePath(), p.formatDate(p.getTime()));
-//        }
         return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
     }
 
@@ -284,69 +278,45 @@ public class BackupServlet
     
     private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
     {
-    		String logPrefix = "000000";
-    		int logCnt = 1;
-    		filter  = filter.contains("?") ? filter.substring(0, filter.indexOf("?")) : filter;
-    	    Map<String,String> keyValues = new LinkedHashMap<String,String>();
-//    	    while (it.hasNext())
-//        {
-//            AbstractBackupPath p = it.next();
-//            if (filter != null && BackupFileType.valueOf(filter) != p.getType())
-//                continue;
-//            keyValues.put("BUCKET", config.getBackupPrefix());
-//            keyValues.put("FILENAME", p.getRemotePath());
-//            keyValues.put("APP", p.getClusterName());
-//            keyValues.put("REGION", p.getRegion());
-//            keyValues.put("TOKEN", p.getToken());
-//            keyValues.put("TIMESTAMP", new DateTime(p.getTime()).toString(FMT));
-//            keyValues.put("INSTANCE-ID", p.getInstanceIdentity().getInstance().getInstanceId());
-//            keyValues.put("UPLOADED-TS", new DateTime(p.getUploadedTs()).toString(FMT));
-//            if(filter != null && filter.equalsIgnoreCase("meta"))
-//            {
-//            		List<AbstractBackupPath> allFiles = metaData.get(p);
-//            		long totalSize = 0;
-//            		for(AbstractBackupPath abp:allFiles)
-//            			totalSize = totalSize + abp.getSize();
-//            		keyValues.put("NUM-FILES", Long.toString(allFiles.size()));
-////            		keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); // Add Later
-//            }
-//            object.put("File ("+logPrefix+logCnt+++")", keyValues);
-//        }
-    	    int fileCnt = 0;
-//    	    JSONObject jObject = new JSONObject();
-            try {
-                    JSONArray jArray = new JSONArray();
-            	    while (it.hasNext())
-                    {
-            	    			JSONObject backupJSON = new JSONObject();
-            	    			AbstractBackupPath p = it.next();
-                        if (filter != null && BackupFileType.valueOf(filter) != p.getType())
-                            continue;
-                        backupJSON.put("bucket", config.getBackupPrefix());
-                        backupJSON.put("filename", p.getRemotePath());
-                        backupJSON.put("app", p.getClusterName());
-                        backupJSON.put("region", p.getRegion());
-                        backupJSON.put("token", p.getToken());
-                        backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
-                        backupJSON.put("instance_id", p.getInstanceIdentity().getInstance().getInstanceId());
-                        backupJSON.put("uploaded_ts", new DateTime(p.getUploadedTs()).toString(FMT));
-                        if(filter != null && filter.equalsIgnoreCase("meta"))
-                        {
-                        		List<AbstractBackupPath> allFiles = metaData.get(p);
-                        		long totalSize = 0;
-                        		for(AbstractBackupPath abp:allFiles)
-                        			totalSize = totalSize + abp.getSize();
-                        		backupJSON.put("num_files", Long.toString(allFiles.size()));
-//                        		keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); // Add Later
-                        }
-                        fileCnt++;
-                        jArray.put(backupJSON);
-                    }
-                    object.put("files", jArray);
-                    object.put("num_files", fileCnt);
-            } catch (JSONException jse) {
-                //jse.printStacktrace();
-            }
-   		return object;
-    }
+		int fileCnt = 0;
+		filter = filter.contains("?") ? filter
+				.substring(0, filter.indexOf("?")) : filter;
+
+		try {
+			JSONArray jArray = new JSONArray();
+			while (it.hasNext()) {
+				JSONObject backupJSON = new JSONObject();
+				AbstractBackupPath p = it.next();
+				if (filter != null
+						&& BackupFileType.valueOf(filter) != p.getType())
+					continue;
+				backupJSON.put("bucket", config.getBackupPrefix());
+				backupJSON.put("filename", p.getRemotePath());
+				backupJSON.put("app", p.getClusterName());
+				backupJSON.put("region", p.getRegion());
+				backupJSON.put("token", p.getToken());
+				backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
+				backupJSON.put("instance_id", p.getInstanceIdentity()
+						.getInstance().getInstanceId());
+				backupJSON.put("uploaded_ts",
+						new DateTime(p.getUploadedTs()).toString(FMT));
+				if (filter != null && filter.equalsIgnoreCase("meta")) {
+					List<AbstractBackupPath> allFiles = metaData.get(p);
+					long totalSize = 0;
+					for (AbstractBackupPath abp : allFiles)
+						totalSize = totalSize + abp.getSize();
+					backupJSON.put("num_files", Long.toString(allFiles.size()));
+					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
+					// Add Later
+				}
+				fileCnt++;
+				jArray.put(backupJSON);
+			}
+			object.put("files", jArray);
+			object.put("num_files", fileCnt);
+		} catch (JSONException jse) {
+			logger.info("Caught JSON Exception --> "+jse.getMessage());
+		}
+		return object;
+	}
 }

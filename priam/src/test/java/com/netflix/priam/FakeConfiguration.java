@@ -433,4 +433,5 @@ public class FakeConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return false;
 	}
+
 }

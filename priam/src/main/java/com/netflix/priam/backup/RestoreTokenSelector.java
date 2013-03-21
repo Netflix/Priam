@@ -31,10 +31,12 @@ import java.util.List;
 public class RestoreTokenSelector
 {
     private final ITokenManager tokenManager;
-    private IBackupFileSystem fs;
+    private final IBackupFileSystem fs;
 
     @Inject
+
     public RestoreTokenSelector(ITokenManager tokenManager,@Named("backup")IBackupFileSystem fs)
+
     {
         this.tokenManager = tokenManager;
         this.fs = fs;

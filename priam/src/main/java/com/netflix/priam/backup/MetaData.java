@@ -48,10 +48,11 @@ public class MetaData
     private final Provider<AbstractBackupPath> pathFactory;
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final List<String> metaRemotePaths = new ArrayList<String>();
-    private IBackupFileSystem fs;
+    private final IBackupFileSystem fs;
 
     @Inject
     public MetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs)
+
     {
         this.pathFactory = pathFactory;
         this.fs = fs;

@@ -333,17 +333,23 @@ public interface IConfiguration
     public String getAuthorizer();
 
     /**
+<<<<<<< HEAD
      * This can be used during cluster migration.
      * When on Target Cluster, keyspace name is different
      * than the original one.
+=======
+>>>>>>> origin/1.1
      * @return New Keyspace Name on Target Cluster
      */
     public String getTargetKSName();
     
     /**
+<<<<<<< HEAD
      * This can be used during cluster migration.
      * When on Target Cluster, Column Family name is different
      * than the original one.
+=======
+>>>>>>> origin/1.1
      * @return New Column Family Name on Target Cluster
      */
     public String getTargetCFName();

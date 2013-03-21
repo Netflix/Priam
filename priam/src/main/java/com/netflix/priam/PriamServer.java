@@ -16,6 +16,8 @@
 package com.netflix.priam;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,6 +30,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
@@ -85,7 +88,7 @@ public class PriamServer
         else
         {
         		if(!config.doesCassandraStartManually())
-                    cassProcess.start(true);
+        			cassProcess.start(true);				 // Start cassandra.
         		else
         			logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         }

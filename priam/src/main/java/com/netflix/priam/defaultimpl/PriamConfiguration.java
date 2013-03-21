@@ -691,7 +691,6 @@ public class PriamConfiguration implements IConfiguration
         return config.getProperty(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
     }
 
-    @Override
 	public String getTargetKSName() {
 		return config.getProperty(CONFIG_TARGET_KEYSPACE_NAME, null);
 	}
@@ -705,4 +704,5 @@ public class PriamConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
+
 }

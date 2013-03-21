@@ -69,8 +69,6 @@ public interface IConfiguration
     /**
      * Location containing backup files. Typically bucket name followed by path
      * to the clusters backup
-     * 
-     * @return
      */
     public String getRestorePrefix();
 
@@ -106,7 +104,7 @@ public interface IConfiguration
     public long getBackupChunkSize();
 
     /**
-     * @return trus if commit log backup is enabled
+     * @return true if commit log backup is enabled
      */
     public boolean isCommitLogBackup();
 
@@ -117,7 +115,6 @@ public interface IConfiguration
         
     /**
      * Cassandra storage/cluster communication port
-     * @return
      */
     public int getStoragePort();
     
@@ -262,7 +259,7 @@ public interface IConfiguration
      * @return hinted_handoff_throttle_delay_in_ms
      */
     public int getHintHandoffDelay();
-    
+
     /**
      * @return Size of Cassandra max direct memory
      */
@@ -326,7 +323,7 @@ public interface IConfiguration
     public String getCassProcessName();
 
     /**
-     * Defaults to 'allow all'.
+    * Defaults to 'allow all'.
      */
     public String getAuthenticator();
 
@@ -334,4 +331,32 @@ public interface IConfiguration
      * Defaults to 'allow all'.
      */
     public String getAuthorizer();
+
+    /**
+<<<<<<< HEAD
+     * This can be used during cluster migration.
+     * When on Target Cluster, keyspace name is different
+     * than the original one.
+=======
+>>>>>>> origin/1.1
+     * @return New Keyspace Name on Target Cluster
+     */
+    public String getTargetKSName();
+    
+    /**
+<<<<<<< HEAD
+     * This can be used during cluster migration.
+     * When on Target Cluster, Column Family name is different
+     * than the original one.
+=======
+>>>>>>> origin/1.1
+     * @return New Column Family Name on Target Cluster
+     */
+    public String getTargetCFName();
+    
+    /**
+     * @return true/false, if Cassandra needs to be started manually
+     */
+    public boolean doesCassandraStartManually();
+
 }

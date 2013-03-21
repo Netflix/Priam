@@ -16,6 +16,8 @@
 package com.netflix.priam;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -28,7 +30,11 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
+import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -43,6 +49,7 @@ public class PriamServer
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
+    private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
     public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess)
@@ -79,7 +86,12 @@ public class PriamServer
         if (!config.getRestoreSnapshot().equals(""))
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
         else
-            cassProcess.start(true);
+        {
+        		if(!config.doesCassandraStartManually())
+        			cassProcess.start(true);				 // Start cassandra.
+        		else
+        			logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+        }
 
         /*
          *  Run the delayed task (after 10 seconds) to Monitor Cassandra
@@ -87,7 +99,7 @@ public class PriamServer
          *  Hence waiting for Cassandra to stop
          */
         scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME,CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
-
+        
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1)
         if (config.getBackupHour() >= 0 && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac())))
@@ -96,9 +108,9 @@ public class PriamServer
 
             // Start the Incremental backup schedule if enabled
             if (config.isIncrBackup())
-                scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
+            		scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
         }
-        
+       
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }

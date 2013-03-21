@@ -18,7 +18,10 @@ package com.netflix.priam.resources;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -26,20 +29,27 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.IncrementalRestore;
+import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -47,8 +57,6 @@ import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -62,10 +70,12 @@ public class BackupServlet
     private static final String REST_HEADER_TOKEN = "token";
     private static final String REST_HEADER_REGION = "region";
     private static final String REST_KEYSPACES = "keyspaces";
+    private static final String FMT = "yyyyMMddHHmm";
 
     private PriamServer priamServer;
     private IConfiguration config;
-    private IBackupFileSystem fs;
+    private IBackupFileSystem backupFs;
+    private IBackupFileSystem bkpStatusFs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
     private CassandraTuner tuner;
@@ -75,14 +85,19 @@ public class BackupServlet
     private final ICassandraProcess cassProcess;
     @Inject
     private PriamScheduler scheduler;
+    @Inject
+    private MetaData metaData;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, IBackupFileSystem fs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
+
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
+
     {
         this.priamServer = priamServer;
         this.config = config;
-        this.fs = fs;
+        this.backupFs = backupFs;
+        this.bkpStatusFs = bkpStatusFs;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
         this.tuner = tuner;
@@ -97,6 +112,14 @@ public class BackupServlet
     public Response backup() throws Exception
     {
         snapshotBackup.execute();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/incremental_backup")
+    public Response backupIncrementals() throws Exception
+    {
+        scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 
@@ -152,16 +175,10 @@ public class BackupServlet
             startTime = path.parseDate(restore[0]);
             endTime = path.parseDate(restore[1]);
         }
-        Iterator<AbstractBackupPath> it = fs.list(config.getBackupPrefix(), startTime, endTime);
+        Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
-        while (it.hasNext())
-        {
-            AbstractBackupPath p = it.next();
-            if (filter != null && BackupFileType.valueOf(filter) != p.getType())
-                continue;
-            object.put(p.getRemotePath(), p.formatDate(p.getTime()));
-        }
-        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+        object = constructJsonResponse(object,it,filter);
+        return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
@@ -170,7 +187,7 @@ public class BackupServlet
     {
         int restoreTCount = restoreObj.getActiveCount();
         logger.debug("Thread counts for backup is: %d", restoreTCount);
-        int backupTCount = fs.getActivecount();
+        int backupTCount = backupFs.getActivecount();
         logger.debug("Thread counts for restore is: %d", backupTCount);
         JSONObject object = new JSONObject();
         object.put("Restore", new Integer(restoreTCount));
@@ -258,4 +275,48 @@ public class BackupServlet
             list.addAll(newKeyspaces);
         }
     }
+    
+    private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
+    {
+		int fileCnt = 0;
+		filter = filter.contains("?") ? filter
+				.substring(0, filter.indexOf("?")) : filter;
+
+		try {
+			JSONArray jArray = new JSONArray();
+			while (it.hasNext()) {
+				JSONObject backupJSON = new JSONObject();
+				AbstractBackupPath p = it.next();
+				if (filter != null
+						&& BackupFileType.valueOf(filter) != p.getType())
+					continue;
+				backupJSON.put("bucket", config.getBackupPrefix());
+				backupJSON.put("filename", p.getRemotePath());
+				backupJSON.put("app", p.getClusterName());
+				backupJSON.put("region", p.getRegion());
+				backupJSON.put("token", p.getToken());
+				backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
+				backupJSON.put("instance_id", p.getInstanceIdentity()
+						.getInstance().getInstanceId());
+				backupJSON.put("uploaded_ts",
+						new DateTime(p.getUploadedTs()).toString(FMT));
+				if (filter != null && filter.equalsIgnoreCase("meta")) {
+					List<AbstractBackupPath> allFiles = metaData.get(p);
+					long totalSize = 0;
+					for (AbstractBackupPath abp : allFiles)
+						totalSize = totalSize + abp.getSize();
+					backupJSON.put("num_files", Long.toString(allFiles.size()));
+					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
+					// Add Later
+				}
+				fileCnt++;
+				jArray.put(backupJSON);
+			}
+			object.put("files", jArray);
+			object.put("num_files", fileCnt);
+		} catch (JSONException jse) {
+			logger.info("Caught JSON Exception --> "+jse.getMessage());
+		}
+		return object;
+	}
 }

@@ -69,8 +69,6 @@ public interface IConfiguration
     /**
      * Location containing backup files. Typically bucket name followed by path
      * to the clusters backup
-     * 
-     * @return
      */
     public String getRestorePrefix();
 
@@ -106,7 +104,7 @@ public interface IConfiguration
     public long getBackupChunkSize();
 
     /**
-     * @return trus if commit log backup is enabled
+     * @return true if commit log backup is enabled
      */
     public boolean isCommitLogBackup();
 
@@ -117,7 +115,6 @@ public interface IConfiguration
         
     /**
      * Cassandra storage/cluster communication port
-     * @return
      */
     public int getStoragePort();
     
@@ -262,7 +259,7 @@ public interface IConfiguration
      * @return hinted_handoff_throttle_delay_in_ms
      */
     public int getHintHandoffDelay();
-    
+
     /**
      * @return Size of Cassandra max direct memory
      */
@@ -336,11 +333,17 @@ public interface IConfiguration
     public String getAuthorizer();
 
     /**
+     * This can be used during cluster migration.
+     * When on Target Cluster, keyspace name is different
+     * than the original one.
      * @return New Keyspace Name on Target Cluster
      */
     public String getTargetKSName();
     
     /**
+     * This can be used during cluster migration.
+     * When on Target Cluster, Column Family name is different
+     * than the original one.
      * @return New Column Family Name on Target Cluster
      */
     public String getTargetCFName();
@@ -349,4 +352,5 @@ public interface IConfiguration
      * @return true/false, if Cassandra needs to be started manually
      */
     public boolean doesCassandraStartManually();
+
 }

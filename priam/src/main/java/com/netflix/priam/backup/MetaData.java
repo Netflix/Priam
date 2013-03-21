@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.commons.io.FileUtils;
@@ -34,6 +35,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.utils.RetryableCallable;
 
 /**
@@ -44,15 +46,15 @@ public class MetaData
 {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    
-    @Inject
-    @Named("backup")
-    protected IBackupFileSystem fs;
+    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private final List<String> metaRemotePaths = new ArrayList<String>();
+    private IBackupFileSystem fs;
 
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathFactory)
+    public MetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs)
     {
         this.pathFactory = pathFactory;
+        this.fs = fs;
     }
 
     @SuppressWarnings("unchecked")
@@ -76,7 +78,12 @@ public class MetaData
         backupfile.time = backupfile.parseDate(snapshotName);
         try
         {
-            upload(backupfile);
+			upload(backupfile);
+
+			addToRemotePath(backupfile.getRemotePath());
+			if (metaRemotePaths.size() > 0) {
+				notifyObservers();
+			}          
         }
         finally
         {
@@ -136,5 +143,27 @@ public class MetaData
         FileUtils.moveFile(metafile, destFile);
         return destFile;
     }
+
+	public static void addObserver(IMessageObserver observer) {
+		observers.add(observer);
+	}
+
+	public static void removeObserver(IMessageObserver observer) {
+		observers.remove(observer);
+	}
+
+	public void notifyObservers() {
+		for (IMessageObserver observer : observers) {
+			if (observer != null) {
+				logger.debug("Updating snapshot observers now ...");
+				observer.update(BACKUP_MESSAGE_TYPE.META, metaRemotePaths);
+			} else
+				logger.info("Observer is Null, hence can not notify ...");
+		}
+	}
+
+	protected void addToRemotePath(String remotePath) {
+		metaRemotePaths.add(remotePath);
+	}
 
 }

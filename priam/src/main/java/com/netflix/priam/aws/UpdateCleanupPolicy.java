@@ -34,15 +34,13 @@ import com.google.inject.name.Named;
 public class UpdateCleanupPolicy extends Task
 {
     public static final String JOBNAME = "UpdateCleanupPolicy";
+    private IBackupFileSystem fs;
 
     @Inject
-    @Named("backup")
-    protected IBackupFileSystem fs;
-
-    @Inject
-    public UpdateCleanupPolicy(IConfiguration config)
+    public UpdateCleanupPolicy(IConfiguration config,@Named("backup")IBackupFileSystem fs)
     {
         super(config);
+		this.fs = fs;
     }
 
     @Override

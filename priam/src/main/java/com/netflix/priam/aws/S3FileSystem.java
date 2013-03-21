@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
-
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +41,6 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.amazonaws.services.s3.model.S3Object;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -338,7 +337,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     }
 
     /**
-     * This method does exactly as other download method.
+     * This method does exactly as other download method.(Supposed to be overridden)
      * filePath parameter provides the diskPath of the downloaded file.
      * This path can be used to correlate the files which are Streamed In 
      * during Incremental Restores
@@ -346,24 +345,12 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 	@Override
 	public void download(AbstractBackupPath path, OutputStream os,
 			String filePath) throws BackupRestoreException {
-        try
-        {
-            logger.info("Downloading " + path.getRemotePath());
-            downloadCount.incrementAndGet();
-            AmazonS3 client = getS3Client();
-            S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
-
-            long contentLen = obj.getObjectMetadata().getContentLength();
-            path.setSize(contentLen);
-            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
-            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
-            compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
-            bytesDownloaded.addAndGet(contentLen);
-        }
-        catch (Exception e)
-        {
-            throw new BackupRestoreException(e.getMessage(), e);
-        }
+		try {
+			// Calling original Download method
+			download(path, os);
+		} catch (Exception e) {
+			throw new BackupRestoreException(e.getMessage(), e);
+		}
 	}
 
 }

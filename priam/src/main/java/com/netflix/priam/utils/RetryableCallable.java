@@ -69,7 +69,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
                 {
                     throw e;
                 }
-                logger.error(String.format("Retry #%d for: %s",retry, ExceptionUtils.getFullStackTrace(e)));
+                logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
                 if(++logCounter == 1)
                 		logger.error("Exception --> "+ExceptionUtils.getFullStackTrace(e));
                 Thread.sleep(waitTime);

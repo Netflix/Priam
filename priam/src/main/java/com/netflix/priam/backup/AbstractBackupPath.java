@@ -60,7 +60,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 	protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
-
+    protected Date uploadedTs;
+    
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {
         this.factory = factory;
@@ -256,6 +257,21 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public void setFileName(String fileName)
     {
         this.fileName = fileName;
+    }
+
+    public InstanceIdentity getInstanceIdentity()
+    {
+    		return this.factory;
+    }
+    
+    public void setUploadedTs(Date uploadedTs)
+    {
+    		this.uploadedTs = uploadedTs;
+    }
+
+    public Date getUploadedTs()
+    {
+    		return this.uploadedTs;
     }
 
     public static class RafInputStream extends InputStream

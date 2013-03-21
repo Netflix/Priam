@@ -49,6 +49,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(ICredential.class).to(ClearCredential.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(S3FileSystem.class);
+        bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
         //bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);

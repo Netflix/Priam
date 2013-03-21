@@ -36,7 +36,8 @@ public class BackupServletTest
 {
     private @NonStrict PriamServer priamServer;
     private @NonStrict IConfiguration config;
-    private @Mocked IBackupFileSystem fs;
+    private @Mocked IBackupFileSystem bkpFs;
+    private @Mocked IBackupFileSystem bkpStatusFs;
     private @Mocked Restore restoreObj;
     private @Mocked Provider<AbstractBackupPath> pathProvider;
     private @Mocked CassandraTuner tuner;
@@ -49,7 +50,7 @@ public class BackupServletTest
     @Before
     public void setUp()
     {
-        resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
+        resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
             tuner, snapshotBackup, factory, tokenManager, cassProcess);
     }
 

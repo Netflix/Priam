@@ -17,6 +17,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.LinkedBlockingDeque;
 
 /**
  * Manages running processes in the agent
@@ -31,7 +32,7 @@ public class AgentProcessManager implements Closeable
     private final ExecutorService executorService;
 
     @GuardedBy("synchronized")
-    private final Deque<ProcessRecord> completedProcesses = Queues.newLinkedBlockingDeque();
+    private final Deque<ProcessRecord> completedProcesses = new LinkedBlockingDeque<ProcessRecord>();
 
     /**
      * @param processMap map from process name to process provider

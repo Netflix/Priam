@@ -40,10 +40,7 @@ public abstract class AbstractBackup extends Task
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final List<String> FILTER_COLUMN_FAMILY = Arrays.asList("LocationInfo");
     protected final Provider<AbstractBackupPath> pathFactory;
-    
-    @Inject
-    @Named("backup")
-    protected IBackupFileSystem fs;
+    protected final IBackupFileSystem fs;
 
     @Inject
     public AbstractBackup(IConfiguration config,IBackupFileSystem fs,Provider<AbstractBackupPath> pathFactory)

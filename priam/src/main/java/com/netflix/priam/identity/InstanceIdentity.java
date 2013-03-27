@@ -15,6 +15,7 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
@@ -182,11 +183,15 @@ public class InstanceIdentity
                 max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
             int maxSlot = max - hash;
             int my_slot = 0;
-            if (hash == max && locMap.get(config.getRac()).size() == 0)
-                my_slot = config.getRacs().indexOf(config.getRac()) + maxSlot;
-            else
+            if (hash == max && locMap.get(config.getRac()).size() == 0) {
+                int idx = config.getRacs().indexOf(config.getRac());
+                Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());
+                my_slot = idx + maxSlot;
+            } else
                 my_slot = config.getRacs().size() + maxSlot;
 
+            logger.info("Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
+                    my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
             String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
             return factory.create(config.getAppName(), my_slot + hash, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, payload);
         }

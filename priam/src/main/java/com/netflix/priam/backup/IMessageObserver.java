@@ -20,7 +20,11 @@ import java.util.List;
 
 public interface IMessageObserver {
 
-	public enum BACKUP_MESSAGE_TYPE {SNAPSHOT, INCREMENTAL, COMMITLOG};
+	public enum BACKUP_MESSAGE_TYPE {SNAPSHOT, INCREMENTAL, COMMITLOG, META};
+	public enum RESTORE_MESSAGE_TYPE {SNAPSHOT, INCREMENTAL, COMMITLOG, META};
+	public enum RESTORE_MESSAGE_STATUS {UPLOADED, DOWNLOADED, STREAMED};
 	public void update(BACKUP_MESSAGE_TYPE bkpMsgType, List<String> remotePathNames);
+	public void update(RESTORE_MESSAGE_TYPE rstMsgType, List<String> remotePathNames,RESTORE_MESSAGE_STATUS rstMsgStatus);
+	public void update(RESTORE_MESSAGE_TYPE rstMsgType, String remotePath, String fileDiskPath,RESTORE_MESSAGE_STATUS rstMsgStatus);
 
 }

@@ -24,6 +24,7 @@ import com.netflix.priam.utils.RetryableCallable;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 
 /**
  * Updates the cleanup policy for the bucket
@@ -33,14 +34,13 @@ import com.google.inject.Singleton;
 public class UpdateCleanupPolicy extends Task
 {
     public static final String JOBNAME = "UpdateCleanupPolicy";
-    private final IBackupFileSystem fs;
+    private IBackupFileSystem fs;
 
     @Inject
-    public UpdateCleanupPolicy(IConfiguration config, IBackupFileSystem fs)
+    public UpdateCleanupPolicy(IConfiguration config,@Named("backup")IBackupFileSystem fs)
     {
         super(config);
-        this.fs = fs;
-
+		this.fs = fs;
     }
 
     @Override

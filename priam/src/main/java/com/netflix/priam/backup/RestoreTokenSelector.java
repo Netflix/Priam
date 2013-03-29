@@ -16,6 +16,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
+import com.google.inject.name.Named;
 import com.netflix.priam.utils.ITokenManager;
 
 import java.math.BigInteger;
@@ -29,14 +30,16 @@ import java.util.List;
  */
 public class RestoreTokenSelector
 {
-    private final IBackupFileSystem fs;
     private final ITokenManager tokenManager;
+    private final IBackupFileSystem fs;
 
     @Inject
-    public RestoreTokenSelector(IBackupFileSystem fs, ITokenManager tokenManager)
+
+    public RestoreTokenSelector(ITokenManager tokenManager,@Named("backup")IBackupFileSystem fs)
+
     {
-        this.fs = fs;
         this.tokenManager = tokenManager;
+        this.fs = fs;
     }
 
     /**

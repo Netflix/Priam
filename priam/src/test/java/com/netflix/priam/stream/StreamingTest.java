@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 
+import com.netflix.priam.defaultimpl.StandardTuner;
 import junit.framework.Assert;
 
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
@@ -25,7 +26,8 @@ public class StreamingTest
 {
     public void teststream() throws IOException, InterruptedException
     {
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id"));
+        IConfiguration config = new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id");
+        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(config, new StandardTuner(config));
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);
     }
@@ -51,33 +53,33 @@ public class StreamingTest
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f1" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f1" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f2" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f2" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         for (int i = 10; i < 30; i++)
         {
             S3BackupPath path = new S3BackupPath(conf, factory);
-            path.parseRemote("test_backup/fake-region/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f3" + i + ".db");
+            path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108" + i + "0000" + "/SNAP/ks1/cf2/f3" + i + ".db");
             queue.adjustAndAdd(path);
         }
 
         S3BackupPath path = new S3BackupPath(conf, factory);
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f129.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f129.db");
         Assert.assertTrue(queue.contains(path));
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f229.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f229.db");
         Assert.assertTrue(queue.contains(path));
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f329.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108290000" + "/SNAP/ks1/cf2/f329.db");
         Assert.assertTrue(queue.contains(path));
 
-        path.parseRemote("test_backup/fake-region/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
+        path.parseRemote("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
         Assert.assertEquals(path, queue.first());
     }
 

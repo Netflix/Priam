@@ -6,10 +6,13 @@ import java.util.List;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.defaultimpl.PriamConfiguration;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
 {
+
+	public static final String FAKE_REGION = "us-east-1";
 
     public String region;
     public String appName;
@@ -408,4 +411,34 @@ public class FakeConfiguration implements IConfiguration
     {
         return 1;
     }
+
+    public String getYamlLocation()
+    {
+        return "conf/cassandra.yaml";
+    }
+
+    public String getAuthenticator()
+    {
+        return PriamConfiguration.DEFAULT_AUTHENTICATOR;
+    }
+
+    public String getAuthorizer()
+    {
+        return PriamConfiguration.DEFAULT_AUTHORIZER;
+    }
+
+    @Override
+	public String getTargetKSName() {
+		return null;
+	}
+
+	@Override
+	public String getTargetCFName() {
+		return null;
+	}
+
+	@Override
+	public boolean doesCassandraStartManually() {
+		return false;
+	}
 }

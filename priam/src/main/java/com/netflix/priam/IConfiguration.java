@@ -30,6 +30,8 @@ public interface IConfiguration
      */
     public String getCassHome();
 
+    public String getYamlLocation();
+
     /**
      * @return Path to Cassandra startup script
      */
@@ -319,7 +321,7 @@ public interface IConfiguration
      * Support for limiting the total number of rows in c* 1.1 global row cache.
      */
     public String getRowCacheKeysToSave();
-    
+
     /**
      * @return C* Process Name
      */
@@ -329,4 +331,36 @@ public interface IConfiguration
      * Get the number of tokens node uses; used as part of vnodes support
      */
     public int getNumTokens();
+
+    /**
+    * Defaults to 'allow all'.
+     */
+    public String getAuthenticator();
+
+    /**
+     * Defaults to 'allow all'.
+     */
+    public String getAuthorizer();
+
+    /**
+     * This can be used during cluster migration.
+     * When on Target Cluster, keyspace name is different
+     * than the original one.
+     * @return New Keyspace Name on Target Cluster
+     */
+    public String getTargetKSName();
+    
+    /**
+     * This can be used during cluster migration.
+     * When on Target Cluster, Column Family name is different
+     * than the original one.
+     * @return New Column Family Name on Target Cluster
+     */
+    public String getTargetCFName();
+    
+    /**
+     * @return true/false, if Cassandra needs to be started manually
+     */
+    public boolean doesCassandraStartManually();
+
 }

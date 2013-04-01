@@ -128,7 +128,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
     private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
     private final String DEFAULT_BACKUP_LOCATION = "backup";
-    private final String DEFAULT_BUCKET_NAME = "mdo-cassandra-archive";
+    private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
     private String DEFAULT_AVAILABILITY_ZONES = "";
     private final String DEFAULT_CASS_PROCESS_NAME = "CassandraDaemon";
 

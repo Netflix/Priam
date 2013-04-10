@@ -89,7 +89,7 @@ public class TestScheduler
             try
             {
                 // todo : why is this sleep important?
-                Thread.sleep(55);//5sec
+                Thread.sleep(10);  //10sec
             }
             catch (InterruptedException e)
             {

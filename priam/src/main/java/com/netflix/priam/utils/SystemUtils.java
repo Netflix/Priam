@@ -92,13 +92,13 @@ public class SystemUtils
         try
         {
             int code = starter.exitValue();
-            if (code == 0)
-                logger.info("Cassandra server has been started");
+            if (code == 0) 
+                logger.info("Cassandra server has been triggerred to start");
             else
-            {
                 logger.error("Unable to start cassandra server. Error code: {}", code);
-                logProcessOutput(starter);
-            }
+        
+            logProcessOutput(starter);
+
         } catch (IllegalThreadStateException e)
         {
         }

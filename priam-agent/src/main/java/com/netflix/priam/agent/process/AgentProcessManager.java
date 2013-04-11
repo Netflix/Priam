@@ -2,7 +2,6 @@ package com.netflix.priam.agent.process;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Queues;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.priam.agent.AgentConfiguration;
 import com.netflix.priam.agent.NodeStatus;

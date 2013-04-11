@@ -15,6 +15,7 @@
  */
 package com.netflix.priam.utils;
 
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +51,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
     public T call() throws Exception
     {
         int retry = 0;
+        int logCounter = 0;
         while (true)
         {
             try
@@ -68,6 +70,9 @@ public abstract class RetryableCallable<T> implements Callable<T>
                     throw e;
                 }
                 logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
+
+                if(++logCounter == 1)
+                		logger.error("Exception --> "+ExceptionUtils.getFullStackTrace(e));
                 Thread.sleep(waitTime);
             }
             finally

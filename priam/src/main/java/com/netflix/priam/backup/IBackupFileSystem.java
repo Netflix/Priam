@@ -32,6 +32,12 @@ public interface IBackupFileSystem
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException;
 
     /**
+     * Write the contents of the specified remote path to the output stream and close.
+     * filePath denotes the diskPath of the downloaded file
+     */
+    public void download(AbstractBackupPath path, OutputStream os, String filePath) throws BackupRestoreException;
+
+    /**
      * Upload/Backup to the specified location with contents from the input
      * stream. Closes the InputStream after its done.
      */

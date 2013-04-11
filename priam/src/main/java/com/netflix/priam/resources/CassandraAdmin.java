@@ -25,7 +25,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
@@ -34,6 +33,15 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.google.common.collect.Lists;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.inject.Inject;
+import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
@@ -52,6 +60,11 @@ import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.SystemUtils;
+import org.apache.cassandra.net.MessagingServiceMBean;
+import org.apache.cassandra.utils.EstimatedHistogram;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
 
 /**
  * Do general operations. Start/Stop and some JMX node tool commands
@@ -67,18 +80,20 @@ public class CassandraAdmin
     private static final String REST_SUCCESS = "[\"ok\"]";
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
     private IConfiguration config;
+    private final ICassandraProcess cassProcess;
 
     @Inject
-    public CassandraAdmin(IConfiguration config)
+    public CassandraAdmin(IConfiguration config, ICassandraProcess cassProcess)
     {
         this.config = config;
+        this.cassProcess = cassProcess;
     }
 
     @GET
     @Path("/start")
     public Response cassStart() throws IOException, InterruptedException, JSONException
     {
-        SystemUtils.startCassandra(true, config);
+        cassProcess.start(true);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 
@@ -86,7 +101,7 @@ public class CassandraAdmin
     @Path("/stop")
     public Response cassStop() throws IOException, InterruptedException, JSONException
     {
-        SystemUtils.stopCassandra(config);
+        cassProcess.stop();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

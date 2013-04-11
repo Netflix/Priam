@@ -8,7 +8,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import junit.framework.Assert;
-
 import mockit.Mock;
 import mockit.Mockit;
 
@@ -23,9 +22,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.SnapshotBackup;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
 import com.netflix.priam.utils.CassandraMonitor;
 
 /**
@@ -45,7 +43,7 @@ public class TestBackup
     public static void setup() throws InterruptedException, IOException
     {
         injector = Guice.createInjector(new BRTestModule());
-        filesystem = (FakeBackupFileSystem) injector.getInstance(IBackupFileSystem.class);
+        filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class,Names.named("backup")));
         Mockit.setUpMock(NodeProbe.class, MockNodeProbe.class);
     }
     
@@ -59,13 +57,13 @@ public class TestBackup
     @Test
     public void testSnapshotBackup() throws Exception
     {
-        filesystem.setupTest();
+    		filesystem.setupTest();
         SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
         CassandraMonitor cassMon = injector.getInstance(CassandraMonitor.class);
         cassMon.setIsCassadraStarted();
         backup.execute();
         Assert.assertEquals(3, filesystem.uploadedFiles.size());
-        System.out.println(filesystem.uploadedFiles.size());
+        System.out.println("***** "+filesystem.uploadedFiles.size());
         boolean metafile = false;
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
@@ -82,7 +80,7 @@ public class TestBackup
     @Test
     public void testIncrementalBackup() throws Exception
     {
-        filesystem.setupTest();
+    		filesystem.setupTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();

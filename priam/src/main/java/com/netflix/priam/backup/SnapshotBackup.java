@@ -28,6 +28,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
@@ -54,7 +55,7 @@ public class SnapshotBackup extends AbstractBackup
     private final long WAIT_TIME_MS = 60 * 1000 * 10;
 
     @Inject
-    public SnapshotBackup(IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
+    public SnapshotBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
     {
         super(config, fs, pathFactory);
         this.metaData = metaData;

@@ -15,6 +15,8 @@
  */
 package com.netflix.priam.defaultimpl;
 
+import java.net.URL;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -152,6 +154,8 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
 
+    private final String BLANK = "";
+    
     private PriamProperties config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
@@ -244,9 +248,36 @@ public class PriamConfiguration implements IConfiguration
 
     private void populateProps()
     {
+    	config = new PriamProperties();
+    	
+    	Properties systemProps = System.getProperties();
+    	
+    	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();) 
+    	{
+            String key = (String) en.nextElement();
+            String value = (String) systemProps.getProperty(key);
+            
+            if (value != null && !BLANK.equals(value))
+            	config.put(key, systemProps.getProperty(key));
+        }
+    	
+    	//override command line properties if there is
+    	Properties fileProps = loadFileProperties();
+    	if (fileProps != null)  {
+    		for (Enumeration en = fileProps.propertyNames(); en.hasMoreElements();) 
+        	{
+                String key = (String) en.nextElement();
+                String value = (String) fileProps.getProperty(key);
+                if (value != null && !BLANK.equals(value))
+                	config.put(key, fileProps.getProperty(key));
+            }
+    	}
+    	
+    	
+    	//Or let SimpleDb overrides the properties
         // End point is us-east-1
         AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
-        config = new PriamProperties();
+        
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);
         String nextToken = null;
@@ -264,6 +295,24 @@ public class PriamConfiguration implements IConfiguration
 
         } while (nextToken != null);
 
+    }
+    
+    
+    private Properties loadFileProperties() 
+    {
+    	try 
+    	{
+    	   Properties properties = new Properties();
+    	   ClassLoader loader = PriamConfiguration.class.getClassLoader();
+    	   URL url = loader.getResource("Priam.properties");
+    	   properties.load(url.openStream());
+    	   return properties;
+    	} catch (Exception e) 
+    	{
+    		logger.info("No Priam.properties. Ignore!");
+    	}
+    	
+    	return null;
     }
 
     private void addProperty(Item item)

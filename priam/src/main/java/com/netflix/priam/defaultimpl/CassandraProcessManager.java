@@ -64,13 +64,15 @@ public class CassandraProcessManager implements ICassandraProcess
         {
             Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
             int code = starter.exitValue();
-            if (code == 0)
+            if (code == 0) {
                 logger.info("Cassandra server has been started");
+            }
             else
             {
                 logger.error("Unable to start cassandra server. Error code: {}", code);
-                logProcessOutput(starter);
             }
+            
+            logProcessOutput(starter);
         } catch (Exception e)
         {
         }

@@ -256,9 +256,14 @@ public interface IConfiguration
     public int getMaxHintWindowInMS();
     
     /**
-     * @return hinted_handoff_throttle_delay_in_ms
+     * @return hinted_handoff_throttle_in_kb
      */
-    public int getHintHandoffDelay();
+    public int getHintedHandoffThrottleKb();
+
+    /**
+     * @return max_hints_delivery_threads
+     */
+    public int getMaxHintThreads();
 
     /**
      * @return Size of Cassandra max direct memory
@@ -321,6 +326,11 @@ public interface IConfiguration
      * @return C* Process Name
      */
     public String getCassProcessName();
+
+    /**
+     * Get the number of tokens node uses; used as part of vnodes support
+     */
+    public int getNumTokens();
 
     /**
     * Defaults to 'allow all'.

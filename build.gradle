@@ -16,6 +16,8 @@ apply from: file('gradle/check.gradle')
 apply from: file('gradle/license.gradle')
 apply from: file('gradle/release.gradle')
 
+apply plugin: 'idea'
+
 subprojects {
     apply plugin: 'idea'
     apply plugin: 'eclipse'
@@ -29,7 +31,7 @@ subprojects {
     }
 
     dependencies {
-        compile "commons-lang:commons-lang:2.5"
+        compile "commons-lang:commons-lang:2.6"
         compile "commons-logging:commons-logging:1.1.1"
         compile "commons-collections:commons-collections:3.2.1"
         compile "commons-io:commons-io:2.0.1"
@@ -45,9 +47,9 @@ subprojects {
         compile "com.google.inject.extensions:guice-servlet:3.0"
         compile "org.quartz-scheduler:quartz:1.7.3"
         compile "com.googlecode.json-simple:json-simple:1.1"
-        compile "org.xerial.snappy:snappy-java:1.0.4.1"
+        compile "org.xerial.snappy:snappy-java:1.0.5-M3"
         compile "org.yaml:snakeyaml:1.10"
-        compile "org.apache.cassandra:cassandra-all:[1.1.9,1.1.10["
+        compile "org.apache.cassandra:cassandra-all:[1.2.3,2.0["
         compile "javax.ws.rs:jsr311-api:1.1.1"
         compile "joda-time:joda-time:2.0"
         compile "commons-configuration:commons-configuration:1.5"

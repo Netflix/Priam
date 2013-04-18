@@ -10,7 +10,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
+import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 
 public class TestCustomizedTPE
 {
@@ -18,7 +18,7 @@ public class TestCustomizedTPE
     private static final int MAX_THREADS = 10;
     // timeout 1 sec
     private static final int TIME_OUT = 10 * 1000;
-    private CustomizedThreadPoolExecutor startTest = new CustomizedThreadPoolExecutor(MAX_THREADS, new LinkedBlockingDeque<Runnable>(MAX_THREADS), TIME_OUT);
+    private BlockingSubmitThreadPoolExecutor startTest = new BlockingSubmitThreadPoolExecutor(MAX_THREADS, new LinkedBlockingDeque<Runnable>(MAX_THREADS), TIME_OUT);
 
     @Test
     public void testExecutor() throws InterruptedException

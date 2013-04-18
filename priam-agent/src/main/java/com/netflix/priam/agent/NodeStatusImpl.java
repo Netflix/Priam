@@ -1,7 +1,6 @@
 package com.netflix.priam.agent;
 
 import com.netflix.priam.utils.JMXNodeTool;
-import org.apache.cassandra.config.ConfigurationException;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import java.io.IOException;
@@ -110,13 +109,7 @@ public class NodeStatusImpl implements NodeStatus
     @Override
     public void joinRing() throws IOException
     {
-        try
-        {
-            nodeTool.joinRing();
-        } catch (ConfigurationException e)
-        {
-            throw new IllegalArgumentException("Bad cassandra config", e);
-        }
+        nodeTool.joinRing();
     }
 
     @Override
@@ -128,7 +121,7 @@ public class NodeStatusImpl implements NodeStatus
     @Override
     public void removeNode(String token) throws Exception
     {
-        nodeTool.removeToken(token);
+        nodeTool.removeNode(token);
     }
 
     @Override
@@ -150,9 +143,9 @@ public class NodeStatusImpl implements NodeStatus
     }
 
     @Override
-    public void repair(boolean sequential) throws Exception
+    public void repair(boolean sequential, boolean localDataCenterOnly) throws Exception
     {
-        nodeTool.repair(sequential);
+        nodeTool.repair(sequential, localDataCenterOnly);
     }
 
     @Override

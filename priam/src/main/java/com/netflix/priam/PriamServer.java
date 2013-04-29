@@ -29,6 +29,8 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
 import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -42,7 +44,8 @@ public class PriamServer
     private final InstanceIdentity id;
     private final Sleeper sleeper;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
-
+    private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
+    
     @Inject
     public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper)
     {
@@ -76,8 +79,13 @@ public class PriamServer
         // restore from backup else start cassandra.
         if (!config.getRestoreSnapshot().equals(""))
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
-        else
-            SystemUtils.startCassandra(true, config); // Start cassandra.
+		else {
+			if (!config.doesCassandraStartManually())
+				SystemUtils.startCassandra(true, config); // Start cassandra.
+			else
+				logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+		}
+            
 
         /*
          *  Run the delayed task (after 10 seconds) to Monitor Cassandra

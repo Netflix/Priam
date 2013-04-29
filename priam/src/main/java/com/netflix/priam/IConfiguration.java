@@ -323,5 +323,8 @@ public interface IConfiguration
      */
     public String getCassProcessName();
 
-
+    /**
+     * @return true/false, if Cassandra needs to be started manually
+     */
+    public boolean doesCassandraStartManually();
 }

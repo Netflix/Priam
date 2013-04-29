@@ -203,8 +203,8 @@ public class BackupServlet
      * 
      * @param token
      *            Overrides the current token with this one, if specified
-     * @param region
-     *            Override the region for searching backup
+     * @param dc
+     *            Override the dc for searching backup
      * @param startTime
      *            Start time
      * @param endTime
@@ -213,9 +213,9 @@ public class BackupServlet
      *            Comma seperated list of keyspaces to restore
      * @throws Exception
      */
-    private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
+    private void restore(String token, String dc, Date startTime, Date endTime, String keyspaces) throws Exception
     {
-        String origRegion = config.getDC();
+        String origDC = config.getDC();
         String origToken = priamServer.getId().getInstance().getToken();
         if (StringUtils.isNotBlank(token))
             priamServer.getId().getInstance().setToken(token);
@@ -223,11 +223,11 @@ public class BackupServlet
         if( config.isRestoreClosestToken())
             priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
         
-        if (StringUtils.isNotBlank(region))
+        if (StringUtils.isNotBlank(dc))
         {
-            config.setDC(region);
-            logger.info("Restoring from region " + region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
+            config.setDC(dc);
+            logger.info("Restoring from region " + dc);
+            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), dc));
             logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
         }
 
@@ -239,7 +239,7 @@ public class BackupServlet
         }
         finally
         {
-            config.setDC(origRegion);
+            config.setDC(origDC);
             priamServer.getId().getInstance().setToken(origToken);
         }
         tuner.updateAutoBootstrap(config.getYamlLocation(), false);
@@ -289,7 +289,11 @@ public class BackupServlet
 				backupJSON.put("bucket", config.getBackupPrefix());
 				backupJSON.put("filename", p.getRemotePath());
 				backupJSON.put("app", p.getClusterName());
-				backupJSON.put("region", p.getRegion());
+				/* TODO: We should remove region from JSON response, but I am not sure about everyone's usage. So,
+				         keeping it for now. -Arya
+				  */
+                backupJSON.put("region", p.getDC());
+                backupJSON.put("dc", p.getDC());
 				backupJSON.put("token", p.getToken());
 				backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
 				backupJSON.put("instance_id", p.getInstanceIdentity()

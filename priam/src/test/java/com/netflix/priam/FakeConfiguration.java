@@ -402,4 +402,9 @@ public class FakeConfiguration implements IConfiguration
 	public String getCassProcessName() {
 		return "CassandraDaemon";
 	}
+
+	@Override
+	public boolean doesCassandraStartManually() {
+		return false;
+	}
 }

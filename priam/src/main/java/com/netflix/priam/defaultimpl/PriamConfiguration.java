@@ -77,7 +77,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
     private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
-
+    private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
+    
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
     private static final String CONFIG_RESTORE_PREFIX = PRIAM_PRE + ".restore.prefix";
@@ -667,5 +668,10 @@ public class PriamConfiguration implements IConfiguration
 	@Override
 	public String getCassProcessName() {
         return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+	}
+	
+	@Override
+	public boolean doesCassandraStartManually() {
+		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
 }

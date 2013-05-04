@@ -43,13 +43,10 @@ public abstract class AbstractRestore extends Task
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
     protected final IBackupFileSystem fs;
-    
+
     protected final IConfiguration config;
     protected final ThreadPoolExecutor executor;
 
-    protected IBackupFileSystem fs;
-    public static BigInteger restoreToken;
-    
     protected final Sleeper sleeper;
     
     public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper)

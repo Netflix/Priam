@@ -36,6 +36,7 @@ import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.RetryableCallable;
 
+@Ignore
 public class TestS3FileSystem
 {
     private static Injector injector;

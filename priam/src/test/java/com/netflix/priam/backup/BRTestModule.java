@@ -2,6 +2,8 @@ package com.netflix.priam.backup;
 
 import java.util.Arrays;
 
+import com.netflix.priam.*;
+import com.netflix.priam.utils.StubProcessor;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -9,10 +11,6 @@ import org.quartz.impl.StdSchedulerFactory;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.FakeMembership;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.compress.ICompression;
@@ -37,5 +35,6 @@ public class BRTestModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(FakeSleeper.class);
+        bind(ICassandraProcess.class).to(StubProcessor.class);
     }
 }

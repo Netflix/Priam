@@ -254,11 +254,16 @@ public interface IConfiguration
      * @return compaction_throughput_mb_per_sec
      */
     public int getMaxHintWindowInMS();
-    
+
     /**
      * @return hinted_handoff_throttle_in_kb
      */
-    public int getHintHandoffDelay();
+    public int getHintedHandoffThrottleKB();
+
+    /**
+     * @return hinted_handoff_throttle_in_kb
+     */
+    public int getHintedHandoffMaxThreads();
 
     /**
      * @return Size of Cassandra max direct memory

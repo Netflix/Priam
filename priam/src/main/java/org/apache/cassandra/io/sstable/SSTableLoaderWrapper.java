@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.cassandra.config.ConfigurationException;
+import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
@@ -114,7 +114,7 @@ public class SSTableLoaderWrapper
         try {
 			client.setPartitioner(config.getPartitioner());
 		} catch (ConfigurationException e) {
-			logger.error("Configuration Exception -> "+e);
+			logger.error("Configuration Exception", e);
 		}
         
         

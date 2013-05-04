@@ -13,9 +13,7 @@ import com.netflix.priam.backup.FakeCredentials;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.utils.FakeSleeper;
-import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.TokenManager;
 
 @Ignore
 public class TestModule extends AbstractModule

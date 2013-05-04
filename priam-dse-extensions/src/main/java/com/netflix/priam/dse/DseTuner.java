@@ -8,6 +8,7 @@ import java.io.Reader;
 import java.util.Map;
 import java.util.Properties;
 
+import com.netflix.priam.dse.snitch.SnitchProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,7 +19,6 @@ import org.apache.cassandra.io.util.FileUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import static com.netflix.priam.dse.IDseConfiguration.NodeType;
-import static org.apache.cassandra.locator.GossipingPropertyFileSnitch.RACKDC_PROPERTY_FILENAME;
 
 /**
  * Makes Datastax Enterprise-specific changes to the c* yaml and dse-yaml.
@@ -66,7 +66,7 @@ public class DseTuner extends StandardTuner
         Reader reader = null;
         try
         {
-            String filePath = config.getCassHome() + "/conf/" + RACKDC_PROPERTY_FILENAME;
+            String filePath = config.getCassHome() + "/conf/" + SnitchProperties.RACKDC_PROPERTY_FILENAME;
             reader = new FileReader(filePath);
             Properties properties = new Properties();
             properties.load(reader);
@@ -80,7 +80,7 @@ public class DseTuner extends StandardTuner
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Unable to read " + RACKDC_PROPERTY_FILENAME, e);
+            throw new RuntimeException("Unable to read " + SnitchProperties.RACKDC_PROPERTY_FILENAME, e);
         }
         finally
         {

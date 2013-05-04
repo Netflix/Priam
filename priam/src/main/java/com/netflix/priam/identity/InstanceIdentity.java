@@ -15,25 +15,23 @@
  */
 package com.netflix.priam.identity;
 
-import com.google.common.base.Preconditions;
-import java.net.UnknownHostException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Multimaps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.UnknownHostException;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 
 /**
  * This class provides the central place to create and consume the identity of
@@ -82,6 +80,7 @@ public class InstanceIdentity
     private void populateRacMap()
     {
         locMap.clear();
+        for (PriamInstance ins : membership.getAllInstances(config.getAppName()))
         {
             locMap.put(ins.getRac(), ins);
         }

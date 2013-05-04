@@ -26,7 +26,10 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
+import com.netflix.priam.utils.CassandraTuner;
 import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -300,7 +303,7 @@ public class BackupServlet
 			object.put("files", jArray);
 			object.put("num_files", fileCnt);
 		} catch (JSONException jse) {
-			logger.info("Caught JSON Exception --> "+jse.getMessage());
+			logger.info("Caught JSON Exception", jse.getMessage());
 		}
 		return object;
 	}

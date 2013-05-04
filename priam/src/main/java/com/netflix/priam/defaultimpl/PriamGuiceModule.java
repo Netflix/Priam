@@ -15,12 +15,8 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.AWSMembership;
@@ -31,15 +27,10 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.identity.IMembership;
-<<<<<<< HEAD
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.utils.CassandraTuner;
-import com.netflix.priam.utils.ITokenManager;
-=======
->>>>>>> WIP - demo for vnodes
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.ThreadSleeper;
-import com.netflix.priam.utils.TokenManager;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
 
 public class PriamGuiceModule extends AbstractModule
 {

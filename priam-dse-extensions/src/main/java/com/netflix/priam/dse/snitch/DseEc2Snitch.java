@@ -2,7 +2,7 @@ package com.netflix.priam.dse.snitch;
 
 import java.io.IOException;
 
-import org.apache.cassandra.config.ConfigurationException;
+import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.locator.Ec2Snitch;
 
 /**

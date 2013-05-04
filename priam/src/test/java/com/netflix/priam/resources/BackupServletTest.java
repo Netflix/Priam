@@ -3,7 +3,6 @@ package com.netflix.priam.resources;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
-import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.aws.S3BackupPath;
@@ -13,6 +12,7 @@ import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.TuneCassandra;
 import mockit.Expectations;
 import mockit.Mocked;
@@ -45,8 +45,7 @@ public class BackupServletTest
     @Before
     public void setUp()
     {
-        resource = new BackupServlet(priamServer, config, fs, restoreObj, pathProvider,
-            tuneCassandra, snapshotBackup);
+        resource = new BackupServlet(priamServer, config, bkpFs, restoreObj, pathProvider, new TuneCassandra(config, tuner), snapshotBackup);
     }
 
     @Test
@@ -87,7 +86,7 @@ public class BackupServletTest
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
   
                 config.setDC(oldRegion);
-                tuneCassandra.updateYaml(false);
+                tuner.updateYaml(config.getYamlLocation(), config.getHostname(), config.getSeedProviderName());
             }
         };
 
@@ -131,7 +130,7 @@ public class BackupServletTest
                     new DateTime(2011, 12, 31, 23, 59).toDate());
   
                 config.setDC(oldRegion);
-                tuneCassandra.updateYaml(false);
+                tuner.updateYaml(config.getYamlLocation(), config.getHostname(), config.getSeedProviderName());
             }
         };
 
@@ -186,7 +185,7 @@ public class BackupServletTest
 //  
 //                config.setDC(oldRegion);
 //                instance.setToken(oldToken);
-//                tuneCassandra.updateYaml(false);
+//                tuner.updateYaml(false);
 //            }
 //        };
 //
@@ -223,7 +222,7 @@ public class BackupServletTest
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
   
                 config.setDC(oldRegion);
-                tuneCassandra.updateYaml(false);
+                tuner.updateYaml(config.getYamlLocation(), config.getHostname(), config.getSeedProviderName());
             }
         };
 
@@ -265,7 +264,7 @@ public class BackupServletTest
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
   
                 config.setDC(oldRegion);
-                tuneCassandra.updateYaml(false);
+                tuner.updateYaml(config.getYamlLocation(), config.getHostname(), config.getSeedProviderName());
             }
         };
 
@@ -327,7 +326,7 @@ public class BackupServletTest
 //
 //                config.setDC(oldRegion);
 //                instance.setToken(oldToken);
-//                tuneCassandra.updateYaml(false);
+//                tuner.updateYaml(false);
 //            }
 //        };
 //

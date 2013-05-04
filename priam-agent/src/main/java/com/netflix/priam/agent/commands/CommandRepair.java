@@ -15,7 +15,8 @@ public class CommandRepair implements AgentProcess
     {
         Set<String>     argumentsSet = Sets.newHashSet(Arrays.asList(arguments));
         boolean         sequential = argumentsSet.contains("sequential");
-        nodeTool.repair(sequential);
+        boolean         localDc = argumentsSet.contains("localDc");
+        nodeTool.repair(sequential, localDc);
     }
 
     @Override

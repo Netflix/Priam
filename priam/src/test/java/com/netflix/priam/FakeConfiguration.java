@@ -1,12 +1,11 @@
 package com.netflix.priam;
 
-import java.util.Arrays;
-import java.util.List;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -339,7 +338,19 @@ public class FakeConfiguration implements IConfiguration
     
     public int getMaxHintWindowInMS()
     {
-        return 36000;
+        return 10800000;
+    }
+
+    @Override
+    public int getHintedHandoffThrottleKB()
+    {
+        return 1024;
+    }
+
+    @Override
+    public int getHintedHandoffMaxThreads()
+    {
+        return 2;
     }
 
     public int getHintedHandoffThrottleKb()
@@ -441,4 +452,6 @@ public class FakeConfiguration implements IConfiguration
     {
         return 1;
     }
+
+
 }

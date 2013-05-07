@@ -21,6 +21,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 
+import com.google.common.base.Preconditions;
+import com.google.inject.ImplementedBy;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,7 +158,7 @@ public class PriamConfiguration implements IConfiguration
 
     private final String BLANK = "";
     
-    private PriamProperties config;
+    private final Config config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
     private static class Attributes
@@ -173,9 +175,10 @@ public class PriamConfiguration implements IConfiguration
     private final ICredential provider;
 
     @Inject
-    public PriamConfiguration(ICredential provider)
+    public PriamConfiguration(ICredential provider, Config config)
     {
         this.provider = provider;
+        this.config = config;
     }
 
     @Override
@@ -248,7 +251,6 @@ public class PriamConfiguration implements IConfiguration
 
     private void populateProps()
     {
-    	config = new PriamProperties();
         config.put(CONFIG_ASG_NAME, ASG_NAME);
         config.put(CONFIG_REGION_NAME, REGION);
         
@@ -347,31 +349,31 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getCassStartupScript()
     {
-        return config.getProperty(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
+        return config.get(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
     }
 
     @Override
     public String getCassStopScript()
     {
-        return config.getProperty(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
+        return config.get(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
     }
 
     @Override
     public String getCassHome()
     {
-        return config.getProperty(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
+        return config.get(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
     }
 
     @Override
     public String getBackupLocation()
     {
-        return config.getProperty(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
+        return config.get(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
     }
 
     @Override
     public String getBackupPrefix()
     {
-        return config.getProperty(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
+        return config.get(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
     }
 
     @Override
@@ -389,7 +391,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getRestorePrefix()
     {
-        return config.getProperty(CONFIG_RESTORE_PREFIX);
+        return config.get(CONFIG_RESTORE_PREFIX);
     }
 
     @Override
@@ -401,25 +403,25 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getDataFileLocation()
     {
-        return config.getProperty(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
+        return config.get(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
     }
 
     @Override
     public String getCacheLocation()
     {
-        return config.getProperty(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
+        return config.get(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
     }
 
     @Override
     public String getCommitLogLocation()
     {
-        return config.getProperty(CONFIG_CL_LOCATION, DEFAULT_COMMIT_LOG_LOCATION);
+        return config.get(CONFIG_CL_LOCATION, DEFAULT_COMMIT_LOG_LOCATION);
     }
 
     @Override
     public String getBackupCommitLogLocation()
     {
-        return config.getProperty(CONFIG_CL_BK_LOCATION, "");
+        return config.get(CONFIG_CL_BK_LOCATION, "");
     }
 
     @Override
@@ -462,13 +464,13 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getSnitch()
     {
-        return config.getProperty(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
+        return config.get(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
     }
 
     @Override
     public String getAppName()
     {
-        return config.getProperty(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+        return config.get(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
     }
 
     @Override
@@ -498,19 +500,19 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHeapSize()
     {
-        return config.getProperty(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
+        return config.get(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
     }
 
     @Override
     public String getHeapNewSize()
     {
-        return config.getProperty(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
+        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
     }
 
     @Override
     public String getMaxDirectMemory()
     {
-        return config.getProperty(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
+        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
     }
 
     @Override
@@ -522,19 +524,19 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getRestoreSnapshot()
     {
-        return config.getProperty(CONFIG_AUTO_RESTORE_SNAPSHOTNAME, "");
+        return config.get(CONFIG_AUTO_RESTORE_SNAPSHOTNAME, "");
     }
 
     @Override
     public String getDC()
     {
-        return config.getProperty(CONFIG_REGION_NAME, "");
+        return config.get(CONFIG_REGION_NAME, "");
     }
 
     @Override
     public void setDC(String region)
     {
-        config.setProperty(CONFIG_REGION_NAME, region);
+        config.put(CONFIG_REGION_NAME, region);
     }
 
     @Override
@@ -565,13 +567,13 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getASGName()
     {
-        return config.getProperty(CONFIG_ASG_NAME, "");
+        return config.get(CONFIG_ASG_NAME, "");
     }
     
     @Override
     public String getACLGroupName()
     {
-    	return config.getProperty(CONFIG_ACL_GROUP_NAME, this.getAppName());
+    	return config.get(CONFIG_ACL_GROUP_NAME, this.getAppName());
     }
 
     @Override
@@ -625,49 +627,93 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getBootClusterName()
     {
-        return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "");
+        return config.get(CONFIG_BOOTCLUSTER_NAME, "");
     }
 
     @Override
     public String getSeedProviderName()
     {
-        return config.getProperty(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
+        return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
-    private class PriamProperties extends Properties
+    @ImplementedBy(PropertiesConfig.class)
+    public interface Config
+    {
+        String get(String prop);
+        String get(String prop, String defaultValue);
+        int getInteger(String prop, int defaultValue);
+        long getLong(String prop, long defaultValue);
+        boolean getBoolean(String prop, boolean defaultValue);
+        List<String> getList(String prop);
+        List<String> getList(String prop, String defaultValue);
+
+        void put(String prop, String value);
+
+        boolean contains(String prop);
+    }
+
+    public class PropertiesConfig implements Config
     {
 
-        private static final long serialVersionUID = 1L;
+      private final Properties properties;
 
-        public int getInteger(String prop, int defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Integer.parseInt(getProperty(prop));
-        }
+      public PropertiesConfig() {
+        this.properties = new Properties();
+      }
 
-        public long getLong(String prop, long defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Long.parseLong(getProperty(prop));
-        }
+      @Override
+      public String get(final String prop) {
+        return properties.getProperty(prop);
+      }
 
-        public boolean getBoolean(String prop, boolean defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Boolean.parseBoolean(getProperty(prop));
-        }
+      @Override
+      public String get(final String prop, final String defaultValue) {
+        return properties.getProperty(prop, defaultValue);
+      }
 
-        public List<String> getList(String prop)
-        {
-            if (getProperty(prop) == null)
-                return Lists.newArrayList();
-            return getTrimmedStringList(getProperty(prop).split(","));
-        }
+      @Override
+      public int getInteger(String prop, int defaultValue)
+      {
+        return get(prop) == null ? defaultValue : Integer.parseInt(get(prop));
+      }
 
-        public List<String> getList(String prop, String defaultValue)
-        {
-            if (getProperty(prop) == null)
-            		return getTrimmedStringList(defaultValue.split(","));
-            return getList(prop);
-        }
+      @Override
+      public long getLong(String prop, long defaultValue)
+      {
+        return get(prop) == null ? defaultValue : Long.parseLong(get(prop));
+      }
 
+      @Override
+      public boolean getBoolean(String prop, boolean defaultValue)
+      {
+        return get(prop) == null ? defaultValue : Boolean.parseBoolean(get(prop));
+      }
+
+      @Override
+      public List<String> getList(String prop)
+      {
+        if (get(prop) == null)
+          return Lists.newArrayList();
+        return getTrimmedStringList(get(prop).split(","));
+      }
+
+      @Override
+      public List<String> getList(String prop, String defaultValue)
+      {
+        if (get(prop) == null)
+          return getTrimmedStringList(defaultValue.split(","));
+        return getList(prop);
+      }
+
+      @Override
+      public void put(final String prop, final String value) {
+        properties.put(prop, value);
+      }
+
+      @Override
+      public boolean contains(final String prop) {
+        return properties.containsKey(prop);
+      }
     }
 
     @Override
@@ -693,27 +739,27 @@ public class PriamConfiguration implements IConfiguration
 
     public String getPartitioner()
     {
-        return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
+        return config.get(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
     }
 
     public String getKeyCacheSizeInMB()
     {
-        return config.getProperty(CONFIG_KEYCACHE_SIZE, null);
+        return config.get(CONFIG_KEYCACHE_SIZE, null);
     }
 
     public String getKeyCacheKeysToSave()
     {
-        return config.getProperty(CONFIG_KEYCACHE_COUNT, null);
+        return config.get(CONFIG_KEYCACHE_COUNT, null);
     }
 
     public String getRowCacheSizeInMB()
     {
-        return config.getProperty(CONFIG_ROWCACHE_SIZE, null);
+        return config.get(CONFIG_ROWCACHE_SIZE, null);
     }
 
     public String getRowCacheKeysToSave()
     {
-        return config.getProperty(CONFIG_ROWCACHE_COUNT, null);
+        return config.get(CONFIG_ROWCACHE_COUNT, null);
     }
 
     private List<String> getTrimmedStringList(String[] strings) {
@@ -726,31 +772,31 @@ public class PriamConfiguration implements IConfiguration
 
 	@Override
 	public String getCassProcessName() {
-        return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+        return config.get(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
 	}
 
     public String getYamlLocation()
     {
-        return config.getProperty(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
+        return config.get(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
     }
 
     public String getAuthenticator()
     {
-        return config.getProperty(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
+        return config.get(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
     }
 
     public String getAuthorizer()
     {
-        return config.getProperty(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
+        return config.get(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
     }
 
 	public String getTargetKSName() {
-		return config.getProperty(CONFIG_TARGET_KEYSPACE_NAME, null);
+		return config.get(CONFIG_TARGET_KEYSPACE_NAME, null);
 	}
 
 	@Override
 	public String getTargetCFName() {
-		return config.getProperty(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
+		return config.get(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
 	}
 
 	@Override

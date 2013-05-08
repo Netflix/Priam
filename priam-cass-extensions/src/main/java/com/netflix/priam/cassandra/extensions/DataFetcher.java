@@ -22,9 +22,13 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 
 import com.google.common.base.Charsets;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataFetcher
 {
+    private static final Logger logger = LoggerFactory.getLogger(DataFetcher.class);
+
     public static String fetchData(String url)
     {
         try
@@ -43,7 +47,7 @@ public class DataFetcher
             while ((c = d.read(b, 0, b.length)) != -1)
                 bos.write(b, 0, c);
             String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
-            System.out.println(String.format("Calling URL API: %s returns: %s", url, return_));
+            logger.info(String.format("Calling URL API: %s returns: %s", url, return_));
             conn.disconnect();
             return return_;
         }

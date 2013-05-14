@@ -35,6 +35,8 @@ import java.util.TimeZone;
 import javax.management.remote.JMXConnector;
 
 import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
@@ -125,8 +127,8 @@ public class SystemUtils
     {
         try
         {
-            byte[] digest = Files.getDigest(file, MessageDigest.getInstance("MD5"));
-            return toHex(digest);
+            HashCode hc = Files.hash(file, Hashing.md5());
+            return toHex(hc.asBytes());
         }
         catch (Exception e)
         {

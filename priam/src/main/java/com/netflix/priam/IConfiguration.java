@@ -16,6 +16,7 @@
 package com.netflix.priam;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * Interface for Priam's configuration
@@ -327,4 +328,20 @@ public interface IConfiguration
      * @return true/false, if Cassandra needs to be started manually
      */
     public boolean doesCassandraStartManually();
+    
+    /**
+     * @return the endpoint where metrics are sent to
+     */
+	public String getCloudwatchMonitoringEndpoint();
+	
+	/**
+	 * @return true/false to define if metrics are enabled or not
+	 */
+	public boolean isMetricsEnabled();
+	
+	
+	/**
+	 * @return a set of column family names to be monitored
+	 */
+	public Set<String> getMetricsForColumnFamilies();
 }

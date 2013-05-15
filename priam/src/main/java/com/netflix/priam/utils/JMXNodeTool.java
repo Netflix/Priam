@@ -27,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
@@ -47,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.metrics.CfMetric;
 
 /**
  * Class to get data out of Cassandra JMX
@@ -132,7 +134,7 @@ public class JMXNodeTool extends NodeProbe
     		JMXNodeTool jmxNodeTool = null;
     		
 		// If Cassandra is started then only start the monitoring
-		if (!CassandraMonitor.isCassadraStarted()) {
+		if (!CassandraMonitor.isCassandraStarted()) {
 			String exceptionMsg = "Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);
@@ -170,7 +172,7 @@ public class JMXNodeTool extends NodeProbe
     @SuppressWarnings("unchecked")
     public JSONObject estimateKeys() throws JSONException
     {
-        Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
+        Iterator<Entry<String, ColumnFamilyStoreMBean>> it = getCfMBeanProxies();
         JSONObject object = new JSONObject();
         while (it.hasNext())
         {
@@ -181,7 +183,13 @@ public class JMXNodeTool extends NodeProbe
         }
         return object;
     }
+    
+    
+    public Iterator<Entry<String, ColumnFamilyStoreMBean>> getCfMBeanProxies() {
+    	return super.getColumnFamilyStoreMBeanProxies();
+    }
 
+    
     @SuppressWarnings("unchecked")
     public JSONObject info() throws JSONException
     {
@@ -338,4 +346,6 @@ public class JMXNodeTool extends NodeProbe
             super.close();
         }
     }
+
+	
 }

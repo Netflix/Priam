@@ -13,7 +13,12 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
+import javax.management.Notification;
+import javax.management.NotificationListener;
 import javax.management.ObjectName;
+import javax.management.remote.JMXConnectionNotification;
+import javax.management.remote.JMXConnector;
+import javax.management.remote.JMXConnectorFactory;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -58,9 +63,9 @@ public class JMXNodeTool extends NodeProbe {
     /**
      * try to create if it is null.
      */
-    public static JMXNodeTool instance(CassandraConfiguration config) {
+    public static JMXNodeTool instance(CassandraConfiguration config) throws Exception {
         if (!testConnection()) {
-            tool = connect(config);
+            reconnect(config);
         }
         return tool;
     }
@@ -99,8 +104,16 @@ public class JMXNodeTool extends NodeProbe {
         return true;
     }
 
-    public static synchronized JMXNodeTool connect(final CassandraConfiguration config) {
-        return SystemUtils.retryForEver(new RetryableCallable<JMXNodeTool>(false) {
+    private static synchronized void reconnect(CassandraConfiguration config) throws Exception {
+        // Recheck connection in case we were beaten to the punch by another reconnect call.
+        if (testConnection()) {
+            return;
+        }
+        tool = connect(config);
+    }
+
+    public static synchronized JMXNodeTool connect(final CassandraConfiguration config) throws Exception {
+        return new RetryableCallable<JMXNodeTool>(false) {
             @Override
             public JMXNodeTool retriableCall() throws Exception {
                 JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
@@ -114,7 +127,7 @@ public class JMXNodeTool extends NodeProbe {
                 }
                 return nodetool;
             }
-        });
+        }.call();
     }
 
     /**

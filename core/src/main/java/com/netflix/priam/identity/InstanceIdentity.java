@@ -242,7 +242,7 @@ public class InstanceIdentity {
      * moving a server to a new token or else the move may be reverted if/when the server is replaced and the
      * replacement assigns the old token from SimpleDB.
      */
-    public void updateToken() {
+    public void updateToken() throws Exception {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         myInstance.setToken(tokenManager.sanitizeToken(nodetool.getToken()));
         instanceRegistry.update(myInstance);

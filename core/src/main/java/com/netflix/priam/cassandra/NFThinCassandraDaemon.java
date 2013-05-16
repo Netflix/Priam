@@ -1,13 +1,13 @@
 package com.netflix.priam.cassandra;
 
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.cassandra.thrift.CassandraDaemon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 
 public class NFThinCassandraDaemon extends CassandraDaemon {
@@ -80,10 +80,7 @@ public class NFThinCassandraDaemon extends CassandraDaemon {
         }
 
         try {
-            BufferedWriter oomAdjWriter = new BufferedWriter(new FileWriter(oomAdj));
-            // oom_adj ranges from -17 to 15
-            oomAdjWriter.write("-16");
-            oomAdjWriter.close();
+            Files.write("-16", oomAdj, Charsets.UTF_8);
         } catch (IOException e) {
             logger.warn("Failed to write OOM adjust.", e);
         }

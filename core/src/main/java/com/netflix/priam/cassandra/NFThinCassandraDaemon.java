@@ -5,6 +5,9 @@ import org.apache.cassandra.thrift.CassandraDaemon;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
 public class NFThinCassandraDaemon extends CassandraDaemon {
@@ -34,6 +37,7 @@ public class NFThinCassandraDaemon extends CassandraDaemon {
     @Override
     public void init(String[] args) throws IOException {
         setPriamProperties();
+        protectFromOomKiller();
         super.init(args);
     }
 
@@ -65,6 +69,23 @@ public class NFThinCassandraDaemon extends CassandraDaemon {
 
         if (isReplace) {
             System.setProperty("cassandra.replace_token", token);
+        }
+    }
+
+    private void protectFromOomKiller() {
+        File oomAdj = new File("/proc/self/oom_adj");
+
+        if (!oomAdj.exists()) {
+            return;
+        }
+
+        try {
+            BufferedWriter oomAdjWriter = new BufferedWriter(new FileWriter(oomAdj));
+            // oom_adj ranges from -17 to 15
+            oomAdjWriter.write("-16");
+            oomAdjWriter.close();
+        } catch (IOException e) {
+            logger.warn("Failed to write OOM adjust.", e);
         }
     }
 }

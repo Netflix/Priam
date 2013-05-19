@@ -78,6 +78,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
     private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
     private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
+    private static final String CONFIG_VNODE_NUM_TOKENS = PRIAM_PRE + ".vnodes.numTokens";
     private static final String CONFIG_YAML_LOCATION = PRIAM_PRE + ".yamlLocation";
     private static final String CONFIG_AUTHENTICATOR = PRIAM_PRE + ".authenticator";
     private static final String CONFIG_AUTHORIZER = PRIAM_PRE + ".authorizer";
@@ -107,7 +108,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
     private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
     private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
-
+    private static final String CONFIG_MAX_HINT_THREADS = PRIAM_PRE + ".hints.maxThreads";
+    private static final String CONFIG_HINTS_THROTTLE_KB = PRIAM_PRE + ".hints.throttleKb";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -130,7 +132,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.extensions.NFSeedProvider";
     private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
     public static final String DEFAULT_AUTHENTICATOR = "org.apache.cassandra.auth.AllowAllAuthenticator";
-    public static final String DEFAULT_AUTHORIZER = "org.apache.cassandra.auth.AllowAllAuthority";
+    public static final String DEFAULT_AUTHORIZER = "org.apache.cassandra.auth.AllowAllAuthorizer";
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
@@ -153,6 +155,9 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
+    private final int DEFAULT_VNODE_NUM_TOKENS = 1;
+    private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
+    private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
 
     private final String BLANK = "";
     
@@ -616,10 +621,14 @@ public class PriamConfiguration implements IConfiguration
         return config.getInteger(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
     }
 
-    @Override
-    public int getHintHandoffDelay()
+    public int getHintedHandoffThrottleKb()
     {
-        return config.getInteger(CONFIG_HINT_DELAY, 1);
+        return config.getInteger(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
+    }
+
+    public int getMaxHintThreads()
+    {
+        return config.getInteger(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
     }
 
     @Override
@@ -729,6 +738,11 @@ public class PriamConfiguration implements IConfiguration
         return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
 	}
 
+    public int getNumTokens()
+    {
+        return config.getInteger(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
+    }
+
     public String getYamlLocation()
     {
         return config.getProperty(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
@@ -757,5 +771,4 @@ public class PriamConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
-
 }

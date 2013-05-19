@@ -31,7 +31,6 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.CassandraMonitor;
 
 /*
  * Incremental/SSTable backup

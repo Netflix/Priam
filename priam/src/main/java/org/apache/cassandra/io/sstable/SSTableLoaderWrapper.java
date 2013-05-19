@@ -22,8 +22,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
-import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.io.sstable.SSTableLoader.Client;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.FileStreamTask;
@@ -111,10 +111,10 @@ public class SSTableLoaderWrapper
             }
         };
         try {
-			client.setPartitioner(config.getPartitioner());
-		} catch (ConfigurationException e) {
-			logger.error("Configuration Exception -> "+e);
-		}
+	    client.setPartitioner(config.getPartitioner());
+	} catch (Exception e) {
+	    logger.error("Configuration Exception while setting partitioner", e);
+	}
         
         
         SSTableLoader loader = new SSTableLoader(directory, client, options);       
@@ -123,9 +123,9 @@ public class SSTableLoaderWrapper
         for (SSTableReader sstable : loader.openSSTables())
         {
             Descriptor desc = sstable.descriptor;
-            List<Pair<Long, Long>> sections = Lists.newArrayList(new Pair<Long, Long>(0L, sstable.onDiskLength()));
-            PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD, sstable.estimatedKeys());
-            StreamHeader header = new StreamHeader(directory.getName(), System.nanoTime(), pending, Collections.singleton(pending));
+            List<Pair<Long, Long>> sections = Lists.newArrayList(Pair.create(0L, sstable.onDiskLength()));
+            PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD);
+            StreamHeader header = new StreamHeader(directory.getName(), UUID.randomUUID(), pending, Collections.singleton(pending));
             logger.info("Streaming to {}", InetAddress.getLocalHost());
             new FileStreamTask(header, InetAddress.getLocalHost()).run();
             logger.info("Done Streaming: " + pending.toString());

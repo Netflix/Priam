@@ -18,15 +18,14 @@ package com.netflix.priam.defaultimpl;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.amazonaws.auth.AWSCredentials;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.BasicAWSCredentials;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.aws.IAMCredential;
 
 /**
  * This is a basic implementation of ICredentials. User should prefer to

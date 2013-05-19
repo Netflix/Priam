@@ -51,7 +51,7 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
+import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.Throttle;
 
 /**
@@ -70,7 +70,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private final IConfiguration config;
     private final ICredential cred;
     private Throttle throttle;
-    private CustomizedThreadPoolExecutor executor;
+    private BlockingSubmitThreadPoolExecutor executor;
 
     private AtomicLong bytesDownloaded = new AtomicLong();
     private AtomicLong bytesUploaded = new AtomicLong();
@@ -88,7 +88,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         this.cred = cred;
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
-        this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
+        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
         this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
         {
             public int targetThroughput()

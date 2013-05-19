@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.Field;
+import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
@@ -33,14 +34,11 @@ import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 
-import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-//import org.json.simple.JSONArray;
-//import org.json.simple.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,11 +173,10 @@ public class JMXNodeTool extends NodeProbe
     @SuppressWarnings("unchecked")
     public JSONObject info() throws JSONException
     {
-        logger.info("JMX info being called");
         JSONObject object = new JSONObject();
         object.put("gossip_active", isInitialized());
         object.put("thrift_active", isThriftServerRunning());
-        object.put("token", getToken());
+        object.put("token", getTokens().toString());
         object.put("load", getLoadString());
         object.put("generation_no", getCurrentGenerationNumber());
         object.put("uptime", getUptime() / 1000);
@@ -189,14 +186,12 @@ public class JMXNodeTool extends NodeProbe
         object.put("heap_memory_mb", memUsed + "/" + memMax);
         object.put("data_center", getDataCenter());
         object.put("rack", getRack());
-        logger.info(object.toString());
         return object;
     }
 
     @SuppressWarnings("unchecked")
     public JSONArray ring(String keyspace) throws JSONException
     {
-        logger.info("JMX ring being called");
         JSONArray ring = new JSONArray();
         Map<String, String> tokenToEndpoint = getTokenToEndpointMap();
         List<String> sortedTokens = new ArrayList<String>(tokenToEndpoint.keySet());
@@ -211,12 +206,12 @@ public class JMXNodeTool extends NodeProbe
         String format = "%-16s%-12s%-12s%-7s%-8s%-16s%-20s%-44s%n";
 
         // Calculate per-token ownership of the ring
-        Map<String, Float> ownerships;
+        Map<InetAddress, Float> ownerships;
         try
         {
             ownerships = effectiveOwnership(keyspace);
         }
-        catch (ConfigurationException ex)
+        catch (IllegalStateException ex)
         {
             ownerships = getOwnership();
         }
@@ -263,7 +258,6 @@ public class JMXNodeTool extends NodeProbe
             String owns = new DecimalFormat("##0.00%").format(ownerships.get(token) == null ? 0.0F : ownerships.get(token));
             ring.put(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
         }
-        logger.info(ring.toString());
         return ring;
     }
 
@@ -287,10 +281,10 @@ public class JMXNodeTool extends NodeProbe
             forceTableCompaction(keyspace, new String[0]);
     }
 
-    public void repair(boolean isSequential) throws IOException, ExecutionException, InterruptedException
+    public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces())
-            forceTableRepair(keyspace, isSequential, new String[0]);
+            forceTableRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException

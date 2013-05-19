@@ -9,7 +9,22 @@
 # one logical cluster from joining another.
 cluster_name: 'Test Cluster'
 
-# You should always specify InitialToken when setting up a production
+# This defines the number of tokens randomly assigned to this node on the ring
+# The more tokens, relative to other nodes, the larger the proportion of data
+# that this node will store. You probably want all nodes to have the same number
+# of tokens assuming they have equal hardware capability.
+#
+# If you leave this unspecified, Cassandra will use the default of 1 token for legacy compatibility,
+# and will use the initial_token as described below.
+#
+# Specifying initial_token will override this setting.
+#
+# If you already have a cluster with 1 token per node, and wish to migrate to 
+# multiple tokens per node, see http://wiki.apache.org/cassandra/Operations
+# num_tokens: 256
+
+# If you haven't specified num_tokens, or have set it to the default of 1 then
+# you should always specify InitialToken when setting up a production
 # cluster for the first time, and often when adding capacity later.
 # The principle is that each node should be given an equal slice of
 # the token ring; see http://wiki.apache.org/cassandra/Operations
@@ -25,9 +40,13 @@ initial_token:
 hinted_handoff_enabled: true
 # this defines the maximum amount of time a dead host will have hints
 # generated.  After it has been dead this long, hints will be dropped.
-max_hint_window_in_ms: 3600000 # one hour
-# Sleep this long after delivering each hint
-hinted_handoff_throttle_delay_in_ms: 1
+max_hint_window_in_ms: 10800000 # 3 hours
+# throttle in KB's per second, per delivery thread
+hinted_handoff_throttle_in_kb: 1024
+# Number of threads with which to deliver hints;
+# Consider increasing this number when you have multi-dc deployments, since
+# cross-dc handoff tends to be slower
+max_hints_delivery_threads: 2
 
 # The following setting populates the page cache on memtable flush and compaction
 # WARNING: Enable this setting only when the whole node's data fits in memory.
@@ -37,20 +56,19 @@ hinted_handoff_throttle_delay_in_ms: 1
 # authentication backend, implementing IAuthenticator; used to identify users
 authenticator: org.apache.cassandra.auth.AllowAllAuthenticator
 
-# authorization backend, implementing IAuthority; used to limit access/provide permissions
-authority: org.apache.cassandra.auth.AllowAllAuthority
+# authorization backend, implementing IAuthorizer; used to limit access/provide permissions
+authorizer: org.apache.cassandra.auth.AllowAllAuthorizer
 
 # The partitioner is responsible for distributing rows (by key) across
 # nodes in the cluster.  Any IPartitioner may be used, including your
 # own as long as it is on the classpath.  Out of the box, Cassandra
-# provides org.apache.cassandra.dht.RandomPartitioner
-# org.apache.cassandra.dht.ByteOrderedPartitioner,
-# org.apache.cassandra.dht.OrderPreservingPartitioner (deprecated),
-# and org.apache.cassandra.dht.CollatingOrderPreservingPartitioner
-# (deprecated).
+# provides org.apache.cassandra.dht.{Murmur3Partitioner, RandomPartitioner
+# ByteOrderedPartitioner, OrderPreservingPartitioner (deprecated)}.
 # 
 # - RandomPartitioner distributes rows across the cluster evenly by md5.
-#   When in doubt, this is the best option.
+#   This is the default prior to 1.2 and is retained for compatibility.
+# - Murmur3Partitioner is similar to RandomPartioner but uses Murmur3_128
+#   Hash Function instead of md5.  When in doubt, this is the best option.
 # - ByteOrderedPartitioner orders rows lexically by key bytes.  BOP allows
 #   scanning rows in key order, but the ordering can generate hot spots
 #   for sequential insertion workloads.
@@ -62,7 +80,7 @@ authority: org.apache.cassandra.auth.AllowAllAuthority
 #
 # See http://wiki.apache.org/cassandra/Operations for more on
 # partitioners and token selection.
-partitioner: org.apache.cassandra.dht.RandomPartitioner
+partitioner: org.apache.cassandra.dht.Murmur3Partitioner
 
 # directories where Cassandra should store data on disk.
 data_file_directories:
@@ -70,6 +88,15 @@ data_file_directories:
 
 # commit log
 commitlog_directory: /var/lib/cassandra/commitlog
+
+# policy for data disk failures:
+# stop: shut down gossip and Thrift, leaving the node effectively dead, but
+#       still inspectable via JMX.
+# best_effort: stop using the failed disk and respond to requests based on
+#              remaining available sstables.  This means you WILL see obsolete
+#              data at CL.ONE!
+# ignore: ignore fatal errors and let requests fail, as in pre-1.2 Cassandra
+disk_failure_policy: stop
 
 # Maximum size of the key cache in memory.
 #
@@ -155,13 +182,16 @@ saved_caches_directory: /var/lib/cassandra/saved_caches
 commitlog_sync: periodic
 commitlog_sync_period_in_ms: 10000
 
-# Configure  the Size of the individual Commitlog file. The 
-# default is 128 MB, which is almost always fine, but if you are
-# archiving commitlog segments (see commitlog_archiving.properties),
-# then you probably want a finer granularity of archiving; 16 MB
-# is reasonable.
+# The size of the individual commitlog file segments.  A commitlog
+# segment may be archived, deleted, or recycled once all the data
+# in it (potentally from each columnfamily in the system) has been 
+# flushed to sstables.  
 #
-# commitlog_segment_size_in_mb: 128
+# The default size is 32, which is almost always fine, but if you are
+# archiving commitlog segments (see commitlog_archiving.properties),
+# then you probably want a finer granularity of archiving; 8 or 16 MB
+# is reasonable.
+commitlog_segment_size_in_mb: 32
 
 # any class that implements the SeedProvider interface and has a
 # constructor that takes a Map<String, String> of parameters will do.
@@ -174,7 +204,7 @@ seed_provider:
       parameters:
           # seeds is actually a comma-delimited list of addresses.
           # Ex: "<ip1>,<ip2>,<ip3>"
-          - seeds: "0.0.0.0,127.0.0.1"
+          - seeds: "127.0.0.1"
 
 # emergency pressure valve: each time heap usage after a full (CMS)
 # garbage collection is above this fraction of the max, Cassandra will
@@ -218,10 +248,14 @@ concurrent_writes: 32
 # If omitted, Cassandra will set it to 1/3 of the heap.
 # memtable_total_space_in_mb: 2048
 
-# Total space to use for commitlogs. 
+# Total space to use for commitlogs.  Since commitlog segments are
+# mmapped, and hence use up address space, the default size is 32
+# on 32-bit JVMs, and 1024 on 64-bit JVMs.
+#
 # If space gets above this value (it will round up to the next nearest
 # segment multiple), Cassandra will flush every dirty CF in the oldest
-# segment and remove it.
+# segment and remove it.  So a small total commitlog space will tend
+# to cause more flush activity on less-active columnfamilies.
 # commitlog_total_space_in_mb: 4096
 
 # This sets the amount of memtable flush writer threads.  These will
@@ -267,6 +301,25 @@ listen_address: localhost
 # Leaving this blank will set it to the same value as listen_address
 # broadcast_address: 1.2.3.4
 
+
+# Whether to start the native transport server.
+# Currently, only the thrift server is started by default because the native
+# transport is considered beta.
+# Please note that the address on which the native transport is bound is the
+# same as the rpc_address. The port however is different and specified below.
+start_native_transport: false
+# port for the CQL native transport to listen for clients on
+native_transport_port: 9042
+# The minimum and maximum threads for handling requests when the native
+# transport is used. The meaning is those is similar to the one of
+# rpc_min_threads and rpc_max_threads, though the default differ slightly and
+# are the ones below:
+# native_transport_min_threads: 16
+# native_transport_max_threads: 128
+
+
+# Whether to start the thrift rpc server.
+start_rpc: true
 # The address to bind the Thrift RPC service to -- clients connect
 # here. Unlike ListenAddress above, you *can* specify 0.0.0.0 here if
 # you want Thrift to listen on all interfaces.
@@ -280,36 +333,34 @@ rpc_port: 9160
 # enable or disable keepalive on rpc connections
 rpc_keepalive: true
 
-# Cassandra provides three options for the RPC Server:
+# Cassandra provides three out-of-the-box options for the RPC Server:
 #
-# sync  -> One connection per thread in the rpc pool (see below).
-#          For a very large number of clients, memory will be your limiting
-#          factor; on a 64 bit JVM, 128KB is the minimum stack size per thread.
-#          Connection pooling is very, very strongly recommended.
+# sync  -> One thread per thrift connection. For a very large number of clients, memory
+#          will be your limiting factor. On a 64 bit JVM, 128KB is the minimum stack size
+#          per thread, and that will correspond to your use of virtual memory (but physical memory
+#          may be limited depending on use of stack space).
 #
-# async -> Nonblocking server implementation with one thread to serve 
-#          rpc connections.  This is not recommended for high throughput use
-#          cases. Async has been tested to be about 50% slower than sync
-#          or hsha and is deprecated: it will be removed in the next major release.
-#
-# hsha  -> Stands for "half synchronous, half asynchronous." The rpc thread pool 
-#          (see below) is used to manage requests, but the threads are multiplexed
-#          across the different clients.
+# hsha  -> Stands for "half synchronous, half asynchronous." All thrift clients are handled
+#          asynchronously using a small number of threads that does not vary with the amount
+#          of thrift clients (and thus scales well to many clients). The rpc requests are still
+#          synchronous (one thread per active request).
 #
 # The default is sync because on Windows hsha is about 30% slower.  On Linux,
 # sync/hsha performance is about the same, with hsha of course using less memory.
+#
+# Alternatively,  can provide your own RPC server by providing the fully-qualified class name
+# of an o.a.c.t.TServerFactory that can create an instance of it.
 rpc_server_type: sync
 
-# Uncomment rpc_min|max|thread to set request pool size.
-# You would primarily set max for the sync server to safeguard against
-# misbehaved clients; if you do hit the max, Cassandra will block until one
-# disconnects before accepting more.  The defaults for sync are min of 16 and max
-# unlimited.
-# 
-# For the Hsha server, the min and max both default to quadruple the number of
-# CPU cores.
+# Uncomment rpc_min|max_thread to set request pool size limits.
 #
-# This configuration is ignored by the async server.
+# Regardless of your choice of RPC server (see above), the number of maximum requests in the
+# RPC thread pool dictates how many concurrent requests are possible (but if you are using the sync
+# RPC server, it also dictates the number of clients that can be connected at all).
+#
+# The default is unlimited and thus provide no protection against clients overwhelming the server. You are
+# encouraged to set a maximum that makes sense for you in production, but do keep in mind that
+# rpc_max_threads represents the maximum number of client requests this server may execute concurrently.
 #
 # rpc_min_threads: 16
 # rpc_max_threads: 2048
@@ -319,8 +370,6 @@ rpc_server_type: sync
 # rpc_recv_buff_size_in_bytes:
 
 # Frame size for thrift (maximum field length).
-# 0 disables TFramedTransport in favor of TSocket. This option
-# is deprecated; we strongly recommend using Framed mode.
 thrift_framed_transport_size_in_mb: 15
 
 # The max length of a thrift message, including all fields and
@@ -368,8 +417,6 @@ in_memory_compaction_limit_in_mb: 64
 # slowly or too fast, you should look at
 # compaction_throughput_mb_per_sec first.
 #
-# This setting has no effect on LeveledCompactionStrategy.
-#
 # concurrent_compactors defaults to the number of cores.
 # Uncomment to make compaction mono-threaded, the pre-0.8 default.
 #concurrent_compactors: 1
@@ -401,8 +448,27 @@ compaction_preheat_key_cache: true
 # When unset, the default is 400 Mbps or 50 MB/s.
 # stream_throughput_outbound_megabits_per_sec: 400
 
-# Time to wait for a reply from other nodes before failing the command 
+# How long the coordinator should wait for read operations to complete
+read_rpc_timeout_in_ms: 10000
+# How long the coordinator should wait for seq or index scans to complete
+range_rpc_timeout_in_ms: 10000
+# How long the coordinator should wait for writes to complete
+write_rpc_timeout_in_ms: 10000
+# How long the coordinator should wait for truncates to complete
+# (This can be much longer, because we need to flush all CFs
+# to make sure we can clear out anythink in the commitlog that could
+# cause truncated data to reappear.)
+truncate_rpc_timeout_in_ms: 300000
+# The default timeout for other, miscellaneous operations
 rpc_timeout_in_ms: 10000
+
+# Enable operation timeout information exchange between nodes to accurately
+# measure request timeouts, If disabled cassandra will assuming the request
+# was forwarded to the replica instantly by the coordinator
+#
+# Warning: before enabling this property make sure to ntp is installed
+# and the times are synchronized between the nodes.
+cross_node_timeout: false
 
 # Enable socket timeout for streaming operation.
 # When a timeout occurs during streaming, streaming is retried from the start
@@ -547,7 +613,7 @@ index_interval: 128
 # the keystore and truststore.  For instructions on generating these files, see:
 # http://download.oracle.com/javase/6/docs/technotes/guides/security/jsse/JSSERefGuide.html#CreateKeystore
 #
-encryption_options:
+server_encryption_options:
     internode_encryption: none
     keystore: conf/.keystore
     keystore_password: cassandra
@@ -558,3 +624,21 @@ encryption_options:
     # algorithm: SunX509
     # store_type: JKS
     # cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA]
+
+# enable or disable client/server encryption.
+client_encryption_options:
+    enabled: false
+    keystore: conf/.keystore
+    keystore_password: cassandra
+    # More advanced defaults below:
+    # protocol: TLS
+    # algorithm: SunX509
+    # store_type: JKS
+    # cipher_suites: [TLS_RSA_WITH_AES_128_CBC_SHA,TLS_RSA_WITH_AES_256_CBC_SHA]
+
+# internode_compression controls whether traffic between nodes is
+# compressed.
+# can be:  all  - all traffic is compressed
+#          dc   - traffic between different datacenters is compressed
+#          none - nothing is compressed.
+internode_compression: all

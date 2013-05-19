@@ -31,17 +31,18 @@ import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
+
 import javax.management.remote.JMXConnector;
 
 import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.cassandra.config.ConfigurationException;
 
 
 public class SystemUtils
@@ -58,7 +59,7 @@ public class SystemUtils
             conn.setRequestMethod("GET");
             if (conn.getResponseCode() != 200)
             {
-                throw new ConfigurationException("Unable to get data for URL " + url);
+                throw new RuntimeException("Unable to get data for URL " + url);
             }
             byte[] b = new byte[2048];
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
@@ -126,8 +127,8 @@ public class SystemUtils
     {
         try
         {
-            byte[] digest = Files.getDigest(file, MessageDigest.getInstance("MD5"));
-            return toHex(digest);
+            HashCode hc = Files.hash(file, Hashing.md5());
+            return toHex(hc.asBytes());
         }
         catch (Exception e)
         {

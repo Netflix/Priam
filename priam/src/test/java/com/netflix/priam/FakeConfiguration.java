@@ -342,11 +342,14 @@ public class FakeConfiguration implements IConfiguration
         return 36000;
     }
 
-    @Override
-    public int getHintHandoffDelay()
+    public int getHintedHandoffThrottleKb()
     {
-        // TODO Auto-generated method stub
-        return 0;
+        return 1024;
+    }
+
+    public int getMaxHintThreads()
+    {
+        return 1;
     }
 
     @Override
@@ -404,6 +407,11 @@ public class FakeConfiguration implements IConfiguration
 		return "CassandraDaemon";
 	}
 
+    public int getNumTokens()
+    {
+        return 1;
+    }
+
     public String getYamlLocation()
     {
         return "conf/cassandra.yaml";
@@ -433,5 +441,4 @@ public class FakeConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return false;
 	}
-
 }

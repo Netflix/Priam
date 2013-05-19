@@ -121,7 +121,11 @@ public class InstanceIdentity
             myInstance = new GetDeadToken().call();
         // Grab a new token
         if (null == myInstance)
-            myInstance = new GetNewToken().call();
+        {
+			GetNewToken newToken = new GetNewToken();
+			newToken.set(100, 100);
+			myInstance = newToken.call();
+		}
         logger.info("My token: " + myInstance.getToken());
     }
 
@@ -183,14 +187,14 @@ public class InstanceIdentity
                 max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
             int maxSlot = max - hash;
             int my_slot = 0;
-            if (hash == max && locMap.get(config.getRac()).size() == 0){
+            if (hash == max && locMap.get(config.getRac()).size() == 0) {
                 int idx = config.getRacs().indexOf(config.getRac());
                 Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());
                 my_slot = idx + maxSlot;
             } else
                 my_slot = config.getRacs().size() + maxSlot;
 
-            logger.info(String.format("Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
+            logger.info(String.format("Trying to createToken with slot %d with rac count %d with rac membership size %d with dc %s",
                     my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC()));
             String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
             return factory.create(config.getAppName(), my_slot + hash, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, payload);

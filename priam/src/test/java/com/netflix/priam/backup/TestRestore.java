@@ -6,11 +6,10 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import junit.framework.Assert;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.inject.Guice;
@@ -19,6 +18,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+import junit.framework.Assert;
 
 public class TestRestore
 {
@@ -69,7 +69,7 @@ public class TestRestore
         tmpdir.mkdir();
         Assert.assertTrue(tmpdir.exists());
         Restore restore = injector.getInstance(Restore.class);
-        cal.set(2011, 7, 11, 0, 30, 0);
+        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date startTime = cal.getTime();
         cal.add(Calendar.HOUR, 5);
@@ -85,14 +85,14 @@ public class TestRestore
     }
 
     //Pick latest file
-    @Test 
+    @Test
     public void testRestoreLatest() throws Exception
     {
         populateBackupFileSystem("test_backup");
         String metafile = "test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110130/META/meta.json";
         filesystem.addFile(metafile);
         Restore restore = injector.getInstance(Restore.class);
-        cal.set(2011, 7, 11, 0, 30, 0);
+        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date startTime = cal.getTime();
         cal.add(Calendar.HOUR, 5);
@@ -112,7 +112,7 @@ public class TestRestore
         try {
             filesystem.setupTest(new ArrayList<String>());
             Restore restore = injector.getInstance(Restore.class);
-            cal.set(2011, 8, 11, 0, 30);
+            cal.set(2011, Calendar.SEPTEMBER, 11, 0, 30);
             Date startTime = cal.getTime();
             cal.add(Calendar.HOUR, 5);
             restore.restore(startTime, cal.getTime());
@@ -130,13 +130,13 @@ public class TestRestore
     
     
     @Test
-    public void testRestoreFromDiffCluster() throws Exception 
+    public void testRestoreFromDiffCluster() throws Exception
     {
         populateBackupFileSystem("test_backup_new");
         FakeConfiguration conf = (FakeConfiguration)injector.getInstance(IConfiguration.class);
         conf.setRestorePrefix("RESTOREBUCKET/test_backup_new/"+FakeConfiguration.FAKE_REGION+"/fakecluster");
         Restore restore = injector.getInstance(Restore.class);
-        cal.set(2011, 7, 11, 0, 30, 0);
+        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date startTime = cal.getTime();
         cal.add(Calendar.HOUR, 5);

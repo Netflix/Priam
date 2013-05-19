@@ -60,15 +60,17 @@ public class StandardTuner implements CassandraTuner
         map.put("multithreaded_compaction", config.getMultithreadedCompaction());
 
         map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
-        map.put("hinted_handoff_throttle_delay_in_ms", config.getHintHandoffDelay());
+        map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());
         map.put("authenticator", config.getAuthenticator());
-        map.put("authority", config.getAuthorizer());
+        map.put("authorizer", config.getAuthorizer());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);
 
         configureGlobalCaches(config, map);
+        //force to 1 until vnodes are properly supported
+	    map.put("num_tokens", 1);
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));

@@ -18,7 +18,7 @@ import org.apache.cassandra.io.util.FileUtils;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import static com.netflix.priam.dse.IDseConfiguration.NodeType;
-import static org.apache.cassandra.locator.GossipingPropertyFileSnitch.RACKDC_PROPERTY_FILENAME;
+import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 
 /**
  * Makes Datastax Enterprise-specific changes to the c* yaml and dse-yaml.

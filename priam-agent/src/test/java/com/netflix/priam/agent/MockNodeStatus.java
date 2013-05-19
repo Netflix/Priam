@@ -199,9 +199,9 @@ public class MockNodeStatus implements NodeStatus, Provider<NodeStatus>
     }
 
     @Override
-    public void repair(boolean sequential)
+    public void repair(boolean sequential, boolean localDataCenterOnly)
     {
-        operations.add("repair," + sequential);
+        operations.add("repair," + sequential + "," + localDataCenterOnly);
     }
 
     @Override

@@ -328,11 +328,6 @@ public interface IConfiguration
     public String getCassProcessName();
 
     /**
-     * Get the number of tokens node uses; used as part of vnodes support
-     */
-    public int getNumTokens();
-
-    /**
     * Defaults to 'allow all'.
      */
     public String getAuthenticator();

@@ -69,7 +69,8 @@ public class StandardTuner implements CassandraTuner
         m.put("class_name", seedProvider);
 
         configureGlobalCaches(config, map);
-	map.put("num_tokens", config.getNumTokens());
+        //force to 1 until vnodes are properly supported
+	    map.put("num_tokens", 1);
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));

@@ -161,34 +161,6 @@ public class SystemUtils
         return new String(encoded);
     }
 
-    /**
-     * copy the input to the output.
-     */
-    public static void copyAndClose(InputStream input, OutputStream output) throws IOException
-    {
-        try
-        {
-            IOUtils.copy(input, output);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(input);
-            IOUtils.closeQuietly(output);
-        }
-    }
-
-    public static File[] sortByLastModifiedTime(File[] files)
-    {
-        Arrays.sort(files, new Comparator<File>()
-        {
-            public int compare(File file1, File file2)
-            {
-                return Long.valueOf(file2.lastModified()).compareTo(Long.valueOf(file1.lastModified()));
-            }
-        });
-        return files;
-    }
-
     public static void closeQuietly(JMXNodeTool tool)
     {
         try
@@ -197,23 +169,8 @@ public class SystemUtils
         }
         catch (IOException e)
         {
-            // Do nothing.
+            logger.warn("failed to close jxm node tool", e);
         }
-    }
-
-    public static <T> T retryForEver(RetryableCallable<T> retryableCallable)
-    {
-        try
-        {
-            retryableCallable.set(Integer.MAX_VALUE, 1 * 1000);
-            return retryableCallable.call();
-        }
-        catch (Exception e)
-        {
-            // this might not happen because we are trying Integer.MAX_VALUE
-            // times.
-        }
-        return null;
     }
 
     public static void closeQuietly(JMXConnector jmc)
@@ -224,29 +181,7 @@ public class SystemUtils
         }
         catch (IOException e)
         {
-            // Do nothing.
+            logger.warn("failed to close JMXConnector", e);
         }
-    }
-
-    public static Date getDayBeginTime(Date date)
-    {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        cal.setTime(date);
-        cal.set(Calendar.HOUR, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
-    }
-
-    public static Date getDayEndTime(Date date)
-    {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        cal.setTime(date);
-        cal.set(Calendar.HOUR, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
     }
 }

@@ -10,4 +10,9 @@ public class FakeSleeper implements Sleeper
     {
         // no-op
     }
+
+    public void sleepQuietly(long waitTimeMs)
+    {
+        //no-op
+    }
 }

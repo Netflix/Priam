@@ -125,8 +125,9 @@ public class FakeBackupFileSystem implements IBackupFileSystem
         for (AbstractBackupPath path : flist)
         {
 
-            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)){
-                if( path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.region.equals(region))
+            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)
+                && path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.region.equals(region))
+            {
                  tmpList.add(path);
             }
         }

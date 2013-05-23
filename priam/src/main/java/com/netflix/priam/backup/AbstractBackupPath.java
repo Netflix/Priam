@@ -23,6 +23,8 @@ import java.text.ParseException;
 import java.util.Date;
 import java.util.regex.Pattern;
 
+import com.google.inject.ImplementedBy;
+import com.netflix.priam.aws.S3BackupPath;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang.StringUtils;
@@ -33,6 +35,7 @@ import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 
+@ImplementedBy(S3BackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
     private static final String FMT = "yyyyMMddHHmm";

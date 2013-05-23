@@ -15,13 +15,13 @@
  */
 package com.netflix.priam.compress;
 
+import org.apache.commons.io.IOUtils;
+import org.xerial.snappy.SnappyOutputStream;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
-
-import org.apache.commons.io.IOUtils;
-import org.xerial.snappy.SnappyOutputStream;
 /**
  * Byte iterator representing compressed data.
  * Uses snappy compression
@@ -78,15 +78,7 @@ public class ChunkedStream implements Iterator<byte[]>
         hasnext = false;
         IOUtils.closeQuietly(compress);
         IOUtils.closeQuietly(bos);
-        try
-        {
-            if (origin != null)
-                origin.close();
-        }
-        catch (IOException ex)
-        {
-            // do nothing.
-        }
+        IOUtils.closeQuietly(origin);
         return return_;
     }
 

@@ -5,6 +5,9 @@ import com.google.common.collect.Maps;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.netflix.priam.agent.AgentConfiguration;
 import com.netflix.priam.agent.NodeStatus;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.annotation.concurrent.GuardedBy;
 import javax.inject.Provider;
 import java.io.Closeable;
@@ -19,6 +22,7 @@ import java.util.concurrent.*;
 @SuppressWarnings("SynchronizationOnLocalVariableOrMethodParameter")
 public class AgentProcessManager implements Closeable
 {
+    private static final Logger logger = LoggerFactory.getLogger(AgentProcessManager.class);
     private final AgentProcessMap processMap;
     private final AgentConfiguration configuration;
     private final Provider<NodeStatus> nodeToolProvider;
@@ -162,7 +166,8 @@ public class AgentProcessManager implements Closeable
             }
             catch ( NoSuchElementException ignore )
             {
-                // ignore
+                if(logger.isTraceEnabled())
+                    logger.trace("nothing left in list");
             }
             completedProcesses.addFirst(processRecord);
         }

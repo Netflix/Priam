@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.google.common.collect.Lists;
 
+import com.netflix.priam.utils.Sleeper;
 import org.apache.commons.lang.StringUtils;
 
 import org.slf4j.Logger;
@@ -25,11 +26,13 @@ public class CassandraProcessManager implements ICassandraProcess
     private static final String SUDO_STRING = "/usr/bin/sudo";
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 1000;
     private final IConfiguration config;
+    private final Sleeper sleeper;
 
     @Inject
-    public CassandraProcessManager(IConfiguration config)
+    public CassandraProcessManager(IConfiguration config, Sleeper sleeper)
     {
         this.config = config;
+        this.sleeper = sleeper;
     }
 
     public void start(boolean join_ring) throws IOException
@@ -60,22 +63,15 @@ public class CassandraProcessManager implements ICassandraProcess
         startCass.redirectErrorStream(true);
         Process starter = startCass.start();
         logger.info("Starting cassandra server ....");
-        try
-        {
-            Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
-            int code = starter.exitValue();
-            if (code == 0) {
-                logger.info("Cassandra server has been started");
-            }
-            else
-            {
-                logger.error("Unable to start cassandra server. Error code: {}", code);
-            }
-            
-            logProcessOutput(starter);
-        } catch (Exception e)
-        {
-        }
+
+        sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
+        int code = starter.exitValue();
+        if (code == 0)
+            logger.info("Cassandra server has been started");
+        else
+            logger.error("Unable to start cassandra server. Error code: {}", code);
+
+        logProcessOutput(starter);
     }
 
     protected List<String> getStartCommand()
@@ -88,12 +84,19 @@ public class CassandraProcessManager implements ICassandraProcess
         return startCmd;
     }
 
-    void logProcessOutput(Process p) throws IOException
+    void logProcessOutput(Process p)
     {
-        final String stdOut = readProcessStream(p.getInputStream());
-        final String stdErr = readProcessStream(p.getErrorStream());
-        logger.info("std_out: {}", stdOut);
-        logger.info("std_err: {}", stdErr);
+        try
+        {
+            final String stdOut = readProcessStream(p.getInputStream());
+            final String stdErr = readProcessStream(p.getErrorStream());
+            logger.info("std_out: {}", stdOut);
+            logger.info("std_err: {}", stdErr);
+        }
+        catch(IOException ioe)
+        {
+            logger.warn("Failed to read the std out/err streams", ioe);
+        }
     }
 
     String readProcessStream(InputStream inputStream) throws IOException
@@ -125,9 +128,10 @@ public class CassandraProcessManager implements ICassandraProcess
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);
         Process stopper = stopCass.start();
+
+        sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
         try
         {
-            Thread.sleep(SCRIPT_EXECUTE_WAIT_TIME_MS);
             int code = stopper.exitValue();
             if (code == 0)
                 logger.info("Cassandra server has been stopped");
@@ -136,8 +140,10 @@ public class CassandraProcessManager implements ICassandraProcess
                 logger.error("Unable to stop cassandra server. Error code: {}", code);
                 logProcessOutput(stopper);
             }
-        } catch (Exception e)
+        }
+        catch(Exception e)
         {
+            logger.warn("couldn't shut down cassandra correctly", e);
         }
     }
 }

@@ -15,9 +15,12 @@
  */
 package com.netflix.priam.utils;
 
+import com.google.inject.ImplementedBy;
+
 import java.math.BigInteger;
 import java.util.List;
 
+@ImplementedBy(TokenManager.class)
 public interface ITokenManager
 {
     String createToken(int mySlot, int racCount, int racSize, String region);

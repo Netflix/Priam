@@ -15,12 +15,15 @@
  */
 package com.netflix.priam;
 
+import com.google.inject.ImplementedBy;
+import com.netflix.priam.defaultimpl.PriamConfiguration;
+
 import java.util.List;
 
 /**
  * Interface for Priam's configuration
- * 
  */
+@ImplementedBy(PriamConfiguration.class)
 public interface IConfiguration
 {
     public void intialize();

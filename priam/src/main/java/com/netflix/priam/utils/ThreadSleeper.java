@@ -25,4 +25,19 @@ public class ThreadSleeper implements Sleeper
     {
         Thread.sleep(waitTimeMs);
     }
+
+    public void sleepQuietly(long waitTimeMs)
+    {
+        try
+        {
+            sleep(waitTimeMs);
+        }
+        catch (InterruptedException e)
+        {
+            //no-op
+        }
+
+    }
+
+
 }

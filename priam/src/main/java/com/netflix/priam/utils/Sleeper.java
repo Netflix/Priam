@@ -23,5 +23,6 @@ import com.google.inject.ImplementedBy;
 @ImplementedBy(ThreadSleeper.class)
 public interface Sleeper
 {
-    void sleep(long waitTimeMs) throws InterruptedException;;
+    void sleep(long waitTimeMs) throws InterruptedException;
+    void sleepQuietly(long waitTimeMs);
 }

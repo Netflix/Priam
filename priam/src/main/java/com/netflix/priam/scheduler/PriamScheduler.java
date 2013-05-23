@@ -17,6 +17,7 @@ package com.netflix.priam.scheduler;
 
 import java.text.ParseException;
 
+import com.netflix.priam.utils.Sleeper;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
@@ -24,6 +25,8 @@ import org.quartz.SchedulerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Scheduling class to schedule Priam tasks. Uses Quartz scheduler
@@ -31,11 +34,13 @@ import com.google.inject.Singleton;
 @Singleton
 public class PriamScheduler
 {
+    private static final Logger logger = LoggerFactory.getLogger(PriamScheduler.class);
     private final Scheduler scheduler;
     private final GuiceJobFactory jobFactory;
+    private final Sleeper sleeper;
 
     @Inject
-    public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory)
+    public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory, Sleeper sleeper)
     {
         try
         {
@@ -47,6 +52,7 @@ public class PriamScheduler
         {
             throw new RuntimeException(e);
         }
+        this.sleeper = sleeper;
     }
 
     /**
@@ -62,7 +68,7 @@ public class PriamScheduler
     /**
      * Add a delayed task to the scheduler
      */
-    public void addTaskWithDelay(String name, Class<? extends Task> taskclass, final TaskTimer timer, final int delayInSeconds) throws SchedulerException, ParseException
+    public void addTaskWithDelay(final String name, Class<? extends Task> taskclass, final TaskTimer timer, final int delayInSeconds) throws SchedulerException, ParseException
     {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         final JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
@@ -71,12 +77,19 @@ public class PriamScheduler
         new Thread(new Runnable(){
             public void run()
             {
-            		try { 
-            				Thread.sleep(delayInSeconds * 1000L);
-            				scheduler.scheduleJob(job, timer.getTrigger());  
-            		}catch(InterruptedException ignore) {} 
-            		catch (SchedulerException e) {} 
-            		catch (ParseException e) {}
+                try
+                {
+                        sleeper.sleepQuietly(delayInSeconds * 1000L);
+                        scheduler.scheduleJob(job, timer.getTrigger());
+                }
+                catch (SchedulerException e)
+                {
+                    logger.warn("problem occurred while scheduling a job with name " + name, e);
+                }
+                catch (ParseException e)
+                {
+                    logger.warn("problem occurred while parsing a job with name " + name, e);
+                }
             }
         }).start();
     }

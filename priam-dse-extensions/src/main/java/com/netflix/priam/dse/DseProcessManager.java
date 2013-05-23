@@ -5,6 +5,8 @@ import java.util.List;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.utils.Sleeper;
+
 import static com.netflix.priam.dse.IDseConfiguration.NodeType;
 
 public class DseProcessManager extends CassandraProcessManager
@@ -12,9 +14,9 @@ public class DseProcessManager extends CassandraProcessManager
     private final IDseConfiguration dseConfig;
 
     @Inject
-    public DseProcessManager(IConfiguration config, IDseConfiguration dseConfig)
+    public DseProcessManager(IConfiguration config, IDseConfiguration dseConfig, Sleeper sleeper)
     {
-        super(config);
+        super(config, sleeper);
         this.dseConfig = dseConfig;
     }
 

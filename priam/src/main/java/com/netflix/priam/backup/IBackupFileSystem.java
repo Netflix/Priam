@@ -15,10 +15,6 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.ImplementedBy;
-import com.google.inject.name.Named;
-import com.netflix.priam.aws.S3FileSystem;
-
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Date;

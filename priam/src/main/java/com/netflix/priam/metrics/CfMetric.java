@@ -2,7 +2,7 @@ package com.netflix.priam.metrics;
 
 
 /**
- * Helper class for DTOing CF metadata
+ * Helper class for DTOing a single CF metadata
  * 
  */
 public class CfMetric {
@@ -11,19 +11,19 @@ public class CfMetric {
 	private String columnFamilyName;
 	private long pendingTasks;
 	private long estimatedKeys;
-	private long totalReadLatencyMicros;
-	private long totalWriteLatencyMicros;
+	private long avgReadLatencyMicros;
+	private long avgWriteLatencyMicros;
 	private long totalDiskSpaceUsed;
 	
 	public CfMetric(String keyspace, String columnFamilyName, int pendingTasks, long estimateKeys, 
-			long totalWriteLatencyMicros, long totalReadLatencyMicros, long totalDiskSpaceUsed) {
+			long avgWriteLatencyMicros, long avgReadLatencyMicros, long totalDiskSpaceUsed) {
 		
 		this.keyspace = keyspace;
 		this.columnFamilyName = columnFamilyName;
 		this.pendingTasks = pendingTasks;
 		this.estimatedKeys = estimateKeys;
-		this.totalWriteLatencyMicros = totalWriteLatencyMicros;
-		this.totalReadLatencyMicros = totalReadLatencyMicros;
+		this.avgWriteLatencyMicros = avgWriteLatencyMicros;
+		this.avgReadLatencyMicros = avgReadLatencyMicros;
 		this.totalDiskSpaceUsed = totalDiskSpaceUsed;
 		
 	}
@@ -32,11 +32,11 @@ public class CfMetric {
 	public long getTotalDiskSpaceUsed() {
 		return totalDiskSpaceUsed;
 	}
-	public long getTotalReadLatencyMicros() {
-		return totalReadLatencyMicros;
+	public long getAvgReadLatencyMicros() {
+		return avgReadLatencyMicros;
 	}
-	public long getTotalWriteLatencyMicros() {
-		return totalWriteLatencyMicros;
+	public long getAvgWriteLatencyMicros() {
+		return avgWriteLatencyMicros;
 	}
 	public long getEstimatedKeys() {
 		return estimatedKeys;
@@ -81,8 +81,8 @@ public class CfMetric {
 		return "CfMetric [keyspace=" + keyspace + ", columnFamilyName="
 				+ columnFamilyName + ", pendingTasks=" + pendingTasks
 				+ ", estimatedKeys=" + estimatedKeys
-				+ ", totalReadLatencyMicros=" + totalReadLatencyMicros
-				+ ", totalWriteLatencyMicros=" + totalWriteLatencyMicros
+				+ ", avgReadLatencyMicros=" + avgReadLatencyMicros
+				+ ", avgWriteLatencyMicros=" + avgWriteLatencyMicros
 				+ ", totalDiskSpaceUsed=" + totalDiskSpaceUsed + "]";
 	}
 

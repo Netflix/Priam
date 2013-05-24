@@ -110,7 +110,7 @@ public class PriamServer
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
         
-        scheduler.addTaskWithDelay(HecubaTask.JOBNAME, HecubaTask.class, HecubaTask.getTimer(), HecubaTask.HECUBA_INITIAL_WAIT_TIME_IN_SECS);
+        scheduler.addTask(HecubaTask.JOBNAME, HecubaTask.class, HecubaTask.getTimer());
         
     }
 

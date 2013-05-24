@@ -68,7 +68,7 @@ public class MetricsSender {
 			PutMetricDataRequest request = new PutMetricDataRequest().withMetricData(datum).withNamespace(namespace);
 			cloudWatchClient.putMetricData(request);
 		}
-		logger.info("Put [" + datums.size() + "] metrics into cloudwatch!");
+		logger.debug("Put [" + datums.size() + "] metrics into cloudwatch!");
 	}
 	
 

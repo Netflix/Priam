@@ -86,9 +86,8 @@ public class MetricsCollector {
 	public static final String CF_WRITE_LATENCY_MICROS = "write_latency_micros";
 	public static final String CF_READ_LATENCY_MICROS = "read_latency_micros";
 	public static final String CF_USED_DISKSPACE = "used_diskspace";
-
 	
-
+	private static final long BYTES_TO_MEGABYTES = 1024*1024;
 	
 	@Inject
 	public MetricsCollector(IConfiguration config) throws JMXConnectionException {
@@ -119,16 +118,25 @@ public class MetricsCollector {
 	 */
 	private CfMetric createHecubaCfMetric(Entry<String, ColumnFamilyStoreMBean> entry) {
 		
-		CfMetric metric = new CfMetric(
-				entry.getKey(),
-				entry.getValue().getColumnFamilyName(), 
-				entry.getValue().getPendingTasks(),
-				entry.getValue().estimateKeys(),
-				entry.getValue().getTotalWriteLatencyMicros(),
-				entry.getValue().getTotalReadLatencyMicros(),
-				entry.getValue().getTotalDiskSpaceUsed()
-				);
+		String keyspace = entry.getKey();
+		String cfName = entry.getValue().getColumnFamilyName(); 
+		long writeCount = entry.getValue().getWriteCount();
+		if (writeCount == 0) {
+			logger.info("Amount of writes for for CF [" + cfName + "] is zero, inserting 0 instaed");
+		}
+		long readCount = entry.getValue().getReadCount();
+		if (readCount == 0) {
+			logger.info("Amount of reads for CF [" + cfName + "] is zero, inserting 0 instaed");
+		}
+			
+		int pendingTasks = entry.getValue().getPendingTasks();
+		long estimatedKeys = entry.getValue().estimateKeys();
+		long avgWriteLatencyMicroSecs = writeCount == 0 ? 0 : entry.getValue().getTotalWriteLatencyMicros()/writeCount;
+		long avgReadLatencyMicroSecs = readCount == 0 ? 0 : entry.getValue().getTotalReadLatencyMicros()/readCount;
+		long du = entry.getValue().getTotalDiskSpaceUsed();
 		
+		CfMetric metric = new CfMetric(keyspace, cfName, pendingTasks, estimatedKeys, 
+										avgWriteLatencyMicroSecs, avgReadLatencyMicroSecs, du);
 		return metric;
 	}
 	
@@ -183,11 +191,10 @@ public class MetricsCollector {
 					StandardUnit.Count, new Double(cfMetric.getPendingTasks())));
 			mDatums.add(createMetricDatum(CF_USED_DISKSPACE, Arrays.asList(dimension), 
 					StandardUnit.Bytes, new Double(cfMetric.getTotalDiskSpaceUsed())));
-// 	TODO: calculate latest metrics, not total
-//			mDatums.add(createMetricDatum(CF_READ_LATENCY_MICROS, Arrays.asList(dimension), 
-//					StandardUnit.Microseconds, new Double(cfMetric.getTotalReadLatencyMicros())));
-//			mDatums.add(createMetricDatum(CF_WRITE_LATENCY_MICROS, Arrays.asList(dimension), 
-//					StandardUnit.Microseconds, new Double(cfMetric.getTotalWriteLatencyMicros())));
+			mDatums.add(createMetricDatum(CF_READ_LATENCY_MICROS, Arrays.asList(dimension), 
+					StandardUnit.Microseconds, new Double(cfMetric.getAvgReadLatencyMicros())));
+			mDatums.add(createMetricDatum(CF_WRITE_LATENCY_MICROS, Arrays.asList(dimension), 
+					StandardUnit.Microseconds, new Double(cfMetric.getAvgWriteLatencyMicros())));
 			
 		}
 		return mDatums;
@@ -240,7 +247,7 @@ public class MetricsCollector {
 		mDatums.add(createMetricDatum(INSTANCE_SYSTEM_LOAD+":"+config.getInstanceName(), Arrays.asList(dimension), 
 				StandardUnit.None, new Double(osMxBean.getSystemLoadAverage())));
 		mDatums.add(createMetricDatum(INSTANCE_FREE_RUNTIME_MEMORY+":"+config.getInstanceName(), Arrays.asList(dimension), 
-				StandardUnit.Bytes, new Double(Runtime.getRuntime().freeMemory())));
+				StandardUnit.Megabytes, new Double(Runtime.getRuntime().freeMemory()/BYTES_TO_MEGABYTES)));
 		mDatums.add(createMetricDatum(INSTANCE_CURRENT_THREAD_COUNT+":"+config.getInstanceName(), Arrays.asList(dimension), 
 				StandardUnit.Count, new Double(threadMxBean.getThreadCount())));
 		
@@ -261,7 +268,7 @@ public class MetricsCollector {
 		mDatums.addAll(collectCassandraCfMetrics());
 		mDatums.addAll(collectCassandraClusterMetrics());
 		long end = System.currentTimeMillis();
-		logger.info("Collecting Hecuba data took " + ((end-start)/1000) + " seconds.");
+		logger.info("Collecting Hecuba data took " + (end-start) + " ms.");
 		return mDatums;
 	}
 	
@@ -340,13 +347,13 @@ public class MetricsCollector {
 	}
 	
 	// setter only for mocking
-	public void setNodeTool(JMXNodeTool nodeTool) {
+	protected void setNodeTool(JMXNodeTool nodeTool) {
 		this.nodetool = nodeTool;
 	}
-	public void setOsMxBean(OperatingSystemMXBean osMxBean) {
+	protected void setOsMxBean(OperatingSystemMXBean osMxBean) {
 		this.osMxBean = osMxBean;
 	}
-	public void setThreadMxBean(ThreadMXBean threadMxBean) {
+	protected void setThreadMxBean(ThreadMXBean threadMxBean) {
 		this.threadMxBean = threadMxBean;
 	}
 

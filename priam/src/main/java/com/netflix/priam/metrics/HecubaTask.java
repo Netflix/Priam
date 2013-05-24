@@ -9,6 +9,7 @@ import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -60,7 +61,7 @@ public class HecubaTask extends Task {
 	}
 	
 	public static TaskTimer getTimer() {
-		return new SimpleTimer(JOBNAME, INTERVAL);
+		return new CronTimer(JOBNAME, "0 * * * * ?");
 	}
 	
 	

@@ -77,8 +77,9 @@ public class JMXNodeTool extends NodeProbe
 
     /**
      * try to create if it is null.
+     * @throws IOException 
      */
-    public static JMXNodeTool instance(IConfiguration config)
+    public static JMXNodeTool instance(IConfiguration config) throws JMXConnectionException
     {
         if (!testConnection())
             tool = connect(config);
@@ -124,9 +125,17 @@ public class JMXNodeTool extends NodeProbe
         return true;
     }
 
-    public static synchronized JMXNodeTool connect(final IConfiguration config)
+    public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
     {
     		JMXNodeTool jmxNodeTool = null;
+    		
+		// If Cassandra is started then only start the monitoring
+		if (!CassandraMonitor.isCassadraStarted()) {
+			String exceptionMsg = "Cassandra is not yet started, check back again later";
+			logger.debug(exceptionMsg);
+			throw new JMXConnectionException(exceptionMsg);
+		}        		
+    		
     		try {
     				jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
 						{
@@ -147,6 +156,7 @@ public class JMXNodeTool extends NodeProbe
 						}.call();
 			} catch (Exception e) {
 				logger.error(e.getMessage(), e);
+				throw new JMXConnectionException(e.getMessage());
 			}
     		return jmxNodeTool;
     }

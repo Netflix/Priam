@@ -355,5 +355,4 @@ public interface IConfiguration
      * @return true/false, if Cassandra needs to be started manually
      */
     public boolean doesCassandraStartManually();
-
 }

@@ -743,9 +743,8 @@ public class PriamConfiguration implements IConfiguration
 		return config.getProperty(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
 	}
 
-	@Override
-	public boolean doesCassandraStartManually() {
-		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
-	}
-
+    @Override
+    public boolean doesCassandraStartManually() {
+	return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+    }
 }

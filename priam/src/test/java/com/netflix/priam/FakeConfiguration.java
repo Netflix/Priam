@@ -428,10 +428,9 @@ public class FakeConfiguration implements IConfiguration
 	public String getTargetCFName() {
 		return null;
 	}
-
-	@Override
-	public boolean doesCassandraStartManually() {
-		return false;
-	}
-
+    
+    @Override
+    public boolean doesCassandraStartManually() {
+	return false;
+    }
 }

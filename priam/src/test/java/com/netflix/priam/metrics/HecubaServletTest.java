@@ -64,14 +64,6 @@ public class HecubaServletTest {
 		
 	}
 	
-	@Test
-	public void testIsJobEnabled() throws Exception {
-		
-		createExpectations(HecubaTask.JOBNAME, true);
-		Assert.assertTrue(servlet.isJobScheduled());
-		createExpectations("bliblablupp", true);
-		Assert.assertFalse(servlet.isJobScheduled());
-	}
 	
 	@Test
 	public void testEnableDisable() throws Exception {

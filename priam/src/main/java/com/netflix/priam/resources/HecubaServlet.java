@@ -34,8 +34,8 @@ import com.amazonaws.services.cloudwatch.model.MetricDatum;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.metrics.MetricsCollector;
 import com.netflix.priam.metrics.HecubaTask;
+import com.netflix.priam.metrics.MetricsCollector;
 import com.netflix.priam.scheduler.PriamScheduler;
 
 @Path("/v1/metrics")
@@ -79,14 +79,6 @@ public class HecubaServlet
         
     	task.setMetricsEnabled(true);
     	JSONObject response = new JSONObject().put("metrics", stringifyMetricsState());
-//    	if (isJobScheduled()) {
-//    		scheduler.getScheduler().resumeJob(HecubaTask.JOBNAME, Scheduler.DEFAULT_GROUP);
-//    		logger.info("Resumed hecuba job");
-//    		response.put("job", "resumed");
-//    	} else {
-//    		response.put("job", WAS_NOT_SCHEDULED);
-//    	}
-    										  
         return Response.ok(response.toString(), MediaType.APPLICATION_JSON).build();
         
     }
@@ -97,14 +89,6 @@ public class HecubaServlet
         
     	task.setMetricsEnabled(false);
     	JSONObject response = new JSONObject().put("metrics", stringifyMetricsState());
-//    	if (isJobScheduled()) {
-//    		scheduler.getScheduler().pauseJob(HecubaTask.JOBNAME, Scheduler.DEFAULT_GROUP);
-//    		logger.info("Paused hecuba job");
-//    		response.put("job", "paused");
-//    	} else {
-//    		response.put("job", WAS_NOT_SCHEDULED);
-//    	}
-    		
         return Response.ok(response.toString(), MediaType.APPLICATION_JSON).build();
         
     }
@@ -135,15 +119,5 @@ public class HecubaServlet
 	private String stringifyMetricsState() {
 		return task.isMetricsEnabled() == true ? "enabled" : "disabled";
 	}
-	
-	public boolean isJobScheduled() throws SchedulerException {
-    	String[] jobNames = scheduler.getScheduler().getJobNames(Scheduler.DEFAULT_GROUP);
-    	if (jobNames != null) {
-    		for (String name : jobNames) {
-				if (name.equals(HecubaTask.JOBNAME))
-					return true;
-			}
-    	}
-    	return false;
-	}
+
 }

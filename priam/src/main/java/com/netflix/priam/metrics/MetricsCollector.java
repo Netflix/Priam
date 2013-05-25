@@ -88,7 +88,6 @@ public class MetricsCollector {
 	public static final String CF_USED_DISKSPACE = "used_diskspace";
 	
 	private static final long BYTES_TO_MEGABYTES = 1024*1024;
-	private static final long BYTES_TO_GIGABYTES = BYTES_TO_MEGABYTES*1024;
 	
 	@Inject
 	public MetricsCollector(IConfiguration config) throws JMXConnectionException {

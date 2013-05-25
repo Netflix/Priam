@@ -10,7 +10,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXConnectionException;

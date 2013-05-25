@@ -23,15 +23,11 @@ public class MetricsSender {
 	
 	// default value
 	private String namespace = "CASSANDRA-METRICS";
-	private final ICredential provider;
-	private final IConfiguration config;
 	private AmazonCloudWatchClient cloudWatchClient;
 
 	@Inject
 	public MetricsSender(IConfiguration config, ICredential provider) {
 		getNamespace(config);
-		this.provider = provider;
-		this.config = config;
 		cloudWatchClient = new AmazonCloudWatchClient(provider.getAwsCredentialProvider());
 		cloudWatchClient.setEndpoint(config.getCloudwatchMonitoringEndpoint());
 		logger.info("Cloudwatch client with endpoint ["+ config.getCloudwatchMonitoringEndpoint() +"] successfully instantiated");
@@ -41,8 +37,6 @@ public class MetricsSender {
 	// for testing
 	protected MetricsSender(IConfiguration config, AmazonCloudWatchClient cloudWatchClient, ICredential provider) {
 		getNamespace(config);
-		this.provider = provider;
-		this.config = config;
 		this.cloudWatchClient = cloudWatchClient;
 	}
 

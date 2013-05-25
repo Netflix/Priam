@@ -71,7 +71,7 @@ public class MetricsCollector {
 	public static final String CLUSTER_PENDING_TASKS = CLUSTER+"_pending_tasks";
 	
 	// instance metrics
-	private static final String INSTANCE = "instance";
+	public static final String INSTANCE = "instance";
 	public static final String INSTANCE_FILE_LOAD = "file_load";
 	public static final String INSTANCE_USED_HEAP = "used_heap";
 	public static final String INSTANCE_USED_SYSTEM_DISKSPACE = "used_system_diskspace";
@@ -88,6 +88,7 @@ public class MetricsCollector {
 	public static final String CF_USED_DISKSPACE = "used_diskspace";
 	
 	private static final long BYTES_TO_MEGABYTES = 1024*1024;
+	private static final long BYTES_TO_GIGABYTES = BYTES_TO_MEGABYTES*1024;
 	
 	@Inject
 	public MetricsCollector(IConfiguration config) throws JMXConnectionException {
@@ -190,7 +191,7 @@ public class MetricsCollector {
 			mDatums.add(createMetricDatum(CF_PENDING_TASKS, Arrays.asList(dimension), 
 					StandardUnit.Count, new Double(cfMetric.getPendingTasks())));
 			mDatums.add(createMetricDatum(CF_USED_DISKSPACE, Arrays.asList(dimension), 
-					StandardUnit.Bytes, new Double(cfMetric.getTotalDiskSpaceUsed())));
+					StandardUnit.Gigabytes, new Double(cfMetric.getTotalDiskSpaceUsed()/BYTES_TO_GIGABYTES)));
 			mDatums.add(createMetricDatum(CF_READ_LATENCY_MICROS, Arrays.asList(dimension), 
 					StandardUnit.Microseconds, new Double(cfMetric.getAvgReadLatencyMicros())));
 			mDatums.add(createMetricDatum(CF_WRITE_LATENCY_MICROS, Arrays.asList(dimension), 

@@ -21,6 +21,8 @@ import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -33,6 +35,7 @@ public class PriamScheduler
 {
     private final Scheduler scheduler;
     private final GuiceJobFactory jobFactory;
+    private static final Logger logger = LoggerFactory.getLogger(PriamScheduler.class);
 
     @Inject
     public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory)
@@ -57,6 +60,8 @@ public class PriamScheduler
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
         scheduler.scheduleJob(job, timer.getTrigger());
+        logger.info("Added job to scheduler: ["+job+"]");
+        
     }
 
     /**
@@ -79,6 +84,7 @@ public class PriamScheduler
             		catch (ParseException e) {}
             }
         }).start();
+        logger.info("Added delayed job to scheduler: ["+job+"]");
     }
     
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception

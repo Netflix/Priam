@@ -125,6 +125,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
 //            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
 
             long contentLen = obj.getObjectMetadata().getContentLength();
+            obj.getObjectContent().close();
             path.setSize(contentLen);
             RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;

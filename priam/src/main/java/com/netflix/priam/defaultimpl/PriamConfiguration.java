@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
+import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import com.amazonaws.services.simpledb.model.SelectResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
@@ -101,6 +103,9 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
     private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
     private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
+    private static final String CONFIG_METRICS_ENABLED = PRIAM_PRE + ".metrics.enabled";
+    private static final String CONFIG_METRICS_FOR_COLUMN_FAMILES = PRIAM_PRE + ".metrics.for.column.families";
+    private static final String CONFIG_METRICS_CLOUDWATCH_MONITORING_ENDPOINT = PRIAM_PRE + ".metrics.cloudwatch.monitoring.endpoint";
 
 
     // Amazon specific
@@ -145,7 +150,10 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
+    private final String DEFAULT_METRICS_CLOUDWATCH_MONITORING_ENDPOINT = "monitoring.us-east-1.amazonaws.com";
+    private final boolean DEFAULT_METRICS_ENABLED = false;
 
+    
     private PriamProperties config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
@@ -673,5 +681,26 @@ public class PriamConfiguration implements IConfiguration
 	@Override
 	public boolean doesCassandraStartManually() {
 		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+	}
+	
+	
+	@Override
+	public String getCloudwatchMonitoringEndpoint() {
+		return config.getProperty(CONFIG_METRICS_CLOUDWATCH_MONITORING_ENDPOINT, DEFAULT_METRICS_CLOUDWATCH_MONITORING_ENDPOINT);
+	}
+
+	@Override
+	public boolean isMetricsEnabled() {
+		return config.getBoolean(CONFIG_METRICS_ENABLED, DEFAULT_METRICS_ENABLED);
+	}
+
+	@Override
+	public Set<String> getMetricsForColumnFamilies() {
+		Set<String> observedCfs = Sets.newHashSet();
+		List<String> cfs = config.getList(CONFIG_METRICS_FOR_COLUMN_FAMILES, "");
+		if (!cfs.isEmpty()) {
+			observedCfs.addAll(cfs); 
+		}
+		return observedCfs;
 	}
 }

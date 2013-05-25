@@ -2,10 +2,11 @@ package com.netflix.priam;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -406,5 +407,20 @@ public class FakeConfiguration implements IConfiguration
 	@Override
 	public boolean doesCassandraStartManually() {
 		return false;
+	}
+
+	@Override
+	public String getCloudwatchMonitoringEndpoint() {
+		return null;
+	}
+
+	@Override
+	public boolean isMetricsEnabled() {
+		return false;
+	}
+
+	@Override
+	public Set<String> getMetricsForColumnFamilies() {
+		return null;
 	}
 }

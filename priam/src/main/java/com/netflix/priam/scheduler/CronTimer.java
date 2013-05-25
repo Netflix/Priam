@@ -27,6 +27,7 @@ import org.quartz.Trigger;
 public class CronTimer implements TaskTimer
 {
     private String cronExpression;
+	private static String crontrigger = "CronTrigger";
 
     public enum DayOfWeek
     {
@@ -62,11 +63,17 @@ public class CronTimer implements TaskTimer
      */
     public CronTimer(String expression)
     {
+        this(crontrigger, expression);
+    }
+    
+    public CronTimer(String name, String expression)
+    {
         this.cronExpression = expression;
+        crontrigger = name;
     }
 
     public Trigger getTrigger() throws ParseException
     {
-        return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
+        return new CronTrigger(crontrigger , Scheduler.DEFAULT_GROUP, cronExpression);
     }
 }

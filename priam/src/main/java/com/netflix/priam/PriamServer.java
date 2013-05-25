@@ -15,6 +15,10 @@
  */
 package com.netflix.priam;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
@@ -23,14 +27,12 @@ import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.metrics.HecubaTask;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TuneCassandra;
-import org.apache.commons.collections.CollectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Start all tasks here - Property update task - Backup task - Restore task -
@@ -107,6 +109,9 @@ public class PriamServer
         
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
+        
+        scheduler.addTask(HecubaTask.JOBNAME, HecubaTask.class, HecubaTask.getTimer());
+        
     }
 
     public InstanceIdentity getId()

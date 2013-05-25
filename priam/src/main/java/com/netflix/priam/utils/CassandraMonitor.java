@@ -53,12 +53,12 @@ public class CassandraMonitor extends Task{
         		Process p = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
         		BufferedReader input = new BufferedReader(new InputStreamReader(p.getInputStream()));
             String line = input.readLine();
-        		if (line != null&& !isCassadraStarted())
+        		if (line != null&& !isCassandraStarted())
         		{
         			//Setting cassandra flag to true
         			isCassandraStarted.set(true);
         		}
-        		else if(line  == null&& isCassadraStarted())
+        		else if(line  == null&& isCassandraStarted())
         		{
         			//Setting cassandra flag to false
         			isCassandraStarted.set(false);
@@ -84,13 +84,13 @@ public class CassandraMonitor extends Task{
         return JOBNAME;
     }
 
-    public static Boolean isCassadraStarted()
+    public static Boolean isCassandraStarted()
     {
         return isCassandraStarted.get();
     }
 
     //Added for testing only
-    public static void setIsCassadraStarted()
+    public static void setIsCassandraStarted()
     {
 		//Setting cassandra flag to true
 		isCassandraStarted.set(true);

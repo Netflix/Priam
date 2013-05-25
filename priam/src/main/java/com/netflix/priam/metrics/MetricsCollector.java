@@ -191,7 +191,7 @@ public class MetricsCollector {
 			mDatums.add(createMetricDatum(CF_PENDING_TASKS, Arrays.asList(dimension), 
 					StandardUnit.Count, new Double(cfMetric.getPendingTasks())));
 			mDatums.add(createMetricDatum(CF_USED_DISKSPACE, Arrays.asList(dimension), 
-					StandardUnit.Gigabytes, new Double(cfMetric.getTotalDiskSpaceUsed()/BYTES_TO_GIGABYTES)));
+					StandardUnit.Megabytes, new Double(cfMetric.getTotalDiskSpaceUsed()/BYTES_TO_MEGABYTES)));
 			mDatums.add(createMetricDatum(CF_READ_LATENCY_MICROS, Arrays.asList(dimension), 
 					StandardUnit.Microseconds, new Double(cfMetric.getAvgReadLatencyMicros())));
 			mDatums.add(createMetricDatum(CF_WRITE_LATENCY_MICROS, Arrays.asList(dimension), 

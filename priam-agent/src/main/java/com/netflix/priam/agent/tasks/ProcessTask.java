@@ -61,7 +61,7 @@ public class ProcessTask
             }
             else
             {
-                // TODO
+                throw new RuntimeException("Unsupported command: " + command);
             }
         }
     }

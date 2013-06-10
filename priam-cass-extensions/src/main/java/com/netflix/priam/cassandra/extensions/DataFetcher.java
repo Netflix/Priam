@@ -31,20 +31,21 @@ public class DataFetcher
 
     public static String fetchData(String url)
     {
+        DataInputStream responseStream = null;
         try
         {
             HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
             conn.setConnectTimeout(1000);
-            conn.setReadTimeout(1000);
+            conn.setReadTimeout(10000);
             conn.setRequestMethod("GET");
             if (conn.getResponseCode() != 200)
                 throw new RuntimeException("Unable to get data for URL " + url);
 
             byte[] b = new byte[2048];
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
-            DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
+            responseStream = new DataInputStream((FilterInputStream) conn.getContent());
             int c = 0;
-            while ((c = d.read(b, 0, b.length)) != -1)
+            while ((c = responseStream.read(b, 0, b.length)) != -1)
                 bos.write(b, 0, c);
             String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
             logger.info(String.format("Calling URL API: %s returns: %s", url, return_));
@@ -54,6 +55,18 @@ public class DataFetcher
         catch (Exception ex)
         {
             throw new RuntimeException(ex);
+        }
+        finally
+        {
+            try
+            {
+                if(responseStream != null)
+                    responseStream.close();
+            }
+            catch (Exception e)
+            {
+                logger.warn("Failed to close response stream from priam", e);
+            }
         }
     }
 

@@ -2,6 +2,7 @@ package com.netflix.priam.defaultimpl;
 
 import java.io.IOException;
 
+import com.netflix.priam.utils.FakeSleeper;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -17,7 +18,7 @@ public class CassandraProcessManagerTest
     public void setup()
     {
         IConfiguration config = new FakeConfiguration("us-east-1", "test_cluster", "us-east-1a", "i-2378afd3");
-        cpm = new CassandraProcessManager(config);
+        cpm = new CassandraProcessManager(config, new FakeSleeper());
     }
 
     @Test

@@ -24,7 +24,7 @@ import com.google.common.collect.Ordering;
 
 public class TokenManager implements ITokenManager
 {    
-    public static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
+    public static final BigInteger MINIMUM_TOKEN = BigInteger.ZERO;
     public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
 
     /**

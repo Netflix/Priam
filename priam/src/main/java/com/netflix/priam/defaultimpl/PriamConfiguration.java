@@ -23,10 +23,11 @@ import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
 import com.amazonaws.services.simpledb.model.SelectResult;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.inject.ImplementedBy;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.ConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
@@ -135,7 +136,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
     private final String DEFAULT_BACKUP_LOCATION = "backup";
     private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
-    private String DEFAULT_AVAILABILITY_ZONES = "";
+//    private String DEFAULT_AVAILABILITY_ZONES = "";
+    private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
     private final String DEFAULT_CASS_PROCESS_NAME = "CassandraDaemon";
 
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
@@ -156,7 +158,7 @@ public class PriamConfiguration implements IConfiguration
 
     private final String BLANK = "";
     
-    private final Config config;
+    private final ConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
     private static class Attributes
@@ -173,7 +175,7 @@ public class PriamConfiguration implements IConfiguration
     private final ICredential provider;
 
     @Inject
-    public PriamConfiguration(ICredential provider, Config config)
+    public PriamConfiguration(ICredential provider, ConfigSource config)
     {
         this.provider = provider;
         this.config = config;
@@ -182,6 +184,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void intialize()
     {
+        this.config.intialize();
         setupEnvVars();
         setDefaultRACList(REGION);
         populateProps();
@@ -243,15 +246,17 @@ public class PriamConfiguration implements IConfiguration
             if( zone.size() == 3)
                 break;
         }
-        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+//        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+      DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);
     }
 
 
     private void populateProps()
     {
-        config.put(CONFIG_ASG_NAME, ASG_NAME);
-        config.put(CONFIG_REGION_NAME, REGION);
-        
+        config.set(CONFIG_ASG_NAME, ASG_NAME);
+        config.set(CONFIG_REGION_NAME, REGION);
+
+      //TODO should this logic be moved to ConfigSource?
     	Properties systemProps = System.getProperties();
     	
     	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();) 
@@ -264,7 +269,7 @@ public class PriamConfiguration implements IConfiguration
             String value = (String) systemProps.getProperty(key);
             
             if (value != null && !BLANK.equals(value))
-            	config.put(key, systemProps.getProperty(key));
+            	config.set(key, systemProps.getProperty(key));
         }
     	
     	//override command line properties if there is
@@ -275,7 +280,7 @@ public class PriamConfiguration implements IConfiguration
                 String key = (String) en.nextElement();
                 String value = (String) fileProps.getProperty(key);
                 if (value != null && !BLANK.equals(value))
-                	config.put(key, fileProps.getProperty(key));
+                	config.set(key, fileProps.getProperty(key));
             }
     	}
     	
@@ -341,7 +346,7 @@ public class PriamConfiguration implements IConfiguration
         // Override only if region is specified
         if (config.contains(prop) && StringUtils.isBlank(dc))
             return;
-        config.put(prop, value);
+        config.set(prop, value);
     }
 
     @Override
@@ -377,7 +382,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getBackupRetentionDays()
     {
-        return config.getInteger(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
+        return config.get(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
     }
 
     @Override
@@ -425,38 +430,38 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public long getBackupChunkSize()
     {
-        long size = config.getLong(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
+        long size = config.get(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
         return size*1024*1024L;
     }
 
     @Override
     public boolean isCommitLogBackup()
     {
-        return config.getBoolean(CONFIG_CL_BK_ENABLE, false);
+        return config.get(CONFIG_CL_BK_ENABLE, false);
     }
 
     @Override
     public int getJmxPort()
     {
-        return config.getInteger(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
+        return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
     }
 
     @Override
     public int getThriftPort()
     {
-        return config.getInteger(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
+        return config.get(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
     }
 
     @Override
     public int getStoragePort()
     {
-        return config.getInteger(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
+        return config.get(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
     }
 
     @Override
     public int getSSLStoragePort()
     {
-        return config.getInteger(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
+        return config.get(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
     }
 
     @Override
@@ -516,7 +521,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getBackupHour()
     {
-        return config.getInteger(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
+        return config.get(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
     }
 
     @Override
@@ -534,32 +539,32 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void setDC(String region)
     {
-        config.put(CONFIG_REGION_NAME, region);
+        config.set(CONFIG_REGION_NAME, region);
     }
 
     @Override
     public boolean isMultiDC()
     {
-        return config.getBoolean(CONFIG_MR_ENABLE, false);
+        return config.get(CONFIG_MR_ENABLE, false);
     }
 
     @Override
     public int getMaxBackupUploadThreads()
     {
 
-        return config.getInteger(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
+        return config.get(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
     }
 
     @Override
     public int getMaxBackupDownloadThreads()
     {
-        return config.getInteger(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
+        return config.get(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
     }
 
     @Override
     public boolean isRestoreClosestToken()
     {
-        return config.getBoolean(CONFIG_RESTORE_CLOSEST_TOKEN, false);
+        return config.get(CONFIG_RESTORE_CLOSEST_TOKEN, false);
     }
 
     @Override
@@ -577,7 +582,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public boolean isIncrBackup()
     {
-        return config.getBoolean(CONFIG_INCR_BK_ENABLE, true);
+        return config.get(CONFIG_INCR_BK_ENABLE, true);
     }
 
     @Override
@@ -589,41 +594,41 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getUploadThrottle()
     {
-        return config.getInteger(CONFIG_THROTTLE_UPLOAD_PER_SECOND, Integer.MAX_VALUE);
+        return config.get(CONFIG_THROTTLE_UPLOAD_PER_SECOND, Integer.MAX_VALUE);
     }
 
     @Override
     public boolean isLocalBootstrapEnabled()
     {
-        return config.getBoolean(CONFIG_LOAD_LOCAL_PROPERTIES, false);
+        return config.get(CONFIG_LOAD_LOCAL_PROPERTIES, false);
     }
 
     @Override
     public int getInMemoryCompactionLimit()
     {
-        return config.getInteger(CONFIG_IN_MEMORY_COMPACTION_LIMIT, 128);
+        return config.get(CONFIG_IN_MEMORY_COMPACTION_LIMIT, 128);
     }
 
     @Override
     public int getCompactionThroughput()
     {
-        return config.getInteger(CONFIG_COMPACTION_THROUHPUT, 8);
+        return config.get(CONFIG_COMPACTION_THROUHPUT, 8);
     }
 
     @Override
     public int getMaxHintWindowInMS()
     {
-        return config.getInteger(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
+        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
     }
 
     public int getHintedHandoffThrottleKb()
     {
-        return config.getInteger(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
+        return config.get(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
     }
 
     public int getMaxHintThreads()
     {
-        return config.getInteger(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
+        return config.get(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
     }
 
     @Override
@@ -638,105 +643,25 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
-    @ImplementedBy(PropertiesConfig.class)
-    public interface Config
-    {
-        String get(String prop);
-        String get(String prop, String defaultValue);
-        int getInteger(String prop, int defaultValue);
-        long getLong(String prop, long defaultValue);
-        boolean getBoolean(String prop, boolean defaultValue);
-        List<String> getList(String prop);
-        List<String> getList(String prop, String defaultValue);
-
-        void put(String prop, String value);
-
-        boolean contains(String prop);
-    }
-
-    public class PropertiesConfig implements Config
-    {
-
-      private final Properties properties;
-
-      public PropertiesConfig() {
-        this.properties = new Properties();
-      }
-
-      @Override
-      public String get(final String prop) {
-        return properties.getProperty(prop);
-      }
-
-      @Override
-      public String get(final String prop, final String defaultValue) {
-        return properties.getProperty(prop, defaultValue);
-      }
-
-      @Override
-      public int getInteger(String prop, int defaultValue)
-      {
-        return get(prop) == null ? defaultValue : Integer.parseInt(get(prop));
-      }
-
-      @Override
-      public long getLong(String prop, long defaultValue)
-      {
-        return get(prop) == null ? defaultValue : Long.parseLong(get(prop));
-      }
-
-      @Override
-      public boolean getBoolean(String prop, boolean defaultValue)
-      {
-        return get(prop) == null ? defaultValue : Boolean.parseBoolean(get(prop));
-      }
-
-      @Override
-      public List<String> getList(String prop)
-      {
-        if (get(prop) == null)
-          return Lists.newArrayList();
-        return getTrimmedStringList(get(prop).split(","));
-      }
-
-      @Override
-      public List<String> getList(String prop, String defaultValue)
-      {
-        if (get(prop) == null)
-          return getTrimmedStringList(defaultValue.split(","));
-        return getList(prop);
-      }
-
-      @Override
-      public void put(final String prop, final String value) {
-        properties.put(prop, value);
-      }
-
-      @Override
-      public boolean contains(final String prop) {
-        return properties.containsKey(prop);
-      }
-    }
-
-    @Override
+  @Override
     /**
      * Defaults to 0, means dont set it in yaml
      */
     public int getMemtableTotalSpaceMB()
     {
-        return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
+        return config.get(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
     }
 
     @Override
     public int getStreamingThroughputMB()
     {
-        return config.getInteger(CONFIG_STREAMING_THROUGHPUT_MB, 400);
+        return config.get(CONFIG_STREAMING_THROUGHPUT_MB, 400);
     }
 
     @Override
     public boolean getMultithreadedCompaction()
     {
-        return config.getBoolean(CONFIG_MULTITHREADED_COMPACTION, false);
+        return config.get(CONFIG_MULTITHREADED_COMPACTION, false);
     }
 
     public String getPartitioner()
@@ -746,22 +671,22 @@ public class PriamConfiguration implements IConfiguration
 
     public String getKeyCacheSizeInMB()
     {
-        return config.get(CONFIG_KEYCACHE_SIZE, null);
+        return config.get(CONFIG_KEYCACHE_SIZE);
     }
 
     public String getKeyCacheKeysToSave()
     {
-        return config.get(CONFIG_KEYCACHE_COUNT, null);
+        return config.get(CONFIG_KEYCACHE_COUNT);
     }
 
     public String getRowCacheSizeInMB()
     {
-        return config.get(CONFIG_ROWCACHE_SIZE, null);
+        return config.get(CONFIG_ROWCACHE_SIZE);
     }
 
     public String getRowCacheKeysToSave()
     {
-        return config.get(CONFIG_ROWCACHE_COUNT, null);
+        return config.get(CONFIG_ROWCACHE_COUNT);
     }
 
     private List<String> getTrimmedStringList(String[] strings) {
@@ -779,7 +704,7 @@ public class PriamConfiguration implements IConfiguration
 
     public int getNumTokens()
     {
-        return config.getInteger(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
+        return config.get(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
     }
 
     public String getYamlLocation()
@@ -798,16 +723,16 @@ public class PriamConfiguration implements IConfiguration
     }
 
 	public String getTargetKSName() {
-		return config.get(CONFIG_TARGET_KEYSPACE_NAME, null);
+		return config.get(CONFIG_TARGET_KEYSPACE_NAME);
 	}
 
 	@Override
 	public String getTargetCFName() {
-		return config.get(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
+		return config.get(CONFIG_TARGET_COLUMN_FAMILY_NAME);
 	}
 
 	@Override
 	public boolean doesCassandraStartManually() {
-		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+		return config.get(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
 }

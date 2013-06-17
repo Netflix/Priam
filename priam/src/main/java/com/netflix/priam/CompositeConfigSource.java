@@ -7,6 +7,15 @@ import com.google.common.collect.Iterables;
 
 import java.util.Collection;
 
+/**
+ * A {@link ConfigSource} that delegates method calls to the underline sources.  The order in which values are provided
+ * depend on the {@link ConfigSource}s provided.  If user asks for key 'foo', and this composite has three sources, it
+ * will first check if the key is found in the first source, if not it will check the second and if not, the third, else
+ * return null or false if {@link #contains(String)} was called.
+ *
+ * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underline
+ * source overrides one of these methods, then that implementation will be ignored.
+ */
 public class CompositeConfigSource extends AbstractConfigSource {
 
   private final ImmutableCollection<? extends ConfigSource> sources;

@@ -2,6 +2,9 @@ package com.netflix.priam;
 
 import java.util.List;
 
+/**
+ * Defines the configurations for an application.
+ */
 public interface ConfigSource
 {
 

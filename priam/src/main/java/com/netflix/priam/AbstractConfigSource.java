@@ -8,6 +8,9 @@ import java.util.List;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
+/**
+ * Base implementations for most methods on {@link ConfigSource}.
+ */
 public abstract class AbstractConfigSource implements ConfigSource {
 
   private String asgName;

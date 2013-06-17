@@ -15,6 +15,19 @@ import javax.inject.Inject;
 import java.util.Iterator;
 import java.util.Map;
 
+/**
+ * Loads config data from SimpleDB.  {@link #intialize(String, String)} will query the SimpleDB domain "PriamProperties"
+ * for any potential configurations.  The domain is set up to support multiple different clusters; this is done by using
+ * amazon's auto scaling groups (ASG).
+ * <p/>
+ * Schema <ul>
+ *   <li>"appId" // ASG up to first instance of '-'.  So ASG name priam-test will create appId priam, ASG priam_test
+ *   will create appId priam_test.</li>
+ *   <li>"property" // key to use for configs.</li>
+ *   <li>"value" // value to set for the given property/key.</li>
+ *   <li>"region" // region the config belongs to.  If left empty, then applies to all regions.</li>
+ * </ul> }
+ */
 public final class SimpleDBConfigSource extends AbstractConfigSource {
   private static final Logger logger = LoggerFactory.getLogger(SimpleDBConfigSource.class.getName());
 
@@ -51,22 +64,19 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
     } while (nextToken != null);
   }
 
-  private static class Attributes
-  {
+  private static class Attributes {
     public final static String APP_ID = "appId"; // ASG
     public final static String PROPERTY = "property";
     public final static String PROPERTY_VALUE = "value";
     public final static String REGION = "region";
   }
 
-  private void addProperty(Item item)
-  {
+  private void addProperty(Item item) {
     Iterator<Attribute> attrs = item.getAttributes().iterator();
     String prop = "";
     String value = "";
     String dc = "";
-    while (attrs.hasNext())
-    {
+    while (attrs.hasNext()) {
       Attribute att = attrs.next();
       if (att.getName().equals(Attributes.PROPERTY))
         prop = att.getValue();

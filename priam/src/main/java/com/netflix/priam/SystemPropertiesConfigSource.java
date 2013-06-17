@@ -7,6 +7,12 @@ import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 
+/**
+ * Loads {@link System#getProperties()} as a source.
+ * <p/>
+ * Implementation note: {@link #set(String, String)} does not write to system properties, but will write to a new map.
+ * This means that setting values to this source has no effect on system properties or other instances of this class.
+ */
 public final class SystemPropertiesConfigSource extends AbstractConfigSource {
   private static final String PRIAM_PRE = "priam";
   private static final String BLANK = "";
@@ -19,8 +25,7 @@ public final class SystemPropertiesConfigSource extends AbstractConfigSource {
 
     Properties systemProps = System.getProperties();
 
-    for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();)
-    {
+    for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements(); ) {
       String key = (String) en.nextElement();
 
       if (!key.startsWith(PRIAM_PRE))

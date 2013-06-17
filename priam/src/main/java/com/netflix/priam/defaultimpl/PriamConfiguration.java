@@ -18,11 +18,6 @@ package com.netflix.priam.defaultimpl;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
-import com.amazonaws.services.simpledb.model.Attribute;
-import com.amazonaws.services.simpledb.model.Item;
-import com.amazonaws.services.simpledb.model.SelectRequest;
-import com.amazonaws.services.simpledb.model.SelectResult;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -35,11 +30,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -155,23 +146,10 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_VNODE_NUM_TOKENS = 1;
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
-
-    private final String BLANK = "";
     
     private final ConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
-    private static class Attributes
-    {
-        public final static String APP_ID = "appId"; // ASG
-        public final static String PROPERTY = "property";
-        public final static String PROPERTY_VALUE = "value";
-        public final static String REGION = "region";
-    }
-
-    private static final String DOMAIN = "PriamProperties";
-
-    private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     private final ICredential provider;
 
     @Inject
@@ -250,103 +228,10 @@ public class PriamConfiguration implements IConfiguration
       DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);
     }
 
-
     private void populateProps()
     {
         config.set(CONFIG_ASG_NAME, ASG_NAME);
         config.set(CONFIG_REGION_NAME, REGION);
-
-      //TODO should this logic be moved to ConfigSource?
-    	Properties systemProps = System.getProperties();
-
-    	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();)
-    	{
-            String key = (String) en.nextElement();
-
-            if (!key.startsWith(PRIAM_PRE))
-            	continue;
-
-            String value = (String) systemProps.getProperty(key);
-
-            if (value != null && !BLANK.equals(value))
-            	config.set(key, systemProps.getProperty(key));
-        }
-    	
-    	//override command line properties if there is
-    	Properties fileProps = loadFileProperties();
-    	if (fileProps != null)  {
-    		for (Enumeration en = fileProps.propertyNames(); en.hasMoreElements();) 
-        	{
-                String key = (String) en.nextElement();
-                String value = (String) fileProps.getProperty(key);
-                if (value != null && !BLANK.equals(value))
-                	config.set(key, fileProps.getProperty(key));
-            }
-    	}
-    	
-    	
-    	//Or let SimpleDb overrides the properties
-        // End point is us-east-1
-        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
-
-        String nextToken = null;
-        String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.indexOf('-')): ASG_NAME;
-        logger.info(String.format("appid used to fetch properties is: %s",appid));
-        do
-        {
-            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
-            request.setNextToken(nextToken);
-            SelectResult result = simpleDBClient.select(request);
-            nextToken = result.getNextToken();
-            Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext())
-                addProperty(itemiter.next());
-
-        } while (nextToken != null);
-
-    }
-    
-    
-    private Properties loadFileProperties() 
-    {
-    	try 
-    	{
-    	   Properties properties = new Properties();
-    	   ClassLoader loader = PriamConfiguration.class.getClassLoader();
-    	   URL url = loader.getResource("Priam.properties");
-    	   properties.load(url.openStream());
-    	   return properties;
-    	} catch (Exception e) 
-    	{
-    		logger.info("No Priam.properties. Ignore!");
-    	}
-    	
-    	return null;
-    }
-
-    private void addProperty(Item item)
-    {
-        Iterator<Attribute> attrs = item.getAttributes().iterator();
-        String prop = "";
-        String value = "";
-        String dc = "";
-        while (attrs.hasNext())
-        {
-            Attribute att = attrs.next();
-            if (att.getName().equals(Attributes.PROPERTY))
-                prop = att.getValue();
-            else if (att.getName().equals(Attributes.PROPERTY_VALUE))
-                value = att.getValue();
-            else if (att.getName().equals(Attributes.REGION))
-                dc = att.getValue();
-        }
-        // Ignore, if not this region
-        if (StringUtils.isNotBlank(dc) && !dc.equals(REGION))
-            return;
-        // Override only if region is specified
-        if (config.contains(prop) && StringUtils.isBlank(dc))
-            return;
-        config.set(prop, value);
     }
 
     @Override
@@ -687,14 +572,6 @@ public class PriamConfiguration implements IConfiguration
     public String getRowCacheKeysToSave()
     {
         return config.get(CONFIG_ROWCACHE_COUNT);
-    }
-
-    private List<String> getTrimmedStringList(String[] strings) {
-    		List<String> list = Lists.newArrayList();
-    		for(String s : strings) {
-    			list.add(StringUtils.strip(s));
-    		}
-    		return list;
     }
 
 	@Override

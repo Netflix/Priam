@@ -1,10 +1,7 @@
 package com.netflix.priam;
 
-import com.google.inject.ImplementedBy;
-
 import java.util.List;
 
-@ImplementedBy(PropertiesConfigSource.class)
 public interface ConfigSource
 {
 

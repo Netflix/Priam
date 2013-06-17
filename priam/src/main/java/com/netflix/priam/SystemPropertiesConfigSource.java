@@ -1,5 +1,6 @@
 package com.netflix.priam;
 
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
 import java.util.Enumeration;
@@ -44,6 +45,7 @@ public final class SystemPropertiesConfigSource extends AbstractConfigSource {
 
   @Override
   public void set(final String key, final String value) {
+    Preconditions.checkNotNull(value, "Value can not be null for configurations.");
     data.put(key, value);
   }
 }

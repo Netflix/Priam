@@ -5,6 +5,7 @@ import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
 import com.amazonaws.services.simpledb.model.SelectResult;
+import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -95,6 +96,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
 
   @Override
   public void set(final String key, final String value) {
+    Preconditions.checkNotNull(value, "Value can not be null for configurations.");
     data.put(key, value);
   }
 }

@@ -6,11 +6,17 @@ import org.apache.commons.lang.StringUtils;
 
 import java.util.List;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public abstract class AbstractConfigSource implements ConfigSource {
 
+  private String asgName;
+  private String region;
+
   @Override
-  public void intialize() {
-    // no-op.
+  public void intialize(final String asgName, final String region) {
+    this.asgName = checkNotNull(asgName, "ASG name is not defined");
+    this.region = checkNotNull(region, "Region is not defined");
   }
 
   @Override
@@ -134,9 +140,17 @@ public abstract class AbstractConfigSource implements ConfigSource {
     return defaultValue;
   }
 
+  protected String getAsgName() {
+    return asgName;
+  }
+
+  protected String getRegion() {
+    return region;
+  }
+
   private List<String> getTrimmedStringList(String[] strings) {
     List<String> list = Lists.newArrayList();
-    for(String s : strings) {
+    for (String s : strings) {
       list.add(StringUtils.strip(s));
     }
     return list;

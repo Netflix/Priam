@@ -12,7 +12,7 @@ public interface ConfigSource
      * Must be called before any other method.  This method will allow implementations to do any setup that they require
      * before being called.
      */
-    void intialize();
+    void intialize(String asgName, String region);
 
     /**
      * A non-negative integer indicating a count of elements.

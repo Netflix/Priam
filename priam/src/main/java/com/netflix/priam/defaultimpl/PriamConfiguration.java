@@ -184,8 +184,8 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void intialize()
     {
-        this.config.intialize();
         setupEnvVars();
+        this.config.intialize(ASG_NAME, REGION);
         setDefaultRACList(REGION);
         populateProps();
         SystemUtils.createDirs(getBackupCommitLogLocation());
@@ -258,16 +258,16 @@ public class PriamConfiguration implements IConfiguration
 
       //TODO should this logic be moved to ConfigSource?
     	Properties systemProps = System.getProperties();
-    	
-    	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();) 
+
+    	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();)
     	{
             String key = (String) en.nextElement();
-            
+
             if (!key.startsWith(PRIAM_PRE))
             	continue;
-            	
+
             String value = (String) systemProps.getProperty(key);
-            
+
             if (value != null && !BLANK.equals(value))
             	config.set(key, systemProps.getProperty(key));
         }

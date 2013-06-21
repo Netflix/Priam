@@ -15,6 +15,9 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.inject.ImplementedBy;
+import com.netflix.priam.aws.AWSMembership;
+
 import java.util.Collection;
 import java.util.List;
 
@@ -22,6 +25,7 @@ import java.util.List;
  * Interface to manage membership meta information such as size of RAC, list of
  * nodes in RAC etc. Also perform ACL updates used in multi-regional clusters
  */
+@ImplementedBy(AWSMembership.class)
 public interface IMembership
 {
     /**

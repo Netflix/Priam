@@ -87,10 +87,10 @@ public class PriamServer
             scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
         else
         {
-        		if(!config.doesCassandraStartManually())
-        			cassProcess.start(true);				 // Start cassandra.
-        		else
-        			logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+	    if(!config.doesCassandraStartManually())
+		cassProcess.start(true);				 // Start cassandra.
+	    else
+		logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         }
 
         /*

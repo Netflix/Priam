@@ -51,6 +51,19 @@ import org.apache.cassandra.utils.EstimatedHistogram;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.JMXConnectionException;
+import com.netflix.priam.utils.JMXNodeTool;
+import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Do general operations. Start/Stop and some JMX node tool commands
@@ -97,8 +110,14 @@ public class CassandraAdmin
         logger.info("node tool refresh is being called");
         if (StringUtils.isBlank(keyspaces))
             return Response.status(400).entity("Missing keyspace in request").build();
-
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.refresh(Lists.newArrayList(keyspaces.split(",")));
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -107,7 +126,13 @@ public class CassandraAdmin
     @Path("/info")
     public Response cassInfo() throws IOException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool info being called");
         return Response.ok(nodetool.info(), MediaType.APPLICATION_JSON).build();
     }
@@ -116,7 +141,13 @@ public class CassandraAdmin
     @Path("/ring/{id}")
     public Response cassRing(@PathParam("id") String keyspace) throws IOException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool ring being called");
         return Response.ok(nodetool.ring(keyspace), MediaType.APPLICATION_JSON).build();
     }
@@ -125,7 +156,13 @@ public class CassandraAdmin
     @Path("/flush")
     public Response cassFlush() throws IOException, InterruptedException, ExecutionException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool flush being called");
         nodetool.flush();
         return Response.ok().build();
@@ -135,7 +172,13 @@ public class CassandraAdmin
     @Path("/compact")
     public Response cassCompact() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool compact being called");
         nodetool.compact();
         return Response.ok().build();
@@ -145,7 +188,13 @@ public class CassandraAdmin
     @Path("/cleanup")
     public Response cassCleanup() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool cleanup being called");
         nodetool.cleanup();
         return Response.ok().build();
@@ -155,7 +204,13 @@ public class CassandraAdmin
     @Path("/repair")
     public Response cassRepair(@QueryParam("sequential") boolean isSequential) throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         logger.info("node tool repair being called");
         nodetool.repair(isSequential);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -165,7 +220,13 @@ public class CassandraAdmin
     @Path("/version")
     public Response version() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         return Response.ok(new JSONArray().put(nodetool.getReleaseVersion()), MediaType.APPLICATION_JSON).build();
     }
 
@@ -173,7 +234,13 @@ public class CassandraAdmin
     @Path("/tpstats")
     public Response tpstats() throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         Iterator<Map.Entry<String, JMXEnabledThreadPoolExecutorMBean>> threads = nodetool.getThreadPoolMBeanProxies();
         JSONArray threadPoolArray = new JSONArray();
         while (threads.hasNext())
@@ -206,7 +273,13 @@ public class CassandraAdmin
     @Path("/compactionstats")
     public Response compactionStats() throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         JSONObject rootObj = new JSONObject();
         CompactionManagerMBean cm = nodetool.getCompactionManagerProxy();
         rootObj.put("pending tasks", cm.getPendingTasks());
@@ -232,7 +305,13 @@ public class CassandraAdmin
     @Path("/disablegossip")
     public Response disablegossip() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.stopGossiping();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -241,7 +320,13 @@ public class CassandraAdmin
     @Path("/enablegossip")
     public Response enablegossip() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.startGossiping();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -250,7 +335,13 @@ public class CassandraAdmin
     @Path("/disablethrift")
     public Response disablethrift() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.stopThriftServer();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -259,7 +350,13 @@ public class CassandraAdmin
     @Path("/enablethrift")
     public Response enablethrift() throws IOException, ExecutionException, InterruptedException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.startThriftServer();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -268,7 +365,13 @@ public class CassandraAdmin
     @Path("/statusthrift")
     public Response statusthrift() throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         return Response.ok(new JSONObject().put("status", (nodetool.isThriftServerRunning() ? "running" : "not running")), MediaType.APPLICATION_JSON).build();
     }
 
@@ -276,7 +379,13 @@ public class CassandraAdmin
     @Path("/gossipinfo")
     public Response gossipinfo() throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         JSONObject rootObj = new JSONObject();
         String[] ginfo = nodetool.getGossipInfo().split("/");
         for (String info : ginfo)
@@ -302,7 +411,13 @@ public class CassandraAdmin
     @Path("/netstats")
     public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         JSONObject rootObj = new JSONObject();
         rootObj.put("mode", nodetool.getOperationMode());
         final InetAddress addr = (hostname == null) ? null : InetAddress.getByName(hostname);
@@ -399,7 +514,13 @@ public class CassandraAdmin
     @Path("/move")
     public Response moveToken(@QueryParam(REST_HEADER_TOKEN) String newToken) throws IOException, ExecutionException, InterruptedException, ConfigurationException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         nodetool.move(newToken);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -409,7 +530,13 @@ public class CassandraAdmin
     public Response scrub(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces, @QueryParam(REST_HEADER_CFS) String cfnames) throws IOException, ExecutionException, InterruptedException,
             ConfigurationException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         String[] cfs = null;
         if (StringUtils.isNotBlank(cfnames))
             cfs = cfnames.split(",");
@@ -425,7 +552,13 @@ public class CassandraAdmin
     public Response cfhistograms(@QueryParam(REST_HEADER_KEYSPACES) String keyspace, @QueryParam(REST_HEADER_CFS) String cfname) throws IOException, ExecutionException, InterruptedException,
             JSONException
     {
-        JMXNodeTool nodetool = JMXNodeTool.instance(config);
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
         if (StringUtils.isBlank(keyspace) || StringUtils.isBlank(cfname))
             return Response.status(400).entity("Missing keyspace/cfname in request").build();
 

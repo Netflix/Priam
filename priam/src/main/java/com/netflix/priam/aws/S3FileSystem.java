@@ -29,6 +29,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,7 +53,6 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.scheduler.CustomizedThreadPoolExecutor;
-import com.netflix.priam.utils.Throttle;
 
 /**
  * Implementation of IBackupFileSystem for S3
@@ -69,7 +69,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private final ICompression compress;
     private final IConfiguration config;
     private final ICredential cred;
-    private Throttle throttle;
+    private RateLimiter rateLimiter;
     private CustomizedThreadPoolExecutor executor;
 
     private AtomicLong bytesDownloaded = new AtomicLong();
@@ -89,17 +89,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
-        this.throttle = new Throttle(this.getClass().getCanonicalName(), new Throttle.ThroughputFunction()
-        {
-            public int targetThroughput()
-            {
-                int throttleLimit = config.getUploadThrottle();
-                if (throttleLimit < 1)
-                    return 0;
-                int totalBytesPerMS = (throttleLimit * 1024 * 1024) / 1000;
-                return totalBytesPerMS;
-            }
-        });
+
+        double throttleLimit = config.getUploadThrottle();
+        rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = MBEAN_NAME;
@@ -182,7 +174,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             while (chunks.hasNext())
             {
                 byte[] chunk = chunks.next();
-                throttle.throttle(chunk.length);
+                rateLimiter.acquire(chunk.length);
                 DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 executor.submit(partUploader);
@@ -296,7 +288,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
      */
     public String getPrefix()
     {
-        String prefix = "";
+        String prefix;
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
         else

@@ -15,24 +15,9 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
@@ -44,6 +29,15 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
+import org.apache.commons.lang.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -753,9 +747,8 @@ public class PriamConfiguration implements IConfiguration
 		return config.getProperty(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
 	}
 
-	@Override
-	public boolean doesCassandraStartManually() {
-		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
-	}
-
+    @Override
+    public boolean doesCassandraStartManually() {
+	return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+    }
 }

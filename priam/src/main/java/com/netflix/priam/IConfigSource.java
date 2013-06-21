@@ -1,11 +1,15 @@
 package com.netflix.priam;
 
+import com.google.inject.ImplementedBy;
+import com.netflix.priam.defaultimpl.PriamConfigSource;
+
 import java.util.List;
 
 /**
  * Defines the configurations for an application.
  */
-public interface ConfigSource
+@ImplementedBy(PriamConfigSource.class)
+public interface IConfigSource
 {
 
     /**

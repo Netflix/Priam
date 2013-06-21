@@ -1,6 +1,8 @@
 package com.netflix.priam;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,22 +20,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
 public class PropertiesConfigSource extends AbstractConfigSource {
   private static final Logger logger = LoggerFactory.getLogger(PropertiesConfigSource.class.getName());
 
+  private static final String DEFAULT_PRIAM_PROPERTIES = "Priam.properties";
+
   private final Map<String, String> data = Maps.newConcurrentMap();
+  private final String priamFile;
 
   public PropertiesConfigSource() {
+    this.priamFile = DEFAULT_PRIAM_PROPERTIES;
   }
 
   public PropertiesConfigSource(final Properties properties) {
     checkNotNull(properties);
+    this.priamFile = DEFAULT_PRIAM_PROPERTIES;
     clone(properties);
+  }
+
+  @VisibleForTesting
+  PropertiesConfigSource(final String file) {
+    this.priamFile = checkNotNull(file);
   }
 
   @Override
   public void intialize(final String asgName, final String region) {
     super.intialize(asgName, region);
-    ClassLoader loader = PropertiesConfigSource.class.getClassLoader();
     Properties properties = new Properties();
-    URL url = loader.getResource("Priam.properties");
+    URL url = PropertiesConfigSource.class.getClassLoader().getResource(priamFile);
     if (url != null) {
       try {
         properties.load(url.openStream());
@@ -79,7 +90,7 @@ public class PropertiesConfigSource extends AbstractConfigSource {
     synchronized (properties) {
       for (final String key : properties.stringPropertyNames()) {
         final String value = properties.getProperty(key);
-        if (value != null) {
+        if (!Strings.isNullOrEmpty(value)) {
           data.put(key, value);
         }
       }

@@ -22,7 +22,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.ConfigSource;
+import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
@@ -109,8 +109,8 @@ public class PriamConfiguration implements IConfiguration
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
-    
-    // Defaults 
+
+    // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
@@ -146,14 +146,14 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_VNODE_NUM_TOKENS = 1;
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
-    
-    private final ConfigSource config;
+
+    private final IConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
     private final ICredential provider;
 
     @Inject
-    public PriamConfiguration(ICredential provider, ConfigSource config)
+    public PriamConfiguration(ICredential provider, IConfigSource config)
     {
         this.provider = provider;
         this.config = config;
@@ -211,13 +211,13 @@ public class PriamConfiguration implements IConfiguration
     }
 
     /**
-     * Get the fist 3 available zones in the region 
+     * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region){
         AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
-        List<String> zone = Lists.newArrayList(); 
+        List<String> zone = Lists.newArrayList();
         for(AvailabilityZone reg : res.getAvailabilityZones()){
             if( reg.getState().equals("available") )
                 zone.add(reg.getZoneName());
@@ -457,7 +457,7 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.get(CONFIG_ASG_NAME, "");
     }
-    
+
     @Override
     public String getACLGroupName()
     {

@@ -3,7 +3,6 @@ package com.netflix.priam;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 
-import java.util.Enumeration;
 import java.util.Map;
 import java.util.Properties;
 
@@ -25,16 +24,13 @@ public final class SystemPropertiesConfigSource extends AbstractConfigSource {
 
     Properties systemProps = System.getProperties();
 
-    for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements(); ) {
-      String key = (String) en.nextElement();
-
+    for (final String key : systemProps.stringPropertyNames()) {
       if (!key.startsWith(PRIAM_PRE))
         continue;
-
-      String value = (String) systemProps.getProperty(key);
-
-      if (value != null && !BLANK.equals(value))
-        set(key, systemProps.getProperty(key));
+      final String value = systemProps.getProperty(key);
+      if (value != null && !BLANK.equals(value)) {
+        data.put(key, value);
+      }
     }
   }
 

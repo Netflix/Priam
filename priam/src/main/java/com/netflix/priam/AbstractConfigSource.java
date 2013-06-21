@@ -9,9 +9,9 @@ import java.util.List;
 import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
- * Base implementations for most methods on {@link ConfigSource}.
+ * Base implementations for most methods on {@link IConfigSource}.
  */
-public abstract class AbstractConfigSource implements ConfigSource {
+public abstract class AbstractConfigSource implements IConfigSource {
 
   private String asgName;
   private String region;
@@ -137,7 +137,7 @@ public abstract class AbstractConfigSource implements ConfigSource {
   @Override
   public List<String> getList(String prop, List<String> defaultValue) {
     final String value = get(prop);
-    if (value == null) {
+    if (value != null) {
       return getTrimmedStringList(value.split(","));
     }
     return defaultValue;

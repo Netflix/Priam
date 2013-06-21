@@ -15,32 +15,21 @@
  */
 package com.netflix.priam.utils;
 
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FilterInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.List;
-import java.util.TimeZone;
-
-import javax.management.remote.JMXConnector;
-
 import com.google.common.base.Charsets;
+import com.google.common.hash.HashCode;
+import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.management.remote.JMXConnector;
+import java.io.*;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.MessageDigest;
+import java.util.List;
 
 
 public class SystemUtils
@@ -125,8 +114,8 @@ public class SystemUtils
     {
         try
         {
-            byte[] digest = Files.getDigest(file, MessageDigest.getInstance("MD5"));
-            return toHex(digest);
+            HashCode hc = Files.hash(file, Hashing.md5());
+            return toHex(hc.asBytes());
         }
         catch (Exception e)
         {
@@ -159,34 +148,6 @@ public class SystemUtils
         return new String(encoded);
     }
 
-    /**
-     * copy the input to the output.
-     */
-    public static void copyAndClose(InputStream input, OutputStream output) throws IOException
-    {
-        try
-        {
-            IOUtils.copy(input, output);
-        }
-        finally
-        {
-            IOUtils.closeQuietly(input);
-            IOUtils.closeQuietly(output);
-        }
-    }
-
-    public static File[] sortByLastModifiedTime(File[] files)
-    {
-        Arrays.sort(files, new Comparator<File>()
-        {
-            public int compare(File file1, File file2)
-            {
-                return Long.valueOf(file2.lastModified()).compareTo(Long.valueOf(file1.lastModified()));
-            }
-        });
-        return files;
-    }
-
     public static void closeQuietly(JMXNodeTool tool)
     {
         try
@@ -195,23 +156,8 @@ public class SystemUtils
         }
         catch (IOException e)
         {
-            // Do nothing.
+            logger.warn("failed to close jxm node tool", e);
         }
-    }
-
-    public static <T> T retryForEver(RetryableCallable<T> retryableCallable)
-    {
-        try
-        {
-            retryableCallable.set(Integer.MAX_VALUE, 1 * 1000);
-            return retryableCallable.call();
-        }
-        catch (Exception e)
-        {
-            // this might not happen because we are trying Integer.MAX_VALUE
-            // times.
-        }
-        return null;
     }
 
     public static void closeQuietly(JMXConnector jmc)
@@ -222,29 +168,7 @@ public class SystemUtils
         }
         catch (IOException e)
         {
-            // Do nothing.
+            logger.warn("failed to close JMXConnector", e);
         }
-    }
-
-    public static Date getDayBeginTime(Date date)
-    {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        cal.setTime(date);
-        cal.set(Calendar.HOUR, 0);
-        cal.set(Calendar.MINUTE, 0);
-        cal.set(Calendar.SECOND, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
-    }
-
-    public static Date getDayEndTime(Date date)
-    {
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("UTC"));
-        cal.setTime(date);
-        cal.set(Calendar.HOUR, 23);
-        cal.set(Calendar.MINUTE, 59);
-        cal.set(Calendar.SECOND, 59);
-        cal.set(Calendar.MILLISECOND, 0);
-        return cal.getTime();
     }
 }

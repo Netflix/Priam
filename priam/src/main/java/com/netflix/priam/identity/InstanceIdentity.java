@@ -121,7 +121,11 @@ public class InstanceIdentity
             myInstance = new GetDeadToken().call();
         // Grab a new token
         if (null == myInstance)
-            myInstance = new GetNewToken().call();
+        {
+			GetNewToken newToken = new GetNewToken();
+			newToken.set(100, 100);
+			myInstance = newToken.call();
+		}
         logger.info("My token: " + myInstance.getToken());
     }
 

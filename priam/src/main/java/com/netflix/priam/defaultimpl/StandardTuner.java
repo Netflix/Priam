@@ -61,7 +61,6 @@ public class StandardTuner implements CassandraTuner
 
         map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
         map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());
-        map.put("max_hints_delivery_threads", config.getMaxHintThreads());
         map.put("authenticator", config.getAuthenticator());
         map.put("authorizer", config.getAuthorizer());
 
@@ -70,7 +69,8 @@ public class StandardTuner implements CassandraTuner
         m.put("class_name", seedProvider);
 
         configureGlobalCaches(config, map);
-	map.put("num_tokens", config.getNumTokens());
+        //force to 1 until vnodes are properly supported
+	    map.put("num_tokens", 1);
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));

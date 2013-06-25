@@ -30,6 +30,7 @@ import javax.management.ObjectName;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,7 +69,6 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
     private final IConfiguration config;
-    private final ICredential cred;
     private RateLimiter rateLimiter;
     private CustomizedThreadPoolExecutor executor;
 
@@ -85,7 +85,6 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
-        this.cred = cred;
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new CustomizedThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
@@ -137,11 +136,9 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             downloadCount.incrementAndGet();
             AmazonS3 client = getS3Client();
             S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
-//            compress.decompressAndClose(obj.getObjectContent(), os);
-//            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
-
             long contentLen = obj.getObjectMetadata().getContentLength();
             path.setSize(contentLen);
+            IOUtils.closeQuietly(obj.getObjectContent());
             RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);

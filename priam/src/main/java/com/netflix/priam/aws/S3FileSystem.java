@@ -41,7 +41,6 @@ import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
-import com.amazonaws.services.s3.model.S3Object;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -68,7 +67,6 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
     private final IConfiguration config;
-    private final ICredential cred;
     private BlockingSubmitThreadPoolExecutor executor;
     private RateLimiter rateLimiter;
 
@@ -85,7 +83,6 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
-        this.cred = cred;
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
         this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
@@ -134,14 +131,10 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
-            AmazonS3 client = getS3Client();
-            S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
-//            compress.decompressAndClose(obj.getObjectContent(), os);
-//            bytesDownloaded.addAndGet(obj.getObjectMetadata().getContentLength());
-
-            long contentLen = obj.getObjectMetadata().getContentLength();
+            final AmazonS3 client = getS3Client();
+            long contentLen = client.getObjectMetadata(getPrefix(), path.getRemotePath()).getContentLength();
             path.setSize(contentLen);
-            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
+            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
             bytesDownloaded.addAndGet(contentLen);

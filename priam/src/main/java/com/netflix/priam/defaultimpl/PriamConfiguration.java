@@ -617,6 +617,6 @@ public class PriamConfiguration implements IConfiguration
 
     public String getInternodeCompression()
     {
-        return config.getProperty(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
+        return config.get(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
     }
 }

@@ -2,6 +2,7 @@ package com.netflix.priam;
 
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
+import com.netflix.priam.defaultimpl.PriamConfiguration;
 
 import java.util.Map;
 import java.util.Properties;
@@ -14,7 +15,6 @@ import java.util.Properties;
  */
 public final class SystemPropertiesConfigSource extends AbstractConfigSource 
 {
-    private static final String PRIAM_PRE = "priam";
     private static final String BLANK = "";
 
     private final Map<String, String> data = Maps.newConcurrentMap();
@@ -28,7 +28,7 @@ public final class SystemPropertiesConfigSource extends AbstractConfigSource
 
         for (final String key : systemProps.stringPropertyNames()) 
         {
-            if (!key.startsWith(PRIAM_PRE))
+            if (!key.startsWith(PriamConfiguration.PRIAM_PRE))
                 continue;
             final String value = systemProps.getProperty(key);
             if (value != null && !BLANK.equals(value)) 

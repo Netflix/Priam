@@ -35,7 +35,7 @@ import java.util.List;
 @Singleton
 public class PriamConfiguration implements IConfiguration
 {
-    private static final String PRIAM_PRE = "priam";
+    public static final String PRIAM_PRE = "priam";
 
     private static final String CONFIG_CASS_HOME_DIR = PRIAM_PRE + ".cass.home";
     private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";

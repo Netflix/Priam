@@ -13,7 +13,7 @@ import java.util.Collection;
  * will first check if the key is found in the first source, if not it will check the second and if not, the third, else
  * return null or false if {@link #contains(String)} was called.
  * <p/>
- * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underline
+ * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underlying
  * source overrides one of these methods, then that implementation will be ignored.
  */
 public class CompositeConfigSource extends AbstractConfigSource 
@@ -94,7 +94,6 @@ public class CompositeConfigSource extends AbstractConfigSource
     public void set(final String key, final String value) 
     {
         Preconditions.checkNotNull(value, "Value can not be null for configurations.");
-        //TODO should this write to the underline config sources, or a new memory based config source?
         final IConfigSource firstSource = Iterables.getFirst(sources, null);
         // firstSource shouldn't be null because the collection is immutable, and the collection is non empty.
         Preconditions.checkState(firstSource != null, "There was no IConfigSource found at the first location?");

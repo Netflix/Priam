@@ -18,14 +18,11 @@ package com.netflix.priam.defaultimpl;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
-import com.amazonaws.services.simpledb.model.Attribute;
-import com.amazonaws.services.simpledb.model.Item;
-import com.amazonaws.services.simpledb.model.SelectRequest;
-import com.amazonaws.services.simpledb.model.SelectResult;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
@@ -33,11 +30,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -117,8 +110,8 @@ public class PriamConfiguration implements IConfiguration
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
-    
-    // Defaults 
+
+    // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
@@ -135,7 +128,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
     private final String DEFAULT_BACKUP_LOCATION = "backup";
     private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
-    private String DEFAULT_AVAILABILITY_ZONES = "";
+//    private String DEFAULT_AVAILABILITY_ZONES = "";
+    private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
     private final String DEFAULT_CASS_PROCESS_NAME = "CassandraDaemon";
 
     private final String DEFAULT_MAX_DIRECT_MEM = "50G";
@@ -155,34 +149,23 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
 
-    private final String BLANK = "";
-    
-    private PriamProperties config;
+    private final IConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
 
-    private static class Attributes
-    {
-        public final static String APP_ID = "appId"; // ASG
-        public final static String PROPERTY = "property";
-        public final static String PROPERTY_VALUE = "value";
-        public final static String REGION = "region";
-    }
-
-    private static final String DOMAIN = "PriamProperties";
-
-    private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
     private final ICredential provider;
 
     @Inject
-    public PriamConfiguration(ICredential provider)
+    public PriamConfiguration(ICredential provider, IConfigSource config)
     {
         this.provider = provider;
+        this.config = config;
     }
 
     @Override
     public void intialize()
     {
         setupEnvVars();
+        this.config.intialize(ASG_NAME, REGION);
         setDefaultRACList(REGION);
         populateProps();
         SystemUtils.createDirs(getBackupCommitLogLocation());
@@ -230,155 +213,63 @@ public class PriamConfiguration implements IConfiguration
     }
 
     /**
-     * Get the fist 3 available zones in the region 
+     * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region){
         AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
-        List<String> zone = Lists.newArrayList(); 
+        List<String> zone = Lists.newArrayList();
         for(AvailabilityZone reg : res.getAvailabilityZones()){
             if( reg.getState().equals("available") )
                 zone.add(reg.getZoneName());
             if( zone.size() == 3)
                 break;
         }
-        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+//        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
+      DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);
     }
-
 
     private void populateProps()
     {
-    	config = new PriamProperties();
-        config.put(CONFIG_ASG_NAME, ASG_NAME);
-        config.put(CONFIG_REGION_NAME, REGION);
-        
-    	Properties systemProps = System.getProperties();
-    	
-    	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();) 
-    	{
-            String key = (String) en.nextElement();
-            
-            if (!key.startsWith(PRIAM_PRE))
-            	continue;
-            	
-            String value = (String) systemProps.getProperty(key);
-            
-            if (value != null && !BLANK.equals(value))
-            	config.put(key, systemProps.getProperty(key));
-        }
-    	
-    	//override command line properties if there is
-    	Properties fileProps = loadFileProperties();
-    	if (fileProps != null)  {
-    		for (Enumeration en = fileProps.propertyNames(); en.hasMoreElements();) 
-        	{
-                String key = (String) en.nextElement();
-                String value = (String) fileProps.getProperty(key);
-                if (value != null && !BLANK.equals(value))
-                	config.put(key, fileProps.getProperty(key));
-            }
-    	}
-    	
-    	
-    	//Or let SimpleDb overrides the properties
-        // End point is us-east-1
-        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
-
-        String nextToken = null;
-        String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.indexOf('-')): ASG_NAME;
-        logger.info(String.format("appid used to fetch properties is: %s",appid));
-        do
-        {
-            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
-            request.setNextToken(nextToken);
-            SelectResult result = simpleDBClient.select(request);
-            nextToken = result.getNextToken();
-            Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext())
-                addProperty(itemiter.next());
-
-        } while (nextToken != null);
-
-    }
-    
-    
-    private Properties loadFileProperties() 
-    {
-    	try 
-    	{
-    	   Properties properties = new Properties();
-    	   ClassLoader loader = PriamConfiguration.class.getClassLoader();
-    	   URL url = loader.getResource("Priam.properties");
-    	   properties.load(url.openStream());
-    	   return properties;
-    	} catch (Exception e) 
-    	{
-    		logger.info("No Priam.properties. Ignore!");
-    	}
-    	
-    	return null;
-    }
-
-    private void addProperty(Item item)
-    {
-        Iterator<Attribute> attrs = item.getAttributes().iterator();
-        String prop = "";
-        String value = "";
-        String dc = "";
-        while (attrs.hasNext())
-        {
-            Attribute att = attrs.next();
-            if (att.getName().equals(Attributes.PROPERTY))
-                prop = att.getValue();
-            else if (att.getName().equals(Attributes.PROPERTY_VALUE))
-                value = att.getValue();
-            else if (att.getName().equals(Attributes.REGION))
-                dc = att.getValue();
-        }
-        // Ignore, if not this region
-        if (StringUtils.isNotBlank(dc) && !dc.equals(REGION))
-            return;
-        // Override only if region is specified
-        if (config.contains(prop) && StringUtils.isBlank(dc))
-            return;
-        config.put(prop, value);
+        config.set(CONFIG_ASG_NAME, ASG_NAME);
+        config.set(CONFIG_REGION_NAME, REGION);
     }
 
     @Override
     public String getCassStartupScript()
     {
-        return config.getProperty(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
+        return config.get(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
     }
 
     @Override
     public String getCassStopScript()
     {
-        return config.getProperty(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
+        return config.get(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
     }
 
     @Override
     public String getCassHome()
     {
-        return config.getProperty(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
+        return config.get(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
     }
 
     @Override
     public String getBackupLocation()
     {
-        return config.getProperty(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
+        return config.get(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
     }
 
     @Override
     public String getBackupPrefix()
     {
-        return config.getProperty(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
+        return config.get(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
     }
 
     @Override
     public int getBackupRetentionDays()
     {
-        return config.getInteger(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
+        return config.get(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
     }
 
     @Override
@@ -390,7 +281,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getRestorePrefix()
     {
-        return config.getProperty(CONFIG_RESTORE_PREFIX);
+        return config.get(CONFIG_RESTORE_PREFIX);
     }
 
     @Override
@@ -402,74 +293,74 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getDataFileLocation()
     {
-        return config.getProperty(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
+        return config.get(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
     }
 
     @Override
     public String getCacheLocation()
     {
-        return config.getProperty(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
+        return config.get(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
     }
 
     @Override
     public String getCommitLogLocation()
     {
-        return config.getProperty(CONFIG_CL_LOCATION, DEFAULT_COMMIT_LOG_LOCATION);
+        return config.get(CONFIG_CL_LOCATION, DEFAULT_COMMIT_LOG_LOCATION);
     }
 
     @Override
     public String getBackupCommitLogLocation()
     {
-        return config.getProperty(CONFIG_CL_BK_LOCATION, "");
+        return config.get(CONFIG_CL_BK_LOCATION, "");
     }
 
     @Override
     public long getBackupChunkSize()
     {
-        long size = config.getLong(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
+        long size = config.get(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
         return size*1024*1024L;
     }
 
     @Override
     public boolean isCommitLogBackup()
     {
-        return config.getBoolean(CONFIG_CL_BK_ENABLE, false);
+        return config.get(CONFIG_CL_BK_ENABLE, false);
     }
 
     @Override
     public int getJmxPort()
     {
-        return config.getInteger(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
+        return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
     }
 
     @Override
     public int getThriftPort()
     {
-        return config.getInteger(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
+        return config.get(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
     }
 
     @Override
     public int getStoragePort()
     {
-        return config.getInteger(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
+        return config.get(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
     }
 
     @Override
     public int getSSLStoragePort()
     {
-        return config.getInteger(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
+        return config.get(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
     }
 
     @Override
     public String getSnitch()
     {
-        return config.getProperty(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
+        return config.get(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
     }
 
     @Override
     public String getAppName()
     {
-        return config.getProperty(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+        return config.get(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
     }
 
     @Override
@@ -499,86 +390,86 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHeapSize()
     {
-        return config.getProperty(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
+        return config.get(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
     }
 
     @Override
     public String getHeapNewSize()
     {
-        return config.getProperty(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
+        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
     }
 
     @Override
     public String getMaxDirectMemory()
     {
-        return config.getProperty(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
+        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
     }
 
     @Override
     public int getBackupHour()
     {
-        return config.getInteger(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
+        return config.get(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
     }
 
     @Override
     public String getRestoreSnapshot()
     {
-        return config.getProperty(CONFIG_AUTO_RESTORE_SNAPSHOTNAME, "");
+        return config.get(CONFIG_AUTO_RESTORE_SNAPSHOTNAME, "");
     }
 
     @Override
     public String getDC()
     {
-        return config.getProperty(CONFIG_REGION_NAME, "");
+        return config.get(CONFIG_REGION_NAME, "");
     }
 
     @Override
     public void setDC(String region)
     {
-        config.setProperty(CONFIG_REGION_NAME, region);
+        config.set(CONFIG_REGION_NAME, region);
     }
 
     @Override
     public boolean isMultiDC()
     {
-        return config.getBoolean(CONFIG_MR_ENABLE, false);
+        return config.get(CONFIG_MR_ENABLE, false);
     }
 
     @Override
     public int getMaxBackupUploadThreads()
     {
 
-        return config.getInteger(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
+        return config.get(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
     }
 
     @Override
     public int getMaxBackupDownloadThreads()
     {
-        return config.getInteger(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
+        return config.get(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
     }
 
     @Override
     public boolean isRestoreClosestToken()
     {
-        return config.getBoolean(CONFIG_RESTORE_CLOSEST_TOKEN, false);
+        return config.get(CONFIG_RESTORE_CLOSEST_TOKEN, false);
     }
 
     @Override
     public String getASGName()
     {
-        return config.getProperty(CONFIG_ASG_NAME, "");
+        return config.get(CONFIG_ASG_NAME, "");
     }
-    
+
     @Override
     public String getACLGroupName()
     {
-    	return config.getProperty(CONFIG_ACL_GROUP_NAME, this.getAppName());
+    	return config.get(CONFIG_ACL_GROUP_NAME, this.getAppName());
     }
 
     @Override
     public boolean isIncrBackup()
     {
-        return config.getBoolean(CONFIG_INCR_BK_ENABLE, true);
+        return config.get(CONFIG_INCR_BK_ENABLE, true);
     }
 
     @Override
@@ -590,186 +481,142 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getUploadThrottle()
     {
-        return config.getInteger(CONFIG_THROTTLE_UPLOAD_PER_SECOND, Integer.MAX_VALUE);
+        return config.get(CONFIG_THROTTLE_UPLOAD_PER_SECOND, Integer.MAX_VALUE);
     }
 
     @Override
     public boolean isLocalBootstrapEnabled()
     {
-        return config.getBoolean(CONFIG_LOAD_LOCAL_PROPERTIES, false);
+        return config.get(CONFIG_LOAD_LOCAL_PROPERTIES, false);
     }
 
     @Override
     public int getInMemoryCompactionLimit()
     {
-        return config.getInteger(CONFIG_IN_MEMORY_COMPACTION_LIMIT, 128);
+        return config.get(CONFIG_IN_MEMORY_COMPACTION_LIMIT, 128);
     }
 
     @Override
     public int getCompactionThroughput()
     {
-        return config.getInteger(CONFIG_COMPACTION_THROUHPUT, 8);
+        return config.get(CONFIG_COMPACTION_THROUHPUT, 8);
     }
 
     @Override
     public int getMaxHintWindowInMS()
     {
-        return config.getInteger(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
+        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
     }
 
     public int getHintedHandoffThrottleKb()
     {
-        return config.getInteger(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
+        return config.get(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
     }
 
     public int getMaxHintThreads()
     {
-        return config.getInteger(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
+        return config.get(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
     }
 
     @Override
     public String getBootClusterName()
     {
-        return config.getProperty(CONFIG_BOOTCLUSTER_NAME, "");
+        return config.get(CONFIG_BOOTCLUSTER_NAME, "");
     }
 
     @Override
     public String getSeedProviderName()
     {
-        return config.getProperty(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
+        return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
-    private class PriamProperties extends Properties
-    {
-
-        private static final long serialVersionUID = 1L;
-
-        public int getInteger(String prop, int defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Integer.parseInt(getProperty(prop));
-        }
-
-        public long getLong(String prop, long defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Long.parseLong(getProperty(prop));
-        }
-
-        public boolean getBoolean(String prop, boolean defaultValue)
-        {
-            return getProperty(prop) == null ? defaultValue : Boolean.parseBoolean(getProperty(prop));
-        }
-
-        public List<String> getList(String prop)
-        {
-            if (getProperty(prop) == null)
-                return Lists.newArrayList();
-            return getTrimmedStringList(getProperty(prop).split(","));
-        }
-
-        public List<String> getList(String prop, String defaultValue)
-        {
-            if (getProperty(prop) == null)
-            		return getTrimmedStringList(defaultValue.split(","));
-            return getList(prop);
-        }
-
-    }
-
-    @Override
+  @Override
     /**
      * Defaults to 0, means dont set it in yaml
      */
     public int getMemtableTotalSpaceMB()
     {
-        return config.getInteger(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
+        return config.get(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
     }
 
     @Override
     public int getStreamingThroughputMB()
     {
-        return config.getInteger(CONFIG_STREAMING_THROUGHPUT_MB, 400);
+        return config.get(CONFIG_STREAMING_THROUGHPUT_MB, 400);
     }
 
     @Override
     public boolean getMultithreadedCompaction()
     {
-        return config.getBoolean(CONFIG_MULTITHREADED_COMPACTION, false);
+        return config.get(CONFIG_MULTITHREADED_COMPACTION, false);
     }
 
     public String getPartitioner()
     {
-        return config.getProperty(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
+        return config.get(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
     }
 
     public String getKeyCacheSizeInMB()
     {
-        return config.getProperty(CONFIG_KEYCACHE_SIZE, null);
+        return config.get(CONFIG_KEYCACHE_SIZE);
     }
 
     public String getKeyCacheKeysToSave()
     {
-        return config.getProperty(CONFIG_KEYCACHE_COUNT, null);
+        return config.get(CONFIG_KEYCACHE_COUNT);
     }
 
     public String getRowCacheSizeInMB()
     {
-        return config.getProperty(CONFIG_ROWCACHE_SIZE, null);
+        return config.get(CONFIG_ROWCACHE_SIZE);
     }
 
     public String getRowCacheKeysToSave()
     {
-        return config.getProperty(CONFIG_ROWCACHE_COUNT, null);
-    }
-
-    private List<String> getTrimmedStringList(String[] strings) {
-    		List<String> list = Lists.newArrayList();
-    		for(String s : strings) {
-    			list.add(StringUtils.strip(s));
-    		}
-    		return list;
+        return config.get(CONFIG_ROWCACHE_COUNT);
     }
 
 	@Override
 	public String getCassProcessName() {
-        return config.getProperty(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+        return config.get(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
 	}
 
     public int getNumTokens()
     {
-        return config.getInteger(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
+        return config.get(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
     }
 
     public String getYamlLocation()
     {
-        return config.getProperty(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
+        return config.get(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
     }
 
     public String getAuthenticator()
     {
-        return config.getProperty(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
+        return config.get(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
     }
 
     public String getAuthorizer()
     {
-        return config.getProperty(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
+        return config.get(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
     }
 
 	public String getTargetKSName() {
-		return config.getProperty(CONFIG_TARGET_KEYSPACE_NAME, null);
+		return config.get(CONFIG_TARGET_KEYSPACE_NAME);
 	}
 
 	@Override
 	public String getTargetCFName() {
-		return config.getProperty(CONFIG_TARGET_COLUMN_FAMILY_NAME, null);
+		return config.get(CONFIG_TARGET_COLUMN_FAMILY_NAME);
 	}
 
 	@Override
 	public boolean doesCassandraStartManually() {
-		return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+		return config.get(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
 
     public String getInternodeCompression()
     {
-        return config.getProperty(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
+        return config.get(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
     }
 }

@@ -134,12 +134,10 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             logger.info("Downloading " + path.getRemotePath());
             downloadCount.incrementAndGet();
-            AmazonS3 client = getS3Client();
-            S3Object obj = client.getObject(getPrefix(), path.getRemotePath());
-            long contentLen = obj.getObjectMetadata().getContentLength();
+            final AmazonS3 client = getS3Client();
+            long contentLen = client.getObjectMetadata(getPrefix(), path.getRemotePath()).getContentLength();
             path.setSize(contentLen);
-            IOUtils.closeQuietly(obj.getObjectContent());
-            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);            
+            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(), path);
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
             bytesDownloaded.addAndGet(contentLen);

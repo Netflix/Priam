@@ -441,4 +441,9 @@ public class FakeConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return false;
 	}
+
+    public String getInternodeCompression()
+    {
+        return "all";
+    }
 }

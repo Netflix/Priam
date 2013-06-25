@@ -63,6 +63,7 @@ public class StandardTuner implements CassandraTuner
         map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());
         map.put("authenticator", config.getAuthenticator());
         map.put("authorizer", config.getAuthorizer());
+        map.put("internode_compression", config.getInternodeCompression());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

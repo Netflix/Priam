@@ -360,4 +360,9 @@ public interface IConfiguration
      * @return true/false, if Cassandra needs to be started manually
      */
     public boolean doesCassandraStartManually();
+
+    /**
+     * @return possible values: all, dc, none
+     */
+    public String getInternodeCompression();
 }

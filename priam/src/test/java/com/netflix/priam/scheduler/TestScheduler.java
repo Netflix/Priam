@@ -33,6 +33,7 @@ public class TestScheduler
     }
 
     @Test
+    @Ignore("not sure what this test really does, except test countdown latch and thread context switching")
     public void testSingleInstanceSchedule() throws Exception
     {
         latch = new CountDownLatch(3);

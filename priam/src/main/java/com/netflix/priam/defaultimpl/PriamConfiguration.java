@@ -97,6 +97,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
     private static final String CONFIG_MAX_HINT_THREADS = PRIAM_PRE + ".hints.maxThreads";
     private static final String CONFIG_HINTS_THROTTLE_KB = PRIAM_PRE + ".hints.throttleKb";
+    private static final String CONFIG_INTERNODE_COMPRESSION = PRIAM_PRE + ".internodeCompression";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -146,6 +147,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_VNODE_NUM_TOKENS = 1;
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
+    private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
 
     private final IConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
@@ -612,4 +614,9 @@ public class PriamConfiguration implements IConfiguration
 	public boolean doesCassandraStartManually() {
 		return config.get(CONFIG_CASS_MANUAL_START_ENABLE, false);
 	}
+
+    public String getInternodeCompression()
+    {
+        return config.getProperty(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
+    }
 }

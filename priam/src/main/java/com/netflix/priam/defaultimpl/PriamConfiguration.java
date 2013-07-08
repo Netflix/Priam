@@ -751,4 +751,10 @@ public class PriamConfiguration implements IConfiguration
     public boolean doesCassandraStartManually() {
 	return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
     }
+
+	@Override
+    public void setRestorePrefix(String prefix) {
+	    config.setProperty(CONFIG_RESTORE_PREFIX, prefix);
+	    
+    }
 }

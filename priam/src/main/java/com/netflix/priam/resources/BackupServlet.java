@@ -70,6 +70,7 @@ public class BackupServlet
     private static final String REST_HEADER_TOKEN = "token";
     private static final String REST_HEADER_REGION = "region";
     private static final String REST_KEYSPACES = "keyspaces";
+    private static final String REST_RESTORE_PREFIX = "restoreprefix";
     private static final String FMT = "yyyyMMddHHmm";
 
     private PriamServer priamServer;
@@ -126,7 +127,7 @@ public class BackupServlet
     @GET
     @Path("/restore")
     public Response restore(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token,
-            @QueryParam(REST_KEYSPACES) String keyspaces) throws Exception
+            @QueryParam(REST_KEYSPACES) String keyspaces, @QueryParam(REST_RESTORE_PREFIX) String restorePrefix) throws Exception
     {
         Date startTime;
         Date endTime;
@@ -143,7 +144,18 @@ public class BackupServlet
             startTime = path.parseDate(restore[0]);
             endTime = path.parseDate(restore[1]);
         }
+        
+        String origRestorePrefix = config.getRestorePrefix();
+        if (StringUtils.isNotBlank(restorePrefix))
+        {
+            config.setRestorePrefix(restorePrefix);
+        }
+        
         restore(token, region, startTime, endTime, keyspaces);
+        
+        //Since this call is probably never called in parallel, config is multi-thread safe to be edited
+        config.setRestorePrefix(origRestorePrefix);
+        
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
     

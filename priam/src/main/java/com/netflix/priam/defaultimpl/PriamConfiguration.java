@@ -243,12 +243,18 @@ public class PriamConfiguration implements IConfiguration
     private void populateProps()
     {
     	config = new PriamProperties();
-    	
+        config.put(CONFIG_ASG_NAME, ASG_NAME);
+        config.put(CONFIG_REGION_NAME, REGION);
+        
     	Properties systemProps = System.getProperties();
     	
     	for (Enumeration en = systemProps.propertyNames(); en.hasMoreElements();) 
     	{
             String key = (String) en.nextElement();
+            
+            if (!key.startsWith(PRIAM_PRE))
+            	continue;
+            	
             String value = (String) systemProps.getProperty(key);
             
             if (value != null && !BLANK.equals(value))
@@ -271,9 +277,7 @@ public class PriamConfiguration implements IConfiguration
     	//Or let SimpleDb overrides the properties
         // End point is us-east-1
         AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
-        
-        config.put(CONFIG_ASG_NAME, ASG_NAME);
-        config.put(CONFIG_REGION_NAME, REGION);
+
         String nextToken = null;
         String appid = ASG_NAME.lastIndexOf('-') > 0 ? ASG_NAME.substring(0, ASG_NAME.indexOf('-')): ASG_NAME;
         logger.info(String.format("appid used to fetch properties is: %s",appid));
@@ -746,5 +750,11 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public boolean doesCassandraStartManually() {
 	return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+    }
+
+	@Override
+    public void setRestorePrefix(String prefix) {
+	    config.setProperty(CONFIG_RESTORE_PREFIX, prefix);
+	    
     }
 }

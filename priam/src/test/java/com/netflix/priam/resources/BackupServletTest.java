@@ -100,7 +100,7 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
         assertEquals("[\"ok\"]", response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
@@ -146,7 +146,7 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
         assertEquals("[\"ok\"]", response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
@@ -241,7 +241,7 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
         assertEquals("[\"ok\"]", response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
@@ -285,7 +285,7 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
         assertEquals("[\"ok\"]", response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
@@ -347,7 +347,7 @@ public class BackupServletTest
 
         expectCassandraStartup();
 
-        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces, null);
         assertEquals(200, response.getStatus());
         assertEquals("[\"ok\"]", response.getEntity());
         assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));

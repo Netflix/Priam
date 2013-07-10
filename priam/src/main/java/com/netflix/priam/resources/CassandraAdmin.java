@@ -18,29 +18,18 @@ package com.netflix.priam.resources;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.config.ConfigurationException;
@@ -48,22 +37,12 @@ import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.JMXConnectionException;
-import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Do general operations. Start/Stop and some JMX node tool commands
@@ -107,7 +86,7 @@ public class CassandraAdmin
     @Path("/refresh")
     public Response cassRefresh(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces) throws IOException, ExecutionException, InterruptedException, JSONException
     {
-        logger.info("node tool refresh is being called");
+        logger.debug("node tool refresh is being called");
         if (StringUtils.isBlank(keyspaces))
             return Response.status(400).entity("Missing keyspace in request").build();
         
@@ -133,7 +112,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool info being called");
+        logger.debug("node tool info being called");
         return Response.ok(nodetool.info(), MediaType.APPLICATION_JSON).build();
     }
 
@@ -148,7 +127,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool ring being called");
+        logger.debug("node tool ring being called");
         return Response.ok(nodetool.ring(keyspace), MediaType.APPLICATION_JSON).build();
     }
 
@@ -163,7 +142,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool flush being called");
+        logger.debug("node tool flush being called");
         nodetool.flush();
         return Response.ok().build();
     }
@@ -179,7 +158,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool compact being called");
+        logger.debug("node tool compact being called");
         nodetool.compact();
         return Response.ok().build();
     }
@@ -195,7 +174,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool cleanup being called");
+        logger.debug("node tool cleanup being called");
         nodetool.cleanup();
         return Response.ok().build();
     }
@@ -211,7 +190,7 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        logger.info("node tool repair being called");
+        logger.debug("node tool repair being called");
         nodetool.repair(isSequential);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }

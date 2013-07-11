@@ -41,7 +41,7 @@ public interface IPriamInstanceFactory
      * @param id the node id
      * @return the node with the given {@code id}, or {@code null} if none found
      */
-    public PriamInstance getInstance(String appName, int id);
+    public PriamInstance getInstance(String appName, String dc, int id);
 
     /**
      * Create/Register an instance of the server with its info.

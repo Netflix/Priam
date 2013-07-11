@@ -62,7 +62,7 @@ public class PriamInstanceResourceTest
 
             {
                 config.getAppName(); result = APP_NAME;
-                factory.getInstance(APP_NAME, NODE_ID); result = instance;
+                factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = instance;
                 instance.toString(); result = expected;
             }
         };
@@ -75,7 +75,7 @@ public class PriamInstanceResourceTest
     {
         new Expectations() {{
             config.getAppName(); result = APP_NAME;
-            factory.getInstance(APP_NAME, NODE_ID); result = null;
+            factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = null;
         }};
 
         try
@@ -121,7 +121,7 @@ public class PriamInstanceResourceTest
 
           {
               config.getAppName(); result = APP_NAME;
-              factory.getInstance(APP_NAME, NODE_ID); result = instance;
+              factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = instance;
               factory.delete(instance);
           }
         };
@@ -135,7 +135,7 @@ public class PriamInstanceResourceTest
     {
         new Expectations() {{
             config.getAppName(); result = APP_NAME;
-            factory.getInstance(APP_NAME, NODE_ID); result = null;
+            factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = null;
         }};
 
         try

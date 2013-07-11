@@ -58,7 +58,7 @@ public class SDBInstanceData
     }
     public static final String DOMAIN = "InstanceIdentity";
     public static final String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-    public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.ID + "='%d'";
+    public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s ' and " + Attributes.LOCATION + "='%s ' and " + Attributes.ID + "='%d'";
 
     private final ICredential provider;
     
@@ -75,10 +75,10 @@ public class SDBInstanceData
      * @param id Node ID
      * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
-    public PriamInstance getInstance(String app, int id)
+    public PriamInstance getInstance(String app, String dc, int id)
     {
         AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
-        SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, id));
+        SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0)
             return null;
@@ -223,7 +223,7 @@ public class SDBInstanceData
 
     private String getKey(PriamInstance instance)
     {
-        return instance.getApp() + instance.getId();
+        return instance.getApp() + "_" + instance.getDC() + "_" + instance.getId();
     }
     
     private AmazonSimpleDBClient getSimpleDBClient(){

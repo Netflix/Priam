@@ -132,7 +132,7 @@ public class PriamInstanceResource
      */
     private PriamInstance getByIdIfFound(int id)
     {
-        PriamInstance instance = factory.getInstance(config.getAppName(), id);
+        PriamInstance instance = factory.getInstance(config.getAppName(), config.getDC(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
         }

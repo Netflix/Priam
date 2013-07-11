@@ -26,6 +26,7 @@ import java.util.List;
 @ImplementedBy(PriamConfiguration.class)
 public interface IConfiguration
 {
+	
     public void intialize();
 
     /**
@@ -74,6 +75,12 @@ public interface IConfiguration
      * to the clusters backup
      */
     public String getRestorePrefix();
+    
+    /**
+     * @param prefix
+     *            Set the current restore prefix
+     */
+    public void setRestorePrefix(String prefix);
 
     /**
      * @return List of keyspaces to restore. If none, all keyspaces are

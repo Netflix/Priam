@@ -619,4 +619,10 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.get(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
     }
+
+	@Override
+    public void setRestorePrefix(String prefix) {
+	    config.set(CONFIG_RESTORE_PREFIX, prefix);
+	    
+    }
 }

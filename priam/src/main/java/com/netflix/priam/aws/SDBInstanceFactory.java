@@ -64,9 +64,9 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
     }
 
     @Override
-    public PriamInstance getInstance(String appName, int id)
+    public PriamInstance getInstance(String appName, String dc, int id)
     {
-      return dao.getInstance(appName, id);
+      return dao.getInstance(appName, dc, id);
     }
 
     @Override
@@ -80,7 +80,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
             {
                 try
                 {
-                    PriamInstance oldData = dao.getInstance(app, id);
+                    PriamInstance oldData = dao.getInstance(app, config.getDC(), id);
                     // clean up a very old data...
                     if (null != oldData && oldData.getUpdatetime() < (System.currentTimeMillis() - (3 * 60 * 1000)))
                         dao.deregisterInstance(oldData);

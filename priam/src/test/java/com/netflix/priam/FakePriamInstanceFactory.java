@@ -30,7 +30,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
     }
     
     @Override
-    public PriamInstance getInstance(String appName, int id) {
+    public PriamInstance getInstance(String appName, String dc, int id) {
       return instances.get(id);
     }
 

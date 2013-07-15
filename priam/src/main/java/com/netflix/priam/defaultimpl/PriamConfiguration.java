@@ -104,12 +104,27 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
-    private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
-    private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+    private static final String HOSTNAME;
+    private static final String IP;
     private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
+
+    static {
+      String hostname;
+      String ip;
+      try {
+        hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
+        ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+      } catch (Exception e) {
+        // unable to get public hostname or IP, so set to private
+        hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
+        ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
+      }
+      HOSTNAME = hostname;
+      IP = ip;
+    }
 
     // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
@@ -378,7 +393,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHostname()
     {
-        return PUBLIC_HOSTNAME;
+        return HOSTNAME;
     }
 
     @Override
@@ -475,7 +490,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHostIP()
     {
-        return PUBLIC_IP;
+        return IP;
     }
 
     @Override

@@ -442,6 +442,11 @@ public class FakeConfiguration implements IConfiguration
 		return false;
 	}
 
+    @Override
+    public boolean isVpcRing() {
+        return false;
+    }
+
     public String getInternodeCompression()
     {
         return "all";

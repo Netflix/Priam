@@ -44,7 +44,10 @@ public class SystemUtils
             conn.setConnectTimeout(1000);
             conn.setReadTimeout(1000);
             conn.setRequestMethod("GET");
-            if (conn.getResponseCode() != 200)
+            if (conn.getResponseCode() == 404) {
+                return "";
+            }
+            else if (conn.getResponseCode() != 200)
             {
                 throw new RuntimeException("Unable to get data for URL " + url);
             }

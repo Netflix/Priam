@@ -372,4 +372,10 @@ public interface IConfiguration
      * @return possible values: all, dc, none
      */
     public String getInternodeCompression();
+
+
+    /**
+     * @return true/false, if Cassandra is running in a VPC environment
+     */
+    public boolean isVpcRing();
 }

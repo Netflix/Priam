@@ -106,10 +106,14 @@ public class PriamConfiguration implements IConfiguration
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
     private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+    private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
+    private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
+    private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
+
 
     // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
@@ -378,7 +382,8 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHostname()
     {
-        return PUBLIC_HOSTNAME;
+        if (this.isVpcRing()) return LOCAL_IP;
+        else return PUBLIC_HOSTNAME;
     }
 
     @Override
@@ -475,7 +480,8 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHostIP()
     {
-        return PUBLIC_IP;
+        if (this.isVpcRing()) return LOCAL_IP;
+        else return PUBLIC_IP;
     }
 
     @Override
@@ -625,4 +631,10 @@ public class PriamConfiguration implements IConfiguration
 	    config.set(CONFIG_RESTORE_PREFIX, prefix);
 	    
     }
+
+    @Override
+    public boolean isVpcRing() {
+        return config.get(CONFIG_VPC_RING, false);
+    }
+
 }

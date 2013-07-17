@@ -15,6 +15,12 @@
  */
 package com.netflix.priam.defaultimpl;
 
+import java.net.URL;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
@@ -32,12 +38,6 @@ import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -102,6 +102,11 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ROWCACHE_SIZE = PRIAM_PRE + ".rowCache.size";
     private static final String CONFIG_ROWCACHE_COUNT= PRIAM_PRE + ".rowCache.count";
 
+    private static final String CONFIG_COMMITLOG_BKUP_ENABLED = PRIAM_PRE + ".clbackup.enabled";
+    private static final String CONFIG_COMMITLOG_ARCHIVE_CMD = PRIAM_PRE + ".clbackup.archiveCmd";
+    private static final String CONFIG_COMMITLOG_RESTORE_CMD = PRIAM_PRE + ".clbackup.restoreCmd";
+    private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
+    private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -749,12 +754,42 @@ public class PriamConfiguration implements IConfiguration
 
     @Override
     public boolean doesCassandraStartManually() {
-	return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
+	    return config.getBoolean(CONFIG_CASS_MANUAL_START_ENABLE, false);
     }
 
-	@Override
+    @Override
     public void setRestorePrefix(String prefix) {
 	    config.setProperty(CONFIG_RESTORE_PREFIX, prefix);
 	    
+    }
+
+    @Override
+    public boolean isBackingUpCommitLogs()
+    {
+        return config.getBoolean(CONFIG_COMMITLOG_BKUP_ENABLED, false);
+    }
+
+    @Override
+    public String getCommitLogBackupArchiveCmd()
+    {
+        return config.getProperty(CONFIG_COMMITLOG_ARCHIVE_CMD, "");
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreCmd()
+    {
+        return config.getProperty(CONFIG_COMMITLOG_RESTORE_CMD, "");
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreFromDirs()
+    {
+        return config.getProperty(CONFIG_COMMITLOG_RESTORE_DIRS, "");
+    }
+
+    @Override
+    public String getCommitLogBackupRestorePointInTime()
+    {
+        return config.getProperty(CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME, "");
     }
 }

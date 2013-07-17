@@ -362,4 +362,14 @@ public interface IConfiguration
      * @return true/false, if Cassandra needs to be started manually
      */
     public boolean doesCassandraStartManually();
+
+    public boolean isBackingUpCommitLogs();
+
+    public String getCommitLogBackupArchiveCmd();
+
+    public String getCommitLogBackupRestoreCmd();
+
+    public String getCommitLogBackupRestoreFromDirs();
+
+    public String getCommitLogBackupRestorePointInTime();
 }

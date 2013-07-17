@@ -1,15 +1,14 @@
 package com.netflix.priam.defaultimpl;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -22,6 +21,7 @@ import org.yaml.snakeyaml.Yaml;
 public class StandardTuner implements CassandraTuner
 {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
+    private static final String CL_BACKUP_PROPS_FILE = "/conf/commitlog_archiving.properties";
     protected final IConfiguration config;
 
     @Inject
@@ -30,7 +30,7 @@ public class StandardTuner implements CassandraTuner
         this.config = config;
     }
 
-    public void updateYaml(String yamlLocation, String hostname, String seedProvider) throws IOException
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException
     {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
@@ -75,6 +75,8 @@ public class StandardTuner implements CassandraTuner
 
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
+
+        configureCommitLogBackups();
     }
 
     /**
@@ -124,6 +126,28 @@ public class StandardTuner implements CassandraTuner
         if(lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
             return fromConfig;
         return fromYaml;
+    }
+
+    protected void configureCommitLogBackups() throws IOException
+    {
+        if(!config.isBackingUpCommitLogs())
+            return;
+        Properties props = new Properties();
+        props.put("archive_command", config.getCommitLogBackupArchiveCmd());
+        props.put("restore_command", config.getCommitLogBackupRestoreCmd());
+        props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
+        props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
+
+        FileOutputStream fos = null;
+        try
+        {
+            fos = new FileOutputStream(new File(config.getCassHome() + CL_BACKUP_PROPS_FILE));
+            props.store(fos, "cassandra commit log archive props, as written by priam");
+        }
+        finally
+        {
+            IOUtils.closeQuietly(fos);
+        }
     }
 
     public void updateAutoBootstrap(String yamlFile, boolean autobootstrap) throws IOException

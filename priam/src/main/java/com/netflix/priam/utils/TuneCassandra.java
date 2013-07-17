@@ -39,7 +39,7 @@ public class TuneCassandra extends Task
 
     public void execute() throws IOException
     {
-        tuner.updateYaml(config.getYamlLocation(), null, config.getSeedProviderName());
+        tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
     }
 
     @Override

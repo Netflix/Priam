@@ -66,7 +66,7 @@ public class SSTableLoaderWrapper
         Files.copy(sourceFile, targetFile);
         
         logger.info("Trying to load the yaml file from: " + targetFile);
-        tuner.updateYaml(targetFile.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
+        tuner.writeAllProperties(targetFile.getPath(), "localhost", "org.apache.cassandra.locator.SimpleSeedProvider");
         System.setProperty("cassandra.config", "file:"+ targetFile.getPath());
     }
 

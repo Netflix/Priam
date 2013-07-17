@@ -37,9 +37,9 @@ public class DseTuner extends StandardTuner
         this.dseConfig = dseConfig;
     }
 
-    public void updateYaml(String yamlLocation, String hostname, String seedProvider) throws IOException
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException
     {
-        super.updateYaml(yamlLocation, hostname, seedProvider);
+        super.writeAllProperties(yamlLocation, hostname, seedProvider);
         writeDseYaml();
         writeCassandraSnitchProperties();
     }

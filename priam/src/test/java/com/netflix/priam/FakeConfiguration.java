@@ -431,6 +431,36 @@ public class FakeConfiguration implements IConfiguration
     
     @Override
     public boolean doesCassandraStartManually() {
-	return false;
+    	return false;
+    }
+
+    @Override
+    public boolean isBackingUpCommitLogs()
+    {
+        return false;
+    }
+
+    @Override
+    public String getCommitLogBackupArchiveCmd()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreCmd()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreFromDirs()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestorePointInTime()
+    {
+        return null;
     }
 }

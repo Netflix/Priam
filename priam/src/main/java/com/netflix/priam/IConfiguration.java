@@ -382,4 +382,9 @@ public interface IConfiguration
     public String getCommitLogBackupRestoreFromDirs();
 
     public String getCommitLogBackupRestorePointInTime();
+
+    /**
+     * @return true/false, if Cassandra is running in a VPC environment
+     */
+    public boolean isVpcRing();
 }

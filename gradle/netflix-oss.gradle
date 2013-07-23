@@ -7,11 +7,6 @@ rootProject {
             return
         }
         def deps = compileConf.dependencies
-        def httpCoreDep = deps.find { it.group == 'org.apache.httpcomponents' && it.name == 'httpcore' }
-        if (httpCoreDep != null) {
-            deps.remove(httpCoreDep)
-            project.dependencies.add('compile', "org.apache.httpcomponents:httpcore:4.1.2")
-        }
 
         def cassDep = deps.find { it.group == 'org.apache.cassandra' && it.name == 'cassandra-all' }
         if (cassDep != null) {

@@ -24,6 +24,7 @@ import java.util.Properties;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -117,16 +118,31 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
-    private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
-    private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
-    private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
-    private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
+    private static final String PUBLIC_HOSTNAME;
+    private static final String PUBLIC_IP;
+    private static final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
+    private static final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
 
+
+    static {
+      String hostname;
+      String ip;
+      try {
+        hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
+        ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+      } catch (Exception e) {
+        // unable to get public hostname or IP, so set to empty.  #intialize should validate this is ok
+        hostname = "";
+        ip = "";
+      }
+      PUBLIC_HOSTNAME = hostname;
+      PUBLIC_IP = ip;
+    }
 
     // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
@@ -189,6 +205,11 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getCommitLogLocation());
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
+
+        // #isVpcRing should be usable by now, so verify that when not in VPC PUBLIC_* are defined
+        if(!isVpcRing() && (Strings.isNullOrEmpty(PUBLIC_HOSTNAME) || Strings.isNullOrEmpty(PUBLIC_IP))) {
+          throw new IllegalStateException("Cluster is not in VPC mode, so public hostname and public ip are mandatory");
+        }
     }
 
     private void setupEnvVars()
@@ -395,6 +416,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getHostname()
     {
+        //TODO shouldn't this be LOCAL_HOSTNAME?
         if (this.isVpcRing()) return LOCAL_IP;
         else return PUBLIC_HOSTNAME;
     }

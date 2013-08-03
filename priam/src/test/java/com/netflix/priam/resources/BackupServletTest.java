@@ -195,7 +195,7 @@ public class BackupServletTest
 //  
 //                config.setDC(oldRegion);
 //                instance.setToken(oldToken);
-//                tuneCassandra.updateYaml(false);
+//                tuneCassandra.writeAllProperties(false);
 //            }
 //        };
 //

@@ -18,24 +18,10 @@ package com.netflix.priam.resources;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
@@ -44,19 +30,20 @@ import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.IncrementalRestore;
-import com.netflix.priam.backup.MetaData;
-import com.netflix.priam.backup.Restore;
-import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
+import org.apache.commons.lang.StringUtils;
+import org.codehaus.jettison.json.JSONArray;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -170,7 +157,7 @@ public class BackupServlet
 
     @GET
     @Path("/list")
-    public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) String filter) throws Exception
+    public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception
     {
         Date startTime;
         Date endTime;
@@ -291,17 +278,15 @@ public class BackupServlet
     private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
     {
 		int fileCnt = 0;
-		filter = filter.contains("?") ? filter
-				.substring(0, filter.indexOf("?")) : filter;
+		filter = filter.contains("?") ? filter.substring(0, filter.indexOf("?")) : filter;
 
 		try {
 			JSONArray jArray = new JSONArray();
 			while (it.hasNext()) {
-				JSONObject backupJSON = new JSONObject();
 				AbstractBackupPath p = it.next();
-				if (filter != null
-						&& BackupFileType.valueOf(filter) != p.getType())
+				if (filter != null && BackupFileType.valueOf(filter) != p.getType())
 					continue;
+                JSONObject backupJSON = new JSONObject();
 				backupJSON.put("bucket", config.getBackupPrefix());
 				backupJSON.put("filename", p.getRemotePath());
 				backupJSON.put("app", p.getClusterName());

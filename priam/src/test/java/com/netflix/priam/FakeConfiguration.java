@@ -442,8 +442,43 @@ public class FakeConfiguration implements IConfiguration
 		return false;
 	}
 
+    @Override
+    public boolean isVpcRing() {
+        return false;
+    }
+
     public String getInternodeCompression()
     {
         return "all";
+    }
+
+    @Override
+    public boolean isBackingUpCommitLogs()
+    {
+        return false;
+    }
+
+    @Override
+    public String getCommitLogBackupArchiveCmd()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreCmd()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestoreFromDirs()
+    {
+        return null;
+    }
+
+    @Override
+    public String getCommitLogBackupRestorePointInTime()
+    {
+        return null;
     }
 }

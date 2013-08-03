@@ -680,4 +680,21 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_VPC_RING, false);
     }
 
+    @Override
+    public void setRestoreKeySpaces(List<String> keyspaces)
+    {
+        if (keyspaces == null)
+           return;
+
+        StringBuilder sb = new StringBuilder();
+        for(int i=0; i<keyspaces.size(); i++)
+        {
+           if (i>0)
+               sb.append(",");
+
+           sb.append(keyspaces.get(i));
+        }
+
+        config.set(CONFIG_RESTORE_KEYSPACES, sb.toString());
+    }
 }

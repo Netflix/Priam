@@ -481,4 +481,9 @@ public class FakeConfiguration implements IConfiguration
     {
         return null;
     }
+
+    public void setRestoreKeySpaces(List<String> keyspaces) {
+            // TODO Auto-generated method stub
+
+    }
 }

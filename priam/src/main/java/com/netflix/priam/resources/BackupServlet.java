@@ -141,8 +141,10 @@ public class BackupServlet
         restore(token, region, startTime, endTime, keyspaces);
         
         //Since this call is probably never called in parallel, config is multi-thread safe to be edited
-        config.setRestorePrefix(origRestorePrefix);
-        
+        if (origRestorePrefix != null)
+                config.setRestorePrefix(origRestorePrefix);       
+        else    config.setRestorePrefix(""); 
+
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
     
@@ -265,13 +267,10 @@ public class BackupServlet
      */
     private void setRestoreKeyspaces(String keyspaces)
     {
-        List<String> list = config.getRestoreKeySpaces();
-        list.clear();
-        if (keyspaces != null)
+        if (StringUtils.isNotBlank(keyspaces))
         {
-            logger.info("Restoring keyspaces: " + keyspaces);
-            List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
-            list.addAll(newKeyspaces);
+                 List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
+                 config.setRestoreKeySpaces(newKeyspaces);
         }
     }
     

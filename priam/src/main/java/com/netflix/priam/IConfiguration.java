@@ -387,4 +387,7 @@ public interface IConfiguration
      * @return true/false, if Cassandra is running in a VPC environment
      */
     public boolean isVpcRing();
+
+    public void setRestoreKeySpaces(List<String> keyspaces);
+
 }

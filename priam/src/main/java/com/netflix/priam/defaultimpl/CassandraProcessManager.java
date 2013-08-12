@@ -63,15 +63,19 @@ public class CassandraProcessManager implements ICassandraProcess
         startCass.redirectErrorStream(true);
         Process starter = startCass.start();
         logger.info("Starting cassandra server ....");
+        try
+        {
+        		sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
+        		int code = starter.exitValue();
+        		if (code == 0)
+        			logger.info("Cassandra server has been started");
+        		else
+        			logger.error("Unable to start cassandra server. Error code: {}", code);
 
-        sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
-        int code = starter.exitValue();
-        if (code == 0)
-            logger.info("Cassandra server has been started");
-        else
-            logger.error("Unable to start cassandra server. Error code: {}", code);
-
-        logProcessOutput(starter);
+        		logProcessOutput(starter);
+        } catch (Exception e)
+        {
+        }
     }
 
     protected List<String> getStartCommand()

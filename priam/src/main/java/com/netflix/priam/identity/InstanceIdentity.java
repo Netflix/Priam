@@ -217,14 +217,14 @@ public class InstanceIdentity
             if (membership.getRacMembershipSize() != locMap.get(myInstance.getRac()).size())
                 return seeds;
             // If seed node, return the next node in the list
-            if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostIP().equals(myInstance.getHostIP()))
-                seeds.add(locMap.get(myInstance.getRac()).get(1).getHostIP());
+            if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostName().equals(myInstance.getHostName()))
+                seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
         }
         for (String loc : locMap.keySet())
         {
         		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
         		if (instance != null)
-        			seeds.add(instance.getHostIP());
+        			seeds.add(instance.getHostName());
         }
         return seeds;
     }
@@ -232,8 +232,8 @@ public class InstanceIdentity
     public boolean isSeed()
     {
         populateRacMap();
-        String ip = locMap.get(myInstance.getRac()).get(0).getHostIP();
-        return myInstance.getHostIP().equals(ip);
+        String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
+        return myInstance.getHostName().equals(ip);
     }
     
     public boolean isReplace(){

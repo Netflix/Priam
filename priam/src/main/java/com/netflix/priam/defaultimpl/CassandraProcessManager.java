@@ -74,7 +74,9 @@ public class CassandraProcessManager implements ICassandraProcess
 						code);
 
 			logProcessOutput(starter);
-		} catch (Exception e) {
+		} catch (Exception e) 
+                {
+                     logger.warn("Starting Cassandra has an error", e);
 		}
     }
 

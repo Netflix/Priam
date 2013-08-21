@@ -218,13 +218,23 @@ public class InstanceIdentity
                 return seeds;
             // If seed node, return the next node in the list
             if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostIP().equals(myInstance.getHostIP()))
-                seeds.add(locMap.get(myInstance.getRac()).get(1).getHostIP());
+            {	
+            	if (config.isMultiDC())
+            		seeds.add(locMap.get(myInstance.getRac()).get(1).getHostIP());
+            	else 
+            		seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
+            }
         }
         for (String loc : locMap.keySet())
         {
         		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
         		if (instance != null)
-        			seeds.add(instance.getHostIP());
+        		{
+        			if (config.isMultiDC())
+        			   seeds.add(instance.getHostIP());
+        			else
+        			   seeds.add(instance.getHostName());
+        		}
         }
         return seeds;
     }

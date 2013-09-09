@@ -111,6 +111,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMMITLOG_RESTORE_CMD = PRIAM_PRE + ".clbackup.restoreCmd";
     private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
     private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
+    private static final String CONFIG_CLIENT_SSL_ENABLED = PRIAM_PRE + ".client.sslEnabled";
+    private static final String CONFIG_INTERNODE_ENCRYPTION = PRIAM_PRE + ".internodeEncryption";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -696,5 +698,15 @@ public class PriamConfiguration implements IConfiguration
         }
 
         config.set(CONFIG_RESTORE_KEYSPACES, sb.toString());
+    }
+
+    public boolean isClientSslEnabled()
+    {
+        return config.get(CONFIG_CLIENT_SSL_ENABLED, false);
+    }
+
+   public String getInternodeEncryption()
+    {
+        return config.get(CONFIG_INTERNODE_ENCRYPTION, "none");
     }
 }

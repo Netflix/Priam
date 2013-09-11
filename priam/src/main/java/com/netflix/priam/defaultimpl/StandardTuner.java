@@ -69,6 +69,7 @@ public class StandardTuner implements CassandraTuner
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);
 
+        configfureSecurity(map);
         configureGlobalCaches(config, map);
         //force to 1 until vnodes are properly supported
 	    map.put("num_tokens", 1);
@@ -126,6 +127,17 @@ public class StandardTuner implements CassandraTuner
         if(lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
             return fromConfig;
         return fromYaml;
+    }
+
+    protected void configfureSecurity(Map map)
+    {
+        //the client-side ssl settings
+        Map clientEnc = (Map) map.get("client_encryption_options");
+        clientEnc.put("enabled", config.isClientSslEnabled());
+
+        //the server-side (internode) ssl settings
+        Map serverEnc = (Map)map.get("server_encryption_options");
+        serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
     protected void configureCommitLogBackups() throws IOException

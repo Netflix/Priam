@@ -274,8 +274,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getCassHome()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "/tmp/priam";
     }
 
     @Override

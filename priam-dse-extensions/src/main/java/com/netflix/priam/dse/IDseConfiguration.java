@@ -1,5 +1,7 @@
 package com.netflix.priam.dse;
 
+import java.util.Set;
+
 /**
  * Datastax Enterprise-specific properties.
  *
@@ -42,4 +44,19 @@ public interface IDseConfiguration
     String getDseDelegatingSnitch();
 
     NodeType getNodeType();
+
+    /* audit log configuration */
+
+    boolean isAuditLogEnabled();
+
+    /** @return comma-delimited list of keyspace names  */
+    String getAuditLogExemptKeyspaces();
+
+    /**
+     * DSE-defined audit logging categories
+     * http://www.datastax.com/docs/datastax_enterprise3.1/security/data_auditing#data-auditing
+     */
+    public enum AuditLogCategory { ADMIN, ALL, AUTH, DML, DDL, DCL, QUERY };
+
+    Set<AuditLogCategory> getAuditLogCategories();
 }

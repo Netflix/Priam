@@ -113,6 +113,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
     private static final String CONFIG_CLIENT_SSL_ENABLED = PRIAM_PRE + ".client.sslEnabled";
     private static final String CONFIG_INTERNODE_ENCRYPTION = PRIAM_PRE + ".internodeEncryption";
+    private static final String CONFIG_DSNITCH_ENABLED = PRIAM_PRE + ".dsnitchEnabled";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -708,5 +709,10 @@ public class PriamConfiguration implements IConfiguration
    public String getInternodeEncryption()
     {
         return config.get(CONFIG_INTERNODE_ENCRYPTION, "none");
+    }
+
+    public boolean isDynamicSnitchEnabled()
+    {
+        return config.get(CONFIG_DSNITCH_ENABLED, true);
     }
 }

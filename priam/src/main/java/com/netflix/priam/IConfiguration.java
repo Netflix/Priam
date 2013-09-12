@@ -393,4 +393,6 @@ public interface IConfiguration
     public boolean isClientSslEnabled();
 
     public String getInternodeEncryption();
+
+    public boolean isDynamicSnitchEnabled();
 }

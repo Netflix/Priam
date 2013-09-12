@@ -500,4 +500,9 @@ public class FakeConfiguration implements IConfiguration
     {
         return "all";
     }
+
+    public boolean isDynamicSnitchEnabled()
+    {
+        return true;
+    }
 }

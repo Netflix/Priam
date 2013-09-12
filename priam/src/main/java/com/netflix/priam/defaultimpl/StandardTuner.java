@@ -64,6 +64,7 @@ public class StandardTuner implements CassandraTuner
         map.put("authenticator", config.getAuthenticator());
         map.put("authorizer", config.getAuthorizer());
         map.put("internode_compression", config.getInternodeCompression());
+        map.put("dynamic_snitch", config.isDynamicSnitchEnabled());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

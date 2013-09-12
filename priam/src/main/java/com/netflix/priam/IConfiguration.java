@@ -136,6 +136,11 @@ public interface IConfiguration
     public int getThriftPort();
 
     /**
+     * @return Port for CQL binary transport.
+     */
+    public int getNativeTransportPort();
+
+    /**
      * @return Snitch to be used in cassandra.yaml
      */
     public String getSnitch();
@@ -395,4 +400,8 @@ public interface IConfiguration
     public String getInternodeEncryption();
 
     public boolean isDynamicSnitchEnabled();
+
+    public boolean isThriftEnabled();
+
+    public boolean isNativeTransportEnabled();
 }

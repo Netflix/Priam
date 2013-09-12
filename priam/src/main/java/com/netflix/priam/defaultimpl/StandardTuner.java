@@ -40,7 +40,10 @@ public class StandardTuner implements CassandraTuner
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
+        map.put("start_rpc", config.isThriftEnabled());
         map.put("rpc_port", config.getThriftPort());
+        map.put("start_native_transport", config.isNativeTransportEnabled());
+        map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         //Dont bootstrap in restore mode

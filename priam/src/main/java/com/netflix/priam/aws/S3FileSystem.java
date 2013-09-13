@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import org.apache.commons.io.IOUtils;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import org.apache.commons.io.IOUtils;
@@ -184,6 +185,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         {
             new S3PartUploader(s3Client, part, partETags).abortUpload();
             throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
+        } finally {
+            IOUtils.closeQuietly(in);
         }
     }
 

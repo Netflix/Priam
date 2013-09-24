@@ -157,7 +157,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
         long chunkSize = config.getBackupChunkSize();
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
-        logger.info(String.format("Uploading to %s with chunk size %d", path.getRemotePath(), chunkSize));
+        logger.info(String.format("Uploading to %s/%s with chunk size %d", config.getBackupPrefix(), path.getRemotePath(), chunkSize));
         try
         {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);

@@ -21,19 +21,18 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -42,6 +41,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.ThreadSleeper;
 
 /**
  * Main class for restoring data from backup
@@ -155,6 +155,19 @@ public class Restore extends AbstractRestore
         // Download incrementals (SST).
         Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.time, endTime);
         download(incrementals, BackupFileType.SST);
+        
+        //Downloading CommitLogs
+        if (this.config.isBackingUpCommitLogs())  //TODO: will change to isRestoringCommitLogs()
+        {
+        	Iterator<AbstractBackupPath> commitLogs = fs.list(prefix, meta.time, endTime);        	
+        	logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
+        	SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
+        	     
+        	logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
+        	SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
+       	
+        	download(commitLogs, BackupFileType.CL);       	
+        }
     }
 
     public static TaskTimer getTimer()

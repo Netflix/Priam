@@ -102,6 +102,12 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public int getNativeTransportPort()
+    {
+        return 9042;
+    }
+
+    @Override
     public String getSnitch()
     {
         return "org.apache.cassandra.locator.SimpleSnitch";
@@ -504,5 +510,15 @@ public class FakeConfiguration implements IConfiguration
     public boolean isDynamicSnitchEnabled()
     {
         return true;
+    }
+
+    public boolean isThriftEnabled()
+    {
+        return true;
+    }
+
+    public boolean isNativeTransportEnabled()
+    {
+        return false;
     }
 }

@@ -6,10 +6,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
+import junit.framework.Assert;
+
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.google.inject.Guice;
@@ -18,7 +19,6 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
-import junit.framework.Assert;
 
 public class TestRestore
 {

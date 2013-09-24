@@ -42,6 +42,7 @@ import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
+import org.mortbay.log.Log;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -138,6 +139,8 @@ public class BackupServlet
             config.setRestorePrefix(restorePrefix);
         }
         
+        logger.info("Parameters: { token: [%s], region: [%s], startTime: [%s], endTime: [%s], keyspaces: [%s], restorePrefix: [%s]}", token, region, startTime, endTime, keyspaces, restorePrefix);
+        
         restore(token, region, startTime, endTime, keyspaces);
         
         //Since this call is probably never called in parallel, config is multi-thread safe to be edited
@@ -176,6 +179,9 @@ public class BackupServlet
             startTime = path.parseDate(restore[0]);
             endTime = path.parseDate(restore[1]);
         }
+        
+        logger.info("Parameters: {backupPrefix: [%s], daterange: [%s], filter: [%s]}", config.getBackupPrefix(), daterange, filter);
+        
         Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
         object = constructJsonResponse(object,it,filter);

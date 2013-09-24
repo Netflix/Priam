@@ -660,19 +660,19 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getCommitLogBackupArchiveCmd()
     {
-        return config.get(CONFIG_COMMITLOG_ARCHIVE_CMD, "");
+        return config.get(CONFIG_COMMITLOG_ARCHIVE_CMD, "/bin/ln %path /mnt/data/backup/%name");
     }
 
     @Override
     public String getCommitLogBackupRestoreCmd()
     {
-        return config.get(CONFIG_COMMITLOG_RESTORE_CMD, "");
+        return config.get(CONFIG_COMMITLOG_RESTORE_CMD, "/bin/mv %from %to");
     }
 
     @Override
     public String getCommitLogBackupRestoreFromDirs()
     {
-        return config.get(CONFIG_COMMITLOG_RESTORE_DIRS, "");
+        return config.get(CONFIG_COMMITLOG_RESTORE_DIRS, "/mnt/data/backup/commitlog/");
     }
 
     @Override

@@ -68,8 +68,13 @@ public abstract class AbstractRestore extends Task
             AbstractBackupPath temp = fsIterator.next();
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
+            
             if (temp.getType() == filter)
-                download(temp, temp.newRestoreFile());
+            {   
+            	File localFileHandler = temp.newRestoreFile();
+            	logger.info("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+                download(temp, localFileHandler);
+            }   
         }
         waitToComplete();
     }

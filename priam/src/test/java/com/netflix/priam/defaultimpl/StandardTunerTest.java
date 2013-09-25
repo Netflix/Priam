@@ -1,8 +1,13 @@
 package com.netflix.priam.defaultimpl;
 
+import java.io.File;
+import java.io.IOException;
+
+import com.google.common.io.Files;
+import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
-
 import static org.junit.Assert.assertEquals;
 
 public class StandardTunerTest
@@ -13,12 +18,15 @@ public class StandardTunerTest
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
+    private IConfiguration config;
     private StandardTuner tuner;
 
     @Before
     public void setup()
     {
-        tuner = new StandardTuner(null);
+
+        config = new FakeConfiguration();
+        tuner = new StandardTuner(config);
     }
 
     @Test
@@ -61,5 +69,13 @@ public class StandardTunerTest
     {
         String partitioner = tuner.derivePartitioner(RANDOM_PARTITIONER, BOP_PARTITIONER);
         assertEquals(BOP_PARTITIONER, partitioner);
+    }
+
+    @Test
+    public void dump() throws IOException
+    {
+        String target = "/tmp/priam_test.yaml";
+        Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File("/tmp/priam_test.yaml"));
+        tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
     }
 }

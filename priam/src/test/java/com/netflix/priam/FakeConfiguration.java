@@ -20,6 +20,11 @@ public class FakeConfiguration implements IConfiguration
     public String instance_id;
     public String restorePrefix;
 
+    public FakeConfiguration()
+    {
+        this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
+    }
+
     public FakeConfiguration(String region, String appName, String zone, String ins_id)
     {
         this.region = region;
@@ -94,6 +99,12 @@ public class FakeConfiguration implements IConfiguration
     public int getThriftPort()
     {
         return 9160;
+    }
+
+    @Override
+    public int getNativeTransportPort()
+    {
+        return 9042;
     }
 
     @Override
@@ -269,8 +280,7 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getCassHome()
     {
-        // TODO Auto-generated method stub
-        return null;
+        return "/tmp/priam";
     }
 
     @Override
@@ -483,7 +493,36 @@ public class FakeConfiguration implements IConfiguration
     }
 
     public void setRestoreKeySpaces(List<String> keyspaces) {
-            // TODO Auto-generated method stub
+            
+    }
 
+	@Override
+	public int maxCommitLogsRestore() {
+		return 0;
+	}
+
+    public boolean isClientSslEnabled()
+    {
+        return true;
+    }
+
+    public String getInternodeEncryption()
+    {
+        return "all";
+    }
+
+    public boolean isDynamicSnitchEnabled()
+    {
+        return true;
+    }
+
+    public boolean isThriftEnabled()
+    {
+        return true;
+    }
+
+    public boolean isNativeTransportEnabled()
+    {
+        return false;
     }
 }

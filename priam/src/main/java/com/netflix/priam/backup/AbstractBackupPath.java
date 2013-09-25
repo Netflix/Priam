@@ -133,15 +133,24 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public File newRestoreFile()
     {
         StringBuffer buff = new StringBuffer();
-        buff.append(config.getDataFileLocation()).append(PATH_SEP);
-        if (type != BackupFileType.META)
+        if (type == BackupFileType.CL)
         {
+        	buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
+        } else 
+        {
+        
+        	buff.append(config.getDataFileLocation()).append(PATH_SEP);
+        	if (type != BackupFileType.META)
+        	{
         		if(isCassandra1_0)
         			buff.append(keyspace).append(PATH_SEP);
         		else
         			buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
+        	}
         }
+        	
         buff.append(fileName);
+        
         File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());
         if (!parent.exists())

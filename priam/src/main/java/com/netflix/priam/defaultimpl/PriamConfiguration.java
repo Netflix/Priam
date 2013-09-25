@@ -15,11 +15,7 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import java.net.URL;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -35,8 +31,6 @@ import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -58,7 +52,10 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
     private static final String CONFIG_NEW_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.newgen.size.";
     private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = PRIAM_PRE + ".direct.memory.size.";
-    private static final String CONFIG_THRIFT_LISTERN_PORT_NAME = PRIAM_PRE + ".thrift.port";
+    private static final String CONFIG_THRIFT_LISTEN_PORT_NAME = PRIAM_PRE + ".thrift.port";
+    private static final String CONFIG_THRIFT_ENABLED = PRIAM_PRE + ".thrift.enabled";
+    private static final String CONFIG_NATIVE_PROTOCOL_PORT = PRIAM_PRE + ".nativeTransport.port";
+    private static final String CONFIG_NATIVE_PROTOCOL_ENABLED = PRIAM_PRE + ".nativeTransport.enabled";
     private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".storage.port";
     private static final String CONFIG_SSL_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".ssl.storage.port";
     private static final String CONFIG_CL_BK_LOCATION = PRIAM_PRE + ".backup.commitlog.location";
@@ -111,6 +108,10 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMMITLOG_RESTORE_CMD = PRIAM_PRE + ".clbackup.restoreCmd";
     private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
     private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
+    private static final String CONFIG_COMMITLOG_RESTORE_MAX = PRIAM_PRE + ".clrestore.max";
+    private static final String CONFIG_CLIENT_SSL_ENABLED = PRIAM_PRE + ".client.sslEnabled";
+    private static final String CONFIG_INTERNODE_ENCRYPTION = PRIAM_PRE + ".internodeEncryption";
+    private static final String CONFIG_DSNITCH_ENABLED = PRIAM_PRE + ".dsnitchEnabled";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -154,6 +155,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
+    private final int DEFAULT_NATIVE_PROTOCOL_PORT = 9042;
     private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_SSL_STORAGE_PORT = 7001;
     private final int DEFAULT_BACKUP_HOUR = 12;
@@ -350,10 +352,15 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
     }
 
+    public int getNativeTransportPort()
+    {
+        return config.get(CONFIG_NATIVE_PROTOCOL_PORT, DEFAULT_NATIVE_PROTOCOL_PORT);
+    }
+
     @Override
     public int getThriftPort()
     {
-        return config.get(CONFIG_THRIFT_LISTERN_PORT_NAME, DEFAULT_THRIFT_PORT);
+        return config.get(CONFIG_THRIFT_LISTEN_PORT_NAME, DEFAULT_THRIFT_PORT);
     }
 
     @Override
@@ -654,19 +661,19 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getCommitLogBackupArchiveCmd()
     {
-        return config.get(CONFIG_COMMITLOG_ARCHIVE_CMD, "");
+        return config.get(CONFIG_COMMITLOG_ARCHIVE_CMD, "/bin/ln %path /mnt/data/backup/%name");
     }
 
     @Override
     public String getCommitLogBackupRestoreCmd()
     {
-        return config.get(CONFIG_COMMITLOG_RESTORE_CMD, "");
+        return config.get(CONFIG_COMMITLOG_RESTORE_CMD, "/bin/mv %from %to");
     }
 
     @Override
     public String getCommitLogBackupRestoreFromDirs()
     {
-        return config.get(CONFIG_COMMITLOG_RESTORE_DIRS, "");
+        return config.get(CONFIG_COMMITLOG_RESTORE_DIRS, "/mnt/data/backup/commitlog/");
     }
 
     @Override
@@ -675,6 +682,12 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME, "");
     }
 
+    @Override
+    public int maxCommitLogsRestore()
+    {
+    	return config.get(CONFIG_COMMITLOG_RESTORE_MAX, 10);
+    }
+    
     @Override
     public boolean isVpcRing() {
         return config.get(CONFIG_VPC_RING, false);
@@ -696,5 +709,30 @@ public class PriamConfiguration implements IConfiguration
         }
 
         config.set(CONFIG_RESTORE_KEYSPACES, sb.toString());
+    }
+
+    public boolean isClientSslEnabled()
+    {
+        return config.get(CONFIG_CLIENT_SSL_ENABLED, false);
+    }
+
+   public String getInternodeEncryption()
+    {
+        return config.get(CONFIG_INTERNODE_ENCRYPTION, "none");
+    }
+
+    public boolean isDynamicSnitchEnabled()
+    {
+        return config.get(CONFIG_DSNITCH_ENABLED, true);
+    }
+
+    public boolean isThriftEnabled()
+    {
+        return config.get(CONFIG_THRIFT_ENABLED, true);
+    }
+
+    public boolean isNativeTransportEnabled()
+    {
+        return config.get(CONFIG_NATIVE_PROTOCOL_ENABLED, false);
     }
 }

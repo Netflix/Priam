@@ -53,14 +53,19 @@ public class SnapshotBackup extends AbstractBackup
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private final long WAIT_TIME_MS = 60 * 1000 * 10;
+    private final CommitLogBackup clBackup;
+    
 
     @Inject
-    public SnapshotBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, MetaData metaData)
+    public SnapshotBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, 
+    		              MetaData metaData, CommitLogBackup clBackup)
     {
         super(config, fs, pathFactory);
         this.metaData = metaData;
+        this.clBackup = clBackup;
     }
 
+    
     @Override
     public void execute() throws Exception
     {
@@ -106,15 +111,16 @@ public class SnapshotBackup extends AbstractBackup
             logger.info("Snapshot upload complete for " + snapshotName);
             
             if(snapshotRemotePaths.size() > 0)
-            	{
-            		notifyObservers();
-            	}
+            {
+            	notifyObservers();
+            }
+         
         }
         finally
         {
             try
             {
-                clearSnapshot(snapshotName);
+                clearSnapshot(snapshotName);  
             }
             catch (Exception e)
             {

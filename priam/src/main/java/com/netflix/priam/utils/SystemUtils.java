@@ -19,8 +19,11 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
+
+import org.apache.cassandra.utils.FBUtilities;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -154,10 +157,11 @@ public class SystemUtils
         {
             tool.close();
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             logger.warn("failed to close jxm node tool", e);
         }
+       
     }
 
     public static void closeQuietly(JMXConnector jmc)
@@ -166,9 +170,10 @@ public class SystemUtils
         {
             jmc.close();
         }
-        catch (IOException e)
+        catch (Exception e)
         {
             logger.warn("failed to close JMXConnector", e);
         }
-    }
+    }   
+    
 }

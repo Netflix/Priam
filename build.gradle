@@ -51,19 +51,19 @@ subprojects {
         compile "com.sun.jersey:jersey-bundle:1.9.1"
         compile "com.sun.jersey.contribs:jersey-guice:1.9.1"
         compile "com.google.inject.extensions:guice-servlet:3.0"
-	compile "com.google.code.findbugs:jsr305:1.3.9"
+        compile "com.google.code.findbugs:jsr305:1.3.9"
         compile "org.quartz-scheduler:quartz:1.7.3"
         compile "com.googlecode.json-simple:json-simple:1.1"
         compile "org.xerial.snappy:snappy-java:1.0.5-M3"
         compile "org.yaml:snakeyaml:1.10"
-        compile "org.apache.cassandra:cassandra-all:[1.2.0,2.0["
+        compile "org.apache.cassandra:cassandra-all:[1.2.0,1.2.8["
         compile "javax.ws.rs:jsr311-api:1.1.1"
         compile "joda-time:joda-time:2.0"
         compile "commons-configuration:commons-configuration:1.5"
         compile "xerces:xercesImpl:2.4.0"
         compile "net.java.dev.jna:jna:3.2.3"
-	compile "org.apache.httpcomponents:httpclient:4.2.2"
-	compile "org.apache.httpcomponents:httpcore:4.2.2"
+        compile "org.apache.httpcomponents:httpclient:4.2.2"
+        compile "org.apache.httpcomponents:httpcore:4.2.2"
         compile "com.ning:compress-lzf:0.9.5"
         compile "org.slf4j:slf4j-api:1.6.1"
         compile "org.slf4j:slf4j-log4j12:1.6.1"
@@ -93,6 +93,8 @@ project(':priam') {
 project(':priam-dse-extensions') {
     dependencies {
         compile project(':priam')
+        testCompile project(path: ':priam', configuration: 'testCompile')
+        testCompile project(':priam').sourceSets.test.output
     }
 }
 
@@ -110,6 +112,6 @@ project(':priam-web') {
 project(':priam-agent') {
     dependencies {
         compile project(':priam')
-        compile 'com.netflix.astyanax:astyanax:1.56.23'
+        compile 'com.netflix.astyanax:astyanax:1.56.42'
     }
 }

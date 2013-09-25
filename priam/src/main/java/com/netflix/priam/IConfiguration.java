@@ -378,6 +378,7 @@ public interface IConfiguration
      */
     public String getInternodeCompression();
 
+    
     public boolean isBackingUpCommitLogs();
     
     public String getCommitLogBackupArchiveCmd();
@@ -387,6 +388,8 @@ public interface IConfiguration
     public String getCommitLogBackupRestoreFromDirs();
 
     public String getCommitLogBackupRestorePointInTime();
+    
+    public int maxCommitLogsRestore();
 
     /**
      * @return true/false, if Cassandra is running in a VPC environment

@@ -493,9 +493,13 @@ public class FakeConfiguration implements IConfiguration
     }
 
     public void setRestoreKeySpaces(List<String> keyspaces) {
-            // TODO Auto-generated method stub
-
+            
     }
+
+	@Override
+	public int maxCommitLogsRestore() {
+		return 0;
+	}
 
     public boolean isClientSslEnabled()
     {

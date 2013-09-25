@@ -19,13 +19,13 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
@@ -72,11 +72,51 @@ public abstract class AbstractRestore extends Task
             if (temp.getType() == filter)
             {   
             	File localFileHandler = temp.newRestoreFile();
-            	logger.info("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+            	logger.debug("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
                 download(temp, localFileHandler);
             }   
         }
         waitToComplete();
+    }
+    
+    private class BoundedList<E> extends LinkedList<E> {
+
+        private final int limit;
+
+        public BoundedList(int limit) {
+            this.limit = limit;
+        }
+
+        @Override
+        public boolean add(E o) {
+            super.add(o);
+            while (size() > limit) 
+            { 
+            	super.remove(); 
+            }
+            return true;
+        }
+    }
+    
+    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception
+    {
+    	if (fsIterator == null)
+    		return;
+    	
+    	BoundedList bl = new BoundedList(lastN);
+    	while (fsIterator.hasNext())
+    	{
+    		AbstractBackupPath temp = fsIterator.next();
+            if (temp.type == BackupFileType.SST && tracker.contains(temp))
+                continue;
+            
+            if (temp.getType() == filter)
+            {   
+            	bl.add(temp);
+            }  
+    	}
+    	
+    	download(bl.iterator(), filter);
     }
 
     /**

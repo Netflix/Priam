@@ -15,6 +15,8 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.RetryableCallable;
 
+
+//Providing this if we want to use it outside Quart
 public class CommitLogBackup
 {
   private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
@@ -62,7 +64,8 @@ public class CommitLogBackup
 
             AbstractBackupPath bp = (AbstractBackupPath) pathFactory.get();
             bp.parseLocal(file, BackupFileType.CL);
-            bp.time = bp.parseDate(snapshotName);
+            if (snapshotName != null)
+            	bp.time = bp.parseDate(snapshotName);
             upload(bp);
             file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operaion fails
             return bp;
@@ -91,7 +94,7 @@ public class CommitLogBackup
       public Void retriableCall()
         throws Exception
       {
-        CommitLogBackup.this.fs.upload(bp, bp.localReader());
+        fs.upload(bp, bp.localReader());
         return null;
       }
     }
@@ -110,8 +113,8 @@ public class CommitLogBackup
   public void notifyObservers() {
     for (IMessageObserver observer : observers)
       if (observer != null) {
-        logger.debug("Updating snapshot observers now ...");
-        observer.update(IMessageObserver.BACKUP_MESSAGE_TYPE.META, this.clRemotePaths);
+        logger.debug("Updating CommitLog observers now ...");
+        observer.update(IMessageObserver.BACKUP_MESSAGE_TYPE.COMMITLOG, this.clRemotePaths);
       } else {
         logger.debug("Observer is Null, hence can not notify ...");
       }

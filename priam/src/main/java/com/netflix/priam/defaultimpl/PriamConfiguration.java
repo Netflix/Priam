@@ -111,6 +111,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMMITLOG_RESTORE_CMD = PRIAM_PRE + ".clbackup.restoreCmd";
     private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
     private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
+    private static final String CONFIG_COMMITLOG_RESTORE_MAX = PRIAM_PRE + ".clrestore.max";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -675,6 +676,12 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME, "");
     }
 
+    @Override
+    public int maxCommitLogsRestore()
+    {
+    	return config.get(CONFIG_COMMITLOG_RESTORE_MAX, 10);
+    }
+    
     @Override
     public boolean isVpcRing() {
         return config.get(CONFIG_VPC_RING, false);

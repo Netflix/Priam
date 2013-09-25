@@ -40,7 +40,10 @@ public class StandardTuner implements CassandraTuner
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
+        map.put("start_rpc", config.isThriftEnabled());
         map.put("rpc_port", config.getThriftPort());
+        map.put("start_native_transport", config.isNativeTransportEnabled());
+        map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         //Dont bootstrap in restore mode
@@ -64,11 +67,13 @@ public class StandardTuner implements CassandraTuner
         map.put("authenticator", config.getAuthenticator());
         map.put("authorizer", config.getAuthorizer());
         map.put("internode_compression", config.getInternodeCompression());
+        map.put("dynamic_snitch", config.isDynamicSnitchEnabled());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);
 
+        configfureSecurity(map);
         configureGlobalCaches(config, map);
         //force to 1 until vnodes are properly supported
 	    map.put("num_tokens", 1);
@@ -126,6 +131,17 @@ public class StandardTuner implements CassandraTuner
         if(lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
             return fromConfig;
         return fromYaml;
+    }
+
+    protected void configfureSecurity(Map map)
+    {
+        //the client-side ssl settings
+        Map clientEnc = (Map) map.get("client_encryption_options");
+        clientEnc.put("enabled", config.isClientSslEnabled());
+
+        //the server-side (internode) ssl settings
+        Map serverEnc = (Map)map.get("server_encryption_options");
+        serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
     protected void configureCommitLogBackups() throws IOException

@@ -111,7 +111,6 @@ public class PriamServer
         if (config.isBackingUpCommitLogs())
         {
         	scheduler.addTask(CommitLogBackupTask.JOBNAME, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
-            //this.clBackup.upload(this.config.getCommitLogBackupRestoreFromDirs(), null);
         }
         
         //Set cleanup

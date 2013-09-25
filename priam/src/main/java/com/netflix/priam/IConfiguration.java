@@ -377,8 +377,7 @@ public interface IConfiguration
      * @return possible values: all, dc, none
      */
     public String getInternodeCompression();
-
-    
+   
     public boolean isBackingUpCommitLogs();
     
     public String getCommitLogBackupArchiveCmd();

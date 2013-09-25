@@ -24,7 +24,7 @@ public class CommitLogBackupTask extends AbstractBackup
     public static String JOBNAME = "CommitLogBackup";
     
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
-    private final List<String> snapshotRemotePaths = new ArrayList<String>();
+    private final List<String> clRemotePaths = new ArrayList<String>();
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final CommitLogBackup clBackup;
     
@@ -64,7 +64,7 @@ public class CommitLogBackupTask extends AbstractBackup
 
     public static TaskTimer getTimer(IConfiguration config)
     {
-    	return new SimpleTimer(JOBNAME, 60L * 1000); //every 5 min
+    	return new SimpleTimer(JOBNAME, 60L * 1000); //every 1 min
     }
 
    
@@ -84,8 +84,8 @@ public class CommitLogBackupTask extends AbstractBackup
         {
         		if(observer != null)
         		{
-        			logger.debug("Updating snapshot observers now ...");
-        			observer.update(BACKUP_MESSAGE_TYPE.SNAPSHOT,snapshotRemotePaths);
+        			logger.debug("Updating CL observers now ...");
+        			observer.update(BACKUP_MESSAGE_TYPE.COMMITLOG, clRemotePaths);
         		}
         		else
         			logger.info("Observer is Null, hence can not notify ...");
@@ -94,7 +94,7 @@ public class CommitLogBackupTask extends AbstractBackup
 
 	@Override
 	protected void addToRemotePath(String remotePath) {		
-		snapshotRemotePaths.add(remotePath);		
+		clRemotePaths.add(remotePath);		
 	}
 
 }

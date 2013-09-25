@@ -157,16 +157,16 @@ public class Restore extends AbstractRestore
         download(incrementals, BackupFileType.SST);
         
         //Downloading CommitLogs
-        if (this.config.isBackingUpCommitLogs())  //TODO: will change to isRestoringCommitLogs()
-        {
-        	Iterator<AbstractBackupPath> commitLogs = fs.list(prefix, meta.time, endTime);        	
+        if (config.isBackingUpCommitLogs())  //TODO: will change to isRestoringCommitLogs()
+        {	
         	logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
         	SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
         	     
         	logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
         	SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
-       	
-        	download(commitLogs, BackupFileType.CL);       	
+        	
+        	Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.time, endTime); 
+        	download(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());       	
         }
     }
 

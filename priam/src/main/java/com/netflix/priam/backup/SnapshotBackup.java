@@ -114,9 +114,7 @@ public class SnapshotBackup extends AbstractBackup
             {
             	notifyObservers();
             }
-            
-            if (this.config.isBackingUpCommitLogs())
-                this.clBackup.upload(this.config.getCommitLogBackupRestoreFromDirs(), snapshotName);
+         
         }
         finally
         {

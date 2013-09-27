@@ -15,7 +15,7 @@
 
     <properties>
         <!-- note: the *bucket* is the root of the repo -->
-        <yumrepo.s3RepositoryPath>s3://emodb-artifacts/yum-repo</yumrepo.s3RepositoryPath>
+        <yumrepo.s3RepositoryPath>s3://nexus-private-artifacts/emodb/yum-repo</yumrepo.s3RepositoryPath>
     </properties>
 
     <profiles>

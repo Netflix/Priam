@@ -12,8 +12,9 @@ import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.SystemUtils;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.WebResource;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
-import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.net.MessagingServiceMBean;
@@ -37,7 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Do general operations. Start/Stop and some JMX node tool commands
@@ -98,12 +98,71 @@ public class CassandraAdminResource {
         return Response.ok(nodetool.info(), MediaType.APPLICATION_JSON).build();
     }
 
+    /**
+     * This method will return hints info for the entire ring. Currently it simply returns if any hints
+     * were found on any of the nodes in the ring.
+     * @throws Exception
+     */
+    @GET
+    @Path("/hintsInfoInRing")
+    public Response cassHintsInRing()
+            throws Exception {
+        List<Map<String, Object>> ring = JMXNodeTool.instance(cassandraConfiguration).ring();
+
+        Client client = Client.create();
+
+        for (Map<String, Object> node: ring){
+
+            // Is this node down?
+            if (!node.get("status").toString().equalsIgnoreCase("up")){
+                return Response.ok(ImmutableMap.of("hintsExist", "Unreachable node detected: " + node.get("endpoint")),
+                        MediaType.APPLICATION_JSON).build();
+            }
+            String endpoint = node.get("endpoint").toString();
+            try {
+                WebResource webResource = client
+                        .resource("http://" + endpoint + ":8080/v1/cassadmin/hintsInfo");
+                Map<String, Boolean> nodeResponse = webResource.accept("application/json")
+                        .get(Map.class);
+                if (nodeResponse.get("hintsExist")){
+                    logger.info(String.format("Hints exist on endpoint %s", endpoint));
+                    return Response.ok(ImmutableMap.of("hintsExist", "true"), MediaType.APPLICATION_JSON).build();
+                }
+            } catch (Exception e) {
+                return Response.ok(ImmutableMap.of("hintsExist", "exception occurred", "exception", e.toString()),
+                        MediaType.APPLICATION_JSON).build();
+            }
+        }
+
+        return Response.ok(ImmutableMap.of("hintsExist", "false"), MediaType.APPLICATION_JSON).build();
+    }
+
+    /**
+     * This method will return hints info for this node only
+     * @throws Exception
+     */
+    @GET
+    @Path ("/hintsInfo")
+    public Response cassHints() throws Exception {
+        JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
+        logger.info("node tool info being called");
+        return Response.ok(ImmutableMap.of("hintsExist", nodetool.hintsExist()), MediaType.APPLICATION_JSON).build();
+    }
+
     @GET
     @Path ("/ring/{keyspace}")
     public Response cassRing(@PathParam ("keyspace") String keyspace) throws Exception {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         logger.info("node tool ring being called");
         return Response.ok(nodetool.ring(keyspace), MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path ("/ring")
+    public Response cassRingAllKeyspaces(@PathParam ("keyspace") String keyspace) throws Exception {
+        JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
+        logger.info("node tool ring being called");
+        return Response.ok(nodetool.ring(), MediaType.APPLICATION_JSON).build();
     }
 
     @GET

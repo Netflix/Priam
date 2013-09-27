@@ -172,13 +172,13 @@ public class JMXNodeTool extends NodeProbe {
     }
 
     @SuppressWarnings ("unchecked")
-    public boolean hintsExist()
+    public long totalHints()
             throws MalformedObjectNameException {
         ObjectName name = new ObjectName(StorageProxy.MBEAN_NAME);
         StorageProxyMBean storageProxy = JMX.newMBeanProxy(mbeanServerConn, name, StorageProxyMBean.class);
         long totalHints = storageProxy.getTotalHints();
         logger.info(String.format("Total hints found: %s", totalHints));
-        return totalHints > 0l;
+        return totalHints;
     }
 
     @SuppressWarnings("unchecked")

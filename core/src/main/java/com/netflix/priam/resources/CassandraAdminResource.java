@@ -49,6 +49,8 @@ public class CassandraAdminResource {
 
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdminResource.class);
 
+    enum HintsState { OK, UNREACHABLE, ERROR};
+
     private final PriamServer priamServer;
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
@@ -99,42 +101,42 @@ public class CassandraAdminResource {
     }
 
     /**
-     * This method will return hints info for the entire ring. Currently it simply returns if any hints
-     * were found on any of the nodes in the ring.
+     * Returns hints info for the entire ring.
+     * Includes all nodes in the ring along with their state, and total hints.
      * @throws Exception
      */
     @GET
-    @Path("/hintsInfoInRing")
+    @Path("/hints/ring")
     public Response cassHintsInRing()
             throws Exception {
         List<Map<String, Object>> ring = JMXNodeTool.instance(cassandraConfiguration).ring();
+        List<Map<String, Object>> hintsInfo = Lists.newArrayList();
 
         Client client = Client.create();
 
         for (Map<String, Object> node: ring){
+            String endpoint = node.get("endpoint").toString();
 
             // Is this node down?
             if (!node.get("status").toString().equalsIgnoreCase("up")){
-                return Response.ok(ImmutableMap.of("hintsExist", "Unreachable node detected: " + node.get("endpoint")),
-                        MediaType.APPLICATION_JSON).build();
+                hintsInfo.add(ImmutableMap.<String,Object>of("endpoint", endpoint, "state", HintsState.UNREACHABLE));
+                continue;
             }
-            String endpoint = node.get("endpoint").toString();
             try {
-                WebResource webResource = client
-                        .resource("http://" + endpoint + ":8080/v1/cassadmin/hintsInfo");
-                Map<String, Boolean> nodeResponse = webResource.accept("application/json")
+                String url = String.format("http://%s:8080/v1/cassadmin/hints/node", endpoint);
+                WebResource webResource = client.resource(url);
+                Map<String, Object> nodeResponse = webResource.accept("application/json")
                         .get(Map.class);
-                if (nodeResponse.get("hintsExist")){
-                    logger.info(String.format("Hints exist on endpoint %s", endpoint));
-                    return Response.ok(ImmutableMap.of("hintsExist", "true"), MediaType.APPLICATION_JSON).build();
-                }
+                nodeResponse.put("state", HintsState.OK);
+                nodeResponse.put("endpoint", endpoint);
+                hintsInfo.add(nodeResponse);
             } catch (Exception e) {
-                return Response.ok(ImmutableMap.of("hintsExist", "exception occurred", "exception", e.toString()),
-                        MediaType.APPLICATION_JSON).build();
+                hintsInfo.add(ImmutableMap.<String, Object>of("endpoint", endpoint, "state", HintsState.ERROR,
+                        "exception", e.toString()));
             }
         }
 
-        return Response.ok(ImmutableMap.of("hintsExist", "false"), MediaType.APPLICATION_JSON).build();
+        return Response.ok(hintsInfo, MediaType.APPLICATION_JSON).build();
     }
 
     /**
@@ -142,11 +144,11 @@ public class CassandraAdminResource {
      * @throws Exception
      */
     @GET
-    @Path ("/hintsInfo")
-    public Response cassHints() throws Exception {
+    @Path ("/hints/node")
+    public Response cassHintsInNode() throws Exception {
         JMXNodeTool nodetool = JMXNodeTool.instance(cassandraConfiguration);
         logger.info("node tool info being called");
-        return Response.ok(ImmutableMap.of("hintsExist", nodetool.hintsExist()), MediaType.APPLICATION_JSON).build();
+        return Response.ok(ImmutableMap.of("totalHints", nodetool.totalHints()), MediaType.APPLICATION_JSON).build();
     }
 
     @GET

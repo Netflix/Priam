@@ -37,7 +37,7 @@ subprojects {
 
     dependencies {
         compile "commons-lang:commons-lang:2.6"
-        compile "commons-logging:commons-logging:1.1.1"
+        compile "commons-logging:commons-logging:1.1.3"
         compile "commons-collections:commons-collections:3.2.1"
         compile "commons-io:commons-io:2.0.1"
         compile "commons-cli:commons-cli:1.2"

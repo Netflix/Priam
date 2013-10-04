@@ -9,7 +9,7 @@ cassandra:
   cassHome: "/etc/cassandra"                  # Path to the home dir of Cassandra
   cassStartScript: "/etc/init.d/cassandra start"  # Path to Cassandra startup script
   cassStopScript: "/etc/init.d/cassandra stop"    # Path to Cassandra stop script
-  clusterName: "cass_cluster"                 # Cluster name (or App) name
+  clusterName: "local_default"                 # Cluster name (or App) name
   dataLocation: "/var/lib/cassandra/data"     # Location of the local data dir
   sslStoragePort: 7101                        # Cassandra storage/cluster SSL communication port
   storagePort: 7101                           # Cassandra storage/cluster communication port
@@ -77,7 +77,7 @@ amazon:
 
 
 backup:
-  incrementalBackupEnabled: true                    # true if incremental backups are enabled
+  incrementalBackupEnabled: false                    # true if incremental backups are enabled
   snapShotBackupEnabled: false
   #snapShotBackupCronTime:                          # Format: "sec min hour day-of-month month day-of-week". e.g. to run a job every sunday at 12 am, "0 0 0 ? * 1".
                                                     # For detail: http://quartz-scheduler.org/documentation/quartz-1.x/tutorials/crontrigger
@@ -100,14 +100,19 @@ backup:
                                                     #    can lead to saturating the network connection and degrading rpc performance.
   uploadThrottleBytesPerSec: 2147483647             # Bytes per second to throttle for backups
 
+# Configure the HTTP server that listens for inbound requests
+http:
+  port: 9090
+  adminPort: 9091
+
 zooKeeper:
   enabled: false                     # Whether or not ZooKeeper registration is enabled.
-  #connectString: localhost:2181     # Comma-separated list of ZooKeeper servers, eg. "host:port,host:port,..."
+  connectString: localhost:2181     # Comma-separated list of ZooKeeper servers, eg. "host:port,host:port,..."
   #namespace:                        # Root namespace in ZooKeeper, eg. "us-east-1"
 
 # Priam will register the Cassandra node in ZooKeeper using the BV Ostrich library under the specified service names.
 ostrichServiceNames:
-  - cass_cluster-cassandra
+  - local_default-cassandra
 
 monitoring:
   defaultBadgerRegistrationState: true

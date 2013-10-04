@@ -56,6 +56,11 @@
                 <version>${ostrich.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.bazaarvoice.ostrich</groupId>
+                <artifactId>ostrich-dropwizard</artifactId>
+                <version>${ostrich.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.bazaarvoice.ostrich.zookeeper</groupId>
                 <artifactId>ostrich-zookeeper-registry</artifactId>
                 <version>${ostrich.version}</version>
@@ -184,6 +189,31 @@
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>3.2.3</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.2.1</version>
+            </dependency>
+
+            <!-- Test dependencies -->
+            <dependency>
+                <groupId>com.yammer.dropwizard</groupId>
+                <artifactId>dropwizard-testing</artifactId>
+                <version>${dropwizard.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-all</artifactId>
+                <version>1.9.5</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.testng</groupId>
+                <artifactId>testng</artifactId>
+                <version>6.3.1</version>
+                <scope>test</scope>
             </dependency>
         </dependencies>
     </dependencyManagement>

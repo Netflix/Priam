@@ -10,6 +10,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.BackupConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
+import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.SystemUtils;
 import com.sun.jersey.api.client.Client;
@@ -55,14 +56,17 @@ public class CassandraAdminResource {
     private final CassandraConfiguration cassandraConfiguration;
     private final AmazonConfiguration amazonConfiguration;
     private final BackupConfiguration backupConfiguration;
+    private final PriamConfiguration priamConfiguration;
 
     @Inject
     public CassandraAdminResource(PriamServer priamServer, CassandraConfiguration cassandraConfiguration,
-                                  AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration) {
+                                  AmazonConfiguration amazonConfiguration, BackupConfiguration backupConfiguration,
+                                  PriamConfiguration priamConfiguration) {
         this.priamServer = priamServer;
         this.cassandraConfiguration = cassandraConfiguration;
         this.amazonConfiguration = amazonConfiguration;
         this.backupConfiguration = backupConfiguration;
+        this.priamConfiguration = priamConfiguration;
     }
 
     @GET
@@ -123,13 +127,16 @@ public class CassandraAdminResource {
                 continue;
             }
             try {
-                String url = String.format("http://%s:8080/v1/cassadmin/hints/node", endpoint);
+                String url = String.format("http://%s:%s/v1/cassadmin/hints/node", endpoint,
+                        priamConfiguration.getHttpConfiguration().getPort());
                 WebResource webResource = client.resource(url);
-                Map<String, Object> nodeResponse = webResource.accept("application/json")
+                Map<String, Object> fullNodeInfo = Maps.newHashMap();
+                Map<String, Object> nodeResponse = webResource.accept(MediaType.APPLICATION_JSON)
                         .get(Map.class);
-                nodeResponse.put("state", HintsState.OK);
-                nodeResponse.put("endpoint", endpoint);
-                hintsInfo.add(nodeResponse);
+                fullNodeInfo.putAll(nodeResponse);
+                fullNodeInfo.put("state", HintsState.OK);
+                fullNodeInfo.put("endpoint", endpoint);
+                hintsInfo.add(fullNodeInfo);
             } catch (Exception e) {
                 hintsInfo.add(ImmutableMap.<String, Object>of("endpoint", endpoint, "state", HintsState.ERROR,
                         "exception", e.toString()));

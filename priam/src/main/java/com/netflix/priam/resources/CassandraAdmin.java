@@ -592,4 +592,20 @@ public class CassandraAdmin
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
     }
 
+    @GET
+    @Path("/drain")
+    public Response cassDrain() throws IOException, ExecutionException, InterruptedException
+    {
+        JMXNodeTool nodetool = null;
+		try {
+			nodetool = JMXNodeTool.instance(config);
+		} catch (JMXConnectionException e) {
+			return Response.status(503).entity("JMXConnectionException")
+					.build();
+		}
+        logger.debug("node tool drain being called");
+        nodetool.drain();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
 }

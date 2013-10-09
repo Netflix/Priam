@@ -196,7 +196,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/repair")
-    public Response cassRepair(@QueryParam("sequential") boolean isSequential, @QueryParam("localDC") boolean localDCOnly) throws IOException, ExecutionException, InterruptedException
+    public Response cassRepair(@QueryParam("sequential") boolean isSequential, @QueryParam("localDC") boolean localDCOnly, @DefaultValue("false") @QueryParam("primaryRange") boolean primaryRange) throws IOException, ExecutionException, InterruptedException
     {
         JMXNodeTool nodetool = null;
 		try {
@@ -206,7 +206,7 @@ public class CassandraAdmin
 					.build();
 		}
         logger.debug("node tool repair being called");
-        nodetool.repair(isSequential, localDCOnly);
+        nodetool.repair(isSequential, localDCOnly, primaryRange);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

@@ -18,6 +18,7 @@ import com.netflix.priam.config.AmazonConfiguration;
 import com.netflix.priam.config.CassandraConfiguration;
 import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
+import com.yammer.dropwizard.config.HttpConfiguration;
 import com.yammer.dropwizard.lifecycle.Managed;
 import org.apache.cassandra.utils.FBUtilities;
 import org.slf4j.Logger;
@@ -50,17 +51,20 @@ public class ServiceRegistryManager implements Managed {
     private final ScheduledExecutorService executor;
     private final List<ServiceEndPoint> endPoints = Lists.newArrayList();
     private ServiceRegistry zkRegistry;
+    private HttpConfiguration httpConfiguration;
     private boolean registered;
 
     @Inject
     public ServiceRegistryManager(PriamConfiguration priamConfiguration,
                                   CassandraConfiguration casConfiguration,
                                   AmazonConfiguration awsConfiguration,
-                                  Optional<CuratorFramework> zkConnection) {
+                                  Optional<CuratorFramework> zkConnection,
+                                  HttpConfiguration httpConfiguration) {
         this.priamConfiguration = priamConfiguration;
         this.casConfiguration = casConfiguration;
         this.awsConfiguration = awsConfiguration;
         this.zkConnection = zkConnection;
+        this.httpConfiguration = httpConfiguration;
 
         String nameFormat = "ServiceRegistryManager-%d";
         ThreadFactory threadFactory = new ThreadFactoryBuilder().setNameFormat(nameFormat).setDaemon(true).build();
@@ -73,14 +77,18 @@ public class ServiceRegistryManager implements Managed {
             return;
         }
 
+        HostAndPort host = HostAndPort.fromParts(awsConfiguration.getPrivateIP(), casConfiguration.getThriftPort());
+        String priamServiceBaseURL = String.format("http://%s:%s/%s", awsConfiguration.getPrivateIP(),
+                httpConfiguration.getPort(), "v1");
+
         // Include the partitioner in the Ostrich end point data to support clients that need to know the
         // partitioner type before they connect to the ring (eg. Astyanax).
         Map<String, Object> payload = ImmutableMap.<String, Object>of(
-                "partitioner", FBUtilities.newPartitioner(casConfiguration.getPartitionerClassName()).getClass().getName());
+                "partitioner", FBUtilities.newPartitioner(casConfiguration.getPartitionerClassName()).getClass().getName(),
+                "url", priamServiceBaseURL);
         String payloadString = new ObjectMapper().writeValueAsString(payload);
 
         // Construct Ostrich end points for this server.  The ID is the "host:port" that clients should use to connect.
-        HostAndPort host = HostAndPort.fromParts(awsConfiguration.getPrivateIP(), casConfiguration.getThriftPort());
         for (String serviceName : priamConfiguration.getOstrichServiceNames()) {
             ServiceEndPoint endPoint = new ServiceEndPointBuilder()
                     .withServiceName(serviceName)

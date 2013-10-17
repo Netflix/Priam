@@ -8,8 +8,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
-import org.apache.cassandra.service.StorageProxy;
-import org.apache.cassandra.service.StorageProxyMBean;
+import org.apache.cassandra.db.HintedHandOffManagerMBean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,12 +16,7 @@ import org.slf4j.LoggerFactory;
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
-import javax.management.Notification;
-import javax.management.NotificationListener;
 import javax.management.ObjectName;
-import javax.management.remote.JMXConnectionNotification;
-import javax.management.remote.JMXConnector;
-import javax.management.remote.JMXConnectorFactory;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
@@ -172,13 +166,13 @@ public class JMXNodeTool extends NodeProbe {
     }
 
     @SuppressWarnings ("unchecked")
-    public long totalHints()
+    public long totalEndpointsPendingHints()
             throws MalformedObjectNameException {
-        ObjectName name = new ObjectName(StorageProxy.MBEAN_NAME);
-        StorageProxyMBean storageProxy = JMX.newMBeanProxy(mbeanServerConn, name, StorageProxyMBean.class);
-        long totalHints = storageProxy.getTotalHints();
-        logger.info(String.format("Total hints found: %s", totalHints));
-        return totalHints;
+        ObjectName name = new ObjectName("org.apache.cassandra.db:type=HintedHandoffManager");
+        HintedHandOffManagerMBean hintedHandoffManager = JMX.newMBeanProxy(mbeanServerConn, name, HintedHandOffManagerMBean.class);
+        long totalEndpointsPendingHints = hintedHandoffManager.listEndpointsPendingHints().size();
+        logger.info(String.format("Total total endpoints pending hints: %s", totalEndpointsPendingHints));
+        return totalEndpointsPendingHints;
     }
 
     @SuppressWarnings("unchecked")

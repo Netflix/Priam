@@ -310,7 +310,7 @@
                                 </mapping>
                                 <!-- Helper jar that gets added to Cassandra's classpath and wraps its main() method. -->
                                 <mapping>
-                                    <directory>/usr/share/cassandra/lib</directory>
+                                    <directory>/usr/share/cassandra/lib/</directory>
                                     <sources>
                                         <source>
                                             <location>${basedir}/target/${project.artifactId}-${project.version}.jar</location>

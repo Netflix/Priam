@@ -1,5 +1,6 @@
 package com.netflix.priam.utils;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
@@ -7,12 +8,15 @@ import com.google.inject.Singleton;
 import com.netflix.priam.config.CassandraConfiguration;
 import org.apache.cassandra.config.ConfigurationException;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
+import org.apache.cassandra.service.StorageProxy;
+import org.apache.cassandra.service.StorageProxyMBean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 import javax.management.ObjectName;
@@ -168,6 +172,21 @@ public class JMXNodeTool extends NodeProbe {
     }
 
     @SuppressWarnings ("unchecked")
+    public long totalHints()
+            throws MalformedObjectNameException {
+        ObjectName name = new ObjectName(StorageProxy.MBEAN_NAME);
+        StorageProxyMBean storageProxy = JMX.newMBeanProxy(mbeanServerConn, name, StorageProxyMBean.class);
+        long totalHints = storageProxy.getTotalHints();
+        logger.info(String.format("Total hints found: %s", totalHints));
+        return totalHints;
+    }
+
+    @SuppressWarnings("unchecked")
+    public List<Map<String, Object>> ring(){
+        return ring(null);
+    }
+
+    @SuppressWarnings ("unchecked")
     public List<Map<String, Object>> ring(String keyspace) {
         logger.info("JMX ring being called");
         List<Map<String, Object>> ring = Lists.newArrayList();
@@ -186,7 +205,12 @@ public class JMXNodeTool extends NodeProbe {
         // Calculate per-token ownership of the ring
         Map<String, Float> ownerships;
         try {
-            ownerships = effectiveOwnership(keyspace);
+            if (Strings.isNullOrEmpty(keyspace)){
+                ownerships = getOwnership();
+            }
+            else {
+                ownerships = effectiveOwnership(keyspace);
+            }
         } catch (ConfigurationException ex) {
             ownerships = getOwnership();
         }

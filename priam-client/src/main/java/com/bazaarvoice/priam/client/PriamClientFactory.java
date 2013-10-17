@@ -36,7 +36,7 @@ public class PriamClientFactory implements ServiceFactory<PriamCassAdmin> {
     }
 
     /**
-     * Connects to the System of Record using the specified Jersey client.  If you're using Dropwizard, use this
+     * Connects to Priam using the specified Jersey client.  If you're using Dropwizard, use this
      * factory method and pass the Dropwizard-constructed Jersey client.
      */
     public static PriamClientFactory forClusterAndHttpClient(String clusterName, Client client) {
@@ -65,7 +65,6 @@ public class PriamClientFactory implements ServiceFactory<PriamCassAdmin> {
 
     @Override
     public String getServiceName() {
-        //return ServiceNames.forNamespaceAndBaseServiceName(_clusterName + "-cassandra", PriamCassAdminClient.BASE_SERVICE_NAME);
         return _clusterName + "-cassandra";
     }
 
@@ -76,7 +75,7 @@ public class PriamClientFactory implements ServiceFactory<PriamCassAdmin> {
 
     @Override
     public PriamCassAdmin create(ServiceEndPoint endPoint) {
-        Map<?,?> payload = JsonHelper.fromJson(endPoint.getPayload(), Map.class);
+        Map<?, ?> payload = JsonHelper.fromJson(endPoint.getPayload(), Map.class);
         return new PriamCassAdminClient(URI.create((String) checkNotNull(payload.get("url"))), _jerseyClient);
     }
 
@@ -94,7 +93,7 @@ public class PriamClientFactory implements ServiceFactory<PriamCassAdmin> {
 
     @Override
     public boolean isHealthy(ServiceEndPoint endPoint) {
-        Map<?,?> payload = JsonHelper.fromJson(endPoint.getPayload(), Map.class);
+        Map<?, ?> payload = JsonHelper.fromJson(endPoint.getPayload(), Map.class);
         URI adminUrl = URI.create((String) checkNotNull(payload.get("url")));
         return _jerseyClient.resource(adminUrl).path("/cassadmin/pingthrift")
                 .header(HttpHeaders.CONNECTION, "close")

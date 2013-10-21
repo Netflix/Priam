@@ -27,6 +27,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.aws.AwsServiceClients;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -212,8 +213,7 @@ public class PriamConfiguration implements IConfiguration
      */
     private String populateASGName(String region, String instanceId)
     {
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
-        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        AmazonEC2 client = AwsServiceClients.ec2( provider.getAwsCredentialProvider(), region );
         DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
         DescribeInstancesResult res = client.describeInstances(desc);
 
@@ -235,8 +235,7 @@ public class PriamConfiguration implements IConfiguration
      * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region){
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
-        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        AmazonEC2 client = AwsServiceClients.ec2( provider.getAwsCredentialProvider(), region);
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
         List<String> zone = Lists.newArrayList();
         for(AvailabilityZone reg : res.getAvailabilityZones()){

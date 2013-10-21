@@ -293,8 +293,15 @@ public class JMXNodeTool extends NodeProbe
 
     public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException
     {
+        repair(isSequential, localDataCenterOnly, false);
+    }
+    public void repair(boolean isSequential, boolean localDataCenterOnly, boolean primaryRange) throws IOException, ExecutionException, InterruptedException
+    {
         for (String keyspace : getKeyspaces())
-            forceTableRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            if (primaryRange)
+                forceTableRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            else
+                forceTableRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException

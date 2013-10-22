@@ -226,11 +226,14 @@ public class PriamConfiguration implements IConfiguration
     
     private class GetASGName extends RetryableCallable<String>
     {
+        private static final int NUMBER_OF_RETRIES = 15;
+        private static final long WAIT_TIME = 30000;
         private final String region;
         private final String instanceId;
         private final AmazonEC2 client;
         
         public GetASGName(String region, String instanceId) {
+            super(NUMBER_OF_RETRIES, WAIT_TIME);
             this.region = region;
             this.instanceId = instanceId;
             client = new AmazonEC2Client(provider.getCredentials());

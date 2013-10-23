@@ -176,6 +176,24 @@ public class CassandraConfigTest
     }
 
     @Test
+    public void getReplacedAddress()
+    {
+    	final String replacedIp = "127.0.0.1";
+        new Expectations() {
+            InstanceIdentity identity;
+
+            {
+                priamServer.getId(); result = identity;
+                identity.getReplacedIp(); result = replacedIp;
+            }
+        };
+
+        Response response = resource.getReplacedIp();
+        assertEquals(200, response.getStatus());
+        assertEquals(replacedIp, response.getEntity());
+    }
+    
+    @Test
     public void doubleRing() throws Exception
     {
         new NonStrictExpectations() {{

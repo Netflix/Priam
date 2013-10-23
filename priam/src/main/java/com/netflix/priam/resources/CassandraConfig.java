@@ -105,6 +105,24 @@ public class CassandraConfig
         }
     }
 
+    
+    @GET
+    @Path("/get_replaced_ip")
+    public Response getReplacedIp()
+    {
+        try
+        {
+            return Response.ok(String.valueOf(priamServer.getId().getReplacedIp())).build();
+        }
+        catch (Exception e)
+        {
+            // TODO: can this ever happen? if so, what conditions would cause an exception here?
+            logger.error("Error while executing get_replaced_ip", e);
+            return Response.serverError().build();
+        }
+    }
+    
+    
     @GET
     @Path("/double_ring")
     public Response doubleRing() throws IOException, ClassNotFoundException

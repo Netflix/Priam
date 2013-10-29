@@ -27,7 +27,9 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -212,23 +214,52 @@ public class PriamConfiguration implements IConfiguration
      */
     private String populateASGName(String region, String instanceId)
     {
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
-        client.setEndpoint("ec2." + region + ".amazonaws.com");
-        DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
-        DescribeInstancesResult res = client.describeInstances(desc);
-
-        for (Reservation resr : res.getReservations())
-        {
-            for (Instance ins : resr.getInstances())
+        GetASGName getASGName = new GetASGName(region, instanceId);
+        
+        try {
+            return getASGName.call();
+        } catch (Exception e) {
+            logger.error("Failed to determine ASG name.", e);
+            return null;
+        }
+    }
+    
+    private class GetASGName extends RetryableCallable<String>
+    {
+        private static final int NUMBER_OF_RETRIES = 15;
+        private static final long WAIT_TIME = 30000;
+        private final String region;
+        private final String instanceId;
+        private final AmazonEC2 client;
+        
+        public GetASGName(String region, String instanceId) {
+            super(NUMBER_OF_RETRIES, WAIT_TIME);
+            this.region = region;
+            this.instanceId = instanceId;
+            client = new AmazonEC2Client(provider.getCredentials());
+            client.setEndpoint("ec2." + region + ".amazonaws.com");
+        }
+        
+        @Override
+        public String retriableCall() throws IllegalStateException {
+            DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
+            DescribeInstancesResult res = client.describeInstances(desc);
+    
+            for (Reservation resr : res.getReservations())
             {
-                for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                for (Instance ins : resr.getInstances())
                 {
-                    if (tag.getKey().equals("aws:autoscaling:groupName"))
-                        return tag.getValue();
+                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                    {
+                        if (tag.getKey().equals("aws:autoscaling:groupName"))
+                            return tag.getValue();
+                    }
                 }
             }
+            
+            logger.warn("Couldn't determine ASG name");
+            throw new IllegalStateException("Couldn't determine ASG name");
         }
-        return null;
     }
 
     /**

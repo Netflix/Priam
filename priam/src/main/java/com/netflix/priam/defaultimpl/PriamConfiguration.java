@@ -531,7 +531,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getMaxHintWindowInMS()
     {
-        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
+        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 10800000);
     }
 
     public int getHintedHandoffThrottleKb()

@@ -116,7 +116,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     {
         final String curRegion = config.getDC();
         if("us-east-1".equalsIgnoreCase(curRegion))
-            return "s3.amazonaws.com";
+            return "s3-external-1.amazonaws.com";
         if("eu-west-1".equalsIgnoreCase(curRegion))
             return "s3-eu-west-1.amazonaws.com";
         if("us-west-1".equalsIgnoreCase(curRegion))

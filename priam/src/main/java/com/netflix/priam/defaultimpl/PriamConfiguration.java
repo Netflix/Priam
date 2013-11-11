@@ -35,6 +35,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.utils.SystemUtils;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -108,6 +109,18 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
     private static final String CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME = PRIAM_PRE + ".clbackup.restoreTime";
 
+    private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
+    private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
+    private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
+    private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
+    private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
+    
+    private static String US_EAST_1_REGION = "us-east-1";
+    private static String US_WEST_1_REGION = "us-west-1";
+    private static String US_WEST_2_REGION = "us-west-2";
+    private static String EU_WEST_1_REGION = "eu-west-1";
+    private static String SA_EAST_1_REGION = "sa-east-1";
+    
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
@@ -119,6 +132,7 @@ public class PriamConfiguration implements IConfiguration
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
+    
     
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
@@ -153,6 +167,14 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
     private final int DEFAULT_BACKUP_RETENTION = 0;
 
+    //default S3 endpoints
+    private static final String DEFAULT_US_EAST_1_S3_ENDPOINT = "s3-external-1.amazonaws.com";
+    private static final String DEFAULT_US_WEST_1_S3_ENDPOINT = "s3-us-west-1.amazonaws.com";
+    private static final String DEFAULT_US_WEST_2_S3_ENDPOINT = "s3-us-west-2.amazonaws.com";
+    private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
+    private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
+    
+    
     private final String BLANK = "";
     
     private PriamProperties config;
@@ -792,4 +814,45 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.getProperty(CONFIG_COMMITLOG_RESTORE_POINT_IN_TIME, "");
     }
+    
+    
+    public String getS3EndPoint(String region) {
+    	if (StringUtils.isNotBlank(region))
+    		return null;
+    	
+    	String s3Url = null;
+    	
+    	if (US_EAST_1_REGION.equals(region))
+    	{	
+    	   s3Url = config.getProperty(CONFIG_US_EAST_1_S3_ENDPOINT);
+    	   return StringUtils.isBlank(s3Url) ? DEFAULT_US_EAST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (US_WEST_1_REGION.equals(region))
+    	{
+    		s3Url = config.getProperty(CONFIG_US_WEST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (US_WEST_2_REGION.equals(region))
+    	{
+    		s3Url = config.getProperty(CONFIG_US_WEST_2_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_2_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (EU_WEST_1_REGION.equals(region))
+    	{	
+    		s3Url = config.getProperty(CONFIG_EU_WEST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_EU_WEST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (SA_EAST_1_REGION.equals(region))
+    	{	
+    		s3Url = config.getProperty(CONFIG_SA_EAST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_SA_EAST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	return null;
+    }
+    
 }

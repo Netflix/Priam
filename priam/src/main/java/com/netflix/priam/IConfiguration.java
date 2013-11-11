@@ -372,4 +372,7 @@ public interface IConfiguration
     public String getCommitLogBackupRestoreFromDirs();
 
     public String getCommitLogBackupRestorePointInTime();
+    
+    public String getS3EndPoint(String region); 
+    
 }

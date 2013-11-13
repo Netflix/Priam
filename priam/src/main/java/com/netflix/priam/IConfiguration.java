@@ -373,6 +373,6 @@ public interface IConfiguration
 
     public String getCommitLogBackupRestorePointInTime();
     
-    public String getS3EndPoint(String region); 
+    public String getS3EndPoint(); 
     
 }

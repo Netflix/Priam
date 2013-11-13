@@ -816,9 +816,8 @@ public class PriamConfiguration implements IConfiguration
     }
     
     
-    public String getS3EndPoint(String region) {
-    	if (StringUtils.isNotBlank(region))
-    		return null;
+    public String getS3EndPoint() {
+    	String region = getDC();
     	
     	String s3Url = null;
     	

@@ -465,7 +465,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
 	@Override
-	public String getS3EndPoint(String region) {
+	public String getS3EndPoint() {
 		return "s3-external-1.amazonaws.com";
 	}
 }

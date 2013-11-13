@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
@@ -120,7 +121,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             "us-west-2".equalsIgnoreCase(curRegion)	|| 
             "eu-west-1".equalsIgnoreCase(curRegion) ||
             "sa-east-1".equalsIgnoreCase(curRegion))
-             return config.getS3EndPoint(curRegion);
+             return config.getS3EndPoint();
          
          throw new IllegalStateException("Unsupported region for this application: " + curRegion);
     }
@@ -177,6 +178,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
+            
+            if (logger.isDebugEnabled())
+            {	
+               final S3ResponseMetadata responseMetadata = s3Client.getCachedResponseMetadata(initRequest);
+               final String requestId = responseMetadata.getRequestId(); // "x-amz-request-id" header
+               final String hostId = responseMetadata.getHostId(); // "x-amz-id-2" header
+               logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
+            }  
+            
         }
         catch (Exception e)
         {

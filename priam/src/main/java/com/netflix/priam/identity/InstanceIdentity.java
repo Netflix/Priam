@@ -245,8 +245,8 @@ public class InstanceIdentity
     public boolean isSeed()
     {
         populateRacMap();
-        String ip = locMap.get(myInstance.getRac()).get(0).getHostIP();
-        return myInstance.getHostIP().equals(ip);
+        String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
+        return myInstance.getHostName().equals(ip);
     }
     
     public boolean isReplace() 

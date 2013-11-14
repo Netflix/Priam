@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
@@ -37,11 +38,14 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -64,7 +68,8 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
     private static final int MAX_CHUNKS = 10000;
     private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
-
+    	
+    
     private final Provider<AbstractBackupPath> pathProvider;
     private final ICompression compress;
     private final IConfiguration config;
@@ -111,18 +116,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
      */
     private String getS3Endpoint()
     {
-        final String curRegion = config.getDC();
-        if("us-east-1".equalsIgnoreCase(curRegion))
-            return "s3.amazonaws.com";
-        if("eu-west-1".equalsIgnoreCase(curRegion))
-            return "s3-eu-west-1.amazonaws.com";
-        if("us-west-1".equalsIgnoreCase(curRegion))
-            return "s3-us-west-1.amazonaws.com";
-        if("us-west-2".equalsIgnoreCase(curRegion))
-            return "s3-us-west-2.amazonaws.com";
-        if("sa-east-1".equalsIgnoreCase(curRegion))
-            return "s3-sa-east-1.amazonaws.com";
-        throw new IllegalStateException("Unsupported region for this application: " + curRegion);
+    	 final String curRegion = config.getDC();
+         if("us-east-1".equalsIgnoreCase(curRegion) ||
+            "us-west-1".equalsIgnoreCase(curRegion) ||
+            "us-west-2".equalsIgnoreCase(curRegion)	|| 
+            "eu-west-1".equalsIgnoreCase(curRegion) ||
+            "sa-east-1".equalsIgnoreCase(curRegion))
+             return config.getS3EndPoint();
+         
+         throw new IllegalStateException("Unsupported region for this application: " + curRegion);
     }
 
     @Override
@@ -177,6 +179,15 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
+            
+            if (logger.isDebugEnabled())
+            {	
+               final S3ResponseMetadata responseMetadata = s3Client.getCachedResponseMetadata(initRequest);
+               final String requestId = responseMetadata.getRequestId(); // "x-amz-request-id" header
+               final String hostId = responseMetadata.getHostId(); // "x-amz-id-2" header
+               logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
+            }  
+            
         }
         catch (Exception e)
         {

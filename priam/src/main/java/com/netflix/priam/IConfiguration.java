@@ -406,4 +406,6 @@ public interface IConfiguration
     public boolean isThriftEnabled();
 
     public boolean isNativeTransportEnabled();
+    public String getS3EndPoint(); 
+    
 }

@@ -15,7 +15,6 @@
  */
 package com.netflix.priam;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.ClearCredential;
@@ -27,29 +26,6 @@ import com.netflix.priam.defaultimpl.ClearCredential;
 @ImplementedBy(ClearCredential.class)
 public interface ICredential
 {
-    /**
-     * @return Access ID
-     * @deprecated See {code}getCredentials{code}
-     */
-    @Deprecated
-    public String getAccessKeyId();
-
-    /**
-     * @return Secret key
-     * @deprecated See {code}getCredentials{code}
-     */
-    @Deprecated
-    public String getSecretAccessKey();
-
-    /**
-     * Retrieve AWS credentials (id and key).
-     * <p>
-     * Added this method to handle potential data races in calling {code}getAccessKeyId{code}
-     * and {code}getSecretAccessKey{code} sequentially.
-     */
-    @Deprecated
-    AWSCredentials getCredentials();
-    
     /**
      * Retrieve AWS Credential Provider object 
      */

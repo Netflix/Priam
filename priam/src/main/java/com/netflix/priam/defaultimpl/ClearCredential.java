@@ -18,14 +18,13 @@ package com.netflix.priam.defaultimpl;
 import java.io.FileInputStream;
 import java.util.Properties;
 
-import org.apache.cassandra.io.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.netflix.priam.ICredential;
+import org.apache.cassandra.io.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This is a basic implementation of ICredentials. User should prefer to
@@ -39,7 +38,6 @@ public class ClearCredential implements ICredential
 {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
     private static final String CRED_FILE = "/etc/awscredential.properties";
-    private final Properties props;
     private final String AWS_ACCESS_ID;
     private final String AWS_KEY;
 
@@ -49,7 +47,7 @@ public class ClearCredential implements ICredential
         try
         {
             fis = new FileInputStream(CRED_FILE);
-            props = new Properties();
+            final Properties props = new Properties();
             props.load(fis);
             AWS_ACCESS_ID = props.getProperty("AWSACCESSID") != null ? props.getProperty("AWSACCESSID").trim() : "";
             AWS_KEY = props.getProperty("AWSKEY") != null ? props.getProperty("AWSKEY").trim() : "";            
@@ -63,35 +61,19 @@ public class ClearCredential implements ICredential
         {
             FileUtils.closeQuietly(fis);
         }
-
     }
 
-    @Override
-    public String getAccessKeyId()
+	public AWSCredentialsProvider getAwsCredentialProvider()
     {
-        return AWS_ACCESS_ID;
-    }
-
-    @Override
-    public String getSecretAccessKey()
-    {
-        return AWS_KEY;
-    }
-
-    public AWSCredentials getCredentials()
-    {
-        return new BasicAWSCredentials(getAccessKeyId(), getSecretAccessKey());
-    }
-
-	@Override
-	public AWSCredentialsProvider getAwsCredentialProvider() {
-		return new AWSCredentialsProvider(){
-			public AWSCredentials getCredentials(){
-				return ClearCredential.this.getCredentials();
+		return new AWSCredentialsProvider()
+        {
+			public AWSCredentials getCredentials()
+            {
+				return new BasicAWSCredentials(AWS_ACCESS_ID, AWS_KEY);
 			}
 
-			@Override
-			public void refresh() {
+			public void refresh()
+            {
 				// NOP				
 			}
 		};

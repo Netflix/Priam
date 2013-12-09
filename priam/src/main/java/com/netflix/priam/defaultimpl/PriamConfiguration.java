@@ -256,7 +256,7 @@ public class PriamConfiguration implements IConfiguration
             super(NUMBER_OF_RETRIES, WAIT_TIME);
             this.region = region;
             this.instanceId = instanceId;
-            client = new AmazonEC2Client(provider.getCredentials());
+            client = new AmazonEC2Client(provider.getAwsCredentialProvider());
             client.setEndpoint("ec2." + region + ".amazonaws.com");
         }
         
@@ -286,7 +286,7 @@ public class PriamConfiguration implements IConfiguration
      * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region){
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
+        AmazonEC2 client = new AmazonEC2Client(provider.getAwsCredentialProvider());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
         List<String> zone = Lists.newArrayList();

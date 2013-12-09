@@ -50,7 +50,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
         super.intialize(asgName, region);
 
         // End point is us-east-1
-        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getCredentials());
+        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
 
         String nextToken = null;
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;

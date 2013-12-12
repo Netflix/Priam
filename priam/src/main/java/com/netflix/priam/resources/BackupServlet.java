@@ -15,12 +15,12 @@
  */
 package com.netflix.priam.resources;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -30,6 +30,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.exception.ExceptionUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -55,8 +56,10 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.SystemUtils;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -72,6 +75,14 @@ public class BackupServlet
     private static final String REST_KEYSPACES = "keyspaces";
     private static final String REST_RESTORE_PREFIX = "restoreprefix";
     private static final String FMT = "yyyyMMddHHmm";
+	private static final String REST_LOCR_ROWKEY = "verifyrowkey";
+	private static final String REST_LOCR_KEYSPACE = "verifyks";
+	private static final String REST_LOCR_COLUMNFAMILY = "verifycf";
+	private static final String REST_LOCR_FILEEXTENSION = "verifyfileextension";
+	private static final String SSTABLE2JSON_DIR_LOCATION = "/tmp/priam_sstables";
+	private static final String SSTABLE2JSON_COMMAND_FROM_CASSHOME = "/bin/sstable2json";
+
+	private static String JSON_FILE_PATH = "";
 
     private PriamServer priamServer;
     private IConfiguration config;
@@ -210,6 +221,98 @@ public class BackupServlet
     }
 
     /**
+     * <p>
+     * Life_Of_C*Row : With this REST call, mutations/existence of a rowkey can be found.
+     * It uses SSTable2Json utility which will convert SSTables on disk to JSON format and 
+     * Search for the desired rowkey.
+     * 
+     * Steps include:
+     * 1. Restoring data for given data range and other params
+     * 2. Searching provided rowkey in SSTables and writing search result to JSON
+     * 3. Delete all the files under Keyspace Directory.
+     *    Deletion is done for efficient space usage, so that same node can be reused for
+     *    subsequent runs. 
+     * <p>
+     * 
+     * @param Similar to Restore call and few additional params.
+     *        
+     *      daterange 		: Can not be Null or Default. Comma separated Start & End date eg. 201311250000,201311260000
+     *      rowkey    		: rowkey to search (In Hex format)
+     *      ks        		: keyspace of mentioned rowkey
+     *      cf        		: column family of mentioned rowkey
+     *      fileExtension 	: Part of SSTable Data file names 
+     *      					  eg. if file name = KS1-CF1-hf-100-Data.db
+     *      						  then fileExtension = KS1-CF1-hf
+     * 
+     * @return Creates JSON file based on the passed date at hardcoded dir location : /tmp/priam_sstables
+     * 		   If rowkey is not found in the SSTable, JSON file will be empty.
+     */
+	@GET
+	@Path("/life_of_crow")
+	public Response restore_verify_key(
+			@QueryParam(REST_HEADER_RANGE) String daterange,
+			@QueryParam(REST_HEADER_REGION) String region,
+			@QueryParam(REST_HEADER_TOKEN) String token,
+			@QueryParam(REST_KEYSPACES) String keyspaces,
+			@QueryParam(REST_RESTORE_PREFIX) String restorePrefix,
+			@QueryParam(REST_LOCR_ROWKEY) String rowkey,
+			@QueryParam(REST_LOCR_KEYSPACE) String ks,
+			@QueryParam(REST_LOCR_COLUMNFAMILY) String cf,
+			@QueryParam(REST_LOCR_FILEEXTENSION) String fileExtension) throws Exception {
+
+		Date startTime;
+		Date endTime;
+		//Creating Dir for Json storage
+		SystemUtils.createDirs(SSTABLE2JSON_DIR_LOCATION);
+		try
+		{
+		
+		if (StringUtils.isBlank(daterange)
+				|| daterange.equalsIgnoreCase("default")) {
+			return Response.ok("\n[\"daterange can't be blank or default.eg.201311250000,201311260000\"]\n", MediaType.APPLICATION_JSON)
+					.build();
+		}
+		
+		String[] restore = daterange.split(",");
+		AbstractBackupPath path = pathProvider.get();
+		startTime = path.parseDate(restore[0]);
+		endTime = path.parseDate(restore[1]);		
+
+		String origRestorePrefix = config.getRestorePrefix();
+		if (StringUtils.isNotBlank(restorePrefix)) {
+			config.setRestorePrefix(restorePrefix);
+		}
+
+		
+		restore(token, region, startTime, endTime, keyspaces);
+
+		// Since this call is probably never called in parallel, config is
+		// multi-thread safe to be edited
+		config.setRestorePrefix(origRestorePrefix);
+
+		while (!CassandraMonitor.isCassadraStarted())
+			Thread.sleep(1000l);
+
+		// initialize json file name
+		JSON_FILE_PATH = daterange.split(",")[0].substring(0, 8)+".json";
+
+		//Convert SSTable2Json and search for given rowkey
+		checkSSTablesForKey(rowkey,ks,cf,fileExtension);
+
+		}
+		catch(Exception e)
+		{
+			logger.info(ExceptionUtils.getFullStackTrace(e));
+		}
+		finally{
+			removeAllDataFiles(ks);
+		}
+		
+		return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON)
+				.build();
+	}
+
+    /**
      * Restore with the specified start and end time.
      * 
      * @param token
@@ -331,4 +434,52 @@ public class BackupServlet
 		}
 		return object;
 	}
+
+    /**
+     * Convert SSTable2Json and search for given key
+     */
+    public void checkSSTablesForKey(String rowkey,String keyspace, String cf, String fileExtension) throws InterruptedException, Exception, JSONException {
+		try {
+			logger.info("Starting SSTable2Json conversion ...");
+			
+			String unixCmd = formulateCommandToRun( rowkey, keyspace,  cf,  fileExtension);
+			
+			String[] cmd = {"/bin/sh", "-c", unixCmd.toString()};
+			Process p = Runtime
+					.getRuntime()
+					.exec(cmd);
+			p.waitFor();
+
+			logger.info("Finished SSTable2Json conversion and search.");
+		
+		} catch (IOException e) {
+			logger.info(ExceptionUtils.getFullStackTrace(e));
+		}		
+	}
+	
+	public String formulateCommandToRun(String rowkey,String keyspace, String cf, String fileExtension)
+	{
+		StringBuffer sbuff = new StringBuffer();
+
+		sbuff.append("for i in $(ls "+config.getDataFileLocation()+File.separator+keyspace+File.separator+cf+File.separator+fileExtension+"-*-Data.db); do "+config.getCassHome()+SSTABLE2JSON_COMMAND_FROM_CASSHOME+" $i -k ");
+		sbuff.append(rowkey);
+		sbuff.append("  | grep ");
+		sbuff.append(rowkey);
+		sbuff.append(" >> ");
+		sbuff.append(SSTABLE2JSON_DIR_LOCATION+File.separator+JSON_FILE_PATH);
+		sbuff.append(" ; done");
+		
+		logger.info("SSTable2JSON location <"+SSTABLE2JSON_DIR_LOCATION+File.separator+JSON_FILE_PATH+">");
+		logger.info("Running Command = "+sbuff.toString());
+		return sbuff.toString();
+	}
+	
+	public void removeAllDataFiles(String ks) throws Exception
+	{		
+		String cleanupDirPath = config.getDataFileLocation()+File.separator+ks;
+		logger.info("Starting to clean all the files inside <"+cleanupDirPath+">");
+		SystemUtils.cleanupDir(cleanupDirPath, null);
+		logger.info("*** Done cleaning all the files inside <"+cleanupDirPath+">");
+	}
+	
 }

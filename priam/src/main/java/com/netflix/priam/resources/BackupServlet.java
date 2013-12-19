@@ -21,6 +21,12 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -81,8 +87,6 @@ public class BackupServlet
 	private static final String REST_LOCR_FILEEXTENSION = "verifyfileextension";
 	private static final String SSTABLE2JSON_DIR_LOCATION = "/tmp/priam_sstables";
 	private static final String SSTABLE2JSON_COMMAND_FROM_CASSHOME = "/bin/sstable2json";
-
-	private static String JSON_FILE_PATH = "";
 
     private PriamServer priamServer;
     private IConfiguration config;
@@ -264,6 +268,8 @@ public class BackupServlet
 		Date endTime;
 		//Creating Dir for Json storage
 		SystemUtils.createDirs(SSTABLE2JSON_DIR_LOCATION);
+		String JSON_FILE_PATH = "";
+
 		try
 		{
 		
@@ -297,7 +303,7 @@ public class BackupServlet
 		JSON_FILE_PATH = daterange.split(",")[0].substring(0, 8)+".json";
 
 		//Convert SSTable2Json and search for given rowkey
-		checkSSTablesForKey(rowkey,ks,cf,fileExtension);
+		checkSSTablesForKey(rowkey,ks,cf,fileExtension,JSON_FILE_PATH);
 
 		}
 		catch(Exception e)
@@ -438,26 +444,50 @@ public class BackupServlet
     /**
      * Convert SSTable2Json and search for given key
      */
-    public void checkSSTablesForKey(String rowkey,String keyspace, String cf, String fileExtension) throws InterruptedException, Exception, JSONException {
+    public void checkSSTablesForKey(String rowkey,String keyspace, String cf, String fileExtension, String jsonFilePath) throws Exception {
 		try {
 			logger.info("Starting SSTable2Json conversion ...");
-			
-			String unixCmd = formulateCommandToRun( rowkey, keyspace,  cf,  fileExtension);
+			//Setting timeout to 10 Mins
+			long TIMEOUT_PERIOD = 10l;
+			String unixCmd = formulateCommandToRun( rowkey, keyspace,  cf,  fileExtension, jsonFilePath);
 			
 			String[] cmd = {"/bin/sh", "-c", unixCmd.toString()};
-			Process p = Runtime
+			final Process p = Runtime
 					.getRuntime()
 					.exec(cmd);
-			p.waitFor();
-
-			logger.info("Finished SSTable2Json conversion and search.");
-		
+			
+			Callable<Integer> callable = new Callable<Integer>()
+			{
+				@Override
+				public Integer call() throws Exception {
+					int returnCode = p.waitFor();
+					return returnCode;
+				}				
+			};
+			
+			ExecutorService exeService = Executors.newSingleThreadExecutor();
+			try{
+				Future<Integer> future = exeService.submit(callable);
+				int returnVal = future.get(TIMEOUT_PERIOD, TimeUnit.MINUTES);
+				if (returnVal == 0)
+					logger.info("Finished SSTable2Json conversion and search.");
+				else
+					logger.error("Error occurred during SSTable2Json conversion and search.");
+			}catch(TimeoutException e){
+				logger.error(ExceptionUtils.getFullStackTrace(e));
+				throw e;
+			}
+			finally{
+				p.destroy();
+				exeService.shutdown();
+			}
+			
 		} catch (IOException e) {
-			logger.info(ExceptionUtils.getFullStackTrace(e));
+			logger.error(ExceptionUtils.getFullStackTrace(e));
 		}		
 	}
 	
-	public String formulateCommandToRun(String rowkey,String keyspace, String cf, String fileExtension)
+	public String formulateCommandToRun(String rowkey,String keyspace, String cf, String fileExtension, String jsonFilePath)
 	{
 		StringBuffer sbuff = new StringBuffer();
 
@@ -466,10 +496,10 @@ public class BackupServlet
 		sbuff.append("  | grep ");
 		sbuff.append(rowkey);
 		sbuff.append(" >> ");
-		sbuff.append(SSTABLE2JSON_DIR_LOCATION+File.separator+JSON_FILE_PATH);
+		sbuff.append(SSTABLE2JSON_DIR_LOCATION+File.separator+jsonFilePath);
 		sbuff.append(" ; done");
 		
-		logger.info("SSTable2JSON location <"+SSTABLE2JSON_DIR_LOCATION+File.separator+JSON_FILE_PATH+">");
+		logger.info("SSTable2JSON location <"+SSTABLE2JSON_DIR_LOCATION+File.separator+jsonFilePath+">");
 		logger.info("Running Command = "+sbuff.toString());
 		return sbuff.toString();
 	}
@@ -481,5 +511,5 @@ public class BackupServlet
 		SystemUtils.cleanupDir(cleanupDirPath, null);
 		logger.info("*** Done cleaning all the files inside <"+cleanupDirPath+">");
 	}
-	
+
 }

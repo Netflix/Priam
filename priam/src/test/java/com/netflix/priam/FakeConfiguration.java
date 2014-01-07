@@ -530,4 +530,19 @@ public class FakeConfiguration implements IConfiguration
     public String getS3EndPoint() {
 	return "s3-external-1.amazonaws.com";
     }
+
+    public int getConcurrentReadsCnt()
+    {
+        return 8;
+    }
+
+    public int getConcurrentWritesCnt()
+    {
+        return 8;
+    }
+
+    public int getConcurrentCompactorsCnt()
+    {
+        return 1;
+    }
 }

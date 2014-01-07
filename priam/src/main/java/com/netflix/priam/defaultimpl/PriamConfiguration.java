@@ -115,6 +115,10 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_INTERNODE_ENCRYPTION = PRIAM_PRE + ".internodeEncryption";
     private static final String CONFIG_DSNITCH_ENABLED = PRIAM_PRE + ".dsnitchEnabled";
 
+    private static final String CONFIG_CONCURRENT_READS = PRIAM_PRE + ".concurrentReads";
+    private static final String CONFIG_CONCURRENT_WRITES = PRIAM_PRE + ".concurrentWrites";
+    private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
+
     private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
     private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
     private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
@@ -825,5 +829,21 @@ public class PriamConfiguration implements IConfiguration
     	
     	return null;
     }
-    
+
+    public int getConcurrentReadsCnt()
+    {
+        return config.get(CONFIG_CONCURRENT_READS, 32);
+    }
+
+    public int getConcurrentWritesCnt()
+    {
+        return config.get(CONFIG_CONCURRENT_WRITES, 32);
+    }
+
+    public int getConcurrentCompactorsCnt()
+    {
+        int cpus = Runtime.getRuntime().availableProcessors();
+        return config.get(CONFIG_CONCURRENT_COMPACTORS, cpus);
+    }
+
 }

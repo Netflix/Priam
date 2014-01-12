@@ -406,4 +406,9 @@ public interface IConfiguration
     public boolean isThriftEnabled();
 
     public boolean isNativeTransportEnabled();
+    public String getS3EndPoint();
+
+    public int getConcurrentReadsCnt();
+    public int getConcurrentWritesCnt();
+    public int getConcurrentCompactorsCnt();
 }

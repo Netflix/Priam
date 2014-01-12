@@ -496,10 +496,10 @@ public class FakeConfiguration implements IConfiguration
             
     }
 
-	@Override
-	public int maxCommitLogsRestore() {
-		return 0;
-	}
+    @Override
+    public int maxCommitLogsRestore() {		
+       return 0;
+    }
 
     public boolean isClientSslEnabled()
     {
@@ -524,5 +524,25 @@ public class FakeConfiguration implements IConfiguration
     public boolean isNativeTransportEnabled()
     {
         return false;
+    }
+	
+    @Override
+    public String getS3EndPoint() {
+	return "s3-external-1.amazonaws.com";
+    }
+
+    public int getConcurrentReadsCnt()
+    {
+        return 8;
+    }
+
+    public int getConcurrentWritesCnt()
+    {
+        return 8;
+    }
+
+    public int getConcurrentCompactorsCnt()
+    {
+        return 1;
     }
 }

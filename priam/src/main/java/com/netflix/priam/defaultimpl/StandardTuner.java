@@ -69,6 +69,10 @@ public class StandardTuner implements CassandraTuner
         map.put("internode_compression", config.getInternodeCompression());
         map.put("dynamic_snitch", config.isDynamicSnitchEnabled());
 
+        map.put("concurrent_reads", config.getConcurrentReadsCnt());
+        map.put("concurrent_writes", config.getConcurrentWritesCnt());
+        map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
+
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);

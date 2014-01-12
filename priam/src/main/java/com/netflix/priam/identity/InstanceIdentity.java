@@ -71,6 +71,7 @@ public class InstanceIdentity
    
     private PriamInstance myInstance;
     private boolean isReplace = false;
+    private String replacedIp = "";
 
     @Inject
     public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
@@ -127,6 +128,7 @@ public class InstanceIdentity
 			myInstance = newToken.call();
 		}
         logger.info("My token: " + myInstance.getToken());
+        
     }
 
     private void populateRacMap()
@@ -158,6 +160,7 @@ public class InstanceIdentity
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
+                replacedIp = markAsDead.getHostIP();
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
                 return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
@@ -238,15 +241,21 @@ public class InstanceIdentity
         }
         return seeds;
     }
-
+    
     public boolean isSeed()
     {
         populateRacMap();
-        String ip = locMap.get(myInstance.getRac()).get(0).getHostIP();
-        return myInstance.getHostIP().equals(ip);
+        String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
+        return myInstance.getHostName().equals(ip);
     }
     
-    public boolean isReplace(){
+    public boolean isReplace() 
+    {
         return isReplace;
+    }
+    
+    public String getReplacedIp()
+    {
+    	return replacedIp;
     }
 }

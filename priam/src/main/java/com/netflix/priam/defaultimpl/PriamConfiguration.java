@@ -27,7 +27,9 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,6 +115,22 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_INTERNODE_ENCRYPTION = PRIAM_PRE + ".internodeEncryption";
     private static final String CONFIG_DSNITCH_ENABLED = PRIAM_PRE + ".dsnitchEnabled";
 
+    private static final String CONFIG_CONCURRENT_READS = PRIAM_PRE + ".concurrentReads";
+    private static final String CONFIG_CONCURRENT_WRITES = PRIAM_PRE + ".concurrentWrites";
+    private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
+
+    private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
+    private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
+    private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
+    private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
+    private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
+    
+    private static String US_EAST_1_REGION = "us-east-1";
+    private static String US_WEST_1_REGION = "us-west-1";
+    private static String US_WEST_2_REGION = "us-west-2";
+    private static String EU_WEST_1_REGION = "eu-west-1";
+    private static String SA_EAST_1_REGION = "sa-east-1";
+    
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
@@ -129,7 +147,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
 
 
-    // Defaults
+    // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
@@ -168,9 +186,17 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
 
-    private final IConfigSource config;
+    //default S3 endpoints
+    private static final String DEFAULT_US_EAST_1_S3_ENDPOINT = "s3-external-1.amazonaws.com";
+    private static final String DEFAULT_US_WEST_1_S3_ENDPOINT = "s3-us-west-1.amazonaws.com";
+    private static final String DEFAULT_US_WEST_2_S3_ENDPOINT = "s3-us-west-2.amazonaws.com";
+    private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
+    private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
+    
+   
+    private final IConfigSource config; 
+    private final String BLANK = "";
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
-
     private final ICredential provider;
 
     @Inject
@@ -212,30 +238,59 @@ public class PriamConfiguration implements IConfiguration
      */
     private String populateASGName(String region, String instanceId)
     {
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
-        client.setEndpoint("ec2." + region + ".amazonaws.com");
-        DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
-        DescribeInstancesResult res = client.describeInstances(desc);
-
-        for (Reservation resr : res.getReservations())
-        {
-            for (Instance ins : resr.getInstances())
+        GetASGName getASGName = new GetASGName(region, instanceId);
+        
+        try {
+            return getASGName.call();
+        } catch (Exception e) {
+            logger.error("Failed to determine ASG name.", e);
+            return null;
+        }
+    }
+    
+    private class GetASGName extends RetryableCallable<String>
+    {
+        private static final int NUMBER_OF_RETRIES = 15;
+        private static final long WAIT_TIME = 30000;
+        private final String region;
+        private final String instanceId;
+        private final AmazonEC2 client;
+        
+        public GetASGName(String region, String instanceId) {
+            super(NUMBER_OF_RETRIES, WAIT_TIME);
+            this.region = region;
+            this.instanceId = instanceId;
+            client = new AmazonEC2Client(provider.getAwsCredentialProvider());
+            client.setEndpoint("ec2." + region + ".amazonaws.com");
+        }
+        
+        @Override
+        public String retriableCall() throws IllegalStateException {
+            DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
+            DescribeInstancesResult res = client.describeInstances(desc);
+    
+            for (Reservation resr : res.getReservations())
             {
-                for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                for (Instance ins : resr.getInstances())
                 {
-                    if (tag.getKey().equals("aws:autoscaling:groupName"))
-                        return tag.getValue();
+                    for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags())
+                    {
+                        if (tag.getKey().equals("aws:autoscaling:groupName"))
+                            return tag.getValue();
+                    }
                 }
             }
+            
+            logger.warn("Couldn't determine ASG name");
+            throw new IllegalStateException("Couldn't determine ASG name");
         }
-        return null;
     }
 
     /**
      * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region){
-        AmazonEC2 client = new AmazonEC2Client(provider.getCredentials());
+        AmazonEC2 client = new AmazonEC2Client(provider.getAwsCredentialProvider());
         client.setEndpoint("ec2." + region + ".amazonaws.com");
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
         List<String> zone = Lists.newArrayList();
@@ -531,7 +586,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public int getMaxHintWindowInMS()
     {
-        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 8);
+        return config.get(CONFIG_MAX_HINT_WINDOW_IN_MS, 10800000);
     }
 
     public int getHintedHandoffThrottleKb()
@@ -735,4 +790,60 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.get(CONFIG_NATIVE_PROTOCOL_ENABLED, false);
     }
+    
+    
+    public String getS3EndPoint() {
+    	String region = getDC();
+    	
+    	String s3Url = null;
+    	
+    	if (US_EAST_1_REGION.equals(region))
+    	{	
+    	   s3Url = config.get(CONFIG_US_EAST_1_S3_ENDPOINT);
+    	   return StringUtils.isBlank(s3Url) ? DEFAULT_US_EAST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (US_WEST_1_REGION.equals(region))
+    	{
+    		s3Url = config.get(CONFIG_US_WEST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (US_WEST_2_REGION.equals(region))
+    	{
+    		s3Url = config.get(CONFIG_US_WEST_2_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_2_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (EU_WEST_1_REGION.equals(region))
+    	{	
+    		s3Url = config.get(CONFIG_EU_WEST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_EU_WEST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	if (SA_EAST_1_REGION.equals(region))
+    	{	
+    		s3Url = config.get(CONFIG_SA_EAST_1_S3_ENDPOINT);
+    		return StringUtils.isBlank(s3Url) ? DEFAULT_SA_EAST_1_S3_ENDPOINT : s3Url;
+    	}
+    	
+    	return null;
+    }
+
+    public int getConcurrentReadsCnt()
+    {
+        return config.get(CONFIG_CONCURRENT_READS, 32);
+    }
+
+    public int getConcurrentWritesCnt()
+    {
+        return config.get(CONFIG_CONCURRENT_WRITES, 32);
+    }
+
+    public int getConcurrentCompactorsCnt()
+    {
+        int cpus = Runtime.getRuntime().availableProcessors();
+        return config.get(CONFIG_CONCURRENT_COMPACTORS, cpus);
+    }
+
 }

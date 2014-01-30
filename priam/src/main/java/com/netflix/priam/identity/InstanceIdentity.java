@@ -159,7 +159,7 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || InstanceIdentity.DUMMY_INSTANCE_ID.equals(dead.getInstanceId()))
+                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || isInstanceDummy(dead))
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
@@ -195,7 +195,7 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !InstanceIdentity.DUMMY_INSTANCE_ID.equals(dead.getInstanceId()))
+                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !isInstanceDummy(dead))
                     continue;
                 logger.info("Found pre-generated token: " + dead.getToken());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
@@ -268,7 +268,7 @@ public class InstanceIdentity
             if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostIP().equals(myInstance.getHostIP()))
             {	
             	PriamInstance instance = locMap.get(myInstance.getRac()).get(1);
-            	if (instance != null && !instance.getInstanceId().equals(DUMMY_INSTANCE_ID))
+            	if (instance != null && !isInstanceDummy(instance))
             	{
             	    if (config.isMultiDC())
             		   seeds.add(instance.getHostIP());
@@ -280,7 +280,7 @@ public class InstanceIdentity
         for (String loc : locMap.keySet())
         {
         		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
-        		if (instance != null && !instance.getInstanceId().equals(DUMMY_INSTANCE_ID))
+        		if (instance != null && !isInstanceDummy(instance))
         		{
         			if (config.isMultiDC())
         			   seeds.add(instance.getHostIP());
@@ -311,5 +311,10 @@ public class InstanceIdentity
     public String getReplacedIp()
     {
     	return replacedIp;
+    }
+    
+    private boolean isInstanceDummy(PriamInstance instance) 
+    {
+    	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }
 }

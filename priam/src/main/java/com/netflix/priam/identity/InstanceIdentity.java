@@ -47,7 +47,7 @@ import java.util.Random;
 public class InstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
-    private static final String DUMMY_INSTANCE_ID = "new_slot";
+    public static final String DUMMY_INSTANCE_ID = "new_slot";
 
     private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
     {
@@ -71,6 +71,7 @@ public class InstanceIdentity
    
     private PriamInstance myInstance;
     private boolean isReplace = false;
+    private boolean isTokenPregenerated = false;
     private String replacedIp = "";
 
     @Inject
@@ -120,6 +121,11 @@ public class InstanceIdentity
         // Grab a dead token
         if (null == myInstance)
             myInstance = new GetDeadToken().call();
+        
+        // Grab a pre-generated token if there is such one
+        if (null == myInstance)
+           myInstance = new GetPregeneratedToken().call();
+        	
         // Grab a new token
         if (null == myInstance)
         {
@@ -145,6 +151,7 @@ public class InstanceIdentity
         @Override
         public PriamInstance retriableCall() throws Exception
         {
+        	logger.info("Looking for a token from any dead node");
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
             // Sleep random interval - upto 15 sec
@@ -152,7 +159,7 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()))
+                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || isInstanceDummy(dead))
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
@@ -173,12 +180,50 @@ public class InstanceIdentity
             populateRacMap();
         }
     }
+    
+    
+    public class GetPregeneratedToken extends RetryableCallable<PriamInstance>
+    {
+        @Override
+        public PriamInstance retriableCall() throws Exception
+        {
+        	logger.info("Looking for any pre-generated token");
+            final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+            List<String> asgInstances = membership.getRacMembership();
+            // Sleep random interval - upto 15 sec
+            sleeper.sleep(new Random().nextInt(5000) + 10000);
+            for (PriamInstance dead : allIds)
+            {
+                // test same zone and is it is alive.
+                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !isInstanceDummy(dead))
+                    continue;
+                logger.info("Found pre-generated token: " + dead.getToken());
+                PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
+                        dead.getToken());
+                // remove it as we marked it down...
+                factory.delete(dead);
+                isTokenPregenerated = true;
+           
+                String payLoad = markAsDead.getToken();
+                logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
+                return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
+            }
+            return null;
+        }
+
+        public void forEachExecution()
+        {
+            populateRacMap();
+        }
+    }
+    
 
     public class GetNewToken extends RetryableCallable<PriamInstance>
     {
         @Override
         public PriamInstance retriableCall() throws Exception
         {
+        	logger.info("Generating my own and new token");
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(15000));
             int hash = tokenManager.regionOffset(config.getDC());
@@ -222,16 +267,20 @@ public class InstanceIdentity
             // If seed node, return the next node in the list
             if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostIP().equals(myInstance.getHostIP()))
             {	
-            	if (config.isMultiDC())
-            		seeds.add(locMap.get(myInstance.getRac()).get(1).getHostIP());
-            	else 
-            		seeds.add(locMap.get(myInstance.getRac()).get(1).getHostName());
+            	PriamInstance instance = locMap.get(myInstance.getRac()).get(1);
+            	if (instance != null && !isInstanceDummy(instance))
+            	{
+            	    if (config.isMultiDC())
+            		   seeds.add(instance.getHostIP());
+            	    else 
+            		   seeds.add(instance.getHostName());
+                }
             }
         }
         for (String loc : locMap.keySet())
         {
         		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
-        		if (instance != null)
+        		if (instance != null && !isInstanceDummy(instance))
         		{
         			if (config.isMultiDC())
         			   seeds.add(instance.getHostIP());
@@ -254,8 +303,18 @@ public class InstanceIdentity
         return isReplace;
     }
     
+    public boolean isTokenPregenerated()
+    {
+    	return isTokenPregenerated;
+    }
+    
     public String getReplacedIp()
     {
     	return replacedIp;
+    }
+    
+    private boolean isInstanceDummy(PriamInstance instance) 
+    {
+    	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }
 }

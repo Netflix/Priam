@@ -159,7 +159,8 @@ public class InstanceIdentity
                         dead.getToken());
                 // remove it as we marked it down...
                 factory.delete(dead);
-                isReplace = true;
+                if (!"new_slot".equals(dead.getInstanceId()))
+                	isReplace = true;
                 replacedIp = markAsDead.getHostIP();
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());

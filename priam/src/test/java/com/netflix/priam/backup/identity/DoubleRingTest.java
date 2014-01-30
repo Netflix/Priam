@@ -3,12 +3,15 @@ package com.netflix.priam.backup.identity;
 import java.util.List;
 
 import com.netflix.priam.utils.ITokenManager;
+
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.TokenManager;
+
 import static org.junit.Assert.assertEquals;
 
 public class DoubleRingTest extends InstanceTestUtils
@@ -44,7 +47,7 @@ public class DoubleRingTest extends InstanceTestUtils
             int id = ins.getId() - tokenManager.regionOffset(config.getDC());
             System.out.println(ins);
             if (0 != id % 2)
-                assertEquals(ins.getInstanceId(), "new_slot");
+                assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
         }
     }
 

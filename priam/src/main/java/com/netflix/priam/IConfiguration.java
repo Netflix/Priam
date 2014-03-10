@@ -411,4 +411,8 @@ public interface IConfiguration
     public int getConcurrentReadsCnt();
     public int getConcurrentWritesCnt();
     public int getConcurrentCompactorsCnt();
+    
+    public String getRpcServerType();
+    public int getIndexInterval();
+    
 }

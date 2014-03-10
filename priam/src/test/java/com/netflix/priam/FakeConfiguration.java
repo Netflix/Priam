@@ -545,4 +545,14 @@ public class FakeConfiguration implements IConfiguration
     {
         return 1;
     }
+
+	@Override
+	public String getRpcServerType() {
+		return "hsha";
+	}
+
+	@Override
+	public int getIndexInterval() {
+		return 0;
+	}
 }

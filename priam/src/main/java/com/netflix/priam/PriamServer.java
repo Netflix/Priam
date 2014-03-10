@@ -70,9 +70,12 @@ public class PriamServer
         if (config.isMultiDC())
         {
             scheduler.runTaskNow(UpdateSecuritySettings.class);
-            // sleep for 60 sec for the SG update to happen.
-            if (UpdateSecuritySettings.firstTimeUpdated)
+            // sleep for 150 sec if this is a new node with new IP for SG to be updated by other seed nodes
+            if (id.isReplace() || id.isTokenPregenerated())
+            	sleeper.sleep(150 * 1000);
+            else if (UpdateSecuritySettings.firstTimeUpdated)
                 sleeper.sleep(60 * 1000);
+            
             scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
         }
 

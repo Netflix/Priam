@@ -24,7 +24,7 @@ public class CassandraProcessManager implements ICassandraProcess
 {
     private static final Logger logger = LoggerFactory.getLogger(CassandraProcessManager.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
-    private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 1000;
+    private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
     private final IConfiguration config;
     private final Sleeper sleeper;
 

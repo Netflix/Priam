@@ -72,6 +72,9 @@ public class StandardTuner implements CassandraTuner
         map.put("concurrent_reads", config.getConcurrentReadsCnt());
         map.put("concurrent_writes", config.getConcurrentWritesCnt());
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
+        
+        map.put("rpc_server_type", config.getRpcServerType());
+        map.put("index_interval", config.getIndexInterval());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

@@ -118,6 +118,9 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CONCURRENT_READS = PRIAM_PRE + ".concurrentReads";
     private static final String CONFIG_CONCURRENT_WRITES = PRIAM_PRE + ".concurrentWrites";
     private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
+    
+    private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
+    private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
 
     private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
     private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
@@ -185,7 +188,11 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
-
+    
+    private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
+    private static final int DEFAULT_INDEX_INTERVAL = 256;
+    
+    
     //default S3 endpoints
     private static final String DEFAULT_US_EAST_1_S3_ENDPOINT = "s3-external-1.amazonaws.com";
     private static final String DEFAULT_US_WEST_1_S3_ENDPOINT = "s3-us-west-1.amazonaws.com";
@@ -846,4 +853,12 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_CONCURRENT_COMPACTORS, cpus);
     }
 
+    public String getRpcServerType() {
+    	return config.get(CONFIG_RPC_SERVER_TYPE, DEFAULT_RPC_SERVER_TYPE);
+    }
+    
+    public int getIndexInterval() {
+    	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
+    }
+    
 }

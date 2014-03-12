@@ -555,4 +555,12 @@ public class FakeConfiguration implements IConfiguration
 	public int getIndexInterval() {
 		return 0;
 	}
+	
+	public String getExtraConfigParams() {
+		return null;
+	}
+	
+    public String getCassKeyName(String priamKey) {
+    	return "";
+    }
 }

@@ -415,4 +415,7 @@ public interface IConfiguration
     public String getRpcServerType();
     public int getIndexInterval();
     
+    public String getExtraConfigParams();
+    
+    public String getCassYamlVal(String priamKey);
 }

@@ -121,6 +121,7 @@ public class PriamConfiguration implements IConfiguration
     
     private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
     private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
+    private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
 
     private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
     private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
@@ -861,4 +862,11 @@ public class PriamConfiguration implements IConfiguration
     	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }
     
+    public String getExtraConfigParams() {
+    	return config.get(CONFIG_EXTRA_PARAMS);
+    }
+    
+    public String getCassYamlVal(String priamKey) {
+    	return config.get(priamKey);
+    }
 }

@@ -560,7 +560,7 @@ public class FakeConfiguration implements IConfiguration
 		return null;
 	}
 	
-    public String getCassKeyName(String priamKey) {
+    public String getCassYamlVal(String priamKey) {
     	return "";
     }
 }

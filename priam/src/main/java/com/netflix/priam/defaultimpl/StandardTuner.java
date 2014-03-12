@@ -204,7 +204,7 @@ public class StandardTuner implements CassandraTuner
     		String[] pair = pairs[i].split("=");
     		String priamKey = pair[0];
     		String cassKey = pair[1];
-    		String cassVal = config.getCassKeyName(priamKey);
+    		String cassVal = config.getCassYamlVal(priamKey);
     		logger.info("Updating yaml: Priamkey[" + priamKey + "], CassKey[" + cassKey + "], Val[" + cassVal + "]");
     		map.put(cassKey, cassVal);
     	}

@@ -866,7 +866,7 @@ public class PriamConfiguration implements IConfiguration
     	return config.get(CONFIG_EXTRA_PARAMS);
     }
     
-    public String getCassKeyName(String priamKey) {
+    public String getCassYamlVal(String priamKey) {
     	return config.get(priamKey);
     }
 }

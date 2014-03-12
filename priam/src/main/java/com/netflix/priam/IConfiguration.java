@@ -417,5 +417,5 @@ public interface IConfiguration
     
     public String getExtraConfigParams();
     
-    public String getCassKeyName(String priamKey);
+    public String getCassYamlVal(String priamKey);
 }

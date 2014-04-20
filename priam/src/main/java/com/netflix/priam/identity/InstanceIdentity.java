@@ -167,7 +167,7 @@ public class InstanceIdentity
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
-                replacedIp = markAsDead.getHostIP();
+                replacedIp = markAsDead.getHostName();
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
                 return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);

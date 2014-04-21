@@ -140,8 +140,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
-    private final String PUBLIC_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
-    private final String PUBLIC_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+    private final String PUBLIC_HOSTNAME;
+    private final String PUBLIC_IP;
     private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
     private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
@@ -210,6 +210,23 @@ public class PriamConfiguration implements IConfiguration
     @Inject
     public PriamConfiguration(ICredential provider, IConfigSource config)
     {
+        // public interface meta-data does not exist when Priam runs in AWS VPC (priam.vpc=true)
+        String p_hostname="";
+        String p_ip="";
+        try {
+            p_hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
+        }
+        catch (RuntimeException ex) {
+            // swallow
+        }
+        try {
+            p_ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
+        }
+        catch (RuntimeException ex) {
+            // swallow
+        }
+        this.PUBLIC_HOSTNAME = p_hostname;
+        this.PUBLIC_IP = p_ip;
         this.provider = provider;
         this.config = config;
     }

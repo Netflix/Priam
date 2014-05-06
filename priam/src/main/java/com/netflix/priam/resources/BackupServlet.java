@@ -420,7 +420,7 @@ public class BackupServlet
 				AbstractBackupPath p = it.next();
 				if (!filter.isEmpty() && BackupFileType.valueOf(filter) != p.getType())
 					continue;
-                JSONObject backupJSON = new JSONObject();
+                                JSONObject backupJSON = new JSONObject();
 				backupJSON.put("bucket", config.getBackupPrefix());
 				backupJSON.put("filename", p.getRemotePath());
 				backupJSON.put("app", p.getClusterName());
@@ -431,7 +431,7 @@ public class BackupServlet
 						.getInstance().getInstanceId());
 				backupJSON.put("uploaded_ts",
 						new DateTime(p.getUploadedTs()).toString(FMT));
-				if (filter.equalsIgnoreCase("meta")) {
+				if ("meta".equalsIgnoreCase(filter)) {
 					List<AbstractBackupPath> allFiles = metaData.get(p);
 					long totalSize = 0;
 					for (AbstractBackupPath abp : allFiles)

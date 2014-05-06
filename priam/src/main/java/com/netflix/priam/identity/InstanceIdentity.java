@@ -200,71 +200,71 @@ public class InstanceIdentity
         
         private String findReplaceIp(List<PriamInstance> allIds, String token, String location)
         {
-        	String ip = null;
-        	for (PriamInstance ins : allIds) {
-        		logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
+            String ip = null;
+            for (PriamInstance ins : allIds) {
+         	logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
                 if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
-                   continue;	
+                    continue;	
                 }
                 
-        		try {
-        	       ip = getIp(ins.getHostName(), token);
-        		} catch (ParseException e) {
-        			ip = null;
-        		}
+          	try {
+        	   ip = getIp(ins.getHostName(), token);
+        	} catch (ParseException e) {
+                   ip = null;
+                }
         		
-        		if (ip != null) {
-        			logger.info("Found the IP: " + ip);
-        			return ip;
-        		}
-        	}
+        	if (ip != null) {
+                    logger.info("Found the IP: " + ip);
+                    return ip;
+                }
+            }
         	
-        	return null;
+            return null;
         }
         
         private String getBaseURI(String host) 
         {
-			return "http://" + host + ":8080/";
-		}
+               return "http://" + host + ":8080/";
+	}
 		
-		private String getIp(String host, String token) throws ParseException 
-		{
-			ClientConfig config = new DefaultClientConfig();
-		    Client client = Client.create(config);
-		    WebResource service = client.resource(getBaseURI(host));
+        private String getIp(String host, String token) throws ParseException 
+	{
+               ClientConfig config = new DefaultClientConfig();
+	       Client client = Client.create(config);
+               WebResource service = client.resource(getBaseURI(host));
 		    
-		    ClientResponse clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);	
+               ClientResponse clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);	
 		    
-		    if (clientResp.getStatus() != 200)
-		    	return null;
+               if (clientResp.getStatus() != 200)
+		   return null;
 		    
-			String textEntity = clientResp.getEntity(String.class);
+               String textEntity = clientResp.getEntity(String.class);
 			
-			logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
+	       logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
 			
-			JSONParser parser = new JSONParser();
-			Object obj = parser.parse(textEntity);
+	       JSONParser parser = new JSONParser();
+               Object obj = parser.parse(textEntity);
 			
-			JSONObject jsonObject = (JSONObject) obj;
+               JSONObject jsonObject = (JSONObject) obj;
 			
-			Iterator iter = jsonObject.keySet().iterator();
+               Iterator iter = jsonObject.keySet().iterator();
 			
-			while (iter.hasNext()) {
-				Object key = iter.next();
-				JSONObject msg = (JSONObject) jsonObject.get(key);
-				if (msg.get("  STATUS") == null) {
-					continue;
-				}
-				String statusVal = (String) msg.get("  STATUS");
-                String[] ss = statusVal.split(",");
+               while (iter.hasNext()) {
+                    Object key = iter.next();
+                    JSONObject msg = (JSONObject) jsonObject.get(key);
+                    if (msg.get("  STATUS") == null) {
+                        continue;
+                    }
+		    String statusVal = (String) msg.get("  STATUS");
+                    String[] ss = statusVal.split(",");
                 
-                if (ss[1].equals(token)) {
-                	return (String) key;
-                }
+                    if (ss[1].equals(token)) {
+                       return (String) key;
+                    }
                 
-			}
-			return null;
-		}
+              }
+              return null;
+        }
     }
     
     

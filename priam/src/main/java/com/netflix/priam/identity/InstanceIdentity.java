@@ -34,6 +34,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 
+import org.apache.commons.lang.StringUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -202,18 +203,18 @@ public class InstanceIdentity
         {
             String ip = null;
             for (PriamInstance ins : allIds) {
-         	logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
+                logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
                 if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
                     continue;	
                 }
                 
-          	try {
-        	   ip = getIp(ins.getHostName(), token);
-        	} catch (ParseException e) {
+          	    try {
+        	       ip = getIp(ins.getHostName(), token);
+        	    } catch (ParseException e) {
                    ip = null;
                 }
         		
-        	if (ip != null) {
+        	    if (ip != null) {
                     logger.info("Found the IP: " + ip);
                     return ip;
                 }
@@ -225,24 +226,35 @@ public class InstanceIdentity
         private String getBaseURI(String host) 
         {
                return "http://" + host + ":8080/";
-	}
+	    }
 		
         private String getIp(String host, String token) throws ParseException 
-	{
+	    {
                ClientConfig config = new DefaultClientConfig();
-	       Client client = Client.create(config);
+	           Client client = Client.create(config);
                WebResource service = client.resource(getBaseURI(host));
 		    
-               ClientResponse clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);	
+               ClientResponse clientResp;
+               String textEntity = null;
+               
+               try {
+                  clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);	
 		    
-               if (clientResp.getStatus() != 200)
-		   return null;
+                  if (clientResp.getStatus() != 200)
+		             return null;
 		    
-               String textEntity = clientResp.getEntity(String.class);
+                  textEntity = clientResp.getEntity(String.class);
 			
-	       logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
+	              logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
+	              
+	              if (StringUtils.isEmpty(textEntity))
+	                  return null;
+               } catch (Exception e) {
+                   logger.debug("Error in reaching out to host: " + getBaseURI(host));
+                   return null;
+               }
 			
-	       JSONParser parser = new JSONParser();
+	           JSONParser parser = new JSONParser();
                Object obj = parser.parse(textEntity);
 			
                JSONObject jsonObject = (JSONObject) obj;
@@ -255,7 +267,7 @@ public class InstanceIdentity
                     if (msg.get("  STATUS") == null) {
                         continue;
                     }
-		    String statusVal = (String) msg.get("  STATUS");
+		            String statusVal = (String) msg.get("  STATUS");
                     String[] ss = statusVal.split(",");
                 
                     if (ss[1].equals(token)) {

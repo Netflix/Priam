@@ -28,15 +28,28 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import com.sun.jersey.api.client.Client;
+import com.sun.jersey.api.client.ClientResponse;
+import com.sun.jersey.api.client.WebResource;
+import com.sun.jersey.api.client.config.ClientConfig;
+import com.sun.jersey.api.client.config.DefaultClientConfig;
+
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
+
+import javax.ws.rs.core.MediaType;
 
 /**
  * This class provides the central place to create and consume the identity of
@@ -167,10 +180,15 @@ public class InstanceIdentity
                 // remove it as we marked it down...
                 factory.delete(dead);
                 isReplace = true;
-                replacedIp = markAsDead.getHostIP();
+                //find the replaced IP
+                replacedIp = findReplaceIp(allIds, markAsDead.getToken(), markAsDead.getDC());
+                if (replacedIp == null)
+                   replacedIp = markAsDead.getHostIP();
+                
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());
                 return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
+                
             }
             return null;
         }
@@ -179,6 +197,74 @@ public class InstanceIdentity
         {
             populateRacMap();
         }
+        
+        private String findReplaceIp(List<PriamInstance> allIds, String token, String location)
+        {
+        	String ip = null;
+        	for (PriamInstance ins : allIds) {
+        		logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
+                if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
+                   continue;	
+                }
+                
+        		try {
+        	       ip = getIp(ins.getHostName(), token);
+        		} catch (ParseException e) {
+        			ip = null;
+        		}
+        		
+        		if (ip != null) {
+        			logger.info("Found the IP: " + ip);
+        			return ip;
+        		}
+        	}
+        	
+        	return null;
+        }
+        
+        private String getBaseURI(String host) 
+        {
+			return "http://" + host + ":8080/";
+		}
+		
+		private String getIp(String host, String token) throws ParseException 
+		{
+			ClientConfig config = new DefaultClientConfig();
+		    Client client = Client.create(config);
+		    WebResource service = client.resource(getBaseURI(host));
+		    
+		    ClientResponse clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);	
+		    
+		    if (clientResp.getStatus() != 200)
+		    	return null;
+		    
+			String textEntity = clientResp.getEntity(String.class);
+			
+			logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
+			
+			JSONParser parser = new JSONParser();
+			Object obj = parser.parse(textEntity);
+			
+			JSONObject jsonObject = (JSONObject) obj;
+			
+			Iterator iter = jsonObject.keySet().iterator();
+			
+			while (iter.hasNext()) {
+				Object key = iter.next();
+				JSONObject msg = (JSONObject) jsonObject.get(key);
+				if (msg.get("  STATUS") == null) {
+					continue;
+				}
+				String statusVal = (String) msg.get("  STATUS");
+                String[] ss = statusVal.split(",");
+                
+                if (ss[1].equals(token)) {
+                	return (String) key;
+                }
+                
+			}
+			return null;
+		}
     }
     
     

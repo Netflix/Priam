@@ -21,6 +21,7 @@ import java.text.DecimalFormat;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
+
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -31,6 +32,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
+
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
@@ -49,6 +51,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.SystemUtils;
+
 import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
 import org.apache.commons.lang.StringUtils;
@@ -607,5 +610,5 @@ public class CassandraAdmin
         nodetool.drain();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
-
+    
 }

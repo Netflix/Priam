@@ -50,17 +50,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
     }
-
-    @Test
-    public void testDeadInstance() throws Exception
-    {
-        createInstances();
-        instances.remove("fakeinstance4");
-        identity = createInstanceIdentity("az2", "fakeinstancex");
-        int hash = tokenManager.regionOffset(config.getDC());
-        assertEquals(1, identity.getInstance().getId() - hash);
-    }
-
+    
     @Test
     public void testGetSeeds() throws Exception
     {

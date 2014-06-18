@@ -47,10 +47,11 @@ public class TuneCassandra extends Task
     	
     	while (!isDone) {
     	  try {
-              tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
+              tuner.writeAllProperties(config.getYamlLocation(), config.getHostname(), config.getSeedProviderName());
               isDone = true;
     	   } catch (IOException e) {
-    		  LOGGER.info("Fail wrting cassandra.yml file. Retry again!");
+              e.printStackTrace();
+              LOGGER.info("Fail writing properties to '" + config.getYamlLocation() + "' with seed provider '" +  config.getSeedProviderName() + "'. Retry again!");
     	   }
     	}
     	

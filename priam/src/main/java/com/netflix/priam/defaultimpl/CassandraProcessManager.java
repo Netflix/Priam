@@ -44,7 +44,6 @@ public class CassandraProcessManager implements ICassandraProcess
         {
             command.add(SUDO_STRING);
             command.add("-n");
-            command.add("-E");
         }
         command.addAll(getStartCommand());
 
@@ -59,7 +58,7 @@ public class CassandraProcessManager implements ICassandraProcess
         env.put("JMX_PORT", "" + config.getJmxPort());
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
-        startCass.directory(new File("/"));
+
         startCass.redirectErrorStream(true);
         Process starter = startCass.start();
         logger.info("Starting cassandra server ....");
@@ -74,9 +73,8 @@ public class CassandraProcessManager implements ICassandraProcess
 						code);
 
 			logProcessOutput(starter);
-		} catch (Exception e) 
-                {
-                     logger.warn("Starting Cassandra has an error", e);
+		} catch (Exception e) {
+            logger.warn("Starting Cassandra has an error", e);
 		}
     }
 

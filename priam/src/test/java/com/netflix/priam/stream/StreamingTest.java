@@ -8,7 +8,6 @@ import com.netflix.priam.defaultimpl.StandardTuner;
 import junit.framework.Assert;
 
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
-import org.apache.cassandra.streaming.PendingFile;
 import org.junit.Test;
 
 import com.google.inject.Guice;
@@ -28,7 +27,7 @@ public class StreamingTest
     {
         IConfiguration config = new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id");
         SSTableLoaderWrapper loader = new SSTableLoaderWrapper(config, new StandardTuner(config));
-        Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
+        Collection<String> ssts = loader.stream(new File("/tmp/Keyspace2/"), 0);
         loader.deleteCompleted(ssts);
     }
 

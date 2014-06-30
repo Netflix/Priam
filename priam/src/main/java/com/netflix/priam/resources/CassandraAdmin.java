@@ -38,6 +38,9 @@ import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.net.MessagingServiceMBean;
+import org.apache.cassandra.streaming.ProgressInfo;
+import org.apache.cassandra.streaming.SessionInfo;
+import org.apache.cassandra.streaming.StreamState;
 import org.apache.cassandra.utils.EstimatedHistogram;
 import org.apache.commons.lang.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -107,7 +110,7 @@ public class CassandraAdmin
         logger.debug("node tool refresh is being called");
         if (StringUtils.isBlank(keyspaces))
             return Response.status(400).entity("Missing keyspace in request").build();
-        
+
         JMXNodeTool nodetool = null;
 		try {
 			nodetool = JMXNodeTool.instance(config);
@@ -418,65 +421,67 @@ public class CassandraAdmin
         JSONObject rootObj = new JSONObject();
         rootObj.put("mode", nodetool.getOperationMode());
         final InetAddress addr = (hostname == null) ? null : InetAddress.getByName(hostname);
-        Set<InetAddress> hosts = addr == null ? nodetool.getStreamDestinations() : new HashSet<InetAddress>()
-        {
-            {
-                add(addr);
-            }
-        };
-        if (hosts.size() == 0)
-            rootObj.put("sending", "Not sending any streams.");
 
-        JSONObject hostSendStats = new JSONObject();
-        for (InetAddress host : hosts)
+        /*
+        Map<InetAddress, List<String>> hostSendFiles = new HashMap<InetAddress, List<String>>();
+        Map<InetAddress, List<String>> hostRecvFiles = new HashMap<InetAddress, List<String>>();
+
+        for(StreamState status : nodetool.getStreamStatus())
         {
-            try
-            {
-                List<String> files = nodetool.getFilesDestinedFor(host);
-                if (files.size() > 0)
-                {
-                    JSONArray fObj = new JSONArray();
-                    for (String file : files)
-                        fObj.put(file);
-                    hostSendStats.put(host.getHostAddress(), fObj);
-                }
-            }
-            catch (IOException ex)
-            {
-                hostSendStats.put(host.getHostAddress(), "Error retrieving file data");
-            }
+        	for (SessionInfo info : status.sessions)
+        	{
+        		if (!info.receivingSummaries.isEmpty())
+        		{
+        			for (ProgressInfo progress : info.getReceivingFiles())
+        			{
+        				if (!hostRecvFiles.containsKey(progress.peer))
+        					hostRecvFiles.put(progress.peer, new ArrayList<String>());
+        				hostRecvFiles.get(progress.peer).add(progress.fileName);
+        			}
+        		}
+        		if (!info.sendingSummaries.isEmpty())
+        		{
+        			for (ProgressInfo progress : info.getSendingFiles())
+        			{
+        				if (!hostSendFiles.containsKey(progress.peer))
+        					hostSendFiles.put(progress.peer, new ArrayList<String>());
+        				hostSendFiles.get(progress.peer).add(progress.fileName);
+        			}
+        		}
+        	}
+        } */
+
+        JSONObject hostSendFiles = new JSONObject();
+        JSONObject hostRecvFiles = new JSONObject();
+
+        for(StreamState status : nodetool.getStreamStatus())
+        {
+        	for (SessionInfo info : status.sessions)
+        	{
+        		if (!info.receivingSummaries.isEmpty())
+        		{
+        			for (ProgressInfo progress : info.getReceivingFiles())
+        			{
+        				hostRecvFiles.append(progress.peer.getHostAddress(), progress.fileName);
+        			}
+        		}
+        		if (!info.sendingSummaries.isEmpty())
+        		{
+        			for (ProgressInfo progress : info.getSendingFiles())
+        			{
+        				hostSendFiles.append(progress.peer.getHostAddress(), progress.fileName);
+        			}
+        		}
+        	}
         }
 
-        rootObj.put("hosts sending", hostSendStats);
-        hosts = addr == null ? nodetool.getStreamSources() : new HashSet<InetAddress>()
-        {
-            {
-                add(addr);
-            }
-        };
-        if (hosts.size() == 0)
+        if (hostSendFiles.length() == 0)
+        	rootObj.put("Sending", "Not sending any streams.");
+        rootObj.put("hosts sending", hostSendFiles);
+
+        if (hostRecvFiles.length() == 0)
             rootObj.put("receiving", "Not receiving any streams.");
-
-        JSONObject hostRecvStats = new JSONObject();
-        for (InetAddress host : hosts)
-        {
-            try
-            {
-                List<String> files = nodetool.getIncomingFiles(host);
-                if (files.size() > 0)
-                {
-                    JSONArray fObj = new JSONArray();
-                    for (String file : files)
-                        fObj.put(file);
-                    hostRecvStats.put(host.getHostAddress(), fObj);
-                }
-            }
-            catch (IOException ex)
-            {
-                hostRecvStats.put(host.getHostAddress(), "Error retrieving file data");
-            }
-        }
-        rootObj.put("hosts receiving", hostRecvStats);
+        rootObj.put("hosts receiving", hostRecvFiles);
 
         MessagingServiceMBean ms = nodetool.msProxy;
         int pending;
@@ -524,7 +529,7 @@ public class CassandraAdmin
 
     @GET
     @Path("/scrub")
-    public Response scrub(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces, @QueryParam(REST_HEADER_CFS) String cfnames) throws IOException, ExecutionException, InterruptedException,
+    public Response scrub(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces, @QueryParam(REST_HEADER_CFS) String cfnames, @QueryParam("noSnapshot") @DefaultValue("false") Boolean noSnapshot, @QueryParam("skipCorrupted") @DefaultValue("false") Boolean skipCorrupted) throws IOException, ExecutionException, InterruptedException,
             ConfigurationException
     {
         JMXNodeTool nodetool = null;
@@ -538,9 +543,9 @@ public class CassandraAdmin
         if (StringUtils.isNotBlank(cfnames))
             cfs = cfnames.split(",");
         if (cfs == null)
-            nodetool.scrub(keyspaces);
+            nodetool.scrub(noSnapshot, skipCorrupted, keyspaces);
         else
-            nodetool.scrub(keyspaces, cfs);
+            nodetool.scrub(noSnapshot, skipCorrupted, keyspaces, cfs);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 
@@ -610,5 +615,5 @@ public class CassandraAdmin
         nodetool.drain();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
-    
+
 }

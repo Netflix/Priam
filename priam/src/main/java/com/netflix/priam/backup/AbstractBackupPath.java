@@ -64,7 +64,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
-    
+
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {
         this.factory = factory;
@@ -84,7 +84,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public InputStream localReader() throws IOException
     {
         assert backupFile != null;
-        return new RafInputStream(RandomAccessReader.open(backupFile, true));
+        return new RafInputStream(RandomAccessReader.open(backupFile));
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException
@@ -136,9 +136,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (type == BackupFileType.CL)
         {
         	buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
-        } else 
+        } else
         {
-        
+
         	buff.append(config.getDataFileLocation()).append(PATH_SEP);
         	if (type != BackupFileType.META)
         	{
@@ -148,9 +148,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         			buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
         	}
         }
-        	
+
         buff.append(fileName);
-        
+
         File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());
         if (!parent.exists())
@@ -163,7 +163,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         return getRemotePath().compareTo(o.getRemotePath());
     }
-    
+
     @Override
     public boolean equals(Object obj)
     {
@@ -183,16 +183,16 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public abstract void parseRemote(String remoteFilePath);
 
     /**
-     *  Parses paths with just token prefixes 
+     *  Parses paths with just token prefixes
      */
     public abstract void parsePartialPrefix(String remoteFilePath);
 
     /**
-     * Provides a common prefix that matches all objects that fall between 
-     * the start and end time 
+     * Provides a common prefix that matches all objects that fall between
+     * the start and end time
      */
     public abstract String remotePrefix(Date start, Date end, String location);
-    
+
     /**
      * Provides the cluster prefix
      */
@@ -265,7 +265,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 	public void setCassandra1_0(boolean isCassandra1_0) {
 		this.isCassandra1_0 = isCassandra1_0;
 	}
-	
+
     public void setFileName(String fileName)
     {
         this.fileName = fileName;
@@ -275,7 +275,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
     		return this.factory;
     }
-    
+
     public void setUploadedTs(Date uploadedTs)
     {
     		this.uploadedTs = uploadedTs;

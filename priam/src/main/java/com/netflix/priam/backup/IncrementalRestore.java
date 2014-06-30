@@ -26,7 +26,6 @@ import java.util.regex.Pattern;
 
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.streaming.PendingFile;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,13 +60,13 @@ public class IncrementalRestore extends AbstractRestore
     public static final Pattern SECONDRY_INDEX_PATTERN = Pattern.compile("^[a-zA-Z_0-9-]+\\.[a-zA-Z_0-9-]+\\.[a-z1-9]{2,4}$");
 
     private final File restoreDir;
-    
+
     @Inject
     private SSTableLoaderWrapper loader;
-    
+
     @Inject
     private PriamServer priamServer;
-    
+
     @Inject
     public IncrementalRestore(IConfiguration config, @Named("incr_restore")IBackupFileSystem fs, Sleeper sleeper)
     {
@@ -99,14 +98,14 @@ public class IncrementalRestore extends AbstractRestore
             if (tracker.contains(temp) || start.compareTo(temp.time) >= 0)
                 continue; // ignore the ones which where already downloaded.
             if (temp.getType() != BackupFileType.SST)
-                continue; // download SST's only.
+                continue; // download SST's only
             // skip System Keyspace, else you will run into concurrent schema issues.
             if (temp.getKeyspace().equalsIgnoreCase("System"))
                 continue;
             /* Cassandra will rebuild Secondary index's after streaming is complete so we can ignore those */
             if (SECONDRY_INDEX_PATTERN.matcher(temp.fileName).matches()) // Make this use the constant from 1.1
                 continue;
-            
+
             // Create Directory for Individual Token respective to each incoming file
             File tokenDir = new File(restoreDir, temp.getToken());
             FileUtils.createDirectory(tokenDir);
@@ -128,7 +127,7 @@ public class IncrementalRestore extends AbstractRestore
             {
             		for(File columnFamilyDir : keyspaceDir.listFiles())
             		{
-            			Collection<PendingFile> streamedSSTs = loader.stream(columnFamilyDir);
+            			Collection<String> streamedSSTs = loader.stream(columnFamilyDir, 0);	// TODO: make throttle configurable
             			addToStreamedIncrementalRestorePaths(streamedSSTs);
             			if(streamedIncrementalRestorePaths.size() > 0)
             			{
@@ -155,24 +154,24 @@ public class IncrementalRestore extends AbstractRestore
     {
         return JOBNAME;
     }
-    
+
     public static void addObserver(IMessageObserver observer)
     {
     		observers.add(observer);
     }
-    
+
     public static void removeObserver(IMessageObserver observer)
     {
     		observers.remove(observer);
     }
-    
-    public void addToStreamedIncrementalRestorePaths(Collection<PendingFile> streamedSSTs)
+
+    public void addToStreamedIncrementalRestorePaths(Collection<String> streamedSSTs)
     {
     		streamedIncrementalRestorePaths.clear();
-    		for(PendingFile streamedSST:streamedSSTs)
-    			streamedIncrementalRestorePaths.add(streamedSST.getFilename());
+    		for (String streamedSST : streamedSSTs)
+    			streamedIncrementalRestorePaths.add(streamedSST);
     }
-    
+
     public void notifyStreamedDataObservers()
     {
         for(IMessageObserver observer : observers)
@@ -185,25 +184,25 @@ public class IncrementalRestore extends AbstractRestore
         			logger.error("Streamed Observer is Null, hence can not notify ...");
         }
     }
-    
+
     public String renameIncrementalRestoreFile(String fileToBeRenamed)
     {
 		String[] splitToBeRenamed = StringUtils.split(fileToBeRenamed, '-');
-		
+
 		// Rename KS
 		if (config.getTargetKSName() != null)
 		{
 			logger.info("Old Keyspace = ["+splitToBeRenamed[0]+"] --> New Keyspace = ["+config.getTargetKSName()+"]");
 			splitToBeRenamed[0] = config.getTargetKSName();
 		}
-		
+
 		// Rename CF
 		if(config.getTargetCFName() != null)
 		{
 			logger.info("Old Column Family = ["+splitToBeRenamed[1]+"] --> New Column Family = ["+config.getTargetCFName()+"]");
 			splitToBeRenamed[1] = config.getTargetCFName();
 		}
-		
+
 		logger.info("Orig Filename = ["+fileToBeRenamed+"] --> New Filename = ["+StringUtils.join(splitToBeRenamed,'-')+"]");
 
 		return StringUtils.join(splitToBeRenamed,'-');

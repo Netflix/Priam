@@ -383,8 +383,16 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        JSONObject rootObj = new JSONObject();
-        String[] ginfo = nodetool.getGossipInfo().split("/");
+        JSONObject rootObj = parseGossipInfo(nodetool.getGossipInfo());
+        return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
+    }
+
+	
+    // helper method for parsing, to be tested easily
+    protected static JSONObject parseGossipInfo(String gossipinfo)
+			throws JSONException {
+		JSONObject rootObj = new JSONObject();
+        String[] ginfo = gossipinfo.split("/");
         for (String info : ginfo)
         {
             String[] data = info.split("\n");
@@ -392,18 +400,21 @@ public class CassandraAdmin
             JSONObject obj = new JSONObject();
             for (String element : data)
             {
-                String[] kv = element.split(":");
-                if (kv.length == 1)
-                    key = kv[0];
-                else
+            	String[] kv = element.split(":");
+                if (kv.length == 1){
+                	if (key.isEmpty()){
+                		key = kv[0];
+                	}
+                } else {
                     obj.put(kv[0], kv[1]);
+                }
             }
             if (StringUtils.isNotBlank(key))
                 rootObj.put(key, obj);
         }
-        return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
-    }
-
+		return rootObj;
+	}
+    
     @GET
     @Path("/netstats")
     public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException, JSONException

@@ -60,7 +60,7 @@ public class TestBackup
     		filesystem.setupTest();
         SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
         CassandraMonitor cassMon = injector.getInstance(CassandraMonitor.class);
-        cassMon.setIsCassadraStarted();
+        cassMon.setIsCassandraStarted();
         backup.execute();
         Assert.assertEquals(3, filesystem.uploadedFiles.size());
         System.out.println("***** "+filesystem.uploadedFiles.size());

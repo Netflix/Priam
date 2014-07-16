@@ -43,12 +43,12 @@ public class CompositeConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public void intialize(final String asgName, final String region) 
+    public void initialize(final String asgName, final String region)
     {
         for (final IConfigSource source : sources) 
         {
             //TODO should this catch any potential exceptions?
-            source.intialize(asgName, region);
+            source.initialize(asgName, region);
         }
     }
 

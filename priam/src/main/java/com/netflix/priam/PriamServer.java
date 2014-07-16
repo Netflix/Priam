@@ -58,7 +58,7 @@ public class PriamServer
         this.cassProcess = cassProcess;
     }
 
-    public void intialize() throws Exception
+    public void initialize() throws Exception
     {     
         if (id.getInstance().isOutOfService())
             return;

@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Loads config data from SimpleDB.  {@link #intialize(String, String)} will query the SimpleDB domain "PriamProperties"
+ * Loads config data from SimpleDB.  {@link #initialize(String, String)} will query the SimpleDB domain "PriamProperties"
  * for any potential configurations.  The domain is set up to support multiple different clusters; this is done by using
  * amazon's auto scaling groups (ASG).
  * <p/>
@@ -26,7 +26,7 @@ import java.util.Map;
  *   <li>"property" // key to use for configs.</li>
  *   <li>"value" // value to set for the given property/key.</li>
  *   <li>"region" // region the config belongs to.  If left empty, then applies to all regions.</li>
- * </ul> }
+ * </ul>
  */
 public final class SimpleDBConfigSource extends AbstractConfigSource 
 {
@@ -45,9 +45,9 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public void intialize(final String asgName, final String region) 
+    public void initialize(final String asgName, final String region)
     {
-        super.intialize(asgName, region);
+        super.initialize(asgName, region);
 
         // End point is us-east-1
         AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getAwsCredentialProvider());

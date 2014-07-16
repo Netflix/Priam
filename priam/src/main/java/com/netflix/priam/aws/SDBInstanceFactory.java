@@ -34,7 +34,7 @@ import com.netflix.priam.identity.PriamInstance;
 
 /**
  * SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be
- * created ahead
+ * created ahead of time.
  */
 @Singleton
 public class SDBInstanceFactory implements IPriamInstanceFactory

@@ -70,11 +70,11 @@ public abstract class Task implements Job, TaskMBean
 
     
     /**
-     * This method has to be implemented and cannot thow any exception.
+     * This method has to be implemented and cannot throw any exception.
      */
     public void initialize() throws ExecutionException
     {
-        // nothing to intialize
+        // nothing to initialize
     }
         
     public abstract void execute() throws Exception;
@@ -96,13 +96,13 @@ public abstract class Task implements Job, TaskMBean
         catch (Exception e)
         {
             status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of " + e.getMessage(), e);
+            logger.error("Couldn't execute the task because of " + e.getMessage(), e);
             errors.incrementAndGet();
         }
         catch (Throwable e)
         {
             status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of " + e.getMessage(), e);
+            logger.error("Couldn't execute the task because of " + e.getMessage(), e);
             errors.incrementAndGet();
         }
         if (status != STATE.ERROR)

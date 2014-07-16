@@ -35,7 +35,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public void intialize()
+    public void initialize()
     {
         // TODO Auto-generated method stub
 

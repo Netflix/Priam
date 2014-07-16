@@ -168,7 +168,7 @@ public class InstanceIdentity
         	logger.info("Looking for a token from any dead node");
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
-            // Sleep random interval - upto 15 sec
+            // Sleep random interval - up to 15 sec
             sleeper.sleep(new Random().nextInt(5000) + 10000);
             for (PriamInstance dead : allIds)
             {
@@ -288,7 +288,7 @@ public class InstanceIdentity
         	logger.info("Looking for any pre-generated token");
             final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
             List<String> asgInstances = membership.getRacMembership();
-            // Sleep random interval - upto 15 sec
+            // Sleep random interval - up to 15 sec
             sleeper.sleep(new Random().nextInt(5000) + 10000);
             for (PriamInstance dead : allIds)
             {
@@ -322,10 +322,10 @@ public class InstanceIdentity
         public PriamInstance retriableCall() throws Exception
         {
         	logger.info("Generating my own and new token");
-            // Sleep random interval - upto 15 sec
+            // Sleep random interval - up to 15 sec
             sleeper.sleep(new Random().nextInt(15000));
             int hash = tokenManager.regionOffset(config.getDC());
-            // use this hash so that the nodes are spred far away from the other
+            // use this hash so that the nodes are spread far away from the other
             // regions.
 
             int max = hash;

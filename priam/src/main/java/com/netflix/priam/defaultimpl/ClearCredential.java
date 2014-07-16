@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * implement their own versions for more secured access. This class requires
  * clear AWS key and access.
  * 
- * Set the following properties in "conf/awscredntial.properties" 
+ * Set the following properties in "conf/awscredential.properties"
  * 
  */
 public class ClearCredential implements ICredential

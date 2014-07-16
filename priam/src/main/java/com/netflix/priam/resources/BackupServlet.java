@@ -311,7 +311,7 @@ public class BackupServlet
 		// multi-thread safe to be edited
 		config.setRestorePrefix(origRestorePrefix);
 
-		while (!CassandraMonitor.isCassadraStarted())
+		while (!CassandraMonitor.isCassandraStarted())
 			Thread.sleep(1000l);
 
 		// initialize json file name
@@ -343,9 +343,9 @@ public class BackupServlet
      * @param startTime
      *            Start time
      * @param endTime
-     *            End time upto which the restore should fetch data
+     *            End time up to which the restore should fetch data
      * @param keyspaces
-     *            Comma seperated list of keyspaces to restore
+     *            Comma separated list of keyspaces to restore
      * @throws Exception
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception

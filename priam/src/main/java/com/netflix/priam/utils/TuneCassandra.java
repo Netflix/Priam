@@ -50,7 +50,7 @@ public class TuneCassandra extends Task
               tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
               isDone = true;
     	   } catch (IOException e) {
-    		  LOGGER.info("Fail wrting cassandra.yml file. Retry again!");
+    		  LOGGER.info("Fail writing cassandra.yml file. Retry again!");
     	   }
     	}
     	

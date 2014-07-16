@@ -70,7 +70,7 @@ public class SystemUtils
     }
 
     /**
-     * delete all the files/dirs in the given Directory but dont delete the dir
+     * delete all the files/dirs in the given Directory but don't delete the dir
      * itself.
      */
     public static void cleanupDir(String dirPath, List<String> childdirs) throws IOException

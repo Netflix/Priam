@@ -177,7 +177,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
             }
             executor.sleepTillEmpty();
             if (partNum != partETags.size())
-                throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
+                throw new BackupRestoreException("Number of parts(" + partNum + ") does not match the uploaded parts (" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
             
             if (logger.isDebugEnabled())

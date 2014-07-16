@@ -124,7 +124,7 @@ public class AWSMembership implements IMembership
     }
 
     /**
-     * Adds a iplist to the SG.
+     * Adds an iplist to the SG.
      */
     public void addACL(Collection<String> listIPs, int from, int to)
     {
@@ -145,7 +145,7 @@ public class AWSMembership implements IMembership
     }
 
     /**
-     * removes a iplist from the SG
+     * Removes an iplist from the SG
      */
     public void removeACL(Collection<String> listIPs, int from, int to)
     {

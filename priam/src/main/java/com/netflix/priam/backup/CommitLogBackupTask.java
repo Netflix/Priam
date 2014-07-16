@@ -17,7 +17,7 @@ import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 
 
-//Provide this to be run as a Quart job
+//Provide this to be run as a Quartz job
 @Singleton
 public class CommitLogBackupTask extends AbstractBackup
 {

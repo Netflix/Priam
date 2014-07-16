@@ -46,7 +46,7 @@ public class StandardTuner implements CassandraTuner
         map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
-        //Dont bootstrap in restore mode
+        //Don't bootstrap in restore mode
         map.put("auto_bootstrap", !Restore.isRestoreEnabled(config));
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
@@ -97,7 +97,7 @@ public class StandardTuner implements CassandraTuner
     /**
      * Overridable by derived classes to inject a wrapper snitch.
      *
-     * @return Sntich to be used by this cluster
+     * @return Snitch to be used by this cluster
      */
     protected String getSnitch()
     {
@@ -183,7 +183,7 @@ public class StandardTuner implements CassandraTuner
         Yaml yaml = new Yaml(options);
         @SuppressWarnings("rawtypes")
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
-        //Dont bootstrap in restore mode
+        //Don't bootstrap in restore mode
         map.put("auto_bootstrap", autobootstrap);
         logger.info("Updating yaml" + yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));

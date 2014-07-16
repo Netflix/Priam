@@ -27,7 +27,7 @@ import java.util.List;
 public interface IConfiguration
 {
 	
-    public void intialize();
+    public void initialize();
 
     /**
      * @return Path to the home dir of Cassandra
@@ -311,7 +311,7 @@ public interface IConfiguration
     public boolean getMultithreadedCompaction();
 
     /**
-     * Get the paritioner for this cassandra cluster/node.
+     * Get the partitioner for this cassandra cluster/node.
      *
      * @return the fully-qualified name of the partitioner class
      */

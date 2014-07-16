@@ -27,7 +27,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
     public static final int DEFAULT_NUMBER_OF_RETRIES = 15;
     public static final long DEFAULT_WAIT_TIME = 100;
-    private int retrys;
+    private int retries;
     private long waitTime;
 
     public RetryableCallable()
@@ -35,14 +35,14 @@ public abstract class RetryableCallable<T> implements Callable<T>
         this(DEFAULT_NUMBER_OF_RETRIES, DEFAULT_WAIT_TIME);
     }
 
-    public RetryableCallable(int retrys, long waitTime)
+    public RetryableCallable(int retries, long waitTime)
     {
-        set(retrys, waitTime);
+        set(retries, waitTime);
     }
 
-    public void set(int retrys, long waitTime)
+    public void set(int retries, long waitTime)
     {
-        this.retrys = retrys;
+        this.retries = retries;
         this.waitTime = waitTime;
     }
 
@@ -65,7 +65,7 @@ public abstract class RetryableCallable<T> implements Callable<T>
             catch (Exception e)
             {
                 retry++;
-                if (retry == retrys)
+                if (retry == retries)
                 {
                     throw e;
                 }

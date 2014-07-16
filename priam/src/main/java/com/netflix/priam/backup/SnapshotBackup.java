@@ -70,7 +70,7 @@ public class SnapshotBackup extends AbstractBackup
     public void execute() throws Exception
     {
         //If Cassandra is started then only start Snapshot Backup
-    		while(!CassandraMonitor.isCassadraStarted())
+    		while(!CassandraMonitor.isCassandraStarted())
     		{
         		logger.debug("Cassandra is not yet started, hence Snapshot Backup will start after ["+WAIT_TIME_MS/1000+"] secs ...");
     			sleeper.sleep(WAIT_TIME_MS);

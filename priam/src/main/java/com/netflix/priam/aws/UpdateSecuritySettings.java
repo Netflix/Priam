@@ -31,8 +31,9 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 
 /**
- * this class will associate an Public IP's with a new instance so they can talk
- * across the regions.
+ * This class will manage access control lists (ie. add and remove public IPs
+ * to and from AWS security groups) so Cassandra servers can communicate
+ * across different regions.
  * 
  * Requirement: 1) Nodes in the same region needs to be able to talk to each
  * other. 2) Nodes in other regions needs to be able to talk to the others in
@@ -41,7 +42,7 @@ import com.netflix.priam.scheduler.TaskTimer;
  * Assumption: 1) IPriamInstanceFactory will provide the membership... and will
  * be visible across the regions 2) IMembership amazon or any other
  * implementation which can tell if the instance is part of the group (ASG in
- * amazons case).
+ * amazon's case).
  * 
  */
 @Singleton
@@ -63,14 +64,14 @@ public class UpdateSecuritySettings extends Task
     }
 
     /**
-     * Seeds nodes execute this at the specifed interval.
+     * Seeds nodes execute this at the specified interval.
      * Other nodes run only on startup.
-     * Seeds in cassandra are the first node in each Availablity Zone.
+     * Seeds in cassandra are the first node in each Availability Zone.
      */
     @Override
     public void execute()
     {
-        // if seed dont execute.
+        // if seed don't execute.
         int port = config.getSSLStoragePort();
         List<String> acls = membership.listACL(port, port);
         List<PriamInstance> instances = factory.getAllIds(config.getAppName());

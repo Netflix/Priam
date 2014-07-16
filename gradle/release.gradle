@@ -38,7 +38,7 @@ task verifyStatus << {
 uploadArtifactory.dependsOn(verifyStatus)
 uploadMavenCentral.dependsOn(verifyStatus)
 
-// Ensure upload happens before taggging, hence upload failures will leave repo in a revertable state
+// Ensure upload happens before tagging, hence upload failures will leave repo in a revertable state
 preTagCommit.dependsOn([uploadArtifactory, uploadMavenCentral])
 
 

@@ -130,7 +130,7 @@ public class JMXNodeTool extends NodeProbe
     		JMXNodeTool jmxNodeTool = null;
     		
 		// If Cassandra is started then only start the monitoring
-		if (!CassandraMonitor.isCassadraStarted()) {
+		if (!CassandraMonitor.isCassandraStarted()) {
 			String exceptionMsg = "Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);

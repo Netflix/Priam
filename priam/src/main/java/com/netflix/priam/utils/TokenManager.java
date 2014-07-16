@@ -56,7 +56,7 @@ public class TokenManager implements ITokenManager
      * @param my_slot
      *            -- Slot where this instance has to be.
      * @param rac_count
-     *            -- Rac count is the numeber of RAC's
+     *            -- Rac count is the number of RAC's
      * @param rac_size
      *            -- number of memberships in the rac
      * @param region

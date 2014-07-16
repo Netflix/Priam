@@ -16,7 +16,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.RetryableCallable;
 
 
-//Providing this if we want to use it outside Quart
+//Providing this if we want to use it outside Quartz
 public class CommitLogBackup
 {
   private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
@@ -67,7 +67,7 @@ public class CommitLogBackup
             if (snapshotName != null)
             	bp.time = bp.parseDate(snapshotName);
             upload(bp);
-            file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operaion fails
+            file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operation fails
             return bp;
           }
         }

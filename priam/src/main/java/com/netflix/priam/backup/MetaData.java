@@ -118,7 +118,7 @@ public class MetaData
         }
         catch (Exception ex)
         {
-            logger.error("Error downloading the Meta data try with a diffrent date...", ex);
+            logger.error("Error downloading the Meta data.  Try with a different date...", ex);
         }
         return files;
     }

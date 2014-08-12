@@ -389,31 +389,32 @@ public class CassandraAdmin
 
 	
     // helper method for parsing, to be tested easily
-    protected static JSONObject parseGossipInfo(String gossipinfo)
-			throws JSONException {
-		JSONObject rootObj = new JSONObject();
-        String[] ginfo = gossipinfo.split("/");
-        for (String info : ginfo)
+    protected static JSONObject parseGossipInfo(String gossipinfo) throws JSONException
+    {
+        String[] ginfo = gossipinfo.split("\n");
+        JSONObject rootObj = new JSONObject();
+        JSONObject obj = new JSONObject();
+        String key = "";
+        for (String line : ginfo)
         {
-            String[] data = info.split("\n");
-            String key = "";
-            JSONObject obj = new JSONObject();
-            for (String element : data)
-            {
-            	String[] kv = element.split(":");
-                if (kv.length == 1){
-                	if (key.isEmpty()){
-                		key = kv[0];
-                	}
-                } else {
-                    obj.put(kv[0], kv[1]);
+            if (line.matches("^.*/.*$")) {
+                String[] data = line.split("/");
+                if (StringUtils.isNotBlank(key)) {
+                    rootObj.put(key, obj);
+                    obj = new JSONObject();
                 }
+                key = data[1];
+            } else if (line.matches("^  .*:.*$")) {
+                String[] kv = line.split(":");
+                obj.put(kv[0], kv[1]);
+            } else {
+                // probably at EOF, ignore
             }
-            if (StringUtils.isNotBlank(key))
-                rootObj.put(key, obj);
         }
-		return rootObj;
-	}
+        if (StringUtils.isNotBlank(key))
+            rootObj.put(key, obj);
+        return rootObj;
+    }
     
     @GET
     @Path("/netstats")

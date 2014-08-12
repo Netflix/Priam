@@ -33,7 +33,15 @@ public class CassandraAdminTest
         } catch (JSONException notFound){
         	
         }
+        Assert.assertNotNull(rootObj.get("10.80.147.144"));
         Assert.assertNotNull(rootObj.get("10.80.147.20"));
+        Assert.assertNotNull(rootObj.get("10.75.23.21"));
+        Assert.assertTrue(rootObj.getJSONObject("10.80.147.144").get("  SCHEMA").equals("bbb09269-73c9-36a4-b656-13470aa8a3fd"));
+        Assert.assertTrue(rootObj.getJSONObject("10.75.23.21").get("  SCHEMA").equals("bbb09269-73c9-36a4-b656-13470aa8a3fd"));
+        Assert.assertTrue(rootObj.getJSONObject("10.80.147.144").get("  RPC_ADDRESS").equals("10.80.147.144"));
+        Assert.assertTrue(rootObj.getJSONObject("10.80.147.20").get("  RPC_ADDRESS").equals("10.80.147.20"));
+        Assert.assertTrue(rootObj.getJSONObject("10.75.23.21").get("  RPC_ADDRESS").equals("10.75.23.21"));
+        Assert.assertEquals(rootObj.length(), 3);
     	
     }
     

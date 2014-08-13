@@ -418,4 +418,7 @@ public interface IConfiguration
     public String getExtraConfigParams();
     
     public String getCassYamlVal(String priamKey);
+    
+    public boolean getAutoBoostrap();
+    
 }

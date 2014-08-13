@@ -7,14 +7,17 @@ import java.util.Properties;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.utils.CassandraTuner;
+
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -47,7 +50,12 @@ public class StandardTuner implements CassandraTuner
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         //Dont bootstrap in restore mode
-        map.put("auto_bootstrap", !Restore.isRestoreEnabled(config));
+        if (!Restore.isRestoreEnabled(config)) {
+            map.put("auto_bootstrap", config.getAutoBoostrap());
+        } else {
+            map.put("auto_bootstrap", false);
+        }
+        
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));

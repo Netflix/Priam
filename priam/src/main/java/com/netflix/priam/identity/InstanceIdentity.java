@@ -25,6 +25,7 @@ import com.google.common.collect.Multimaps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.Restore;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -180,11 +181,16 @@ public class InstanceIdentity
                         dead.getToken());
                 // remove it as we marked it down...
                 factory.delete(dead);
-                isReplace = true;
-                //find the replaced IP
-                replacedIp = findReplaceIp(allIds, markAsDead.getToken(), markAsDead.getDC());
-                if (replacedIp == null)
-                   replacedIp = markAsDead.getHostIP();
+                
+                if (!Restore.isRestoreEnabled(config)) {
+                   isReplace = true;
+                   //find the replaced IP
+                   replacedIp = findReplaceIp(allIds, markAsDead.getToken(), markAsDead.getDC());
+                   if (replacedIp == null)
+                      replacedIp = markAsDead.getHostIP();
+                } else {
+                    isReplace = false;
+                }
                 
                 String payLoad = markAsDead.getToken();
                 logger.info("Trying to grab slot {} with availability zone {}", markAsDead.getId(), markAsDead.getRac());

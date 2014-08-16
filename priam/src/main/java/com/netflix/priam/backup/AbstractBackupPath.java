@@ -84,7 +84,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public InputStream localReader() throws IOException
     {
         assert backupFile != null;
-        return new RafInputStream(RandomAccessReader.open(backupFile, true));
+        return new RafInputStream(RandomAccessReader.open(backupFile));
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException

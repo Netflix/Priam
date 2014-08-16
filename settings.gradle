@@ -1,1 +1,1 @@
-include 'priam','priam-web','priam-cass-extensions','priam-dse-extensions','priam-agent'
+include 'priam','priam-web','priam-cass-extensions'

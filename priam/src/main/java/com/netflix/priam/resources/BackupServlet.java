@@ -21,11 +21,6 @@ import java.math.BigInteger;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,6 +28,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -56,22 +52,19 @@ import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalBackup;
+import com.netflix.priam.backup.MetaData;
+import com.netflix.priam.backup.Restore;
+import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
-
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.netflix.priam.utils.SystemUtils;
 
 @Path("/v1/backup")
@@ -186,13 +179,6 @@ public class BackupServlet
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
     
-    @GET
-    @Path("/incremental_restore")
-    public Response restoreIncrementals() throws Exception
-    {
-        scheduler.addTask(IncrementalRestore.JOBNAME, IncrementalRestore.class, IncrementalRestore.getTimer());
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
 
 
     @GET

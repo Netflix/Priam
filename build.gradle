@@ -56,7 +56,7 @@ subprojects {
         compile "com.googlecode.json-simple:json-simple:1.1"
         compile "org.xerial.snappy:snappy-java:1.0.5-M3"
         compile "org.yaml:snakeyaml:1.10"
-        compile "org.apache.cassandra:cassandra-all:[1.2.0,1.2.8["
+        compile "org.apache.cassandra:cassandra-all:[2.0,2.0.9["
         compile "javax.ws.rs:jsr311-api:1.1.1"
         compile "joda-time:joda-time:2.0"
         compile "commons-configuration:commons-configuration:1.5"
@@ -90,28 +90,13 @@ project(':priam') {
     }
 }
 
-project(':priam-dse-extensions') {
-    dependencies {
-        compile project(':priam')
-        testCompile project(path: ':priam', configuration: 'testCompile')
-        testCompile project(':priam').sourceSets.test.output
-    }
-}
 
 project(':priam-web') {
     apply plugin: 'war'
     apply plugin: 'jetty'
     dependencies {
         compile project(':priam')
-        compile project(':priam-agent')
-        compile project(':priam-dse-extensions')
         compile project(':priam-cass-extensions')
     }
 }
 
-project(':priam-agent') {
-    dependencies {
-        compile project(':priam')
-        compile 'com.netflix.astyanax:astyanax:1.56.42'
-    }
-}

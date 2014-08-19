@@ -96,6 +96,10 @@ public class StandardTuner implements CassandraTuner
 	    
 	    addExtraCassParams(map);
 
+	    //remove troublesome properties
+	    map.remove("flush_largest_memtables_at");
+	    map.remove("reduce_cache_capacity_to");
+	    
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 

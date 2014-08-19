@@ -16,8 +16,13 @@ public interface IDseConfiguration
     {
         /** vanilla Cassandra node */
         REAL_TIME_QUERY("cassandra"),
+        
         /** Hadoop node */
-        ANALYTIC("hadoop"),
+        ANALYTIC_HADOOP("hadoop"),
+        
+        /** Spark node */
+        ANALYTIC_SPARK("spark"),
+        
         /** Solr node */
         SEARCH("solr");
 

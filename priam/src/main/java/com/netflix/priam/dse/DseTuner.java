@@ -77,7 +77,7 @@ public class DseTuner extends StandardTuner
             String suffix = "";
             if(nodeType == NodeType.SEARCH)
                 suffix = "_solr";
-            if(nodeType == NodeType.ANALYTIC)
+            if(nodeType == NodeType.ANALYTIC_HADOOP)
                 suffix = "_hadoop";
             properties.put("dc_suffix", suffix);
             properties.store(new FileWriter(filePath), "");

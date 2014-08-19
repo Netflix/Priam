@@ -27,7 +27,7 @@ public class DseProcessManager extends CassandraProcessManager
         cmd.add("cassandra");
 
         NodeType nodeType = dseConfig.getNodeType();
-        if(nodeType == NodeType.ANALYTIC)
+        if(nodeType == NodeType.ANALYTIC_HADOOP)
             cmd.add("-t");
         else if(nodeType == NodeType.SEARCH)
             cmd.add("-s");

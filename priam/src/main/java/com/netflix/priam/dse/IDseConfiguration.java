@@ -23,6 +23,9 @@ public interface IDseConfiguration
         /** Spark node */
         ANALYTIC_SPARK("spark"),
         
+        /** Hadoop and Spark node */
+        ANALYTIC_HADOOP_SPARK("hadoop-spark"),
+        
         /** Solr node */
         SEARCH("solr");
 

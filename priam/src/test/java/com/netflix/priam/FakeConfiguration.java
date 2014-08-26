@@ -569,4 +569,10 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return false;
     }
+
+    @Override
+    public String getDseClusterType() {
+        // TODO Auto-generated method stub
+        return "cassandra";
+    }
 }

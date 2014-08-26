@@ -1,13 +1,12 @@
 package com.netflix.priam.dse;
 
-import java.util.List;
+import java.util.Map;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.dse.IDseConfiguration.NodeType;
 import com.netflix.priam.utils.Sleeper;
-
-import static com.netflix.priam.dse.IDseConfiguration.NodeType;
 
 public class DseProcessManager extends CassandraProcessManager
 {
@@ -20,22 +19,18 @@ public class DseProcessManager extends CassandraProcessManager
         this.dseConfig = dseConfig;
     }
 
-    protected List<String> getStartCommand()
-    {
-        List<String> cmd = super.getStartCommand();
-        //looks like we always need to specify cassandra here
-        cmd.add("cassandra");
+    protected void setEnv(Map<String, String> env) {   
+        super.setEnv(env);
 
         NodeType nodeType = dseConfig.getNodeType();
         if (nodeType == NodeType.ANALYTIC_HADOOP)
-            cmd.add("-t");
+            env.put("CLUSTER_TYPE", "-t");
         else if (nodeType == NodeType.ANALYTIC_SPARK)
-            cmd.add("-k");
+            env.put("CLUSTER_TYPE", "-k");
         else if (nodeType == NodeType.ANALYTIC_HADOOP_SPARK)
-            cmd.add("-k -t");
+            env.put("CLUSTER_TYPE", "-k -t");
         else if(nodeType == NodeType.SEARCH)
-            cmd.add("-s");
-
-        return cmd;
+            env.put("CLUSTER_TYPE", "-s");
     }
+  
 }

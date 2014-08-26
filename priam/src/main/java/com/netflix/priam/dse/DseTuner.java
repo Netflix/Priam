@@ -26,7 +26,7 @@ import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILE
 public class DseTuner extends StandardTuner
 {
     private static final Logger logger = LoggerFactory.getLogger(DseTuner.class);
-    protected static final String AUDIT_LOG_FILE = "conf/log4j-server.properties";
+    protected static final String AUDIT_LOG_FILE = "/conf/log4j-server.properties";
 
     protected static final String PRIMARY_AUDIT_LOG_ENTRY = "log4j.logger.DataAudit";
     protected static final String AUDIT_LOG_ADDITIVE_ENTRY = "log4j.additivity.DataAudit";
@@ -79,6 +79,11 @@ public class DseTuner extends StandardTuner
                 suffix = "_solr";
             if(nodeType == NodeType.ANALYTIC_HADOOP)
                 suffix = "_hadoop";
+            if(nodeType == NodeType.ANALYTIC_HADOOP_SPARK)
+                suffix = "_hadoop_spark";
+            if(nodeType == NodeType.ANALYTIC_SPARK)
+                suffix = "_spark";
+            
             properties.put("dc_suffix", suffix);
             properties.store(new FileWriter(filePath), "");
         }
@@ -164,7 +169,9 @@ public class DseTuner extends StandardTuner
         }
         catch (Exception e)
         {
+            e.printStackTrace();
             throw new RuntimeException("Unable to read " + AUDIT_LOG_FILE, e);
+           
         }
         finally
         {

@@ -25,8 +25,8 @@ public class CassandraProcessManager implements ICassandraProcess
     private static final Logger logger = LoggerFactory.getLogger(CassandraProcessManager.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
-    private final IConfiguration config;
-    private final Sleeper sleeper;
+    protected final IConfiguration config;
+    protected final Sleeper sleeper;
 
     @Inject
     public CassandraProcessManager(IConfiguration config, Sleeper sleeper)
@@ -35,6 +35,17 @@ public class CassandraProcessManager implements ICassandraProcess
         this.sleeper = sleeper;
     }
 
+    protected void setEnv(Map<String, String> env) {   
+        env.put("HEAP_NEWSIZE", config.getHeapNewSize());
+        env.put("MAX_HEAP_SIZE", config.getHeapSize());
+        env.put("DATA_DIR", config.getDataFileLocation());
+        env.put("COMMIT_LOG_DIR", config.getCommitLogLocation());
+        env.put("LOCAL_BACKUP_DIR", config.getBackupLocation());
+        env.put("CACHE_DIR", config.getCacheLocation());
+        env.put("JMX_PORT", "" + config.getJmxPort());
+        env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
+    }
+    
     public void start(boolean join_ring) throws IOException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
@@ -49,19 +60,17 @@ public class CassandraProcessManager implements ICassandraProcess
         command.addAll(getStartCommand());
 
         ProcessBuilder startCass = new ProcessBuilder(command);
+        
         Map<String, String> env = startCass.environment();
-        env.put("HEAP_NEWSIZE", config.getHeapNewSize());
-        env.put("MAX_HEAP_SIZE", config.getHeapSize());
-        env.put("DATA_DIR", config.getDataFileLocation());
-        env.put("COMMIT_LOG_DIR", config.getCommitLogLocation());
-        env.put("LOCAL_BACKUP_DIR", config.getBackupLocation());
-        env.put("CACHE_DIR", config.getCacheLocation());
-        env.put("JMX_PORT", "" + config.getJmxPort());
-        env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
+        setEnv(env);
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
+        
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
+        logger.info("Start cmd: " + startCass.command().toString());
+        logger.info("Start env: " + startCass.environment().toString());
         Process starter = startCass.start();
+        
         logger.info("Starting cassandra server ....");
 		try {
 			sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
@@ -69,9 +78,7 @@ public class CassandraProcessManager implements ICassandraProcess
 			if (code == 0)
 				logger.info("Cassandra server has been started");
 			else
-				logger.error(
-						"Unable to start cassandra server. Error code: {}",
-						code);
+				logger.error("Unable to start cassandra server. Error code: {}", code);
 
 			logProcessOutput(starter);
 		} catch (Exception e) 

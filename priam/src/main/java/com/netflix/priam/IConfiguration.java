@@ -194,9 +194,19 @@ public interface IConfiguration
     public String getRestoreSnapshot();
 
     /**
-     * @return Get the Data Center name (or region for AWS)
+     * @return Get the Data Center name
      */
     public String getDC();
+
+    /*
+     * @return Get the Data Center name suffix
+     */
+    public String getDCSuffix();
+
+    /**
+     * @return Get the AWS region
+     */
+    public String getRegion();
 
     /**
      * @param region

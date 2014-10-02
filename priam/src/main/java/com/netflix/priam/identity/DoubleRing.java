@@ -65,7 +65,7 @@ public class DoubleRing
         for (PriamInstance data : local)
             factory.delete(data);
 
-        int hash = tokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.dcOffset(config.getDC());
         // move existing slots.
         for (PriamInstance data : local)
         {

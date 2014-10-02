@@ -17,7 +17,7 @@ public class CassandraProcessManagerTest
     @Before
     public void setup()
     {
-        IConfiguration config = new FakeConfiguration("us-east-1", "test_cluster", "us-east-1a", "i-2378afd3");
+        IConfiguration config = new FakeConfiguration("us-east-1", "_suffix", "test_cluster", "us-east-1a", "i-2378afd3");
         cpm = new CassandraProcessManager(config, new FakeSleeper());
     }
 

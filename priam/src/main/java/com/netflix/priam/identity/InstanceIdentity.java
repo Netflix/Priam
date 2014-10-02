@@ -49,7 +49,6 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Random;
-import java.util.Set;
 
 import javax.ws.rs.core.MediaType;
 
@@ -330,7 +329,7 @@ public class InstanceIdentity
         	logger.info("Generating my own and new token");
             // Sleep random interval - upto 15 sec
             sleeper.sleep(new Random().nextInt(15000));
-            int hash = tokenManager.regionOffset(config.getDC());
+            int hash = tokenManager.dcOffset(config.getDC());
             // use this hash so that the nodes are spred far away from the other
             // regions.
 

@@ -46,16 +46,16 @@ public class S3BackupPath extends AbstractBackupPath
     /**
      * Format of backup path:
      * Cassandra 1.0
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE
+     * BASE/DC/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE
      * Cassandra 1.1
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
+     * BASE/DC/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
      */
     @Override
     public String getRemotePath()
     {
         StringBuffer buff = new StringBuffer();
         buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
-        buff.append(region).append(S3BackupPath.PATH_SEP);
+        buff.append(dc).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);// Cluster name
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
@@ -87,7 +87,7 @@ public class S3BackupPath extends AbstractBackupPath
         if(pieces.size() == NUM_PATH_ELEMENTS_CASS_1_0)
                 setCassandra1_0(true);
         baseDir = pieces.get(0);
-        region = pieces.get(1);
+        dc = pieces.get(1);
         clusterName = pieces.get(2);
         token = pieces.get(3);
         time = parseDate(pieces.get(4));
@@ -116,7 +116,7 @@ public class S3BackupPath extends AbstractBackupPath
         }
         assert pieces.size() >= 4 : "Too few elements in path " + remoteFilePath;
         baseDir = pieces.get(0);
-        region = pieces.get(1);
+        dc = pieces.get(1);
         clusterName = pieces.get(2);
         token = pieces.get(3);
     }
@@ -129,18 +129,18 @@ public class S3BackupPath extends AbstractBackupPath
         if (elements.length <= 1)
         {
             baseDir = config.getBackupLocation();
-            region = config.getDC();
+            dc = config.getDC();
             clusterName = config.getAppName();
         }
         else
         {
             assert elements.length >= 4 : "Too few elements in path " + location;
             baseDir = elements[1];
-            region = elements[2];
+            dc = elements[2];
             clusterName = elements[3];
         }
         buff.append(baseDir).append(S3BackupPath.PATH_SEP);
-        buff.append(region).append(S3BackupPath.PATH_SEP);
+        buff.append(dc).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);
 
         token = factory.getInstance().getToken();
@@ -158,18 +158,18 @@ public class S3BackupPath extends AbstractBackupPath
         if (elements.length <= 1)
         {
             baseDir = config.getBackupLocation();
-            region = config.getDC();
+            dc = config.getDC();
             clusterName = config.getAppName();
         }
         else
         {
             assert elements.length >= 4 : "Too few elements in path " + location;
             baseDir = elements[1];
-            region = elements[2];
+            dc = elements[2];
             clusterName = elements[3];
         }
         buff.append(baseDir).append(S3BackupPath.PATH_SEP);
-        buff.append(region).append(S3BackupPath.PATH_SEP);
+        buff.append(dc).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);
 
         return buff.toString();

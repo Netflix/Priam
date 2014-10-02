@@ -116,7 +116,7 @@ public class S3FileSystem implements IBackupFileSystem, S3FileSystemMBean
      */
     private String getS3Endpoint()
     {
-    	 final String curRegion = config.getDC();
+    	 final String curRegion = config.getRegion();
          if("us-east-1".equalsIgnoreCase(curRegion) ||
             "us-west-1".equalsIgnoreCase(curRegion) ||
             "us-west-2".equalsIgnoreCase(curRegion)	|| 

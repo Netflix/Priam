@@ -64,7 +64,7 @@ public class TokenManagerTest
     {
         assertEquals(MAXIMUM_TOKEN.divide(BigInteger.valueOf(8 * 32))
                 .multiply(BigInteger.TEN)
-                .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
+                .add(BigInteger.valueOf(tokenManager.dcOffset("region")))
                 .toString(),
                 tokenManager.createToken(10, 8, 32, "region"));
     }
@@ -142,15 +142,15 @@ public class TokenManagerTest
                 if (region1.equals(region2))
                     continue;
                 assertFalse("Diffrence seems to be low",
-                        Math.abs(tokenManager.regionOffset(region1) - tokenManager.regionOffset(region2)) < 100);
+                        Math.abs(tokenManager.dcOffset(region1) - tokenManager.dcOffset(region2)) < 100);
             }
     }
 
     @Test
     public void testMultiToken()
     {
-        int h1 = tokenManager.regionOffset("vijay");
-        int h2 = tokenManager.regionOffset("vijay2");
+        int h1 = tokenManager.dcOffset("vijay");
+        int h2 = tokenManager.dcOffset("vijay2");
         BigInteger t1 = tokenManager.initialToken(100, 10, h1);
         BigInteger t2 = tokenManager.initialToken(100, 10, h2);
 

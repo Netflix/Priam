@@ -27,6 +27,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.utils.AsgNameParser;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 
@@ -139,6 +140,7 @@ public class PriamConfiguration implements IConfiguration
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
+    private static final String CONFIG_DC_SUFFIX = PRIAM_PRE + ".az.dcSuffix";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME;
@@ -149,6 +151,7 @@ public class PriamConfiguration implements IConfiguration
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
+    private static String DC_SUFFIX;
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
 
 
@@ -334,6 +337,7 @@ public class PriamConfiguration implements IConfiguration
     {
         config.set(CONFIG_ASG_NAME, ASG_NAME);
         config.set(CONFIG_REGION_NAME, REGION);
+        config.set(CONFIG_DC_SUFFIX, AsgNameParser.parseAsgName(ASG_NAME).getDcSuffix());
     }
 
     @Override
@@ -525,6 +529,19 @@ public class PriamConfiguration implements IConfiguration
 
     @Override
     public String getDC()
+    {
+        return config.get(CONFIG_REGION_NAME, "") + getDCSuffix();
+    }
+
+    @Override
+    public String getDCSuffix()
+    {
+        return config.get(CONFIG_DC_SUFFIX, "");
+    }
+
+
+    @Override
+    public String getRegion()
     {
         return config.get(CONFIG_REGION_NAME, "");
     }

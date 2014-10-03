@@ -8,6 +8,8 @@ import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 import static org.junit.Assert.assertEquals;
 
 public class StandardTunerTest
@@ -75,7 +77,11 @@ public class StandardTunerTest
     public void dump() throws IOException
     {
         String target = "/tmp/priam_test.yaml";
+        String rackPropertiesPath = config.getCassHome() + "/conf/" + RACKDC_PROPERTY_FILENAME;
+
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File("/tmp/priam_test.yaml"));
+        Files.copy(new File("src/test/resources/cassandra-rackdc.properties"), new File(rackPropertiesPath));
+
         tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
     }
 }

@@ -441,6 +441,12 @@ public class FakeConfiguration implements IConfiguration
         return "conf/cassandra.yaml";
     }
 
+    @Override
+    public String getRackDcPropertiesLocation()
+    {
+        return "/tmp/priam/conf/cassandra-rackdc.properties";
+    }
+
     public String getAuthenticator()
     {
         return PriamConfiguration.DEFAULT_AUTHENTICATOR;

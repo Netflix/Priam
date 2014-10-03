@@ -173,7 +173,7 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || isInstanceDummy(dead))
+                if (!dead.getDC().equals(config.getDC()) || !dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || isInstanceDummy(dead))
                     continue;
                 logger.info("Found dead instances: " + dead.getInstanceId());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
@@ -298,7 +298,7 @@ public class InstanceIdentity
             for (PriamInstance dead : allIds)
             {
                 // test same zone and is it is alive.
-                if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !isInstanceDummy(dead))
+                if (!dead.getDC().equals(config.getDC()) || !dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !isInstanceDummy(dead))
                     continue;
                 logger.info("Found pre-generated token: " + dead.getToken());
                 PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
@@ -335,7 +335,7 @@ public class InstanceIdentity
 
             int max = hash;
             for (PriamInstance data : factory.getAllIds(config.getAppName()))
-                max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
+                max = (data.getDC().equals(config.getDC()) && data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
             int maxSlot = max - hash;
             int my_slot = 0;
             if (hash == max && locMap.get(new DcAndRac(config.getDC(), config.getRac())).size() == 0) {

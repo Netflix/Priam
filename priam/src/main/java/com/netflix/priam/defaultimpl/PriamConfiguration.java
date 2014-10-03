@@ -73,6 +73,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
     private static final String CONFIG_VNODE_NUM_TOKENS = PRIAM_PRE + ".vnodes.numTokens";
     private static final String CONFIG_YAML_LOCATION = PRIAM_PRE + ".yamlLocation";
+    private static final String CONFIG_RACK_DC_PROPERTIES_LOCATION = PRIAM_PRE + ".rackDcPropertiesLocation";
     private static final String CONFIG_AUTHENTICATOR = PRIAM_PRE + ".authenticator";
     private static final String CONFIG_AUTHORIZER = PRIAM_PRE + ".authorizer";
     private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
@@ -715,6 +716,12 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
     }
 
+    @Override
+    public String getRackDcPropertiesLocation()
+    {
+        return config.get(CONFIG_RACK_DC_PROPERTIES_LOCATION, "");
+    }
+
     public String getAuthenticator()
     {
         return config.get(CONFIG_AUTHENTICATOR, DEFAULT_AUTHENTICATOR);
@@ -836,7 +843,7 @@ public class PriamConfiguration implements IConfiguration
     
     
     public String getS3EndPoint() {
-    	String region = getDC();
+    	String region = getRegion();
     	
     	String s3Url = null;
     	

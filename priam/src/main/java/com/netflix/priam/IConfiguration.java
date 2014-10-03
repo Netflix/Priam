@@ -37,6 +37,11 @@ public interface IConfiguration
     public String getYamlLocation();
 
     /**
+     * @return Path to cassandra-rackdc.properties directory.
+     */
+    public String getRackDcPropertiesLocation();
+
+    /**
      * @return Path to Cassandra startup script
      */
     public String getCassStartupScript();

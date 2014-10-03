@@ -109,19 +109,28 @@ public class StandardTuner implements CassandraTuner
     private void writeCassandraSnitchProperties()
     {
         Reader reader = null;
+        String filePath = config.getRackDcPropertiesLocation();
+
+        if (filePath.trim().isEmpty()) {
+            // skip tuning if not specified
+            logger.info("cassandra-rackdc.properties location not specified, skipping tuning");
+            return;
+        }
+
         try
         {
-            String filePath = config.getCassHome() + "/conf/" + RACKDC_PROPERTY_FILENAME;
             reader = new FileReader(filePath);
             Properties properties = new Properties();
             properties.load(reader);
             String suffix = config.getDCSuffix();
             properties.put("dc_suffix", suffix);
             properties.store(new FileWriter(filePath), "");
+
+            logger.info("Tuned cassandra-rackdc.properties with dc suffix {}", config.getDCSuffix());
         }
         catch (Exception e)
         {
-            throw new RuntimeException("Unable to read " + RACKDC_PROPERTY_FILENAME, e);
+            throw new RuntimeException("Unable to read " + filePath, e);
         }
         finally
         {

@@ -63,7 +63,7 @@ public class InstanceIdentity
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
     public static final String DUMMY_INSTANCE_ID = "new_slot";
 
-    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
+    private final ListMultimap<DcAndRac, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<DcAndRac, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>()
     {
         public List<PriamInstance> get()
         {
@@ -156,7 +156,7 @@ public class InstanceIdentity
         locMap.clear();
         for (PriamInstance ins : factory.getAllIds(config.getAppName()))
         {
-        		locMap.put(ins.getRac(), ins);
+        		locMap.put(new DcAndRac(ins.getDC(), ins.getRac()), ins);
         }
     }
 
@@ -338,7 +338,7 @@ public class InstanceIdentity
                 max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
             int maxSlot = max - hash;
             int my_slot = 0;
-            if (hash == max && locMap.get(config.getRac()).size() == 0) {
+            if (hash == max && locMap.get(new DcAndRac(config.getDC(), config.getRac())).size() == 0) {
                 int idx = config.getRacs().indexOf(config.getRac());
                 Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());
                 my_slot = idx + maxSlot;
@@ -361,16 +361,19 @@ public class InstanceIdentity
     {
         populateRacMap();
         List<String> seeds = new LinkedList<String>();
+
+        DcAndRac myDcAndRac = new DcAndRac(myInstance.getDC(), myInstance.getRac());
+
         // Handle single zone deployment
         if (config.getRacs().size() == 1)
         {
             // Return empty list if all nodes are not up
-            if (membership.getRacMembershipSize() != locMap.get(myInstance.getRac()).size())
+            if (membership.getRacMembershipSize() != locMap.get(myDcAndRac).size())
                 return seeds;
             // If seed node, return the next node in the list
-            if (locMap.get(myInstance.getRac()).size() > 1 && locMap.get(myInstance.getRac()).get(0).getHostIP().equals(myInstance.getHostIP()))
+            if (locMap.get(myDcAndRac).size() > 1 && locMap.get(myDcAndRac).get(0).getHostIP().equals(myInstance.getHostIP()))
             {	
-            	PriamInstance instance = locMap.get(myInstance.getRac()).get(1);
+            	PriamInstance instance = locMap.get(myDcAndRac).get(1);
             	if (instance != null && !isInstanceDummy(instance))
             	{
             	    if (config.isMultiDC())
@@ -380,7 +383,7 @@ public class InstanceIdentity
                 }
             }
         }
-        for (String loc : locMap.keySet())
+        for (DcAndRac loc : locMap.keySet())
         {
         		PriamInstance instance = Iterables.tryFind(locMap.get(loc), differentHostPredicate).orNull();
         		if (instance != null && !isInstanceDummy(instance))
@@ -397,7 +400,7 @@ public class InstanceIdentity
     public boolean isSeed()
     {
         populateRacMap();
-        String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
+        String ip = locMap.get(new DcAndRac(myInstance.getDC(), myInstance.getRac())).get(0).getHostName();
         return myInstance.getHostName().equals(ip);
     }
     
@@ -419,5 +422,49 @@ public class InstanceIdentity
     private boolean isInstanceDummy(PriamInstance instance) 
     {
     	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
+    }
+
+    public static class DcAndRac
+    {
+        private final String dc;
+        private final String rac;
+
+        public DcAndRac(String dc, String rac)
+        {
+            this.dc = dc;
+            this.rac = rac;
+        }
+
+        public String getDc()
+        {
+            return dc;
+        }
+
+        public String getRac()
+        {
+            return rac;
+        }
+
+        @Override
+        public boolean equals(Object o)
+        {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            DcAndRac dcAndRac = (DcAndRac) o;
+
+            if (!dc.equals(dcAndRac.dc)) return false;
+            if (!rac.equals(dcAndRac.rac)) return false;
+
+            return true;
+        }
+
+        @Override
+        public int hashCode()
+        {
+            int result = dc.hashCode();
+            result = 31 * result + rac.hashCode();
+            return result;
+        }
     }
 }

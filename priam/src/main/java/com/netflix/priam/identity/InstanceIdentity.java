@@ -116,7 +116,7 @@ public class InstanceIdentity
                 // Check if this node is decomissioned
                 for (PriamInstance ins : factory.getAllIds(config.getAppName() + "-dead"))
                 {
-                    logger.debug(String.format("[Dead] Iterating though the hosts: %s", ins.getInstanceId()));
+                    logger.info(String.format("[Dead] Iterating though the hosts: %s", ins.getInstanceId()));
                     if (ins.getInstanceId().equals(config.getInstanceName()))
                     {
                         ins.setOutOfService(true);
@@ -125,7 +125,7 @@ public class InstanceIdentity
                 }
                 for (PriamInstance ins : factory.getAllIds(config.getAppName()))
                 {
-                    logger.debug(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(),ins.getId()));
+                    logger.info(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(),ins.getId()));
                     if (ins.getInstanceId().equals(config.getInstanceName()))
                         return ins;
                 }
@@ -143,7 +143,13 @@ public class InstanceIdentity
         // Grab a new token
         if (null == myInstance)
         {
-			GetNewToken newToken = new GetNewToken();
+        	GetNewToken newToken = null;
+        	if ( this.config.isCreateNewTokenEnable() ) {
+    			newToken = new GetNewToken();        		
+        	} else {
+        		throw new IllegalStateException("Node attempted to erroneously create a new token when we should be grabbing an existing token.");
+        	}
+
 			newToken.set(100, 100);
 			myInstance = newToken.call();
 		}
@@ -250,7 +256,7 @@ public class InstanceIdentity
 	              if (StringUtils.isEmpty(textEntity))
 	                  return null;
                } catch (Exception e) {
-                   logger.debug("Error in reaching out to host: " + getBaseURI(host));
+                   logger.info("Error in reaching out to host: " + getBaseURI(host));
                    return null;
                }
 			

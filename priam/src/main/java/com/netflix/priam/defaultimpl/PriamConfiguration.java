@@ -77,6 +77,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
     private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
     private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
+    private static final String CONFIG_CREATE_NEW_TOKEN_ENABLE = PRIAM_PRE + ".create.new.token.enable";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -886,4 +887,10 @@ public class PriamConfiguration implements IConfiguration
     public String getCassYamlVal(String priamKey) {
     	return config.get(priamKey);
     }
+    @Override
+    public boolean isCreateNewTokenEnable()
+    {
+        return config.get(CONFIG_CREATE_NEW_TOKEN_ENABLE, true);
+    }    
+    
 }

@@ -563,4 +563,9 @@ public class FakeConfiguration implements IConfiguration
     public String getCassYamlVal(String priamKey) {
     	return "";
     }
+	@Override
+	public boolean isCreateNewTokenEnable() {
+		return true;  //allow Junit test to create new tokens
+	}    
+    
 }

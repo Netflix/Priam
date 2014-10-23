@@ -20,9 +20,20 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
+import com.netflix.priam.aws.S3CrossAccountFileSystem;
+import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
+import com.netflix.priam.aws.auth.IS3Credential;
+import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
+import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
-
+import com.netflix.priam.cryptography.GenericKeyCryptography;
+import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.cryptography.IKeyCryptography;
+import com.netflix.priam.cryptography.pgp.PgpCryptography;
+import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.priam.restore.EncryptedRestoreStrategy;
+import com.netflix.priam.restore.IRestoreStrategy;
 import com.netflix.priam.ICredential;
 
 
@@ -34,8 +45,18 @@ public class PriamGuiceModule extends AbstractModule
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
 
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
+        bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(S3EncryptedFileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(S3FileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
+        
+        bind(S3CrossAccountFileSystem.class);
+        bind(BackupFileSystemContext.class);
+        
+        bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
+        bind(IS3Credential.class).annotatedWith(Names.named("awsroleassumption")).to(S3RoleAssumptionCredential.class);
+        bind(IFileCryptography.class).annotatedWith(Names.named("pgpcrypto")).to(PgpCryptography.class);
+        bind(IKeyCryptography.class).annotatedWith(Names.named("keycryptography")).to(GenericKeyCryptography.class);
+        bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
         bind(ICredential.class).to(ClearCredential.class);
     }
 }

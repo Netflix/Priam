@@ -602,5 +602,10 @@ public class FakeConfiguration implements IConfiguration
 	public String getPgpPasswordPhrase() {
 		return null;
 	}
+
+	@Override
+	public String getPgpPublicKeyLoc() {
+		return null;
+	}
     
 }

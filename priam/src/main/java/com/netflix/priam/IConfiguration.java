@@ -464,5 +464,10 @@ public interface IConfiguration
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     public String getPgpPasswordPhrase();
+    /*
+     * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
+     */    
+    public String getPgpPublicKeyLoc();
 
 }

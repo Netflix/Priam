@@ -136,7 +136,6 @@ public class PriamConfiguration implements IConfiguration
     //Backup and restore cryptography
     private static final String CONFIG_PRIKEY_LOC = PRIAM_PRE + ".private.key.location"; //the location on disk of the private key used by the cryptography algorithm
     private static final String CONFIG_PGP_PASSWORD_PHRASE = PRIAM_PRE + ".pgp.password.phrase"; //pass phrase used by the cryptography algorithm
-    private static final String CONFIG_PGP_PUB_KEY = PRIAM_PRE + ".pgp.pubkey.file.location"; //public key used by the cryptography algorithm
     
     //Restore from Google Cloud Storage
     private static final String CONFIG_GCS_SERVICE_ACCT_ID = PRIAM_PRE + ".gcs.service.acct.id"; //Google Cloud Storage service account id
@@ -942,9 +941,4 @@ public class PriamConfiguration implements IConfiguration
 		return config.get(CONFIG_PGP_PASSWORD_PHRASE);
 	}
 
-	@Override
-	public String getPgpPublicKey() {
-		return config.get(CONFIG_PGP_PUB_KEY);
-	}    
-    
 }

@@ -19,6 +19,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredentialGeneric.KEY;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
@@ -26,13 +27,13 @@ import com.netflix.priam.backup.RestoreTokenSelector;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.IKeyCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.ICredentialGeneric;
 
 /*
  * A strategy to restore encrypted data from a primary AWS account
@@ -45,7 +46,6 @@ public class EncryptedRestoreStrategy extends RestoreBase implements IRestoreStr
 	
 	private ICassandraProcess cassProcess;
 	private IFileCryptography fileCryptography;
-	private IKeyCryptography keyCryptography;
 	private ICompression compress;
 
 	@Inject
@@ -55,19 +55,21 @@ public class EncryptedRestoreStrategy extends RestoreBase implements IRestoreStr
     @Inject
     private InstanceIdentity id;   
     @Inject
-    private RestoreTokenSelector tokenSelector;	
+    private RestoreTokenSelector tokenSelector;
+
+	private ICredentialGeneric pgpCredential;	
 	
 	@Inject
 	public EncryptedRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess, @Named("encryptedbackup") IBackupFileSystem fs, Sleeper sleeper
 			, @Named("pgpcrypto") IFileCryptography fileCryptography
-			, @Named("keycryptography") IKeyCryptography phraseCryptography
+			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress
 			) { 
 		
 		super(config, fs, JOBNAME, sleeper);
 		this.cassProcess = cassProcess;
 		this.fileCryptography = fileCryptography;
-		this.keyCryptography = phraseCryptography;
+		this.pgpCredential = credential;
 		this.compress = compress;
 		
 	}
@@ -189,7 +191,7 @@ public class EncryptedRestoreStrategy extends RestoreBase implements IRestoreStr
             	File tempFileHandler = new File(tempFileName);
             	
             	//== download from source, decrypt, and lastly uncompress
-            	download(temp, finalFileHandler, tempFileHandler, this.fileCryptography, this.keyCryptography.decrypt(this.config.getPgpPasswordPhrase()).toCharArray(), this.compress);
+            	download(temp, finalFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD).toCharArray(), this.compress);
             		                
             }   
         }

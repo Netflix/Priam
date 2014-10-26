@@ -19,6 +19,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredentialGeneric.KEY;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
@@ -27,13 +28,14 @@ import com.netflix.priam.backup.RestoreTokenSelector;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.IKeyCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.ICredentialGeneric;
+import com.netflix.priam.cryptography.pgp.PgpCredential;
 
 @Singleton
 public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrategy {
@@ -51,20 +53,20 @@ public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrate
     
 	private ICassandraProcess cassProcess;
 	private IFileCryptography fileCryptography;
-	private IKeyCryptography keyCryptography;
-	private ICompression compress;	
+	private ICompression compress;
+	private ICredentialGeneric pgpCredential;	
 	
 	@Inject
 	public GoogleRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess, @Named("gcsencryptedbackup") IBackupFileSystem fs, Sleeper sleeper
 			, @Named("pgpcrypto") IFileCryptography fileCryptography
-			, @Named("keycryptography") IKeyCryptography phraseCryptography
+			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress
 			) {
 		
 		super(config, fs, JOBNAME, sleeper);
 		this.cassProcess = cassProcess;
 		this.fileCryptography = fileCryptography;
-		this.keyCryptography = phraseCryptography;
+		this.pgpCredential = credential;
 		this.compress = compress;
 	}
 	
@@ -218,7 +220,7 @@ public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrate
 	            	//download from source, decrypt, and lastly uncompress
 	            	
 	            	//download(temp, localFileHandler, encryptedFileHandler, this.fileCryptography, this.keyCryptography.decrypt(null).toCharArray(), this.compress);
-	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.keyCryptography.decrypt(this.config.getPgpPasswordPhrase()).toCharArray(), this.compress);
+	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD).toCharArray(), this.compress);
 	            }   
 	        }
 	        

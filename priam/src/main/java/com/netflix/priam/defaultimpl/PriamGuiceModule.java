@@ -27,11 +27,14 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.cryptography.GenericKeyCryptography;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.IKeyCryptography;
+import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
+import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.priam.ICredentialGeneric;
+import com.netflix.priam.google.GcsCredential;
+import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
 import com.netflix.priam.restore.IRestoreStrategy;
 import com.netflix.priam.ICredential;
@@ -55,7 +58,8 @@ public class PriamGuiceModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
         bind(IS3Credential.class).annotatedWith(Names.named("awsroleassumption")).to(S3RoleAssumptionCredential.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("pgpcrypto")).to(PgpCryptography.class);
-        bind(IKeyCryptography.class).annotatedWith(Names.named("keycryptography")).to(GenericKeyCryptography.class);
+        bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
+        bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
         bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
         bind(ICredential.class).to(ClearCredential.class);
     }

@@ -30,11 +30,12 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredentialGeneric.KEY;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.cryptography.IKeyCryptography;
 import com.netflix.priam.restore.GoogleRestoreStrategy;
+import com.netflix.priam.ICredentialGeneric;
 
 public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileSystemMBean {
 
@@ -53,15 +54,15 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 	private IConfiguration config;
 	private AtomicInteger downloadCount = new AtomicInteger();
 
-	private IKeyCryptography keyCryptography;
+	private ICredentialGeneric gcsCredential;
 	
 	@Inject
 	public GoogleEncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, final IConfiguration config
-			, @Named("keycryptography") IKeyCryptography keyCryptography) {
+			, @Named("gcscredential") ICredentialGeneric credential) {
 		
 		this.pathProvider = pathProvider;
 		this.config = config;
-		this.keyCryptography = keyCryptography;
+		this.gcsCredential = credential;
 		
 		try {
 	        
@@ -124,14 +125,16 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 			
 			if (this.credential == null) {
 				
-				String service_acct_email = this.keyCryptography.decrypt(config.getGcsServiceAccountId());
+				//String service_acct_email = this.keyCryptography.decrypt(config.getGcsServiceAccountId());
+				String service_acct_email = this.gcsCredential.getValue(KEY.GCS_SERVICE_ID);
 				
 				File gcsPrivateKeyHandle = new File("/apps/tomcat/conf/key.p12");
 				OutputStream os = new FileOutputStream(gcsPrivateKeyHandle);
 				BufferedOutputStream bos = new BufferedOutputStream(os);
 				ByteArrayOutputStream byteos = new ByteArrayOutputStream();
 				
-				byte[] gcsPrivateKeyPlainText = this.keyCryptography.decrypt(new File(this.config.getGcsServiceAccountPrivateKeyLoc()));
+				//byte[] gcsPrivateKeyPlainText = this.keyCryptography.decrypt(new File(this.config.getGcsServiceAccountPrivateKeyLoc()));
+				byte[] gcsPrivateKeyPlainText = this.gcsCredential.getValue(KEY.GCS_PRIVATE_KEY_LOC).getBytes();
 				try {
 					
 					byteos.write(gcsPrivateKeyPlainText);

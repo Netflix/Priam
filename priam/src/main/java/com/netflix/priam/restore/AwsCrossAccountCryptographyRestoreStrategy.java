@@ -16,6 +16,7 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.ICredentialGeneric.KEY;
 import com.netflix.priam.aws.S3CrossAccountFileSystem;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.MetaData;
@@ -23,13 +24,14 @@ import com.netflix.priam.backup.RestoreTokenSelector;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.IKeyCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.ICredentialGeneric;
+import com.netflix.priam.cryptography.pgp.*;
 
 /*
  * A strategy to restore from an AWS bucket whose objects are not owned by the current IAM role thus requiring AWS cross account assumption.
@@ -52,8 +54,8 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
     @Inject
     private RestoreTokenSelector tokenSelector;
 	private IFileCryptography fileCryptography;
-	private IKeyCryptography keyCryptography;
-	private ICompression compress;    
+	private ICompression compress;
+	private ICredentialGeneric pgpCredential;    
 	
 	
 	//Note: see javadoc for S3CrossAccountFileSystem for reason why we inject a concrete class (S3CrossAccountFileSystem) instead of the inteface IBackupFileSystem
@@ -62,13 +64,13 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
 			, S3CrossAccountFileSystem crossAcctfs
 			, Sleeper sleeper
 			, @Named("pgpcrypto") IFileCryptography fileCryptography
-			, @Named("keycryptography") IKeyCryptography phraseCryptography
+			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress) {
 			
 		super(config, crossAcctfs.getBackupFileSystem(), JOBNAME, sleeper);  
 		this.cassProcess = cassProcess;	
 		this.fileCryptography = fileCryptography;
-		this.keyCryptography = phraseCryptography; 
+		this.pgpCredential = credential;
 		this.compress = compress;
 	}
 	
@@ -218,7 +220,7 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
 	            	File tempFileHandler = new File(tempFileName);
 	            	
 	            	//== download from source, decrypt, and lastly uncompress
-	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.keyCryptography.decrypt(this.config.getPgpPasswordPhrase()).toCharArray(), this.compress);
+	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD).toCharArray(), this.compress);
 	            		                
 	            }   
 	        }

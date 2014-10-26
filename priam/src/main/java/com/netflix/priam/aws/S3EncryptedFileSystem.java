@@ -42,7 +42,6 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.IKeyCryptography;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 
 /**
@@ -66,7 +65,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
 			, @Named("pgpcrypto") IFileCryptography fileCryptography
-			, @Named("keycryptography") IKeyCryptography phraseCryptography
 			) {
 		
         this.pathProvider = pathProvider;

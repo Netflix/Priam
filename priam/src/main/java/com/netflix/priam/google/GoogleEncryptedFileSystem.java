@@ -134,7 +134,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 				ByteArrayOutputStream byteos = new ByteArrayOutputStream();
 				
 				//byte[] gcsPrivateKeyPlainText = this.keyCryptography.decrypt(new File(this.config.getGcsServiceAccountPrivateKeyLoc()));
-				byte[] gcsPrivateKeyPlainText = this.gcsCredential.getValue(KEY.GCS_PRIVATE_KEY_LOC).getBytes();
+				byte[] gcsPrivateKeyPlainText = this.gcsCredential.getValue(KEY.GCS_PRIVATE_KEY_LOC);
 				try {
 					
 					byteos.write(gcsPrivateKeyPlainText);

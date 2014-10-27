@@ -6,7 +6,7 @@ package com.netflix.priam;
  */
 public interface ICredentialGeneric extends ICredential {
 
-	public String getValue(KEY key);
+	public byte[] getValue(KEY key);
 	
 	public static enum KEY {
 		PGP_PUBLIC_KEY_LOC, PGP_PASSWORD, GCS_SERVICE_ID, GCS_PRIVATE_KEY_LOC

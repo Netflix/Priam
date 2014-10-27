@@ -26,15 +26,15 @@ public class GcsCredential implements ICredentialGeneric {
 	}
 
 	@Override
-	public String getValue(KEY key) {
+	public byte[] getValue(KEY key) {
 		if (key == null) {
 			throw new NullPointerException("Credential key cannot be null.");
 		}
 		
 		if (key.equals(KEY.GCS_PRIVATE_KEY_LOC)) {
-			return this.config.getGcsServiceAccountPrivateKeyLoc();			
+			return this.config.getGcsServiceAccountPrivateKeyLoc().getBytes();			
 		} else if (key.equals(KEY.GCS_SERVICE_ID) ) {
-			return this.config.getGcsServiceAccountId();
+			return this.config.getGcsServiceAccountId().getBytes();
 		} else {
 			throw new IllegalArgumentException("Key value not supported.");
 		}		

@@ -220,7 +220,7 @@ public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrate
 	            	//download from source, decrypt, and lastly uncompress
 	            	
 	            	//download(temp, localFileHandler, encryptedFileHandler, this.fileCryptography, this.keyCryptography.decrypt(null).toCharArray(), this.compress);
-	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD).toCharArray(), this.compress);
+	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD), this.compress);
 	            }   
 	        }
 	        

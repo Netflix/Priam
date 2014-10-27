@@ -220,7 +220,7 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
 	            	File tempFileHandler = new File(tempFileName);
 	            	
 	            	//== download from source, decrypt, and lastly uncompress
-	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD).toCharArray(), this.compress);
+	            	download(temp, localFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD), this.compress);
 	            		                
 	            }   
 	        }

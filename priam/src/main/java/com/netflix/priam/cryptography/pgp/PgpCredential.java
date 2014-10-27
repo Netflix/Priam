@@ -26,15 +26,15 @@ public class PgpCredential  implements ICredentialGeneric {
 	}
 
 	@Override
-	public String getValue(KEY key) {
+	public byte[] getValue(KEY key) {
 		if (key == null) {
 			throw new NullPointerException("Credential key cannot be null.");
 		}
 		
 		if (key.equals(KEY.PGP_PASSWORD)) {
-			return this.config.getPgpPasswordPhrase();			
+			return this.config.getPgpPasswordPhrase().getBytes();			
 		} else if (key.equals(KEY.PGP_PUBLIC_KEY_LOC)) {
-			return this.config.getPgpPublicKeyLoc();
+			return this.config.getPgpPublicKeyLoc().getBytes();
 		} else {
 			throw new IllegalArgumentException("Key value not supported.");
 		}

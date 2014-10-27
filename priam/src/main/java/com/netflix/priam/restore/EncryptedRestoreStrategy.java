@@ -191,7 +191,8 @@ public class EncryptedRestoreStrategy extends RestoreBase implements IRestoreStr
             	File tempFileHandler = new File(tempFileName);
             	
             	//== download from source, decrypt, and lastly uncompress
-            	download(temp, finalFileHandler, tempFileHandler, this.fileCryptography, this.pgpCredential.getValue(KEY.PGP_PASSWORD), this.compress);
+            	String pgpPassword = new String(this.pgpCredential.getValue(KEY.PGP_PASSWORD));
+            	download(temp, finalFileHandler, tempFileHandler, this.fileCryptography, pgpPassword.toCharArray(), this.compress);
             		                
             }   
         }

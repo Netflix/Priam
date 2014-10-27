@@ -126,7 +126,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 			if (this.credential == null) {
 				
 				//String service_acct_email = this.keyCryptography.decrypt(config.getGcsServiceAccountId());
-				String service_acct_email = this.gcsCredential.getValue(KEY.GCS_SERVICE_ID);
+				String service_acct_email = new String(this.gcsCredential.getValue(KEY.GCS_SERVICE_ID));
 				
 				File gcsPrivateKeyHandle = new File("/apps/tomcat/conf/key.p12");
 				OutputStream os = new FileOutputStream(gcsPrivateKeyHandle);

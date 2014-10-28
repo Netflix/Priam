@@ -66,7 +66,6 @@ public class PgpCryptography implements IFileCryptography {
 		try {
 			keyIn = new BufferedInputStream(new FileInputStream(config.getPrivateKeyLocation()));
 		} catch (FileNotFoundException e) {
-			logger.error("PGP private key file not found.  file: " + config.getPrivateKeyLocation());
 			throw new IllegalStateException("PGP private key file not found.  file: " + config.getPrivateKeyLocation());
 		}
 		
@@ -134,7 +133,6 @@ public class PgpCryptography implements IFileCryptography {
         	try{
             	privateKey = findSecretKey(getPgpSecurityCollection(), encryptedDataStreamHandle.getKeyID(), passwd);        		
         	} catch (Exception ex) {
-        		logger.error("decryption exception: object: " + objectName + ", Exception when fetching private key using key: " + encryptedDataStreamHandle.getKeyID() + ", msg: " + ex.getLocalizedMessage());
         		throw new IllegalStateException("decryption exception:  object: " + objectName + ", Exception when fetching private key using key: " + encryptedDataStreamHandle.getKeyID(), ex);
         	}
 

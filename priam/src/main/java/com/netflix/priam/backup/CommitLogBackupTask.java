@@ -31,9 +31,9 @@ public class CommitLogBackupTask extends AbstractBackup
 
     @Inject
     public CommitLogBackupTask(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, 
-    		                   CommitLogBackup clBackup)
+    		                   CommitLogBackup clBackup, BackupFileSystemContext backupFileSystemCtx)
     {
-        super(config, fs, pathFactory);
+        super(config, backupFileSystemCtx, pathFactory);
         this.clBackup = clBackup;
     }
 

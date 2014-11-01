@@ -22,12 +22,12 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
@@ -42,15 +42,22 @@ public abstract class AbstractBackup extends Task
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo")); 
     protected final Provider<AbstractBackupPath> pathFactory;
-    protected final IBackupFileSystem fs;
+    protected IBackupFileSystem fs;
 
     @Inject
-    public AbstractBackup(IConfiguration config,IBackupFileSystem fs,Provider<AbstractBackupPath> pathFactory)
+    public AbstractBackup(IConfiguration config, BackupFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory)
     {
         super(config);
         this.pathFactory = pathFactory;
-        this.fs = fs;
+        this.fs = backupFileSystemCtx.getFileBackupStrategy(config);
     }
+    
+    /*
+     * A means to override the type of backup strategy chosen via BackupFileSystemContext
+     */
+    protected void setFileSystem(IBackupFileSystem fs) {
+    	this.fs = fs;
+    }    
    
     /**
      * Upload files in the specified dir. Does not delete the file in case of

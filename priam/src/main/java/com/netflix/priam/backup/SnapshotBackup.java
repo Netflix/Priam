@@ -58,9 +58,9 @@ public class SnapshotBackup extends AbstractBackup
 
     @Inject
     public SnapshotBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, 
-    		              MetaData metaData, CommitLogBackup clBackup)
+    		              MetaData metaData, CommitLogBackup clBackup, BackupFileSystemContext backupFileSystemCtx)
     {
-        super(config, fs, pathFactory);
+    	super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
         this.clBackup = clBackup;
     }

@@ -606,11 +606,5 @@ public class FakeConfiguration implements IConfiguration
 	@Override
 	public String getPgpPublicKeyLoc() {
 		return null;
-	}
-	
-	@Override
-	public boolean encryptBackupEnabled() {
-		return false;
-	}
-    
+	}	
 }

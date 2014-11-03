@@ -34,7 +34,7 @@ import com.netflix.priam.ICredentialGeneric.KEY;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.restore.GoogleRestoreStrategy;
+import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.ICredentialGeneric;
 
 public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileSystemMBean {
@@ -72,7 +72,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 			throw new IllegalStateException("Unable to create a handle to the Google Http tranport", e);
 		}
 		
-		this.srcBucketName = GoogleRestoreStrategy.getSourcebucket(getPathPrefix());
+		this.srcBucketName = GoogleCryptographyRestoreStrategy.getSourcebucket(getPathPrefix());
 		
 	}
 	

@@ -64,7 +64,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
-			, @Named("pgpcrypto") IFileCryptography fileCryptography
+			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 			) {
 		
         this.pathProvider = pathProvider;

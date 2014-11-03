@@ -63,7 +63,7 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
 	public AwsCrossAccountCryptographyRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess
 			, S3CrossAccountFileSystem crossAcctfs
 			, Sleeper sleeper
-			, @Named("pgpcrypto") IFileCryptography fileCryptography
+			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress) {
 			

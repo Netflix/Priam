@@ -9,12 +9,12 @@ public class RestoreContext {
 
         private IRestoreStrategy restoreObj = null;
         private AwsCrossAccountCryptographyRestoreStrategy awsCrossAccountCryptographyRestoreStrategy;
-        private GoogleRestoreStrategy googleRestoreStrategy;
+        private GoogleCryptographyRestoreStrategy googleCryptographyRestoreStrategy;
 
         @Inject
-        public RestoreContext(AwsCrossAccountCryptographyRestoreStrategy aws, GoogleRestoreStrategy gcs) {
+        public RestoreContext(AwsCrossAccountCryptographyRestoreStrategy aws, GoogleCryptographyRestoreStrategy gcs) {
                 this.awsCrossAccountCryptographyRestoreStrategy = aws;
-                this.googleRestoreStrategy = gcs;
+                this.googleCryptographyRestoreStrategy = gcs;
         }
 
         public IRestoreStrategy getRestoreObj(SourceType srcType) {
@@ -22,8 +22,8 @@ public class RestoreContext {
                         return null; //not fatal as the client should account for this use case
                 }
 
-                if (srcType.equals(SourceType.GOOGLE)) {
-                        this.restoreObj =  this.googleRestoreStrategy;
+                if (srcType.equals(SourceType.GOOGLEENCRYPTED)) {
+                        this.restoreObj =  this.googleCryptographyRestoreStrategy;
                 } else if (srcType.equals(SourceType.AWSCROSSACCTENCRYPTED)){
                         this.restoreObj =  this.awsCrossAccountCryptographyRestoreStrategy;
                 }
@@ -32,7 +32,7 @@ public class RestoreContext {
         }
 
     public enum SourceType {
-        AWSCROSSACCTENCRYPTED, GOOGLE
+        AWSCROSSACCTENCRYPTED, GOOGLEENCRYPTED
     };
 
 

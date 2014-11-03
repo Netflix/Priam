@@ -38,8 +38,8 @@ import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.cryptography.pgp.PgpCredential;
 
 @Singleton
-public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrategy {
-	private static final Logger logger = LoggerFactory.getLogger(GoogleRestoreStrategy.class);
+public class GoogleCryptographyRestoreStrategy extends RestoreBase implements IRestoreStrategy {
+	private static final Logger logger = LoggerFactory.getLogger(GoogleCryptographyRestoreStrategy.class);
 	public static final String JOBNAME = "GOOGLECLOUDSTORAGE_RESTORE_JOB";
 
 	@Inject
@@ -57,8 +57,8 @@ public class GoogleRestoreStrategy extends RestoreBase implements IRestoreStrate
 	private ICredentialGeneric pgpCredential;	
 	
 	@Inject
-	public GoogleRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess, @Named("gcsencryptedbackup") IBackupFileSystem fs, Sleeper sleeper
-			, @Named("pgpcrypto") IFileCryptography fileCryptography
+	public GoogleCryptographyRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess, @Named("gcsencryptedbackup") IBackupFileSystem fs, Sleeper sleeper
+			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress
 			) {

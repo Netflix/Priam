@@ -61,7 +61,7 @@ public class EncryptedRestoreStrategy extends RestoreBase implements IRestoreStr
 	
 	@Inject
 	public EncryptedRestoreStrategy(final IConfiguration config, ICassandraProcess cassProcess, @Named("encryptedbackup") IBackupFileSystem fs, Sleeper sleeper
-			, @Named("pgpcrypto") IFileCryptography fileCryptography
+			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 			, @Named("pgpcredential") ICredentialGeneric credential
 			, ICompression compress
 			) { 

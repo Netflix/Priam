@@ -30,7 +30,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
-import com.netflix.priam.restore.GoogleRestoreStrategy;
+import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
@@ -86,45 +86,49 @@ public class PriamServer
         // Run the task to tune Cassandra
         scheduler.runTaskNow(TuneCassandra.class);
 
-        // restore from backup else start cassandra.
+        // Determine if we need to restore from backup else start cassandra.
         if (!config.getRestoreSnapshot().equals("")) {
 
-            //schedule the proper restore strategy for the node
             if (config.getRestoreSourceType() == null || config.getRestoreSourceType().equals("") ) {
+                //Restore is needed and it will be done from the primary AWS account
+            	
+                if (config.isEncryptBackupEnabled()) {
+                	//Data needs to be decrypted as part of the restore.
+	                scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
+	                logger.info("Scheduled task " + Restore.JOBNAME);
 
-                    //This node wants to restore from the base strategy; however, lets determine if the data to restore is encrypted or not.
-                    if (config.isEncryptBackupEnabled()) {
-
-                            //restore the encrypted data from the AWS primary acct
-                    scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
-                    logger.debug("Scheduled task " + Restore.JOBNAME);
-
-                    } else {
-
-                            //restore from the AWS primary acct -- default
-                    scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct -- default
-                    logger.debug("Scheduled task " + Restore.JOBNAME);
-
-                    }
+                } else {
+                	//Data does NOT need to be decrypted as part of the restore.
+	                scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct -- default
+	                logger.info("Scheduled task " + Restore.JOBNAME);
+	                
+                }
 
 
             } else {
+                //Restore is needed and it will be done either from Google or a non-primary AWS account. 
 
+            	if ( config.isEncryptBackupEnabled() ) {
+            		//Data needs to be decrypted as part of the restore.
+            		
                     if (config.getRestoreSourceType().equalsIgnoreCase((RestoreContext.SourceType.AWSCROSSACCTENCRYPTED.toString()) ) ) {
+                        //Retore from a non-primary AWS account
+                        scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
+                        logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
 
-                            //restore the encrypted data from a non-primary AWS account
-                            scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
-                            logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
+	                } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLEENCRYPTED.toString()) ) {
+	                        //Restore from Google Cloud Storage (GCS)
+	                        scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
+	                        logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
+	
+	                } else {
+	                        throw new UnsupportedOperationException("Source type (" +  config.getRestoreSourceType() + ") for the scheduled restore not supported.");
+	                }            		
+            		
+            	} else {
+            		throw new UnsupportedOperationException("For this release, Source type (" +  config.getRestoreSourceType() + ") for the scheduled restore, we expect the data was encrypted.");
+            	}
 
-                    } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLE.toString()) ) {
-
-                            //restore the encrypted data from Google Cloud Storage (GCS)
-                            scheduler.addTask(GoogleRestoreStrategy.JOBNAME, GoogleRestoreStrategy.class, GoogleRestoreStrategy.getTimer());
-                            logger.debug("Scheduled task " + GoogleRestoreStrategy.JOBNAME);
-
-                    } else {
-                            throw new UnsupportedOperationException("Source type (" +  config.getRestoreSourceType() + ") for the scheduled restore not supported.");
-                    }
             }
 
         } else { //no restores needed

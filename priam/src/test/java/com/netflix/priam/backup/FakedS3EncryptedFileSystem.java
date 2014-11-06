@@ -34,7 +34,7 @@ public class FakedS3EncryptedFileSystem implements IBackupFileSystem {
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
         }
 	}
 	

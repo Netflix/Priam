@@ -4,7 +4,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 
-public class BackupFileSystemContext {
+public class BackupFileSystemContext implements IFileSystemContext {
 
 	private IBackupFileSystem fs = null, encryptedFs = null;
 
@@ -15,7 +15,7 @@ public class BackupFileSystemContext {
 		this.encryptedFs = encryptedFs;
 	}
 	
-	public IBackupFileSystem getFileBackupStrategy(IConfiguration config) {
+	public IBackupFileSystem getFileStrategy(IConfiguration config) {
 		
 		if (!config.isEncryptBackupEnabled()) {
 			

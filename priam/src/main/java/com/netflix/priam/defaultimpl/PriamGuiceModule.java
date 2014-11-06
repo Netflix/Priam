@@ -27,6 +27,7 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
@@ -53,7 +54,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
         
         bind(S3CrossAccountFileSystem.class);
-        bind(BackupFileSystemContext.class);
+        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
         
         bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
         bind(IS3Credential.class).annotatedWith(Names.named("awsroleassumption")).to(S3RoleAssumptionCredential.class);

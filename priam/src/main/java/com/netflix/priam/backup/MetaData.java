@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
@@ -51,11 +52,11 @@ public class MetaData
     private final IBackupFileSystem fs;
 
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathFactory, BackupFileSystemContext backupFileSystemCtx, IConfiguration config)
+    public MetaData(Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx, IConfiguration config)
 
     {
         this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileBackupStrategy(config);
+        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
     @SuppressWarnings("unchecked")

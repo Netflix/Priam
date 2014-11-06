@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
@@ -45,11 +46,11 @@ public abstract class AbstractBackup extends Task
     protected IBackupFileSystem fs;
 
     @Inject
-    public AbstractBackup(IConfiguration config, BackupFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory)
+    public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory)
     {
         super(config);
         this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileBackupStrategy(config);
+        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
     
     /*

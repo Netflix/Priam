@@ -44,7 +44,7 @@ public class IncrementalBackup extends AbstractBackup
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
-    public IncrementalBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, BackupFileSystemContext backupFileSystemCtx)
+    public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx)
     {
         super(config, backupFileSystemCtx, pathFactory);
     }

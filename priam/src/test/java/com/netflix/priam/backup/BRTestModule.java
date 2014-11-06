@@ -60,7 +60,7 @@ public class BRTestModule extends AbstractModule
         bind(ITokenManager.class).to(TokenManager.class);
         bind(ICassandraProcess.class).to(CassandraProcessManager.class);
 
-        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(FakedBackupFileSystemContext.class);
+        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
 

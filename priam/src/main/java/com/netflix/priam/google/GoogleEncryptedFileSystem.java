@@ -42,7 +42,7 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.ICredentialGeneric;
 
-public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileSystemMBean {
+public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncryptedFileSystemMBean {
 
 	private static final Logger logger = LoggerFactory.getLogger(GoogleEncryptedFileSystem.class);
 	

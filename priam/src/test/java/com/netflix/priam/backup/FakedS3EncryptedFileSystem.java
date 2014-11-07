@@ -26,16 +26,6 @@ public class FakedS3EncryptedFileSystem implements IBackupFileSystem {
 	, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 	) {
 		
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        String mbeanName = "com.priam.aws.FakedS3EncryptedFileSystemMBean:name=FakedS3EncryptedFileSystemMBean";
-        try
-        {
-            mbs.registerMBean(this, new ObjectName(mbeanName));
-        }
-        catch (Exception e)
-        {
-            throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
-        }
 	}
 	
 	@Override

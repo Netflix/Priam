@@ -7,11 +7,16 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
@@ -53,6 +58,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 	private String srcBucketName;
 	private IConfiguration config;
 	private AtomicInteger downloadCount = new AtomicInteger();
+	protected AtomicLong bytesDownloaded = new AtomicLong();
 
 	private ICredentialGeneric gcsCredential;
 	
@@ -74,6 +80,16 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 		
 		this.srcBucketName = GoogleCryptographyRestoreStrategy.getSourcebucket(getPathPrefix());
 		
+		MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
+		String mbeanName = MBEAN_NAME;
+        try
+        {
+            mbs.registerMBean(this, new ObjectName(mbeanName));
+        }
+        catch (Exception e)
+        {
+        	throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
+        }		
 	}
 	
 	private Storage.Objects constructObjectResourceHandle() {
@@ -202,7 +218,9 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
         {
             IOUtils.closeQuietly(is);
             IOUtils.closeQuietly(os);
-        }		
+        }	
+		
+		bytesDownloaded.addAndGet(get.getLastResponseHeaders().getContentLength());
 		
 	}
 
@@ -256,8 +274,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 
 	@Override
 	public int downloadCount() {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.downloadCount.get();
 	}
 
 	@Override
@@ -274,8 +291,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleFileS
 
 	@Override
 	public long bytesDownloaded() {
-		// TODO Auto-generated method stub
-		return 0;
+		return this.bytesDownloaded.get();
 	}
 	
     /**

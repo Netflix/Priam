@@ -2,7 +2,7 @@ package com.netflix.priam.google;
 
 public interface GoogleFileSystemMBean {
 
-    String MBEAN_NAME = "com.priam.google.GoogleFileSystemMBean:name=GoogleFileSystemMBean";
+    String MBEAN_NAME = "com.priam.google.GoogleEncryptedFileSystemMBean:name=GoogleEncryptedFileSystemMBean";
     
     public int downloadCount();
 

@@ -87,7 +87,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
         }
         catch (Exception e)
         {
-            throw new RuntimeException(e);
+        	throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
         }        
         
         super.s3Client = new AmazonS3Client(cred.getAwsCredentialProvider());

@@ -22,6 +22,7 @@ import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILE
  * Makes Datastax Enterprise-specific changes to the c* yaml and dse-yaml.
  *
  * @author jason brown
+ * @author minh do
  */
 public class DseTuner extends StandardTuner
 {
@@ -56,7 +57,7 @@ public class DseTuner extends StandardTuner
         String dseYaml = dseConfig.getDseYamlLocation();
         @SuppressWarnings("rawtypes")
         Map map = (Map) yaml.load(new FileInputStream(dseYaml));
-        map.put("delegated_snitch", config.getSnitch());
+        //map.put("#delegated_snitch", config.getSnitch()); 
         logger.info("Updating dse-yaml:\n" + yaml.dump(map));
         yaml.dump(map, new FileWriter(dseYaml));
     }

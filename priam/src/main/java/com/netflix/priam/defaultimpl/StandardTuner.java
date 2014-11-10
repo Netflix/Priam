@@ -61,7 +61,7 @@ public class StandardTuner implements CassandraTuner
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
         boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);
-        map.put("endpoint_snitch", getSnitch());
+        map.put("endpoint_snitch", config.getSnitch());
         map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
         map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
@@ -82,7 +82,7 @@ public class StandardTuner implements CassandraTuner
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
         
         map.put("rpc_server_type", config.getRpcServerType());
-        map.put("index_interval", config.getIndexInterval());
+        //map.put("index_interval", config.getIndexInterval());
         
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

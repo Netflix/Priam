@@ -566,6 +566,45 @@ public class FakeConfiguration implements IConfiguration
 	@Override
 	public boolean isCreateNewTokenEnable() {
 		return true;  //allow Junit test to create new tokens
-	}    
-    
+	}
+
+	@Override
+	public String getPrivateKeyLocation() {
+		return null;
+	}
+
+	@Override
+	public String getRestoreSourceType() {
+		return null;
+	}
+
+	@Override
+	public boolean isEncryptBackupEnabled() {
+		return false;
+	}
+
+	@Override
+	public String getAWSRoleAssumptionArn() {
+		return null;
+	}
+
+	@Override
+	public String getGcsServiceAccountId() {
+		return null;
+	}
+
+	@Override
+	public String getGcsServiceAccountPrivateKeyLoc() {
+		return null;
+	}
+
+	@Override
+	public String getPgpPasswordPhrase() {
+		return null;
+	}
+
+	@Override
+	public String getPgpPublicKeyLoc() {
+		return null;
+	}	
 }

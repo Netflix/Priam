@@ -4,8 +4,11 @@ import java.util.Arrays;
 
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.restore.EncryptedRestoreStrategy;
+import com.netflix.priam.restore.IRestoreStrategy;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
+
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -18,10 +21,20 @@ import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.S3CrossAccountFileSystem;
+import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
+import com.netflix.priam.aws.auth.IS3Credential;
+import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
+import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.cryptography.pgp.PgpCredential;
+import com.netflix.priam.cryptography.pgp.PgpCryptography;
+import com.netflix.priam.google.GcsCredential;
+import com.netflix.priam.google.GoogleEncryptedFileSystem;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.FakeSleeper;
@@ -46,5 +59,10 @@ public class BRTestModule extends AbstractModule
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
         bind(ICassandraProcess.class).to(CassandraProcessManager.class);
+
+        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
+        bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
+        bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
+
     }
 }

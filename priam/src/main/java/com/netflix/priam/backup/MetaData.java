@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.utils.RetryableCallable;
@@ -51,11 +52,11 @@ public class MetaData
     private final IBackupFileSystem fs;
 
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs)
+    public MetaData(Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx, IConfiguration config)
 
     {
         this.pathFactory = pathFactory;
-        this.fs = fs;
+        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
     @SuppressWarnings("unchecked")
@@ -166,5 +167,25 @@ public class MetaData
 	protected void addToRemotePath(String remotePath) {
 		metaRemotePaths.add(remotePath);
 	}
+	
+    public List<AbstractBackupPath> toJson(File input) {
+    	List<AbstractBackupPath> files = Lists.newArrayList();
+    	try{
+    		
+            JSONArray jsonObj = (JSONArray) new JSONParser().parse(new FileReader(input));
+            for (int i = 0; i < jsonObj.size(); i++)
+            {
+                AbstractBackupPath p = pathFactory.get();
+                p.parseRemote((String) jsonObj.get(i));
+                files.add(p);
+            }
+            
+    	} catch (Exception ex) {
+    		throw new RuntimeException("Error transforming file " + input.getAbsolutePath() + " to JSON format.  Msg:" + ex.getLocalizedMessage(), ex);
+    	}
+
+        logger.debug("Transformed file " + input.getAbsolutePath() + " to JSON.  Number of JSON elements: " + files.size());
+        return files;
+    }	
 
 }

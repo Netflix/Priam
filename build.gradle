@@ -44,9 +44,9 @@ subprojects {
         compile "commons-httpclient:commons-httpclient:3.1"
         compile "com.sun.jersey.contribs:jersey-multipart:1.1.4.1"
         compile "com.sun.jersey:jersey-json:1.9.1"
-        compile "com.google.guava:guava:14.0.1"
+        compile "com.google.guava:guava:17.0"
         compile "com.google.code.findbugs:jsr305:1.3.9"
-        compile "com.amazonaws:aws-java-sdk:1.3.27"
+        compile group: 'com.amazonaws', name: 'aws-java-sdk', version: 'latest.version'
         compile "com.google.inject:guice:3.0"
         compile "com.sun.jersey:jersey-bundle:1.9.1"
         compile "com.sun.jersey.contribs:jersey-guice:1.9.1"
@@ -67,6 +67,12 @@ subprojects {
         compile "com.ning:compress-lzf:0.9.5"
         compile "org.slf4j:slf4j-api:1.6.1"
         compile "org.slf4j:slf4j-log4j12:1.6.1"
+        //Cryptography implementation
+        compile group: 'bouncycastle', name: 'bcpg-jdk15', version: 'latest.version'
+        //Google Cloud Storage api set
+        compile group: 'com.google.appengine.tools', name: 'appengine-gcs-client', version: 'latest.version'
+        compile group: 'com.google.apis', name: 'google-api-services-storage', version: 'v1-rev9-1.19.0'
+        compile group: 'com.google.http-client', name: 'google-http-client-jackson2', version: 'latest.version'
         provided "javax.servlet:servlet-api:2.5"
         testCompile "com.googlecode.jmockit:jmockit:0.999.17"
         testCompile "junit:junit:4.8"

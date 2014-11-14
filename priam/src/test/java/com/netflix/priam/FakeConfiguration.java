@@ -15,6 +15,7 @@ public class FakeConfiguration implements IConfiguration
 	public static final String FAKE_REGION = "us-east-1";
 
     public String region;
+    public String dc;
     public String appName;
     public String zone;
     public String instance_id;
@@ -28,6 +29,7 @@ public class FakeConfiguration implements IConfiguration
     public FakeConfiguration(String region, String appName, String zone, String ins_id)
     {
         this.region = region;
+        this.dc = region;
         this.appName = appName;
         this.zone = zone;
         this.instance_id = ins_id;
@@ -38,7 +40,6 @@ public class FakeConfiguration implements IConfiguration
     public void intialize()
     {
         // TODO Auto-generated method stub
-
     }
 
     @Override
@@ -180,10 +181,17 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getDC()
+    public String getRegion()
     {
         // TODO Auto-generated method stub
         return this.region;
+    }
+
+    @Override
+    public String getDC()
+    {
+        // TODO Auto-generated method stub
+        return this.dc;
     }
 
     @Override
@@ -304,10 +312,15 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public void setDC(String region)
+    public void setRegion(String region)
     {
         // TODO Auto-generated method stub
-        
+    }
+
+    @Override
+    public void setDC(String dc)
+    {
+        // TODO Auto-generated method stub
     }
 
     @Override

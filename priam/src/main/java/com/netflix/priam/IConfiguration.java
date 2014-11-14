@@ -194,15 +194,26 @@ public interface IConfiguration
     public String getRestoreSnapshot();
 
     /**
-     * @return Get the Data Center name (or region for AWS)
+     * @return Get the AWS region name like us-east
+     */
+    public String getRegion();
+
+    /**
+     * @param region
+     *            Set the current AWS region
+     */
+    public void setRegion(String region);
+
+    /**
+     * @return Get the Data Center name
      */
     public String getDC();
 
     /**
-     * @param region
+     * @param dc
      *            Set the current data center
      */
-    public void setDC(String region);
+    public void setDC(String dc);
 
     /**
      * @return true if it is a multi regional cluster

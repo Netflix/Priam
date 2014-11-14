@@ -77,6 +77,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
     private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
     private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
+    private static final String CONFIG_DC_NAME = PRIAM_PRE + ".dc.name";
+    private static final String CONFIG_DC_SUFFIX = PRIAM_PRE + ".dc.suffix";
 
     // Backup and Restore
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
@@ -334,7 +336,9 @@ public class PriamConfiguration implements IConfiguration
     {
         config.set(CONFIG_ASG_NAME, ASG_NAME);
         config.set(CONFIG_REGION_NAME, REGION);
+        config.set(CONFIG_DC_NAME, REGION + config.get(CONFIG_DC_SUFFIX, ""));
     }
+
 
     @Override
     public String getCassStartupScript()
@@ -471,7 +475,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getRac()
     {
-        return RAC;
+        return RAC.concat(config.get(CONFIG_DC_SUFFIX,""));
     }
 
     @Override
@@ -526,11 +530,23 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getDC()
     {
-        return config.get(CONFIG_REGION_NAME, "");
+        return config.get(CONFIG_DC_NAME, "");
     }
 
     @Override
     public void setDC(String region)
+    {
+        config.set(CONFIG_DC_NAME, region);
+    }
+
+    @Override
+    public String getRegion()
+    {
+        return config.get(CONFIG_REGION_NAME, "");
+    }
+
+    @Override
+    public void setRegion(String region)
     {
         config.set(CONFIG_REGION_NAME, region);
     }

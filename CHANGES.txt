@@ -1,3 +1,11 @@
+1.2.5
+- Decoupled definition of DC from Region in configuration and all used
+  instances. This enabled further development to support multiple C*
+  clusters (OLAP and OLTP) in one AWS region, something DSE already does.
+
+1.2 (master)
+- Support for C* 1.2
+
 1.1
 - Support for cassandra 1.1
 - Support to publish cassandra metrics (TODO)

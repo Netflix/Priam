@@ -152,7 +152,19 @@ public class InstanceIdentity
         		
         		@Override
                 public PriamInstance retriableCall() throws Exception {
-        			return deadTokenRetriever.get(); 
+        			PriamInstance result = null;
+        			result = deadTokenRetriever.get();
+        			if (result != null) {
+        				
+        				isReplace = true; //indicate that we are acquiring a dead instance's token
+        				
+        				if (deadTokenRetriever.getReplaceIp() != null) { //The IP address of the dead instance to which we will acquire its token
+            				replacedIp = deadTokenRetriever.getReplaceIp();        					
+        				}
+        				
+        			}
+        			
+        			return result; 
         		}
         		
         		@Override
@@ -475,7 +487,7 @@ public class InstanceIdentity
     	return replacedIp;
     }
     
-    private boolean isInstanceDummy(PriamInstance instance) 
+    public static boolean isInstanceDummy(PriamInstance instance) 
     {
     	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }

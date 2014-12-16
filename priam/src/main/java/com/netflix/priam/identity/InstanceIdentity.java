@@ -58,7 +58,7 @@ import javax.ws.rs.core.MediaType;
  * 
  */
 @Singleton
-public class InstanceIdentity
+public class InstanceIdentity implements IInstanceIdentity
 {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
     public static final String DUMMY_INSTANCE_ID = "new_slot";
@@ -402,16 +402,17 @@ public class InstanceIdentity
         return myInstance.getHostName().equals(ip);
     }
     
+    @Override
     public boolean isReplace() 
     {
         return isReplace;
     }
-    
+    @Override
     public boolean isTokenPregenerated()
     {
     	return isTokenPregenerated;
     }
-    
+    @Override
     public String getReplacedIp()
     {
     	return replacedIp;

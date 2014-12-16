@@ -22,7 +22,8 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.backup.IBackupFileSystem;
-
+import com.netflix.priam.identity.IInstanceIdentity;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.ICredential;
 
 
@@ -37,5 +38,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(S3FileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
         bind(ICredential.class).to(ClearCredential.class);
+        
+        bind(IInstanceIdentity.class).to(InstanceIdentity.class);
     }
 }

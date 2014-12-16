@@ -22,7 +22,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.identity.IInstanceIdentity;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;

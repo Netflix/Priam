@@ -184,7 +184,12 @@ public class InstanceIdentity
             	
                 @Override
                 public PriamInstance retriableCall() throws Exception {
-                	return preGeneratedTokenRetriever.get();
+                	PriamInstance result = null;
+                	result = preGeneratedTokenRetriever.get();
+                	if (result != null) {
+                		isTokenPregenerated = true;
+                	}
+                	return result;
                 }
                 
                 @Override
@@ -209,6 +214,7 @@ public class InstanceIdentity
     		        @Override
     		        public PriamInstance retriableCall() throws Exception {
     		        	super.set(100, 100);
+    		        	newTokenRetriever.setLocMap(locMap);
     		        	return newTokenRetriever.get();
     		        }
     		        
@@ -487,7 +493,7 @@ public class InstanceIdentity
     	return replacedIp;
     }
     
-    public static boolean isInstanceDummy(PriamInstance instance) 
+    private static boolean isInstanceDummy(PriamInstance instance) 
     {
     	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }

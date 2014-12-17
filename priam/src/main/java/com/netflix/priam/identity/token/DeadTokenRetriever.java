@@ -26,7 +26,7 @@ import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
 
-public class DeadTokenRetriever implements IDeadTokenRetriever {
+public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadTokenRetriever {
 	private static final Logger logger = LoggerFactory.getLogger(DeadTokenRetriever.class);
 	private IPriamInstanceFactory factory;
 	private IMembership membership;
@@ -53,7 +53,7 @@ public class DeadTokenRetriever implements IDeadTokenRetriever {
         for (PriamInstance dead : allIds)
         {
             // test same zone and is it is alive.
-            if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || InstanceIdentity.isInstanceDummy(dead))
+            if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || super.isInstanceDummy(dead))
                 continue;
             logger.info("Found dead instances: " + dead.getInstanceId());
             PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),

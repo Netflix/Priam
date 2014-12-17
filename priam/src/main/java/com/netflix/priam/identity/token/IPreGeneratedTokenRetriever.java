@@ -4,5 +4,5 @@ import com.netflix.priam.identity.PriamInstance;
 
 public interface IPreGeneratedTokenRetriever {
 
-	public PriamInstance get();
+	public PriamInstance get() throws Exception;
 }

@@ -25,6 +25,9 @@ import com.google.common.collect.Multimaps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.identity.token.IDeadTokenRetriever;
+import com.netflix.priam.identity.token.INewTokenRetriever;
+import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -87,16 +90,26 @@ public class InstanceIdentity
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
+	private IDeadTokenRetriever deadTokenRetriever;
+	private IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
+	private INewTokenRetriever newTokenRetriever;
 
     @Inject
     public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
-            Sleeper sleeper, ITokenManager tokenManager) throws Exception
+            Sleeper sleeper, ITokenManager tokenManager
+            , IDeadTokenRetriever deadTokenRetriever
+            , IPreGeneratedTokenRetriever preGeneratedTokenRetriever
+            , INewTokenRetriever newTokenRetriever
+            ) throws Exception
     {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
         this.sleeper = sleeper;
         this.tokenManager = tokenManager;
+        this.deadTokenRetriever = deadTokenRetriever;
+        this.preGeneratedTokenRetriever = preGeneratedTokenRetriever;
+        this.newTokenRetriever = newTokenRetriever;
         init();
     }
 
@@ -132,29 +145,94 @@ public class InstanceIdentity
                 return null;
             }
         }.call();
+
         // Grab a dead token
-        if (null == myInstance)
-            myInstance = new GetDeadToken().call();
+        if (null == myInstance) {
+        	myInstance = new RetryableCallable<PriamInstance>() {
+        		
+        		@Override
+                public PriamInstance retriableCall() throws Exception {
+        			PriamInstance result = null;
+        			result = deadTokenRetriever.get();
+        			if (result != null) {
+        				
+        				isReplace = true; //indicate that we are acquiring a dead instance's token
+        				
+        				if (deadTokenRetriever.getReplaceIp() != null) { //The IP address of the dead instance to which we will acquire its token
+            				replacedIp = deadTokenRetriever.getReplaceIp();        					
+        				}
+        				
+        			}
+        			
+        			return result; 
+        		}
+        		
+        		@Override
+                public void forEachExecution()
+                {
+                    populateRacMap();
+                } 
+        		
+        	}.call();
+        }
+
         
         // Grab a pre-generated token if there is such one
-        if (null == myInstance)
-           myInstance = new GetPregeneratedToken().call();
+        if (null == myInstance) {
+
+            myInstance = new RetryableCallable<PriamInstance>() {
+            	
+                @Override
+                public PriamInstance retriableCall() throws Exception {
+                	PriamInstance result = null;
+                	result = preGeneratedTokenRetriever.get();
+                	if (result != null) {
+                		isTokenPregenerated = true;
+                	}
+                	return result;
+                }
+                
+                @Override
+                public void forEachExecution()
+                {
+                    populateRacMap();
+                }                
+
+            }.call();
+        	
+        }
+
         	
         // Grab a new token
         if (null == myInstance)
         {
-        	GetNewToken newToken = null;
+			
         	if ( this.config.isCreateNewTokenEnable() ) {
-    			newToken = new GetNewToken();        		
+
+    			myInstance = new RetryableCallable<PriamInstance>() {
+    				
+    		        @Override
+    		        public PriamInstance retriableCall() throws Exception {
+    		        	super.set(100, 100);
+    		        	newTokenRetriever.setLocMap(locMap);
+    		        	return newTokenRetriever.get();
+    		        }
+    		        
+    		        @Override
+    		        public void forEachExecution()
+    		        {
+    		            populateRacMap();
+    		        }		        
+    				
+    			}.call();        		
+        		
         	} else {
         		throw new IllegalStateException("Node attempted to erroneously create a new token when we should be grabbing an existing token.");
-        	}
-
-			newToken.set(100, 100);
-			myInstance = newToken.call();
+        	}			
+			
 		}
-        logger.info("My token: " + myInstance.getToken());
         
+        logger.info("My token: " + myInstance.getToken());
     }
 
     private void populateRacMap()
@@ -406,18 +484,16 @@ public class InstanceIdentity
     {
         return isReplace;
     }
-    
     public boolean isTokenPregenerated()
     {
     	return isTokenPregenerated;
     }
-    
     public String getReplacedIp()
     {
     	return replacedIp;
     }
     
-    private boolean isInstanceDummy(PriamInstance instance) 
+    private static boolean isInstanceDummy(PriamInstance instance) 
     {
     	return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }

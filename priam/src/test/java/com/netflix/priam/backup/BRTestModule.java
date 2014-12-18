@@ -6,6 +6,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
+
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -20,10 +21,16 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
+import com.netflix.priam.backup.identity.token.FakeDeadTokenRetriever;
+import com.netflix.priam.backup.identity.token.FakeNewTokenRetriever;
+import com.netflix.priam.backup.identity.token.FakePreGeneratedTokenRetriever;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.token.IDeadTokenRetriever;
+import com.netflix.priam.identity.token.INewTokenRetriever;
+import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 @Ignore
@@ -46,5 +53,9 @@ public class BRTestModule extends AbstractModule
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
         bind(ICassandraProcess.class).to(CassandraProcessManager.class);
+        
+        bind(IDeadTokenRetriever.class).to(FakeDeadTokenRetriever.class);
+        bind(IPreGeneratedTokenRetriever.class).to(FakePreGeneratedTokenRetriever.class);
+        bind(INewTokenRetriever.class).to(FakeNewTokenRetriever.class);        
     }
 }

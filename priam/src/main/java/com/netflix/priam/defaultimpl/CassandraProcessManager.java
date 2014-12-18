@@ -37,7 +37,7 @@ public class CassandraProcessManager implements ICassandraProcess
 
     public void start(boolean join_ring) throws IOException
     {
-        logger.info("Starting cassandra server ....Join ring=" + join_ring);
+        logger.info("Starting cassandra server ....");
 
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))
@@ -58,7 +58,6 @@ public class CassandraProcessManager implements ICassandraProcess
         env.put("CACHE_DIR", config.getCacheLocation());
         env.put("JMX_PORT", "" + config.getJmxPort());
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
-        env.put("cassandra.join_ring", join_ring ? "true" : "false");
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
         Process starter = startCass.start();

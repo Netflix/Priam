@@ -3,12 +3,16 @@ package com.netflix.priam.backup.identity;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
+import com.netflix.priam.backup.identity.token.FakeDeadTokenRetriever;
+import com.netflix.priam.backup.identity.token.FakeNewTokenRetriever;
+import com.netflix.priam.backup.identity.token.FakePreGeneratedTokenRetriever;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
+
 import org.junit.Before;
 import org.junit.Ignore;
 
@@ -25,6 +29,9 @@ public abstract class InstanceTestUtils
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
     Sleeper sleeper;
+	FakeDeadTokenRetriever deadTokenRetriever;
+	FakePreGeneratedTokenRetriever preGeneratedTokenRetriever;
+	FakeNewTokenRetriever newTokenRetriever;
 
     @Before
     public void setup()
@@ -43,6 +50,9 @@ public abstract class InstanceTestUtils
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
+        this.deadTokenRetriever = new FakeDeadTokenRetriever();
+        this.preGeneratedTokenRetriever = new FakePreGeneratedTokenRetriever();
+        this.newTokenRetriever = new FakeNewTokenRetriever();
     }
 
     public void createInstances() throws Exception
@@ -64,6 +74,10 @@ public abstract class InstanceTestUtils
     {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager());
+        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager()
+        , this.deadTokenRetriever
+        , this.preGeneratedTokenRetriever
+        , this.newTokenRetriever
+        );
     }
 }

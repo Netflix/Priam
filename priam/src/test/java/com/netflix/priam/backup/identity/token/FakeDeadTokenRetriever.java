@@ -1,5 +1,6 @@
 package com.netflix.priam.backup.identity.token;
 
+import com.google.common.collect.ListMultimap;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 
@@ -15,6 +16,12 @@ public class FakeDeadTokenRetriever implements IDeadTokenRetriever {
 	public String getReplaceIp() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	@Override
+	public void setLocMap(ListMultimap<String, PriamInstance> locMap) {
+		// TODO Auto-generated method stub
+		
 	}
 
 }

@@ -6,6 +6,7 @@ import java.util.Random;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IMembership;
@@ -20,6 +21,7 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase implements IP
 	private IMembership membership;
 	private IConfiguration config;
 	private Sleeper sleeper; 
+	private ListMultimap<String, PriamInstance> locMap;
 
 	@Inject
 	public PreGeneratedTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, Sleeper sleeper) {
@@ -54,6 +56,12 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase implements IP
             return factory.create(config.getAppName(), markAsDead.getId(), config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), markAsDead.getVolumes(), payLoad);
         }
         return null;
+	}
+
+	@Override
+	public void setLocMap(ListMultimap<String, PriamInstance> locMap) {
+		this.locMap = locMap;
+		
 	}
 
 }

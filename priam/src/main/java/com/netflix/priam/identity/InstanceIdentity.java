@@ -171,6 +171,7 @@ public class InstanceIdentity
                 public void forEachExecution()
                 {
                     populateRacMap();
+                    deadTokenRetriever.setLocMap(locMap);
                 } 
         		
         	}.call();
@@ -196,6 +197,7 @@ public class InstanceIdentity
                 public void forEachExecution()
                 {
                     populateRacMap();
+                    preGeneratedTokenRetriever.setLocMap(locMap);
                 }                
 
             }.call();
@@ -222,6 +224,7 @@ public class InstanceIdentity
     		        public void forEachExecution()
     		        {
     		            populateRacMap();
+    		            newTokenRetriever.setLocMap(locMap);
     		        }		        
     				
     			}.call();        		

@@ -13,6 +13,7 @@ import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ListMultimap;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IMembership;
@@ -33,6 +34,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 	private IConfiguration config;
 	private Sleeper sleeper;
 	private String replacedIp; //The IP address of the dead instance to which we will acquire its token
+	private ListMultimap<String, PriamInstance> locMap;
 	
 	@Inject
 	public  DeadTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, Sleeper sleeper) {
@@ -157,6 +159,12 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     private String getBaseURI(String host) 
     {
            return "http://" + host + ":8080/";
-    }    
+    }
+
+	@Override
+	public void setLocMap(ListMultimap<String, PriamInstance> locMap) {
+		this.locMap = locMap;
+		
+	}    
 
 }

@@ -50,10 +50,6 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         int maxSlot = max - hash;
         int my_slot = 0;
         
-        if (locMap == null || locMap.isEmpty() ) {
-        	throw new IllegalStateException("A map of the location for each instance cannot be null or empty.");
-        }
-        
         if (hash == max && locMap.get(config.getRac()).size() == 0) {
             int idx = config.getRacs().indexOf(config.getRac());
             Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());

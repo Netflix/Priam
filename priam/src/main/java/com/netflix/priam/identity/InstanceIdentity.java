@@ -127,20 +127,42 @@ public class InstanceIdentity
             public PriamInstance retriableCall() throws Exception
             {
                 // Check if this node is decomissioned
-                for (PriamInstance ins : factory.getAllIds(config.getAppName() + "-dead"))
+            	List<PriamInstance> deadInstances = factory.getAllIds(config.getAppName() + "-dead");
+                for (PriamInstance ins : deadInstances)
                 {
                     logger.info(String.format("[Dead] Iterating though the hosts: %s", ins.getInstanceId()));
                     if (ins.getInstanceId().equals(config.getInstanceName()))
                     {
                         ins.setOutOfService(true);
-                        return ins;
+                        logger.info("[Dead]  found that this node is dead."
+                        		+ " application: " + ins.getApp()
+                        		+ ", id: " + ins.getId()
+                        		+ ", " + ins.getInstanceId()
+                        		+ ", region: " + ins.getDC()
+                        		+ ", host ip: " + ins.getHostIP()
+                        		+ ", host name: " + ins.getHostName()
+                        		+ ", token: " + ins.getToken()
+                        		);
+                        return ins; 
                     }
                 }
-                for (PriamInstance ins : factory.getAllIds(config.getAppName()))
+                List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
+                for (PriamInstance ins : aliveInstances)
                 {
                     logger.info(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(),ins.getId()));
-                    if (ins.getInstanceId().equals(config.getInstanceName()))
-                        return ins;
+                    if (ins.getInstanceId().equals(config.getInstanceName())) {
+                        logger.info("[Alive]  found that this node is alive."
+                        		+ " application: " + ins.getApp()
+                        		+ ", id: " + ins.getId()
+                        		+ ", " + ins.getInstanceId()
+                        		+ ", region: " + ins.getDC()
+                        		+ ", host ip: " + ins.getHostIP()
+                        		+ ", host name: " + ins.getHostName()
+                        		+ ", token: " + ins.getToken()
+                        		);                    	
+                    	return ins;
+                    }
+                        
                 }
                 return null;
             }
@@ -241,7 +263,8 @@ public class InstanceIdentity
     private void populateRacMap()
     {
         locMap.clear();
-        for (PriamInstance ins : factory.getAllIds(config.getAppName()))
+        List<PriamInstance> instances = factory.getAllIds(config.getAppName()); 
+        for (PriamInstance ins : instances)
         {
         		locMap.put(ins.getRac(), ins);
         }

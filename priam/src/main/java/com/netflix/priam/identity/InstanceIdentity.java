@@ -73,7 +73,7 @@ public class InstanceIdentity
             return Lists.newArrayList();
         }
     });
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
@@ -95,7 +95,7 @@ public class InstanceIdentity
 	private INewTokenRetriever newTokenRetriever;
 
     @Inject
-    public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
+    public InstanceIdentity(IPriamInstanceFactory<PriamInstance> factory, IMembership membership, IConfiguration config,
             Sleeper sleeper, ITokenManager tokenManager
             , IDeadTokenRetriever deadTokenRetriever
             , IPreGeneratedTokenRetriever preGeneratedTokenRetriever

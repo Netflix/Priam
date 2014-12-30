@@ -17,6 +17,7 @@ package com.netflix.priam.resources;
 
 import java.net.URI;
 
+import java.util.*;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
@@ -47,10 +48,10 @@ public class PriamInstanceResource
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final IConfiguration config;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceFactory<PriamInstance> factory;
 
     @Inject
-    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory)
+    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory<PriamInstance> factory)
     {
         this.config = config;
         this.factory = factory;
@@ -64,7 +65,8 @@ public class PriamInstanceResource
     public String getInstances()
     {
         StringBuilder response = new StringBuilder();
-        for (PriamInstance node : factory.getAllIds(config.getAppName()))
+        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName()); 
+        for (PriamInstance node : allInstances)
         {
             response.append(node.toString());
             response.append("\n");

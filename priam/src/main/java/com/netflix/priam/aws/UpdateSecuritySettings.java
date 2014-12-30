@@ -52,10 +52,10 @@ public class UpdateSecuritySettings extends Task
 
     private static final Random ran = new Random();
     private final IMembership membership;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceFactory<PriamInstance> factory;
 
     @Inject
-    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
+    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory<PriamInstance> factory)
     {
         super(config);
         this.membership = membership;
@@ -77,7 +77,8 @@ public class UpdateSecuritySettings extends Task
 
         // iterate to add...
         List<String> add = Lists.newArrayList();
-        for (PriamInstance instance : factory.getAllIds(config.getAppName()))
+        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
+        for (PriamInstance instance : allInstances)
         {
             String range = instance.getHostIP() + "/32";
             if (!acls.contains(range))

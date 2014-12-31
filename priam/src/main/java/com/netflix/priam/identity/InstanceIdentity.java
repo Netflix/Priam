@@ -73,7 +73,7 @@ public class InstanceIdentity
             return Lists.newArrayList();
         }
     });
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory; //Note: do not parametized the type variable to an implementation as it confuses Guice in the binding.
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
@@ -95,7 +95,8 @@ public class InstanceIdentity
 	private INewTokenRetriever newTokenRetriever;
 
     @Inject
-    public InstanceIdentity(IPriamInstanceFactory<PriamInstance> factory, IMembership membership, IConfiguration config,
+    //Note: do not parametized the type variable to an implementation as it confuses Guice in the binding.
+    public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
             Sleeper sleeper, ITokenManager tokenManager
             , IDeadTokenRetriever deadTokenRetriever
             , IPreGeneratedTokenRetriever preGeneratedTokenRetriever
@@ -137,7 +138,7 @@ public class InstanceIdentity
                         logger.info("[Dead]  found that this node is dead."
                         		+ " application: " + ins.getApp()
                         		+ ", id: " + ins.getId()
-                        		+ ", " + ins.getInstanceId()
+                        		+ ", intsance: " + ins.getInstanceId()
                         		+ ", region: " + ins.getDC()
                         		+ ", host ip: " + ins.getHostIP()
                         		+ ", host name: " + ins.getHostName()
@@ -154,7 +155,7 @@ public class InstanceIdentity
                         logger.info("[Alive]  found that this node is alive."
                         		+ " application: " + ins.getApp()
                         		+ ", id: " + ins.getId()
-                        		+ ", " + ins.getInstanceId()
+                        		+ ", instance: " + ins.getInstanceId()
                         		+ ", region: " + ins.getDC()
                         		+ ", host ip: " + ins.getHostIP()
                         		+ ", host name: " + ins.getHostName()

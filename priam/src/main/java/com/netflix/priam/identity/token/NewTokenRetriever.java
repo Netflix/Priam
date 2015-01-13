@@ -1,6 +1,7 @@
 package com.netflix.priam.identity.token;
 
 import java.util.Random;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,7 @@ import com.netflix.priam.utils.Sleeper;
 public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRetriever {
 
 	private static final Logger logger = LoggerFactory.getLogger(NewTokenRetriever.class);
-	private IPriamInstanceFactory factory;
+	private IPriamInstanceFactory<PriamInstance> factory;
 	private IMembership membership;
 	private IConfiguration config;
 	private Sleeper sleeper;
@@ -26,6 +27,7 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
 	private ListMultimap<String, PriamInstance> locMap; 
 	
 	@Inject
+    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
 	public NewTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, Sleeper sleeper, ITokenManager tokenManager) {
 		this.factory = factory;
 		this.membership = membership;
@@ -45,7 +47,8 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         // regions.
 
         int max = hash;
-        for (PriamInstance data : factory.getAllIds(config.getAppName()))
+        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName()); 
+        for (PriamInstance data : allInstances)
             max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
         int maxSlot = max - hash;
         int my_slot = 0;

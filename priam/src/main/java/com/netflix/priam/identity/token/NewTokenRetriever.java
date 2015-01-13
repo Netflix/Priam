@@ -27,7 +27,8 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
 	private ListMultimap<String, PriamInstance> locMap; 
 	
 	@Inject
-	public NewTokenRetriever(IPriamInstanceFactory<PriamInstance> factory, IMembership membership, IConfiguration config, Sleeper sleeper, ITokenManager tokenManager) {
+    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
+	public NewTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, Sleeper sleeper, ITokenManager tokenManager) {
 		this.factory = factory;
 		this.membership = membership;
 		this.config = config;

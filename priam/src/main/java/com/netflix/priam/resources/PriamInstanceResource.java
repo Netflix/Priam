@@ -51,7 +51,8 @@ public class PriamInstanceResource
     private final IPriamInstanceFactory<PriamInstance> factory;
 
     @Inject
-    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory<PriamInstance> factory)
+    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.    
+    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory)
     {
         this.config = config;
         this.factory = factory;

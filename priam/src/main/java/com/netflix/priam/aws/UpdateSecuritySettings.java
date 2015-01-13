@@ -55,7 +55,8 @@ public class UpdateSecuritySettings extends Task
     private final IPriamInstanceFactory<PriamInstance> factory;
 
     @Inject
-    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory<PriamInstance> factory)
+    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
+    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
     {
         super(config);
         this.membership = membership;

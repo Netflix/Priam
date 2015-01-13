@@ -73,7 +73,7 @@ public class InstanceIdentity
             return Lists.newArrayList();
         }
     });
-    private final IPriamInstanceFactory factory; //Note: do not parametized the type variable to an implementation as it confuses Guice in the binding.
+    private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
@@ -95,7 +95,7 @@ public class InstanceIdentity
 	private INewTokenRetriever newTokenRetriever;
 
     @Inject
-    //Note: do not parametized the type variable to an implementation as it confuses Guice in the binding.
+    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
     public InstanceIdentity(IPriamInstanceFactory factory, IMembership membership, IConfiguration config,
             Sleeper sleeper, ITokenManager tokenManager
             , IDeadTokenRetriever deadTokenRetriever

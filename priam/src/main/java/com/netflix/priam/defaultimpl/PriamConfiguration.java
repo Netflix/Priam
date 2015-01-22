@@ -118,7 +118,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CONCURRENT_READS = PRIAM_PRE + ".concurrentReads";
     private static final String CONFIG_CONCURRENT_WRITES = PRIAM_PRE + ".concurrentWrites";
     private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
-    
+
     private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
     private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
     private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
@@ -129,17 +129,17 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
     private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
     private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
-    
+
     private static String US_EAST_1_REGION = "us-east-1";
     private static String US_WEST_1_REGION = "us-west-1";
     private static String US_WEST_2_REGION = "us-west-2";
     private static String EU_WEST_1_REGION = "eu-west-1";
     private static String SA_EAST_1_REGION = "sa-east-1";
-    
+
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
-    private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
+    private static final String CONFIG_ACL_GROUP_ID = PRIAM_PRE + ".acl.groupid";
     private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     private final String PUBLIC_HOSTNAME;
     private final String PUBLIC_IP;
@@ -152,7 +152,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
 
 
-    // Defaults 
+    // Defaults
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
@@ -190,20 +190,20 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
-    
+
     private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
     private static final int DEFAULT_INDEX_INTERVAL = 256;
-    
-    
+
+
     //default S3 endpoints
     private static final String DEFAULT_US_EAST_1_S3_ENDPOINT = "s3-external-1.amazonaws.com";
     private static final String DEFAULT_US_WEST_1_S3_ENDPOINT = "s3-us-west-1.amazonaws.com";
     private static final String DEFAULT_US_WEST_2_S3_ENDPOINT = "s3-us-west-2.amazonaws.com";
     private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
     private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
-    
-   
-    private final IConfigSource config; 
+
+
+    private final IConfigSource config;
     private final String BLANK = "";
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
     private final ICredential provider;
@@ -265,7 +265,7 @@ public class PriamConfiguration implements IConfiguration
     private String populateASGName(String region, String instanceId)
     {
         GetASGName getASGName = new GetASGName(region, instanceId);
-        
+
         try {
             return getASGName.call();
         } catch (Exception e) {
@@ -273,7 +273,7 @@ public class PriamConfiguration implements IConfiguration
             return null;
         }
     }
-    
+
     private class GetASGName extends RetryableCallable<String>
     {
         private static final int NUMBER_OF_RETRIES = 15;
@@ -281,7 +281,7 @@ public class PriamConfiguration implements IConfiguration
         private final String region;
         private final String instanceId;
         private final AmazonEC2 client;
-        
+
         public GetASGName(String region, String instanceId) {
             super(NUMBER_OF_RETRIES, WAIT_TIME);
             this.region = region;
@@ -289,12 +289,12 @@ public class PriamConfiguration implements IConfiguration
             client = new AmazonEC2Client(provider.getAwsCredentialProvider());
             client.setEndpoint("ec2." + region + ".amazonaws.com");
         }
-        
+
         @Override
         public String retriableCall() throws IllegalStateException {
             DescribeInstancesRequest desc = new DescribeInstancesRequest().withInstanceIds(instanceId);
             DescribeInstancesResult res = client.describeInstances(desc);
-    
+
             for (Reservation resr : res.getReservations())
             {
                 for (Instance ins : resr.getInstances())
@@ -306,7 +306,7 @@ public class PriamConfiguration implements IConfiguration
                     }
                 }
             }
-            
+
             logger.warn("Couldn't determine ASG name");
             throw new IllegalStateException("Couldn't determine ASG name");
         }
@@ -567,9 +567,9 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
-    public String getACLGroupName()
+    public String getACLGroupId()
     {
-    	return config.get(CONFIG_ACL_GROUP_NAME, this.getAppName());
+    	return config.get(CONFIG_ACL_GROUP_ID, "");
     }
 
     @Override
@@ -730,7 +730,7 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void setRestorePrefix(String prefix) {
 	    config.set(CONFIG_RESTORE_PREFIX, prefix);
-	    
+
     }
 
     @Override
@@ -768,7 +768,7 @@ public class PriamConfiguration implements IConfiguration
     {
     	return config.get(CONFIG_COMMITLOG_RESTORE_MAX, 10);
     }
-    
+
     @Override
     public boolean isVpcRing() {
         return config.get(CONFIG_VPC_RING, false);
@@ -816,43 +816,43 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.get(CONFIG_NATIVE_PROTOCOL_ENABLED, false);
     }
-    
-    
+
+
     public String getS3EndPoint() {
     	String region = getDC();
-    	
+
     	String s3Url = null;
-    	
+
     	if (US_EAST_1_REGION.equals(region))
-    	{	
+    	{
     	   s3Url = config.get(CONFIG_US_EAST_1_S3_ENDPOINT);
     	   return StringUtils.isBlank(s3Url) ? DEFAULT_US_EAST_1_S3_ENDPOINT : s3Url;
     	}
-    	
+
     	if (US_WEST_1_REGION.equals(region))
     	{
     		s3Url = config.get(CONFIG_US_WEST_1_S3_ENDPOINT);
     		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_1_S3_ENDPOINT : s3Url;
     	}
-    	
+
     	if (US_WEST_2_REGION.equals(region))
     	{
     		s3Url = config.get(CONFIG_US_WEST_2_S3_ENDPOINT);
     		return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_2_S3_ENDPOINT : s3Url;
     	}
-    	
+
     	if (EU_WEST_1_REGION.equals(region))
-    	{	
+    	{
     		s3Url = config.get(CONFIG_EU_WEST_1_S3_ENDPOINT);
     		return StringUtils.isBlank(s3Url) ? DEFAULT_EU_WEST_1_S3_ENDPOINT : s3Url;
     	}
-    	
+
     	if (SA_EAST_1_REGION.equals(region))
-    	{	
+    	{
     		s3Url = config.get(CONFIG_SA_EAST_1_S3_ENDPOINT);
     		return StringUtils.isBlank(s3Url) ? DEFAULT_SA_EAST_1_S3_ENDPOINT : s3Url;
     	}
-    	
+
     	return null;
     }
 
@@ -875,19 +875,19 @@ public class PriamConfiguration implements IConfiguration
     public String getRpcServerType() {
     	return config.get(CONFIG_RPC_SERVER_TYPE, DEFAULT_RPC_SERVER_TYPE);
     }
-    
+
     public int getIndexInterval() {
     	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }
-    
+
     public String getExtraConfigParams() {
     	return config.get(CONFIG_EXTRA_PARAMS);
     }
-    
+
     public String getCassYamlVal(String priamKey) {
     	return config.get(priamKey);
     }
-    
+
     public boolean getAutoBoostrap() {
         return config.get(CONFIG_AUTO_BOOTSTRAP, true);
     }

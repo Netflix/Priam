@@ -53,13 +53,13 @@ public class AWSMembership implements IMembership
 {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
     private final IConfiguration config;
-    private final ICredential provider;    
+    private final ICredential provider;
 
     @Inject
     public AWSMembership(IConfiguration config, ICredential provider)
     {
         this.config = config;
-        this.provider = provider;        
+        this.provider = provider;
     }
 
     @Override
@@ -134,7 +134,10 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            AuthorizeSecurityGroupIngressRequest ingressRequest = new AuthorizeSecurityGroupIngressRequest();
+            ingressRequest.setGroupId(config.getACLGroupId());
+            ingressRequest.setIpPermissions(ipPermissions);
+            client.authorizeSecurityGroupIngress(ingressRequest);
             logger.info("Done adding ACL to: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -155,7 +158,10 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            RevokeSecurityGroupIngressRequest ingressRequest = new RevokeSecurityGroupIngressRequest();
+            ingressRequest.setGroupId(config.getACLGroupId());
+            ingressRequest.setIpPermissions(ipPermissions);
+            client.revokeSecurityGroupIngress(ingressRequest);
             logger.info("Done removing from ACL: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -175,7 +181,7 @@ public class AWSMembership implements IMembership
         {
             client = getEc2Client();
             List<String> ipPermissions = new ArrayList<String>();
-            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Arrays.asList(config.getACLGroupName()));
+            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupIds(Arrays.asList(config.getACLGroupId()));
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups())
                 for (IpPermission perm : group.getIpPermissions())

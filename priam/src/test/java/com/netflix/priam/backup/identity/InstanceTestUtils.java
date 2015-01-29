@@ -3,13 +3,14 @@ package com.netflix.priam.backup.identity;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
-import com.netflix.priam.backup.identity.token.FakeDeadTokenRetriever;
-import com.netflix.priam.backup.identity.token.FakeNewTokenRetriever;
-import com.netflix.priam.backup.identity.token.FakePreGeneratedTokenRetriever;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.token.DeadTokenRetriever;
+import com.netflix.priam.identity.token.NewTokenRetriever;
+import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
 
@@ -29,9 +30,10 @@ public abstract class InstanceTestUtils
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
     Sleeper sleeper;
-	FakeDeadTokenRetriever deadTokenRetriever;
-	FakePreGeneratedTokenRetriever preGeneratedTokenRetriever;
-	FakeNewTokenRetriever newTokenRetriever;
+    DeadTokenRetriever deadTokenRetriever;
+    PreGeneratedTokenRetriever preGeneratedTokenRetriever;
+	NewTokenRetriever newTokenRetriever;
+	private static final ITokenManager tokenManager = new TokenManager();
 
     @Before
     public void setup()
@@ -50,9 +52,9 @@ public abstract class InstanceTestUtils
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
-        this.deadTokenRetriever = new FakeDeadTokenRetriever();
-        this.preGeneratedTokenRetriever = new FakePreGeneratedTokenRetriever();
-        this.newTokenRetriever = new FakeNewTokenRetriever();
+        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper);
+        this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
+        this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }
 
     public void createInstances() throws Exception

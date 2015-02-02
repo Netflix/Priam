@@ -324,9 +324,9 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getStoragePort()
+    public String getStoragePort()
     {
-        return 7101;
+        return "7101";
     }
 
     @Override

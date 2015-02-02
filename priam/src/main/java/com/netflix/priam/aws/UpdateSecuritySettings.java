@@ -18,6 +18,9 @@ package com.netflix.priam.aws;
 import java.util.List;
 import java.util.Random;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -47,20 +50,26 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class UpdateSecuritySettings extends Task
 {
-    public static final String JOBNAME = "Update_SG";
+    private static final Logger logger = LoggerFactory.getLogger(UpdateSecuritySettings.class);
+	
+	public static final String JOBNAME = "Update_SG";
     public static boolean firstTimeUpdated = false;
 
     private static final Random ran = new Random();
     private final IMembership membership;
     private final IPriamInstanceFactory<PriamInstance> factory;
 
+	private IS3SecurityRuleMetadata securityRuleMetadata;
+
     @Inject
     //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
-    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory)
+    public UpdateSecuritySettings(IConfiguration config, IMembership membership, IPriamInstanceFactory factory
+    		, IS3SecurityRuleMetadata securityRuleMetadata)
     {
         super(config);
         this.membership = membership;
         this.factory = factory;
+        this.securityRuleMetadata = securityRuleMetadata;
     }
 
     /**
@@ -72,8 +81,17 @@ public class UpdateSecuritySettings extends Task
     public void execute()
     {
         // if seed dont execute.
-        int port = config.getSSLStoragePort();
-        List<String> acls = membership.listACL(port, port);
+    	
+    	List<Integer> ports = securityRuleMetadata.getPorts();
+    	for (Integer port : ports) {
+            updateSecurityRule(port, port);
+            logger.info("Added rule to security group for port: " + port);
+    	}
+          
+    }
+    
+    protected void updateSecurityRule(Integer fromPort, Integer toPort) {
+        List<String> acls = membership.listACL(fromPort, toPort);
         List<PriamInstance> instances = factory.getAllIds(config.getAppName());
 
         // iterate to add...
@@ -87,7 +105,7 @@ public class UpdateSecuritySettings extends Task
         }
         if (add.size() > 0)
         {
-            membership.addACL(add, port, port);
+            membership.addACL(add, fromPort, toPort);
             firstTimeUpdated = true;
         }
 
@@ -95,7 +113,7 @@ public class UpdateSecuritySettings extends Task
         List<String> currentRanges = Lists.newArrayList();
         for (PriamInstance instance : instances)
         {
-            String range = instance.getHostIP() + "/32";
+            String range = instance.getHostIP() + "/32"; //public ip
             currentRanges.add(range);
         }
 
@@ -106,9 +124,9 @@ public class UpdateSecuritySettings extends Task
                 remove.add(acl);
         if (remove.size() > 0)
         {
-            membership.removeACL(remove, port, port);
+            membership.removeACL(remove, fromPort, toPort);
             firstTimeUpdated = true;
-        }
+        }   	
     }
 
     public static TaskTimer getTimer(InstanceIdentity id)

@@ -124,9 +124,10 @@ public interface IConfiguration
     public int getJmxPort();
         
     /**
-     * Cassandra storage/cluster communication port
+     * Cassandra storage/cluster communication port(s)
+     * @return ports(s) for communication among nodes.  Use a comma delimiter for list of ports.
      */
-    public int getStoragePort();
+    public String getStoragePort();
     
     public int getSSLStoragePort();
 

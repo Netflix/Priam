@@ -7,6 +7,7 @@ import java.util.Properties;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
+
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -15,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.utils.CassandraTuner;
+
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -38,7 +40,21 @@ public class StandardTuner implements CassandraTuner
         File yamlFile = new File(yamlLocation);
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
-        map.put("storage_port", config.getStoragePort());
+        
+        if (config.getStoragePort() != null) {
+            String[] nonSSLPorts = config.getStoragePort().split(",");
+    		if (nonSSLPorts.length > 0) {
+    			for (int i=0; i < nonSSLPorts.length; i++) {
+    		        map.put("storage_port", Integer.getInteger(nonSSLPorts[i]));
+    			}
+    		} else {
+    			logger.warn("There is no non SSL storage port to set within the yaml file.");
+    		}
+    		
+        } else {
+        	logger.warn("There is no non SSL storage port to set within the yaml file.");
+        }
+
         map.put("ssl_storage_port", config.getSSLStoragePort());
         map.put("start_rpc", config.isThriftEnabled());
         map.put("rpc_port", config.getThriftPort());

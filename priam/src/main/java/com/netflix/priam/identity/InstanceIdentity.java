@@ -308,11 +308,19 @@ public class InstanceIdentity
         return seeds;
     }
     
+    /*
+     * @return true if "this" is the 1st entry within the location map and "this" is NOT a dummy instance.
+     */
     public boolean isSeed()
     {
+    	boolean result = false;
+    	
         populateRacMap();
         String ip = locMap.get(myInstance.getRac()).get(0).getHostName();
-        return myInstance.getHostName().equals(ip);
+        if (myInstance.getHostName().equals(ip) ) {
+        	result = myInstance.getInstanceId().contains("i-");
+        }
+        return result;
     }
     
     public boolean isReplace() 

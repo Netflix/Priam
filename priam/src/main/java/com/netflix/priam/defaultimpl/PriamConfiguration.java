@@ -179,7 +179,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_JMX_PORT = 7199;
     private final int DEFAULT_THRIFT_PORT = 9160;
     private final int DEFAULT_NATIVE_PROTOCOL_PORT = 9042;
-    private final int DEFAULT_STORAGE_PORT = 7000;
+    private final String DEFAULT_STORAGE_PORT = "7000";
     private final int DEFAULT_SSL_STORAGE_PORT = 7001;
     private final int DEFAULT_BACKUP_HOUR = 12;
     private final int DEFAULT_BACKUP_THREADS = 2;
@@ -445,7 +445,7 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
-    public int getStoragePort()
+    public String getStoragePort()
     {
         return config.get(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
     }

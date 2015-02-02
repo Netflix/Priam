@@ -20,7 +20,9 @@ import org.quartz.impl.StdSchedulerFactory;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
+import com.netflix.priam.aws.IS3SecurityRuleMetadata;
 import com.netflix.priam.aws.S3FileSystem;
+import com.netflix.priam.aws.S3SecurityRuleMetadata;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
@@ -46,5 +48,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
+        
+        bind(IS3SecurityRuleMetadata.class).to(S3SecurityRuleMetadata.class);
     }
 }

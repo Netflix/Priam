@@ -575,4 +575,10 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return "cassandra";
     }
+
+	@Override
+	public boolean isCreateNewTokenEnable() {
+		return true;  //allow Junit test to create new tokens
+	}    
+    
 }

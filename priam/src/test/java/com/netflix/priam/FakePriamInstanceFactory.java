@@ -12,7 +12,7 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
-public class FakePriamInstanceFactory implements IPriamInstanceFactory
+public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance>
 {
     private final Map<Integer,PriamInstance> instances = Maps.newHashMap();
     private final IConfiguration config;
@@ -62,6 +62,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
         instances.put(inst.getId(), inst);
     }
 
+ 
     @Override
     public void sort(List<PriamInstance> return_)
     {
@@ -84,4 +85,6 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory
     {
         // TODO Auto-generated method stub
     }
+
+
 }

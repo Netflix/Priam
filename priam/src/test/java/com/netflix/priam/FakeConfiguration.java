@@ -569,4 +569,10 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return false;
     }
+
+	@Override
+	public boolean isCreateNewTokenEnable() {
+		return true;  //allow Junit test to create new tokens
+	}    
+    
 }

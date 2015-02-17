@@ -37,7 +37,7 @@ import com.netflix.priam.identity.PriamInstance;
  * created ahead
  */
 @Singleton
-public class SDBInstanceFactory implements IPriamInstanceFactory
+public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance>
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
@@ -136,6 +136,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory
             @Override
             public int compare(PriamInstance o1, PriamInstance o2)
             {
+            	
                 Integer c1 = o1.getId();
                 Integer c2 = o2.getId();
                 return c1.compareTo(c2);

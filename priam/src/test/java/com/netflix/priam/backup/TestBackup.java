@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import junit.framework.Assert;
@@ -84,7 +85,7 @@ public class TestBackup
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(4, filesystem.uploadedFiles.size());
+        Assert.assertEquals(5, filesystem.uploadedFiles.size()); //uploaded files will now include the incremental audit log
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }

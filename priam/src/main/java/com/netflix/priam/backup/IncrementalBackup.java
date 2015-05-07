@@ -81,11 +81,15 @@ public class IncrementalBackup extends AbstractBackup
                 
                 //TODO:  create FP to upload meta data file -- upload audit info of files successfully upload for CF
                 
-                String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
-                String metaFileName = "meta_" + backupDir.getCanonicalPath() + "_" + incrementalUploadTime;
-                this.metaData.setMetaFileName(metaFileName);
-                this.metaData.set(uploadedFiles, incrementalUploadTime);
-                logger.info("Incremental snapshot upload complete for " + metaFileName);
+                if ( ! uploadedFiles.isEmpty() ) {
+                    String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
+                    String metaFileName = "meta_" + columnFamilyDir.getName() + "_" + incrementalUploadTime;
+                    logger.info("Uploading meta file for incremental backup: " + metaFileName); 
+                    this.metaData.setMetaFileName(metaFileName);
+                    this.metaData.set(uploadedFiles, incrementalUploadTime);
+                    logger.info("Uploaded meta file for incremental backup: " + metaFileName);                	
+                }
+
             }
         }
      		

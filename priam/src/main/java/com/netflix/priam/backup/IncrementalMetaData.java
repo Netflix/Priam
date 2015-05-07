@@ -11,7 +11,7 @@ import com.google.inject.name.Named;
 
 public class IncrementalMetaData extends MetaData {
 
-	private String metaFileName; //format meta_cf_time (e.g. 
+	private String metaFileName = null; //format meta_cf_time (e.g. 
 
 	@Inject
 	public IncrementalMetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs) {
@@ -26,7 +26,8 @@ public class IncrementalMetaData extends MetaData {
 	public File createTmpMetaFile() throws IOException{
 		File metafile = null, destFile = null;
 		
-		if (this.metaFileName != null || !this.metaFileName.isEmpty() ) {
+		if (this.metaFileName == null) {
+			
 	        metafile = File.createTempFile("incrementalMeta", ".json");
 	        destFile = new File(metafile.getParent(), "incrementalMeta.json");
 			

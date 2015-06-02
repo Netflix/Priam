@@ -270,12 +270,12 @@ public class InstanceIdentity
                while (iter.hasNext()) {
                     Object key = iter.next();
                     JSONObject msg = (JSONObject) jsonObject.get(key);
-                    if (msg.get("  STATUS") == null) {
+                    if (msg.get("Token") == null) {
                         continue;
                     }
-		            String statusVal = (String) msg.get("  STATUS");
+                    String statusVal = (String) msg.get("Token");
                     String[] ss = statusVal.split(",");
-                
+                    logger.info("Using gossipinfo from host[" + host + "] and token[" + token + "], the replaced address is : " + key);
                     if (ss[1].equals(token)) {
                        return (String) key;
                     }

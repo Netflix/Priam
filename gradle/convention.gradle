@@ -30,12 +30,9 @@ subprojects { project ->
 
     // When outputing to an Ivy repo, we want to use the proper type field
     gradle.taskGraph.whenReady {
-        def isNotMaven = !it.hasTask(project.uploadMavenCentral)
-        if (isNotMaven) {
-            def artifacts = project.configurations.sources.artifacts
-            def sourceArtifact = artifacts.iterator().next()
-            sourceArtifact.type = 'sources'
-        }
+        def artifacts = project.configurations.sources.artifacts
+        def sourceArtifact = artifacts.iterator().next()
+        sourceArtifact.type = 'sources'
     }
 
     artifacts {

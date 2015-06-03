@@ -406,10 +406,15 @@ public class CassandraAdmin
                 key = data[1];
             } else if (line.matches("^  .*:.*$")) {
                 String[] kv = line.split(":");
-                obj.put(kv[0], kv[1]);
-            } else {
-                // probably at EOF, ignore
-            }
+                kv[0] = kv[0].trim();
+                if (kv[0].equals("STATUS")) {
+                	obj.put(kv[0], kv[1]);
+                	String[] vv = kv[1].split(",");
+                	obj.put("Token", vv[1]);
+                } else {
+                   obj.put(kv[0], kv[1]);
+                }
+            } 
         }
         if (StringUtils.isNotBlank(key))
             rootObj.put(key, obj);

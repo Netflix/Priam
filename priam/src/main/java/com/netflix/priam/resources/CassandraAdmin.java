@@ -373,25 +373,42 @@ public class CassandraAdmin
 			return Response.status(503).entity("JMXConnectionException")
 					.build();
 		}
-        JSONObject rootObj = new JSONObject();
-        String[] ginfo = nodetool.getGossipInfo().split("/");
-        for (String info : ginfo)
-        {
-            String[] data = info.split("\n");
-            String key = "";
-            JSONObject obj = new JSONObject();
-            for (String element : data)
-            {
-                String[] kv = element.split(":");
-                if (kv.length == 1)
-                    key = kv[0];
-                else
-                    obj.put(kv[0], kv[1]);
-            }
-            if (StringUtils.isNotBlank(key))
-                rootObj.put(key, obj);
-        }
+        JSONObject rootObj = parseGossipInfo(nodetool.getGossipInfo());
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
+    }
+
+	
+    // helper method for parsing, to be tested easily
+    protected static JSONObject parseGossipInfo(String gossipinfo) throws JSONException
+    {
+        String[] ginfo = gossipinfo.split("\n");
+        JSONObject rootObj = new JSONObject();
+        JSONObject obj = new JSONObject();
+        String key = "";
+        for (String line : ginfo)
+        {
+            if (line.matches("^.*/.*$")) {
+                String[] data = line.split("/");
+                if (StringUtils.isNotBlank(key)) {
+                    rootObj.put(key, obj);
+                    obj = new JSONObject();
+                }
+                key = data[1];
+            } else if (line.matches("^  .*:.*$")) {
+                String[] kv = line.split(":");
+                kv[0] = kv[0].trim();
+                if (kv[0].equals("STATUS")) {
+                	obj.put(kv[0], kv[1]);
+                	String[] vv = kv[1].split(",");
+                	obj.put("Token", vv[1]);
+                } else {
+                   obj.put(kv[0], kv[1]);
+                }
+            } 
+        }
+        if (StringUtils.isNotBlank(key))
+            rootObj.put(key, obj);
+        return rootObj;
     }
 
     @GET

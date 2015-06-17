@@ -418,11 +418,61 @@ public interface IConfiguration
     public String getExtraConfigParams();
     
     public String getCassYamlVal(String priamKey);
-    
+
     public boolean getAutoBoostrap();
     
     //if using with Datastax Enterprise
     public String getDseClusterType();
     public boolean isCreateNewTokenEnable();
+    
+    /*
+     * @return the location on disk of the private key used by the cryptography algorithm
+     */
+    public String getPrivateKeyLocation();
+    /*
+     * @return the type of source for the restore.  Valid values are: AWSCROSSACCTENCRYPTED or GOOGLE.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
+     * 
+     * AWSCROSSACCTENCRYPTED
+     * - You are restoring from an AWS account which requires cross account assumption where an IAM user in one account is allowed to access resources that belong
+     * to a different account.
+     * 
+     * GOOGLE
+     * - You are restoring from Google Cloud Storage
+     * 
+     */
+    public String getRestoreSourceType();
+    /*
+     * @return true to enable encryption of backup (snapshots, incrementals, commit logs).
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
+     */
+    public boolean isEncryptBackupEnabled();
+    /*
+     * @return the Amazon Resource Name (ARN).  This is applicable when restoring from an AWS account which requires cross account assumption. 
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
+     */
+    public String getAWSRoleAssumptionArn();
+    /*
+     * @return Google Cloud Storage service account id to be use within the restore functionality.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
+     */
+    public String getGcsServiceAccountId();
+    /*
+     * @return the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).  
+     * This information is to be use within the restore functionality.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
+     */
+    public String getGcsServiceAccountPrivateKeyLoc();
+    
+    /*
+     * @return the pass phrase use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
+     */
+    public String getPgpPasswordPhrase();
+    /*
+     * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
+     * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
+     */    
+    public String getPgpPublicKeyLoc();
 
 }

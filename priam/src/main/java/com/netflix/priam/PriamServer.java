@@ -28,6 +28,10 @@ import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
+import com.netflix.priam.restore.EncryptedRestoreStrategy;
+import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
+import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
@@ -82,16 +86,60 @@ public class PriamServer
         // Run the task to tune Cassandra
         scheduler.runTaskNow(TuneCassandra.class);
 
-        // restore from backup else start cassandra.
-        if (!config.getRestoreSnapshot().equals(""))
-            scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());
-        else
-        {
-	    if(!config.doesCassandraStartManually())
-		cassProcess.start(true);				 // Start cassandra.
-	    else
-		logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+        // Determine if we need to restore from backup else start cassandra.
+        if (!config.getRestoreSnapshot().equals("")) {
+
+            if (config.getRestoreSourceType() == null || config.getRestoreSourceType().equals("") ) {
+                //Restore is needed and it will be done from the primary AWS account
+            	
+                if (config.isEncryptBackupEnabled()) {
+                	//Data needs to be decrypted as part of the restore.
+	                scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
+	                logger.info("Scheduled task " + Restore.JOBNAME);
+
+                } else {
+                	//Data does NOT need to be decrypted as part of the restore.
+	                scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct -- default
+	                logger.info("Scheduled task " + Restore.JOBNAME);
+	                
+                }
+
+
+            } else {
+                //Restore is needed and it will be done either from Google or a non-primary AWS account. 
+
+            	if ( config.isEncryptBackupEnabled() ) {
+            		//Data needs to be decrypted as part of the restore.
+            		
+                    if (config.getRestoreSourceType().equalsIgnoreCase((RestoreContext.SourceType.AWSCROSSACCTENCRYPTED.toString()) ) ) {
+                        //Retore from a non-primary AWS account
+                        scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
+                        logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
+
+	                } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLEENCRYPTED.toString()) ) {
+	                        //Restore from Google Cloud Storage (GCS)
+	                        scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
+	                        logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
+	
+	                } else {
+	                        throw new UnsupportedOperationException("Source type (" +  config.getRestoreSourceType() + ") for the scheduled restore not supported.");
+	                }            		
+            		
+            	} else {
+            		throw new UnsupportedOperationException("For this release, Source type (" +  config.getRestoreSourceType() + ") for the scheduled restore, we expect the data was encrypted.");
+            	}
+
+            }
+
+        } else { //no restores needed
+        	
+            logger.info("No restore needed, task not scheduled");
+             if(!config.doesCassandraStartManually())
+            	 cassProcess.start(true);                                 // Start cassandra.
+             else
+                 logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         }
+
 
         /*
          *  Run the delayed task (after 10 seconds) to Monitor Cassandra

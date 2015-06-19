@@ -141,20 +141,19 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
 			
 			if (this.credential == null) {
 				
-				//String service_acct_email = this.keyCryptography.decrypt(config.getGcsServiceAccountId());
 				String service_acct_email = new String(this.gcsCredential.getValue(KEY.GCS_SERVICE_ID));
 				
 				if (this.config.getGcsServiceAccountPrivateKeyLoc() == null || this.config.getGcsServiceAccountPrivateKeyLoc().isEmpty()) {
-					throw new NullPointerException("Fast property for the location of the GCS private key file is null/empty.");
+					throw new NullPointerException("Fast property for the the GCS private key file is null/empty.");
 				}
 				
-				File gcsPrivateKeyHandle = new File("/apps/tomcat/conf/key.p12.output");  //Note: this is the in-transit file which will contain the private key
+				//Take the encrypted private key, decrypted into an in-transit file which is passed to GCS
+				File gcsPrivateKeyHandle = new File(this.config.getGcsServiceAccountPrivateKeyLoc() + ".output");
 				
 				OutputStream os = new FileOutputStream(gcsPrivateKeyHandle);
 				BufferedOutputStream bos = new BufferedOutputStream(os);
 				ByteArrayOutputStream byteos = new ByteArrayOutputStream();
 				
-				//byte[] gcsPrivateKeyPlainText = this.keyCryptography.decrypt(new File(this.config.getGcsServiceAccountPrivateKeyLoc()));
 				byte[] gcsPrivateKeyPlainText = this.gcsCredential.getValue(KEY.GCS_PRIVATE_KEY_LOC);
 				try {
 					

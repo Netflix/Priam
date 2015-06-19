@@ -947,7 +947,7 @@ public class PriamConfiguration implements IConfiguration
 
 	@Override
 	public String getGcsServiceAccountPrivateKeyLoc() {
-		return config.get(CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC);
+		return config.get(CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC, "/apps/tomcat/conf/gcsentryptedkey.p12");
 	}
 
 	@Override

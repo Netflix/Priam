@@ -430,10 +430,10 @@ public interface IConfiguration
      */
     public String getPrivateKeyLocation();
     /*
-     * @return the type of source for the restore.  Valid values are: AWSCROSSACCTENCRYPTED or GOOGLE.
+     * @return the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      * 
-     * AWSCROSSACCTENCRYPTED
+     * AWSCROSSACCT
      * - You are restoring from an AWS account which requires cross account assumption where an IAM user in one account is allowed to access resources that belong
      * to a different account.
      * 

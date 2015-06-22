@@ -111,12 +111,12 @@ public class PriamServer
             	if ( config.isEncryptBackupEnabled() ) {
             		//Data needs to be decrypted as part of the restore.
             		
-                    if (config.getRestoreSourceType().equalsIgnoreCase((RestoreContext.SourceType.AWSCROSSACCTENCRYPTED.toString()) ) ) {
+                    if (config.getRestoreSourceType().equalsIgnoreCase((RestoreContext.SourceType.AWSCROSSACCT.toString()) ) ) {
                         //Retore from a non-primary AWS account
                         scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
                         logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
 
-	                } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLEENCRYPTED.toString()) ) {
+	                } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLE.toString()) ) {
 	                        //Restore from Google Cloud Storage (GCS)
 	                        scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
 	                        logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);

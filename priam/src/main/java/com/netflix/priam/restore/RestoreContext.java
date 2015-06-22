@@ -22,9 +22,9 @@ public class RestoreContext {
                         return null; //not fatal as the client should account for this use case
                 }
 
-                if (srcType.equals(SourceType.GOOGLEENCRYPTED)) {
+                if (srcType.equals(SourceType.GOOGLE)) {
                         this.restoreObj =  this.googleCryptographyRestoreStrategy;
-                } else if (srcType.equals(SourceType.AWSCROSSACCTENCRYPTED)){
+                } else if (srcType.equals(SourceType.AWSCROSSACCT)){
                         this.restoreObj =  this.awsCrossAccountCryptographyRestoreStrategy;
                 }
 
@@ -32,7 +32,7 @@ public class RestoreContext {
         }
 
     public enum SourceType {
-        AWSCROSSACCTENCRYPTED, GOOGLEENCRYPTED
+        AWSCROSSACCT, GOOGLE
     };
 
 

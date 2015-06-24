@@ -77,7 +77,7 @@ public class GoogleFileIterator  implements Iterator<AbstractBackupPath> {
     		this.iterator = createIterator();
     		
 		} catch (Exception e) {
-			throw new RuntimeException("Exception encountered fetching elements, see previous messages for details.");
+			throw new RuntimeException("Exception encountered fetching elements, msg: ." + e.getLocalizedMessage(), e);
 		}
 	}
 	

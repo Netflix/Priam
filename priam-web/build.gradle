@@ -5,7 +5,6 @@ apply plugin: 'jetty'
 
 dependencies {
     compile project(':priam')
-    compile project(':priam-agent')
     compile project(':priam-dse-extensions')
     compile project(':priam-cass-extensions')
     compile 'commons-lang:commons-lang:2.6'

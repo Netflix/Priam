@@ -132,6 +132,19 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
     private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
     
+    private static final String CONFIG_RESTORE_SOURCE_TYPE = PRIAM_PRE + ".restore.source.type"; //the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
+    private static final String CONFIG_ENCRYPTED_BACKUP_ENABLED = PRIAM_PRE + ".encrypted.backup.enabled"; //enable encryption of backup (snapshots, incrementals, commit logs).
+
+    //Backup and restore cryptography
+    private static final String CONFIG_PRIKEY_LOC = PRIAM_PRE + ".private.key.location"; //the location on disk of the private key used by the cryptography algorithm
+    private static final String CONFIG_PGP_PASSWORD_PHRASE = PRIAM_PRE + ".pgp.password.phrase"; //pass phrase used by the cryptography algorithm
+    private static final String CONFIG_PGP_PUB_KEY_LOC = PRIAM_PRE + ".pgp.pubkey.file.location";
+    
+    //Restore from Google Cloud Storage
+    private static final String CONFIG_GCS_SERVICE_ACCT_ID = PRIAM_PRE + ".gcs.service.acct.id"; //Google Cloud Storage service account id
+    private static final String CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC = PRIAM_PRE + ".gcs.service.acct.private.key"; //the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).
+    
+    
     private static String US_EAST_1_REGION = "us-east-1";
     private static String US_WEST_1_REGION = "us-west-1";
     private static String US_WEST_2_REGION = "us-west-2";
@@ -152,6 +165,7 @@ public class PriamConfiguration implements IConfiguration
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
+    private static final String CONFIG_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".roleassumption.arn"; //Restore from AWS.  This is applicable when restoring from an AWS account which requires cross account assumption. 
 
 
     // Defaults 
@@ -905,4 +919,45 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_CREATE_NEW_TOKEN_ENABLE, true);
     }    
     
+
+	@Override
+	public String getPrivateKeyLocation() {
+		return config.get(CONFIG_PRIKEY_LOC);
+	}
+
+	@Override
+	public String getRestoreSourceType() {
+		return config.get(CONFIG_RESTORE_SOURCE_TYPE);
+	}
+
+	@Override
+	public boolean isEncryptBackupEnabled() {
+		return config.get(CONFIG_ENCRYPTED_BACKUP_ENABLED, false);
+	}
+
+	@Override
+	public String getAWSRoleAssumptionArn() {
+		return config.get(CONFIG_ROLE_ASSUMPTION_ARN);
+	}
+
+	@Override
+	public String getGcsServiceAccountId() {
+		return config.get(CONFIG_GCS_SERVICE_ACCT_ID);
+	}
+
+	@Override
+	public String getGcsServiceAccountPrivateKeyLoc() {
+		return config.get(CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC, "/apps/tomcat/conf/gcsentryptedkey.p12");
+	}
+
+	@Override
+	public String getPgpPasswordPhrase() {
+		return config.get(CONFIG_PGP_PASSWORD_PHRASE);
+	}
+
+	@Override
+	public String getPgpPublicKeyLoc() {
+		return config.get(CONFIG_PGP_PUB_KEY_LOC);
+	}
+
 }

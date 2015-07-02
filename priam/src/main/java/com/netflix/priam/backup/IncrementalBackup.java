@@ -49,11 +49,11 @@ public class IncrementalBackup extends AbstractBackup
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
-    public IncrementalBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory
+    public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
     		, IncrementalMetaData metaData)
     {
-        super(config, fs, pathFactory);
-        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded
+        super(config, backupFileSystemCtx, pathFactory);
+        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
     }
     
     @Override
@@ -78,8 +78,6 @@ public class IncrementalBackup extends AbstractBackup
                 if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir))
                     continue;
                 List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
-                
-                //TODO:  create FP to upload meta data file -- upload audit info of files successfully upload for CF
                 
                 if ( ! uploadedFiles.isEmpty() ) {
                     String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)

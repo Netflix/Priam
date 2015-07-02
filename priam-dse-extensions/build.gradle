@@ -36,7 +36,9 @@ dependencies {
     compile 'org.slf4j:slf4j-log4j12:1.6.1'
     compile 'org.bouncycastle:bcprov-jdk16:1.46'
     compile 'org.bouncycastle:bcpg-jdk16:1.46'
-    compile 'com.google.appengine.tools:appengine-gcs-client:0.4.3'
+    compile ('com.google.appengine.tools:appengine-gcs-client:0.4.3') {
+	exclude module: 'guava'
+    }
     compile 'com.google.apis:google-api-services-storage:v1-rev9-1.19.0'
     compile 'com.google.http-client:google-http-client-jackson2:1.19.0'
     provided 'javax.servlet:servlet-api:2.5'

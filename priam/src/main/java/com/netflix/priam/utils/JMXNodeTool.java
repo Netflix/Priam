@@ -287,11 +287,10 @@ public class JMXNodeTool extends NodeProbe
 
     public void compact() throws IOException, ExecutionException, InterruptedException
     {
-    	throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
-    	/*
-        for (String keyspace : getKeyspaces())
-            forceTableCompaction(keyspace, new String[0]);
-            */
+        for (String keyspace : getKeyspaces()) {
+        	forceKeyspaceCompaction(keyspace, new String[0]);
+        }
+        	
     }
 
     public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException
@@ -300,32 +299,23 @@ public class JMXNodeTool extends NodeProbe
     }
     public void repair(boolean isSequential, boolean localDataCenterOnly, boolean primaryRange) throws IOException, ExecutionException, InterruptedException
     {
-    	throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
-    	/*
         for (String keyspace : getKeyspaces())
             if (primaryRange)
-                forceTableRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            	forceKeyspaceRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
             else
-                forceTableRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
-                */
+            	forceKeyspaceRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException
     {
-    	throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
-    	/*
         for (String keyspace : getKeyspaces())
-            forceTableCleanup(keyspace, new String[0]);
-            */
+        	forceKeyspaceCleanup(keyspace, new String[0]);
     }
 
     public void flush() throws IOException, ExecutionException, InterruptedException
     {
-    	throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
-    	/*
         for (String keyspace : getKeyspaces())
-            forceTableFlush(keyspace, new String[0]);
-            */
+        	forceKeyspaceFlush(keyspace, new String[0]);
     }
 
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException

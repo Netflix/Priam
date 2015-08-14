@@ -19,6 +19,7 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Interface for Priam's configuration
@@ -475,4 +476,9 @@ public interface IConfiguration
      */    
     public String getPgpPublicKeyLoc();
 
+    /**
+     * Use this method for adding extra/ dynamic cassandra startup options or env properties
+     * @return
+     */
+    Map<String, String> getExtraEnvParams();
 }

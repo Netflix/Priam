@@ -1,12 +1,12 @@
 /**
  * Copyright 2013 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +20,14 @@ import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,8 +39,7 @@ import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 
-public abstract class AbstractRestore extends Task
-{
+public abstract class AbstractRestore extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String SYSTEM_KEYSPACE = "system";
     // keeps track of the last few download which was executed.
@@ -43,16 +47,15 @@ public abstract class AbstractRestore extends Task
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private AtomicInteger count = new AtomicInteger();
     protected final IBackupFileSystem fs;
-    
+
     protected final IConfiguration config;
     protected final ThreadPoolExecutor executor;
 
     public static BigInteger restoreToken;
-    
+
     protected final Sleeper sleeper;
-    
-    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper)
-    {
+
+    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper) {
         super(config);
         this.config = config;
         this.fs = fs;
@@ -61,24 +64,23 @@ public abstract class AbstractRestore extends Task
         executor.allowCoreThreadTimeOut(true);
     }
 
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter) throws Exception
-    {
-        while (fsIterator.hasNext())
-        {
+    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter) throws Exception {
+        List<Future<?>> futures = Lists.newArrayList();
+
+        while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
-            
-            if (temp.getType() == filter)
-            {   
-            	File localFileHandler = temp.newRestoreFile();
-            	logger.debug("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
-                download(temp, localFileHandler);
-            }   
+
+            if (temp.getType() == filter) {
+                File localFileHandler = temp.newRestoreFile();
+                logger.debug("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+                futures.add(download(temp, localFileHandler));
+            }
         }
-        waitToComplete();
+        waitToComplete(futures);
     }
-    
+
     private class BoundedList<E> extends LinkedList<E> {
 
         private final int limit;
@@ -90,80 +92,67 @@ public abstract class AbstractRestore extends Task
         @Override
         public boolean add(E o) {
             super.add(o);
-            while (size() > limit) 
-            { 
-            	super.remove(); 
+            while (size() > limit) {
+                super.remove();
             }
             return true;
         }
     }
-    
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception
-    {
-    	if (fsIterator == null)
-    		return;
-    	
-    	BoundedList bl = new BoundedList(lastN);
-    	while (fsIterator.hasNext())
-    	{
-    		AbstractBackupPath temp = fsIterator.next();
+
+    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception {
+        if (fsIterator == null)
+            return;
+
+        BoundedList bl = new BoundedList(lastN);
+        while (fsIterator.hasNext()) {
+            AbstractBackupPath temp = fsIterator.next();
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
-            
-            if (temp.getType() == filter)
-            {   
-            	bl.add(temp);
-            }  
-    	}
-    	
-    	download(bl.iterator(), filter);
+
+            if (temp.getType() == filter) {
+                bl.add(temp);
+            }
+        }
+
+        download(bl.iterator(), filter);
     }
 
     /**
      * Download to specific location
      */
-    public void download(final AbstractBackupPath path, final File restoreLocation) throws Exception
-    {
+    public Future<?> download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
         if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
-            return;
+            return Futures.immediateFuture(count.get());
         count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>()
-        {
+        return executor.submit(new RetryableCallable<Integer>() {
             @Override
-            public Integer retriableCall() throws Exception
-            {
+            public Integer retriableCall() throws Exception {
                 logger.info("Downloading file: " + path + " to: " + restoreLocation);
-                fs.download(path, new FileOutputStream(restoreLocation),restoreLocation.getAbsolutePath());
+                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
                 tracker.adjustAndAdd(path);
-                // TODO: fix me -> if there is exception the why hang?
                 return count.decrementAndGet();
             }
         });
     }
-    
-    protected void waitToComplete()
-    {
-        while (count.get() != 0)
-        {
-            try
-            {
-                sleeper.sleep(1000);
-            }
-            catch (InterruptedException e)
-            {
-                logger.error("Interrupted: ", e);
+
+    protected void waitToComplete(List<Future<?>> futures) {
+        for (Future<?> future : futures) {
+            try {
+                future.get();
+            } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
+                throw new AssertionError(e);
+            } catch (ExecutionException e) {
+                logger.error("Wait for future task error: {}", e.getCause());
             }
         }
     }
-    
-    protected AtomicInteger getFileCount()
-    {
-    		return count;
+
+    protected AtomicInteger getFileCount() {
+        return count;
     }
-    
-    protected void setFileCount(int cnt)
-    {
-    		count.set(cnt);
+
+    protected void setFileCount(int cnt) {
+        count.set(cnt);
     }
 }

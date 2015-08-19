@@ -22,8 +22,10 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
+import com.google.common.collect.Lists;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.PendingFile;
@@ -93,6 +95,8 @@ public class IncrementalRestore extends AbstractRestore
         Date start = tracker.first().time;
         Iterator<AbstractBackupPath> incrementals = fs.list(prefix, start, Calendar.getInstance().getTime());
         FileUtils.createDirectory(restoreDir); // create restore dir.
+
+        List<Future<?>> futures = Lists.newArrayList();
         while (incrementals.hasNext())
         {
             AbstractBackupPath temp = incrementals.next();
@@ -117,10 +121,10 @@ public class IncrementalRestore extends AbstractRestore
             logger.debug("*** Keyspace = "+keyspaceDir.getAbsolutePath()+ " Column Family = "+columnFamilyDir.getAbsolutePath()+" File = "+temp.getRemotePath());
             if(config.getTargetKSName() != null || config.getTargetCFName() != null)
             	 	temp.fileName = renameIncrementalRestoreFile(temp.fileName);
-            download(temp, new File(columnFamilyDir, temp.fileName));
+            futures.add(download(temp, new File(columnFamilyDir, temp.fileName)));
         }
         // wait for all the downloads in this batch to complete.
-        waitToComplete();
+        waitToComplete(futures);
         // stream the SST's in the dir
         for (File tokenDir : restoreDir.listFiles())
         {

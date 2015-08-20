@@ -913,7 +913,6 @@ public class PriamConfiguration implements IConfiguration
         Map<String, String> extraEnvParamsMap = new HashMap<String, String>();
         String[] pairs = envParams.split(",");
         logger.info("getExtraEnvParams: Extra cass params. From config :" +envParams);
-        if ( pairs.length > 0) {
             for (int i = 0; i < pairs.length; i++) {
                 String[] pair = pairs[i].split("=");
                 if (pair.length > 1) {
@@ -926,7 +925,6 @@ public class PriamConfiguration implements IConfiguration
                     }
                 }
             }
-        }
         return extraEnvParamsMap;
 
     }

@@ -143,7 +143,7 @@ public class CassandraConfig
         }
         catch (Exception e)
         {
-            logger.error("Error while executing get_replaced_ip", e);
+            logger.error("Error while executing get_extra_env_params", e);
             return Response.serverError().build();
         }
     }

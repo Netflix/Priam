@@ -121,17 +121,17 @@ public class GoogleCryptographyRestoreStrategy extends RestoreBase implements IR
         //== Generate Json format list of all files to download. This information is derived from meta.json file.
         List<AbstractBackupPath> metas = Lists.newArrayList();
         
-        fetchMetaFile(metas, startTime, endTime);
+        fetchSnapshotMetaFile(getRestorePrefix(), metas, startTime, endTime);
         if (metas.size() == 0)
         {
-        	logger.error("No meta file found, Restore Failed.");
+        	logger.error("No snapshot meta file found, Restore Failed.");
         	assert false : "[GoogleRestoreStrategy] No snapshots meta data file found, Restore Failed.";
         	return;
         }        
         
         Collections.sort(metas);
         AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-        logger.info("Meta file for restore " + meta.getRemotePath());
+        logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
 
         //download, decrypt, and uncompress the metadata file
         List<AbstractBackupPath> metaFile = new ArrayList<AbstractBackupPath>();
@@ -237,27 +237,6 @@ public class GoogleCryptographyRestoreStrategy extends RestoreBase implements IR
         return new SimpleTimer(JOBNAME);
     }	
     
-    @Override
-	protected void fetchMetaFile(List<AbstractBackupPath> out, Date startTime, Date endTime) {
-		String pathPrefix = getRestorePrefix();
-		String metaJsonPath = pathProvider.get().remotePrefix(startTime, endTime, pathPrefix) + "/META/meta.json";
-		logger.debug("Looking for meta file within bucket: " + getSourcebucket(pathPrefix) + ", prefix: " + metaJsonPath);
-		
-        Iterator<AbstractBackupPath> backupfiles = fs.list(pathPrefix, startTime, endTime);
-        if (!backupfiles.hasNext()) {
-        	throw new IllegalStateException("meta.json not found at path: " + metaJsonPath);
-        }
-
-        while (backupfiles.hasNext())
-        {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == BackupFileType.META)
-                out.add(path);
-        }
-        
-        return;
-        		
-	}    
     
     /*
      * @param pathprefix - the absolute path (including bucket name) to the object.

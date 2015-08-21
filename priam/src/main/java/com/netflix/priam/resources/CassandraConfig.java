@@ -16,7 +16,9 @@
 package com.netflix.priam.resources;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -24,7 +26,9 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import com.netflix.priam.IConfiguration;
 import org.apache.commons.lang.StringUtils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,8 +124,31 @@ public class CassandraConfig
             return Response.serverError().build();
         }
     }
+
     
-    
+    @GET
+    @Path("/get_extra_env_params")
+    public Response getExtraEnvParams()
+    {
+        try
+        {
+            Map<String, String> returnMap;
+            returnMap=priamServer.getConfiguration().getExtraEnvParams();
+            if(returnMap == null)
+            {
+                returnMap = new HashMap<String,String>();
+            }
+            String extraEnvParamsJson=JSONValue.toJSONString(returnMap);
+            return Response.ok(extraEnvParamsJson).build();
+        }
+        catch (Exception e)
+        {
+            logger.error("Error while executing get_extra_env_params", e);
+            return Response.serverError().build();
+        }
+    }
+
+
     @GET
     @Path("/double_ring")
     public Response doubleRing() throws IOException, ClassNotFoundException

@@ -16,9 +16,18 @@
 package com.netflix.priam.cassandra.extensions;
 
 import java.lang.instrument.Instrumentation;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 
 
 import org.apache.cassandra.utils.FBUtilities;
+import org.apache.commons.lang.StringUtils;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+
 
 /**
  * A <a href="http://docs.oracle.com/javase/6/docs/api/java/lang/instrument/package-summary.html">PreMain</a> class
@@ -40,6 +49,7 @@ public class PriamStartupAgent
         String seeds = null;
         boolean isReplace = false;
         String replacedIp = "";
+        String extraEnvParams = null;
         
         while (true)
         {
@@ -49,6 +59,8 @@ public class PriamStartupAgent
                 seeds = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
                 isReplace = Boolean.parseBoolean(DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/is_replace_token"));
                 replacedIp = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_replaced_ip");
+                extraEnvParams = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_extra_env_params");
+
             }
             catch (Exception e)
             {
@@ -69,7 +81,9 @@ public class PriamStartupAgent
         }
         
         System.setProperty("cassandra.initial_token", token);
-  
+
+        setExtraEnvParams(extraEnvParams);
+
         if (isReplace)
         {	
         	System.out.println("Detect cassandra version : " + FBUtilities.getReleaseVersionString());
@@ -82,6 +96,30 @@ public class PriamStartupAgent
         	}
         }
 
+    }
+
+    private void setExtraEnvParams(String extraEnvParams)  {
+        try {
+            if (null != extraEnvParams && extraEnvParams.length() > 0) {
+                JSONParser parser = new JSONParser();
+                Object obj = parser.parse(extraEnvParams);
+                JSONObject jsonObj = (JSONObject) obj;
+                if(jsonObj.size()>0) {
+                    for (Iterator iterator = jsonObj.keySet().iterator(); iterator.hasNext(); ) {
+                        String key = (String) iterator.next();
+                        String val = (String) jsonObj.get(key);
+                        if (StringUtils.isNotBlank(key) && StringUtils.isNotBlank(val)) {
+                            System.setProperty(key.trim(), val.trim());
+                        }
+                    }
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            System.out.println("Failed to parse extra env params: "+extraEnvParams+". However, ignoring the exception.");
+            e.printStackTrace();
+        }
     }
 
 }

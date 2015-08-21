@@ -15,7 +15,9 @@
  */
 package com.netflix.priam.defaultimpl;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
@@ -125,6 +127,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
     private static final String CONFIG_AUTO_BOOTSTRAP = PRIAM_PRE + ".auto.bootstrap";
     private static final String CONFIG_DSE_CLUSTER_TYPE = PRIAM_PRE + ".dse.cluster.type";
+    private static final String CONFIG_EXTRA_ENV_PARAMS = PRIAM_PRE + ".extra.env.params";
 
     private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
     private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
@@ -899,7 +902,33 @@ public class PriamConfiguration implements IConfiguration
     public String getExtraConfigParams() {
     	return config.get(CONFIG_EXTRA_PARAMS);
     }
-    
+
+    public Map<String, String> getExtraEnvParams() {
+
+        String envParams = config.get(CONFIG_EXTRA_ENV_PARAMS);
+        if (envParams == null) {
+            logger.info("getExtraEnvParams: No extra env params");
+            return null;
+        }
+        Map<String, String> extraEnvParamsMap = new HashMap<String, String>();
+        String[] pairs = envParams.split(",");
+        logger.info("getExtraEnvParams: Extra cass params. From config :" +envParams);
+            for (int i = 0; i < pairs.length; i++) {
+                String[] pair = pairs[i].split("=");
+                if (pair.length > 1) {
+                    String priamKey = pair[0];
+                    String cassKey = pair[1];
+                    String cassVal = config.get(priamKey);
+                    logger.info("getExtraEnvParams: Start-up/ env params: Priamkey[" + priamKey + "], CassStartupKey[" + cassKey + "], Val[" + cassVal + "]");
+                    if(!StringUtils.isBlank(cassKey) && !StringUtils.isBlank(cassVal)) {
+                        extraEnvParamsMap.put(cassKey, cassVal);
+                    }
+                }
+            }
+        return extraEnvParamsMap;
+
+    }
+
     public String getCassYamlVal(String priamKey) {
     	return config.get(priamKey);
     }

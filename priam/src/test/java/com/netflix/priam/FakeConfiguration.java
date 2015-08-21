@@ -2,6 +2,7 @@ package com.netflix.priam;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
@@ -619,6 +620,16 @@ public class FakeConfiguration implements IConfiguration
 	@Override
 	public String getPgpPublicKeyLoc() {
 		return null;
-	}	
+	}
+
+    /**
+     * Use this method for adding extra/ dynamic cassandra startup options or env properties
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> getExtraEnvParams() {
+        return null;
+    }
 
 }

@@ -124,17 +124,17 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
         //== Generate Json format list of all files to download. This information is derived from meta.json file.
         List<AbstractBackupPath> metas = Lists.newArrayList();
         
-        fetchMetaFile(metas, startTime, endTime);
+        fetchSnapshotMetaFile(getRestorePrefix(), metas, startTime, endTime);
         if (metas.size() == 0)
         {
-        	logger.error("No meta file found, Restore Failed.");
+        	logger.error("No snapshot meta file found, Restore Failed.");
         	assert false : "[AwsCrossAccountCrypotographyRestoreStrategy] No snapshots meta data file found, Restore Failed.";
         	return;
         }        
         
         Collections.sort(metas);
         AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-        logger.info("Meta file for restore " + meta.getRemotePath());
+        logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
 
         //download, decrypt, and uncompress the metadata file
         List<AbstractBackupPath> metaFile = new ArrayList<AbstractBackupPath>();

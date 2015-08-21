@@ -43,10 +43,12 @@ public class RestoreBase extends AbstractRestore {
 		
 	}
 	
-	protected void fetchMetaFile(List<AbstractBackupPath> out, Date startTime, Date endTime) {
-		String prefix = getRestorePrefix();
-        logger.info("Looking for meta file here:  " + prefix);
-        Iterator<AbstractBackupPath> backupfiles = fs.list(prefix, startTime, endTime);
+	/*
+	 * Fetches all files of type META.
+	 */
+	protected void fetchMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) {
+        logger.info("Looking for meta file here:  " + restorePrefix);
+        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
         while (backupfiles.hasNext())
         {
             AbstractBackupPath path = backupfiles.next();
@@ -68,6 +70,30 @@ public class RestoreBase extends AbstractRestore {
         
         return prefix;
 		
+	}
+	
+	/*
+	 * Fetches meta.json used to store snapshots metadata.
+	 */
+	protected void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime ) {
+		logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
+		
+        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
+        if (!backupfiles.hasNext()) {
+        	throw new IllegalStateException("meta.json not found, restore prefix: " + restorePrefix);
+        }
+
+        while (backupfiles.hasNext())
+        {
+            AbstractBackupPath path = backupfiles.next();
+            if (path.getType() == BackupFileType.META)
+            	//Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
+            	if (path.getFileName().equalsIgnoreCase("meta.json")) {
+            		out.add(path);            		
+            	}
+        }
+        
+        return;
 	}
 
 	@Override

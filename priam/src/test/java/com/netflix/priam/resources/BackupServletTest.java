@@ -6,6 +6,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Restore;
@@ -16,18 +17,14 @@ import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
+import com.netflix.priam.utils.TuneCassandra;
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.NonStrictExpectations;
-import mockit.integration.junit4.JMockit;
-import mockit.internal.expectations.TestOnlyPhase;
-
+import mockit.NonStrict;
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Date;
@@ -35,11 +32,10 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-@RunWith(JMockit.class)
 public class BackupServletTest
 {
-    private @Mocked PriamServer priamServer;
-    private @Mocked IConfiguration config;
+    private @NonStrict PriamServer priamServer;
+    private @NonStrict IConfiguration config;
     private @Mocked IBackupFileSystem bkpFs;
     private @Mocked IBackupFileSystem bkpStatusFs;
     private @Mocked Restore restoreObj;
@@ -72,8 +68,7 @@ public class BackupServletTest
     }
 
     @Test
-    public void restore_minimal(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance) throws Exception
+    public void restore_minimal() throws Exception
     {
         final String dateRange = null;
         final String newRegion = null;
@@ -83,14 +78,13 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
-            {
-              priamServer.getId(); result = identity; times = 2;
-            }
-        };
         new Expectations() {
+            @NonStrict InstanceIdentity identity;
+            PriamInstance instance;
+  
             {
                 config.getDC(); result = oldRegion;
+                priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
@@ -113,8 +107,7 @@ public class BackupServletTest
     }
 
     @Test
-    public void restore_withDateRange(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance, @Mocked final AbstractBackupPath backupPath) throws Exception
+    public void restore_withDateRange() throws Exception
     {
         final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
@@ -124,18 +117,18 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
-            {
-              priamServer.getId(); result = identity; times = 2;
-            }
-        };
         new Expectations() {
+            @NonStrict InstanceIdentity identity;
+            PriamInstance instance;
+            AbstractBackupPath backupPath = new S3BackupPath(null, null);
+  
             {
                 pathProvider.get(); result = backupPath;
                 backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
                 backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
                 config.getDC(); result = oldRegion;
+                priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
@@ -215,8 +208,7 @@ public class BackupServletTest
 //    }
 
     @Test
-    public void restore_withToken(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance) throws Exception
+    public void restore_withToken() throws Exception
     {
         final String dateRange = null;
         final String newRegion = null;
@@ -226,14 +218,13 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
-            {
-              priamServer.getId(); result = identity; times = 3;
-            }
-        };
         new Expectations() {
+            @NonStrict InstanceIdentity identity;
+            PriamInstance instance;
+  
             {
                 config.getDC(); result = oldRegion;
+                priamServer.getId(); result = identity; times = 3;
                 identity.getInstance(); result = instance; times = 3;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
@@ -257,8 +248,7 @@ public class BackupServletTest
     }
 
     @Test
-    public void restore_withKeyspaces(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance) throws Exception
+    public void restore_withKeyspaces() throws Exception
     {
         final String dateRange = null;
         final String newRegion = null;
@@ -268,27 +258,26 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
-            {
-              config.getDC(); result = oldRegion;
-              config.isRestoreClosestToken(); result = false;
-
-              List<String> restoreKeyspaces = Lists.newArrayList();
-              restoreKeyspaces.clear();
-              restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
-
-              config.getRestoreKeySpaces(); result = restoreKeyspaces;
-              config.setDC(oldRegion);
-              priamServer.getId(); result = identity; times = 2;
-            }
-        };
         new Expectations() {
+            @NonStrict InstanceIdentity identity;
+            PriamInstance instance;
+  
             {
+                config.getDC(); result = oldRegion;
+                priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
+
+                config.isRestoreClosestToken(); result = false;
   
+                List<String> restoreKeyspaces = Lists.newArrayList();
+                config.getRestoreKeySpaces(); result = restoreKeyspaces;
+                restoreKeyspaces.clear();
+                restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
+
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
   
+                config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
@@ -304,10 +293,7 @@ public class BackupServletTest
 
     // TODO: this should also set/test newRegion and keyspaces
     @Test
-    public void restore_maximal(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance, @Mocked final PriamInstance instance1,
-        @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3,
-        @Mocked final AbstractBackupPath backupPath) throws Exception
+    public void restore_maximal() throws Exception
     {
         final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
@@ -318,26 +304,26 @@ public class BackupServletTest
         final String oldToken = "1234";
         final String appName = "myApp";
 
-        new NonStrictExpectations() {
-          {
-            config.getDC(); result = oldRegion; times = 2;
-            priamServer.getId(); result = identity; times = 5;
-            config.isRestoreClosestToken(); result = true;
-            config.getAppName(); result = appName;
-            config.setDC(oldRegion);
-          }
-        };
         new Expectations() {
+            @NonStrict InstanceIdentity identity;
+            PriamInstance instance;
+            @NonStrict PriamInstance instance1, instance2, instance3;
+            AbstractBackupPath backupPath;
+
             {
                 pathProvider.get(); result = backupPath;
                 backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
                 backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
+                config.getDC(); result = oldRegion; times = 2;
+                priamServer.getId(); result = identity; times = 5;
                 identity.getInstance(); result = instance; times = 5;
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
 
+                config.isRestoreClosestToken(); result = true;
                 instance.getToken(); result = oldToken;
+                config.getAppName(); result = appName;
                 factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
                 instance.getDC();  result = oldRegion;
                 instance.getToken(); result = oldToken;
@@ -353,6 +339,7 @@ public class BackupServletTest
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
   
+                config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
@@ -368,7 +355,7 @@ public class BackupServletTest
 
     // TODO: create CassandraController interface and inject, instead of static util method
     private Expectations expectCassandraStartup() {
-        return new NonStrictExpectations() {{
+        return new Expectations() {{
             config.getCassStartupScript(); result = "/usr/bin/false";
             config.getHeapNewSize(); result = "2G";
             config.getHeapSize(); result = "8G";

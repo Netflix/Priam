@@ -10,7 +10,7 @@ import java.util.Set;
 
 import junit.framework.Assert;
 import mockit.Mock;
-import mockit.MockUp;
+import mockit.Mockit;
 
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.FileUtils;
@@ -43,9 +43,9 @@ public class TestBackup
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
     {
-        new MockNodeProbe();
         injector = Guice.createInjector(new BRTestModule());
         filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class,Names.named("backup")));
+        Mockit.setUpMock(NodeProbe.class, MockNodeProbe.class);
     }
     
     @AfterClass
@@ -137,7 +137,7 @@ public class TestBackup
 
     // Mock Nodeprobe class
     @Ignore
-    public static class MockNodeProbe extends MockUp<NodeProbe>
+    public static class MockNodeProbe
     {
         @Mock
         public void $init(String host, int port) throws IOException, InterruptedException

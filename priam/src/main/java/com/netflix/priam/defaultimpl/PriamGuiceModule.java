@@ -33,9 +33,13 @@ import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.priam.identity.token.DeadTokenRetriever;
+import com.netflix.priam.identity.token.IDeadTokenRetriever;
+import com.netflix.priam.identity.token.INewTokenRetriever;
+import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
+import com.netflix.priam.identity.token.NewTokenRetriever;
+import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
 import com.netflix.priam.ICredentialGeneric;
-import com.netflix.priam.google.GcsCredential;
-import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
 import com.netflix.priam.restore.IRestoreStrategy;
 import com.netflix.priam.ICredential;
@@ -63,5 +67,8 @@ public class PriamGuiceModule extends AbstractModule
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
         bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
         bind(ICredential.class).to(ClearCredential.class);
+        bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
+        bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
+        bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
     }
 }

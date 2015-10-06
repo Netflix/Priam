@@ -441,8 +441,11 @@ public class CassandraAdmin
     @Path("/netstats")
     public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException, JSONException
     {
-    	throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
-    	/*
+    	
+    	throw new UnsupportedOperationException("Need to use C* 2.x apis.");
+    	
+    	/* * * * * below is my refactoring to use 2.x C* apis...
+
         JMXNodeTool nodetool = null;
 		try {
 			nodetool = JMXNodeTool.instance(config);
@@ -541,7 +544,8 @@ public class CassandraAdmin
         rObj.put("completed", completed);
         rootObj.put("responses", rObj);
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
-        */
+        
+        * * */
     }
 
     @GET

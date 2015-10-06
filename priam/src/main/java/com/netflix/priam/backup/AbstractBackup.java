@@ -111,13 +111,28 @@ public abstract class AbstractBackup extends Task
      */
     protected void upload(final AbstractBackupPath bp) throws Exception
     {
+
+    	final java.io.InputStream is = bp.localReader();
+    	if (is == null) {
+    		throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
+    	}
+    	
         new RetryableCallable<Void>()
         {
             @Override
             public Void retriableCall() throws Exception
             {
-                fs.upload(bp, bp.localReader());
-                return null;
+            	
+            	try {
+                    fs.upload(bp, is);
+                    return null;            		
+            	} catch (Exception e) {
+            		logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."
+            				, bp.backupFile.getCanonicalFile()));
+            		is.close();
+            		throw e;
+            	}
+
             }
         }.call();
     }

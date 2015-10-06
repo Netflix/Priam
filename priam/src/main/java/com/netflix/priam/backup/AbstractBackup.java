@@ -87,6 +87,7 @@ public abstract class AbstractBackup extends Task
                         final AbstractBackupPath bp = pathFactory.get();
                         bp.parseLocal(file, type);
                         upload(bp);
+                        logger.info("About to delete file: " + file.getAbsolutePath()); 
                         file.delete();
                         return bp;
                     }
@@ -111,25 +112,25 @@ public abstract class AbstractBackup extends Task
      */
     protected void upload(final AbstractBackupPath bp) throws Exception
     {
-
-    	final java.io.InputStream is = bp.localReader();
-    	if (is == null) {
-    		throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
-    	}
-    	
         new RetryableCallable<Void>()
         {
             @Override
             public Void retriableCall() throws Exception
             {
-            	
+            	java.io.InputStream is = null;
             	try {
+                	is = bp.localReader();
+                	if (is == null) {
+                		throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
+                	}
                     fs.upload(bp, is);
                     return null;            		
             	} catch (Exception e) {
             		logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."
             				, bp.backupFile.getCanonicalFile()));
-            		is.close();
+            		if (is != null) {
+                		is.close();            			
+            		}
             		throw e;
             	}
 

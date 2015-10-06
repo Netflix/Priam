@@ -86,8 +86,7 @@ public abstract class AbstractBackup extends Task
                     {
                         final AbstractBackupPath bp = pathFactory.get();
                         bp.parseLocal(file, type);
-                        upload(bp);
-                        logger.info("About to delete file: " + file.getAbsolutePath()); 
+                        upload(bp); 
                         file.delete();
                         return bp;
                     }

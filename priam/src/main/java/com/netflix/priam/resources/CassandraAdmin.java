@@ -444,7 +444,7 @@ public class CassandraAdmin
     	
     	throw new UnsupportedOperationException("Need to use C* 2.x apis.");
     	
-    	/* * * * * below is my refactoring to use 2.x C* apis...
+    	/* * * * * Will refactor later to use 2.x C* apis, comment out for now for success compilation...
 
         JMXNodeTool nodetool = null;
 		try {

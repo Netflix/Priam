@@ -1,5 +1,7 @@
 package com.netflix.priam.dse;
 
+import com.netflix.priam.FakeConfiguration;
+
 import java.util.HashSet;
 import java.util.Set;
 
@@ -9,7 +11,7 @@ public class DseConfigStub implements IDseConfiguration
 
     public String getDseYamlLocation()
     {
-        return null;
+        return new FakeConfiguration().getCassHome() + "/resources/dse/conf/dse.yaml";
     }
 
     public String getDseDelegatingSnitch()

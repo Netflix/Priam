@@ -20,8 +20,9 @@ public class DseTunerTest
     DseConfigStub dseConfig;
     DseTuner dseTuner;
     File targetFile;
+    File targetDseYamlFile;
 
-    //@Before
+    @Before
     public void setup() throws IOException
     {
         config = new FakeConfiguration();
@@ -36,7 +37,7 @@ public class DseTunerTest
         Files.copy(new File("src/test/resources/" + DseTuner.AUDIT_LOG_FILE), targetFile);
     }
 
-    //@Test
+    @Test
     public void auditLogProperties_Enabled() throws IOException
     {
         dseConfig.setAuditLogEnabled(true);
@@ -47,7 +48,7 @@ public class DseTunerTest
         Assert.assertTrue(p.containsKey(DseTuner.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
-    //@Test
+    @Test
     public void auditLogProperties_Disabled() throws IOException
     {
         dseConfig.setAuditLogEnabled(false);
@@ -64,7 +65,7 @@ public class DseTunerTest
      *
      * @throws IOException
      */
-    //@Test
+    @Test
     public void auditLogProperties_ThereAndBackAgain() throws IOException
     {
         auditLogProperties_Enabled();
@@ -87,5 +88,22 @@ public class DseTunerTest
         auditLogProperties_Disabled();
         auditLogProperties_Enabled();
         auditLogProperties_Enabled();
+    }
+
+    @Test
+    public void auditLogYamlProperties_Enabled() throws IOException {
+        File targetDseDir = new File(config.getCassHome() + "/resources/dse/conf/");
+        if(!targetDseDir.exists()) {
+            targetDseDir.mkdirs();
+        }
+
+        int index = dseConfig.getDseYamlLocation().lastIndexOf('/') + 1;
+        targetDseYamlFile = new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
+        Files.copy(new File("src/test/resources/conf/" + dseConfig.getDseYamlLocation().substring(index)), targetDseYamlFile);
+
+
+        dseConfig.setAuditLogEnabled(true);
+        dseTuner.writeDseYaml();
+
     }
 }

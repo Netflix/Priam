@@ -60,12 +60,21 @@ public class DseTuner extends StandardTuner
         String dseYaml = dseConfig.getDseYamlLocation();
         Map<String, Object> map = (Map<String, Object>) yaml.load(new FileInputStream(dseYaml));
 
-        // Enable audit logging (need this in addition to log4j-server.properties settings)
-        if (dseConfig.isAuditLogEnabled())
+        if (map.containsKey(AUDIT_LOG_DSE_ENTRY))
         {
-            if (map.containsKey(AUDIT_LOG_DSE_ENTRY))
+            Boolean isEnabled = (Boolean) ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).get("enabled");
+
+            // Enable/disable audit logging (need this in addition to log4j-server.properties settings)
+            if (dseConfig.isAuditLogEnabled())
             {
-                ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", true);
+                if (!isEnabled)
+                {
+                    ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", true);
+                }
+            }
+            else if (isEnabled)
+            {
+                ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", false);
             }
         }
 

@@ -106,4 +106,21 @@ public class DseTunerTest
         dseTuner.writeDseYaml();
 
     }
+
+    @Test
+    public void auditLogYamlProperties_Disabled() throws IOException {
+        File targetDseDir = new File(config.getCassHome() + "/resources/dse/conf/");
+        if(!targetDseDir.exists()) {
+            targetDseDir.mkdirs();
+        }
+
+        int index = dseConfig.getDseYamlLocation().lastIndexOf('/') + 1;
+        targetDseYamlFile = new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
+        Files.copy(new File("src/test/resources/conf/" + dseConfig.getDseYamlLocation().substring(index)), targetDseYamlFile);
+
+
+        dseConfig.setAuditLogEnabled(false);
+        dseTuner.writeDseYaml();
+
+    }
 }

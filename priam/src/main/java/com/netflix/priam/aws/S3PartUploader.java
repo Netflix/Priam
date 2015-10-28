@@ -17,6 +17,7 @@ package com.netflix.priam.aws;
 
 import java.io.ByteArrayInputStream;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,6 +38,7 @@ public class S3PartUploader extends RetryableCallable<Void>
     private final AmazonS3 client;
     private DataPart dataPart;
     private List<PartETag> partETags;
+    private AtomicInteger partsUploaded = null; //num of data parts successfully uploaded
     
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     private static final int MAX_RETRIES = 5;
@@ -48,6 +50,16 @@ public class S3PartUploader extends RetryableCallable<Void>
         this.dataPart = dp;
         this.partETags = partETags;
     }
+    
+    public S3PartUploader(AmazonS3 client, DataPart dp, List<PartETag> partETags, AtomicInteger partsUploaded)
+    {
+    	super(MAX_RETRIES, RetryableCallable.DEFAULT_WAIT_TIME);
+        this.client = client;
+        this.dataPart = dp;
+        this.partETags = partETags;
+        this.partsUploaded = partsUploaded;
+    }
+
 
     private Void uploadPart() throws AmazonClientException, BackupRestoreException
     {
@@ -64,6 +76,8 @@ public class S3PartUploader extends RetryableCallable<Void>
         if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.getMd5())))
             throw new BackupRestoreException("Unable to match MD5 for part " + dataPart.getPartNo());
         partETags.add(partETag);
+        if (this.partsUploaded != null )
+        	this.partsUploaded.incrementAndGet();
         return null;
     }
 

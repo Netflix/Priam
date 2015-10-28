@@ -19,10 +19,13 @@ import java.io.BufferedInputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -31,6 +34,9 @@ import org.apache.commons.io.IOUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
+
+
+
 
 
 import org.slf4j.Logger;
@@ -129,7 +135,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
-        List<PartETag> partETags = Lists.newArrayList();
+        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
         long chunkSize = config.getBackupChunkSize();
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
@@ -139,16 +145,18 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
             // Upload parts.
             int partNum = 0;
+            AtomicInteger partsUploaded = new AtomicInteger(0); 
             while (chunks.hasNext())
             {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
                 DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
-                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
+                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsUploaded);
                 executor.submit(partUploader);
                 bytesUploaded.addAndGet(chunk.length);
             }
             executor.sleepTillEmpty();
+            logger.info("All chunks uploaded for file " + path.getFileName() + ", num of expected parts:" + partNum + ", num of actual uploaded parts: " + partsUploaded.get());
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
@@ -164,6 +172,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         }
         catch (Exception e)
         {
+        	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.  msg: " + e.getLocalizedMessage());
             new S3PartUploader(s3Client, part, partETags).abortUpload();
             throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         } finally {

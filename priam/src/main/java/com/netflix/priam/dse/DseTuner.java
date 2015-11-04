@@ -32,6 +32,8 @@ public class DseTuner extends StandardTuner
     protected static final String PRIMARY_AUDIT_LOG_ENTRY = "log4j.logger.DataAudit";
     protected static final String AUDIT_LOG_ADDITIVE_ENTRY = "log4j.additivity.DataAudit";
 
+    protected static final String AUDIT_LOG_DSE_ENTRY = "audit_logging_options";
+
     private final IDseConfiguration dseConfig;
 
     @Inject
@@ -49,15 +51,33 @@ public class DseTuner extends StandardTuner
         writeAuditLogProperties();
     }
 
-    private void writeDseYaml() throws IOException
+    @SuppressWarnings("unchecked")
+    /*package protected*/ void writeDseYaml() throws IOException
     {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
         String dseYaml = dseConfig.getDseYamlLocation();
-        @SuppressWarnings("rawtypes")
-        Map map = (Map) yaml.load(new FileInputStream(dseYaml));
-        //map.put("#delegated_snitch", config.getSnitch()); 
+        Map<String, Object> map = (Map<String, Object>) yaml.load(new FileInputStream(dseYaml));
+
+        if (map.containsKey(AUDIT_LOG_DSE_ENTRY))
+        {
+            Boolean isEnabled = (Boolean) ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).get("enabled");
+
+            // Enable/disable audit logging (need this in addition to log4j-server.properties settings)
+            if (dseConfig.isAuditLogEnabled())
+            {
+                if (!isEnabled)
+                {
+                    ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", true);
+                }
+            }
+            else if (isEnabled)
+            {
+                ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", false);
+            }
+        }
+
         logger.info("Updating dse-yaml:\n" + yaml.dump(map));
         yaml.dump(map, new FileWriter(dseYaml));
     }

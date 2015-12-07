@@ -18,9 +18,13 @@ package com.netflix.priam.identity;
 import java.io.Serializable;
 import java.util.Map;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PriamInstance implements Serializable
 {
     private static final long serialVersionUID = 5606412386974488659L;
+    private static final Logger logger = LoggerFactory.getLogger(PriamInstance.class);
     private String hostname;
     private long updatetime;
     private boolean outOfService;
@@ -103,6 +107,7 @@ public class PriamInstance implements Serializable
 
     public String getToken()
     {
+    	logger.info("Returning token value \"" + token + "\" for this instance to caller.");
         return token;
     }
 

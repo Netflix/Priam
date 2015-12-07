@@ -35,6 +35,7 @@ import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.RetryableCallable;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class TestS3FileSystem
 {
@@ -161,11 +162,13 @@ public class TestS3FileSystem
         public static boolean partFailure = false;
         public static boolean completionFailure = false;
         private static List<PartETag> partETags;
+		private AtomicInteger partsUploaded;
 
         @Mock
-        public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags)
+        public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags, AtomicInteger partsUploaded)
         {
             this.partETags = partETags;
+            this.partsUploaded = partsUploaded;
         }
 
         @Mock

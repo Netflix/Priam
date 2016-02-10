@@ -1,3 +1,11 @@
+# Priam
+
+2.x status:
+[![Build Status](https://travis-ci.org/Netflix/Priam.svg?branch=2.x)](https://travis-ci.org/Netflix/Priam)
+
+3.x status:
+[![Build Status](https://travis-ci.org/Netflix/Priam.svg?branch=3.x)](https://travis-ci.org/Netflix/Priam)
+
 Priam is a process/tool that runs alongside Apache Cassandra to automate the following:
 - Backup and recovery (Complete and incremental)
 - Token management

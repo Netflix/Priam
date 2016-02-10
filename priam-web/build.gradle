@@ -1,7 +1,9 @@
-apply plugin: 'java'
-apply plugin: 'nebula.provided-base'
+plugins {
+  id 'jetty'
+}
+
 apply plugin: 'war'
-apply plugin: 'jetty'
+apply plugin: 'nebula.provided-base'
 
 dependencies {
     compile project(':priam')
@@ -27,7 +29,7 @@ dependencies {
     compile 'com.googlecode.json-simple:json-simple:1.1'
     compile 'org.xerial.snappy:snappy-java:1.0.5-M3'
     compile 'org.yaml:snakeyaml:1.10'
-	compile "org.apache.cassandra:cassandra-all:2.0.9"
+	  compile 'org.apache.cassandra:cassandra-all:2.0.9'
     compile 'javax.ws.rs:jsr311-api:1.1.1'
     compile 'joda-time:joda-time:2.0'
     compile 'commons-configuration:commons-configuration:1.5'
@@ -41,7 +43,7 @@ dependencies {
     compile 'org.bouncycastle:bcprov-jdk16:1.46'
     compile 'org.bouncycastle:bcpg-jdk16:1.46'
     compile ('com.google.appengine.tools:appengine-gcs-client:0.4.3') {
-	exclude module: 'guava'
+	     exclude module: 'guava'
     }
     compile 'com.google.apis:google-api-services-storage:v1-rev9-1.19.0'
     compile 'com.google.http-client:google-http-client-jackson2:1.19.0'

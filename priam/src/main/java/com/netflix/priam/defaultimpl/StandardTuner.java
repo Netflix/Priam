@@ -62,13 +62,13 @@ public class StandardTuner implements CassandraTuner
         boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);
         map.put("endpoint_snitch", config.getSnitch());
-        map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
+//        map.put("in_memory_compaction_limit_in_mb", config.getInMemoryCompactionLimit());
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
         map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
 
-        map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
+//        map.put("memtable_total_space_in_mb", config.getMemtableTotalSpaceMB());
         map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
-        map.put("multithreaded_compaction", config.getMultithreadedCompaction());
+//        map.put("multithreaded_compaction", config.getMultithreadedCompaction());
 
         map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
         map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());

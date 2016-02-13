@@ -8,9 +8,9 @@ import java.util.Properties;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 
+import org.apache.cassandra.io.util.FileUtils;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +20,8 @@ import com.netflix.priam.utils.CassandraTuner;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
+
+import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 
 public class StandardTuner implements CassandraTuner
 {
@@ -88,7 +90,7 @@ public class StandardTuner implements CassandraTuner
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);
 
-        configfureSecurity(map);
+        configureSecurity(map);
         configureGlobalCaches(config, map);
         //force to 1 until vnodes are properly supported
 	    map.put("num_tokens", 1);
@@ -100,6 +102,40 @@ public class StandardTuner implements CassandraTuner
         yaml.dump(map, new FileWriter(yamlFile));
 
         configureCommitLogBackups();
+
+        writeCassandraSnitchProperties();
+    }
+
+    private void writeCassandraSnitchProperties()
+    {
+        Reader reader = null;
+        String filePath = config.getRackDcPropertiesLocation();
+
+        if (filePath.trim().isEmpty()) {
+            // skip tuning if not specified
+            logger.info("cassandra-rackdc.properties location not specified, skipping tuning");
+            return;
+        }
+
+        try
+        {
+            reader = new FileReader(filePath);
+            Properties properties = new Properties();
+            properties.load(reader);
+            String suffix = config.getDCSuffix();
+            properties.put("dc_suffix", suffix);
+            properties.store(new FileWriter(filePath), "");
+
+            logger.info("Tuned cassandra-rackdc.properties with dc suffix {}", config.getDCSuffix());
+        }
+        catch (Exception e)
+        {
+            throw new RuntimeException("Unable to read " + filePath, e);
+        }
+        finally
+        {
+            FileUtils.closeQuietly(reader);
+        }
     }
 
     /**
@@ -151,7 +187,7 @@ public class StandardTuner implements CassandraTuner
         return fromYaml;
     }
 
-    protected void configfureSecurity(Map map)
+    protected void configureSecurity(Map map)
     {
         //the client-side ssl settings
         Map clientEnc = (Map) map.get("client_encryption_options");

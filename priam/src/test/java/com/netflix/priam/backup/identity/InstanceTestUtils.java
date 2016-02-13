@@ -40,7 +40,7 @@ public abstract class InstanceTestUtils
         instances.add("fakeinstance9");
 
         membership = new FakeMembership(instances);
-        config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
+        config = new FakeConfiguration("fake", "_suffix", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
     }

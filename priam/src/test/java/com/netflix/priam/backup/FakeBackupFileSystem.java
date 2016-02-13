@@ -28,7 +28,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     private List<AbstractBackupPath> flist;
     public Set<String> downloadedFiles;
     public Set<String> uploadedFiles;
-    public String baseDir, region, clusterName;
+    public String baseDir, dc, clusterName;
 
     @Inject
     Provider<S3BackupPath> pathProvider;
@@ -117,7 +117,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
         
         if( paths.length > 1){
             baseDir = paths[1];
-            region = paths[2];
+            dc = paths[2];
             clusterName = paths[3];
         }
         
@@ -126,7 +126,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
         {
 
             if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)
-                && path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.region.equals(region))
+                && path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.dc.equals(dc))
             {
                  tmpList.add(path);
             }

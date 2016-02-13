@@ -21,7 +21,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
-        int hash = tokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.dcOffset(config.getDC());
         assertEquals(0, identity.getInstance().getId() - hash);
 
         identity = createInstanceIdentity("az1", "fakeinstance2");
@@ -85,7 +85,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         new DoubleRing(config, factory, tokenManager).doubleSlots();
         config.zone = "az1";
         config.instance_id = "fakeinstancex";
-        int hash = tokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.dcOffset(config.getDC());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }

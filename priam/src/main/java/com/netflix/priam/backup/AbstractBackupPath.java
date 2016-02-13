@@ -55,7 +55,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String fileName;
     protected String baseDir;
     protected String token;
-    protected String region;
+    protected String dc;
     protected Date time;
     protected long size;
     protected boolean isCassandra1_0;
@@ -96,7 +96,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         String[] elements = rpath.split("" + PATH_SEP);
         this.clusterName = config.getAppName();
         this.baseDir = config.getBackupLocation();
-        this.region = config.getDC();
+        this.dc = config.getDC();
         this.token = factory.getInstance().getToken();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL)
@@ -233,9 +233,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return token;
     }
 
-    public String getRegion()
+    public String getDC()
     {
-        return region;
+        return dc;
     }
 
     public Date getTime()

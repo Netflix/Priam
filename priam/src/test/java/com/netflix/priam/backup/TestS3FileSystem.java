@@ -6,6 +6,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.List;
 
+import com.netflix.priam.IConfiguration;
 import junit.framework.Assert;
 import mockit.Mock;
 import mockit.Mockit;
@@ -41,6 +42,7 @@ public class TestS3FileSystem
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestS3FileSystem.class);
     private static String FILE_PATH = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+    private static IConfiguration configuration;
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
@@ -61,6 +63,8 @@ public class TestS3FileSystem
             bos1.write(b);
         }
         bos1.close();
+
+        configuration = injector.getInstance(IConfiguration.class);
     }
 
     @AfterClass
@@ -134,7 +138,7 @@ public class TestS3FileSystem
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/"+configuration.getDC()+"/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -147,7 +151,7 @@ public class TestS3FileSystem
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/"+configuration.getDC()+"/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -230,7 +234,7 @@ public class TestS3FileSystem
             List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
             if( ruleAvailable )
             {
-                String clusterPath = "casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/";                
+                String clusterPath = "casstestbackup/"+configuration.getDC()+"/fake-app/";
                 BucketLifecycleConfiguration.Rule rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(5).withPrefix(clusterPath);
                 rule.setStatus(BucketLifecycleConfiguration.ENABLED);
                 rule.setId(clusterPath);

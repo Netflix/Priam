@@ -44,7 +44,7 @@ public class DoubleRingTest extends InstanceTestUtils
         {
             PriamInstance ins = doubled.get(i);
             assertEquals(validator.get(i), ins.getToken());
-            int id = ins.getId() - tokenManager.regionOffset(config.getDC());
+            int id = ins.getId() - tokenManager.dcOffset(config.getDC());
             System.out.println(ins);
             if (0 != id % 2)
                 assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);

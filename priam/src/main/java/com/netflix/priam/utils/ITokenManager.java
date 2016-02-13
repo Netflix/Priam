@@ -23,11 +23,11 @@ import java.util.List;
 @ImplementedBy(TokenManager.class)
 public interface ITokenManager
 {
-    String createToken(int mySlot, int racCount, int racSize, String region);
+    String createToken(int mySlot, int racCount, int racSize, String dc);
 
-    String createToken(int mySlot, int totalCount, String region);
+    String createToken(int mySlot, int totalCount, String dc);
 
     BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList);
 
-    int regionOffset(String region);
+    int dcOffset(String dc);
 }

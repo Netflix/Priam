@@ -15,6 +15,7 @@ public class FakeConfiguration implements IConfiguration
 	public static final String FAKE_REGION = "us-east-1";
 
     public String region;
+    public String dcSuffix;
     public String appName;
     public String zone;
     public String instance_id;
@@ -22,12 +23,13 @@ public class FakeConfiguration implements IConfiguration
 
     public FakeConfiguration()
     {
-        this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
+        this(FAKE_REGION, "_dcSuffix", "my_fake_cluster", "my_zone", "i-01234567");
     }
 
-    public FakeConfiguration(String region, String appName, String zone, String ins_id)
+    public FakeConfiguration(String region, String dcSuffix, String appName, String zone, String ins_id)
     {
         this.region = region;
+        this.dcSuffix = dcSuffix;
         this.appName = appName;
         this.zone = zone;
         this.instance_id = ins_id;
@@ -183,6 +185,18 @@ public class FakeConfiguration implements IConfiguration
     public String getDC()
     {
         // TODO Auto-generated method stub
+        return this.region + this.dcSuffix;
+    }
+
+    @Override
+    public String getDCSuffix()
+    {
+        return this.dcSuffix;
+    }
+
+    @Override
+    public String getRegion()
+    {
         return this.region;
     }
 
@@ -425,6 +439,12 @@ public class FakeConfiguration implements IConfiguration
     public String getYamlLocation()
     {
         return "conf/cassandra.yaml";
+    }
+
+    @Override
+    public String getRackDcPropertiesLocation()
+    {
+        return "/tmp/priam/conf/cassandra-rackdc.properties";
     }
 
     public String getAuthenticator()

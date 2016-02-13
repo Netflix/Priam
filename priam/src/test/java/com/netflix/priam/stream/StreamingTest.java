@@ -26,7 +26,7 @@ public class StreamingTest
 {
     public void teststream() throws IOException, InterruptedException
     {
-        IConfiguration config = new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id");
+        IConfiguration config = new FakeConfiguration("test", "_suffix", "cass_upg107_ccs", "test", "ins_id");
         SSTableLoaderWrapper loader = new SSTableLoaderWrapper(config, new StandardTuner(config));
         Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
         loader.deleteCompleted(ssts);

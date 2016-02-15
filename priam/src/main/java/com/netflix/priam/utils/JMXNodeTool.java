@@ -32,6 +32,7 @@ import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
@@ -77,6 +78,7 @@ public class JMXNodeTool extends NodeProbe
 
     /**
      * try to create if it is null.
+     * @throws JMXConnectionException 
      * @throws IOException 
      */
     public static JMXNodeTool instance(IConfiguration config) throws JMXConnectionException
@@ -86,20 +88,13 @@ public class JMXNodeTool extends NodeProbe
         return tool;
     }
 
-    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean)
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws JMXConnectionException, IOException, MalformedObjectNameException
     {
-        try
-        {
-            if (mxbean)
-                return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
-            else
-                return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
+        if (mxbean)
+            return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
+        else
+            return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
+
     }
 
     /**
@@ -127,38 +122,58 @@ public class JMXNodeTool extends NodeProbe
 
     public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
     {
-    		JMXNodeTool jmxNodeTool = null;
-    		
+    	//lets make sure some other monitor didn't sneak in the recreated the connection already
+		if (!testConnection()) {
+			
+        	if (tool != null) {
+            	try {
+    				tool.close(); //Ensure we properly close any existing (even if it's corrupted) connection to the remote jmx agent
+    			} catch (IOException e) {
+    				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+    			}        		
+        	}
+        	
+		} else {
+			//Someone beat you and already created the connection, nothing you need to do..
+			return tool;
+		}
+    	
+    	JMXNodeTool jmxNodeTool = null;
 		// If Cassandra is started then only start the monitoring
 		if (!CassandraMonitor.isCassadraStarted()) {
-			String exceptionMsg = "Cassandra is not yet started, check back again later";
+			String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);
 		}        		
     		
-    		try {
-    				jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
-						{
-							@Override
-							public JMXNodeTool retriableCall() throws Exception
-							{
-								JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
-								Field fields[] = NodeProbe.class.getDeclaredFields();
-								for (int i = 0; i < fields.length; i++)
-								{
-									if (!fields[i].getName().equals("mbeanServerConn"))
-										continue;
-									fields[i].setAccessible(true);
-									nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
-								}
-								return nodetool;
-							}
-						}.call();
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-				throw new JMXConnectionException(e.getMessage());
-			}
-    		return jmxNodeTool;
+		try {
+			
+			jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
+			{
+				@Override
+				public JMXNodeTool retriableCall() throws Exception
+				{
+					JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+					Field fields[] = NodeProbe.class.getDeclaredFields();
+					for (int i = 0; i < fields.length; i++)
+					{
+						if (!fields[i].getName().equals("mbeanServerConn"))
+							continue;
+						fields[i].setAccessible(true);
+						nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
+					}
+					
+					return nodetool;
+				}
+			}.call();
+			
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new JMXConnectionException(e.getMessage());
+		}
+		
+		logger.info("Connected to remote jmx agent!");
+		return jmxNodeTool;
     }
 
     /**

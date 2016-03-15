@@ -39,8 +39,16 @@ public class IncrementalMetaData extends MetaData {
 		
         if(destFile.exists())
             destFile.delete();
-        FileUtils.moveFile(metafile, destFile);
+        
+        try {
+			
+        	FileUtils.moveFile(metafile, destFile);
+			
+		} finally {
+			if (metafile != null && metafile.exists()) { //clean up resource
+				FileUtils.deleteQuietly(metafile);
+			}
+		}
         return destFile;
-
     }
 }

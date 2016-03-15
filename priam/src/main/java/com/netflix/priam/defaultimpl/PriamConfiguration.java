@@ -85,6 +85,13 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
     private static final String CONFIG_RESTORE_PREFIX = PRIAM_PRE + ".restore.prefix";
     private static final String CONFIG_INCR_BK_ENABLE = PRIAM_PRE + ".backup.incremental.enable";
+    private static final String CONFIG_SNAPSHOT_KEYSPACE_FILTER = PRIAM_PRE + ".snapshot.keyspace.filter";
+    private static final String CONFIG_SNAPSHOT_CF_FILTER = PRIAM_PRE + ".snapshot.cf.filter";
+    private static final String CONFIG_INCREMENTAL_KEYSPACE_FILTER = PRIAM_PRE + ".incremental.keyspace.filter";
+    private static final String CONFIG_INCREMENTAL_CF_FILTER = PRIAM_PRE + ".incremental.cf.filter";
+    private static final String CONFIG_RESTORE_KEYSPACE_FILTER = PRIAM_PRE + ".restore.keyspace.filter";
+    private static final String CONFIG_RESTORE_CF_FILTER = PRIAM_PRE + ".restore.cf.filter";
+    
     private static final String CONFIG_CL_BK_ENABLE = PRIAM_PRE + ".backup.commitlog.enable";
     private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = PRIAM_PRE + ".restore.snapshot";
     private static final String CONFIG_BUCKET_NAME = PRIAM_PRE + ".s3.bucket";
@@ -534,6 +541,36 @@ public class PriamConfiguration implements IConfiguration
     public int getBackupHour()
     {
         return config.get(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
+    }
+    
+    @Override
+    public String getSnapshotKeyspaceFilters() {
+    	return config.get(CONFIG_SNAPSHOT_KEYSPACE_FILTER);
+    }
+    
+    @Override
+    public String getSnapshotCFFilter() throws IllegalArgumentException{
+    	return config.get(CONFIG_SNAPSHOT_CF_FILTER);
+    }
+    
+    @Override
+    public String getIncrementalKeyspaceFilters() {
+    	return config.get(CONFIG_INCREMENTAL_KEYSPACE_FILTER);
+    }
+    
+    @Override
+    public String getIncrementalCFFilter() {
+    	return config.get(CONFIG_INCREMENTAL_CF_FILTER);
+    }
+    
+    @Override
+    public String getRestoreKeyspaceFilter() {
+    	return config.get(CONFIG_RESTORE_KEYSPACE_FILTER);
+    }
+    
+    @Override
+    public String getRestoreCFFilter() {
+    	return config.get(CONFIG_RESTORE_CF_FILTER);
     }
 
     @Override

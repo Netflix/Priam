@@ -17,7 +17,11 @@ package com.netflix.priam.backup;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
@@ -29,6 +33,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -45,6 +50,9 @@ public class IncrementalBackup extends AbstractBackup
     
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
 	private IncrementalMetaData metaData;
+	
+    private final Map<String, Object> incrementalCFFilter = new HashMap<String, Object>();
+	private final Map<String, Object> incrementalKeyspaceFilter  = new HashMap<String, Object>();
 
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
@@ -54,13 +62,55 @@ public class IncrementalBackup extends AbstractBackup
     {
         super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
+        
+        init();
     }
     
+    private void init() {
+    	populateIncrementalFilters();
+    } 
+    
+    private void populateIncrementalFilters() {
+    	String keyspaceFilters = this.config.getIncrementalKeyspaceFilters();
+    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
+    		
+    		logger.info("No keyspace filter set for incremental.");
+    		
+    	} else {
+
+        	String[] keyspaces = keyspaceFilters.split(",");
+        	for (int i=0; i < keyspaces.length; i++ ) {
+        		logger.info("Adding incremental keyspace filter: " + keyspaces[i]);
+        		this.incrementalKeyspaceFilter.put(keyspaces[i], null);
+        	}    		
+    		
+    	}
+    	
+    	String cfFilters = this.config.getIncrementalCFFilter();
+    	if (cfFilters == null || cfFilters.isEmpty()) {
+    		
+    		logger.info("No column family filter set for snapshot.");
+    		
+    	} else {
+
+        	String[] cf = cfFilters.split(",");
+        	for (int i=0; i < cf.length; i++) {
+        		if (isValidCFFilterFormat(cf[i])) {
+        			logger.info("Adding incremental CF filter: " + cf[i]);
+            		this.incrementalCFFilter.put(cf[i], null);        			
+        		} else {
+        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cf[i]);
+        		}
+        	}    		
+    		
+    	}    	
+    }
+        
     @Override
     public void execute() throws Exception
     {   	
-    		//Clearing remotePath List
-    		incrementalRemotePaths.clear();
+    	//Clearing remotePath List
+    	incrementalRemotePaths.clear();
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists())
         {
@@ -72,11 +122,28 @@ public class IncrementalBackup extends AbstractBackup
         {
             if (keyspaceDir.isFile())
         			continue;
+            
+            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
+            	logger.info(keyspaceDir.getName() + " is part of keyspace filter, incremental not done.");
+            	continue;
+            }
+            
             for (File columnFamilyDir : keyspaceDir.listFiles())
             {
+            	
+                if ( isFiltered(DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
+                	logger.info("keyspace: " + keyspaceDir.getName() 
+                			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, incrmental not done.");
+                	continue;
+                }
+            	
                 File backupDir = new File(columnFamilyDir, "backups");
-                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir))
-                    continue;
+                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
+                	logger.warn("Not a valid backup dir or keyspace/cf is part of the default filter.  SnapshotDir: " + backupDir.getAbsolutePath()
+                			+ ", keyspace dir: " + keyspaceDir.getName() + ", CF: " + columnFamilyDir.getName());
+                	continue;
+                }
+                
                 List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
                 
                 if ( ! uploadedFiles.isEmpty() ) {
@@ -91,10 +158,36 @@ public class IncrementalBackup extends AbstractBackup
             }
         }
      		
-        	if(incrementalRemotePaths.size() > 0)
-        	{
-        		notifyObservers();
-        	}
+        if(incrementalRemotePaths.size() > 0)
+        {
+        	notifyObservers();
+        }
+
+    }
+    
+    /*
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
+    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) {
+    		String keyspaceName = args[0];
+    		String cfName = args[1];
+    		if (this.incrementalKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
+    			return true;
+    		} else {
+    			StringBuffer strBuf = new StringBuffer();
+    			strBuf.append(keyspaceName);
+    			strBuf.append('.');
+    			strBuf.append(cfName);
+            	return this.incrementalCFFilter.containsKey(strBuf.toString());    			
+    		}
+        	
+    	} else if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) {
+    		return this.incrementalKeyspaceFilter.containsKey(args[0]);
+    		
+    	} else {
+    		throw new UnsupportedOperationException("Directory type not supported.  Invalid input: " + directoryType.name());
+    	}
 
     }
 

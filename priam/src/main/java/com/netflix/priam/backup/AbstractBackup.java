@@ -19,6 +19,8 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -58,7 +60,18 @@ public abstract class AbstractBackup extends Task
      */
     protected void setFileSystem(IBackupFileSystem fs) {
     	this.fs = fs;
-    }    
+    }   
+    
+    /*
+     * search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
+     * @param input string
+     * @return true if input string matches search pattern; otherwise, false
+     */
+    protected boolean isValidCFFilterFormat(String cfFilter) {
+    	Pattern p = Pattern.compile(".\\..");
+    	Matcher m = p.matcher(cfFilter);
+    	return m.find();
+    }
    
     /**
      * Upload files in the specified dir. Does not delete the file in case of
@@ -145,12 +158,18 @@ public abstract class AbstractBackup extends Task
         if (!backupDir.isDirectory() && !backupDir.exists())
             return false;
         String keyspaceName = keyspaceDir.getName();
-        if (FILTER_KEYSPACE.contains(keyspaceName))
-            return false;
+        if (FILTER_KEYSPACE.contains(keyspaceName)) {
+        	logger.info(keyspaceName + " is not consider a valid keyspace backup directory, will be bypass.");
+            return false;        	
+        }
+
         String columnFamilyName = columnFamilyDir.getName();
 
-        if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName))
-            return false;
+        if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName)) {
+        	logger.info(columnFamilyName + " is not consider a valid CF backup directory, will be bypass.");
+            return false;        	
+        }
+
         return true;
     }
     
@@ -159,4 +178,7 @@ public abstract class AbstractBackup extends Task
      */
     protected abstract void addToRemotePath(String remotePath);
     
+    public enum DIRECTORYTYPE {
+    	KEYSPACE, CF
+    }
 }

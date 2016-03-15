@@ -185,6 +185,45 @@ public interface IConfiguration
      * @return Backup hour for snapshot backups (0 - 23)
      */
     public int getBackupHour();
+    
+    /*
+     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+     */
+    public String getSnapshotKeyspaceFilters();
+    
+    /*
+     * Column Family(ies), comma delimited, to filter from backup.
+     * *Note:  the expected format is keyspace.cfname  
+     * 
+     * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
+     */
+    public String getSnapshotCFFilter();
+    
+    /*
+     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+     */
+    public String getIncrementalKeyspaceFilters();
+    
+    /*
+     * Column Family(ies), comma delimited, to filter from backup.
+     * *Note:  the expected format is keyspace.cfname  
+     * 
+     * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
+     */
+    public String getIncrementalCFFilter();
+    
+    /*
+     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+     */
+    public String getRestoreKeyspaceFilter();
+    
+    /*
+     * Column Family(ies), comma delimited, to filter from backup.
+     * Note:  the expected format is keyspace.cfname  
+     * 
+     * @return Column Family(ies), comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+     */
+    public String getRestoreCFFilter();    
 
     /**
      * Specifies the start and end time used for restoring data (yyyyMMddHHmm

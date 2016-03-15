@@ -23,10 +23,14 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.util.io.Streams;
@@ -34,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -61,6 +66,8 @@ public abstract class AbstractRestore extends Task
     
     protected final IConfiguration config;
     protected final ThreadPoolExecutor executor;
+    private final Map<String, Object> restoreCFFilter = new HashMap<String, Object>();
+	private final Map<String, Object> restoreKeyspaceFilter  = new HashMap<String, Object>();
 
     public static BigInteger restoreToken;
     
@@ -74,9 +81,62 @@ public abstract class AbstractRestore extends Task
         this.sleeper = sleeper;
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
         executor.allowCoreThreadTimeOut(true);
+        
+        init();
+    }
+    
+    private void init() {
+    	populateRestoreFilters();
+    }
+    
+    private void populateRestoreFilters() {
+    	String keyspaceFilters = this.config.getRestoreKeyspaceFilter();
+    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
+    		
+    		logger.info("No keyspace filter set for restore.");
+    		
+    	} else {
+
+        	String[] keyspaces = keyspaceFilters.split(",");
+        	for (int i=0; i < keyspaces.length; i++ ) {
+        		logger.info("Adding restore keyspace filter: " + keyspaces[i]);
+        		this.restoreKeyspaceFilter.put(keyspaces[i], null);
+        	}    		
+    		
+    	}
+    	
+    	String cfFilters = this.config.getRestoreCFFilter();
+    	if (cfFilters == null || cfFilters.isEmpty()) {
+    		
+    		logger.info("No column family filter set for restore.");
+    		
+    	} else {
+
+        	String[] cf = cfFilters.split(",");
+        	for (int i=0; i < cf.length; i++) {
+        		if (isValidCFFilterFormat(cf[i])) {
+        			logger.info("Adding restore CF filter: " + cf[i]);
+            		this.restoreCFFilter.put(cf[i], null);        			
+        		} else {
+        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cf[i]);
+        		}
+        	}    		
+    		
+    	}
+    }
+    
+    /*
+     * search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
+     * @param input string
+     * @return true if input string matches search pattern; otherwise, false
+     */
+    private boolean isValidCFFilterFormat(String cfFilter) {
+    	Pattern p = Pattern.compile(".\\..");
+    	Matcher m = p.matcher(cfFilter);
+    	return m.find();
     }
 
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter) throws Exception
+    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception
     {
         while (fsIterator.hasNext())
         {
@@ -84,7 +144,18 @@ public abstract class AbstractRestore extends Task
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
             
-            if (temp.getType() == filter)
+            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //keyspace filtered?
+            	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as its keyspace: \"" + temp.getKeyspace() + "\" is part of the filter list");
+            	continue;
+            }
+            
+            if (isFiltered(DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
+            	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: "
+            			+ temp.getKeyspace() + ":" + temp.getColumnFamily());
+            	continue;
+            }
+            
+            if (temp.getType() == bkupFileType)
             {   
             	File localFileHandler = temp.newRestoreFile();
             	logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
@@ -92,6 +163,33 @@ public abstract class AbstractRestore extends Task
             }   
         }
         waitToComplete();
+    }
+    
+    /*
+     * @param keyspace or columnfamily directory type.
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
+    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) {
+    		String keyspaceName = args[0];
+    		String cfName = args[1];
+    		if (this.restoreKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
+    			return true;
+    		} else {
+    			StringBuffer strBuf = new StringBuffer();
+    			strBuf.append(keyspaceName);
+    			strBuf.append('.');
+    			strBuf.append(cfName);
+            	return this.restoreCFFilter.containsKey(strBuf.toString());    			
+    		}
+        	
+    	} else if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) {
+    		return this.restoreKeyspaceFilter.containsKey(args[0]);
+    		
+    	} else {
+    		throw new UnsupportedOperationException("Directory type not supported.  Invalid input: " + directoryType.name());
+    	}
+
     }
     
     public class BoundedList<E> extends LinkedList<E> {

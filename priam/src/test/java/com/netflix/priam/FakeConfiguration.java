@@ -631,5 +631,36 @@ public class FakeConfiguration implements IConfiguration
     public Map<String, String> getExtraEnvParams() {
         return null;
     }
+    
+    @Override
+    public String getRestoreKeyspaceFilter()
+    {
+        return null;
+    }
+	
+    @Override
+    public String getRestoreCFFilter() {
+    	return null;
+    }
+    
+   @Override
+    public String getIncrementalKeyspaceFilters() {
+    	return null;
+    }
+   
+    @Override
+    public String getIncrementalCFFilter() {
+    	return null;
+    }
+    
+    @Override
+    public String getSnapshotKeyspaceFilters() {
+    	return null;
+    }
+    
+    @Override
+    public String getSnapshotCFFilter() {
+    	return null;
+    }
 
 }

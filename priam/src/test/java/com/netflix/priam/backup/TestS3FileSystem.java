@@ -8,7 +8,7 @@ import java.util.List;
 
 import junit.framework.Assert;
 import mockit.Mock;
-import mockit.Mockit;
+import mockit.MockUp;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -45,8 +45,9 @@ public class TestS3FileSystem
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
     {
-        Mockit.setUpMock(S3PartUploader.class, MockS3PartUploader.class);
-        Mockit.setUpMock(AmazonS3Client.class, MockAmazonS3Client.class);
+        new MockS3PartUploader();
+        new MockAmazonS3Client();
+
         injector = Guice.createInjector(new BRTestModule());
 
         File dir1 = new File("target/data/Keyspace1/Standard1/backups/201108082320");
@@ -154,7 +155,7 @@ public class TestS3FileSystem
     
     // Mock Nodeprobe class
     @Ignore
-    public static class MockS3PartUploader extends RetryableCallable<Void>
+    public static class MockS3PartUploader extends MockUp<S3PartUploader>
     {
         public static int compattempts = 0;
         public static int partAttempts = 0;
@@ -191,7 +192,6 @@ public class TestS3FileSystem
         {
         }
 
-        @Override
         @Mock
         public Void retriableCall() throws AmazonClientException, BackupRestoreException
         {
@@ -209,7 +209,7 @@ public class TestS3FileSystem
     }
 
     @Ignore
-    public static class MockAmazonS3Client
+    public static class MockAmazonS3Client extends MockUp<AmazonS3Client>
     {
         public static boolean ruleAvailable = false;
         public static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();

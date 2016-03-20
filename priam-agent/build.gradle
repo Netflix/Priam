@@ -36,6 +36,6 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.6.1'
     compile 'org.slf4j:slf4j-log4j12:1.6.1'
     provided 'javax.servlet:servlet-api:2.5'
-    testCompile 'com.googlecode.jmockit:jmockit:0.999.17'
+    testCompile 'org.jmockit:jmockit:1.19'
     testCompile 'junit:junit:4.8'
 }

@@ -273,10 +273,10 @@ public class InstanceIdentity
                     if (msg.get("Token") == null) {
                         continue;
                     }
-                    String statusVal = (String) msg.get("Token");
-                    String[] ss = statusVal.split(",");
-                    logger.info("Using gossipinfo from host[" + host + "] and token[" + token + "], the replaced address is : " + key);
-                    if (ss[1].equals(token)) {
+    	            String tokenVal = (String) msg.get("Token");
+
+                    if (token.equals(tokenVal)) {
+                       logger.info("Using gossipinfo from host[" + host + "] and token[" + token + "], the replaced address is : " + key);                   
                        return (String) key;
                     }
                 

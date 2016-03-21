@@ -19,6 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.ITokenManager;
+
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,7 +42,7 @@ public class DoubleRing
     private static final Logger logger = LoggerFactory.getLogger(DoubleRing.class);
     private static File TMP_BACKUP_FILE;
     private final IConfiguration config;
-    private final IPriamInstanceFactory factory;
+    private final IPriamInstanceFactory<PriamInstance> factory;
     private final ITokenManager tokenManager;
 
     @Inject

@@ -37,7 +37,7 @@ import com.netflix.priam.identity.PriamInstance;
  * created ahead
  */
 @Singleton
-public class SDBInstanceFactory implements IPriamInstanceFactory
+public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance>
 {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 

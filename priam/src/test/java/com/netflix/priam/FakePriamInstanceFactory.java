@@ -12,7 +12,7 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 
-public class FakePriamInstanceFactory implements IPriamInstanceFactory
+public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance>
 {
     private final Map<Integer,PriamInstance> instances = Maps.newHashMap();
     private final IConfiguration config;

@@ -6,7 +6,11 @@ import com.netflix.priam.FakePriamInstanceFactory;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.token.DeadTokenRetriever;
+import com.netflix.priam.identity.token.NewTokenRetriever;
+import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
 import org.junit.Before;
@@ -25,6 +29,10 @@ public abstract class InstanceTestUtils
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
     Sleeper sleeper;
+    DeadTokenRetriever deadTokenRetriever;
+    PreGeneratedTokenRetriever preGeneratedTokenRetriever;
+	NewTokenRetriever newTokenRetriever;
+	private static final ITokenManager tokenManager = new TokenManager();
 
     @Before
     public void setup()
@@ -43,6 +51,9 @@ public abstract class InstanceTestUtils
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
+        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper);
+        this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
+        this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }
 
     public void createInstances() throws Exception
@@ -64,6 +75,10 @@ public abstract class InstanceTestUtils
     {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager());
+        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager()
+        , this.deadTokenRetriever
+        , this.preGeneratedTokenRetriever
+        , this.newTokenRetriever
+        );
     }
 }

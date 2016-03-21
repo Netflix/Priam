@@ -24,6 +24,12 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.token.DeadTokenRetriever;
+import com.netflix.priam.identity.token.IDeadTokenRetriever;
+import com.netflix.priam.identity.token.INewTokenRetriever;
+import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
+import com.netflix.priam.identity.token.NewTokenRetriever;
+import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 @Ignore
@@ -46,5 +52,9 @@ public class BRTestModule extends AbstractModule
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
         bind(ICassandraProcess.class).to(CassandraProcessManager.class);
+        
+        bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
+        bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
+        bind(INewTokenRetriever.class).to(NewTokenRetriever.class); //for backward compatibility, unit test always create new tokens     
     }
 }

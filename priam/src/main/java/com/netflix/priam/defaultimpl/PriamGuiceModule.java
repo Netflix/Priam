@@ -22,6 +22,13 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.token.DeadTokenRetriever;
+import com.netflix.priam.identity.token.IDeadTokenRetriever;
+import com.netflix.priam.identity.token.INewTokenRetriever;
+import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
+import com.netflix.priam.identity.token.NewTokenRetriever;
+import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
 
 import com.netflix.priam.ICredential;
 
@@ -37,5 +44,8 @@ public class PriamGuiceModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(S3FileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
         bind(ICredential.class).to(ClearCredential.class);
+        bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
+        bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
+        bind(INewTokenRetriever.class).to(NewTokenRetriever.class);        
     }
 }

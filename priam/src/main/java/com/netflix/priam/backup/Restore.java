@@ -23,6 +23,7 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,7 +38,9 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
+import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.scheduler.Task.STATE;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
@@ -60,12 +63,24 @@ public class Restore extends AbstractRestore
     private MetaData metaData;
     @Inject
     private InstanceIdentity id;
+    
+    private DateTime startDateRange = null, endDateRange = null; //Date range to restore from
+    private DateTime execStartTime = null, execEndTime = null; //Start-end time of the actual restore execution
+    private Task.STATE state = Task.STATE.NOT_APPLICABLE;  //the state of a restore.  Note: this is different than the "status" of a Task.
 
     @Inject
     public Restore(IConfiguration config, @Named("backup")IBackupFileSystem fs,Sleeper sleeper, ICassandraProcess cassProcess)
     {
         super(config, fs, JOBNAME, sleeper);
         this.cassProcess = cassProcess;
+    }
+    
+    private void initRestoreState() {
+    	this.endDateRange = null;
+    	this.startDateRange = null;
+    	this.execEndTime = null;
+    	this.execStartTime = null;
+    	this.state = Task.STATE.NOT_APPLICABLE;
     }
 
     @Override
@@ -79,6 +94,7 @@ public class Restore extends AbstractRestore
             final Date startTime = path.parseDate(restore[0]);
             final Date endTime = path.parseDate(restore[1]);
             String origToken = id.getInstance().getToken();
+            
             try
             {
                 if (config.isRestoreClosestToken())
@@ -90,14 +106,19 @@ public class Restore extends AbstractRestore
                 {
                     public Void retriableCall() throws Exception
                     {
-                        logger.info("Attempting restore");
+                        logger.info("Attempting restore");                        
                         restore(startTime, endTime);
                         logger.info("Restore completed");
+                        
                         // Wait for other server init to complete
                         sleeper.sleep(30000);
                         return null;
                     }
                 }.call();
+            }
+            catch (Exception e) {
+                this.state = STATE.ERROR;
+                this.execEndTime = new DateTime(new Date());
             }
             finally
             {
@@ -112,6 +133,13 @@ public class Restore extends AbstractRestore
      */
     public void restore(Date startTime, Date endTime) throws Exception
     {
+    	
+    	initRestoreState();
+        this.state = STATE.RUNNING;
+        this.startDateRange = new DateTime(startTime);
+        this.endDateRange = new DateTime(endTime);
+        this.execStartTime = new DateTime(new Date());
+    	
         // Stop cassandra if its running and restoring all keyspaces
         if (config.getRestoreKeySpaces().size() == 0)
             cassProcess.stop();
@@ -144,6 +172,9 @@ public class Restore extends AbstractRestore
         if (metas.size() == 0)
         {
         	logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
+            execEndTime = new DateTime(new Date());
+            state = STATE.DONE;
+            
         	assert false : "[cass_backup] No snapshots found, Restore Failed.";
         	return;
         }
@@ -174,6 +205,9 @@ public class Restore extends AbstractRestore
         	Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.time, endTime); 
         	download(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());       	
         }
+        
+        execEndTime = new DateTime(new Date());
+        state = STATE.DONE;
     }
 
     public static TaskTimer getTimer()
@@ -198,5 +232,59 @@ public class Restore extends AbstractRestore
         boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
         return (isRestoreMode && isBackedupRac);
     }
+    
+    /*
+     * @returns the state of a restore, can be null if the restore never happened or if Priam was restarted (as 
+     * restore state is not durable).
+     */
+    public Task.STATE getRestoreState() {
+    	return this.state;
+    }
+    
+    /*
+     * @return the start date range used for the restore, null if there is no state information for the restore.
+     */
+    public String getStartDateRange() {
+    	if (this.startDateRange != null ) {
+        	return this.startDateRange.toString("yyyyMMddHHmm");	
+    	} else {
+    		return null;
+    	}
 
+    }
+    /*
+     * @return the end date range used for the restore, null if there is no state information for the restore.
+     */
+    public String getEndDateRange() {
+    	if (this.startDateRange != null ) {
+        	return this.endDateRange.toString("yyyyMMddHHmm");	
+    	} else {
+    		return null;
+    	}
+
+    }
+    
+    /*
+     * @return the start time of actual restore, null if there is no state information for the restore.
+     */
+    public String getExecStartTime() {
+    	if (this.execStartTime != null ) {
+        	return this.execStartTime.toString("yyyyMMddHHmm");	
+    	} else {
+    		return null;
+    	}
+
+    }
+    /*
+     * @return the end time of actual restore, null if there is no state information for the restore.
+     */
+    public String getExecEndTime() {
+    	if (this.execEndTime != null ) {
+        	return this.execEndTime.toString("yyyyMMddHHmm");	
+    	} else {
+    		return null;
+    	}
+
+    }
+    
 }

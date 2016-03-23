@@ -131,13 +131,18 @@ public class Restore extends AbstractRestore
         while (backupfiles.hasNext())
         {
             AbstractBackupPath path = backupfiles.next();
-            if (path.type == BackupFileType.META)
-                metas.add(path);
+            if (path.type == BackupFileType.META) {
+            	//Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
+            	if (path.getFileName().equalsIgnoreCase("meta.json")) {
+                    metas.add(path);            		
+            	}
+            	
+            }
         }
         
         if (metas.size() == 0)
         {
-        	logger.info("[cass_backup] No meta file found, Restore Failed.");
+        	logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
         	assert false : "[cass_backup] No snapshots found, Restore Failed.";
         	return;
         }
@@ -145,7 +150,7 @@ public class Restore extends AbstractRestore
 
         Collections.sort(metas);
         AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-        logger.info("Meta file for restore " + meta.getRemotePath());
+        logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
 
         // Download snapshot which is listed in the meta file.
         List<AbstractBackupPath> snapshots = metaData.get(meta);

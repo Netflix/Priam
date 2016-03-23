@@ -71,7 +71,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.config = config;
     }
 
-    public String formatDate(Date d)
+    public static String formatDate(Date d)
     {
         return new DateTime(d).toString(FMT);
     }

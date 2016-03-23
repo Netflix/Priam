@@ -22,6 +22,7 @@ import java.util.Map;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -90,7 +91,7 @@ public abstract class AbstractBackup extends Task
             }
             catch(Exception e)
             {
-                logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.", file), e);
+            	logger.error(String.format("Failed to upload local file %s within CF %s. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath()), e);
             }
         }
         return bps;

@@ -136,7 +136,7 @@ public class MetaData
         }.call();
     }
     
-    public static File createTmpMetaFile() throws IOException{
+    public File createTmpMetaFile() throws IOException{
         File metafile = File.createTempFile("meta", ".json");
         File destFile = new File(metafile.getParent(), "meta.json");
         if(destFile.exists())

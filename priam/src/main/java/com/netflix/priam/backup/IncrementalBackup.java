@@ -19,6 +19,8 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,12 +43,15 @@ public class IncrementalBackup extends AbstractBackup
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
+    private IncrementalMetaData metaData;
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
-    public IncrementalBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory)
+    public IncrementalBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory
+    		 , IncrementalMetaData metaData)
     {
         super(config, fs, pathFactory);
+        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded
     }
     
     @Override
@@ -68,9 +73,22 @@ public class IncrementalBackup extends AbstractBackup
             for (File columnFamilyDir : keyspaceDir.listFiles())
             {
                 File backupDir = new File(columnFamilyDir, "backups");
-                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir))
-                    continue;
-                upload(backupDir, BackupFileType.SST);
+				if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
+					logger.warn("Not a valid backup dir or keyspace/cf is part of the default filter.  SnapshotDir: " + backupDir.getAbsolutePath()
+            			+ ", keyspace dir: " + keyspaceDir.getName() + ", CF: " + columnFamilyDir.getName());
+					continue;
+				}
+				List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
+	            
+				if ( ! uploadedFiles.isEmpty() ) {
+					String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
+					String metaFileName = "meta_" + columnFamilyDir.getName() + "_" + incrementalUploadTime;
+					logger.info("Uploading meta file for incremental backup: " + metaFileName); 
+					this.metaData.setMetaFileName(metaFileName);
+					this.metaData.set(uploadedFiles, incrementalUploadTime);
+					logger.info("Uploaded meta file for incremental backup: " + metaFileName);                	
+				}
+				
             }
         }
      		

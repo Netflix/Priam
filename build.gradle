@@ -56,7 +56,7 @@ subprojects {
       compile 'com.google.apis:google-api-services-storage:v1-rev9-1.19.0'
       compile 'com.google.http-client:google-http-client-jackson2:1.19.0'
       provided 'javax.servlet:servlet-api:2.5'
-      testCompile 'com.googlecode.jmockit:jmockit:0.999.17'
+      testCompile 'org.jmockit:jmockit:1.19'
       testCompile 'junit:junit:4.8'
     }
 }

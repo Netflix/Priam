@@ -107,7 +107,6 @@ public class PriamInstance implements Serializable
 
     public String getToken()
     {
-    	logger.info("Returning token value \"" + token + "\" for this instance to caller.");
         return token;
     }
 

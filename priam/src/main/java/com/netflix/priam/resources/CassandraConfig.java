@@ -80,8 +80,12 @@ public class CassandraConfig
     {
         try
         {
-            if (StringUtils.isNotBlank(priamServer.getId().getInstance().getToken()))
-                return Response.ok(priamServer.getId().getInstance().getToken()).build();
+        	String token = priamServer.getId().getInstance().getToken();
+            if (StringUtils.isNotBlank(token)) {
+            	logger.info("Returning token value \"" + token + "\" for this instance to caller.");
+                return Response.ok(priamServer.getId().getInstance().getToken()).build();            	
+            }
+
             logger.error("Cannot find token for this instance.");
         }
         catch (Exception e)

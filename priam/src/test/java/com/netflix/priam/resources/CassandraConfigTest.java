@@ -15,13 +15,16 @@ import com.netflix.priam.identity.PriamInstance;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
+import mockit.integration.junit4.JMockit;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(JMockit.class)
 public class CassandraConfigTest
 {
     private @Mocked PriamServer priamServer;
@@ -35,12 +38,10 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getSeeds() throws Exception
+    public void getSeeds(@Mocked final InstanceIdentity identity) throws Exception
     {
         final List<String> seeds = ImmutableList.of("seed1", "seed2", "seed3");
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity; times = 1;
                 identity.getSeeds(); result = seeds; times = 1;
@@ -53,12 +54,10 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getSeeds_notFound() throws Exception
+    public void getSeeds_notFound(@Mocked final InstanceIdentity identity) throws Exception
     {
         final List<String> seeds = ImmutableList.of();
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity; times = 1;
                 identity.getSeeds(); result = seeds; times = 1;
@@ -70,11 +69,9 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getSeeds_handlesUnknownHostException() throws Exception
+    public void getSeeds_handlesUnknownHostException(@Mocked final InstanceIdentity identity) throws Exception
     {
         new Expectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity;
                 identity.getSeeds(); result = new UnknownHostException();
@@ -86,13 +83,10 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken()
+    public void getToken(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
     {
         final String token = "myToken";
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-            PriamInstance instance;
-
             {
                 priamServer.getId(); result = identity; times = 2;
                 identity.getInstance(); result = instance; times = 2;
@@ -106,13 +100,10 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken_notFound()
+    public void getToken_notFound(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
     {
         final String token = "";
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-            PriamInstance instance;
-
             {
                 priamServer.getId(); result = identity;
                 identity.getInstance(); result = instance;
@@ -125,12 +116,9 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken_handlesException()
+    public void getToken_handlesException(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
     {
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-            PriamInstance instance;
-
             {
                 priamServer.getId(); result = identity;
                 identity.getInstance(); result = instance;
@@ -143,11 +131,9 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void isReplaceToken()
+    public void isReplaceToken(@Mocked final InstanceIdentity identity)
     {
         new NonStrictExpectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity;
                 identity.isReplace(); result = true;
@@ -160,11 +146,9 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void isReplaceToken_handlesException()
+    public void isReplaceToken_handlesException(@Mocked final InstanceIdentity identity)
     {
         new Expectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity;
                 identity.isReplace(); result = new RuntimeException();
@@ -176,12 +160,10 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getReplacedAddress()
+    public void getReplacedAddress(@Mocked final InstanceIdentity identity)
     {
     	final String replacedIp = "127.0.0.1";
         new Expectations() {
-            InstanceIdentity identity;
-
             {
                 priamServer.getId(); result = identity;
                 identity.getReplacedIp(); result = replacedIp;

@@ -1,511 +1,392 @@
-/**
- * Copyright 2013 Netflix, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package com.netflix.priam.resources;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TokenManager;
+import mockit.Expectations;
+import mockit.Mocked;
+import mockit.NonStrictExpectations;
+import mockit.integration.junit4.JMockit;
+import mockit.internal.expectations.TestOnlyPhase;
+import org.joda.time.DateTime;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
-@Path("/v1/backup")
-@Produces(MediaType.APPLICATION_JSON)
-public class BackupServlet
+import javax.annotation.Nonnull;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.util.Date;
+import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+
+@RunWith(JMockit.class)
+public class BackupServletTest
 {
-    private static final Logger logger = LoggerFactory.getLogger(BackupServlet.class);
+    private @Mocked PriamServer priamServer;
+    private @Mocked IConfiguration config;
+    private @Mocked IBackupFileSystem bkpFs;
+    private @Mocked IBackupFileSystem bkpStatusFs;
+    private @Mocked Restore restoreObj;
+    private @Mocked Provider<AbstractBackupPath> pathProvider;
+    private @Mocked CassandraTuner tuner;
+    private @Mocked SnapshotBackup snapshotBackup;
+    private @Mocked IPriamInstanceFactory factory;
+    private @Mocked ICassandraProcess cassProcess;
+    private final ITokenManager tokenManager = new TokenManager();
+    private BackupServlet resource;
+    private RestoreServlet restoreResource;
 
-    private static final String REST_SUCCESS = "[\"ok\"]";
-    private static final String REST_HEADER_RANGE = "daterange";
-    private static final String REST_HEADER_FILTER = "filter";
-    private static final String REST_HEADER_TOKEN = "token";
-    private static final String REST_HEADER_REGION = "region";
-    private static final String REST_KEYSPACES = "keyspaces";
-    private static final String REST_RESTORE_PREFIX = "restoreprefix";
-    private static final String FMT = "yyyyMMddHHmm";
-	private static final String REST_LOCR_ROWKEY = "verifyrowkey";
-	private static final String REST_LOCR_KEYSPACE = "verifyks";
-	private static final String REST_LOCR_COLUMNFAMILY = "verifycf";
-	private static final String REST_LOCR_FILEEXTENSION = "verifyfileextension";
-	private static final String SSTABLE2JSON_DIR_LOCATION = "/tmp/priam_sstables";
-	private static final String SSTABLE2JSON_COMMAND_FROM_CASSHOME = "/bin/sstable2json";
-
-    private PriamServer priamServer;
-    private IConfiguration config;
-    private IBackupFileSystem backupFs;
-    private IBackupFileSystem bkpStatusFs;
-    private Restore restoreObj;
-    private Provider<AbstractBackupPath> pathProvider;
-    private CassandraTuner tuner;
-    private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory factory;
-    private final ITokenManager tokenManager;
-    private final ICassandraProcess cassProcess;
-    @Inject
-    private PriamScheduler scheduler;
-    @Inject
-    private MetaData metaData;
-
-    @Inject
-
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
-
+    @Before
+    public void setUp()
     {
-        this.priamServer = priamServer;
-        this.config = config;
-        this.backupFs = backupFs;
-        this.bkpStatusFs = bkpStatusFs;
-        this.restoreObj = restoreObj;
-        this.pathProvider = pathProvider;
-        this.tuner = tuner;
-        this.snapshotBackup = snapshotBackup;
-        this.factory = factory;
-        this.tokenManager = tokenManager;
-        this.cassProcess = cassProcess;
-    }
-
-    @GET
-    @Path("/do_snapshot")
-    public Response backup() throws Exception
-    {
-        snapshotBackup.execute();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/incremental_backup")
-    public Response backupIncrementals() throws Exception
-    {
-        scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/restore")
-    public Response restore(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token,
-            @QueryParam(REST_KEYSPACES) String keyspaces, @QueryParam(REST_RESTORE_PREFIX) String restorePrefix) throws Exception
-    {
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default"))
-        {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        }
-        else
-        {
-            String[] restore = daterange.split(",");
-            AbstractBackupPath path = pathProvider.get();
-            startTime = path.parseDate(restore[0]);
-            endTime = path.parseDate(restore[1]);
-        }
+        resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
+            tuner, snapshotBackup, factory, tokenManager, cassProcess);
         
-        String origRestorePrefix = config.getRestorePrefix();
-        if (StringUtils.isNotBlank(restorePrefix))
-        {
-            config.setRestorePrefix(restorePrefix);
-        }
-        
-        logger.info("Parameters: { token: [" + token + "], region: [" +  region + "], startTime: [" + startTime + "], endTime: [" + endTime + 
-                    "], keyspaces: [" + keyspaces + "], restorePrefix: [" + restorePrefix + "]}");
-        
-        restore(token, region, startTime, endTime, keyspaces);
-        
-        //Since this call is probably never called in parallel, config is multi-thread safe to be edited
-        if (origRestorePrefix != null)
-                config.setRestorePrefix(origRestorePrefix);       
-        else    config.setRestorePrefix(""); 
-
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-    
-
-
-    @GET
-    @Path("/list")
-    public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception
-    {
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default"))
-        {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        }
-        else
-        {
-            String[] restore = daterange.split(",");
-            AbstractBackupPath path = pathProvider.get();
-            startTime = path.parseDate(restore[0]);
-            endTime = path.parseDate(restore[1]);
-        }
-        
-        logger.info("Parameters: {backupPrefix: [" + config.getBackupPrefix() + "], daterange: [" + daterange + "], filter: [" + filter + "]}");
-        
-        Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
-        JSONObject object = new JSONObject();
-        object = constructJsonResponse(object,it,filter);
-        return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
+        restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
+        		, tokenManager);
     }
 
-    @GET
-    @Path("/status")
-    public Response status() throws Exception
+    @Test
+    public void backup() throws Exception
     {
-        int restoreTCount = restoreObj.getActiveCount();
-        logger.debug("Thread counts for backup is: %d", restoreTCount);
-        int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for restore is: %d", backupTCount);
-        JSONObject object = new JSONObject();
-        object.put("Restore", new Integer(restoreTCount));
-        object.put("Status", restoreObj.state().toString());
-        object.put("Backup", new Integer(backupTCount));
-        object.put("Status", snapshotBackup.state().toString());
-        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+        new Expectations() {{
+            snapshotBackup.execute();
+        }};
+
+        Response response = resource.backup();
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
-    /**
-     * <p>
-     * Life_Of_C*Row : With this REST call, mutations/existence of a rowkey can be found.
-     * It uses SSTable2Json utility which will convert SSTables on disk to JSON format and 
-     * Search for the desired rowkey.
-     * 
-     * Steps include:
-     * 1. Restoring data for given data range and other params
-     * 2. Searching provided rowkey in SSTables and writing search result to JSON
-     * 3. Delete all the files under Keyspace Directory.
-     *    Deletion is done for efficient space usage, so that same node can be reused for
-     *    subsequent runs. 
-     * <p>
-     * 
-     * @param Similar to Restore call and few additional params.
-     *        
-     *      daterange 		: Can not be Null or Default. Comma separated Start & End date eg. 201311250000,201311260000
-     *      rowkey    		: rowkey to search (In Hex format)
-     *      ks        		: keyspace of mentioned rowkey
-     *      cf        		: column family of mentioned rowkey
-     *      fileExtension 	: Part of SSTable Data file names 
-     *      					  eg. if file name = KS1-CF1-hf-100-Data.db
-     *      						  then fileExtension = KS1-CF1-hf
-     * 
-     * @return Creates JSON file based on the passed date at hardcoded dir location : /tmp/priam_sstables
-     * 		   If rowkey is not found in the SSTable, JSON file will be empty.
-     */
-	@GET
-	@Path("/life_of_crow")
-	public Response restore_verify_key(
-			@QueryParam(REST_HEADER_RANGE) String daterange,
-			@QueryParam(REST_HEADER_REGION) String region,
-			@QueryParam(REST_HEADER_TOKEN) String token,
-			@QueryParam(REST_KEYSPACES) String keyspaces,
-			@QueryParam(REST_RESTORE_PREFIX) String restorePrefix,
-			@QueryParam(REST_LOCR_ROWKEY) String rowkey,
-			@QueryParam(REST_LOCR_KEYSPACE) String ks,
-			@QueryParam(REST_LOCR_COLUMNFAMILY) String cf,
-			@QueryParam(REST_LOCR_FILEEXTENSION) String fileExtension) throws Exception {
-
-		Date startTime;
-		Date endTime;
-		//Creating Dir for Json storage
-		SystemUtils.createDirs(SSTABLE2JSON_DIR_LOCATION);
-		String JSON_FILE_PATH = "";
-
-		try
-		{
-		
-		if (StringUtils.isBlank(daterange)
-				|| daterange.equalsIgnoreCase("default")) {
-			return Response.ok("\n[\"daterange can't be blank or default.eg.201311250000,201311260000\"]\n", MediaType.APPLICATION_JSON)
-					.build();
-		}
-		
-		String[] restore = daterange.split(",");
-		AbstractBackupPath path = pathProvider.get();
-		startTime = path.parseDate(restore[0]);
-		endTime = path.parseDate(restore[1]);		
-
-		String origRestorePrefix = config.getRestorePrefix();
-		if (StringUtils.isNotBlank(restorePrefix)) {
-			config.setRestorePrefix(restorePrefix);
-		}
-
-		
-		restore(token, region, startTime, endTime, keyspaces);
-
-		// Since this call is probably never called in parallel, config is
-		// multi-thread safe to be edited
-		config.setRestorePrefix(origRestorePrefix);
-
-		while (!CassandraMonitor.isCassadraStarted())
-			Thread.sleep(1000l);
-
-		// initialize json file name
-		JSON_FILE_PATH = daterange.split(",")[0].substring(0, 8)+".json";
-
-		//Convert SSTable2Json and search for given rowkey
-		checkSSTablesForKey(rowkey,ks,cf,fileExtension,JSON_FILE_PATH);
-
-		}
-		catch(Exception e)
-		{
-			logger.info(ExceptionUtils.getFullStackTrace(e));
-		}
-		finally{
-			removeAllDataFiles(ks);
-		}
-		
-		return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON)
-				.build();
-	}
-
-    /**
-     * Restore with the specified start and end time.
-     * 
-     * @param token
-     *            Overrides the current token with this one, if specified
-     * @param region
-     *            Override the region for searching backup
-     * @param startTime
-     *            Start time
-     * @param endTime
-     *            End time upto which the restore should fetch data
-     * @param keyspaces
-     *            Comma seperated list of keyspaces to restore
-     * @throws Exception
-     */
-    private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception
+    @Test
+    public void restore_minimal(@Mocked final InstanceIdentity identity,
+	 @Mocked final PriamInstance instance) throws Exception
     {
-        String origRegion = config.getDC();
-        String origToken = priamServer.getId().getInstance().getToken();
-        if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+        final String dateRange = null;
+        final String newRegion = null;
+        final String newToken = null;
+        final String keyspaces = null;
 
-        if( config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
-        
-        if (StringUtils.isNotBlank(region))
-        {
-            config.setDC(region);
-            logger.info("Restoring from region " + region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
-        }
+        final String oldRegion = "us-east-1";
+        final String oldToken = "1234";
 
-        setRestoreKeyspaces(keyspaces);
+        new NonStrictExpectations() {
+            {
+              priamServer.getId(); result = identity; times = 2;
+            }
+        };	
 
-        try
-        {
-            restoreObj.restore(startTime, endTime);
-        }
-        finally
-        {
-            config.setDC(origRegion);
-            priamServer.getId().getInstance().setToken(origToken);
-        }
-        tuner.updateAutoBootstrap(config.getYamlLocation(), false);
-        cassProcess.start(true);
+        new Expectations() {
+  
+            {
+                config.getDC(); result = oldRegion;
+                identity.getInstance(); result = instance; times = 2;
+                instance.getToken(); result = oldToken;
+
+                config.isRestoreClosestToken(); result = false;
+  
+                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+  
+                config.setDC(oldRegion);
+                instance.setToken(oldToken);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
+            }
+        };
+
+        expectCassandraStartup();
+
+        Response response = restoreResource.restore(dateRange, newRegion, newToken, keyspaces, null);
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
-    /**
-     * Find closest token in the specified region
-     */
-    private String closestToken(String token, String region)
+    @Test
+    public void restore_withDateRange(@Mocked final InstanceIdentity identity,
+	@Mocked final PriamInstance instance, @Mocked final AbstractBackupPath backupPath) throws Exception
     {
-        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
-        List<BigInteger> tokenList = Lists.newArrayList();
-        for (PriamInstance ins : plist)
-        {
-            if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getToken()));
-        }
-        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
+        final String dateRange = "201101010000,20111231259";
+        final String newRegion = null;
+        final String newToken = null;
+        final String keyspaces = null;
+
+        final String oldRegion = "us-east-1";
+        final String oldToken = "1234";
+
+        new NonStrictExpectations() {
+            {
+              priamServer.getId(); result = identity; times = 2;
+            }
+        };
+        new Expectations() {
+  
+            {
+                pathProvider.get(); result = backupPath;
+                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
+
+                config.getDC(); result = oldRegion;
+                identity.getInstance(); result = instance; times = 2;
+                instance.getToken(); result = oldToken;
+
+                config.isRestoreClosestToken(); result = false;
+
+                restoreObj.restore(
+                    new DateTime(2011, 01, 01, 00, 00).toDate(),
+                    new DateTime(2011, 12, 31, 23, 59).toDate());
+  
+                config.setDC(oldRegion);
+                instance.setToken(oldToken);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
+            }
+        };
+
+        expectCassandraStartup();
+
+        Response response = restoreResource.restore(dateRange, newRegion, newToken, keyspaces, null);
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
 
-    /*
-     * TODO: decouple the servlet, config, and restorer. this should not rely on a side
-     *       effect of a list mutation on the config object (treating it as global var).
-     */
-    private void setRestoreKeyspaces(String keyspaces)
+//    @Test
+//    public void restore_withRegion() throws Exception
+//    {
+//        final String dateRange = null;
+//        final String newRegion = "us-west-1";
+//        final String newToken = null;
+//        final String keyspaces = null;
+//
+//        final String oldRegion = "us-east-1";
+//        final String oldToken = "1234";
+//        final String appName = "myApp";
+//
+//        new Expectations() {
+//            @NonStrict InstanceIdentity identity;
+//            PriamInstance instance;
+//            @NonStrict PriamInstance instance1, instance2, instance3;
+//  
+//            {
+//                config.getDC(); result = oldRegion;
+//                priamServer.getId(); result = identity; times = 3;
+//                identity.getInstance(); result = instance; times = 3;
+//                instance.getToken(); result = oldToken;
+//
+//                config.isRestoreClosestToken(); result = false;
+//                
+//                config.setDC(newRegion);
+//                instance.getToken(); result = oldToken;
+//                config.getAppName(); result = appName;
+//                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
+//                instance.getDC();  result = oldRegion;
+//                instance.getToken(); result = oldToken;
+//                instance1.getDC(); result = oldRegion;
+//                instance2.getDC(); result = oldRegion;
+//                instance3.getDC(); result = oldRegion;
+//                instance1.getToken(); result = "1234";
+//                instance2.getToken(); result = "5678";
+//                instance3.getToken(); result = "9000";
+//                instance.setToken((String) any); // TODO: test mocked closest token
+//
+//                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+//  
+//                config.setDC(oldRegion);
+//                instance.setToken(oldToken);
+//                tuneCassandra.writeAllProperties(false);
+//            }
+//        };
+//
+//        expectCassandraStartup();
+//
+//        Response response = resource.restore(dateRange, newRegion, newToken, keyspaces);
+//        assertEquals(200, response.getStatus());
+//        assertEquals("[\"ok\"]", response.getEntity());
+//        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
+//    }
+
+    @Test
+    public void restore_withToken(@Mocked final InstanceIdentity identity,
+	@Mocked final PriamInstance instance) throws Exception
     {
-        if (StringUtils.isNotBlank(keyspaces))
-        {
-                 List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
-                 config.setRestoreKeySpaces(newKeyspaces);
-        }
+        final String dateRange = null;
+        final String newRegion = null;
+        final String newToken = "myNewToken";
+        final String keyspaces = null;
+
+        final String oldRegion = "us-east-1";
+        final String oldToken = "1234";
+
+        new NonStrictExpectations() {
+            {
+              priamServer.getId(); result = identity; times = 3;
+            }
+        };
+        new Expectations() {
+  
+            {
+                config.getDC(); result = oldRegion;
+                identity.getInstance(); result = instance; times = 3;
+                instance.getToken(); result = oldToken;
+                instance.setToken(newToken);
+
+                config.isRestoreClosestToken(); result = false;
+
+                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+  
+                config.setDC(oldRegion);
+                instance.setToken(oldToken);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
+            }
+        };
+
+        expectCassandraStartup();
+
+        Response response = restoreResource.restore(dateRange, newRegion, newToken, keyspaces, null);
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
     }
-    
-    private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
+
+    @Test
+    public void restore_withKeyspaces(@Mocked final InstanceIdentity identity,
+	@Mocked final PriamInstance instance) throws Exception
     {
-		int fileCnt = 0;
-		filter = filter.contains("?") ? filter.substring(0, filter.indexOf("?")) : filter;
+        final String dateRange = null;
+        final String newRegion = null;
+        final String newToken = null;
+        final String keyspaces = "keyspace1,keyspace2";
 
-		try {
-			JSONArray jArray = new JSONArray();
-			while (it.hasNext()) {
-				AbstractBackupPath p = it.next();
-				if (!filter.isEmpty() && BackupFileType.valueOf(filter) != p.getType())
-					continue;
-                                JSONObject backupJSON = new JSONObject();
-				backupJSON.put("bucket", config.getBackupPrefix());
-				backupJSON.put("filename", p.getRemotePath());
-				backupJSON.put("app", p.getClusterName());
-				backupJSON.put("region", p.getRegion());
-				backupJSON.put("token", p.getToken());
-				backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
-				backupJSON.put("instance_id", p.getInstanceIdentity()
-						.getInstance().getInstanceId());
-				backupJSON.put("uploaded_ts",
-						new DateTime(p.getUploadedTs()).toString(FMT));
-				if ("meta".equalsIgnoreCase(filter)) {
-					List<AbstractBackupPath> allFiles = metaData.get(p);
-					long totalSize = 0;
-					for (AbstractBackupPath abp : allFiles)
-						totalSize = totalSize + abp.getSize();
-					backupJSON.put("num_files", Long.toString(allFiles.size()));
-					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
-					// Add Later
-				}
-				fileCnt++;
-				jArray.put(backupJSON);
-			}
-			object.put("files", jArray);
-			object.put("num_files", fileCnt);
-		} catch (JSONException jse) {
-			logger.info("Caught JSON Exception --> "+jse.getMessage());
-		}
-		return object;
-	}
+        final String oldRegion = "us-east-1";
+        final String oldToken = "1234";
 
-    /**
-     * Convert SSTable2Json and search for given key
-     */
-    public void checkSSTablesForKey(String rowkey,String keyspace, String cf, String fileExtension, String jsonFilePath) throws Exception {
-		try {
-			logger.info("Starting SSTable2Json conversion ...");
-			//Setting timeout to 10 Mins
-			long TIMEOUT_PERIOD = 10l;
-			String unixCmd = formulateCommandToRun( rowkey, keyspace,  cf,  fileExtension, jsonFilePath);
-			
-			String[] cmd = {"/bin/sh", "-c", unixCmd.toString()};
-			final Process p = Runtime
-					.getRuntime()
-					.exec(cmd);
-			
-			Callable<Integer> callable = new Callable<Integer>()
-			{
-				@Override
-				public Integer call() throws Exception {
-					int returnCode = p.waitFor();
-					return returnCode;
-				}				
-			};
-			
-			ExecutorService exeService = Executors.newSingleThreadExecutor();
-			try{
-				Future<Integer> future = exeService.submit(callable);
-				int returnVal = future.get(TIMEOUT_PERIOD, TimeUnit.MINUTES);
-				if (returnVal == 0)
-					logger.info("Finished SSTable2Json conversion and search.");
-				else
-					logger.error("Error occurred during SSTable2Json conversion and search.");
-			}catch(TimeoutException e){
-				logger.error(ExceptionUtils.getFullStackTrace(e));
-				throw e;
-			}
-			finally{
-				p.destroy();
-				exeService.shutdown();
-			}
-			
-		} catch (IOException e) {
-			logger.error(ExceptionUtils.getFullStackTrace(e));
-		}		
-	}
-	
-	public String formulateCommandToRun(String rowkey,String keyspace, String cf, String fileExtension, String jsonFilePath)
-	{
-		StringBuffer sbuff = new StringBuffer();
+       new NonStrictExpectations() {
+            {
+              config.getDC(); result = oldRegion;
+              config.isRestoreClosestToken(); result = false;
 
-		sbuff.append("for i in $(ls "+config.getDataFileLocation()+File.separator+keyspace+File.separator+cf+File.separator+fileExtension+"-*-Data.db); do "+config.getCassHome()+SSTABLE2JSON_COMMAND_FROM_CASSHOME+" $i -k ");
-		sbuff.append(rowkey);
-		sbuff.append("  | grep ");
-		sbuff.append(rowkey);
-		sbuff.append(" >> ");
-		sbuff.append(SSTABLE2JSON_DIR_LOCATION+File.separator+jsonFilePath);
-		sbuff.append(" ; done");
-		
-		logger.info("SSTable2JSON location <"+SSTABLE2JSON_DIR_LOCATION+File.separator+jsonFilePath+">");
-		logger.info("Running Command = "+sbuff.toString());
-		return sbuff.toString();
-	}
-	
-	public void removeAllDataFiles(String ks) throws Exception
-	{		
-		String cleanupDirPath = config.getDataFileLocation()+File.separator+ks;
-		logger.info("Starting to clean all the files inside <"+cleanupDirPath+">");
-		SystemUtils.cleanupDir(cleanupDirPath, null);
-		logger.info("*** Done cleaning all the files inside <"+cleanupDirPath+">");
-	}
+              List<String> restoreKeyspaces = Lists.newArrayList();
+              restoreKeyspaces.clear();
+              restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
 
+              config.getRestoreKeySpaces(); result = restoreKeyspaces;
+              config.setDC(oldRegion);
+              priamServer.getId(); result = identity; times = 2;
+            }
+        };
+        new Expectations() {
+  
+            {
+                identity.getInstance(); result = instance; times = 2;
+                instance.getToken(); result = oldToken;
+
+                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+  
+                instance.setToken(oldToken);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
+            }
+        };
+
+        expectCassandraStartup();
+
+        Response response = restoreResource.restore(dateRange, newRegion, newToken, keyspaces, null);
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
+    }
+
+    // TODO: this should also set/test newRegion and keyspaces
+    @Test
+    public void restore_maximal(@Mocked final InstanceIdentity identity,
+        @Mocked final PriamInstance instance, @Mocked final PriamInstance instance1,
+        @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3,
+        @Mocked final AbstractBackupPath backupPath) throws Exception
+    {
+        final String dateRange = "201101010000,20111231259";
+        final String newRegion = null;
+        final String newToken = "5678";
+        final String keyspaces = null;
+
+        final String oldRegion = "us-east-1";
+        final String oldToken = "1234";
+        final String appName = "myApp";
+
+        new NonStrictExpectations() {
+          {
+            config.getDC(); result = oldRegion; times = 2;
+            priamServer.getId(); result = identity; times = 5;
+            config.isRestoreClosestToken(); result = true;
+            config.getAppName(); result = appName;
+            config.setDC(oldRegion);
+          }
+        };
+        new Expectations() {
+
+            {
+                pathProvider.get(); result = backupPath;
+                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
+
+                identity.getInstance(); result = instance; times = 5;
+                instance.getToken(); result = oldToken;
+                instance.setToken(newToken);
+
+                instance.getToken(); result = oldToken;
+                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
+                instance.getDC();  result = oldRegion;
+                instance.getToken(); result = oldToken;
+                instance1.getDC(); result = oldRegion;
+                instance2.getDC(); result = oldRegion;
+                instance3.getDC(); result = oldRegion;
+                instance1.getToken(); result = "1234";
+                instance2.getToken(); result = "5678";
+                instance3.getToken(); result = "9000";
+                instance.setToken((String) any); // TODO: test mocked closest token
+
+                restoreObj.restore(
+                    new DateTime(2011, 01, 01, 00, 00).toDate(),
+                    new DateTime(2011, 12, 31, 23, 59).toDate());
+  
+                instance.setToken(oldToken);
+                tuner.updateAutoBootstrap(config.getYamlLocation(), false);
+            }
+        };
+
+        expectCassandraStartup();
+
+        Response response = restoreResource.restore(dateRange, newRegion, newToken, keyspaces, null);
+        assertEquals(200, response.getStatus());
+        assertEquals("[\"ok\"]", response.getEntity());
+        assertEquals(MediaType.APPLICATION_JSON_TYPE, response.getMetadata().get("Content-Type").get(0));
+    }
+
+    // TODO: create CassandraController interface and inject, instead of static util method
+    private Expectations expectCassandraStartup() {
+        return new NonStrictExpectations() {{
+            config.getCassStartupScript(); result = "/usr/bin/false";
+            config.getHeapNewSize(); result = "2G";
+            config.getHeapSize(); result = "8G";
+            config.getDataFileLocation(); result = "/var/lib/cassandra/data";
+            config.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
+            config.getBackupLocation(); result = "backup";
+            config.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
+            config.getJmxPort(); result = 7199;
+            config.getMaxDirectMemory(); result = "50G";
+        }};
+    }
 }

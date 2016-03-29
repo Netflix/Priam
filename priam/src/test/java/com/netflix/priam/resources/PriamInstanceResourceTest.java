@@ -12,13 +12,16 @@ import com.netflix.priam.identity.PriamInstance;
 
 import mockit.Expectations;
 import mockit.Mocked;
+import mockit.integration.junit4.JMockit;
 
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+@RunWith(JMockit.class)
 public class PriamInstanceResourceTest
 {
     private static final String APP_NAME = "myApp";
@@ -35,10 +38,9 @@ public class PriamInstanceResourceTest
     }
 
     @Test
-    public void getInstances()
+    public void getInstances(@Mocked final PriamInstance instance1, @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3)
     {
         new Expectations() {
-            PriamInstance instance1, instance2, instance3;
             List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
 
             {
@@ -54,12 +56,10 @@ public class PriamInstanceResourceTest
     }
 
     @Test
-    public void getInstance()
+    public void getInstance(@Mocked final PriamInstance instance)
     {
         final String expected = "plain text describing the instance";
         new Expectations() {
-            PriamInstance instance;
-
             {
                 config.getAppName(); result = APP_NAME;
                 factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = instance;
@@ -90,7 +90,7 @@ public class PriamInstanceResourceTest
     }
 
     @Test
-    public void createInstance()
+    public void createInstance(@Mocked final PriamInstance instance)
     {
         final String instanceID = "i-abc123";
         final String hostname = "dom.com";
@@ -99,8 +99,6 @@ public class PriamInstanceResourceTest
         final String token = "1234567890";
 
         new Expectations() {
-          PriamInstance instance;
-
           {
               config.getAppName(); result = APP_NAME;
               factory.create(APP_NAME, NODE_ID, instanceID, hostname, ip, rack, null, token); result = instance;
@@ -114,11 +112,9 @@ public class PriamInstanceResourceTest
     }
 
     @Test
-    public void deleteInstance()
+    public void deleteInstance(@Mocked final PriamInstance instance)
     {
         new Expectations() {
-          PriamInstance instance;
-
           {
               config.getAppName(); result = APP_NAME;
               factory.getInstance(APP_NAME, config.getDC(), NODE_ID); result = instance;

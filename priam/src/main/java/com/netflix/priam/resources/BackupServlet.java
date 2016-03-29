@@ -139,48 +139,7 @@ public class BackupServlet
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 
-    @GET
-    @Path("/restore")
-    public Response restore(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token,
-            @QueryParam(REST_KEYSPACES) String keyspaces, @QueryParam(REST_RESTORE_PREFIX) String restorePrefix) throws Exception
-    {
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default"))
-        {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        }
-        else
-        {
-            String[] restore = daterange.split(",");
-            AbstractBackupPath path = pathProvider.get();
-            startTime = path.parseDate(restore[0]);
-            endTime = path.parseDate(restore[1]);
-        }
-        
-        String origRestorePrefix = config.getRestorePrefix();
-        if (StringUtils.isNotBlank(restorePrefix))
-        {
-            config.setRestorePrefix(restorePrefix);
-        }
-        
-        logger.info("Parameters: { token: [" + token + "], region: [" +  region + "], startTime: [" + startTime + "], endTime: [" + endTime + 
-                    "], keyspaces: [" + keyspaces + "], restorePrefix: [" + restorePrefix + "]}");
-        
-        restore(token, region, startTime, endTime, keyspaces);
-        
-        //Since this call is probably never called in parallel, config is multi-thread safe to be edited
-        if (origRestorePrefix != null)
-                config.setRestorePrefix(origRestorePrefix);       
-        else    config.setRestorePrefix(""); 
-
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-    
-
-
+   
     @GET
     @Path("/list")
     public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception
@@ -209,19 +168,20 @@ public class BackupServlet
         return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
     }
 
+    
     @GET
     @Path("/status")
     public Response status() throws Exception
     {
-        int restoreTCount = restoreObj.getActiveCount();
-        logger.debug("Thread counts for backup is: %d", restoreTCount);
+        int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
+        logger.debug("Thread counts for restore is: %d", restoreTCount);
         int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for restore is: %d", backupTCount);
+        logger.debug("Thread counts for snapshot backup is: %d", backupTCount);
         JSONObject object = new JSONObject();
-        object.put("Restore", new Integer(restoreTCount));
-        object.put("Status", restoreObj.state().toString());
-        object.put("Backup", new Integer(backupTCount));
-        object.put("Status", snapshotBackup.state().toString());
+        object.put("Restore", new Integer(restoreTCount)); //Number of active threads performing the restore
+        object.put("status", restoreObj.state().toString()); //state of the restore [ERROR|RUNNING|DONE]
+        object.put("Backup", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
+        object.put("Snapshotstatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 

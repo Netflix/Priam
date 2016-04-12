@@ -59,6 +59,7 @@ public class Restorer
         } finally
         {
             Application.shutdownAdditionalThreads();
+            Application.getInjector().getInstance(Restore.class).shutdown();
         }
     }
 }

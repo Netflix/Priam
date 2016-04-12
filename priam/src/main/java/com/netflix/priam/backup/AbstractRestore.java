@@ -127,13 +127,11 @@ public abstract class AbstractRestore extends Task
         if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
             return;
         count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>()
-        {
+        executor.submit(new RetryableCallable<Integer>() {
             @Override
-            public Integer retriableCall() throws Exception
-            {
+            public Integer retriableCall() throws Exception {
                 logger.info("Downloading file: " + path + " to: " + restoreLocation);
-                fs.download(path, new FileOutputStream(restoreLocation),restoreLocation.getAbsolutePath());
+                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
                 return count.decrementAndGet();
@@ -165,5 +163,11 @@ public abstract class AbstractRestore extends Task
     protected void setFileCount(int cnt)
     {
     		count.set(cnt);
+    }
+
+    public void shutdown() {
+        if (executor != null) {
+            executor.shutdown();
+        }
     }
 }

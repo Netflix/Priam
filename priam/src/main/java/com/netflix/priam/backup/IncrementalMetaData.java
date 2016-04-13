@@ -15,8 +15,8 @@ public class IncrementalMetaData extends MetaData {
 	private String metaFileName = null; //format meta_cf_time (e.g. 
 
 	@Inject
-	public IncrementalMetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs) {
-		super(pathFactory, fs);
+	public IncrementalMetaData(IConfiguration config, Provider<AbstractBackupPath> pathFactory,@Named("backup")IFileSystemContext backupFileSystemCtx) {
+		super(pathFactory, backupFileSystemCtx, config);
 	}
 	
 	public void setMetaFileName(String name) {
@@ -39,16 +39,8 @@ public class IncrementalMetaData extends MetaData {
 		
         if(destFile.exists())
             destFile.delete();
-        
-        try {
-			
-        	FileUtils.moveFile(metafile, destFile);
-			
-		} finally {
-			if (metafile != null && metafile.exists()) { //clean up resource
-				FileUtils.deleteQuietly(metafile);
-			}
-		}
+        FileUtils.moveFile(metafile, destFile);
         return destFile;
+
     }
 }

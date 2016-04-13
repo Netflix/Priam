@@ -43,16 +43,24 @@ public abstract class AbstractBackup extends Task
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo")); 
     protected final Provider<AbstractBackupPath> pathFactory;
-    protected final IBackupFileSystem fs;
+    protected IBackupFileSystem fs;
 
     @Inject
-    public AbstractBackup(IConfiguration config,IBackupFileSystem fs,Provider<AbstractBackupPath> pathFactory)
+    public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx
+    		,Provider<AbstractBackupPath> pathFactory)
     {
         super(config);
         this.pathFactory = pathFactory;
-        this.fs = fs;
+        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
-   
+
+    /*
+     * A means to override the type of backup strategy chosen via BackupFileSystemContext
+     */
+    protected void setFileSystem(IBackupFileSystem fs) {
+    	this.fs = fs;
+    } 
+    
     /**
      * Upload files in the specified dir. Does not delete the file in case of
      * error

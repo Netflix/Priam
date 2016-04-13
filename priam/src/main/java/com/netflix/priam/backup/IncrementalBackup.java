@@ -47,10 +47,10 @@ public class IncrementalBackup extends AbstractBackup
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
-    public IncrementalBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory
-    		 , IncrementalMetaData metaData)
+    public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
+    		, IncrementalMetaData metaData)
     {
-        super(config, fs, pathFactory);
+    	super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded
     }
     

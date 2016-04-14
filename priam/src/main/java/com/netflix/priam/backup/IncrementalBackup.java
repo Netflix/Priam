@@ -137,8 +137,6 @@ public class IncrementalBackup extends AbstractBackup
         	
 				File backupDir = new File(columnFamilyDir, "backups");
 				if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
-					logger.warn("Not a valid backup dir or keyspace/cf is part of the default filter.  SnapshotDir: " + backupDir.getAbsolutePath()
-            			+ ", keyspace dir: " + keyspaceDir.getName() + ", CF: " + columnFamilyDir.getName());
 					continue;
 				}
             

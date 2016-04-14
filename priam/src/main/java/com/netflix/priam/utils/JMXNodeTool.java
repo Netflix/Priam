@@ -120,6 +120,23 @@ public class JMXNodeTool extends NodeProbe
         return true;
     }
 
+    /*
+     * A means to clean up existing and recreate the JMX connection to the Cassandra process.
+     * @return the new connection.
+     */
+    public static synchronized JMXNodeTool createNewConnection(final IConfiguration config) throws JMXConnectionException {
+    	if (tool != null) { //Ensure we properly close any existing (even if it's corrupted) connection to the remote jmx agent
+        	try {
+				tool.close();
+			} catch (IOException e) {
+				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+			}
+    	}
+        
+        tool = createConnection(config);
+        return tool;
+    }    
+    
     public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
     {
     	//lets make sure some other monitor didn't sneak in the recreated the connection already
@@ -138,6 +155,10 @@ public class JMXNodeTool extends NodeProbe
 			return tool;
 		}
     	
+		return createConnection(config);
+    }
+    
+    private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
     	JMXNodeTool jmxNodeTool = null;
 		// If Cassandra is started then only start the monitoring
 		if (!CassandraMonitor.isCassadraStarted()) {
@@ -173,7 +194,7 @@ public class JMXNodeTool extends NodeProbe
 		}
 		
 		logger.info("Connected to remote jmx agent!");
-		return jmxNodeTool;
+		return jmxNodeTool;    	
     }
 
     /**

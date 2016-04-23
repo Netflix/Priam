@@ -276,6 +276,11 @@ public interface IConfiguration
     public String getACLGroupName();
 
     /**
+     * Get the VPC ID of the current instance.
+     */
+    public String getVpcId();
+
+    /**
      * @return true if incremental backups are enabled
      */
     boolean isIncrBackup();

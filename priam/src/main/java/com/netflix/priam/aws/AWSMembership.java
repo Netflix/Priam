@@ -228,7 +228,11 @@ public class AWSMembership implements IMembership
             DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups())
+            {
+                logger.debug(String.format("got group-id:%s for group-name:%s,vpc-id:%s", group.getGroupId(), config.getACLGroupName(), config.getVpcId()));
                 return group.getGroupId();
+            }
+            logger.error(String.format("unable to get group-id for group-name=%s vpc-id=%s", config.getACLGroupName(), config.getVpcId()));
             return "";
         }
         finally

@@ -24,10 +24,12 @@ import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
@@ -51,11 +53,13 @@ import com.netflix.priam.IConfiguration;
  * Class to get data out of Cassandra JMX
  */
 @Singleton
-public class JMXNodeTool extends NodeProbe
+public class JMXNodeTool extends NodeProbe implements INodeToolObservable
 {
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
+    
+    private static Set<INodeToolObserver> observers = new HashSet<INodeToolObserver>();
 
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -125,16 +129,7 @@ public class JMXNodeTool extends NodeProbe
      * @return the new connection.
      */
     public static synchronized JMXNodeTool createNewConnection(final IConfiguration config) throws JMXConnectionException {
-    	if (tool != null) { //Ensure we properly close any existing (even if it's corrupted) connection to the remote jmx agent
-        	try {
-				tool.close();
-			} catch (IOException e) {
-				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
-			}
-    	}
-        
-        tool = createConnection(config);
-        return tool;
+    	return createConnection(config);
     }    
     
     public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
@@ -165,7 +160,15 @@ public class JMXNodeTool extends NodeProbe
 			String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);
-		}        		
+		}
+		
+    	if (tool != null) { //lets make sure we properly close any existing (even if it's corrupted) connection to the remote jmx agent 
+        	try {
+				tool.close();
+			} catch (IOException e) {
+				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+			}        		
+    	}
     		
 		try {
 			
@@ -193,7 +196,13 @@ public class JMXNodeTool extends NodeProbe
 			throw new JMXConnectionException(e.getMessage());
 		}
 		
-		logger.info("Connected to remote jmx agent!");
+		logger.info("Connected to remote jmx agent, will notify interested parties!");
+		Iterator<INodeToolObserver> it = observers.iterator();
+		while (it.hasNext()) {
+			INodeToolObserver observer = it.next();
+			observer.nodeToolHasChanged(jmxNodeTool);
+		}
+		
 		return jmxNodeTool;    	
     }
 
@@ -376,5 +385,28 @@ public class JMXNodeTool extends NodeProbe
             tool = null;
             super.close();
         }
+    }
+    
+	/*
+	 * @param observer to add to list of internal observers.  This behavior is thread-safe.
+	 */
+    @Override
+	public void addObserver(INodeToolObserver observer) {
+    	if (observer == null) 
+    		throw new NullPointerException("Cannot not observer.");
+    	synchronized(observers) {
+    	   	observers.add(observer);  //if observer exist, it's a noop   		
+    	}
+    	
+    }
+    
+    /*
+     * @param observer to be removed; behavior is thread-safe.
+     */
+    @Override
+    public void deleteObserver(INodeToolObserver observer) {
+    	synchronized(observers) {
+        	observers.remove(observer);    		
+    	}
     }
 }

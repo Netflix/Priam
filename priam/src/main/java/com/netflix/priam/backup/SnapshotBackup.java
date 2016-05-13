@@ -19,9 +19,12 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +60,8 @@ public class SnapshotBackup extends AbstractBackup
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private final long WAIT_TIME_MS = 60 * 1000 * 10;
     private final CommitLogBackup clBackup;
-    private final Map<String, Object> snapshotCFFilter = new HashMap<String, Object>();
-	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>();
+    private final Map<String, List<String>>  snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
+	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
     
 
     @Inject
@@ -98,18 +101,36 @@ public class SnapshotBackup extends AbstractBackup
     		
     	} else {
 
-        	String[] cf = cfFilters.split(",");
-        	for (int i=0; i < cf.length; i++) {
-        		if (isValidCFFilterFormat(cf[i])) {
-            		logger.info("Adding snapshot CF filter: " + cf[i]);
-            		this.snapshotCFFilter.put(cf[i], null);        			
-        		} else {
-        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cf[i]);
-        		}
-        	}    		
-    		
-    	}
-    	
+    		String[] filters = cfFilters.split(",");
+    		for (int i=0; i < filters.length; i++) { //process each filter
+    			
+    			if (isValidCFFilterFormat(filters[i])) {
+    				
+        			String[] filter = filters[i].split("\\.");
+        			String ksName = filter[0];
+        			String cfName = filter[1];
+        			logger.info("Adding snapshot CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
+        			
+        			if (this.snapshotCFFilter.containsKey(ksName)) {
+        				//add cf to existing filter
+        				List<String> cfs = this.snapshotCFFilter.get(ksName);
+        				cfs.add(cfName);
+        				this.snapshotCFFilter.put(ksName, cfs);
+        				
+        			} else {
+        				
+        				List<String> cfs = new ArrayList<String>();
+        				cfs.add(cfName);
+        				this.snapshotCFFilter.put(ksName, cfs);
+        				
+        			}
+    				
+    			} else {
+    				throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
+    			}
+    			
+    		} //end processing each filter
+    	}    	
     }
     
     @Override
@@ -196,25 +217,44 @@ public class SnapshotBackup extends AbstractBackup
      * @return true if directory should be filter from processing; otherwise, false.
      */
     private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
-    	if (directoryType.equals(DIRECTORYTYPE.CF)) {
+    	
+    	if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
+    		//Apply each keyspace filter to input string
     		String keyspaceName = args[0];
-    		String cfName = args[1];
-    		if (this.snapshotKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
-    			return true;
-    		} else {
-    			StringBuffer strBuf = new StringBuffer();
-    			strBuf.append(keyspaceName);
-    			strBuf.append('.');
-    			strBuf.append(cfName);
-            	return this.snapshotCFFilter.containsKey(strBuf.toString());    			
-    		}
-        	
-    	} else if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) {
-    		return this.snapshotKeyspaceFilter.containsKey(args[0]);
     		
-    	} else {
-    		throw new UnsupportedOperationException("Directory type not supported.  Invalid input: " + directoryType.name());
+    		java.util.Set<String> ksFilters = this.snapshotKeyspaceFilter.keySet();
+    		Iterator<String> it = ksFilters.iterator();
+    		while (it.hasNext()) {
+    			String ksFilter = it.next();
+    			Pattern p = Pattern.compile(ksFilter);
+    			Matcher m = p.matcher(keyspaceName);
+    			if (m.find()) {
+    				logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
+    				return true;
+    			}
+    		}    		
+
     	}
+    	
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
+    		String keyspaceName = args[0];
+    		if ( !this.snapshotCFFilter.containsKey(keyspaceName) ) {
+    			return false;
+    		}
+    		
+    		String cfName = args[1];
+    		List<String> cfsFilter = this.snapshotCFFilter.get(keyspaceName);
+			for (int i=0; i < cfsFilter.size(); i++) {
+				Pattern p = Pattern.compile(cfsFilter.get(i));
+				Matcher m = p.matcher(cfName);
+				if (m.find()) {
+    				logger.info(keyspaceName + "." +  cfName + " matched filter");
+    				return true;
+				}
+			}        	
+    	}
+    	
+    	return false; //if here, current input are not part of keyspae and cf filters
 
     }
 

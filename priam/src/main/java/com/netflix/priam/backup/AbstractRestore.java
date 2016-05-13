@@ -23,9 +23,11 @@ import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -66,8 +68,8 @@ public abstract class AbstractRestore extends Task
     
     protected final IConfiguration config;
     protected final ThreadPoolExecutor executor;
-    private final Map<String, Object> restoreCFFilter = new HashMap<String, Object>();
-	private final Map<String, Object> restoreKeyspaceFilter  = new HashMap<String, Object>();
+    private final Map<String, List<String>> restoreCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
+	private final Map<String, Object> restoreKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
 
     public static BigInteger restoreToken;
     
@@ -112,15 +114,32 @@ public abstract class AbstractRestore extends Task
     		
     	} else {
 
-        	String[] cf = cfFilters.split(",");
-        	for (int i=0; i < cf.length; i++) {
-        		if (isValidCFFilterFormat(cf[i])) {
-        			logger.info("Adding restore CF filter: " + cf[i]);
-            		this.restoreCFFilter.put(cf[i], null);        			
+        	String[] filters = cfFilters.split(",");
+        	for (int i=0; i < filters.length; i++) { //process each filter
+        		
+        		if (isValidCFFilterFormat(filters[i])) {
+        			String[] filter = filters[i].split("\\.");
+        			String ksName = filter[0];
+        			String cfName = filter[1];
+        			logger.info("Adding restore CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
+        			
+        			if (this.restoreCFFilter.containsKey(ksName)) {
+        				//add cf to existing filter
+        				List<String> cfs = this.restoreCFFilter.get(ksName);
+        				cfs.add(cfName);
+        				this.restoreCFFilter.put(ksName, cfs);
+        				
+        			} else {
+        				
+        				List<String> cfs = new ArrayList<String>();
+        				cfs.add(cfName);
+        				this.restoreCFFilter.put(ksName, cfs);
+        			}
+            		        			
         		} else {
-        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cf[i]);
+        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
         		}
-        	}    		
+        	} //end processing each filter    		
     		
     	}
     }
@@ -170,26 +189,41 @@ public abstract class AbstractRestore extends Task
      * @return true if directory should be filter from processing; otherwise, false.
      */
     private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
-    	if (directoryType.equals(DIRECTORYTYPE.CF)) {
+    	if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
+        	String keyspaceName = args[0];
+    		//Apply each keyspace filter to input string
+    		java.util.Set<String> ksFilters = this.restoreKeyspaceFilter.keySet();
+    		Iterator<String> it = ksFilters.iterator();
+    		while (it.hasNext()) {
+    			String ksFilter = it.next();
+    			Pattern p = Pattern.compile(ksFilter);
+    			Matcher m = p.matcher(keyspaceName);
+    			if (m.find()) {
+    				logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
+    				return true;
+    			}
+    		}    
+    	}
+		
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) {  //parent (keyspace) is not filtered, now see if the child (CF) is filtered
     		String keyspaceName = args[0];
-    		String cfName = args[1];
-    		if (this.restoreKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
-    			return true;
-    		} else {
-    			StringBuffer strBuf = new StringBuffer();
-    			strBuf.append(keyspaceName);
-    			strBuf.append('.');
-    			strBuf.append(cfName);
-            	return this.restoreCFFilter.containsKey(strBuf.toString());    			
+    		if ( !this.restoreCFFilter.containsKey(keyspaceName) ) {
+    			return false;
     		}
-        	
-    	} else if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) {
-    		return this.restoreKeyspaceFilter.containsKey(args[0]);
     		
-    	} else {
-    		throw new UnsupportedOperationException("Directory type not supported.  Invalid input: " + directoryType.name());
+    		String cfName = args[1];
+    		List<String> cfsFilter = this.restoreCFFilter.get(keyspaceName);
+			for (int i=0; i < cfsFilter.size(); i++) {
+				Pattern p = Pattern.compile(cfsFilter.get(i));
+				Matcher m = p.matcher(cfName);
+				if (m.find()) {
+    				logger.info(keyspaceName + "." +  cfName + " matched filter");
+    				return true;
+				}
+			}
     	}
 
+    	return false; //if here, current input are not part of keyspae and cf filters
     }
     
     public class BoundedList<E> extends LinkedList<E> {

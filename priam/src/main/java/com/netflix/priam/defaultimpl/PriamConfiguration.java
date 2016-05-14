@@ -1025,5 +1025,10 @@ public class PriamConfiguration implements IConfiguration
 	public String getPgpPublicKeyLoc() {
 		return config.get(CONFIG_PGP_PUB_KEY_LOC);
 	}
+	
+	@Override
+	public Boolean isIncrBackupParallelEnabled() {
+		return config.get(PRIAM_PRE + ".incremental.bkup.parallel", false);
+	}
 
 }

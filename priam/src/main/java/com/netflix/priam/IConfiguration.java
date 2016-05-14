@@ -520,4 +520,9 @@ public interface IConfiguration
      * @return
      */
     Map<String, String> getExtraEnvParams();
+    
+    /*
+     * @return true to use parallization within incremental backups.
+     */
+    public Boolean isIncrBackupParallelEnabled();
 }

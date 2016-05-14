@@ -663,4 +663,9 @@ public class FakeConfiguration implements IConfiguration
     	return null;
     }
 
+	@Override
+	public Boolean isIncrBackupParallelEnabled() {
+		return false;
+	}
+
 }

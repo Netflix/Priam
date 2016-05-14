@@ -59,6 +59,7 @@ import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
@@ -135,7 +136,12 @@ public class BackupServlet
     @Path("/incremental_backup")
     public Response backupIncrementals() throws Exception
     {
-        scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());
+    	if ( config.isIncrBackupParallelEnabled()  ) {
+            scheduler.addTask("IncrementalBackupProducer", IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
+    	} else {
+            scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());    		
+    	}
+
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

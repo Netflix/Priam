@@ -662,5 +662,11 @@ public class FakeConfiguration implements IConfiguration
     public String getSnapshotCFFilter() {
     	return null;
     }
+    
+    @Override
+    public String getVpcId() {
+    	return "";
+    }
+
 
 }

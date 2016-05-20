@@ -520,4 +520,9 @@ public interface IConfiguration
      * @return
      */
     Map<String, String> getExtraEnvParams();
+    
+    /*
+     * @return the vpc id of the running instance.
+     */
+    public String getVpcId();
 }

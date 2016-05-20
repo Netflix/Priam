@@ -6,7 +6,7 @@ import org.slf4j.LoggerFactory;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.utils.SystemUtils;
 
-**
+/**
 * Calls AWS metadata to get info on the location of the running instance within vpc environment.
 *
 */

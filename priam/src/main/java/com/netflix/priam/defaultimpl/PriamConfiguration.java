@@ -29,7 +29,6 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.identity.IInstanceEnvIdentity;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.utils.RetryableCallable;

@@ -44,7 +44,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.identity.IInstanceEnvIdentity;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 

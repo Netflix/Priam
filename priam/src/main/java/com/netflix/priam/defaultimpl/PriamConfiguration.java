@@ -1031,4 +1031,14 @@ public class PriamConfiguration implements IConfiguration
 		return config.get(PRIAM_PRE + ".incremental.bkup.parallel", false);
 	}
 
+	@Override
+	public int getUncrementalBkupQueueSize() {
+		return config.get(PRIAM_PRE + ".incremental.bkup.queue.size", 100000);
+	}
+
+	@Override
+	public int getIncrementalBkupMaxConsumers() {
+		return config.get(PRIAM_PRE + ".incremental.bkup.max.consumers", 4);
+	}
+
 }

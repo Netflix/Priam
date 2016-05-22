@@ -55,6 +55,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
@@ -104,11 +105,14 @@ public class BackupServlet
     private PriamScheduler scheduler;
     @Inject
     private MetaData metaData;
+    
+    private IIncrementalBackup incrementalBkup;
 
     @Inject
 
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
+            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+            , IIncrementalBackup incrementalBkup)
 
     {
         this.priamServer = priamServer;
@@ -122,6 +126,7 @@ public class BackupServlet
         this.factory = factory;
         this.tokenManager = tokenManager;
         this.cassProcess = cassProcess;
+        this.incrementalBkup = incrementalBkup;
     }
 
     @GET
@@ -139,7 +144,7 @@ public class BackupServlet
     	if ( config.isIncrBackupParallelEnabled()  ) {
             scheduler.addTask("IncrementalBackupProducer", IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
     	} else {
-            scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());    		
+    		scheduler.addTask("IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());   		
     	}
 
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -384,17 +389,17 @@ public class BackupServlet
 				backupJSON.put("uploaded_ts",
 						new DateTime(p.getUploadedTs()).toString(FMT));
 				if ("meta".equalsIgnoreCase(filter)) {
+					p.setFileName("meta.json"); //ignore incremental meta files, we are only interested in daily snapshot
 					List<AbstractBackupPath> allFiles = metaData.get(p);
-					long totalSize = 0;
-					for (AbstractBackupPath abp : allFiles)
-						totalSize = totalSize + abp.getSize();
-					backupJSON.put("num_files", Long.toString(allFiles.size()));
-					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
-					// Add Later
+					if (allFiles.size() > 0) {
+						//if here, snapshot completed.
+						fileCnt++;
+						jArray.put(backupJSON);
+						backupJSON.put("num_files", "1");						
+					}
 				}
-				fileCnt++;
-				jArray.put(backupJSON);
 			}
+			
 			object.put("files", jArray);
 			object.put("num_files", fileCnt);
 		} catch (JSONException jse) {

@@ -50,15 +50,15 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     	
         super(config, backupFileSystemCtx, pathFactory);
         this.taskQueueMgr = taskQueueMgr;
-        this.metaData = metaData; //TODO: base class - a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
+        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
         
-        init(backupFileSystemCtx); //TODO: base class
+        init(backupFileSystemCtx);
     }
     
     private void init(IFileSystemContext backupFileSystemCtx) {
     	populateIncrementalFilters(); 
     	//"this" is a producer, lets wake up the "consumers"
-    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config)); 
+    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.config, this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config)); 
     	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
     	consumerMgr.start();
     	
@@ -163,8 +163,8 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	
 	}
 		
-    /*
-     * TODO: base class	
+    /*	
+     * TODO: base class
      * 
      * @return true if directory should be filter from processing; otherwise, false.
      */
@@ -199,7 +199,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 		return JOBNAME;
 	}
 	
-    private void populateIncrementalFilters() { //TODO: base class
+    private void populateIncrementalFilters() {
     	String keyspaceFilters = this.config.getIncrementalKeyspaceFilters();
     	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
     		
@@ -241,8 +241,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	}
 	
     /**
-     * TODO: base class
-     * 
+     * Frequency of producer will look for files on disk to upload. 
      * Run every 10 Sec
      */
     public static TaskTimer getTimer()

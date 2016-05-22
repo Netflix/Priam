@@ -1,7 +1,9 @@
 package com.netflix.priam.backup.parallel;
 
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IIncrementalBackup;
@@ -27,19 +30,30 @@ public class IncrementalConsumerMgr implements Runnable {
 	private IBackupFileSystem fs;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
 	BackupPostProcessingCallback<AbstractBackupPath> callback;
+	private IConfiguration config;
 
 	
-	public IncrementalConsumerMgr(ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs) {
+	public IncrementalConsumerMgr(IConfiguration config, ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs) {
 		this.taskQueueMgr = taskQueueMgr;
 		this.fs = fs;
+		this.config = config;
 		
 		/*
 		 * Too few threads, the queue will build up, consuming a lot of memory.
 		 * Too many threads on the other hand will slow down the whole system due to excessive context switches - and lead to same symptoms.
 		 */
-		int maxWorkers = 5; //TODO: FP
+		int maxWorkers = this.config.getIncrementalBkupMaxConsumers();
+		//number of tasks that can be submitted and enqueued for later execution.  If the work queue is full, the submitted task will be "rejected" 
+		BlockingQueue<Runnable> runnableQueue = new ArrayBlockingQueue<Runnable>(maxWorkers * 2);
+		/*
+		 * We have upper bound on maximum threads and work queue.  New task submitted will be rejected by ThreadPoolExecutor when these resources are
+		 * saturated.  In this case, the thread submitting the task itself will run the task.  This provides a simple control mechanism that will slow down the rate
+		 * that new tasks are submitted (i.e. you can't submit new task if you are busy yourself executing the task at which point there will 
+		 * be free threads or the process repeats).
+		 */
+		 RejectedExecutionHandler rejecteTaskHandler = new ThreadPoolExecutor.CallerRunsPolicy();
 		executor = new ThreadPoolExecutor(maxWorkers, maxWorkers, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
+				runnableQueue, rejecteTaskHandler); 
 		
 		callback = new IncrementalBkupPostProcessing(this.taskQueueMgr); 
 	}
@@ -56,14 +70,22 @@ public class IncrementalConsumerMgr implements Runnable {
 	public void run() {
 		while(this.run.get()) {
 			
-			logger.info("Size of work queue: " + this.taskQueueMgr.getNumOfTasksToBeProessed());
+			logger.info("Number of files in queue: " + this.taskQueueMgr.getNumOfTasksToBeProessed());
 			
 			while( this.taskQueueMgr.hasTasks() ) {
 				try {
 					AbstractBackupPath bp = this.taskQueueMgr.take();
-					logger.info("Dequeued task: " + bp.getFileName());
-					
+					logger.info("Dequeued task and adding to work queue (yet another queue!): " + bp.getFileName()
+							+ ", approximate number of active threads uploading files" + executor.getActiveCount());
 					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback);
+					/*
+					 * We have upper bound on maximum threads and work queue.  If  these resources are saturated, the task is "rejected".
+					 * Our thread pool executor has a handler for rejected tasks that runs the rejected task directly in the 
+					 * calling thread of the submit method, unless the executor has been shut down, in which case the task is discarded.   
+					 * This provides a simple control mechanism that will slow down the rate
+					 * that new tasks are submitted (i.e. you can't submit new task if you are busy yourself executing the task at which point there will 
+					 * be free threads or the process repeats).
+					 */
 					executor.submit(task);
 
 					

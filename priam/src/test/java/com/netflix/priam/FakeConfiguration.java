@@ -668,4 +668,15 @@ public class FakeConfiguration implements IConfiguration
 		return false;
 	}
 
+	@Override
+	public int getUncrementalBkupQueueSize() {
+		return 10;
+	}
+
+	@Override
+	public int getIncrementalBkupMaxConsumers() {
+		// TODO Auto-generated method stub
+		return 2;
+	}
+
 }

@@ -663,4 +663,20 @@ public class FakeConfiguration implements IConfiguration
     	return null;
     }
 
+	@Override
+	public Boolean isIncrBackupParallelEnabled() {
+		return false;
+	}
+
+	@Override
+	public int getUncrementalBkupQueueSize() {
+		return 10;
+	}
+
+	@Override
+	public int getIncrementalBkupMaxConsumers() {
+		// TODO Auto-generated method stub
+		return 2;
+	}
+
 }

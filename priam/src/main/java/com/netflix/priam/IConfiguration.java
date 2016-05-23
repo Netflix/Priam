@@ -520,4 +520,19 @@ public interface IConfiguration
      * @return
      */
     Map<String, String> getExtraEnvParams();
+    
+    /*
+     * @return true to use parallization within incremental backups.
+     */
+    public Boolean isIncrBackupParallelEnabled();
+    
+    /*
+     * @return upper bound on number of tasks in queue.
+     */
+    public int getUncrementalBkupQueueSize();
+    
+    /*
+     * @return The number of threads for actual upload.
+     */
+    public int getIncrementalBkupMaxConsumers();
 }

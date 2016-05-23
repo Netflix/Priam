@@ -75,7 +75,7 @@ public abstract class AbstractBackup extends Task
    
     /**
      * Upload files in the specified dir. Does not delete the file in case of
-     * error
+     * error.  The files are uploaded serially.
      * 
      * @param parent
      *            Parent dir

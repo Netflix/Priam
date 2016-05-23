@@ -43,7 +43,7 @@ import com.netflix.priam.scheduler.TaskTimer;
  * Incremental/SSTable backup
  */
 @Singleton
-public class IncrementalBackup extends AbstractBackup
+public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup
 {
     public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
@@ -194,7 +194,7 @@ public class IncrementalBackup extends AbstractBackup
      */
     public static TaskTimer getTimer()
     {
-        return new SimpleTimer(JOBNAME, 10L * 1000);
+        return new SimpleTimer(JOBNAME, INCREMENTAL_INTERVAL_IN_MILLISECS);
     }
 
     @Override
@@ -230,6 +230,16 @@ public class IncrementalBackup extends AbstractBackup
 	@Override
 	protected void addToRemotePath(String remotePath) {
 		incrementalRemotePaths.add(remotePath);		
+	}
+	
+	@Override
+	public long getNumPendingFiles() {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public String getJobName() {
+		return JOBNAME;
 	}
 
 }

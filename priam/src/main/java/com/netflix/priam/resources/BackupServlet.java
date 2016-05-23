@@ -142,6 +142,13 @@ public class BackupServlet
    
     @GET
     @Path("/list")
+    /*
+     * Fetch the list of files for the requested date range.
+     * 
+     * @param date range
+     * @param filter.  The type of data files fetched.  E.g. META will only fetch the dailsy snapshot meta data file (meta.json).
+     * @return the list of files in json format as part of the Http response body.
+     */
     public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception
     {
         Date startTime;
@@ -355,6 +362,16 @@ public class BackupServlet
         }
     }
     
+    /*
+     * A list of files for requested filter.  Currently, the only supported filter is META, all others will be ignore.  
+     * For filter of META, ONLY the daily snapshot meta file (meta.json)  are accounted for, not the incremental meta file.
+     * In addition, we do ONLY list the name of the meta data file, not the list of data files within it.
+     * 
+     * @param handle to the json response
+     * @param a list of all files (data (*.db), and meta data file (*.json)) from S3 for requested dates.
+     * @param backup meta data file filter.  Currently, the only supported filter is META, all others will be ignore.
+     * @return a list of files in Json format.
+     */
     private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
     {
 		int fileCnt = 0;
@@ -377,17 +394,19 @@ public class BackupServlet
 						.getInstance().getInstanceId());
 				backupJSON.put("uploaded_ts",
 						new DateTime(p.getUploadedTs()).toString(FMT));
-				if ("meta".equalsIgnoreCase(filter)) {
-					List<AbstractBackupPath> allFiles = metaData.get(p);
-					long totalSize = 0;
-					for (AbstractBackupPath abp : allFiles)
-						totalSize = totalSize + abp.getSize();
-					backupJSON.put("num_files", Long.toString(allFiles.size()));
-					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
-					// Add Later
+				if ("meta".equalsIgnoreCase(filter)) { //only check for existence of meta file
+					p.setFileName("meta.json"); //ignore incremental meta files, we are only interested in daily snapshot
+					if (metaData.doesExist(p)) {
+						//if here, snapshot completed.
+						fileCnt++;
+						jArray.put(backupJSON);
+						backupJSON.put("num_files", "1");						
+					}
+				} else { //account for every file (data, and meta) .
+					fileCnt++;
+					jArray.put(backupJSON);					
 				}
-				fileCnt++;
-				jArray.put(backupJSON);
+
 			}
 			object.put("files", jArray);
 			object.put("num_files", fileCnt);

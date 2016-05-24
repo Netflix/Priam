@@ -10,7 +10,7 @@ subprojects {
     apply plugin: 'java'
     apply plugin: 'nebula.provided-base'
 
-    group = 'com.netflix.priam'
+    group = 'com.netflix.priam.vpc'
 
     repositories {
         jcenter()

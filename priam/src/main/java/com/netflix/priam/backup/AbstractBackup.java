@@ -46,7 +46,8 @@ public abstract class AbstractBackup extends Task
     protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo")); 
     protected final Provider<AbstractBackupPath> pathFactory;
     protected IBackupFileSystem fs;
-
+    
+    
     @Inject
     public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory)
     {
@@ -54,6 +55,7 @@ public abstract class AbstractBackup extends Task
         this.pathFactory = pathFactory;
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
+    
     
     /*
      * A means to override the type of backup strategy chosen via BackupFileSystemContext
@@ -75,7 +77,7 @@ public abstract class AbstractBackup extends Task
    
     /**
      * Upload files in the specified dir. Does not delete the file in case of
-     * error
+     * error.  The files are uploaded serially.
      * 
      * @param parent
      *            Parent dir
@@ -118,7 +120,7 @@ public abstract class AbstractBackup extends Task
         }
         return bps;
     }
-
+    
     /**
      * Upload specified file (RandomAccessFile) with retries
      */

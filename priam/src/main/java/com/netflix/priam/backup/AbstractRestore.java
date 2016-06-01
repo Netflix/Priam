@@ -144,7 +144,7 @@ public abstract class AbstractRestore extends Task
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
             
-            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //keyspace filtered?
+            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //applicable only if there is  FP to filter just keyspace
             	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as its keyspace: \"" + temp.getKeyspace() + "\" is part of the filter list");
             	continue;
             }

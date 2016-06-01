@@ -24,9 +24,11 @@ import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
+import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
@@ -49,17 +51,20 @@ public class PriamServer
     private final InstanceIdentity id;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
+	private IIncrementalBackup incrementalBkup;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess)
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess
+    		, IIncrementalBackup incrementalBkup)
     {
         this.config = config;
         this.scheduler = scheduler;
         this.id = id;
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
+        this.incrementalBkup = incrementalBkup;
     }
 
     public void intialize() throws Exception
@@ -155,8 +160,19 @@ public class PriamServer
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
             // Start the Incremental backup schedule if enabled
-            if (config.isIncrBackup())
+            if (config.isIncrBackup()) {
+            	if (this.incrementalBkup instanceof IncrementalBackup ) {
             		scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
+            		logger.info("Added incremental synchronous bkup");
+            	} else if (this.incrementalBkup instanceof IncrementalBackupProducer ) {
+            		scheduler.addTask(IncrementalBackupProducer.JOBNAME, IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
+            		logger.info("Added incremental async-synchronous bkup, next fired time: " + IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
+            	} else {
+            		throw new RuntimeException("Unsupported \"IIncrementalBackup\" type.");
+            	}
+            	
+            }
+
         }
        
         if (config.isBackingUpCommitLogs())

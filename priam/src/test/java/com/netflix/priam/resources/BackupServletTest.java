@@ -8,6 +8,7 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -16,11 +17,13 @@ import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
+
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
 import mockit.internal.expectations.TestOnlyPhase;
+
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,6 +32,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+
 import java.util.Date;
 import java.util.List;
 
@@ -47,6 +51,7 @@ public class BackupServletTest
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
     private @Mocked ICassandraProcess cassProcess;
+    private @Mocked IncrementalBackup incrmentalBkup;
     private final ITokenManager tokenManager = new TokenManager();
     private BackupServlet resource;
     private RestoreServlet restoreResource;
@@ -55,7 +60,7 @@ public class BackupServletTest
     public void setUp()
     {
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager, cassProcess);
+            tuner, snapshotBackup, factory, tokenManager, cassProcess, incrmentalBkup);
         
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager);

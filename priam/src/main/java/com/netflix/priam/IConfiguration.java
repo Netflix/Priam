@@ -520,4 +520,14 @@ public interface IConfiguration
      * @return
      */
     Map<String, String> getExtraEnvParams();
+    
+    public Boolean isIncrBackupParallelEnabled();
+    /*
+     * The number of workers for parallel uploads.
+     */
+    public int getIncrementalBkupMaxConsumers();
+    /*
+     * The max number of files queued to be uploaded.
+     */
+    public int getUncrementalBkupQueueSize();
 }

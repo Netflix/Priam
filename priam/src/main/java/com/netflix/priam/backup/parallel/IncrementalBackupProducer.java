@@ -33,8 +33,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 
 	public static final String JOBNAME = "INCR_PARALLEL_BACKUP_THREAD";
 	private static final Logger logger = LoggerFactory.getLogger(IncrementalBackupProducer.class);
-	
-	 //TODO: following should be in base base class 
+	 
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
     private final Map<String, Object> incrementalCFFilter = new HashMap<String, Object>();
 	private final Map<String, Object> incrementalKeyspaceFilter  = new HashMap<String, Object>();
@@ -50,15 +49,15 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     	
         super(config, backupFileSystemCtx, pathFactory);
         this.taskQueueMgr = taskQueueMgr;
-        this.metaData = metaData; //TODO: base class - a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
+        this.metaData = metaData;
         
-        init(backupFileSystemCtx); //TODO: base class
+        init(backupFileSystemCtx);
     }
     
     private void init(IFileSystemContext backupFileSystemCtx) {
     	populateIncrementalFilters(); 
     	//"this" is a producer, lets wake up the "consumers"
-    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config)); 
+    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config); 
     	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
     	consumerMgr.start();
     	
@@ -87,7 +86,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles())
         {
-        	logger.info("Peeking at keyspace: " + keyspaceDir.getName());
         	if (keyspaceDir.isFile())
     			continue;
         	
@@ -133,9 +131,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         return;
 	}
 	
-	/*
-	 * TODO:  A callback function invoked once all uploads are completed.
-	 */
 	public void postProcessing() {
         /*
         *
@@ -163,8 +158,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	
 	}
 		
-    /*
-     * TODO: base class	
+    /*	
      * 
      * @return true if directory should be filter from processing; otherwise, false.
      */
@@ -199,7 +193,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 		return JOBNAME;
 	}
 	
-    private void populateIncrementalFilters() { //TODO: base class
+    private void populateIncrementalFilters() {
     	String keyspaceFilters = this.config.getIncrementalKeyspaceFilters();
     	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
     		
@@ -241,8 +235,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	}
 	
     /**
-     * TODO: base class
-     * 
      * Run every 10 Sec
      */
     public static TaskTimer getTimer()

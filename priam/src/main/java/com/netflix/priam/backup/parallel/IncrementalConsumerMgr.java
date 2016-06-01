@@ -1,7 +1,10 @@
 package com.netflix.priam.backup.parallel;
 
+import java.util.AbstractQueue;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -10,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IIncrementalBackup;
@@ -26,10 +30,11 @@ public class IncrementalConsumerMgr implements Runnable {
 	private ThreadPoolExecutor executor;
 	private IBackupFileSystem fs;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
-	BackupPostProcessingCallback<AbstractBackupPath> callback;
+	private BackupPostProcessingCallback<AbstractBackupPath> callback;
 
 	
-	public IncrementalConsumerMgr(ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs) {
+	public IncrementalConsumerMgr(ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs
+			, IConfiguration config) {
 		this.taskQueueMgr = taskQueueMgr;
 		this.fs = fs;
 		
@@ -37,9 +42,18 @@ public class IncrementalConsumerMgr implements Runnable {
 		 * Too few threads, the queue will build up, consuming a lot of memory.
 		 * Too many threads on the other hand will slow down the whole system due to excessive context switches - and lead to same symptoms.
 		 */
-		int maxWorkers = 5; //TODO: FP
+		int maxWorkers = config.getIncrementalBkupMaxConsumers();
+		/*
+		 * ThreadPoolExecutor will move the file to be uploaded as a Runnable task in the work queue.
+		 */
+		BlockingQueue<Runnable> workQueue = new ArrayBlockingQueue<Runnable>(config.getIncrementalBkupMaxConsumers() * 2);
+		/*
+		 * If there all workers are busy, the calling thread for the submit() will itself upload the file.  This is a way to throttle how many files are moved to the
+		 * worker queue.  Specifically, the calling will continue to perform the upload unless a worker is avaialble.
+		 */
+		RejectedExecutionHandler rejectedExecutionHandler = new ThreadPoolExecutor.CallerRunsPolicy();
 		executor = new ThreadPoolExecutor(maxWorkers, maxWorkers, 60, TimeUnit.SECONDS,
-                new LinkedBlockingQueue<Runnable>());
+                workQueue, rejectedExecutionHandler);
 		
 		callback = new IncrementalBkupPostProcessing(this.taskQueueMgr); 
 	}
@@ -55,16 +69,13 @@ public class IncrementalConsumerMgr implements Runnable {
 	@Override
 	public void run() {
 		while(this.run.get()) {
-			
-			logger.info("Size of work queue: " + this.taskQueueMgr.getNumOfTasksToBeProessed());
-			
+
 			while( this.taskQueueMgr.hasTasks() ) {
 				try {
 					AbstractBackupPath bp = this.taskQueueMgr.take();
-					logger.info("Dequeued task: " + bp.getFileName());
 					
 					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback);
-					executor.submit(task);
+					executor.submit(task); //non-blocking, will be rejected if the task cannot be scheduled
 
 					
 				} catch (InterruptedException e) {

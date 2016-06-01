@@ -9,7 +9,9 @@ import java.util.concurrent.BlockingQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 
 /*
@@ -27,10 +29,14 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
 
 	private static final Logger logger = LoggerFactory.getLogger(CassandraBackupQueueMgr.class);
 	
-	//TODO: FP - if small upper bound, the producer will wait until space becomes avaiable
-	BlockingQueue<AbstractBackupPath> tasks = new ArrayBlockingQueue<AbstractBackupPath>(10);
-	//Key to task is the S3 absolute path (BASE/REGION/CLUSTER/TOKEN/[yyyymmddhhmm]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
-	AbstractSet<String> tasksQueued = new HashSet<String>(); //TODO: initialize to half size of tasks queue
+	BlockingQueue<AbstractBackupPath> tasks; //A queue of files to be uploaded
+	AbstractSet<String> tasksQueued; //A queue to determine what files have been queued
+	
+	@Inject
+	public CassandraBackupQueueMgr(IConfiguration config) {
+		tasks = new ArrayBlockingQueue<AbstractBackupPath>(config.getUncrementalBkupQueueSize());
+		tasksQueued = new HashSet<String>(config.getUncrementalBkupQueueSize()); //Key to task is the S3 absolute path (BASE/REGION/CLUSTER/TOKEN/[yyyymmddhhmm]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
+	}
 	
 	@Override
 	/*

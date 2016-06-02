@@ -631,7 +631,7 @@ public class FakeConfiguration implements IConfiguration
     public Map<String, String> getExtraEnvParams() {
         return null;
     }
-    
+
     @Override
     public String getRestoreKeyspaceFilter()
     {
@@ -662,5 +662,20 @@ public class FakeConfiguration implements IConfiguration
     public String getSnapshotCFFilter() {
     	return null;
     }
+
+	@Override
+	public Boolean isIncrBackupParallelEnabled() {
+		return false;
+	}
+
+	@Override
+	public int getIncrementalBkupMaxConsumers() {
+		return 2;
+	}
+
+	@Override
+	public int getUncrementalBkupQueueSize() {
+		return 100;
+	}
 
 }

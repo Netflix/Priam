@@ -55,6 +55,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
@@ -104,10 +105,13 @@ public class BackupServlet
     @Inject
     private MetaData metaData;
 
+	private IIncrementalBackup incrementalBkup;
+
     @Inject
 
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
+            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+            , IIncrementalBackup incrementalBkup)
 
     {
         this.priamServer = priamServer;
@@ -121,6 +125,7 @@ public class BackupServlet
         this.factory = factory;
         this.tokenManager = tokenManager;
         this.cassProcess = cassProcess;
+        this.incrementalBkup = incrementalBkup;
     }
 
     @GET

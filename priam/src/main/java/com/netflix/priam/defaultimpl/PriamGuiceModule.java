@@ -28,6 +28,10 @@ import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.IIncrementalBackup;
+import com.netflix.priam.backup.IncrementalBackup;
+import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
+import com.netflix.priam.backup.parallel.ITaskQueueMgr;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
@@ -70,5 +74,10 @@ public class PriamGuiceModule extends AbstractModule
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
+        bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
+        
+        //Use default incrementalbackup behavior
+        bind(IIncrementalBackup.class).to(IncrementalBackup.class);
+        
     }
 }

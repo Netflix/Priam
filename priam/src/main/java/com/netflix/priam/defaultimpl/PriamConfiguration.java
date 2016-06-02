@@ -337,8 +337,6 @@ public class PriamConfiguration implements IConfiguration
         for(AvailabilityZone reg : res.getAvailabilityZones()){
             if( reg.getState().equals("available") )
                 zone.add(reg.getZoneName());
-            if( zone.size() == 3)
-                break;
         }
 //        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
       DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);

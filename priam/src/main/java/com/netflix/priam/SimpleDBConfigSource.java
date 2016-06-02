@@ -53,7 +53,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
         AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
 
         String nextToken = null;
-        String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;
+        String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.lastIndexOf('-')) : asgName;
         logger.info(String.format("appid used to fetch properties is: %s", appid));
         do 
         {

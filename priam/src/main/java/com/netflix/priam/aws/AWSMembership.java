@@ -36,6 +36,7 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.AuthorizeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.DescribeSecurityGroupsRequest;
 import com.amazonaws.services.ec2.model.DescribeSecurityGroupsResult;
+import com.amazonaws.services.ec2.model.Filter;
 import com.amazonaws.services.ec2.model.IpPermission;
 import com.amazonaws.services.ec2.model.RevokeSecurityGroupIngressRequest;
 import com.amazonaws.services.ec2.model.SecurityGroup;
@@ -134,7 +135,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest().withGroupId(getACLGroupId()).withIpPermissions(ipPermissions));
             logger.info("Done adding ACL to: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -155,7 +156,7 @@ public class AWSMembership implements IMembership
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
-            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+            client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest().withGroupId(getACLGroupId()).withIpPermissions(ipPermissions));
             logger.info("Done removing from ACL: " + StringUtils.join(listIPs, ","));
         }
         finally
@@ -175,7 +176,9 @@ public class AWSMembership implements IMembership
         {
             client = getEc2Client();
             List<String> ipPermissions = new ArrayList<String>();
-            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Arrays.asList(config.getACLGroupName()));
+            Filter nameFilter = new Filter().withName("group-name").withValues(config.getACLGroupName());
+            Filter vpcFilter = new Filter().withName("vpc-id").withValues(config.getVpcId());
+            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups())
                 for (IpPermission perm : group.getIpPermissions())
@@ -206,6 +209,31 @@ public class AWSMembership implements IMembership
             ureq.setMaxSize(asg.getMinSize() + 1);
             ureq.setDesiredCapacity(asg.getMinSize() + 1);
             client.updateAutoScalingGroup(ureq);
+        }
+        finally
+        {
+            if (client != null)
+                client.shutdown();
+        }
+    }
+
+    protected String getACLGroupId()
+    {
+        AmazonEC2 client = null;
+        try
+        {
+            client = getEc2Client();
+            Filter nameFilter = new Filter().withName("group-name").withValues(config.getACLGroupName());
+            Filter vpcFilter = new Filter().withName("vpc-id").withValues(config.getVpcId());
+            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
+            DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
+            for (SecurityGroup group : result.getSecurityGroups())
+            {
+                logger.debug(String.format("got group-id:%s for group-name:%s,vpc-id:%s", group.getGroupId(), config.getACLGroupName(), config.getVpcId()));
+                return group.getGroupId();
+            }
+            logger.error(String.format("unable to get group-id for group-name=%s vpc-id=%s", config.getACLGroupName(), config.getVpcId()));
+            return "";
         }
         finally
         {

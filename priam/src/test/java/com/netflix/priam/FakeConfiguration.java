@@ -174,6 +174,12 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getVpcId()
+    {
+        return "";
+    }
+
+    @Override
     public int getMaxBackupUploadThreads()
     {
         // TODO Auto-generated method stub

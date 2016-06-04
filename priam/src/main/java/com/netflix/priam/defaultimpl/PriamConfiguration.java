@@ -172,6 +172,8 @@ public class PriamConfiguration implements IConfiguration
     private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
     private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
+    private final String NETWORK_MAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/network/interfaces/macs/").trim();
+    private final String NETWORK_VPC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/network/interfaces/macs/" + NETWORK_MAC + "/vpc-id").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
@@ -626,6 +628,12 @@ public class PriamConfiguration implements IConfiguration
     public String getACLGroupName()
     {
     	return config.get(CONFIG_ACL_GROUP_NAME, this.getAppName());
+    }
+
+    @Override
+    public String getVpcId()
+    {
+        return NETWORK_VPC;
     }
 
     @Override

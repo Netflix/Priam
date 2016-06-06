@@ -76,8 +76,5 @@ public class PriamGuiceModule extends AbstractModule
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         
-        //Use default incrementalbackup behavior
-        bind(IIncrementalBackup.class).to(IncrementalBackup.class);
-        
     }
 }

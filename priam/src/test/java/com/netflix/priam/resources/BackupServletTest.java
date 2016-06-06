@@ -7,6 +7,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupStatusMgr;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
@@ -51,7 +52,7 @@ public class BackupServletTest
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
     private @Mocked ICassandraProcess cassProcess;
-    private @Mocked IncrementalBackup incrmentalBkup;
+    private @Mocked BackupStatusMgr bkupStatusMgr;
     private final ITokenManager tokenManager = new TokenManager();
     private BackupServlet resource;
     private RestoreServlet restoreResource;
@@ -60,7 +61,7 @@ public class BackupServletTest
     public void setUp()
     {
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager, cassProcess, incrmentalBkup);
+            tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr);
         
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager);

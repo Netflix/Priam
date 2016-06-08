@@ -18,6 +18,7 @@ package com.netflix.priam.backup;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -62,15 +63,19 @@ public class SnapshotBackup extends AbstractBackup
     private final CommitLogBackup clBackup;
     private final Map<String, List<String>>  snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
 	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
+
+	private BackupStatusMgr completedBackups;
     
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
-    		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx)
+    		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
+    		              ,BackupStatusMgr completedBackups)
     {
     	super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
         this.clBackup = clBackup;
+        this.completedBackups = completedBackups;
         init();
     }
 
@@ -192,6 +197,7 @@ public class SnapshotBackup extends AbstractBackup
             // Upload meta file
             metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
+            this.postProcesing(cal.getTime(), snapshotName);
             
             if(snapshotRemotePaths.size() > 0)
             {
@@ -210,6 +216,16 @@ public class SnapshotBackup extends AbstractBackup
                 logger.error(e.getMessage(), e);
             }
         }
+    }
+    
+    /*
+     * Performs any post processing (e.g. log success of backup).
+     * 
+     * @param name of the snapshotname, format is yyyymmddhhss
+     */
+    private void postProcesing(Date date, String snapshotname) {
+    	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);  //format is backuptype_yyyymmdd
+    	this.completedBackups.add(key, snapshotname);
     }
     
     /*

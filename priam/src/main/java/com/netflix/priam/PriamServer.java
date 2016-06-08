@@ -27,6 +27,7 @@ import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
@@ -155,8 +156,16 @@ public class PriamServer
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
             // Start the Incremental backup schedule if enabled
-            if (config.isIncrBackup())
+            if (config.isIncrBackup()) {
+            	if ( !config.isIncrBackupParallelEnabled() ) {
             		scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
+            		logger.info("Added incremental synchronous bkup");
+            	} else {
+            		scheduler.addTask(IncrementalBackupProducer.JOBNAME, IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
+            		logger.info("Added incremental async-synchronous bkup, next fired time: " + IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
+            	} 
+            }
+
         }
        
         if (config.isBackingUpCommitLogs())

@@ -93,6 +93,13 @@ public class MetaData
         }
     }
 
+    /*
+     * A list of data files within a meta backup file.  The meta backup file can be
+     * daily snapshot (meta.json) or incrementals (meta_keyspace_cf_date.json)
+     * 
+     * @param meta data file to derive the list of data files.  The meta data file can be meta.json or meta_keyspace_cf_date.json
+     * @return a list of data files (*.db)
+     */
     public List<AbstractBackupPath> get(final AbstractBackupPath meta)
     {
         List<AbstractBackupPath> files = Lists.newArrayList();
@@ -124,6 +131,35 @@ public class MetaData
         return files;
     }
 
+    /*
+     * Determines the existence of the backup meta file.  This meta file could be snapshot (meta.json) or 
+     * incrementals (meta_keyspace_cf..json).
+     * 
+     * @param backup meta file to search
+     * @return true if backup meta file exist, false otherwise.
+     */
+    public Boolean doesExist(final AbstractBackupPath meta) {
+    	try {
+        	new RetryableCallable<Void>() {
+                @Override
+                public Void retriableCall() throws Exception {
+                    fs.download(meta, new FileOutputStream(meta.newRestoreFile())); //download actual file to disk
+                    return null;
+                }
+        	}.call();
+        	
+    	} catch (Exception e) {
+    		logger.error("Error downloading the Meta data try with a diffrent date...", e);
+    	}
+
+    	if (meta.newRestoreFile().exists()) {
+    		return true;
+    	} else {
+        	return false;    		
+    	}
+
+    }
+    
     private void upload(final AbstractBackupPath bp) throws Exception
     {
         new RetryableCallable<Void>()

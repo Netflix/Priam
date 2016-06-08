@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -54,7 +55,10 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupStatusMgr;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.IIncrementalBackup;
+import com.netflix.priam.backup.IMessageObserver;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
@@ -104,10 +108,13 @@ public class BackupServlet
     @Inject
     private MetaData metaData;
 
+	private BackupStatusMgr completedBkups;
+
     @Inject
 
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess)
+            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+    		,BackupStatusMgr completedBkups)
 
     {
         this.priamServer = priamServer;
@@ -121,6 +128,7 @@ public class BackupServlet
         this.factory = factory;
         this.tokenManager = tokenManager;
         this.cassProcess = cassProcess;
+        this.completedBkups = completedBkups;
     }
 
     @GET
@@ -142,6 +150,13 @@ public class BackupServlet
    
     @GET
     @Path("/list")
+    /*
+     * Fetch the list of files for the requested date range.
+     * 
+     * @param date range
+     * @param filter.  The type of data files fetched.  E.g. META will only fetch the dailsy snapshot meta data file (meta.json).
+     * @return the list of files in json format as part of the Http response body.
+     */
     public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception
     {
         Date startTime;
@@ -184,7 +199,38 @@ public class BackupServlet
         object.put("Snapshotstatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
+    
+    /*
+     * Determines the status of a snapshot for a date.  If there was at least one successful snpashot for the date, snapshot
+     * for the date is considered completed.
+     * @param date date of the snapshot.  Format of date is yyyymmdd
+     * @return {"Snapshotstatus":false} or {"Snapshotstatus":true}
+     */
+    @GET
+    @Path("/status/{date}")
+    public Response statusByDate(@PathParam("date") String date) throws Exception {
+    	Boolean success = this.completedBkups.status(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+        JSONObject object = new JSONObject();
+        object.put("Snapshotstatus", success);
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+    }
 
+    /*
+     * Determines the status of a snapshot for a date.  If there was at least one successful snpashot for the date, snapshot
+     * for the date is considered completed.
+     * @param date date of the snapshot.  Format of date is yyyymmdd
+     * @return {"Snapshots":["201606060450","201606060504"]} or "Snapshots":[]}
+     */
+    @GET
+    @Path("/status/{date}/snapshots")
+    public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
+    	List<String> snapshots = this.completedBkups.getBackups(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+        JSONObject object = new JSONObject();
+        object.put("Snapshots", snapshots);
+
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+    }
+    
     /**
      * <p>
      * Life_Of_C*Row : With this REST call, mutations/existence of a rowkey can be found.
@@ -355,6 +401,16 @@ public class BackupServlet
         }
     }
     
+    /*
+     * A list of files for requested filter.  Currently, the only supported filter is META, all others will be ignore.  
+     * For filter of META, ONLY the daily snapshot meta file (meta.json)  are accounted for, not the incremental meta file.
+     * In addition, we do ONLY list the name of the meta data file, not the list of data files within it.
+     * 
+     * @param handle to the json response
+     * @param a list of all files (data (*.db), and meta data file (*.json)) from S3 for requested dates.
+     * @param backup meta data file filter.  Currently, the only supported filter is META, all others will be ignore.
+     * @return a list of files in Json format.
+     */
     private JSONObject constructJsonResponse(JSONObject object, Iterator<AbstractBackupPath> it,String filter) throws Exception
     {
 		int fileCnt = 0;
@@ -377,17 +433,19 @@ public class BackupServlet
 						.getInstance().getInstanceId());
 				backupJSON.put("uploaded_ts",
 						new DateTime(p.getUploadedTs()).toString(FMT));
-				if ("meta".equalsIgnoreCase(filter)) {
-					List<AbstractBackupPath> allFiles = metaData.get(p);
-					long totalSize = 0;
-					for (AbstractBackupPath abp : allFiles)
-						totalSize = totalSize + abp.getSize();
-					backupJSON.put("num_files", Long.toString(allFiles.size()));
-					// keyValues.put("TOTAL-SIZE", Long.toString(totalSize)); //
-					// Add Later
+				if ("meta".equalsIgnoreCase(filter)) { //only check for existence of meta file
+					p.setFileName("meta.json"); //ignore incremental meta files, we are only interested in daily snapshot
+					if (metaData.doesExist(p)) {
+						//if here, snapshot completed.
+						fileCnt++;
+						jArray.put(backupJSON);
+						backupJSON.put("num_files", "1");						
+					}
+				} else { //account for every file (data, and meta) .
+					fileCnt++;
+					jArray.put(backupJSON);					
 				}
-				fileCnt++;
-				jArray.put(backupJSON);
+
 			}
 			object.put("files", jArray);
 			object.put("num_files", fileCnt);

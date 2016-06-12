@@ -31,6 +31,7 @@ import java.util.concurrent.TimeoutException;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
+import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
@@ -54,8 +55,10 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupStatusMgr;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IIncrementalBackup;
+import com.netflix.priam.backup.IMessageObserver;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Restore;
@@ -105,13 +108,13 @@ public class BackupServlet
     @Inject
     private MetaData metaData;
 
-	private IIncrementalBackup incrementalBkup;
+	private BackupStatusMgr completedBkups;
 
     @Inject
 
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
-            , IIncrementalBackup incrementalBkup)
+    		,BackupStatusMgr completedBkups)
 
     {
         this.priamServer = priamServer;
@@ -125,7 +128,7 @@ public class BackupServlet
         this.factory = factory;
         this.tokenManager = tokenManager;
         this.cassProcess = cassProcess;
-        this.incrementalBkup = incrementalBkup;
+        this.completedBkups = completedBkups;
     }
 
     @GET
@@ -196,7 +199,38 @@ public class BackupServlet
         object.put("Snapshotstatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
+    
+    /*
+     * Determines the status of a snapshot for a date.  If there was at least one successful snpashot for the date, snapshot
+     * for the date is considered completed.
+     * @param date date of the snapshot.  Format of date is yyyymmdd
+     * @return {"Snapshotstatus":false} or {"Snapshotstatus":true}
+     */
+    @GET
+    @Path("/status/{date}")
+    public Response statusByDate(@PathParam("date") String date) throws Exception {
+    	Boolean success = this.completedBkups.status(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+        JSONObject object = new JSONObject();
+        object.put("Snapshotstatus", success);
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+    }
 
+    /*
+     * Determines the status of a snapshot for a date.  If there was at least one successful snpashot for the date, snapshot
+     * for the date is considered completed.
+     * @param date date of the snapshot.  Format of date is yyyymmdd
+     * @return {"Snapshots":["201606060450","201606060504"]} or "Snapshots":[]}
+     */
+    @GET
+    @Path("/status/{date}/snapshots")
+    public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
+    	List<String> snapshots = this.completedBkups.getBackups(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+        JSONObject object = new JSONObject();
+        object.put("Snapshots", snapshots);
+
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
+    }
+    
     /**
      * <p>
      * Life_Of_C*Row : With this REST call, mutations/existence of a rowkey can be found.

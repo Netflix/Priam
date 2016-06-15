@@ -28,6 +28,7 @@ import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
 import com.netflix.priam.backup.parallel.ITaskQueueMgr;

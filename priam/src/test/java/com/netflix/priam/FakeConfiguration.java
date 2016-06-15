@@ -631,7 +631,7 @@ public class FakeConfiguration implements IConfiguration
     public Map<String, String> getExtraEnvParams() {
         return null;
     }
-    
+
     @Override
     public String getRestoreKeyspaceFilter()
     {
@@ -682,5 +682,4 @@ public class FakeConfiguration implements IConfiguration
 	public int getUncrementalBkupQueueSize() {
 		return 100;
 	}
-
 }

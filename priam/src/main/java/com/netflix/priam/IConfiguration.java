@@ -525,7 +525,7 @@ public interface IConfiguration
      * @return the vpc id of the running instance.
      */
     public String getVpcId();
-    
+
     public Boolean isIncrBackupParallelEnabled();
     /*
      * The number of workers for parallel uploads.

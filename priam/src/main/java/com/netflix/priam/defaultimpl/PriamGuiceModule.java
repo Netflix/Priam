@@ -28,7 +28,6 @@ import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
 import com.netflix.priam.backup.parallel.ITaskQueueMgr;
@@ -37,6 +36,8 @@ import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.priam.identity.AwsInstanceEnvIdentity;
+import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
@@ -75,6 +76,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
+        bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         
     }
 }

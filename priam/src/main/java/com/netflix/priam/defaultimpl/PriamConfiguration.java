@@ -1041,4 +1041,9 @@ public class PriamConfiguration implements IConfiguration
 		return config.get(PRIAM_PRE  + ".incremental.bkup.queue.size", 100000);
 	}
 
+	@Override
+	public String getVpcId() {
+		throw new UnsupportedOperationException();
+	}
+
 }

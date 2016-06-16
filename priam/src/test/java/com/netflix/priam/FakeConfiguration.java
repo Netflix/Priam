@@ -662,6 +662,11 @@ public class FakeConfiguration implements IConfiguration
     public String getSnapshotCFFilter() {
     	return null;
     }
+    
+    @Override
+    public String getVpcId() {
+    	return "";
+    }
 
 	@Override
 	public Boolean isIncrBackupParallelEnabled() {
@@ -677,5 +682,4 @@ public class FakeConfiguration implements IConfiguration
 	public int getUncrementalBkupQueueSize() {
 		return 100;
 	}
-
 }

@@ -243,8 +243,10 @@ public class BackupServlet
     	} else {
     		String token = SystemUtils.getDataFromUrl("http://localhost:8080/Priam/REST/v1/cassconfig/get_token");
             if (token != null && !token.isEmpty() ) {
-                strBuffer.append("token=" + bkupMetadata.getToken());        	
+            	strBuffer.append(',');
+                strBuffer.append("token=" + token);        	
             } else {
+            	strBuffer.append(',');
                 strBuffer.append("token=not available");
             }
     	}

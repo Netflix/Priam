@@ -114,11 +114,21 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
         
         try
         {
-            tool.isInitialized();
+        	MBeanServerConnection serverConn = tool.mbeanServerConn;
+        	if (serverConn == null) {
+        		logger.info("Test connection to remove MBean server failed as there is no connection.");
+        		return false;
+        	}
+        	
+            if ( serverConn.getMBeanCount() < 1 ) { //If C* is up, it should have at multiple MBeans registered.
+            	logger.info("Test connection to remove MBean server failed as there is no registered MBeans.");
+            	return false;
+            }
         }
         catch (Throwable ex)
         {
             SystemUtils.closeQuietly(tool);
+            logger.error("Exception while checking JXM connection to C*, msg: " + ex.getLocalizedMessage());
             return false;
         }
         return true;
@@ -154,7 +164,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     }
     
     private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
-    	JMXNodeTool jmxNodeTool = null;
 		// If Cassandra is started then only start the monitoring
 		if (!CassandraMonitor.isCassadraStarted()) {
 			String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
@@ -172,7 +181,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     		
 		try {
 			
-			jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
+			tool = new BoundedExponentialRetryCallable<JMXNodeTool>()
 			{
 				@Override
 				public JMXNodeTool retriableCall() throws Exception
@@ -200,10 +209,10 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
 		Iterator<INodeToolObserver> it = observers.iterator();
 		while (it.hasNext()) {
 			INodeToolObserver observer = it.next();
-			observer.nodeToolHasChanged(jmxNodeTool);
+			observer.nodeToolHasChanged(tool);
 		}
 		
-		return jmxNodeTool;    	
+		return tool;    	
     }
 
     /**

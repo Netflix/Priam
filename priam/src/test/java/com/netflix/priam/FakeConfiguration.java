@@ -673,6 +673,11 @@ public class FakeConfiguration implements IConfiguration
     	return null;
     }
 
+    @Override
+    public String getVpcId() {
+    	return "";
+    }
+    
 	@Override
 	public Boolean isIncrBackupParallelEnabled() {
 		return false;

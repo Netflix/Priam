@@ -523,6 +523,11 @@ public interface IConfiguration
      */
     Map<String, String> getExtraEnvParams();
     
+    /*
+     * @return the vpc id of the running instance.
+     */
+    public String getVpcId();
+    
     public Boolean isIncrBackupParallelEnabled();
     /*
      * The number of workers for parallel uploads.

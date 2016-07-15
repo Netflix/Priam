@@ -29,6 +29,8 @@ import com.google.inject.Singleton;
 import com.netflix.priam.IConfigSource;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
+import com.netflix.priam.identity.InstanceEnvIdentity;
+import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 
@@ -167,19 +169,24 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
-    private final String RAC = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
-    private final String PUBLIC_HOSTNAME;
-    private final String PUBLIC_IP;
     private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
     private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
-    private final String INSTANCE_ID = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id").trim();
-    private final String INSTANCE_TYPE = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
     private static final String CONFIG_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".roleassumption.arn"; //Restore from AWS.  This is applicable when restoring from an AWS account which requires cross account assumption. 
 
-
+    //Running instance meta data
+    private String RAC;
+    private String PUBLIC_HOSTNAME;
+    private String PUBLIC_IP;
+    private String INSTANCE_TYPE;
+    private String INSTANCE_ID;
+    private String NETWORK_MAC;  //Fetch metadata of the running instance's network interface
+    
+    //== vpc specific   
+    private String NETWORK_VPC;  //Fetch the vpc id of running instance
+    
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
@@ -238,8 +245,10 @@ public class PriamConfiguration implements IConfiguration
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
     private final ICredential provider;
 
+	private InstanceEnvIdentity insEnvIdentity;
+
     @Inject
-    public PriamConfiguration(ICredential provider, IConfigSource config)
+    public PriamConfiguration(ICredential provider, IConfigSource config, InstanceEnvIdentity insEnvIdentity)
     {
         // public interface meta-data does not exist when Priam runs in AWS VPC (priam.vpc=true)
         String p_hostname="";
@@ -260,6 +269,7 @@ public class PriamConfiguration implements IConfiguration
         this.PUBLIC_IP = p_ip;
         this.provider = provider;
         this.config = config;
+        this.insEnvIdentity = insEnvIdentity;
     }
 
     @Override
@@ -273,6 +283,35 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getCommitLogLocation());
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
+        
+    	InstanceDataRetriever instanceDataRetriever;
+		try {
+			instanceDataRetriever = getInstanceDataRetriever();
+		} catch (Exception e) {
+			throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
+		}
+		
+	    RAC = instanceDataRetriever.getRac();
+	    PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
+	    PUBLIC_IP = instanceDataRetriever.getPublicIP();
+
+	    INSTANCE_ID = instanceDataRetriever.getInstanceId();
+	    INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
+
+		NETWORK_MAC =  instanceDataRetriever.getMac();
+		NETWORK_VPC = instanceDataRetriever.getVpcId();
+    }
+    
+    private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException
+    {
+    	if (this.insEnvIdentity.isClassic()) {
+    		return (InstanceDataRetriever)Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
+    		
+    	} else if (this.insEnvIdentity.isNonDefaultVpc()) {
+    		return (InstanceDataRetriever)Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
+    	} else {
+    		throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
+    	}
     }
 
     private void setupEnvVars()
@@ -935,15 +974,15 @@ public class PriamConfiguration implements IConfiguration
     public String getRpcServerType() {
     	return config.get(CONFIG_RPC_SERVER_TYPE, DEFAULT_RPC_SERVER_TYPE);
     }
-
+    
     public int getRpcMinThreads() {
         return config.get(CONFIG_RPC_MIN_THREADS, DEFAULT_RPC_MIN_THREADS);
     }
-    
+    	      		      
     public int getRpcMaxThreads() {
-        return config.get(CONFIG_RPC_MAX_THREADS, DEFAULT_RPC_MAX_THREADS);
+    	 return config.get(CONFIG_RPC_MAX_THREADS, DEFAULT_RPC_MAX_THREADS);
     }
-
+    
     public int getIndexInterval() {
     	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }
@@ -1037,7 +1076,15 @@ public class PriamConfiguration implements IConfiguration
 	public String getPgpPublicKeyLoc() {
 		return config.get(CONFIG_PGP_PUB_KEY_LOC);
 	}
-
+	
+	@Override
+    /*
+     * @return the vpc id of the running instance.
+     */
+	public String getVpcId() {
+		return NETWORK_VPC;
+	}
+	
 	@Override
 	public Boolean isIncrBackupParallelEnabled() {
 		return config.get(PRIAM_PRE  + ".incremental.bkup.parallel", false);

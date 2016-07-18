@@ -143,6 +143,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
     private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
     private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
+    private static final String CONFIG_EU_CENTRAL_1_S3_ENDPOINT = PRIAM_PRE + ".eucentral1.s3url";
     
     private static final String CONFIG_RESTORE_SOURCE_TYPE = PRIAM_PRE + ".restore.source.type"; //the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
     private static final String CONFIG_ENCRYPTED_BACKUP_ENABLED = PRIAM_PRE + ".encrypted.backup.enabled"; //enable encryption of backup (snapshots, incrementals, commit logs).
@@ -162,6 +163,7 @@ public class PriamConfiguration implements IConfiguration
     private static String US_WEST_2_REGION = "us-west-2";
     private static String EU_WEST_1_REGION = "eu-west-1";
     private static String SA_EAST_1_REGION = "sa-east-1";
+    private static String EU_CENTRAL_1_REGION = "eu-central-1";
     
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -234,6 +236,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String DEFAULT_US_WEST_2_S3_ENDPOINT = "s3-us-west-2.amazonaws.com";
     private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
     private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
+    private static final String DEFAULT_EU_CENTRAL_1_S3_ENDPOINT = "s3-eu-central-1.amazonaws.com";
     
    
     private final IConfigSource config; 
@@ -947,6 +950,12 @@ public class PriamConfiguration implements IConfiguration
     		s3Url = config.get(CONFIG_SA_EAST_1_S3_ENDPOINT);
     		return StringUtils.isBlank(s3Url) ? DEFAULT_SA_EAST_1_S3_ENDPOINT : s3Url;
     	}
+
+        if (EU_CENTRAL_1_REGION.equals(region))
+        {
+            s3Url = config.get(CONFIG_EU_CENTRAL_1_S3_ENDPOINT);
+            return StringUtils.isBlank(s3Url) ? DEFAULT_EU_CENTRAL_1_S3_ENDPOINT : s3Url;
+        }
     	
     	return null;
     }

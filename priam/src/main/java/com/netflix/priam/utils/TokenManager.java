@@ -22,10 +22,37 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
 
+import com.netflix.priam.IConfiguration;
+import com.google.inject.Inject;
+
 public class TokenManager implements ITokenManager
-{    
-    public static final BigInteger MINIMUM_TOKEN = BigInteger.ZERO;
-    public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
+{
+    public static final BigInteger MINIMUM_TOKEN_RANDOM = BigInteger.ZERO;
+    public static final BigInteger MAXIMUM_TOKEN_RANDOM = new BigInteger("2").pow(127);
+    public static final BigInteger MINIMUM_TOKEN_MURMUR3 = new BigInteger("-2").pow(63);
+    public static final BigInteger MAXIMUM_TOKEN_MURMUR3 = new BigInteger("2").pow(63);
+
+
+    private final BigInteger minimumToken;
+    private final BigInteger maximumToken;
+    private final BigInteger tokenRangeSize;
+
+    private IConfiguration config;
+
+    @Inject
+    public TokenManager(IConfiguration config)
+    {
+        this.config = config;
+
+        if("org.apache.cassandra.dht.Murmur3Partitioner".equals(this.config.getPartitioner())) {
+          minimumToken = MINIMUM_TOKEN_MURMUR3;
+          maximumToken = MAXIMUM_TOKEN_MURMUR3;
+        } else {
+          minimumToken = MINIMUM_TOKEN_RANDOM;
+          maximumToken = MAXIMUM_TOKEN_RANDOM;
+        }
+        tokenRangeSize = maximumToken.subtract(minimumToken);
+    }
 
     /**
      * Calculate a token for the given position, evenly spaced from other size-1 nodes.  See
@@ -45,14 +72,15 @@ public class TokenManager implements ITokenManager
          * unit test failures.
          */
         Preconditions.checkArgument(position >= 0, "position must be >= 0");
-        return MAXIMUM_TOKEN.divide(BigInteger.valueOf(size))
+        return tokenRangeSize.divide(BigInteger.valueOf(size))
                 .multiply(BigInteger.valueOf(position))
-                .add(BigInteger.valueOf(offset));
+                .add(BigInteger.valueOf(offset))
+                .add(minimumToken);
     }
 
     /**
      * Creates a token given the following parameter
-     * 
+     *
      * @param my_slot
      *            -- Slot where this instance has to be.
      * @param rac_count
@@ -68,13 +96,13 @@ public class TokenManager implements ITokenManager
         int regionCount = rac_count * rac_size;
         return initialToken(regionCount, my_slot, regionOffset(region)).toString();
     }
-    
+
     @Override
     public String createToken(int my_slot, int totalCount, String region)
     {
         return initialToken(totalCount, my_slot, regionOffset(region)).toString();
     }
-    
+
     @Override
     public BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList)
     {

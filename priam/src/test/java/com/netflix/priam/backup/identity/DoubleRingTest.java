@@ -16,7 +16,6 @@ import static org.junit.Assert.assertEquals;
 
 public class DoubleRingTest extends InstanceTestUtils
 {
-    private static final ITokenManager tokenManager = new TokenManager();
 
     @Test
     public void testDouble() throws Exception

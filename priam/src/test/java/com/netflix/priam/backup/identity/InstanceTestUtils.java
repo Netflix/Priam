@@ -33,7 +33,7 @@ public abstract class InstanceTestUtils
     DeadTokenRetriever deadTokenRetriever;
     PreGeneratedTokenRetriever preGeneratedTokenRetriever;
 	NewTokenRetriever newTokenRetriever;
-	private static final ITokenManager tokenManager = new TokenManager();
+  	ITokenManager tokenManager;
 
     @Before
     public void setup()
@@ -50,6 +50,7 @@ public abstract class InstanceTestUtils
 
         membership = new FakeMembership(instances);
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
+        tokenManager = new TokenManager(config);
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
         this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper);
@@ -71,12 +72,12 @@ public abstract class InstanceTestUtils
         createInstanceIdentity("az3", "fakeinstance8");
         createInstanceIdentity("az3", "fakeinstance9");
     }
-    
+
     protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception
     {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager()
+        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager(config)
         , this.deadTokenRetriever
         , this.preGeneratedTokenRetriever
         , this.newTokenRetriever

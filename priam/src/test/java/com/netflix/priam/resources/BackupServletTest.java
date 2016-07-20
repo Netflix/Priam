@@ -53,16 +53,17 @@ public class BackupServletTest
     private @Mocked IPriamInstanceFactory factory;
     private @Mocked ICassandraProcess cassProcess;
     private @Mocked BackupStatusMgr bkupStatusMgr;
-    private final ITokenManager tokenManager = new TokenManager();
+    private ITokenManager tokenManager;
     private BackupServlet resource;
     private RestoreServlet restoreResource;
 
     @Before
     public void setUp()
     {
+        this.tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
             tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr);
-        
+
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager);
     }
@@ -96,19 +97,19 @@ public class BackupServletTest
             {
               priamServer.getId(); result = identity; times = 2;
             }
-        };	
+        };
 
         new Expectations() {
-  
+
             {
                 config.getDC(); result = oldRegion;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
                 config.isRestoreClosestToken(); result = false;
-  
+
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
+
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
@@ -141,7 +142,7 @@ public class BackupServletTest
             }
         };
         new Expectations() {
-  
+
             {
                 pathProvider.get(); result = backupPath;
                 backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
@@ -156,7 +157,7 @@ public class BackupServletTest
                 restoreObj.restore(
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
-  
+
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
@@ -187,7 +188,7 @@ public class BackupServletTest
 //            @NonStrict InstanceIdentity identity;
 //            PriamInstance instance;
 //            @NonStrict PriamInstance instance1, instance2, instance3;
-//  
+//
 //            {
 //                config.getDC(); result = oldRegion;
 //                priamServer.getId(); result = identity; times = 3;
@@ -195,7 +196,7 @@ public class BackupServletTest
 //                instance.getToken(); result = oldToken;
 //
 //                config.isRestoreClosestToken(); result = false;
-//                
+//
 //                config.setDC(newRegion);
 //                instance.getToken(); result = oldToken;
 //                config.getAppName(); result = appName;
@@ -211,7 +212,7 @@ public class BackupServletTest
 //                instance.setToken((String) any); // TODO: test mocked closest token
 //
 //                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-//  
+//
 //                config.setDC(oldRegion);
 //                instance.setToken(oldToken);
 //                tuneCassandra.writeAllProperties(false);
@@ -244,7 +245,7 @@ public class BackupServletTest
             }
         };
         new Expectations() {
-  
+
             {
                 config.getDC(); result = oldRegion;
                 identity.getInstance(); result = instance; times = 3;
@@ -254,7 +255,7 @@ public class BackupServletTest
                 config.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
+
                 config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
@@ -296,13 +297,13 @@ public class BackupServletTest
             }
         };
         new Expectations() {
-  
+
             {
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
-  
+
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
@@ -367,7 +368,7 @@ public class BackupServletTest
                 restoreObj.restore(
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
-  
+
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }

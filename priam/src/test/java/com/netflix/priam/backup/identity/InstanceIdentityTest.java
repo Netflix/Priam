@@ -14,7 +14,6 @@ import static org.junit.Assert.assertEquals;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {
-    private static final ITokenManager tokenManager = new TokenManager();
 
     @Test
     public void testCreateToken() throws Exception

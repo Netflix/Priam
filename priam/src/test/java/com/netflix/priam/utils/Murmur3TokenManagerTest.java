@@ -5,17 +5,27 @@ import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
+import org.junit.Before;
 
 import com.google.common.collect.ImmutableList;
-import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN;
-import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN;
+import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN_MURMUR3;
+import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN_MURMUR3;
+import com.netflix.priam.FakeConfigurationMurmur3;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
-public class TokenManagerTest
+public class Murmur3TokenManagerTest
 {
-    private static final TokenManager tokenManager = new TokenManager();
-    
+    FakeConfigurationMurmur3 config;
+    private TokenManager tokenManager;
+
+    @Before
+    public void setUp()
+    {
+        this.config = new FakeConfigurationMurmur3();
+        this.tokenManager = new TokenManager(config);
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void initialToken_zeroSize()
     {
@@ -37,34 +47,35 @@ public class TokenManagerTest
     @Test
     public void initialToken_positionZero()
     {
-        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(1, 0, 0));
-        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(10, 0, 0));
-        assertEquals(MINIMUM_TOKEN, tokenManager.initialToken(133, 0, 0));
+        assertEquals(MINIMUM_TOKEN_MURMUR3, tokenManager.initialToken(1, 0, 0));
+        assertEquals(MINIMUM_TOKEN_MURMUR3, tokenManager.initialToken(10, 0, 0));
+        assertEquals(MINIMUM_TOKEN_MURMUR3, tokenManager.initialToken(133, 0, 0));
     }
 
     @Test
     public void initialToken_offsets_zeroPosition()
     {
-        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(7)), tokenManager.initialToken(1, 0, 7));
-        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(11)), tokenManager.initialToken(2, 0, 11));
-        assertEquals(MINIMUM_TOKEN.add(BigInteger.valueOf(Integer.MAX_VALUE)),
+        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(7)), tokenManager.initialToken(1, 0, 7));
+        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(11)), tokenManager.initialToken(2, 0, 11));
+        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(Integer.MAX_VALUE)),
                 tokenManager.initialToken(256, 0, Integer.MAX_VALUE));
     }
-    
+
     @Test
     public void initialToken_cannotExceedMaximumToken() {
         final int maxRingSize = Integer.MAX_VALUE;
         final int maxPosition = maxRingSize - 1;
         final int maxOffset = Integer.MAX_VALUE;
-        assertEquals(1, MAXIMUM_TOKEN.compareTo(tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
+        assertEquals(1, MAXIMUM_TOKEN_MURMUR3.compareTo(tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
     }
 
     @Test
     public void createToken()
     {
-        assertEquals(MAXIMUM_TOKEN.divide(BigInteger.valueOf(8 * 32))
+        assertEquals(MAXIMUM_TOKEN_MURMUR3.subtract(MINIMUM_TOKEN_MURMUR3).divide(BigInteger.valueOf(8 * 32))
                 .multiply(BigInteger.TEN)
                 .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
+                .add(MINIMUM_TOKEN_MURMUR3)
                 .toString(),
                 tokenManager.createToken(10, 8, 32, "region"));
     }
@@ -106,8 +117,9 @@ public class TokenManagerTest
     public void test4Splits()
     {
         // example tokens from http://wiki.apache.org/cassandra/Operations
-        final String expectedTokens = "0,42535295865117307932921825928971026432,"
-                + "85070591730234615865843651857942052864,127605887595351923798765477786913079296";
+
+        final String expectedTokens = "-9223372036854775808,-4611686018427387904,"
+                + "0,4611686018427387904";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
@@ -117,14 +129,14 @@ public class TokenManagerTest
     @Test
     public void test16Splits()
     {
-        final String expectedTokens = "0,10633823966279326983230456482242756608,"
-                + "21267647932558653966460912964485513216,31901471898837980949691369446728269824,"
-                + "42535295865117307932921825928971026432,53169119831396634916152282411213783040,"
-                + "63802943797675961899382738893456539648,74436767763955288882613195375699296256,"
-                + "85070591730234615865843651857942052864,95704415696513942849074108340184809472,"
-                + "106338239662793269832304564822427566080,116972063629072596815535021304670322688,"
-                + "127605887595351923798765477786913079296,138239711561631250781995934269155835904,"
-                + "148873535527910577765226390751398592512,159507359494189904748456847233641349120";
+        final String expectedTokens = "-9223372036854775808,-8070450532247928832,"
+                + "-6917529027641081856,-5764607523034234880,"
+                + "-4611686018427387904,-3458764513820540928,"
+                + "-2305843009213693952,-1152921504606846976,"
+                + "0,1152921504606846976,"
+                + "2305843009213693952,3458764513820540928,"
+                + "4611686018427387904,5764607523034234880,"
+                + "6917529027641081856,8070450532247928832";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)

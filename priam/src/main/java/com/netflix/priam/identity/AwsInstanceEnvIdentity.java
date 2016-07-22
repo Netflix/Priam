@@ -2,7 +2,7 @@ package com.netflix.priam.identity;
 
 import com.google.inject.Singleton;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
-import com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever;
+import com.netflix.priam.identity.config.VpcInstanceDataRetriever;
 
 /*
  * A means to determine if running instance is within classic, default vpc account, or non-default vpc account
@@ -25,7 +25,7 @@ public class AwsInstanceEnvIdentity implements InstanceEnvIdentity {
 	 * @return the vpc id of the running instance, null if instance is not running within vpc.
 	 */
 	private String getVpcId() {
-		InstanceDataRetriever insDataRetriever = new AWSVpcInstanceDataRetriever();
+		InstanceDataRetriever insDataRetriever = new VpcInstanceDataRetriever();
 		return insDataRetriever.getVpcId();
 	}
 

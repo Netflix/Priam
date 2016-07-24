@@ -58,6 +58,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
+    
     private static Set<INodeToolObserver> observers = new HashSet<INodeToolObserver>();
 
     /**
@@ -113,24 +114,34 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
         
         try
         {
-            tool.isInitialized();
+        	MBeanServerConnection serverConn = tool.mbeanServerConn;
+        	if (serverConn == null) {
+        		logger.info("Test connection to remove MBean server failed as there is no connection.");
+        		return false;
+        	}
+        	
+            if ( serverConn.getMBeanCount() < 1 ) { //If C* is up, it should have at multiple MBeans registered.
+            	logger.info("Test connection to remove MBean server failed as there is no registered MBeans.");
+            	return false;
+            }
         }
         catch (Throwable ex)
         {
             SystemUtils.closeQuietly(tool);
+            logger.error("Exception while checking JXM connection to C*, msg: " + ex.getLocalizedMessage());
             return false;
         }
         return true;
     }
-    
+
     /*
      * A means to clean up existing and recreate the JMX connection to the Cassandra process.
      * @return the new connection.
      */
     public static synchronized JMXNodeTool createNewConnection(final IConfiguration config) throws JMXConnectionException {
     	return createConnection(config);
-    }
-
+    }    
+    
     public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
     {
     	//lets make sure some other monitor didn't sneak in the recreated the connection already
@@ -153,13 +164,12 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     }
     
     private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
-    	JMXNodeTool jmxNodeTool = null;
 		// If Cassandra is started then only start the monitoring
 		if (!CassandraMonitor.isCassadraStarted()) {
 			String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);
-		}      
+		}
 		
     	if (tool != null) { //lets make sure we properly close any existing (even if it's corrupted) connection to the remote jmx agent 
         	try {
@@ -171,7 +181,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     		
 		try {
 			
-			jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
+			tool = new BoundedExponentialRetryCallable<JMXNodeTool>()
 			{
 				@Override
 				public JMXNodeTool retriableCall() throws Exception
@@ -199,10 +209,10 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
 		Iterator<INodeToolObserver> it = observers.iterator();
 		while (it.hasNext()) {
 			INodeToolObserver observer = it.next();
-			observer.nodeToolHasChanged(jmxNodeTool);
+			observer.nodeToolHasChanged(tool);
 		}
 		
-		return jmxNodeTool;    	
+		return tool;    	
     }
 
     /**
@@ -408,5 +418,4 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
         	observers.remove(observer);    		
     	}
     }
-    
 }

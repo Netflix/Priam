@@ -24,14 +24,17 @@ import org.apache.cassandra.utils.FBUtilities;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
+import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.remote.JMXConnector;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
+import java.util.Date;
 import java.util.List;
 
 
@@ -67,6 +70,16 @@ public class SystemUtils
             throw new RuntimeException(ex);
         }
 
+    }
+    
+    /*
+     * @param datae to format
+     * @param e.g. yyyymmddhhmm
+     * @return formatted date
+     */
+    public static String formatDate(Date date, String format) {
+		String s = new DateTime(date).toString(format);
+		return s;
     }
 
     /**

@@ -17,9 +17,10 @@ import org.slf4j.LoggerFactory;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.SystemUtils;
 
 /*
- * Encapsulates meta data concerning a backup (snapshot, and incremental).
+ * A means to manage metadata for various types of backups (snapshots, incrementals)
  */
 @Singleton
 public class BackupStatusMgr {
@@ -37,20 +38,39 @@ public class BackupStatusMgr {
 		this.capacity = 60;  //TODO: fetch from properties
 	}
 
-	public void add(String key, String val) {
+	/*
+	 * Will add or update (a new snapshot for the same key (day)).  The start / completed time applies to the most recent 
+	 * snapshot.
+	 */
+	public BackupMetadata add(String key, String backup, Date startTime, Date completedTime) {
 		if (bkups.size() == this.capacity) {
 			bkups.removeFirst(); //Remove the oldest backup
 		}
 		BackupMetadata b = locate(key);
 		if (b != null) {
-			b.getBackups().add(val);
+			b.getBackups().add(backup);
+			b.setStartTime(startTime);
+			b.setCompletedTime(completedTime);
 			logger.info("Adding val to existing snapshot: " + key);
 			
 		} else {
-			BackupMetadata c = new BackupMetadata(key, val);
+			BackupMetadata c = new BackupMetadata(key, backup);
+			c.setCompletedTime(completedTime);
+			c.setStartTime(startTime);
+			
+			try {
+				String token = SystemUtils.getDataFromUrl("http://localhost:8080/Priam/REST/v1/cassconfig/get_token");
+				c.setToken(token);				
+			} catch (Exception e) {
+				logger.warn("Backup metadata will not have a token as I was not able to fetch it.");
+			}
+
+			
 			bkups.add(c);
 			logger.info("Adding new snapshot meta data: " + key);
 		}
+		
+		return b;
 
 	}
 
@@ -99,7 +119,7 @@ public class BackupStatusMgr {
 		
 	}
 	
-	private BackupMetadata locate(String key) {
+	public BackupMetadata locate(String key) {
 		BackupMetadata res = null;
 		//start with the most recent bakcup
 		Iterator<BackupMetadata> descIt = bkups.descendingIterator();
@@ -131,9 +151,14 @@ public class BackupStatusMgr {
 		return result;
 	}
 	
+	/*
+	 * Encapsulates metadata for a backup.
+	 */
 	public static class BackupMetadata {
 		private List<String> backups = new ArrayList<String>();
 		private String key;
+		private String token;
+		private Date start, completed;
 
 		public BackupMetadata(String key, String val) {
 			this.key = key;
@@ -152,6 +177,30 @@ public class BackupStatusMgr {
 		 */
 		public String getKey() {
 			return this.key;
+		}
+
+		public String getToken() {
+			return token;
+		}
+
+		public void setToken(String token) {
+			this.token = token;
+		}
+
+		public Date getStartTime() {
+			return start;
+		}
+
+		public void setStartTime(Date start) {
+			this.start = start;
+		}
+		
+		public void setCompletedTime(Date completed) {
+			this.completed = completed;
+		}
+		
+		public Date getCompletedTime() {
+			return this.completed;
 		}
 	}
 	

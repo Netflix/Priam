@@ -56,6 +56,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BackupStatusMgr;
+import com.netflix.priam.backup.BackupStatusMgr.BackupMetadata;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IMessageObserver;
@@ -209,9 +210,48 @@ public class BackupServlet
     @GET
     @Path("/status/{date}")
     public Response statusByDate(@PathParam("date") String date) throws Exception {
-    	Boolean success = this.completedBkups.status(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+    	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
+    	Boolean success = this.completedBkups.status(key);
         JSONObject object = new JSONObject();
-        object.put("Snapshotstatus", success);
+        StringBuffer strBuffer = new StringBuffer();
+        strBuffer.append(success);
+        
+    	BackupMetadata bkupMetadata = this.completedBkups.locate(key);
+    	if (bkupMetadata != null ) { //backup exist base on requested date, lets fetch more of its metadata
+            strBuffer.append(',');
+            String token = bkupMetadata.getToken();
+            if (token != null && !token.isEmpty() ) {
+                strBuffer.append("token=" + bkupMetadata.getToken());        	
+            } else {
+                strBuffer.append("token=not available");
+            }
+            strBuffer.append(',');
+            if (bkupMetadata.getStartTime() != null) {
+                strBuffer.append("starttime=" + SystemUtils.formatDate(bkupMetadata.getStartTime(), "yyyyMMddHHmm"));        	
+            } else {
+                strBuffer.append("starttime=not available");
+            }
+
+            Date completeTime = bkupMetadata.getCompletedTime();
+            strBuffer.append(',');
+            if (bkupMetadata.getCompletedTime() != null ) {
+                strBuffer.append("completetime=" + SystemUtils.formatDate(bkupMetadata.getCompletedTime(), "yyyyMMddHHmm"));        	
+            } else {
+            	strBuffer.append("completetime=not_available"); 
+            }
+    		
+    	} else {
+    		String token = SystemUtils.getDataFromUrl("http://localhost:8080/Priam/REST/v1/cassconfig/get_token");
+            if (token != null && !token.isEmpty() ) {
+            	strBuffer.append(',');
+                strBuffer.append("token=" + token);        	
+            } else {
+            	strBuffer.append(',');
+                strBuffer.append("token=not available");
+            }
+    	}
+
+        object.put("Snapshotstatus", strBuffer.toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 

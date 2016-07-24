@@ -38,6 +38,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupStatusMgr.BackupMetadata;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -149,6 +150,7 @@ public class SnapshotBackup extends AbstractBackup
     		}
 
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Date startTime = cal.getTime();
         String snapshotName = pathFactory.get().formatDate(cal.getTime());
         try
         {
@@ -197,7 +199,8 @@ public class SnapshotBackup extends AbstractBackup
             // Upload meta file
             metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
-            this.postProcesing(cal.getTime(), snapshotName);
+            Calendar completed = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+            this.postProcesing(snapshotName, startTime, completed.getTime());
             
             if(snapshotRemotePaths.size() > 0)
             {
@@ -221,11 +224,15 @@ public class SnapshotBackup extends AbstractBackup
     /*
      * Performs any post processing (e.g. log success of backup).
      * 
-     * @param name of the snapshotname, format is yyyymmddhhss
+     * @param name of the snapshotname, format is yyyymmddhhs
+     * @param start time of backup
      */
-    private void postProcesing(Date date, String snapshotname) {
-    	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);  //format is backuptype_yyyymmdd
-    	this.completedBackups.add(key, snapshotname);
+    private void postProcesing(String snapshotname, Date start, Date completed) {
+    	if ( !snapshotname.isEmpty() && start != null & completed != null) {
+        	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
+        	BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);    		
+    	}
+    	
     }
     
     /*

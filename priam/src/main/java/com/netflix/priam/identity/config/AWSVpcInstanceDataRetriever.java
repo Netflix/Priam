@@ -10,8 +10,8 @@ import com.netflix.priam.utils.SystemUtils;
 * Calls AWS metadata to get info on the location of the running instance within vpc environment.
 *
 */
-public class VpcInstanceDataRetriever implements InstanceDataRetriever {
-	private static final Logger logger = LoggerFactory.getLogger(VpcInstanceDataRetriever.class);
+public class AWSVpcInstanceDataRetriever  extends InstanceDataRetrieverBase implements InstanceDataRetriever {
+	private static final Logger logger = LoggerFactory.getLogger(AWSVpcInstanceDataRetriever.class);
 
    public String getRac()
    {

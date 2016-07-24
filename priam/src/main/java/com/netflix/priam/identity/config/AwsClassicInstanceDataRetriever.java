@@ -1,12 +1,14 @@
 package com.netflix.priam.identity.config;
 
+import org.codehaus.jettison.json.JSONException;
+
 import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Calls AWS metadata to get info on the location of the running instance within classic environment.
  *
  */
-public class AwsInstanceDataRetriever implements InstanceDataRetriever {
+public class AwsClassicInstanceDataRetriever extends InstanceDataRetrieverBase implements InstanceDataRetriever {
 
     public String getRac()
     {

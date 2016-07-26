@@ -552,6 +552,16 @@ public class FakeConfiguration implements IConfiguration
 		return "hsha";
 	}
 
+    @Override
+    public int getRpcMinThreads() {
+        return 16;
+    }
+
+    @Override
+    public int getRpcMaxThreads() {
+        return 2048;
+    }
+
 	@Override
 	public int getIndexInterval() {
 		return 0;

@@ -132,6 +132,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
     
     private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
+    private static final String CONFIG_RPC_MIN_THREADS = PRIAM_PRE + ".rpc.min.threads";
+    private static final String CONFIG_RPC_MAX_THREADS = PRIAM_PRE + ".rpc.max.threads";
     private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
     private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
     private static final String CONFIG_AUTO_BOOTSTRAP = PRIAM_PRE + ".auto.bootstrap";
@@ -225,6 +227,8 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
     
     private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
+    private static final int DEFAULT_RPC_MIN_THREADS = 16;
+    private static final int DEFAULT_RPC_MAX_THREADS = 2048;
     private static final int DEFAULT_INDEX_INTERVAL = 256;
     
     
@@ -970,7 +974,15 @@ public class PriamConfiguration implements IConfiguration
     public String getRpcServerType() {
     	return config.get(CONFIG_RPC_SERVER_TYPE, DEFAULT_RPC_SERVER_TYPE);
     }
+
+    public int getRpcMinThreads() {
+        return config.get(CONFIG_RPC_MIN_THREADS, DEFAULT_RPC_MIN_THREADS);
+    }
     
+    public int getRpcMaxThreads() {
+        return config.get(CONFIG_RPC_MAX_THREADS, DEFAULT_RPC_MAX_THREADS);
+    }
+
     public int getIndexInterval() {
     	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }

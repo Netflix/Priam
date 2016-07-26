@@ -89,6 +89,8 @@ public class StandardTuner implements CassandraTuner
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
         
         map.put("rpc_server_type", config.getRpcServerType());
+        map.put("rpc_min_threads", config.getRpcMinThreads());
+        map.put("rpc_max_threads", config.getRpcMaxThreads());
         //map.put("index_interval", config.getIndexInterval());
         
         List<?> seedp = (List) map.get("seed_provider");

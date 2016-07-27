@@ -35,8 +35,10 @@ import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.priam.identity.AwsInstanceEnvIdentity;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
@@ -74,6 +76,8 @@ public class BRTestModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
+        bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
+
 
     }
 }

@@ -35,6 +35,14 @@ public interface IMembership
      */
     public List<String> getRacMembership();
 
+    
+    /**
+     * Get a list of Instances in the cross-account but current RAC
+     * 
+     * @return
+     */
+	public List<String> getCrossAccountRacMembership();
+    
     /**
      * @return Size of current RAC
      */
@@ -78,4 +86,6 @@ public interface IMembership
      * @param count
      */
     public void expandRacMembership(int count);
+
+
 }

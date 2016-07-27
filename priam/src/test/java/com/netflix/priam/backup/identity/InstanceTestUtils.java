@@ -5,6 +5,7 @@ import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.NewTokenRetriever;
@@ -33,6 +34,7 @@ public abstract class InstanceTestUtils
     DeadTokenRetriever deadTokenRetriever;
     PreGeneratedTokenRetriever preGeneratedTokenRetriever;
 	NewTokenRetriever newTokenRetriever;
+	InstanceEnvIdentity insEnvIdentity;  
 	private static final ITokenManager tokenManager = new TokenManager();
 
     @Before
@@ -52,7 +54,7 @@ public abstract class InstanceTestUtils
         config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
-        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper);
+        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
         this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
         this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }

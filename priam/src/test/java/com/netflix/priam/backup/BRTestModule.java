@@ -28,6 +28,7 @@ import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
+import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -76,7 +77,7 @@ public class BRTestModule extends AbstractModule
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
-        bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
+        bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
 
 
     }

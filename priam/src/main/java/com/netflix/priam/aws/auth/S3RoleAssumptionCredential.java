@@ -25,7 +25,8 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 	private AWSCredentialsProvider stsSessionCredentialsProvider;
 
 	@Inject
-	public S3RoleAssumptionCredential(IConfiguration config) {
+	public S3RoleAssumptionCredential(ICredential cred, IConfiguration config) {
+		this.cred = cred;
 		this.config = config;		
 	}
 	

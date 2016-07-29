@@ -601,6 +601,21 @@ public class FakeConfiguration implements IConfiguration
 	public String getAWSRoleAssumptionArn() {
 		return null;
 	}
+	
+    @Override
+	public String getClassicEC2RoleAssumptionArn() {
+		return null;
+	}
+
+    @Override
+	public String getVpcEC2RoleAssumptionArn() {
+		return null;
+	}
+
+    @Override
+	public boolean isDualAccount(){
+    	return false;
+    }
 
 	@Override
 	public String getGcsServiceAccountId() {

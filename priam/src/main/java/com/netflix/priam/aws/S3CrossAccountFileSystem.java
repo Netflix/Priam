@@ -30,7 +30,7 @@ public class S3CrossAccountFileSystem  {
 	private IS3Credential s3Credential;
 	
 	@Inject
-	public S3CrossAccountFileSystem(@Named("backup") IBackupFileSystem fs, @Named("awsroleassumption") IS3Credential s3Credential, IConfiguration config) {
+	public S3CrossAccountFileSystem(@Named("backup") IBackupFileSystem fs, @Named("awss3roleassumption") IS3Credential s3Credential, IConfiguration config) {
 	
 		
 		this.s3fs = (S3FileSystem) fs;

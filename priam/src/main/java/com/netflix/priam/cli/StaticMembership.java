@@ -80,6 +80,12 @@ public class StaticMembership implements IMembership
     {
         return racMembership;
     }
+    
+    @Override
+    public List<String> getCrossAccountRacMembership()
+    {
+    	return null;
+    }
 
     @Override
     public int getRacMembershipSize()

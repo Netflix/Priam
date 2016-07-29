@@ -25,6 +25,13 @@ public class FakeMembership implements IMembership
     {
         return instances;
     }
+    
+    @Override
+    public List<String> getCrossAccountRacMembership()
+    {
+       return null;	
+    }
+
 
     @Override
     public int getRacMembershipSize()

@@ -1,5 +1,6 @@
 package com.netflix.priam.identity.token;
 
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
@@ -18,6 +19,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.Sleeper;
@@ -35,21 +37,56 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 	private Sleeper sleeper;
 	private String replacedIp; //The IP address of the dead instance to which we will acquire its token
 	private ListMultimap<String, PriamInstance> locMap;
+	private InstanceEnvIdentity insEnvIdentity;    
+
 	
 	@Inject
-	public  DeadTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, Sleeper sleeper) {
+	public  DeadTokenRetriever(IPriamInstanceFactory factory, IMembership membership, IConfiguration config, 
+			Sleeper sleeper, InstanceEnvIdentity insEnvIdentity) {
 		this.factory = factory;
 		this.membership = membership;
 		this.config = config;
 		this.sleeper = sleeper;
+        this.insEnvIdentity = insEnvIdentity;
 	}
 
+    private List<String> getDualAccountRacMembership(List<String> asgInstances){
+    	logger.info("Dual Account cluster");
+
+        List<String> crossAccountAsgInstances = membership.getCrossAccountRacMembership();           
+
+        if (insEnvIdentity.isClassic()) {
+           logger.info("EC2 classic instances (local ASG): " + Arrays.toString(asgInstances.toArray()));
+           logger.info("VPC Account (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
+        }
+        else {
+           logger.info("VPC Account (local ASG): " + Arrays.toString(asgInstances.toArray()));
+           logger.info("EC2 classic instances (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
+        }
+  
+        // Remove duplicates (probably there are not)
+        asgInstances.removeAll(crossAccountAsgInstances);
+    
+        // Merge the two lists
+        asgInstances.addAll(crossAccountAsgInstances);
+        logger.info("Combined Instances in the AZ: " + asgInstances);
+        
+    	return asgInstances;
+    }
+	
 	@Override
 	public PriamInstance get() throws Exception {
 		
     	logger.info("Looking for a token from any dead node");
         final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
-        List<String> asgInstances = membership.getRacMembership();
+        List<String> asgInstances = membership.getRacMembership();       
+        if (config.isDualAccount()){
+        	asgInstances = getDualAccountRacMembership(asgInstances);
+        }
+        else {
+        	logger.info("Single Account cluster");
+        }
+        
         // Sleep random interval - upto 15 sec
         sleeper.sleep(new Random().nextInt(5000) + 10000);
         for (PriamInstance dead : allIds)

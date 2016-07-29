@@ -525,6 +525,23 @@ public interface IConfiguration
      * @return the vpc id of the running instance.
      */
     public String getVpcId();
+       
+
+    /*
+     * @return the Amazon Resource Name (ARN) for EC2 classic. 
+     */
+	public String getClassicEC2RoleAssumptionArn();
+		
+    /*
+     * @return the Amazon Resource Name (ARN) for VPC. 
+     */
+	public String getVpcEC2RoleAssumptionArn();
+	
+	/*
+	 * @return if the dual account support
+	 */
+	public boolean isDualAccount();
+	
 
     public Boolean isIncrBackupParallelEnabled();
     /*

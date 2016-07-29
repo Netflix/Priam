@@ -8,7 +8,7 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredentialGeneric;
 
 /*
- * A generic implemention of fetch keys as plaintext.  The key values are used within PGP crypotography algorithm.  Users may
+ * A generic implementation of fetch keys as plaintext.  The key values are used within PGP cryptography algorithm.  Users may
  * want to provide an implementation where your key(s)' value is decrypted using AES encryption algorithm.  
  */
 public class PgpCredential  implements ICredentialGeneric {

@@ -11,8 +11,10 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.FakeCredentials;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.identity.AwsInstanceEnvIdentity;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
@@ -42,7 +44,7 @@ public class TestModule extends AbstractModule
         bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
-        
+        bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class); //for backward compatibility, unit test always create new tokens        

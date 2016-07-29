@@ -19,12 +19,10 @@ import java.util.Properties;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Collection;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 
 import org.apache.cassandra.io.util.FileUtils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,6 +77,12 @@ public class StaticMembership implements IMembership
     public List<String> getRacMembership()
     {
         return racMembership;
+    }
+    
+    @Override
+    public List<String> getCrossAccountRacMembership()
+    {
+    	return null;
     }
 
     @Override

@@ -275,15 +275,6 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void intialize()
     {
-        setupEnvVars();
-        this.config.intialize(ASG_NAME, REGION);
-        setDefaultRACList(REGION);
-        populateProps();
-        SystemUtils.createDirs(getBackupCommitLogLocation());
-        SystemUtils.createDirs(getCommitLogLocation());
-        SystemUtils.createDirs(getCacheLocation());
-        SystemUtils.createDirs(getDataFileLocation());
-        
     	InstanceDataRetriever instanceDataRetriever;
 		try {
 			instanceDataRetriever = getInstanceDataRetriever();
@@ -300,6 +291,15 @@ public class PriamConfiguration implements IConfiguration
 
 		NETWORK_MAC =  instanceDataRetriever.getMac();
 		NETWORK_VPC = instanceDataRetriever.getVpcId();
+
+        setupEnvVars();
+        this.config.intialize(ASG_NAME, REGION);
+        setDefaultRACList(REGION);
+        populateProps();
+        SystemUtils.createDirs(getBackupCommitLogLocation());
+        SystemUtils.createDirs(getCommitLogLocation());
+        SystemUtils.createDirs(getCacheLocation());
+        SystemUtils.createDirs(getDataFileLocation());
     }
     
     private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException

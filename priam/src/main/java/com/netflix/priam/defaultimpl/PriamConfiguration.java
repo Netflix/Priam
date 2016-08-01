@@ -277,6 +277,23 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public void intialize()
     {
+        InstanceDataRetriever instanceDataRetriever;
+        try {
+            instanceDataRetriever = getInstanceDataRetriever();
+        } catch (Exception e) {
+            throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
+        }
+
+        RAC = instanceDataRetriever.getRac();
+        PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
+        PUBLIC_IP = instanceDataRetriever.getPublicIP();
+
+        INSTANCE_ID = instanceDataRetriever.getInstanceId();
+        INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
+
+        NETWORK_MAC =  instanceDataRetriever.getMac();
+        NETWORK_VPC = instanceDataRetriever.getVpcId();
+
         setupEnvVars();
         this.config.intialize(ASG_NAME, REGION);
         setDefaultRACList(REGION);
@@ -285,23 +302,6 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getCommitLogLocation());
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
-        
-    	InstanceDataRetriever instanceDataRetriever;
-		try {
-			instanceDataRetriever = getInstanceDataRetriever();
-		} catch (Exception e) {
-			throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
-		}
-		
-	    RAC = instanceDataRetriever.getRac();
-	    PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
-	    PUBLIC_IP = instanceDataRetriever.getPublicIP();
-
-	    INSTANCE_ID = instanceDataRetriever.getInstanceId();
-	    INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
-
-		NETWORK_MAC =  instanceDataRetriever.getMac();
-		NETWORK_VPC = instanceDataRetriever.getVpcId();
     }
     
     private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException

@@ -15,6 +15,8 @@
  */
 package com.netflix.priam.aws;
 
+import com.google.inject.name.Named;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -56,14 +58,16 @@ public class AWSMembership implements IMembership
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
     private final IConfiguration config;
     private final ICredential provider;
-	private InstanceEnvIdentity insEnvIdentity;    
+	private final InstanceEnvIdentity insEnvIdentity;
+	private final ICredential crossAccountProvider;
 
     @Inject
-    public AWSMembership(IConfiguration config, ICredential provider, InstanceEnvIdentity insEnvIdentity)
+    public AWSMembership(IConfiguration config, ICredential provider,  @Named("awsec2roleassumption")ICredential crossAccountProvider, InstanceEnvIdentity insEnvIdentity)
     {
         this.config = config;
         this.provider = provider;  
         this.insEnvIdentity = insEnvIdentity;
+        this.crossAccountProvider = crossAccountProvider;
     }
 
     @Override
@@ -113,6 +117,34 @@ public class AWSMembership implements IMembership
             }
             logger.info(String.format("Query on ASG returning %d instances", size));
             return size;
+        }
+        finally
+        {
+            if (client != null)
+                client.shutdown();
+        }
+    }
+    
+    @Override
+    public List<String> getCrossAccountRacMembership()
+    {
+        AmazonAutoScaling client = null;
+        try
+        {
+            client = getCrossAccountAutoScalingClient();
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
+
+            List<String> instanceIds = Lists.newArrayList();
+            for (AutoScalingGroup asg : res.getAutoScalingGroups())
+            {
+                for (Instance ins : asg.getInstances())
+                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
+                            .equalsIgnoreCase("Terminated")))
+                        instanceIds.add(ins.getInstanceId());
+            }
+            logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            return instanceIds;
         }
         finally
         {
@@ -295,6 +327,13 @@ public class AWSMembership implements IMembership
     protected AmazonAutoScaling getAutoScalingClient()
     {
         AmazonAutoScaling client = new AmazonAutoScalingClient(provider.getAwsCredentialProvider());
+        client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
+        return client;
+    }
+    
+    protected AmazonAutoScaling getCrossAccountAutoScalingClient()
+    {
+        AmazonAutoScaling client = new AmazonAutoScalingClient(crossAccountProvider.getAwsCredentialProvider());
         client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
         return client;
     }

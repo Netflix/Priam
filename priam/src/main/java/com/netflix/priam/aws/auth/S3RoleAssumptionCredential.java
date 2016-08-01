@@ -27,8 +27,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 	@Inject
 	public S3RoleAssumptionCredential(ICredential cred, IConfiguration config) {
 		this.cred = cred;
-		this.config = config;
-		
+		this.config = config;		
 	}
 	
 	@Override

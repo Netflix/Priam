@@ -172,8 +172,12 @@ public class PriamConfiguration implements IConfiguration
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
-    private static final String CONFIG_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".roleassumption.arn"; //Restore from AWS.  This is applicable when restoring from an AWS account which requires cross account assumption. 
+    private static final String CONFIG_S3_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".roleassumption.arn"; //Restore from AWS.  This is applicable when restoring from an AWS account which requires cross account assumption. 
+    private static final String CONFIG_EC2_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".ec2.roleassumption.arn"; 
+    private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".vpc.roleassumption.arn";
+    private static final String CONFIG_DUAL_ACCOUNT = PRIAM_PRE + ".roleassumption.dualaccount";
 
+    
     //Running instance meta data
     private String RAC;
     private String PUBLIC_HOSTNAME;
@@ -235,6 +239,8 @@ public class PriamConfiguration implements IConfiguration
     private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
     private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
     
+    // AWS EC2 Dual Account
+    private static final boolean DEFAULT_DUAL_ACCOUNT = false;
    
     private final IConfigSource config; 
     private final String BLANK = "";
@@ -1042,8 +1048,23 @@ public class PriamConfiguration implements IConfiguration
 
 	@Override
 	public String getAWSRoleAssumptionArn() {
-		return config.get(CONFIG_ROLE_ASSUMPTION_ARN);
+		return config.get(CONFIG_S3_ROLE_ASSUMPTION_ARN);
 	}
+	
+	@Override
+	public String getClassicEC2RoleAssumptionArn() {
+	   return config.get(CONFIG_EC2_ROLE_ASSUMPTION_ARN);
+	}
+	 	
+	@Override
+	public String getVpcEC2RoleAssumptionArn() {
+	 	return config.get(CONFIG_VPC_ROLE_ASSUMPTION_ARN);
+	}
+		
+	@Override
+	public boolean isDualAccount() {
+	   return config.get(CONFIG_DUAL_ACCOUNT, DEFAULT_DUAL_ACCOUNT);
+	 }
 
 	@Override
 	public String getGcsServiceAccountId() {

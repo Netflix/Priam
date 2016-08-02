@@ -40,7 +40,8 @@ public class S3FileSystemBase {
             "us-west-1".equalsIgnoreCase(curRegion) ||
             "us-west-2".equalsIgnoreCase(curRegion)	|| 
             "eu-west-1".equalsIgnoreCase(curRegion) ||
-            "sa-east-1".equalsIgnoreCase(curRegion))
+            "sa-east-1".equalsIgnoreCase(curRegion) ||
+            "eu-central-1".equalsIgnoreCase(curRegion))
              return config.getS3EndPoint();
          
          throw new IllegalStateException("Unsupported region for this application: " + curRegion);

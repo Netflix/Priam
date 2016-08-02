@@ -308,7 +308,7 @@ public class PriamConfiguration implements IConfiguration
     		return (InstanceDataRetriever)Class.forName("com.netflix.priam.identity.config.AwsInstanceDataRetriever").newInstance();
     		
     	} else if (this.insEnvIdentity.isNonDefaultVpc()) {
-    		return (InstanceDataRetriever)Class.forName("com.netflix.priam.identity.config.VpcInstanceDataRetriever").newInstance();
+    		return (InstanceDataRetriever)Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
     	} else {
     		throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
     	}

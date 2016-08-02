@@ -551,6 +551,16 @@ public class FakeConfigurationMurmur3 implements IConfiguration
 	public String getRpcServerType() {
 		return "hsha";
 	}
+    
+    @Override
+    public int getRpcMinThreads() {
+        return 16;
+    }
+
+    @Override
+    public int getRpcMaxThreads() {
+        return 2048;
+    }
 
 	@Override
 	public int getIndexInterval() {

@@ -107,6 +107,10 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
+    private static final String CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS = PRIAM_PRE + ".streaming.socket.timeout.ms";
+    private static final String CONFIG_TOMBSTONE_FAILURE_THRESHOLD = PRIAM_PRE + ".tombstone.failure.threshold";
+    private static final String CONFIG_TOMBSTONE_WARNING_THRESHOLD = PRIAM_PRE + ".tombstone.warning.threshold";
+
     private static final String CONFIG_PARTITIONER = PRIAM_PRE + ".partitioner";
     private static final String CONFIG_KEYCACHE_SIZE = PRIAM_PRE + ".keyCache.size";
     private static final String CONFIG_KEYCACHE_COUNT= PRIAM_PRE + ".keyCache.count";
@@ -181,7 +185,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".vpc.roleassumption.arn";
     private static final String CONFIG_DUAL_ACCOUNT = PRIAM_PRE + ".roleassumption.dualaccount";
 
-    
+
     //Running instance meta data
     private String RAC;
     private String PUBLIC_HOSTNAME;
@@ -236,6 +240,9 @@ public class PriamConfiguration implements IConfiguration
     private static final int DEFAULT_RPC_MIN_THREADS = 16;
     private static final int DEFAULT_RPC_MAX_THREADS = 2048;
     private static final int DEFAULT_INDEX_INTERVAL = 256;
+    private static final int DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS = 86400000; // 24 Hours
+    private static final int DEFAULT_TOMBSTONE_WARNING_THRESHOLD = 1000; // C* defaults
+    private static final int DEFAULT_TOMBSTONE_FAILURE_THRESHOLD = 100000;// C* defaults
     
     
     //default S3 endpoints
@@ -1129,5 +1136,29 @@ public class PriamConfiguration implements IConfiguration
 	public int getUncrementalBkupQueueSize() {
 		return config.get(PRIAM_PRE  + ".incremental.bkup.queue.size", 100000);
 	}
+
+    /**
+     * @return tombstone_warn_threshold in yaml
+     */
+    @Override
+    public int getTombstoneWarnThreshold() {
+        return config.get(CONFIG_TOMBSTONE_WARNING_THRESHOLD, DEFAULT_TOMBSTONE_WARNING_THRESHOLD);
+    }
+
+    /**
+     * @return tombstone_failure_threshold in yaml
+     */
+    @Override
+    public int getTombstoneFailureThreshold() {
+        return config.get(CONFIG_TOMBSTONE_FAILURE_THRESHOLD, DEFAULT_TOMBSTONE_FAILURE_THRESHOLD);
+    }
+
+    /**
+     * @return streaming_socket_timeout_in_ms in yaml
+     */
+    @Override
+    public int getStreamingSocketTimeoutInMS() {
+        return config.get(CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS, DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS);
+    }
 
 }

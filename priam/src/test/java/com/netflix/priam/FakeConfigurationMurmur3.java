@@ -707,4 +707,28 @@ public class FakeConfigurationMurmur3 implements IConfiguration
 	public int getUncrementalBkupQueueSize() {
 		return 100;
 	}
+
+    /**
+     * @return tombstone_warn_threshold in yaml
+     */
+    @Override
+    public int getTombstoneWarnThreshold() {
+        return 1000;
+    }
+
+    /**
+     * @return tombstone_failure_threshold in yaml
+     */
+    @Override
+    public int getTombstoneFailureThreshold() {
+        return 100000;
+    }
+
+    /**
+     * @return streaming_socket_timeout_in_ms in yaml
+     */
+    @Override
+    public int getStreamingSocketTimeoutInMS() {
+        return 86400000;
+    }
 }

@@ -552,4 +552,17 @@ public interface IConfiguration
      * The max number of files queued to be uploaded.
      */
     public int getUncrementalBkupQueueSize();
+
+    /**
+     * @return tombstone_warn_threshold in C* yaml
+     */
+    int getTombstoneWarnThreshold();
+    /**
+     * @return tombstone_failure_threshold in C* yaml
+     */
+    int getTombstoneFailureThreshold();
+    /**
+     * @return streaming_socket_timeout_in_ms in C* yaml
+     */
+    int getStreamingSocketTimeoutInMS();
 }

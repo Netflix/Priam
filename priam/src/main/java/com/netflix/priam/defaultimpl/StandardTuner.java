@@ -92,7 +92,12 @@ public class StandardTuner implements CassandraTuner
         map.put("rpc_min_threads", config.getRpcMinThreads());
         map.put("rpc_max_threads", config.getRpcMaxThreads());
         //map.put("index_interval", config.getIndexInterval());
-        
+
+
+        map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
+        map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
+        map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
+
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);

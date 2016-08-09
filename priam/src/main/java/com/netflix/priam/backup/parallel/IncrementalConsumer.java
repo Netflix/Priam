@@ -89,8 +89,14 @@ public class IncrementalConsumer implements Runnable {
 			this.callback.postProcessing(bp); //post processing
 			
 		} catch (Exception e) {
-			logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
-					, this.bp.getFileName(), e.getLocalizedMessage()));
+			if (e instanceof java.util.concurrent.CancellationException) {
+				logger.debug(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
+						, this.bp.getFileName(), e.getLocalizedMessage()));
+			} else {
+				logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
+						, this.bp.getFileName(), e.getLocalizedMessage()));				
+			}
+
 		}
 		
 	}

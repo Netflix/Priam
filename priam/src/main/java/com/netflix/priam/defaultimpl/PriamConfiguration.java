@@ -124,6 +124,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_INTERNODE_COMPRESSION = PRIAM_PRE + ".internodeCompression";
 
     private static final String CONFIG_COMMITLOG_BKUP_ENABLED = PRIAM_PRE + ".clbackup.enabled";
+    private static final String CONFIG_COMMITLOG_PROPS_FILE = PRIAM_PRE + ".clbackup.propsfile";
     private static final String CONFIG_COMMITLOG_ARCHIVE_CMD = PRIAM_PRE + ".clbackup.archiveCmd";
     private static final String CONFIG_COMMITLOG_RESTORE_CMD = PRIAM_PRE + ".clbackup.restoreCmd";
     private static final String CONFIG_COMMITLOG_RESTORE_DIRS = PRIAM_PRE + ".clbackup.restoreDirs";
@@ -210,6 +211,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
     public static final String DEFAULT_AUTHENTICATOR = "org.apache.cassandra.auth.AllowAllAuthenticator";
     public static final String DEFAULT_AUTHORIZER = "org.apache.cassandra.auth.AllowAllAuthorizer";
+    public static final String DEFAULT_COMMITLOG_PROPS_FILE = "/conf/commitlog_archiving.properties";
 
     // rpm based. Can be modified for tar based.
     private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
@@ -877,6 +879,12 @@ public class PriamConfiguration implements IConfiguration
     public boolean isBackingUpCommitLogs()
     {
         return config.get(CONFIG_COMMITLOG_BKUP_ENABLED, false);
+    }
+
+    @Override
+    public String getCommitLogBackupPropsFile()
+    {
+        return config.get(CONFIG_COMMITLOG_PROPS_FILE, getCassHome() + DEFAULT_COMMITLOG_PROPS_FILE);
     }
 
     @Override

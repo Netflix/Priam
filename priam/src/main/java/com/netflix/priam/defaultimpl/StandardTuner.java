@@ -24,7 +24,6 @@ import org.yaml.snakeyaml.Yaml;
 public class StandardTuner implements CassandraTuner
 {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
-    private static final String CL_BACKUP_PROPS_FILE = "/conf/commitlog_archiving.properties";
     protected final IConfiguration config;
 
     @Inject
@@ -195,7 +194,7 @@ public class StandardTuner implements CassandraTuner
         FileOutputStream fos = null;
         try
         {
-            fos = new FileOutputStream(new File(config.getCassHome() + CL_BACKUP_PROPS_FILE));
+            fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()));
             props.store(fos, "cassandra commit log archive props, as written by priam");
         }
         finally

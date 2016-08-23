@@ -91,6 +91,53 @@ public class TestBackup
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
 
+    @Test
+    public void testClusterSpecificColumnFamiliesSkippedBefore21() throws Exception
+    {
+        String[] columnFamilyDirs = {"schema_columns","local", "peers", "LocationInfo"};
+        testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
+    }
+
+    @Test
+    public void testClusterSpecificColumnFamiliesSkippedFrom21() throws Exception
+    {
+        String[] columnFamilyDirs = {"schema_columns-296e9c049bec30c5828dc17d3df2132a",
+                                   "local-7ad54392bcdd45d684174c047860b347",
+                                   "peers-37c71aca7ac2383ba74672528af04d4f",
+                                   "LocationInfo-9f5c6374d48633299a0a5094bf9ad1e4"};
+        testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
+    }
+
+    private void testClusterSpecificColumnFamiliesSkipped(String[] columnFamilyDirs) throws Exception
+    {
+        filesystem.setupTest();
+        File tmp = new File("target/data/");
+        if (tmp.exists())
+            cleanup(tmp);
+        // Generate "data"
+        generateIncrementalFiles();
+        Set<String> systemfiles = new HashSet<String>();
+        // Generate system files
+        for (String columnFamilyDir: columnFamilyDirs) {
+            String columnFamily = columnFamilyDir.split("-")[0];
+            systemfiles.add(String.format("target/data/system/%s/backups/system-%s-ka-1-Data.db", columnFamilyDir, columnFamily));
+            systemfiles.add(String.format("target/data/system/%s/backups/system-%s-ka-1-Index.db", columnFamilyDir, columnFamily));
+        }
+        for (String systemFilePath: systemfiles)
+        {
+            File file = new File(systemFilePath);
+            genTestFile(file);
+            //Not cluster specific columns should be backed up
+            if(systemFilePath.contains("schema_columns"))
+                expectedFiles.add(file.getAbsolutePath());
+        }
+        IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
+        backup.execute();
+        Assert.assertEquals(8, filesystem.uploadedFiles.size());
+        for (String filePath : expectedFiles)
+            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+    }
+
     public static void generateIncrementalFiles()
     {
         File tmp = new File("target/data/");

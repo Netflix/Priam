@@ -165,10 +165,11 @@ public abstract class AbstractBackup extends Task
             return false;        	
         }
 
-        String columnFamilyName = columnFamilyDir.getName();
+        String dirName = columnFamilyDir.getName();
 
+        String columnFamilyName = dirName.split("-")[0];
         if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName)) {
-        	logger.debug(columnFamilyName + " is not consider a valid CF backup directory, will be bypass.");
+            logger.debug(dirName + " is not consider a valid CF backup directory, will be bypass.");
             return false;        	
         }
 

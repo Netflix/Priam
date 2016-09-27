@@ -98,6 +98,8 @@ public class StandardTuner implements CassandraTuner
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
         map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
 
+        map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
+
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
         m.put("class_name", seedProvider);

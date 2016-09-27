@@ -369,6 +369,14 @@ public class FakeConfiguration implements IConfiguration
         return 0;
     }
 
+    /**
+     * @return memtable_cleanup_threshold in C* yaml
+     */
+    @Override
+    public double getMemtableCleanupThreshold() {
+        return 0.11;
+    }
+
     @Override
     public int getStreamingThroughputMB()
     {

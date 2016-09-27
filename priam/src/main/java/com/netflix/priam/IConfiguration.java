@@ -339,6 +339,11 @@ public interface IConfiguration
      * @return Get Memtable throughput settings
      */
     public int getMemtableTotalSpaceMB();
+
+    /**
+     * @return memtable_cleanup_threshold in C* yaml
+     */
+    double getMemtableCleanupThreshold();
     
     /**
      * @return stream_throughput_outbound_megabits_per_sec in yaml

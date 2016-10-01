@@ -21,7 +21,7 @@ public class S3InstanceCredential implements IS3Credential {
 	}
 
 	@Override
-	public AWSCredentialsProvider getCredentialsProvider() throws Exception {
+	public AWSCredentialsProvider getAwsCredentialProvider() {
 		return this.credentialsProvider;
 	}
 	

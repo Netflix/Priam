@@ -51,8 +51,8 @@ public class S3CrossAccountFileSystem  {
 				if (this.s3Client == null ) {
 				
 					try {
-						
-						this.s3Client = new AmazonS3Client(s3Credential.getCredentialsProvider());
+
+						this.s3Client = new AmazonS3Client(s3Credential.getAwsCredentialProvider());
 
 					} catch (Exception e) {
 						throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);

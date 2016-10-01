@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.netflix.priam.aws.auth.IS3Credential;
 import org.apache.commons.io.IOUtils;
 
 import com.google.common.collect.Lists;
@@ -51,8 +52,8 @@ import com.amazonaws.services.s3.model.PartETag;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
+import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
@@ -77,7 +78,8 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     private RateLimiter rateLimiter;
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred)
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config,
+                        @Named("awss3roleassumption")IS3Credential cred)
     {
         this.pathProvider = pathProvider;
         this.compress = compress;

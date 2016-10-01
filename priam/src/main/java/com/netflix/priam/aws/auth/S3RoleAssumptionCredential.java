@@ -20,6 +20,8 @@ import com.netflix.priam.ICredential;
 @Singleton
 public class S3RoleAssumptionCredential implements IS3Credential {
 	private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "S3RoleAssumptionSession";
+	private static final Logger logger = LoggerFactory.getLogger(S3RoleAssumptionCredential.class);
+
 	private ICredential cred;
 	private IConfiguration config;
 	private AWSCredentialsProvider stsSessionCredentialsProvider;
@@ -34,7 +36,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 	public AWSCredentials getCredentials() throws Exception {
 				
 		if (this.stsSessionCredentialsProvider == null) {
-			this.getCredentialsProvider();
+			this.getAwsCredentialProvider();
 		}
 		
 		return this.stsSessionCredentialsProvider.getCredentials();
@@ -53,24 +55,27 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 	}
 
 	@Override
-	public AWSCredentialsProvider getCredentialsProvider() throws Exception {
+	public AWSCredentialsProvider getAwsCredentialProvider() {
 		if (this.stsSessionCredentialsProvider == null) {
 			synchronized(this) {
 				if (this.stsSessionCredentialsProvider == null) {
 					
 					final String roleArn = this.config.getAWSRoleAssumptionArn();  //IAM role created for bucket own by account "awsprodbackup"
 					if (roleArn == null || roleArn.isEmpty()) {
-						throw new NullPointerException("Role ARN is null or empty probably due to missing config entry");
+						logger.warn("Was expecting an override configuration to assume the role. Falling back to instance level credentials");
+						this.stsSessionCredentialsProvider =  this.cred.getAwsCredentialProvider();
+						//throw new NullPointerException("Role ARN is null or empty probably due to missing config entry");
 					}
-					
-					//== Get handle to an implementation that uses AWS Security Token Service (STS) to create temporary, short-lived session with explicit refresh for session/token expiration.
-					try {
-						
-						this.stsSessionCredentialsProvider = new STSAssumeRoleSessionCredentialsProvider(this.cred.getAwsCredentialProvider(), roleArn, AWS_ROLE_ASSUMPTION_SESSION_NAME);
-						
-					} catch (Exception ex) {
-						throw new IllegalStateException("Exception in getting handle to AWS Security Token Service (STS).  Msg: " + ex.getLocalizedMessage(), ex);
-					}							
+					else {
+						//== Get handle to an implementation that uses AWS Security Token Service (STS) to create temporary, short-lived session with explicit refresh for session/token expiration.
+						try {
+
+							this.stsSessionCredentialsProvider = new STSAssumeRoleSessionCredentialsProvider(this.cred.getAwsCredentialProvider(), roleArn, AWS_ROLE_ASSUMPTION_SESSION_NAME);
+
+						} catch (Exception ex) {
+							throw new IllegalStateException("Exception in getting handle to AWS Security Token Service (STS).  Msg: " + ex.getLocalizedMessage(), ex);
+						}
+					}
 
 				}
 			}

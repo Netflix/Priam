@@ -62,7 +62,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 					
 					final String roleArn = this.config.getAWSRoleAssumptionArn();  //IAM role created for bucket own by account "awsprodbackup"
 					if (roleArn == null || roleArn.isEmpty()) {
-						logger.warn("Was expecting an override configuration to assume the role. Falling back to instance level credentials");
+						logger.warn("Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
 						this.stsSessionCredentialsProvider =  this.cred.getAwsCredentialProvider();
 						//throw new NullPointerException("Role ARN is null or empty probably due to missing config entry");
 					}

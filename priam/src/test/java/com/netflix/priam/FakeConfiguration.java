@@ -617,7 +617,7 @@ public class FakeConfiguration implements IConfiguration
 
 	@Override
 	public String getAWSRoleAssumptionArn() {
-		return "";
+		return null;
 	}
 	
     @Override

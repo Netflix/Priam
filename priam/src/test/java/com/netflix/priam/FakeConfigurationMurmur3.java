@@ -227,6 +227,14 @@ public class FakeConfigurationMurmur3 implements IConfiguration
         return null;
     }
 
+    /**
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     */
+    @Override
+    public String getSiblingASGNames() {
+        return null;
+    }
+
     @Override
     public boolean isIncrBackup()
     {

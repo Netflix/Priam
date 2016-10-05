@@ -226,7 +226,15 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return null;
     }
-    
+
+    /**
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     */
+    @Override
+    public String getSiblingASGNames() {
+        return null;
+    }
+
     @Override
     public boolean isIncrBackup()
     {

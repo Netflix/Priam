@@ -17,10 +17,7 @@ package com.netflix.priam.aws;
 
 import com.google.inject.name.Named;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -76,8 +73,11 @@ public class AWSMembership implements IMembership
         AmazonAutoScaling client = null;
         try
         {
+            List<String> asgNames = new ArrayList<>();
+            asgNames.add(config.getASGName());
+            asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
             List<String> instanceIds = Lists.newArrayList();
@@ -88,7 +88,7 @@ public class AWSMembership implements IMembership
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(),StringUtils.join(asgNames, ",") ,StringUtils.join(instanceIds, ",")));
             return instanceIds;
         }
         finally

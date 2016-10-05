@@ -269,7 +269,12 @@ public interface IConfiguration
      * Amazon specific setting to query ASG Membership
      */
     public String getASGName();
-    
+
+    /**
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     */
+    public String getSiblingASGNames();
+
     /**
      * Get the security group associated with nodes in this cluster
      */

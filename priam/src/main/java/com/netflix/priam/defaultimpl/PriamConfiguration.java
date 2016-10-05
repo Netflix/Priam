@@ -174,6 +174,7 @@ public class PriamConfiguration implements IConfiguration
     
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
+    private static final String CONFIG_SIBLING_ASG_NAMES = PRIAM_PRE + ".az.sibling.asgnames";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
@@ -680,6 +681,14 @@ public class PriamConfiguration implements IConfiguration
     public String getASGName()
     {
         return config.get(CONFIG_ASG_NAME, "");
+    }
+
+    /**
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     */
+    @Override
+    public String getSiblingASGNames() {
+        return config.get(CONFIG_SIBLING_ASG_NAMES, ",");
     }
 
     @Override

@@ -15,6 +15,7 @@
  */
 package com.netflix.priam;
 
+import com.netflix.priam.cluster.management.FlushTask;
 import org.apache.commons.collections.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -175,6 +176,13 @@ public class PriamServer
         
         //Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
+
+        //Set up nodetool flush task
+        String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10)
+        if (timerVal != null && !timerVal.isEmpty() ) {
+            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, FlushTask.getTimer(config));
+            logger.info("Added nodetool flush task.");
+        }
     }
 
     public InstanceIdentity getId()

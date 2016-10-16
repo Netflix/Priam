@@ -15,6 +15,8 @@
  */
 package com.netflix.priam.defaultimpl;
 
+import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.NoOpMetricPublisher;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -79,6 +81,7 @@ public class PriamGuiceModule extends AbstractModule
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
+        bind(IMetricPublisher.class).annotatedWith(Names.named("defaultmetricpublisher")).to(NoOpMetricPublisher.class);
         
     }
 }

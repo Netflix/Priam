@@ -185,7 +185,7 @@ public class SystemUtils
         }
         catch (Exception e)
         {
-            logger.warn("failed to close JMXConnector", e);
+            logger.warn("failed to close JMXConnectorMgr", e);
         }
     }   
     

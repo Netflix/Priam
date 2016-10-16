@@ -575,4 +575,14 @@ public interface IConfiguration
      * @return streaming_socket_timeout_in_ms in C* yaml
      */
     int getStreamingSocketTimeoutInMS();
+
+    /*
+     * @return a comma delimited list of keyspaces to flush
+     */
+    public String getFlushKeyspaces();
+    /*
+     * @return the interval to run the flush task.  Format is name=value where
+     * “name” is an enum of hour, daily, value is ...
+     */
+    public String getFlushInterval();
 }

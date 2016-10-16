@@ -30,8 +30,9 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.JMXConnectionException;
-import com.netflix.priam.utils.JMXNodeTool;
+import com.netflix.priam.cluster.management.Flush;
+import com.netflix.priam.cluster.management.IClusterManagement;
+import com.netflix.priam.utils.*;
 
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
@@ -50,7 +51,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.SystemUtils;
 
 import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
@@ -156,17 +156,59 @@ public class CassandraAdmin
     @Path("/flush")
     public Response cassFlush() throws IOException, InterruptedException, ExecutionException
     {
-        JMXNodeTool nodetool = null;
+        JMXConnectorMgr connMgr = null;
 		try {
-			nodetool = JMXNodeTool.instance(config);
-		} catch (JMXConnectionException e) {
-			logger.error("Exception in fetching c* jmx tool .  Msgl: " + e.getLocalizedMessage(), e);
-			return Response.status(503).entity("JMXConnectionException")
-					.build();
-		}
-        logger.debug("node tool flush being called");
-        nodetool.flush();
-        return Response.ok().build();
+			connMgr = new JMXConnectorMgr(config);
+		} catch(IOException | InterruptedException e) {
+            JSONObject rootObj = new JSONObject();
+            try {
+                rootObj.put("status", "ERRROR");
+                rootObj.put("component", "jmxconnector");
+                rootObj.put("desc", e.getLocalizedMessage());
+            } catch (Exception e1) {
+                return Response.status(503).entity("JMXConnector error")
+                        .build();
+            }
+            return Response.status(503).entity(rootObj)
+                    .build();
+        }
+
+        List<String> flushed = null;
+        try {
+            IClusterManagement task = new Flush(this.config, connMgr);
+            flushed = task.execute();
+        } catch (Exception e) {
+            JSONObject rootObj = new JSONObject();
+            try {
+                rootObj.put("status", "ERRROR");
+                rootObj.put("component", "flush");
+                rootObj.put("desc", e.getLocalizedMessage());
+            } catch (Exception e1) {
+                return Response.status(503).entity("Flush error")
+                        .build();
+            }
+            return Response.status(503).entity(rootObj)
+                    .build();
+        } finally {
+            connMgr.close();
+        }
+
+        JSONObject rootObj = new JSONObject();
+        if (flushed != null && !flushed.isEmpty() ) {
+            try {
+                rootObj.put("keyspace_flushed", flushed);
+            } catch (JSONException e) {
+                //no op
+            }
+        } else {
+            try {
+                rootObj.put("keyspace_flushed", "none");
+            } catch (JSONException e) {
+                //no op
+            }
+        }
+
+        return Response.ok().entity(rootObj).build();
     }
 
     @GET

@@ -24,11 +24,13 @@ public class FlushTask extends Task {
     public static final String JOBNAME = "FlushTask";
     private static final Logger logger = LoggerFactory.getLogger(FlushTask.class);
     private IMetricPublisher metricPublisher;
+    private IMeasurement measurement;
 
     @Inject
     public FlushTask(IConfiguration config, @Named("defaultmetricpublisher") IMetricPublisher metricPublisher) {
         super(config);
         this.metricPublisher = metricPublisher;
+        measurement = new NodeToolFlushMeasurement();
     }
 
     @Override
@@ -43,7 +45,6 @@ public class FlushTask extends Task {
         try {
             IClusterManagement flush = new Flush(this.config, connMgr);
             flushed = flush.execute();
-            IMeasurement measurement = new NodeToolFlushMeasurement();
             measurement.incrementSuccessCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a success
 

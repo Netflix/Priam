@@ -747,4 +747,14 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     public int getStreamingSocketTimeoutInMS() {
         return 86400000;
     }
+
+    @Override
+    public String getFlushKeyspaces() {
+        return new String();
+    }
+
+    @Override
+    public String getFlushInterval() {
+        return null;
+    }
 }

@@ -27,6 +27,8 @@ import java.util.TimeZone;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import com.netflix.priam.merics.IMeasurement;
+import com.netflix.priam.merics.SnapshotBackupMeasurement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,12 +68,13 @@ public class SnapshotBackup extends AbstractBackup
 	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
 
 	private BackupStatusMgr completedBackups;
-    
+
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
     		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
-    		              ,BackupStatusMgr completedBackups)
+    		              ,BackupStatusMgr completedBackups
+                        )
     {
     	super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
@@ -230,7 +233,8 @@ public class SnapshotBackup extends AbstractBackup
     private void postProcesing(String snapshotname, Date start, Date completed) {
     	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
     	BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);
-    	
+        IMeasurement measurement = new SnapshotBackupMeasurement();
+        measurement.incrementSuccessCnt(1);
     }
     
     /*

@@ -1177,4 +1177,14 @@ public class PriamConfiguration implements IConfiguration
         return config.get(CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS, DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS);
     }
 
+    @Override
+    public String getFlushKeyspaces() {
+        return config.get(PRIAM_PRE  + ".flush.keyspaces");
+    }
+
+    @Override
+    public String getFlushInterval() {
+        return config.get(PRIAM_PRE  + ".flush.interval");
+    }
+
 }

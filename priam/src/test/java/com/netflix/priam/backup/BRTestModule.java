@@ -4,6 +4,8 @@ import java.util.Arrays;
 
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.NoOpMetricPublisher;
 import com.netflix.priam.restore.EncryptedRestoreStrategy;
 import com.netflix.priam.restore.IRestoreStrategy;
 import com.netflix.priam.utils.ITokenManager;
@@ -78,5 +80,6 @@ public class BRTestModule extends AbstractModule
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
+        bind(IMetricPublisher.class).annotatedWith(Names.named("defaultmetricpublisher")).to(NoOpMetricPublisher.class);
     }
 }

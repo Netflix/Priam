@@ -96,6 +96,14 @@ public class FakeConfigurationMurmur3 implements IConfiguration
         return 7199;
     }
 
+    /**
+     * @return Enables Remote JMX connections n C*
+     */
+    @Override
+    public boolean enableRemoteJMX() {
+        return false;
+    }
+
     @Override
     public int getThriftPort()
     {

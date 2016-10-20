@@ -54,6 +54,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_MR_ENABLE = PRIAM_PRE + ".multiregion.enable";
     private static final String CONFIG_CL_LOCATION = PRIAM_PRE + ".commitlog.location";
     private static final String CONFIG_JMX_LISTERN_PORT_NAME = PRIAM_PRE + ".jmx.port";
+    private static final String CONFIG_JMX_ENABLE_REMOTE = PRIAM_PRE + ".jmx.remote.enable";
     private static final String CONFIG_AVAILABILITY_ZONES = PRIAM_PRE + ".zones.available";
     private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
     private static final String CONFIG_NEW_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.newgen.size.";
@@ -518,6 +519,14 @@ public class PriamConfiguration implements IConfiguration
     public int getJmxPort()
     {
         return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
+    }
+
+    /**
+     * @return Enables Remote JMX connections n C*
+     */
+    @Override
+    public boolean enableRemoteJMX() {
+        return config.get(CONFIG_JMX_ENABLE_REMOTE, false);
     }
 
     public int getNativeTransportPort()

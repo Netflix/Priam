@@ -96,6 +96,14 @@ public class FakeConfiguration implements IConfiguration
         return 7199;
     }
 
+    /**
+     * @return Enables Remote JMX connections n C*
+     */
+    @Override
+    public boolean enableRemoteJMX() {
+        return false;
+    }
+
     @Override
     public int getThriftPort()
     {

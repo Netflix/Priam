@@ -123,7 +123,13 @@ public interface IConfiguration
      * @return Cassandra's JMX port
      */
     public int getJmxPort();
-        
+
+    /**
+     * @return Enables Remote JMX connections n C*
+     */
+    public boolean enableRemoteJMX();
+
+
     /**
      * Cassandra storage/cluster communication port
      */

@@ -87,7 +87,7 @@ public class FlushTask extends Task {
         Integer time = new Integer(s[1]);
 
         if (name.equalsIgnoreCase("hour")) {
-            return new CronTimer(0, 0); //minute, sec after each hour
+            return new CronTimer(time, 0); //minute, sec after each hour
         } if (name.equalsIgnoreCase("daily")) {
             return new CronTimer(time, 0 , 0); //hour, minute, sec to run on a daily basis
         } else {

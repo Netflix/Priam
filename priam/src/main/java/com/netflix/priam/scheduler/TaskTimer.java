@@ -25,4 +25,8 @@ import org.quartz.Trigger;
 public interface TaskTimer
 {
     public Trigger getTrigger() throws ParseException;
+    /*
+    @return the cron like expression use to schedule the task.  Can return null or empty string.
+     */
+    public String getCronExpression();
 }

@@ -56,4 +56,9 @@ public class SimpleTimer implements TaskTimer
         trigger.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW);
         return trigger;
     }
+
+    @Override
+    public String getCronExpression() {
+        return null;
+    }
 }

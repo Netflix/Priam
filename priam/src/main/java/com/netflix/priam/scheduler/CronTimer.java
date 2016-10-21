@@ -20,12 +20,15 @@ import java.text.ParseException;
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.Trigger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Runs jobs at the specified absolute time and frequency
  */
 public class CronTimer implements TaskTimer
 {
+    private static final Logger logger = LoggerFactory.getLogger(CronTimer.class);
     private String cronExpression;
 
     public enum DayOfWeek
@@ -33,12 +36,19 @@ public class CronTimer implements TaskTimer
         SUN, MON, TUE, WED, THU, FRI, SAT
     }
 
+    /*
+     * interval in terms of minutes
+     */
+    public CronTimer(int min) {
+        cronExpression = "*" + " " + "0/" + min + " " + "* * * ?";
+    }
+
     /**
      * Hourly cron.
      */
     public CronTimer(int minute, int sec)
     {
-        cronExpression = sec + " " + minute + " * * * ?";
+        cronExpression = sec + " " + minute + " 0/1 * * ?";
     }
 
     /**
@@ -68,5 +78,10 @@ public class CronTimer implements TaskTimer
     public Trigger getTrigger() throws ParseException
     {
         return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
+    }
+
+    @Override
+    public String getCronExpression() {
+        return this.cronExpression;
     }
 }

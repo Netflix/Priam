@@ -62,7 +62,14 @@ public class PriamScheduler
     {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
-        scheduler.scheduleJob(job, timer.getTrigger());
+        if (timer.getCronExpression() != null && !timer.getCronExpression().isEmpty() ) {
+            logger.info("Scheduled task metadata.  Task name: " + taskclass.getName()
+                    + ", cron expression: " + timer.getCronExpression());
+
+        } else {
+            logger.info("Scheduled task metadata.  Task name: " + taskclass.getName());
+        }
+       scheduler.scheduleJob(job, timer.getTrigger());
     }
 
     /**

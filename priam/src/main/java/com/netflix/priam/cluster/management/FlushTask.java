@@ -2,6 +2,7 @@ package com.netflix.priam.cluster.management;
 
 import com.amazonaws.services.lambda.model.Runtime;
 import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
@@ -20,6 +21,7 @@ import java.util.List;
 /**
  * Created by vinhn on 10/13/16.
  */
+@Singleton
 public class FlushTask extends Task {
     public static final String JOBNAME = "FlushTask";
     private static final Logger logger = LoggerFactory.getLogger(FlushTask.class);
@@ -85,7 +87,7 @@ public class FlushTask extends Task {
         Integer time = new Integer(s[1]);
 
         if (name.equalsIgnoreCase("hour")) {
-            return new CronTimer(time, 0); //minute, sec after the hour
+            return new CronTimer(0, 0); //minute, sec after each hour
         } if (name.equalsIgnoreCase("daily")) {
             return new CronTimer(time, 0 , 0); //hour, minute, sec to run on a daily basis
         } else {

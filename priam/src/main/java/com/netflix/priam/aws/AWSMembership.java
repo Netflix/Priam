@@ -131,8 +131,11 @@ public class AWSMembership implements IMembership
         AmazonAutoScaling client = null;
         try
         {
+            List<String> asgNames = new ArrayList<>();
+            asgNames.add(config.getASGName());
+            asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
             client = getCrossAccountAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
             List<String> instanceIds = Lists.newArrayList();

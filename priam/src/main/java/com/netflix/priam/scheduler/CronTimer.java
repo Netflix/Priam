@@ -30,6 +30,7 @@ public class CronTimer implements TaskTimer
 {
     private static final Logger logger = LoggerFactory.getLogger(CronTimer.class);
     private String cronExpression;
+    private String name;
 
     public enum DayOfWeek
     {
@@ -39,31 +40,35 @@ public class CronTimer implements TaskTimer
     /*
      * interval in terms of minutes
      */
-    public CronTimer(int min) {
+    public CronTimer(String name, int min) {
+        this.name = name;
         cronExpression = "*" + " " + "0/" + min + " " + "* * * ?";
     }
 
     /**
      * Hourly cron.
      */
-    public CronTimer(int minute, int sec)
+    public CronTimer(String name, int minute, int sec)
     {
+        this.name = name;
         cronExpression = sec + " " + minute + " 0/1 * * ?";
     }
 
     /**
      * Daily Cron
      */
-    public CronTimer(int hour, int minute, int sec)
+    public CronTimer(String name, int hour, int minute, int sec)
     {
+        this.name = name;
         cronExpression = sec + " " + minute + " " + hour + " * * ?";
     }
 
     /**
      * Weekly cron jobs
      */
-    public CronTimer(DayOfWeek dayofweek, int hour, int minute, int sec)
+    public CronTimer(String name, DayOfWeek dayofweek, int hour, int minute, int sec)
     {
+        this.name = name;
         cronExpression = sec + " " + minute + " " + hour + " * * " + dayofweek;
     }
 
@@ -77,7 +82,7 @@ public class CronTimer implements TaskTimer
 
     public Trigger getTrigger() throws ParseException
     {
-        return new CronTrigger("CronTrigger", Scheduler.DEFAULT_GROUP, cronExpression);
+        return new CronTrigger(name, Scheduler.DEFAULT_GROUP, cronExpression);
     }
 
     @Override

@@ -231,10 +231,7 @@ public class SnapshotBackup extends AbstractBackup
      * @param start time of backup
      */
     private void postProcesing(String snapshotname, Date start, Date completed) {
-    	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
-    	BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);
-        IMeasurement measurement = new SnapshotBackupMeasurement();
-        measurement.incrementSuccessCnt(1);
+        //NO op
     }
     
     /*
@@ -326,7 +323,7 @@ public class SnapshotBackup extends AbstractBackup
     public static TaskTimer getTimer(IConfiguration config)
     {
         int hour = config.getBackupHour();
-        return new CronTimer(hour, 1, 0);
+        return new CronTimer(JOBNAME, hour, 1, 0);
     }
 
    

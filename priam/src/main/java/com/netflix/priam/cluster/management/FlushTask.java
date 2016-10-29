@@ -87,9 +87,9 @@ public class FlushTask extends Task {
         Integer time = new Integer(s[1]);
 
         if (name.equalsIgnoreCase("hour")) {
-            return new CronTimer(time, 0); //minute, sec after each hour
+            return new CronTimer(JOBNAME, time, 0); //minute, sec after each hour
         } if (name.equalsIgnoreCase("daily")) {
-            return new CronTimer(time, 0 , 0); //hour, minute, sec to run on a daily basis
+            return new CronTimer(JOBNAME, time, 0 , 0); //hour, minute, sec to run on a daily basis
         } else {
             throw new IllegalArgumentException("Flush interval type is invalid.  Expecting \"hour, daily\", received: " + name);
         }

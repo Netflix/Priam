@@ -231,7 +231,8 @@ public class SnapshotBackup extends AbstractBackup
      * @param start time of backup
      */
     private void postProcesing(String snapshotname, Date start, Date completed) {
-        //NO op
+        String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
+        BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);
     }
     
     /*

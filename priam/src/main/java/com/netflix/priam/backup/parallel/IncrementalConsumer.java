@@ -1,20 +1,12 @@
 package com.netflix.priam.backup.parallel;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
+import com.netflix.priam.notification.BackupNotificationMgr;
+import org.codehaus.jettison.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-import com.google.inject.Provider;
-import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.utils.RetryableCallable;
 
 /*
@@ -26,6 +18,7 @@ public class IncrementalConsumer implements Runnable {
 	private AbstractBackupPath bp;
 	private IBackupFileSystem fs;
 	private BackupPostProcessingCallback<AbstractBackupPath> callback;
+	private BackupNotificationMgr backupNotificationMgr;
 
     /**
      * Upload files. Does not delete the file in case of
@@ -35,10 +28,13 @@ public class IncrementalConsumer implements Runnable {
      * @param incremental file - handle to the actual file to upload
      */
 	public IncrementalConsumer(AbstractBackupPath bp, IBackupFileSystem fs
-			, BackupPostProcessingCallback<AbstractBackupPath> callback) {
+			, BackupPostProcessingCallback<AbstractBackupPath> callback
+			, BackupNotificationMgr backupNotificationMgr
+	        ) {
 		this.bp = bp;
 		this.fs = fs;
 		this.callback = callback;
+		this.backupNotificationMgr = backupNotificationMgr;
 	}
 
 	@Override
@@ -87,6 +83,7 @@ public class IncrementalConsumer implements Runnable {
 			
 			this.bp.getBackupFile().delete(); //resource cleanup
 			this.callback.postProcessing(bp); //post processing
+			this.backupNotificationMgr.notify(bp, BackupNotificationMgr.SUCCESS_VAL);
 			
 		} catch (Exception e) {
 			if (e instanceof java.util.concurrent.CancellationException) {
@@ -97,9 +94,13 @@ public class IncrementalConsumer implements Runnable {
 						, this.bp.getFileName(), e.getLocalizedMessage()));				
 			}
 
+			try {
+				this.backupNotificationMgr.notify(bp, BackupNotificationMgr.FAILED_VAL);
+			} catch (JSONException e1) {
+				logger.error(String.format("JSon exception during notifcation for failed upload.  Local file %s. Ignoring to continue with rest of backup.  Msg: %s"
+						, this.bp.getFileName(), e.getLocalizedMessage()));
+			}
 		}
-		
 	}
-
 
 }

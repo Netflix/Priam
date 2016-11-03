@@ -25,12 +25,14 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.netflix.priam.aws.auth.IS3Credential;
+import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
 
 import com.google.common.collect.Lists;
@@ -78,15 +80,18 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     private RateLimiter rateLimiter;
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config,
-                        @Named("awss3roleassumption")IS3Credential cred)
+    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config
+                        , @Named("awss3roleassumption")IS3Credential cred
+                        , @Named("defaultmetricpublisher") IMetricPublisher metricPublisher
+                    )
     {
+        super(metricPublisher);
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
-        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
+        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT); //Provide 2 hours to upload all chunks of a file
         double throttleLimit = config.getUploadThrottle();
         rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
 
@@ -147,7 +152,9 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
             // Upload parts.
             int partNum = 0;
-            AtomicInteger partsUploaded = new AtomicInteger(0); 
+            AtomicInteger partsUploaded = new AtomicInteger(0);
+
+            long startTime = System.nanoTime();; //initialize for each file upload
             while (chunks.hasNext())
             {
                 byte[] chunk = chunks.next();
@@ -162,6 +169,9 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
+            long completedTime = System.nanoTime();
+
+            postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
             
             if (logger.isDebugEnabled())
             {	
@@ -175,7 +185,13 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         catch (Exception e)
         {
         	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.  msg: " + e.getLocalizedMessage());
-            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            new S3PartUploader(s3Client, part, partETags).abortUpload(); //Tells S3 to abandon the upload
+
+            /* * * TODO vdn
+            check for http response of 503, and resp body xml.  See http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
+            if throttling is done, publish metric so we knnow.
+            * */
+
             throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         } finally {
             IOUtils.closeQuietly(in);

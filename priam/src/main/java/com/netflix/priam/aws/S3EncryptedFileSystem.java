@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,8 +66,10 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
 			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
+			, @Named("defaultmetricpublisher") IMetricPublisher metricPublisher
 			) {
-		
+
+		super(metricPublisher);
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;

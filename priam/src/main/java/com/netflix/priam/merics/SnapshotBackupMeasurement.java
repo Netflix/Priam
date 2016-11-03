@@ -3,7 +3,7 @@ package com.netflix.priam.merics;
 /**
  * Created by vinhn on 10/14/16.
  */
-public class SnapshotBackupMeasurement  implements IMeasurement  {
+public class SnapshotBackupMeasurement  implements IMeasurement<Object>  {
     private int failure = 0, success = 0;
     @Override
     public MMEASUREMENT_TYPE getType() {
@@ -22,5 +22,15 @@ public class SnapshotBackupMeasurement  implements IMeasurement  {
     }
     public int getSuccessCnt() {
         return this.success;
+    }
+
+    @Override
+    public Object getVal() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setVal(Object val) {
+
     }
 }

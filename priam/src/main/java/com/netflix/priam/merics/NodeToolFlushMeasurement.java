@@ -6,7 +6,7 @@ package com.netflix.priam.merics;
  *
  * Created by vinhn on 10/14/16.
  */
-public class NodeToolFlushMeasurement implements IMeasurement {
+public class NodeToolFlushMeasurement implements IMeasurement<Object> {
     private int failure = 0, success = 0;
 
     @Override
@@ -26,6 +26,16 @@ public class NodeToolFlushMeasurement implements IMeasurement {
     }
     public int getSuccessCnt() {
         return this.success;
+    }
+
+    @Override
+    public Object getVal() {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void setVal(Object val) {
+        throw new UnsupportedOperationException();
     }
 
 }

@@ -24,8 +24,7 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +33,6 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -59,9 +57,11 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
-    		, IncrementalMetaData metaData)
+    		, IncrementalMetaData metaData
+			,BackupNotificationMgr backupNotificationMgr
+			)
     {
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
         
         init();

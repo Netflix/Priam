@@ -25,6 +25,7 @@ import java.util.regex.Pattern;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +47,17 @@ public abstract class AbstractBackup extends Task
     protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo")); 
     protected final Provider<AbstractBackupPath> pathFactory;
     protected IBackupFileSystem fs;
+    protected BackupNotificationMgr backupNotificationMgr;
     
     
     @Inject
-    public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory)
+    public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx,Provider<AbstractBackupPath> pathFactory
+                            , BackupNotificationMgr backupNotificationMgr)
     {
         super(config);
         this.pathFactory = pathFactory;
         this.fs = backupFileSystemCtx.getFileStrategy(config);
+        this.backupNotificationMgr = backupNotificationMgr;
     }
     
     
@@ -91,6 +95,9 @@ public abstract class AbstractBackup extends Task
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         for (final File file : parent.listFiles())
         {
+            //== decorate file with metadata
+            final AbstractBackupPath bp = pathFactory.get();
+            bp.parseLocal(file, type);
 
             try
             {
@@ -99,16 +106,16 @@ public abstract class AbstractBackup extends Task
                 {
                     public AbstractBackupPath retriableCall() throws Exception
                     {
-                        final AbstractBackupPath bp = pathFactory.get();
-                        bp.parseLocal(file, type);
                         upload(bp); 
                         file.delete();
                         return bp;
                     }
                 }.call();
 
-                if(abp != null)
+                if(abp != null) {
                     bps.add(abp);
+                    this.backupNotificationMgr.notify(abp, BackupNotificationMgr.SUCCESS_VAL);
+                }
                 
                 logger.info(String.format("Uploaded file %s within CF %s for backup", file.getCanonicalFile(), parent.getAbsolutePath()));
                 addToRemotePath(abp.getRemotePath());
@@ -116,11 +123,13 @@ public abstract class AbstractBackup extends Task
             catch(Exception e)
             {
                 logger.error(String.format("Failed to upload local file %s within CF %s. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath()), e);
+                this.backupNotificationMgr.notify(bp, BackupNotificationMgr.FAILED_VAL);
             }
         }
         return bps;
     }
-    
+
+
     /**
      * Upload specified file (RandomAccessFile) with retries
      */

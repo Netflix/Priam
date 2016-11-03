@@ -4,6 +4,7 @@ package com.netflix.priam.backup;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +32,11 @@ public class CommitLogBackupTask extends AbstractBackup
 
     @Inject
     public CommitLogBackupTask(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
-    		                   CommitLogBackup clBackup, @Named("backup") IFileSystemContext  backupFileSystemCtx)
+    		                   CommitLogBackup clBackup, @Named("backup") IFileSystemContext  backupFileSystemCtx
+                                ,BackupNotificationMgr backupNotificationMgr
+                                )
     {
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.clBackup = clBackup;
     }
 

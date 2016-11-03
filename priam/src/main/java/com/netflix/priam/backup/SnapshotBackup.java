@@ -29,6 +29,7 @@ import java.util.regex.Pattern;
 
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.SnapshotBackupMeasurement;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,9 +75,10 @@ public class SnapshotBackup extends AbstractBackup
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
     		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
     		              ,BackupStatusMgr completedBackups
+                          ,BackupNotificationMgr backupNotificationMgr
                         )
     {
-    	super(config, backupFileSystemCtx, pathFactory);
+        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.completedBackups = completedBackups;

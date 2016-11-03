@@ -765,4 +765,9 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     public String getFlushInterval() {
         return null;
     }
+
+    @Override
+    public String getBackupStatusFileLoc() {
+        return null;
+    }
 }

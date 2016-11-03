@@ -1196,4 +1196,9 @@ public class PriamConfiguration implements IConfiguration
         return config.get(PRIAM_PRE  + ".flush.interval");
     }
 
+    @Override
+    public String getBackupStatusFileLoc() {
+        return "backup.status";
+    }
+
 }

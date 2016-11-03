@@ -187,6 +187,44 @@ public class SystemUtils
         {
             logger.warn("failed to close JMXConnectorMgr", e);
         }
-    }   
-    
+    }
+
+    /*
+    @param absolute path to input file
+    @return handle to input file
+     */
+    public static BufferedReader readFile(String absPathToFile) throws IOException {
+            InputStream is = new FileInputStream(absPathToFile);
+            InputStreamReader isr = new InputStreamReader(is);
+            return new BufferedReader(isr);
+    }
+
+    /*
+    Write the "line" to the file.  If file does not exist, it's created.  if file exists, its content will be overwritten with the input.
+    @param absolute path to file
+    @param input line
+    */
+    public static void writeToFile(String filename, String line) {
+        File f = new File(filename);
+        PrintWriter pw = null;
+        FileWriter fw = null;
+        try {
+            if ( !f.exists() ) {
+                f.createNewFile();
+                logger.info("File created, absolute path: " + f.getAbsolutePath());
+            }
+
+            fw = new FileWriter(f, false);
+            pw = new PrintWriter(fw);
+            pw.print(line);
+
+        } catch (IOException e) {
+            throw new IllegalStateException("Exception processing file: " + filename, e);
+        } finally {
+            if (pw != null) {
+                pw.flush();
+                pw.close();
+            }
+        }
+    }
 }

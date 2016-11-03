@@ -591,4 +591,9 @@ public interface IConfiguration
      * “name” is an enum of hour, daily, value is ...
      */
     public String getFlushInterval();
+
+    /*
+    @return the absolute path to store the backup status on disk
+     */
+    public String getBackupStatusFileLoc();
 }

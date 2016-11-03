@@ -765,4 +765,9 @@ public class FakeConfiguration implements IConfiguration
     public String getFlushInterval() {
         return null;
     }
+
+    @Override
+    public String getBackupStatusFileLoc() {
+        return null;
+    }
 }

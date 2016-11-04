@@ -57,7 +57,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String token;
     protected String region;
     protected Date time;
-    protected long size;
+    protected long size; //uncompressed file size
+    protected long compressedFileSize = 0;
     protected boolean isCassandra1_0;
 
 	protected final InstanceIdentity factory;
@@ -243,6 +244,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return time;
     }
 
+    /*
+    @return original, uncompressed file size
+     */
     public long getSize()
     {
         return size;
@@ -251,6 +255,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public void setSize(long size)
     {
         this.size = size;
+    }
+
+    public long getCompressedFileSize() {
+        return this.compressedFileSize;
+    }
+    public void setCompressedFileSize(long val) {
+        this.compressedFileSize = val;
     }
 
     public File getBackupFile()

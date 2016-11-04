@@ -79,4 +79,9 @@ public class FakedS3EncryptedFileSystem implements IBackupFileSystem {
 
 	}
 
+	@Override
+	public long getBytesUploaded() {
+		return 0;
+	}
+
 }

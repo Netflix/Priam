@@ -294,6 +294,11 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
 	}
 
 	@Override
+	public long getBytesUploaded() {
+		return 0;
+	}
+
+	@Override
 	public long bytesDownloaded() {
 		return this.bytesDownloaded.get();
 	}

@@ -30,6 +30,11 @@ public class NullBackupFileSystem implements IBackupFileSystem
     }
 
     @Override
+    public long getBytesUploaded() {
+        return 0;
+    }
+
+    @Override
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
     {
     }

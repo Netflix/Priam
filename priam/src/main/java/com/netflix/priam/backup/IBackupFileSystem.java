@@ -67,4 +67,6 @@ public interface IBackupFileSystem
      * Give the file system a chance to terminate any thread pools, etc.
      */
     public void shutdown();
+
+    public long getBytesUploaded();
 }

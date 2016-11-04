@@ -108,9 +108,18 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	}
 
 	@Override
+	/*
+    Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
+     */
 	public long bytesUploaded() {
 		return super.bytesUploaded.get();
 	}
+
+	@Override
+	public long getBytesUploaded() {
+		return super.bytesUploaded.get();
+	}
+
 
 	@Override
 	public long bytesDownloaded() {
@@ -290,8 +299,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
             executor.shutdown();
 
 	}
-	
-    /*
+
+	/*
      * A means to change the default handle to the S3 client.
      */
     public void setS3Client(AmazonS3Client client) {

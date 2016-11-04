@@ -147,6 +147,7 @@ public abstract class AbstractBackup extends Task
                 		throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
                 	}
                     fs.upload(bp, is);
+                    bp.setCompressedFileSize(fs.getBytesUploaded());
                     return null;            		
             	} catch (Exception e) {
             		logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."

@@ -36,7 +36,8 @@ public class BackupNotificationMgr {
         jsonObject.put("rack", this.config.getRac());
         jsonObject.put("token", abp.getToken());
         jsonObject.put("filename", abp.getFileName());
-        jsonObject.put("filesize", abp.getSize());
+        jsonObject.put("uncompressfilesize", abp.getSize());
+        jsonObject.put("compressfilesize", abp.getCompressedFileSize());
         jsonObject.put("backuptype", abp.getType().name());
         jsonObject.put("uploadstatus", uploadStatus);
 

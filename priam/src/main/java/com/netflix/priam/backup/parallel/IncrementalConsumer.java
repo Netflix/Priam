@@ -69,6 +69,7 @@ public class IncrementalConsumer implements Runnable {
 	                		throw new NullPointerException("Unable to get handle on file: " + bp.getFileName());
 	                	}
 	                    fs.upload(bp, is);
+						bp.setCompressedFileSize(fs.getBytesUploaded());
 	                    return null;            		
 	            	}catch (Exception e) {
 	            		logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."

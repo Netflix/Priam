@@ -252,8 +252,16 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     }
 
     @Override
+    /*
+    Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
+     */
     public long bytesUploaded()
     {
+        return super.bytesUploaded.get();
+    }
+
+    @Override
+    public long getBytesUploaded() {
         return super.bytesUploaded.get();
     }
 

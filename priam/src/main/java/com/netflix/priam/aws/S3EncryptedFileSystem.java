@@ -15,6 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -185,6 +186,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 
 	@Override
 	public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException {
+		reinitialize();  //perform before file upload
 		super.uploadCount.incrementAndGet();
 		
 		//== Setup for multi part (chunks) upload to aws

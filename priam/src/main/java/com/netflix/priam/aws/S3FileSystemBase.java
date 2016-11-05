@@ -27,7 +27,7 @@ public class S3FileSystemBase {
     protected static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
 	
 	protected AtomicInteger uploadCount = new AtomicInteger();
-	protected AtomicLong bytesUploaded = new AtomicLong();
+	protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
     protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
 	protected AmazonS3Client s3Client;
@@ -176,5 +176,12 @@ public class S3FileSystemBase {
             logger.error("Post processing of file " + path.getFileName() + " failed, not fatal.  Msg: " + e.getLocalizedMessage());
         }
 
+    }
+
+    /*
+    Reinitializtion which should be performed before uploading a file
+     */
+    protected void reinitialize() {
+        bytesUploaded = new AtomicLong(0); //initi
     }
 }

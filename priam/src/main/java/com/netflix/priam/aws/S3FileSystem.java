@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
@@ -137,7 +138,9 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     @Override
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
     {
+        reinitialize();  //perform before file upload
         super.uploadCount.incrementAndGet();
+
         AmazonS3 s3Client = super.getS3Client();
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);

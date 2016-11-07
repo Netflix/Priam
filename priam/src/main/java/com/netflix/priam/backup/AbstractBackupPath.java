@@ -203,6 +203,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         return type;
     }
+    public void setType(BackupFileType type) {
+        this.type = type;
+    }
 
     public String getClusterName()
     {

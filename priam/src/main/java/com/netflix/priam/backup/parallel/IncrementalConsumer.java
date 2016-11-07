@@ -32,6 +32,7 @@ public class IncrementalConsumer implements Runnable {
 			, BackupNotificationMgr backupNotificationMgr
 	        ) {
 		this.bp = bp;
+		this.bp.setType(AbstractBackupPath.BackupFileType.SST);  //Tag this is an incremental upload, not snapshot
 		this.fs = fs;
 		this.callback = callback;
 		this.backupNotificationMgr = backupNotificationMgr;

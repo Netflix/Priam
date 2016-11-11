@@ -187,7 +187,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         }
         catch (Exception e)
         {
-        	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.  msg: " + e.getLocalizedMessage());
+        	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
             new S3PartUploader(s3Client, part, partETags).abortUpload(); //Tells S3 to abandon the upload
 
             /* * * TODO vdn

@@ -6,6 +6,7 @@ package com.netflix.priam.merics;
 public class BackupUploadRateMeasurement implements IMeasurement<BackupUploadRateMeasurement.Metadata> {
 
     private BackupUploadRateMeasurement.Metadata metadata;
+    private int incrementSuccessCnt = 0;
 
     @Override
     public MMEASUREMENT_TYPE getType() {
@@ -14,6 +15,7 @@ public class BackupUploadRateMeasurement implements IMeasurement<BackupUploadRat
 
     @Override
     public void incrementFailureCnt(int i) {
+
         throw new UnsupportedOperationException();
     }
 
@@ -24,12 +26,12 @@ public class BackupUploadRateMeasurement implements IMeasurement<BackupUploadRat
 
     @Override
     public void incrementSuccessCnt(int i) {
-        throw new UnsupportedOperationException();
+        this.incrementSuccessCnt += i;
     }
 
     @Override
     public int getSuccessCnt() {
-        throw new UnsupportedOperationException();
+        return this.incrementSuccessCnt;
     }
 
     @Override

@@ -23,6 +23,7 @@ public interface IMeasurement<T> {
     public void setVal(T val);
 
     public enum MMEASUREMENT_TYPE {
-        NOOP, NODETOOLFLUSH, SNAPSHOTBACKUP, BACKUPUPLOADRATE;
+        NOOP, NODETOOLFLUSH, SNAPSHOTBACKUP, BACKUPUPLOADRATE
+        , SNAPSHOTBACKUPUPNOTIFICATION;
     };
 }

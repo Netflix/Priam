@@ -173,6 +173,8 @@ public class MetaData
                 return null;
             }
         }.call();
+
+        bp.setCompressedFileSize(fs.getBytesUploaded());
     }
     
     public File createTmpMetaFile() throws IOException{

@@ -173,9 +173,8 @@ public class S3FileSystemBase {
             this.metricPublisher.publish(measurement); //signal of upload rate for file
 
         } catch (Exception e) {
-            logger.error("Post processing of file " + path.getFileName() + " failed, not fatal.  Msg: " + e.getLocalizedMessage());
+            logger.error("Post processing of file " + path.getFileName() + " failed, not fatal.", e);
         }
-
     }
 
     /*

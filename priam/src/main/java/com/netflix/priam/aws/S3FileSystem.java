@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
@@ -79,6 +80,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     private final IConfiguration config;
     private BlockingSubmitThreadPoolExecutor executor;
     private RateLimiter rateLimiter;
+    private int awsSlowDownExceptionCounter;
 
     @Inject
     public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config
@@ -184,8 +186,13 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
                logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
             }  
             
-        }
-        catch (Exception e)
+        } catch(AmazonS3Exception e) {
+            String amazoneErrorCode = e.getErrorCode();
+            if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
+                this.awsSlowDownExceptionCounter += 1;
+            }
+            //No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
+        } catch (Exception e)
         {
         	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
             new S3PartUploader(s3Client, part, partETags).abortUpload(); //Tells S3 to abandon the upload
@@ -266,6 +273,11 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     @Override
     public long getBytesUploaded() {
         return super.bytesUploaded.get();
+    }
+
+    @Override
+    public int getAWSSlowDownExceptionCounter() {
+        return this.awsSlowDownExceptionCounter;
     }
 
     @Override

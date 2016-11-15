@@ -84,4 +84,9 @@ public class FakedS3EncryptedFileSystem implements IBackupFileSystem {
 		return 0;
 	}
 
+	@Override
+	public int getAWSSlowDownExceptionCounter() {
+		return 0;
+	}
+
 }

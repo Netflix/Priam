@@ -69,4 +69,6 @@ public interface IBackupFileSystem
     public void shutdown();
 
     public long getBytesUploaded();
+
+    public int getAWSSlowDownExceptionCounter();
 }

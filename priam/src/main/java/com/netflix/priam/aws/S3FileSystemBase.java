@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
 import com.netflix.priam.merics.BackupUploadRateMeasurement;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
@@ -167,10 +168,14 @@ public class S3FileSystemBase {
                     + ", KB per sec: " + speedInKBps
             );
 
-            IMeasurement measurement = new BackupUploadRateMeasurement();
+            IMeasurement backupUploadRateMeasurement = new BackupUploadRateMeasurement();
             BackupUploadRateMeasurement.Metadata metadata = new BackupUploadRateMeasurement.Metadata(path.getFileName(), speedInKBps, elapseTimeInMillisecs);
-            measurement.setVal(metadata);
-            this.metricPublisher.publish(measurement); //signal of upload rate for file
+            backupUploadRateMeasurement.setVal(metadata);
+            this.metricPublisher.publish(backupUploadRateMeasurement); //signal of upload rate for file
+
+            IMeasurement awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement();
+            awsSlowDownMeasurement.incrementFailureCnt(path.getAWSSlowDownExceptionCounter());
+            this.metricPublisher.publish(awsSlowDownMeasurement); //signal of possible throttling by aws
 
         } catch (Exception e) {
             logger.error("Post processing of file " + path.getFileName() + " failed, not fatal.", e);

@@ -65,6 +65,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
+    protected int awsSlowDownExceptionCounter;
     
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {
@@ -332,5 +333,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public String toString()
     {
         return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();
+    }
+
+    public int getAWSSlowDownExceptionCounter() {
+        return this.awsSlowDownExceptionCounter;
+    }
+
+    public int setAWSSlowDownExceptionCounter(int val) {
+        return this.awsSlowDownExceptionCounter = val;
     }
 }

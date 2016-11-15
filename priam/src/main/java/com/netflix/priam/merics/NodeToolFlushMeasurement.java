@@ -30,12 +30,12 @@ public class NodeToolFlushMeasurement implements IMeasurement<Object> {
 
     @Override
     public Object getVal() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override
     public void setVal(Object val) {
-        throw new UnsupportedOperationException();
+        //NO op;
     }
 
 }

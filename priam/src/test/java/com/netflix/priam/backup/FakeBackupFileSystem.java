@@ -152,6 +152,11 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     }
 
     @Override
+    public int getAWSSlowDownExceptionCounter() {
+        return 0;
+    }
+
+    @Override
     public Iterator<AbstractBackupPath> listPrefixes(Date date)
     {
         // TODO Auto-generated method stub

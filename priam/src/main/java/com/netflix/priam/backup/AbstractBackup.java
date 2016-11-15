@@ -148,6 +148,7 @@ public abstract class AbstractBackup extends Task
                 	}
                     fs.upload(bp, is);
                     bp.setCompressedFileSize(fs.getBytesUploaded());
+                    bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                     return null;            		
             	} catch (Exception e) {
             		logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."

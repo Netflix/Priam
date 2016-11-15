@@ -16,12 +16,12 @@ public class BackupUploadRateMeasurement implements IMeasurement<BackupUploadRat
     @Override
     public void incrementFailureCnt(int i) {
 
-        throw new UnsupportedOperationException();
+        //No op
     }
 
     @Override
     public int getFailureCnt() {
-        throw new UnsupportedOperationException();
+        return 0;
     }
 
     @Override

@@ -26,7 +26,7 @@ public class SnapshotBackupMeasurement  implements IMeasurement<Object>  {
 
     @Override
     public Object getVal() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

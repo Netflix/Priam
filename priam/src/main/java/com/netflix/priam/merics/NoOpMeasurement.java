@@ -36,7 +36,7 @@ public class NoOpMeasurement implements IMeasurement<Object>{
 
     @Override
     public Object getVal() {
-        throw new UnsupportedOperationException();
+        return null;
     }
 
     @Override

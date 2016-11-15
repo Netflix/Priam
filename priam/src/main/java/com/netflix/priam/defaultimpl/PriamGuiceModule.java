@@ -17,6 +17,9 @@ package com.netflix.priam.defaultimpl;
 
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.merics.NoOpMetricPublisher;
+import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.notification.INotificationService;
+import com.netflix.priam.notification.NoOpNotificationService;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -31,7 +34,6 @@ import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
 import com.netflix.priam.backup.parallel.ITaskQueueMgr;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -82,6 +84,6 @@ public class PriamGuiceModule extends AbstractModule
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         bind(IMetricPublisher.class).annotatedWith(Names.named("defaultmetricpublisher")).to(NoOpMetricPublisher.class);
-        
+        bind(INotificationService.class).annotatedWith(Names.named("defaultnotificationservice")).to(NoOpNotificationService.class);
     }
 }

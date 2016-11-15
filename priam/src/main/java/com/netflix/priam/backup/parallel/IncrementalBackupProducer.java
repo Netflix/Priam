@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +21,8 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.backup.IIncrementalBackup;
 import com.netflix.priam.backup.IncrementalMetaData;
-import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.RetryableCallable;
-
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 @Singleton
 public class IncrementalBackupProducer extends AbstractBackup implements IIncrementalBackup {
@@ -45,9 +41,11 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     @Inject
     public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
     		, IncrementalMetaData metaData
-    		, @Named("backup") ITaskQueueMgr taskQueueMgr) {
+    		, @Named("backup") ITaskQueueMgr taskQueueMgr
+			, BackupNotificationMgr backupNotificationMgr
+			) {
     	
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.taskQueueMgr = taskQueueMgr;
         this.metaData = metaData;
         
@@ -57,7 +55,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     private void init(IFileSystemContext backupFileSystemCtx) {
     	populateIncrementalFilters(); 
     	//"this" is a producer, lets wake up the "consumers"
-    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config); 
+    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config, super.backupNotificationMgr);
     	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
     	consumerMgr.start();
     	

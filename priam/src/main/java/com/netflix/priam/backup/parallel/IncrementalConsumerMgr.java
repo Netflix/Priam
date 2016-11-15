@@ -1,23 +1,20 @@
 package com.netflix.priam.backup.parallel;
 
-import java.util.AbstractQueue;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IIncrementalBackup;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 
 /*
  * Monitors files to be uploaded and assigns each file to a worker
@@ -31,12 +28,16 @@ public class IncrementalConsumerMgr implements Runnable {
 	private IBackupFileSystem fs;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
 	private BackupPostProcessingCallback<AbstractBackupPath> callback;
+	private BackupNotificationMgr backupNotificationMgr;
 
 	
 	public IncrementalConsumerMgr(ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs
-			, IConfiguration config) {
+			, IConfiguration config
+			, BackupNotificationMgr backupNotificationMgr
+		) {
 		this.taskQueueMgr = taskQueueMgr;
 		this.fs = fs;
+		this.backupNotificationMgr = backupNotificationMgr;
 		
 		/*
 		 * Too few threads, the queue will build up, consuming a lot of memory.
@@ -74,7 +75,7 @@ public class IncrementalConsumerMgr implements Runnable {
 				try {
 					AbstractBackupPath bp = this.taskQueueMgr.take();
 					
-					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback);
+					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback, this.backupNotificationMgr);
 					executor.submit(task); //non-blocking, will be rejected if the task cannot be scheduled
 
 					

@@ -19,16 +19,12 @@ import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import com.amazonaws.services.s3.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AbortMultipartUploadRequest;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadRequest;
-import com.amazonaws.services.s3.model.PartETag;
-import com.amazonaws.services.s3.model.UploadPartRequest;
-import com.amazonaws.services.s3.model.UploadPartResult;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
@@ -61,7 +57,7 @@ public class S3PartUploader extends RetryableCallable<Void>
     }
 
 
-    private Void uploadPart() throws AmazonClientException, BackupRestoreException
+    private Void uploadPart() throws AmazonS3Exception, AmazonClientException, BackupRestoreException
     {
         UploadPartRequest req = new UploadPartRequest();
         req.setBucketName(dataPart.getBucketName());
@@ -95,7 +91,7 @@ public class S3PartUploader extends RetryableCallable<Void>
     }
 
     @Override
-    public Void retriableCall() throws AmazonClientException, BackupRestoreException
+    public Void retriableCall() throws AmazonS3Exception, AmazonClientException, BackupRestoreException
     {
         logger.debug("Picked up part " + dataPart.getPartNo() + " size " + dataPart.getPartData().length);
         return uploadPart();

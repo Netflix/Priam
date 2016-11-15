@@ -60,7 +60,7 @@ public class MetaData
     }
 
     @SuppressWarnings("unchecked")
-    public void set(List<AbstractBackupPath> bps, String snapshotName) throws Exception
+    public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName) throws Exception
     {
         File metafile = createTmpMetaFile();
         FileWriter fr = new FileWriter(metafile);
@@ -91,6 +91,8 @@ public class MetaData
         {
             FileUtils.deleteQuietly(metafile);
         }
+
+        return backupfile;
     }
 
     /*
@@ -171,6 +173,8 @@ public class MetaData
                 return null;
             }
         }.call();
+
+        bp.setCompressedFileSize(fs.getBytesUploaded());
     }
     
     public File createTmpMetaFile() throws IOException{

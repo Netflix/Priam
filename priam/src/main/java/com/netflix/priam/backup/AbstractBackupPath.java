@@ -57,13 +57,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String token;
     protected String region;
     protected Date time;
-    protected long size;
+    protected long size; //uncompressed file size
+    protected long compressedFileSize = 0;
     protected boolean isCassandra1_0;
 
 	protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
+    protected int awsSlowDownExceptionCounter;
     
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {
@@ -202,6 +204,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     {
         return type;
     }
+    public void setType(BackupFileType type) {
+        this.type = type;
+    }
 
     public String getClusterName()
     {
@@ -243,6 +248,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return time;
     }
 
+    /*
+    @return original, uncompressed file size
+     */
     public long getSize()
     {
         return size;
@@ -251,6 +259,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public void setSize(long size)
     {
         this.size = size;
+    }
+
+    public long getCompressedFileSize() {
+        return this.compressedFileSize;
+    }
+    public void setCompressedFileSize(long val) {
+        this.compressedFileSize = val;
     }
 
     public File getBackupFile()
@@ -318,5 +333,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public String toString()
     {
         return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();
+    }
+
+    public int getAWSSlowDownExceptionCounter() {
+        return this.awsSlowDownExceptionCounter;
+    }
+
+    public int setAWSSlowDownExceptionCounter(int val) {
+        return this.awsSlowDownExceptionCounter = val;
     }
 }

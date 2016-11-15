@@ -14,11 +14,15 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,12 +65,15 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	private RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 	private AtomicInteger uploadCount = new AtomicInteger();
 	private IFileCryptography encryptor;
+	private int awsSlowDownExceptionCounter;
 	
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
 			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
+			, @Named("defaultmetricpublisher") IMetricPublisher metricPublisher
 			) {
-		
+
+		super(metricPublisher);
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
@@ -105,9 +112,23 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	}
 
 	@Override
+	/*
+    Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
+     */
 	public long bytesUploaded() {
 		return super.bytesUploaded.get();
 	}
+
+	@Override
+	public long getBytesUploaded() {
+		return super.bytesUploaded.get();
+	}
+
+	@Override
+	public int getAWSSlowDownExceptionCounter() {
+		return this.awsSlowDownExceptionCounter;
+	}
+
 
 	@Override
 	public long bytesDownloaded() {
@@ -173,6 +194,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 
 	@Override
 	public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException {
+		reinitialize();  //perform before file upload
 		super.uploadCount.incrementAndGet();
 		
 		//== Setup for multi part (chunks) upload to aws
@@ -231,6 +253,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
             Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, path.getRemotePath());
 
             int partNum = 0; //identifies this part position in the object we are uploading
+			long startTime = System.nanoTime();; //initialize for each file upload
             while (chunks.hasNext())
             {
                 byte[] chunk = chunks.next();
@@ -247,9 +270,17 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the expected number of uploaded parts(" + partETags.size() + ")");
             
-            new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data       	
+            new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
+			long completedTime = System.nanoTime();
+			postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
         	
-        } catch(Exception e ) {
+        } catch(AmazonS3Exception e) {
+			String amazoneErrorCode = e.getErrorCode();
+			if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
+				this.awsSlowDownExceptionCounter += 1;
+			}
+			//No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
+		} catch(Exception e ) {
         	new S3PartUploader(s3Client, part, partETags).abortUpload();
         	throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         } finally {
@@ -287,8 +318,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
             executor.shutdown();
 
 	}
-	
-    /*
+
+	/*
      * A means to change the default handle to the S3 client.
      */
     public void setS3Client(AmazonS3Client client) {

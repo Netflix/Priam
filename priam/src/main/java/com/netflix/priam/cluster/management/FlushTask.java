@@ -38,13 +38,10 @@ public class FlushTask extends Task {
     @Override
     public void execute() throws Exception {
         JMXConnectorMgr connMgr = null;
+        List<String> flushed = null;
+
         try {
             connMgr = new JMXConnectorMgr(config);
-        } catch (Exception e) {
-            throw new RuntimeException("Exception connection to remove jxm server.", e);
-        }
-        List<String> flushed = null;
-        try {
             IClusterManagement flush = new Flush(this.config, connMgr);
             flushed = flush.execute();
             measurement.incrementSuccessCnt(1);
@@ -57,7 +54,8 @@ public class FlushTask extends Task {
             throw new RuntimeException("Exception during flush.", e);
 
         } finally {
-            connMgr.close();  //resource cleanup
+            if (connMgr != null)
+                connMgr.close();  //resource cleanup
         }
         if (flushed.isEmpty()) {
             logger.warn("Flush task completed successfully but no keyspaces were flushed.");

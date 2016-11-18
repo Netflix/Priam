@@ -33,9 +33,11 @@ public class S3FileSystemBase {
     protected AtomicLong bytesDownloaded = new AtomicLong();
 	protected AmazonS3Client s3Client;
     protected IMetricPublisher metricPublisher;
+    protected IMeasurement awsSlowDownMeasurement;
 
     public S3FileSystemBase (IMetricPublisher metricPublisher) {
         this.metricPublisher = metricPublisher;
+        awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement(); //a counter of AWS warning for all uploads
     }
 
     /*
@@ -168,12 +170,16 @@ public class S3FileSystemBase {
                     + ", KB per sec: " + speedInKBps
             );
 
+            /*
+            This measurement is different than most others.  Other measurements are applicable to all occurrences (e.g
+            node tool flush errors, AWS TPS warning errors).  Upload rate for all occurrences (uploads) is not useful; rather,
+            we are interested in the upload rate per file.  Hence "metadata" is the upload rate for the just uploaded file.
+             */
             IMeasurement backupUploadRateMeasurement = new BackupUploadRateMeasurement();
             BackupUploadRateMeasurement.Metadata metadata = new BackupUploadRateMeasurement.Metadata(path.getFileName(), speedInKBps, elapseTimeInMillisecs);
             backupUploadRateMeasurement.setVal(metadata);
             this.metricPublisher.publish(backupUploadRateMeasurement); //signal of upload rate for file
 
-            IMeasurement awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement();
             awsSlowDownMeasurement.incrementFailureCnt(path.getAWSSlowDownExceptionCounter());
             this.metricPublisher.publish(awsSlowDownMeasurement); //signal of possible throttling by aws
 

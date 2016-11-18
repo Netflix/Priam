@@ -48,7 +48,6 @@ public class FlushTask extends Task {
             this.metricPublisher.publish(measurement); //signal that there was a success
 
         } catch (Exception e) {
-            IMeasurement measurement = new NodeToolFlushMeasurement();
             measurement.incrementFailureCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a failure
             throw new RuntimeException("Exception during flush.", e);

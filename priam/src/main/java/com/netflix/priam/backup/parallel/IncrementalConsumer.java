@@ -46,7 +46,13 @@ public class IncrementalConsumer implements Runnable {
 	public void run() {
 		
 		logger.info("Consumer - about to upload file: " + this.bp.getFileName());
-		
+		try {
+			this.backupNotificationMgr.notify(bp, BackupNotificationMgr.STARTED);
+		} catch (JSONException e) {
+			logger.error(String.format("JSon exception during precondition notifcation file upload.  Local file %s. Ignoring to continue with rest of backup.  Msg: %s"
+					, this.bp.getFileName(), e.getLocalizedMessage()));
+		}
+
 		try {
 			
 			new RetryableCallable<Void>() 

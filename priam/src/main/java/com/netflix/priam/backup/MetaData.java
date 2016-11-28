@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -75,9 +76,7 @@ public class MetaData
         {
             IOUtils.closeQuietly(fr);
         }
-        AbstractBackupPath backupfile = pathFactory.get();
-        backupfile.parseLocal(metafile, BackupFileType.META);
-        backupfile.time = backupfile.parseDate(snapshotName);
+        AbstractBackupPath backupfile  = decorateMetaJson(metafile, snapshotName);
         try
         {
 			upload(backupfile);
@@ -92,6 +91,16 @@ public class MetaData
             FileUtils.deleteQuietly(metafile);
         }
 
+        return backupfile;
+    }
+
+    /*
+    From the meta.json to be created, populate its meta data for the backup file.
+     */
+    public AbstractBackupPath decorateMetaJson(File metafile, String snapshotName) throws ParseException {
+        AbstractBackupPath backupfile = pathFactory.get();
+        backupfile.parseLocal(metafile, BackupFileType.META);
+        backupfile.time = backupfile.parseDate(snapshotName);
         return backupfile;
     }
 

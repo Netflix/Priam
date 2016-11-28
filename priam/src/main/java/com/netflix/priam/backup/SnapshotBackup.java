@@ -202,11 +202,18 @@ public class SnapshotBackup extends AbstractBackup
                 }
                 
             }
+
+            //pre condition notifiy of meta.json upload
+            File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
+            AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
+            metaJsonAbp.setCompressedFileSize(0);
+            backupNotificationMgr.notify(metaJsonAbp, BackupNotificationMgr.STARTED);
+
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
             Calendar completed = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-            this.postProcesing(snapshotName, startTime, completed.getTime(), metaJson);
+            postProcesing(snapshotName, startTime, completed.getTime(), metaJson);
             
             if(snapshotRemotePaths.size() > 0)
             {
@@ -226,7 +233,7 @@ public class SnapshotBackup extends AbstractBackup
             }
         }
     }
-    
+
     /*
      * Performs any post processing (e.g. log success of backup).
      * 

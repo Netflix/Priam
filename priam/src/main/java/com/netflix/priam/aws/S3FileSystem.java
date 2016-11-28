@@ -80,7 +80,6 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     private final IConfiguration config;
     private BlockingSubmitThreadPoolExecutor executor;
     private RateLimiter rateLimiter;
-    private int awsSlowDownExceptionCounter;
 
     @Inject
     public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config
@@ -189,7 +188,8 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         } catch(AmazonS3Exception e) {
             String amazoneErrorCode = e.getErrorCode();
             if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
-                this.awsSlowDownExceptionCounter += 1;
+                super.awsSlowDownExceptionCounter += 1;
+                logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
             }
             //No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
         } catch (Exception e)
@@ -277,7 +277,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
 
     @Override
     public int getAWSSlowDownExceptionCounter() {
-        return this.awsSlowDownExceptionCounter;
+        return super.awsSlowDownExceptionCounter;
     }
 
     @Override

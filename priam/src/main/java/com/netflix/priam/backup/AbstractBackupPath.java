@@ -34,10 +34,13 @@ import com.netflix.priam.identity.InstanceIdentity;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @ImplementedBy(S3BackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath>
 {
+    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     private static final String FMT = "yyyyMMddHHmm";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern(FMT);
     public static final char PATH_SEP = File.separatorChar;
@@ -65,7 +68,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
-    protected int awsSlowDownExceptionCounter;
+    protected int awsSlowDownExceptionCounter = 0;
     
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory)
     {
@@ -339,7 +342,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return this.awsSlowDownExceptionCounter;
     }
 
-    public int setAWSSlowDownExceptionCounter(int val) {
-        return this.awsSlowDownExceptionCounter = val;
+    public void setAWSSlowDownExceptionCounter(int val) {
+        this.awsSlowDownExceptionCounter = val;
     }
 }

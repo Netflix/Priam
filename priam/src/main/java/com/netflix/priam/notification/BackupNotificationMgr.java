@@ -14,7 +14,7 @@ import org.codehaus.jettison.json.JSONObject;
  */
 public class BackupNotificationMgr {
 
-    public static final String SUCCESS_VAL = "success", FAILED_VAL = "failed";
+    public static final String SUCCESS_VAL = "success", FAILED_VAL = "failed", STARTED = "started";
 
     private final IConfiguration config;
     private INotificationService notificationService;

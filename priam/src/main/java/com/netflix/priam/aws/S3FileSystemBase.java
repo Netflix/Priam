@@ -34,6 +34,7 @@ public class S3FileSystemBase {
 	protected AmazonS3Client s3Client;
     protected IMetricPublisher metricPublisher;
     protected IMeasurement awsSlowDownMeasurement;
+    protected int awsSlowDownExceptionCounter = 0;
 
     public S3FileSystemBase (IMetricPublisher metricPublisher) {
         this.metricPublisher = metricPublisher;
@@ -193,5 +194,6 @@ public class S3FileSystemBase {
      */
     protected void reinitialize() {
         bytesUploaded = new AtomicLong(0); //initi
+        this.awsSlowDownExceptionCounter = 0;
     }
 }

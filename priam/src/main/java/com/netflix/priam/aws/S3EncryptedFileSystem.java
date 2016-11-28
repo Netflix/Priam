@@ -65,7 +65,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	private RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 	private AtomicInteger uploadCount = new AtomicInteger();
 	private IFileCryptography encryptor;
-	private int awsSlowDownExceptionCounter;
 	
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
@@ -126,7 +125,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 
 	@Override
 	public int getAWSSlowDownExceptionCounter() {
-		return this.awsSlowDownExceptionCounter;
+		return super.awsSlowDownExceptionCounter;
 	}
 
 
@@ -277,7 +276,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
         } catch(AmazonS3Exception e) {
 			String amazoneErrorCode = e.getErrorCode();
 			if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
-				this.awsSlowDownExceptionCounter += 1;
+				super.awsSlowDownExceptionCounter += 1;
+				logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
 			}
 			//No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
 		} catch(Exception e ) {

@@ -1,9 +1,13 @@
 package com.netflix.priam.merics;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Created by vinhn on 11/12/16.
  */
 public class AWSSlowDownExceptionMeasurement implements IMeasurement<Object> {
+    private static final Logger logger = LoggerFactory.getLogger(AWSSlowDownExceptionMeasurement.class);
     private int awsSlowDownExceptionCounter = 0;
 
     @Override
@@ -13,7 +17,7 @@ public class AWSSlowDownExceptionMeasurement implements IMeasurement<Object> {
 
     @Override
     public void incrementFailureCnt(int i) {
-        this.awsSlowDownExceptionCounter += 1;
+        this.awsSlowDownExceptionCounter += i;
     }
 
     @Override

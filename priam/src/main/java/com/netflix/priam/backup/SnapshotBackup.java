@@ -15,41 +15,29 @@
  */
 package com.netflix.priam.backup;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TimeZone;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.SnapshotBackupMeasurement;
-import com.netflix.priam.notification.BackupNotificationMgr;
-import org.codehaus.jettison.json.JSONException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.BackupStatusMgr.BackupMetadata;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.ThreadSleeper;
+import org.codehaus.jettison.json.JSONException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Task for running daily snapshots
@@ -241,9 +229,7 @@ public class SnapshotBackup extends AbstractBackup
      * @param start time of backup
      */
     private void postProcesing(String snapshotname, Date start, Date completed, AbstractBackupPath adp) throws JSONException {
-        String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
-        BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);
-
+        this.completedBackups.add(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, snapshotname, start, completed);
         backupNotificationMgr.notify(adp, BackupNotificationMgr.SUCCESS_VAL);
     }
     

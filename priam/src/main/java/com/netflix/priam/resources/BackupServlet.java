@@ -167,6 +167,7 @@ public class BackupServlet
     
     @GET
     @Path("/status")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response status() throws Exception
     {
         int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
@@ -189,6 +190,7 @@ public class BackupServlet
      */
     @GET
     @Path("/status/{date}")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response statusByDate(@PathParam("date") String date) throws Exception {
         JSONObject object = new JSONObject();
     	BackupMetadata bkupMetadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
@@ -235,6 +237,7 @@ public class BackupServlet
      */
     @GET
     @Path("/status/{date}/snapshots")
+    @Produces(MediaType.APPLICATION_JSON)
     public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
     	BackupMetadata metadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
         JSONObject object = new JSONObject();
@@ -276,6 +279,7 @@ public class BackupServlet
      */
 	@GET
 	@Path("/life_of_crow")
+    @Produces(MediaType.APPLICATION_JSON)
 	public Response restore_verify_key(
 			@QueryParam(REST_HEADER_RANGE) String daterange,
 			@QueryParam(REST_HEADER_REGION) String region,

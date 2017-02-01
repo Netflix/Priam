@@ -22,7 +22,7 @@ import com.netflix.priam.utils.SystemUtils;
  * A means to manage metadata for various types of backups (snapshots, incrementals)
  */
 @Singleton
-public class BackupStatusMgr {
+public class BackupStatusMgr implements IBackupStatusMgr{
 
 	private static final Logger logger = LoggerFactory.getLogger(BackupStatusMgr.class);
 	
@@ -47,11 +47,13 @@ public class BackupStatusMgr {
 	 * @param startime of backup
 	 * @param completion time of backup
 	 */
-	public BackupMetadata add(String key, String backup, Date startTime, Date completedTime) {
+	public void add(IMessageObserver.BACKUP_MESSAGE_TYPE message_type, String backup, Date startTime, Date completedTime) {
+		String key = formatKey(message_type, startTime);
 		if (bkups.size() == this.capacity) {
 			bkups.removeFirst(); //Remove the oldest backup
 		}
-		BackupMetadata b = locate(key);
+
+		BackupMetadata b = locate(message_type, new DateTime(startTime).toString("yyyyMMdd"));
 		if (b != null) {
 			b.getBackups().add(backup);
 			b.setStartTime(startTime);
@@ -77,9 +79,6 @@ public class BackupStatusMgr {
 
 			logger.info("Adding new snapshot meta data: " + key);
 		}
-		
-		return b;
-
 	}
 
 	public int capacity() {
@@ -110,30 +109,15 @@ public class BackupStatusMgr {
 		return bkupType.name() + "_" + date;
 	}
 
-	/*
-	 * Worse case, seek time is O(n).  The average seek time is O(1) as we expect majority of requests will be for the most
-	 * recent backup date.
-	 * 
-	 * @param key.  See this.formatkey(...) for expected format
-	 * 
-	 */
-	public Boolean status(String key) {
-		Boolean result = false;
-		if (locate(key) != null) {
-			return true;
-		} else {
-			return false;
-		}
-		
-	}
 
 	/*
 	Will locate the backup for a type (incremental or snapshot) for a day (yyyymmdd)
 	status first in memory, if not found, look on disk.
 	@param key See this.formatkey(...) for expected format
 	*/
-	public BackupMetadata locate(String key) {
+	public BackupMetadata locate(IMessageObserver.BACKUP_MESSAGE_TYPE message_type, String date) {
 		//start with the most recent bakcup
+        String key = formatKey(message_type, date);
 		Iterator<BackupMetadata> descIt = bkups.descendingIterator();
 		while (descIt.hasNext()) {
 			BackupMetadata c = descIt.next();
@@ -267,90 +251,4 @@ public class BackupStatusMgr {
 		return buffer.toString();
 	}
 
-
-	/*
-	 * @param the date of backups
-	 * @return dates of backups for the specified date, if none, returns empty list.
-	 * *Note: date. See this.formatkey(...) for expected format
-	 * 
-	 */
-	public List<String> getBackups(String key) {
-		List<String> result = new ArrayList<String>();
-		BackupMetadata b = locate(key);
-		if (b != null) {
-			result.addAll(b.getBackups());
-		}
-
-		return result;
-	}
-	
-	/*
-	 * Encapsulates metadata for a backup for a day.
-	 */
-	public static class BackupMetadata {
-		private List<String> backups = new ArrayList<String>();
-		private String key;
-		private String token;
-		private Date start, completed;
-
-		/*
-		Represents a granular (includes hour and secs) backup for the day.
-		@param key see formatKey() for format
-		@param backupDate format is yyyymmddhhss
-		 */
-		public BackupMetadata(String key, String backupDate) {
-			this.key = key;
-			backups.add(backupDate);
-		}
-		/*
-		Represents a high level(does not includ hour and secs) backup for the day.
-		@param key see formatKey() for format
-		@param backupDate format is yyyymmddhhss
- 		*/
-		public BackupMetadata(String key) {
-			this.key = key;
-		}
-
-		/*
-		 * @return a list of all backups for the day, empty list if no backups.
-		 */
-		public Collection<String> getBackups() {
-			return backups;
-		}
-
-		public void setKey(String key) {
-			this.key = key;
-		}
-		/*
-		 * @return the date of the backup.  Format of date is yyyymmdd.
-		 */
-		public String getKey() {
-			return this.key;
-		}
-
-		public String getToken() {
-			return token;
-		}
-
-		public void setToken(String token) {
-			this.token = token;
-		}
-
-		public Date getStartTime() {
-			return start;
-		}
-
-		public void setStartTime(Date start) {
-			this.start = start;
-		}
-		
-		public void setCompletedTime(Date completed) {
-			this.completed = completed;
-		}
-		
-		public Date getCompletedTime() {
-			return this.completed;
-		}
-	}
-	
 }

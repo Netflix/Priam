@@ -15,28 +15,22 @@
  */
 package com.netflix.priam.resources;
 
-import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
-
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.google.inject.name.Named;
+import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.utils.CassandraTuner;
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -46,31 +40,17 @@ import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.name.Named;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.BackupStatusMgr;
-import com.netflix.priam.backup.BackupStatusMgr.BackupMetadata;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IIncrementalBackup;
-import com.netflix.priam.backup.IMessageObserver;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.MetaData;
-import com.netflix.priam.backup.Restore;
-import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.CassandraMonitor;
-import com.netflix.priam.utils.CassandraTuner;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.SystemUtils;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.File;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.*;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -109,13 +89,13 @@ public class BackupServlet
     @Inject
     private MetaData metaData;
 
-	private BackupStatusMgr completedBkups;
+	private IBackupStatusMgr completedBkups;
 
     @Inject
 
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
             SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
-    		,BackupStatusMgr completedBkups)
+    		,@Named("backupStatusMgr")IBackupStatusMgr completedBkups)
 
     {
         this.priamServer = priamServer;
@@ -210,48 +190,40 @@ public class BackupServlet
     @GET
     @Path("/status/{date}")
     public Response statusByDate(@PathParam("date") String date) throws Exception {
-    	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
-    	Boolean success = this.completedBkups.status(key);
         JSONObject object = new JSONObject();
-        StringBuffer strBuffer = new StringBuffer();
-        strBuffer.append(success);
-        
-    	BackupMetadata bkupMetadata = this.completedBkups.locate(key);
+    	BackupMetadata bkupMetadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
+
     	if (bkupMetadata != null ) { //backup exist base on requested date, lets fetch more of its metadata
-            strBuffer.append(',');
+            object.put("Snapshotstatus", true);
             String token = bkupMetadata.getToken();
             if (token != null && !token.isEmpty() ) {
-                strBuffer.append("token=" + bkupMetadata.getToken());        	
+                object.put("token", bkupMetadata.getToken());
             } else {
-                strBuffer.append("token=not available");
+                object.put("token", "not available");
             }
-            strBuffer.append(',');
             if (bkupMetadata.getStartTime() != null) {
-                strBuffer.append("starttime=" + SystemUtils.formatDate(bkupMetadata.getStartTime(), "yyyyMMddHHmm"));        	
+                object.put("starttime", SystemUtils.formatDate(bkupMetadata.getStartTime(), "yyyyMMddHHmm"));
             } else {
-                strBuffer.append("starttime=not available");
+                object.put("starttime", "not available");
             }
 
             Date completeTime = bkupMetadata.getCompletedTime();
-            strBuffer.append(',');
             if (bkupMetadata.getCompletedTime() != null ) {
-                strBuffer.append("completetime=" + SystemUtils.formatDate(bkupMetadata.getCompletedTime(), "yyyyMMddHHmm"));        	
+                object.put("completetime", SystemUtils.formatDate(bkupMetadata.getCompletedTime(), "yyyyMMddHHmm"));
             } else {
-            	strBuffer.append("completetime=not_available"); 
+                object.put("completetime","not_available");
             }
     		
-    	} else {
+    	} else { //Backup do not exist for that date.
+            object.put("Snapshotstatus", false);
     		String token = SystemUtils.getDataFromUrl("http://localhost:8080/Priam/REST/v1/cassconfig/get_token");
             if (token != null && !token.isEmpty() ) {
-            	strBuffer.append(',');
-                strBuffer.append("token=" + token);        	
+                object.put("token" , token);
             } else {
-            	strBuffer.append(',');
-                strBuffer.append("token=not available");
+                object.put("token","not available");
             }
     	}
 
-        object.put("Snapshotstatus", strBuffer.toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 
@@ -264,10 +236,14 @@ public class BackupServlet
     @GET
     @Path("/status/{date}/snapshots")
     public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
-    	List<String> snapshots = this.completedBkups.getBackups(BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date));
+    	BackupMetadata metadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
         JSONObject object = new JSONObject();
-        object.put("Snapshots", snapshots);
+        List<String> snapshots = new ArrayList<String>();
 
+        if (metadata != null)
+            snapshots.addAll(metadata.getBackups());
+
+        object.put("Snapshots", snapshots);
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
     

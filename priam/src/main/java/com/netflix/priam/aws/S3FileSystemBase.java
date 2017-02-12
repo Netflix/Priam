@@ -1,9 +1,12 @@
 package com.netflix.priam.aws;
 
+import java.io.File;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.PartETag;
 import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
 import com.netflix.priam.merics.BackupUploadRateMeasurement;
 import com.netflix.priam.merics.IMeasurement;
@@ -195,5 +198,37 @@ public class S3FileSystemBase {
     protected void reinitialize() {
         bytesUploaded = new AtomicLong(0); //initi
         this.awsSlowDownExceptionCounter = 0;
+    }
+
+    /*
+    @param file uploaded to S3
+    @param a list of unique parts uploaded to S3 for file
+     */
+    protected void logDiagnosticInfo(AbstractBackupPath fileUploaded, DataPart lastPart, List<PartETag> partsIds) {
+        File f = fileUploaded.getBackupFile();
+        String fName = f.getAbsolutePath();
+        if (partsIds.size() < 1) {
+            logger.warn("Uploaded file (%s), it's not multipart uploaded so no part number." + fName);
+            return;
+        }
+
+
+        for (PartETag id : partsIds) {
+            logger.info("Uploaded file: " + fName + ", part id: " + id.getPartNumber() + ", etag: " + id.getETag());
+        }
+        logger.info("Uploaded file: " + fName + ", last part id: " + lastPart.getPartNo() + ", upload id: " + lastPart.getUploadID());
+    }
+
+    protected void lookForS3Throttling(Exception e, AbstractBackupPath path) {
+        if (e instanceof AmazonS3Exception) {
+            AmazonS3Exception a = (AmazonS3Exception) e;
+            String amazoneErrorCode = a.getErrorCode();
+            if (amazoneErrorCode != null && !amazoneErrorCode.isEmpty() ) {
+                if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
+                    awsSlowDownExceptionCounter += 1;
+                    logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
+                }
+            }
+        }
     }
 }

@@ -270,19 +270,19 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the expected number of uploaded parts(" + partETags.size() + ")");
             
             new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
+			logDiagnosticInfo(path, part, partETags);
 			long completedTime = System.nanoTime();
 			postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
-        	
-        } catch(AmazonS3Exception e) {
-			String amazoneErrorCode = e.getErrorCode();
-			if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
-				super.awsSlowDownExceptionCounter += 1;
-				logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
-			}
-			//No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
+
+		} catch(AmazonS3Exception e) {
+			lookForS3Throttling(e, path);
+			logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
+			new S3PartUploader(s3Client, part, partETags).abortUpload();
+			throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
 		} catch(Exception e ) {
-        	new S3PartUploader(s3Client, part, partETags).abortUpload();
-        	throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
+			logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
+			new S3PartUploader(s3Client, part, partETags).abortUpload();
+			throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         } finally {
 			IOUtils.closeQuietly(compressedBis);
 			if (compressedDstFile.exists())

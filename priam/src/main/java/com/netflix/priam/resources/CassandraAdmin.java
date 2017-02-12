@@ -15,6 +15,8 @@
  */
 package com.netflix.priam.resources;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.text.DecimalFormat;
@@ -32,6 +34,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.cluster.management.IClusterManagement;
+import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.*;
 
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
@@ -699,6 +702,23 @@ public class CassandraAdmin
         logger.debug("node tool drain being called");
         nodetool.drain();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    /*
+    @parm in - absolute path on disk of compressed file.
+    @param out - absolute path on disk for output, decompressed file
+    @parapm compression algorithn -- optional and if not provided, defaults to Snappy
+    */
+    @GET
+    @Path("/decompress")
+    public Response decompress(@QueryParam("in") String in, @QueryParam("out") String out) throws Exception
+    {
+        SnappyCompression compress = new SnappyCompression();
+        compress.decompressAndClose(new FileInputStream(in), new FileOutputStream(out));
+        JSONObject object = new JSONObject();
+        object.put("Input compressed file", in);
+        object.put("Output decompress file", out);
+        return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
     
 }

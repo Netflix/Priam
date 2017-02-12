@@ -173,6 +173,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
             new S3PartUploader(s3Client, part, partETags).completeUpload();
+            logDiagnosticInfo(path, part, partETags);
             long completedTime = System.nanoTime();
 
             postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
@@ -183,25 +184,18 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
                final String requestId = responseMetadata.getRequestId(); // "x-amz-request-id" header
                final String hostId = responseMetadata.getHostId(); // "x-amz-id-2" header
                logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
-            }  
-            
-        } catch(AmazonS3Exception e) {
-            String amazoneErrorCode = e.getErrorCode();
-            if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
-                super.awsSlowDownExceptionCounter += 1;
-                logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
             }
-            //No need to throw exception as this is not fatal (i.e. this exception does not mean AWS will throttle or fail the upload
+
+        } catch(AmazonS3Exception e) {
+            lookForS3Throttling(e, path);
+            logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
+            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
+
         } catch (Exception e)
         {
-        	logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
+            logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
             new S3PartUploader(s3Client, part, partETags).abortUpload(); //Tells S3 to abandon the upload
-
-            /* * * TODO vdn
-            check for http response of 503, and resp body xml.  See http://docs.aws.amazon.com/AmazonS3/latest/API/ErrorResponses.html
-            if throttling is done, publish metric so we knnow.
-            * */
-
             throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
         } finally {
             IOUtils.closeQuietly(in);

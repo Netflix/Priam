@@ -101,7 +101,7 @@ public abstract class AbstractBackup extends Task
 
             try
             {
-                logger.info(String.format("Uploading file %s within CF %s for backup", file.getCanonicalFile(), parent.getAbsolutePath()));
+                logger.info(String.format("About to upload file %s for backup", file.getCanonicalFile()));
                 backupNotificationMgr.notify(bp, BackupNotificationMgr.STARTED); //pre condition
 
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME)
@@ -118,8 +118,7 @@ public abstract class AbstractBackup extends Task
                     bps.add(abp);
                     this.backupNotificationMgr.notify(abp, BackupNotificationMgr.SUCCESS_VAL);
                 }
-                
-                logger.info(String.format("Uploaded file %s within CF %s for backup", file.getCanonicalFile(), parent.getAbsolutePath()));
+
                 addToRemotePath(abp.getRemotePath());
             }
             catch(Exception e)

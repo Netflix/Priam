@@ -250,6 +250,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     @Override
     public int downloadCount()
     {
+        this.backupMetricsMgr.incrementValidDownloads();
         return downloadCount.get();
     }
 

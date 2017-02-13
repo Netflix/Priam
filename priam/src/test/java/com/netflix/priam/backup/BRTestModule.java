@@ -4,6 +4,7 @@ import java.util.Arrays;
 
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.merics.BackupMetricsMgr;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.merics.NoOpMetricPublisher;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -76,5 +77,6 @@ public class BRTestModule extends AbstractModule
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(IMetricPublisher.class).annotatedWith(Names.named("defaultmetricpublisher")).to(NoOpMetricPublisher.class);
         bind(INotificationService.class).annotatedWith(Names.named("defaultnotificationservice")).to(NoOpNotificationService.class);
+        bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
     }
 }

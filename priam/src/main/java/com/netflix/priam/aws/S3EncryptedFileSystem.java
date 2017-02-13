@@ -22,6 +22,7 @@ import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -40,10 +41,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
@@ -65,11 +62,13 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	private RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 	private AtomicInteger uploadCount = new AtomicInteger();
 	private IFileCryptography encryptor;
+	private IBackupMetrics backupMetricsMgr;
 	
 	@Inject
 	public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
 			, @Named("filecryptoalgorithm") IFileCryptography fileCryptography
 			, @Named("defaultmetricpublisher") IMetricPublisher metricPublisher
+			, IBackupMetrics backupMetricsMgr
 			) {
 
 		super(metricPublisher);
@@ -77,6 +76,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
         this.compress = compress;
         this.config = config;
         this.encryptor = fileCryptography;
+		this.backupMetricsMgr = backupMetricsMgr;
         
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
@@ -266,10 +266,15 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
             }        
             
             executor.sleepTillEmpty();
-            if (partNum != partETags.size())
-                throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the expected number of uploaded parts(" + partETags.size() + ")");
-            
+            if (partNum != partETags.size()) {
+				throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the expected number of uploaded parts(" + partETags.size() + ")");
+			}
+
             new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
+			if (part.getUploadID() == null || part.getUploadID().isEmpty()) {
+				this.backupMetricsMgr.incrementInvalidUploads();
+				throw new BackupRestoreException("Error uploading file " + path.getFileName() + ".  Unable to get S3 upload id.");
+			}
 			logDiagnosticInfo(path, part, partETags);
 			long completedTime = System.nanoTime();
 			postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
@@ -324,6 +329,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
      */
     public void setS3Client(AmazonS3Client client) {
     	super.s3Client = client;
-    }	
+    }
 
 }

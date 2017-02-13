@@ -102,6 +102,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	
 	@Override
 	public int downloadCount() {
+		this.backupMetricsMgr.incrementValidDownloads();
 		return downloadCount.get();
 	}
 

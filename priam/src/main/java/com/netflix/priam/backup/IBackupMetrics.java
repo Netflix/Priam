@@ -9,4 +9,8 @@ public interface IBackupMetrics {
     public void incrementValidUploads();
     public int getInvalidUploads();  //defers the semantic of "invalid upload" to implementation
     public void incrementInvalidUploads();
+    public int getValidDownloads();
+    public void incrementValidDownloads();
+    public int getInvalidDownloads();
+    public void incrementInvalidDownloads();
 }

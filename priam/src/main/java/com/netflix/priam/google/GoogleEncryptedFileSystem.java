@@ -18,6 +18,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.netflix.priam.backup.IBackupMetrics;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -59,16 +60,20 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
 	private IConfiguration config;
 	private AtomicInteger downloadCount = new AtomicInteger();
 	protected AtomicLong bytesDownloaded = new AtomicLong();
+	private IBackupMetrics backupMetricsMgr;
 
 	private ICredentialGeneric gcsCredential;
 	
 	@Inject
 	public GoogleEncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, final IConfiguration config
-			, @Named("gcscredential") ICredentialGeneric credential) {
+			, @Named("gcscredential") ICredentialGeneric credential
+			, IBackupMetrics backupMetricsMgr
+		){
 		
 		this.pathProvider = pathProvider;
 		this.config = config;
 		this.gcsCredential = credential;
+		this.backupMetricsMgr = backupMetricsMgr;
 		
 		try {
 	        

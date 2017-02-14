@@ -22,7 +22,11 @@ public class BackupMetricsMgr implements IBackupMetrics{
 
     @Override
     public int getInvalidUploads() {
-        return 0;
+        return this.invalidUploads.get();
+    }
+    @Override
+    public void incrementInvalidUploads() {
+        this.invalidUploads.getAndIncrement();
     }
 
     @Override
@@ -31,13 +35,8 @@ public class BackupMetricsMgr implements IBackupMetrics{
     }
 
     @Override
-    public void incrementInvalidUploads() {
-        this.invalidUploads.getAndIncrement();
-    }
-
-    @Override
     public int getValidDownloads() {
-        return 0;
+        return this.validDownloads.get();
     }
 
     @Override

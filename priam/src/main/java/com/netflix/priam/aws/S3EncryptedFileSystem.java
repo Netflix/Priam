@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.*;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.merics.IMetricPublisher;
 import org.apache.commons.io.IOUtils;
@@ -30,9 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.PartETag;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
@@ -271,21 +268,28 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 				throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the expected number of uploaded parts(" + partETags.size() + ")");
 			}
 
-            new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
-			if (part.getUploadID() == null || part.getUploadID().isEmpty()) {
-				this.backupMetricsMgr.incrementInvalidUploads();
-				throw new BackupRestoreException("Error uploading file " + path.getFileName() + ".  Unable to get S3 upload id.");
+			CompleteMultipartUploadResult resultS3MultiPartUploadComplete = new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
+			if(null != resultS3MultiPartUploadComplete &&  null != resultS3MultiPartUploadComplete.getETag()) {
+				String eTagObjectId = resultS3MultiPartUploadComplete.getETag(); //unique id of the whole object
+				logDiagnosticInfo(path, resultS3MultiPartUploadComplete);
 			}
-			logDiagnosticInfo(path, part, partETags);
+			else
+			{
+				this.backupMetricsMgr.incrementInvalidUploads();
+				throw new BackupRestoreException("Error uploading file as ETag or CompleteMultipartUploadResult is NULL -" + path.getFileName());
+			}
+
 			long completedTime = System.nanoTime();
 			postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
 
 		} catch(AmazonS3Exception e) {
+			this.backupMetricsMgr.incrementInvalidUploads();
 			lookForS3Throttling(e, path);
 			logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
 			new S3PartUploader(s3Client, part, partETags).abortUpload();
 			throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
 		} catch(Exception e ) {
+			this.backupMetricsMgr.incrementInvalidUploads();
 			logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
 			new S3PartUploader(s3Client, part, partETags).abortUpload();
 			throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);

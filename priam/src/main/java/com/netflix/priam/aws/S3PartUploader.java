@@ -77,10 +77,10 @@ public class S3PartUploader extends RetryableCallable<Void>
         return null;
     }
 
-    public void completeUpload() throws BackupRestoreException
+    public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException
     {
         CompleteMultipartUploadRequest compRequest = new CompleteMultipartUploadRequest(dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID(), partETags);
-        client.completeMultipartUpload(compRequest);
+        return client.completeMultipartUpload(compRequest);
     }
 
     // Abort

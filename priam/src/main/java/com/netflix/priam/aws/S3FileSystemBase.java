@@ -6,6 +6,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.amazonaws.services.s3.model.AmazonS3Exception;
+import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
 import com.netflix.priam.merics.BackupUploadRateMeasurement;
@@ -204,19 +205,10 @@ public class S3FileSystemBase {
     @param file uploaded to S3
     @param a list of unique parts uploaded to S3 for file
      */
-    protected void logDiagnosticInfo(AbstractBackupPath fileUploaded, DataPart lastPart, List<PartETag> partsIds) {
+    protected void logDiagnosticInfo(AbstractBackupPath fileUploaded, CompleteMultipartUploadResult res) {
         File f = fileUploaded.getBackupFile();
         String fName = f.getAbsolutePath();
-        if (partsIds.size() < 1) {
-            logger.warn("Uploaded file (%s), it's not multipart uploaded so no part number." + fName);
-            return;
-        }
-
-
-        for (PartETag id : partsIds) {
-            logger.info("Uploaded file: " + fName + ", part id: " + id.getPartNumber() + ", etag: " + id.getETag());
-        }
-        logger.info("Uploaded file: " + fName + ", last part id: " + lastPart.getPartNo() + ", upload id: " + lastPart.getUploadID());
+        logger.info("Uploaded file: " + fName + ", object eTag: " + res.getETag());
     }
 
     protected void lookForS3Throttling(Exception e, AbstractBackupPath path) {

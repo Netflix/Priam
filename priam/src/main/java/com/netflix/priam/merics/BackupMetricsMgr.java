@@ -1,5 +1,6 @@
 package com.netflix.priam.merics;
 
+import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupMetrics;
 
@@ -8,6 +9,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Created by vinhn on 2/13/17.
  */
+@Singleton
 public class BackupMetricsMgr implements IBackupMetrics{
     private AtomicInteger validUploads = new AtomicInteger()
             , invalidUploads = new AtomicInteger()

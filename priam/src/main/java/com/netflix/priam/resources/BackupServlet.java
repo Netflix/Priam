@@ -300,6 +300,7 @@ public class BackupServlet {
         BackupVerificationResult result = backupVerification.verifyBackup(metadata, startTime);
         jsonReply.put("snapshotAvailable", result.snapshotAvailable);
         jsonReply.put("valid", result.valid);
+        jsonReply.put("backupFileListAvailable", result.backupFileListAvail);
         jsonReply.put("metaFileFound", result.metaFileFound);
         jsonReply.put("selectedDate", result.selectedDate);
         jsonReply.put("snapshotTime", result.snapshotTime);

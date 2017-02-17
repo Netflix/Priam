@@ -6,12 +6,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupStatusMgr;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.Restore;
-import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
@@ -56,13 +51,14 @@ public class BackupServletTest
     private ITokenManager tokenManager;
     private BackupServlet resource;
     private RestoreServlet restoreResource;
+    private BackupVerification backupVerification;
 
     @Before
     public void setUp()
     {
         this.tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr);
+            tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr,backupVerification);
 
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager);

@@ -34,6 +34,8 @@ import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -41,6 +43,8 @@ import java.util.List;
 public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
+    private static final SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat("yyyyMMdd");
+    private static final SimpleDateFormat simpleDateFormatTime = new SimpleDateFormat("yyyyMMddHHmm");
 
     public static String getDataFromUrl(String url)
     {
@@ -80,6 +84,29 @@ public class SystemUtils
     public static String formatDate(Date date, String format) {
 		String s = new DateTime(date).toString(format);
 		return s;
+    }
+
+    public static Date getDate(String date) {
+        /*
+         * Try to parse in the format of yyyyMMddHHmm else move to yyyyMMdd
+         */
+
+        Date parseTime = parseDate(date, simpleDateFormatTime);
+        if (parseTime == null)
+            parseTime = parseDate(date, simpleDateFormatDate);
+
+        return parseTime;
+    }
+
+    private static Date parseDate(String date, SimpleDateFormat format)
+    {
+        try
+        {
+            return format.parse(date);
+        }catch (ParseException e)
+        {
+            return null;
+        }
     }
 
     /**

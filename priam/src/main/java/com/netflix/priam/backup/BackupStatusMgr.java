@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.Date;
 import java.util.Iterator;
@@ -144,28 +145,26 @@ public class BackupStatusMgr implements IBackupStatusMgr{
 	@return representation of backup for the day.  If not present, returns null.
  	*/
 	private BackupMetadata getBkupStatusFromDataStore(String key) {
-		BufferedReader br = null;
-		try {
-			br = SystemUtils.readFile(this.config.getBackupStatusFileLoc());
-		} catch (IOException e) {
-			logger.warn("Backup status file (" + key + ") does not exist in data store.  Msg: " + e.getLocalizedMessage());
-			return null;
-		}
 
-		String raw = null;
+		BackupMetadata result = null;
 		try {
-			raw = br.readLine();
+			BufferedReader br = SystemUtils.readFile(this.config.getBackupStatusFileLoc());
+			String raw = null;
+			while((raw = br.readLine()) != null) {
+				logger.info("Found backup status in data store.  Raw string: " + raw);
+				BackupMetadata metadata = unmarshall(raw);
+				bkups.add(metadata);
+				if (metadata.getKey().equals(key))
+					result = metadata;
+			}
+		} catch(FileNotFoundException fnfe)
+		{
+			logger.warn("Backup status file does not exist.", fnfe);
 		} catch (IOException e) {
 			logger.warn("Backup status file (" + key + ") exist in data store but unable to read file.  Msg: " + e.getLocalizedMessage());
-			return null;
-		}
-		if (raw == null || raw.isEmpty() ) {
-			logger.warn("Backup status file (" + key + ") exist in data store but is empty.");
-			return null;
 		}
 
-		logger.info("Found backup status in data store.  Raw string: " + raw);
-		return unmarshall(raw);
+		return result;
 	}
 
 	/*
@@ -219,6 +218,7 @@ public class BackupStatusMgr implements IBackupStatusMgr{
 		result.setCompletedTime(new Date(completionTime));
 		result.setToken(token);
 		result.setStartTime(new Date(startTime));
+		result.getBackups().add(SystemUtils.formatDate(result.getStartTime(),"yyyyMMddHHmm"));
 		return result;
 	}
 

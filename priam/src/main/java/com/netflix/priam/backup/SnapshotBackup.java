@@ -57,13 +57,13 @@ public class SnapshotBackup extends AbstractBackup
     private final Map<String, List<String>>  snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
 	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
 
-	private BackupStatusMgr completedBackups;
+	private IBackupStatusMgr completedBackups;
 
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
     		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
-    		              ,BackupStatusMgr completedBackups
+    		              ,IBackupStatusMgr completedBackups
                           ,BackupNotificationMgr backupNotificationMgr
                         )
     {

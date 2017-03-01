@@ -76,4 +76,16 @@ public class BackupMetadata {
     public Date getCompletedTime() {
         return this.completed;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("BackupMetadata{");
+        sb.append("backups=").append(backups);
+        sb.append(", key='").append(key).append('\'');
+        sb.append(", token='").append(token).append('\'');
+        sb.append(", start=").append(start);
+        sb.append(", completed=").append(completed);
+        sb.append('}');
+        return sb.toString();
+    }
 }

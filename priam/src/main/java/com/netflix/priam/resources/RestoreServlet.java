@@ -79,10 +79,10 @@ public class RestoreServlet {
         Task.STATE state = this.restoreObj.getRestoreState();
         if (state.equals(Task.STATE.NOT_APPLICABLE)) {
             object.put("status", this.restoreObj.getRestoreState());
-            object.put("daterange", "not_applicable");
-            object.put("starttime", "not_applicable");
-            object.put("endtime", "not_applicable");
-            object.put("token", "not_applicable");
+            object.put("daterange", "NOT_APPLICABLE");
+            object.put("starttime", "NOT_APPLICABLE");
+            object.put("endtime", "NOT_APPLICABLE");
+            object.put("token", "NOT_APPLICABLE");
             
             return Response.status(503).type(MediaType.APPLICATION_JSON)
             	.entity(object.toString(2)).build();

@@ -68,7 +68,7 @@ public class PriamGuiceModule extends AbstractModule
         
         bind(S3CrossAccountFileSystem.class);
         bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
-        bind(IBackupStatusMgr.class).annotatedWith(Names.named("backupStatusMgr")).to(BackupStatusMgr.class);
+//        bind(IBackupStatusMgr.class).to(BackupStatusMgr.class);
         
         bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
         bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);

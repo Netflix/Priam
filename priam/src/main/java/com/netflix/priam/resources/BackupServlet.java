@@ -94,11 +94,9 @@ public class BackupServlet {
     private SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat("yyyyMMdd");
 
     @Inject
-
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-                         SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
-            , @Named("backupStatusMgr") IBackupStatusMgr completedBkups, BackupVerification backupVerification)
-
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
+            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+    		,IBackupStatusMgr completedBkups, BackupVerification backupVerification)
     {
         this.priamServer = priamServer;
         this.config = config;
@@ -171,10 +169,8 @@ public class BackupServlet {
         int backupTCount = backupFs.getActivecount();
         logger.debug("Thread counts for snapshot backup is: %d", backupTCount);
         JSONObject object = new JSONObject();
-        object.put("Restore", new Integer(restoreTCount)); //Number of active threads performing the restore
-        object.put("status", restoreObj.state().toString()); //state of the restore [ERROR|RUNNING|DONE]
-        object.put("Backup", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
-        object.put("Snapshotstatus", snapshotBackup.state().toString());
+        object.put("ThreadCount", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
+        object.put("SnapshotStatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 

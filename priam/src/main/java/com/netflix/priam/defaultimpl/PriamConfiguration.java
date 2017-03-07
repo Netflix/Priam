@@ -100,6 +100,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = PRIAM_PRE + ".restore.snapshot";
     private static final String CONFIG_BUCKET_NAME = PRIAM_PRE + ".s3.bucket";
     private static final String CONFIG_BACKUP_HOUR = PRIAM_PRE + ".backup.hour";
+    private static final String CONFIG_BACKUP_CRON_EXPRESSION = PRIAM_PRE + ".backup.cron";
     private static final String CONFIG_S3_BASE_DIR = PRIAM_PRE + ".s3.base_dir";
     private static final String CONFIG_RESTORE_THREADS = PRIAM_PRE + ".restore.threads";
     private static final String CONFIG_RESTORE_CLOSEST_TOKEN = PRIAM_PRE + ".restore.closesttoken";
@@ -612,7 +613,12 @@ public class PriamConfiguration implements IConfiguration
     {
         return config.get(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
     }
-    
+
+    @Override
+    public String getBackupCronExpression() {
+        return config.get(CONFIG_BACKUP_CRON_EXPRESSION, "");
+    }
+
     @Override
     public String getSnapshotKeyspaceFilters() {
     	return config.get(CONFIG_SNAPSHOT_KEYSPACE_FILTER);

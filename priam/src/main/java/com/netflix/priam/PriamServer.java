@@ -17,6 +17,7 @@ package com.netflix.priam;
 
 import com.netflix.priam.cluster.management.FlushTask;
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -151,8 +152,8 @@ public class PriamServer
         scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME,CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
         
         // Start the snapshot backup schedule - Always run this. (If you want to
-        // set it off, set backup hour to -1)
-        if (config.getBackupHour() >= 0 && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac())))
+        // set it off, set backup hour to -1) or set backup cron to "0 0 5 31 2 ?" (Feb 31)
+        if ((!StringUtils.isEmpty(config.getBackupCronExpression()) || config.getBackupHour() >= 0) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac())))
         {
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 

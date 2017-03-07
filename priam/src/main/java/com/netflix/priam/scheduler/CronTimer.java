@@ -17,6 +17,7 @@ package com.netflix.priam.scheduler;
 
 import java.text.ParseException;
 
+import org.quartz.CronExpression;
 import org.quartz.CronTrigger;
 import org.quartz.Scheduler;
 import org.quartz.Trigger;
@@ -77,6 +78,12 @@ public class CronTimer implements TaskTimer
      */
     public CronTimer(String expression)
     {
+        this.cronExpression = expression;
+    }
+
+    public CronTimer(String name, String expression)
+    {
+        this.name = name;
         this.cronExpression = expression;
     }
 

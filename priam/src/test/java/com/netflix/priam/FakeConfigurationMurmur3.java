@@ -163,6 +163,11 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     }
 
     @Override
+    public String getBackupCronExpression() {
+        return null;
+    }
+
+    @Override
     public String getRestoreSnapshot()
     {
         // TODO Auto-generated method stub

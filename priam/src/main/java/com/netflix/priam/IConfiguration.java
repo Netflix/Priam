@@ -191,6 +191,13 @@ public interface IConfiguration
      * @return Backup hour for snapshot backups (0 - 23)
      */
     public int getBackupHour();
+
+    /**
+     * @return Backup cron expression for snapshots
+     * @link http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html
+     * @link http://www.cronmaker.com  To build new cron timer
+     */
+    public String getBackupCronExpression();
     
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.

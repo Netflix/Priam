@@ -17,6 +17,7 @@ package com.netflix.priam;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.scheduler.SchedulerType;
 
 import java.util.List;
 import java.util.Map;
@@ -198,7 +199,12 @@ public interface IConfiguration
      * @link http://www.cronmaker.com  To build new cron timer
      */
     public String getBackupCronExpression();
-    
+
+    /**
+     * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use
+     * @link this.getBackupHour(). If value of "CRON" is provided it starts using @link getBackupCronExpression.
+     */
+    public SchedulerType getBackupSchedulerType();
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */

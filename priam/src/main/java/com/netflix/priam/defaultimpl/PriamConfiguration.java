@@ -15,10 +15,6 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
@@ -31,12 +27,16 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
+import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -99,6 +99,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CL_BK_ENABLE = PRIAM_PRE + ".backup.commitlog.enable";
     private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = PRIAM_PRE + ".restore.snapshot";
     private static final String CONFIG_BUCKET_NAME = PRIAM_PRE + ".s3.bucket";
+    private static final String CONFIG_BACKUP_SCHEDULE_TYPE = PRIAM_PRE + ".backup.schedule.type";
     private static final String CONFIG_BACKUP_HOUR = PRIAM_PRE + ".backup.hour";
     private static final String CONFIG_BACKUP_CRON_EXPRESSION = PRIAM_PRE + ".backup.cron";
     private static final String CONFIG_S3_BASE_DIR = PRIAM_PRE + ".s3.base_dir";
@@ -231,6 +232,7 @@ public class PriamConfiguration implements IConfiguration
     private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_SSL_STORAGE_PORT = 7001;
     private final int DEFAULT_BACKUP_HOUR = 12;
+    private final String DEFAULT_BACKUP_CRON_EXPRESSION = "0 0 12 1/1 * ? *"; //Backup daily at 12.
     private final int DEFAULT_BACKUP_THREADS = 2;
     private final int DEFAULT_RESTORE_THREADS = 8;
     private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
@@ -616,7 +618,13 @@ public class PriamConfiguration implements IConfiguration
 
     @Override
     public String getBackupCronExpression() {
-        return config.get(CONFIG_BACKUP_CRON_EXPRESSION, "");
+        return config.get(CONFIG_BACKUP_CRON_EXPRESSION, DEFAULT_BACKUP_CRON_EXPRESSION);
+    }
+
+    @Override
+    public SchedulerType getBackupSchedulerType() {
+        String schedulerType = config.get(CONFIG_BACKUP_SCHEDULE_TYPE, SchedulerType.TIME.getSchedulerType());
+        return SchedulerType.valueOfIgnoreCase(schedulerType);
     }
 
     @Override

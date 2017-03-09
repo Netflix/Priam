@@ -25,6 +25,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
+import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.JMXNodeTool;
@@ -300,19 +301,34 @@ public class SnapshotBackup extends AbstractBackup {
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer(IConfiguration config) {
-        CronTimer cronTimer;
+    public static TaskTimer getTimer(IConfiguration config) throws Exception{
+        CronTimer cronTimer = null;
+        switch (config.getBackupSchedulerType())
+        {
+            case TIME:
+                int hour = config.getBackupHour();
+                if (hour >= 0) {
+                    cronTimer = new CronTimer(JOBNAME, hour, 1, 0);
+                    logger.info("Starting snapshot backup with backup hour: " + hour);
+                }else
+                    logger.info("Skipping snapshot backup as backup hour is less than 0: " + hour);
+                break;
+            case CRON:
+                String cronExpression = config.getBackupCronExpression();
 
-        if (!StringUtils.isEmpty(config.getBackupCronExpression()) &&
-                CronExpression.isValidExpression(config.getBackupCronExpression())) {
-            cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-            logger.info(String.format("Starting snapshot backup with CRON expression %s", cronTimer.getCronExpression()));
-        } else {
-            int hour = config.getBackupHour();
-            cronTimer = new CronTimer(JOBNAME, hour, 1, 0);
-            logger.info("Starting snapshot backup with backup hour: " + hour);
+                if(!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")){
+                    logger.info("Skipping snapshot backup as backup cron is set to NA");
+                }else
+                {
+                    if(StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
+                        throw new Exception("Invalid CRON expression: " + cronExpression +
+                                ". Please use NA if you wish to disable backup else fix the CRON expression and try again!");
+
+                    cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
+                    logger.info(String.format("Starting snapshot backup with CRON expression %s", cronTimer.getCronExpression()));
+                }
+                break;
         }
-
         return cronTimer;
     }
 

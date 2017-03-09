@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.scheduler.SchedulerType;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -165,6 +166,11 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getBackupCronExpression() {
         return null;
+    }
+
+    @Override
+    public SchedulerType getBackupSchedulerType() {
+        return SchedulerType.TIME;
     }
 
     @Override

@@ -84,7 +84,7 @@ public class PriamServer {
         scheduler.runTaskNow(TuneCassandra.class);
 
         // Start the snapshot backup schedule - Always run this. (If you want to
-        // set it off, set backup hour to -1) or set backup cron to "NA"
+        // set it off, set backup hour to -1) or set backup cron to "-1"
         if (SnapshotBackup.getTimer(config) != null && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()))) {
             scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
@@ -105,7 +105,7 @@ public class PriamServer {
             scheduler.addTask(CommitLogBackupTask.JOBNAME, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
         }
 
-        
+
         // Determine if we need to restore from backup else start cassandra.
         if (!config.getRestoreSnapshot().equals("")) {
 

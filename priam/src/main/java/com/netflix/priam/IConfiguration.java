@@ -18,6 +18,7 @@ package com.netflix.priam;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
 import com.netflix.priam.scheduler.SchedulerType;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.util.List;
 import java.util.Map;
@@ -204,7 +205,7 @@ public interface IConfiguration
      * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use
      * @link this.getBackupHour(). If value of "CRON" is provided it starts using @link getBackupCronExpression.
      */
-    public SchedulerType getBackupSchedulerType();
+    public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */

@@ -25,7 +25,6 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.JMXNodeTool;
@@ -305,7 +304,7 @@ public class SnapshotBackup extends AbstractBackup {
         CronTimer cronTimer = null;
         switch (config.getBackupSchedulerType())
         {
-            case TIME:
+            case HOUR:
                 int hour = config.getBackupHour();
                 if (hour >= 0) {
                     cronTimer = new CronTimer(JOBNAME, hour, 1, 0);
@@ -322,7 +321,7 @@ public class SnapshotBackup extends AbstractBackup {
                 {
                     if(StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
                         throw new Exception("Invalid CRON expression: " + cronExpression +
-                                ". Please use NA if you wish to disable backup else fix the CRON expression and try again!");
+                                ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
 
                     cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
                     logger.info(String.format("Starting snapshot backup with CRON expression %s", cronTimer.getCronExpression()));

@@ -57,6 +57,8 @@ subprojects {
       compile 'com.google.http-client:google-http-client-jackson2:1.19.0'
       provided 'javax.servlet:servlet-api:2.5'
       testCompile 'org.jmockit:jmockit:1.19'
+      testCompile "org.spockframework:spock-core:1.1-groovy-2.4-rc-2"
       testCompile 'junit:junit:4.8'
+      //testCompile 'org.assertj:assertj-core:3.6.2'
     }
 }

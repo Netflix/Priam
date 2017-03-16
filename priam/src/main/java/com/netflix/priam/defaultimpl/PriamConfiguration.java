@@ -28,6 +28,7 @@ import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang.StringUtils;
@@ -622,9 +623,9 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
-    public SchedulerType getBackupSchedulerType() {
-        String schedulerType = config.get(CONFIG_BACKUP_SCHEDULE_TYPE, SchedulerType.TIME.getSchedulerType());
-        return SchedulerType.valueOfIgnoreCase(schedulerType);
+    public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException{
+        String schedulerType = config.get(CONFIG_BACKUP_SCHEDULE_TYPE, SchedulerType.HOUR.getSchedulerType());
+        return SchedulerType.lookup(schedulerType);
     }
 
     @Override

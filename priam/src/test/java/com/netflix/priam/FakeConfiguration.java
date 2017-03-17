@@ -494,6 +494,12 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getCommitLogBackupPropsFile()
+    {
+        return getCassHome() + PriamConfiguration.DEFAULT_COMMITLOG_PROPS_FILE;
+    }
+
+    @Override
     public String getCommitLogBackupArchiveCmd()
     {
         return null;

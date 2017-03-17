@@ -435,7 +435,9 @@ public interface IConfiguration
     public String getInternodeCompression();
    
     public boolean isBackingUpCommitLogs();
-    
+
+    public String getCommitLogBackupPropsFile();
+
     public String getCommitLogBackupArchiveCmd();
 
     public String getCommitLogBackupRestoreCmd();

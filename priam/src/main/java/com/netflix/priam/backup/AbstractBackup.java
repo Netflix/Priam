@@ -87,7 +87,8 @@ public abstract class AbstractBackup extends Task
                         final AbstractBackupPath bp = pathFactory.get();
                         bp.parseLocal(file, type);
                         upload(bp);
-                        file.delete();
+                        if(!file.delete())
+                            logger.warn(String.format("Failed to delete local file %s.", file));
                         return bp;
                     }
                 }.call();

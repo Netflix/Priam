@@ -6,8 +6,8 @@ import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.scheduler.SchedulerType;
 
 @Singleton
 public class FakeConfigurationMurmur3 implements IConfiguration
@@ -160,6 +160,16 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     {
         // TODO Auto-generated method stub
         return 12;
+    }
+
+    @Override
+    public String getBackupCronExpression() {
+        return null;
+    }
+
+    @Override
+    public SchedulerType getBackupSchedulerType() {
+        return SchedulerType.HOUR;
     }
 
     @Override

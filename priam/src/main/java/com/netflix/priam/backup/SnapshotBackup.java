@@ -18,8 +18,14 @@ package com.netflix.priam.backup;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +36,9 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupStatusMgr.BackupMetadata;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -54,17 +62,82 @@ public class SnapshotBackup extends AbstractBackup
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private final long WAIT_TIME_MS = 60 * 1000 * 10;
     private final CommitLogBackup clBackup;
+    private final Map<String, List<String>>  snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
+	private final Map<String, Object> snapshotKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
+
+	private BackupStatusMgr completedBackups;
     
 
     @Inject
-    public SnapshotBackup(IConfiguration config, @Named("backup")IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory, 
-    		              MetaData metaData, CommitLogBackup clBackup)
+    public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, 
+    		              MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
+    		              ,BackupStatusMgr completedBackups)
     {
-        super(config, fs, pathFactory);
+    	super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
         this.clBackup = clBackup;
+        this.completedBackups = completedBackups;
+        init();
     }
 
+    private void init() {
+    	populateSnapshotFilters();
+    }
+    
+    private void populateSnapshotFilters() {
+    	String keyspaceFilters = this.config.getSnapshotKeyspaceFilters();
+    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
+    		
+    		logger.info("No keyspace filter set for snapshot.");
+    		
+    	} else {
+
+        	String[] keyspaces = keyspaceFilters.split(",");
+        	for (int i=0; i < keyspaces.length; i++ ) {
+        		logger.info("Adding snapshot keyspace filter: " + keyspaces[i]);
+        		this.snapshotKeyspaceFilter.put(keyspaces[i], null);
+        	}    		
+    		
+    	}
+    	
+    	String cfFilters = this.config.getSnapshotCFFilter();
+    	if (cfFilters == null || cfFilters.isEmpty()) {
+    		
+    		logger.info("No column family filter set for snapshot.");
+    		
+    	} else {
+
+    		String[] filters = cfFilters.split(",");
+    		for (int i=0; i < filters.length; i++) { //process each filter
+    			
+    			if (isValidCFFilterFormat(filters[i])) {
+    				
+        			String[] filter = filters[i].split("\\.");
+        			String ksName = filter[0];
+        			String cfName = filter[1];
+        			logger.info("Adding snapshot CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
+        			
+        			if (this.snapshotCFFilter.containsKey(ksName)) {
+        				//add cf to existing filter
+        				List<String> cfs = this.snapshotCFFilter.get(ksName);
+        				cfs.add(cfName);
+        				this.snapshotCFFilter.put(ksName, cfs);
+        				
+        			} else {
+        				
+        				List<String> cfs = new ArrayList<String>();
+        				cfs.add(cfName);
+        				this.snapshotCFFilter.put(ksName, cfs);
+        				
+        			}
+    				
+    			} else {
+    				throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
+    			}
+    			
+    		} //end processing each filter
+    	}    	
+    }
     
     @Override
     public void execute() throws Exception
@@ -77,6 +150,7 @@ public class SnapshotBackup extends AbstractBackup
     		}
 
         Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+        Date startTime = cal.getTime();
         String snapshotName = pathFactory.get().formatDate(cal.getTime());
         try
         {
@@ -91,24 +165,42 @@ public class SnapshotBackup extends AbstractBackup
             {
                 if (keyspaceDir.isFile())
                 		continue;
+                
+                if ( isFiltered(DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())  ) { //keyspace filtered?
+                	logger.info(keyspaceDir.getName() + " is part of keyspace filter, will not be backed up.");
+                	continue;
+                }
+                
+                
                 logger.debug("Entering {} keyspace..", keyspaceDir.getName());
                 for (File columnFamilyDir : keyspaceDir.listFiles())
                 {
+                	if ( isFiltered(DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName() )) { //CF filtered?
+                    	logger.info("keyspace: " + keyspaceDir.getName() 
+                    			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, will not be backed up.");
+                    	continue;
+                	}
+                		
                     logger.debug("Entering {} columnFamily..", columnFamilyDir.getName());
                     File snpDir = new File(columnFamilyDir, "snapshots");
-                    if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir))
-                        continue;
+                    if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir)) {
+                    	continue;
+                    }
+                        
                     File snapshotDir = getValidSnapshot(columnFamilyDir, snpDir, snapshotName);
                     // Add files to this dir
                     if (null != snapshotDir)
-                        bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
+                    	bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
                     else
-                        logger.warn("{} folder does not contain {} snapshots", snpDir, snapshotName);
+                    	logger.warn("{} folder does not contain {} snapshots", snpDir, snapshotName);
                 }
+                
             }
             // Upload meta file
             metaData.set(bps, snapshotName);
             logger.info("Snapshot upload complete for " + snapshotName);
+            Calendar completed = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+            this.postProcesing(snapshotName, startTime, completed.getTime());
             
             if(snapshotRemotePaths.size() > 0)
             {
@@ -127,6 +219,66 @@ public class SnapshotBackup extends AbstractBackup
                 logger.error(e.getMessage(), e);
             }
         }
+    }
+    
+    /*
+     * Performs any post processing (e.g. log success of backup).
+     * 
+     * @param name of the snapshotname, format is yyyymmddhhs
+     * @param start time of backup
+     */
+    private void postProcesing(String snapshotname, Date start, Date completed) {
+    	if ( !snapshotname.isEmpty() && start != null & completed != null) {
+        	String key = BackupStatusMgr.formatKey(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, start);  //format is backuptype_yyyymmdd
+        	BackupMetadata metadata = this.completedBackups.add(key, snapshotname, start, completed);    		
+    	}
+    	
+    }
+    
+    /*
+     * @param keyspace or columnfamily directory type.
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
+    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
+    	
+    	if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
+    		//Apply each keyspace filter to input string
+    		String keyspaceName = args[0];
+    		
+    		java.util.Set<String> ksFilters = this.snapshotKeyspaceFilter.keySet();
+    		Iterator<String> it = ksFilters.iterator();
+    		while (it.hasNext()) {
+    			String ksFilter = it.next();
+    			Pattern p = Pattern.compile(ksFilter);
+    			Matcher m = p.matcher(keyspaceName);
+    			if (m.find()) {
+    				logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
+    				return true;
+    			}
+    		}    		
+
+    	}
+    	
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
+    		String keyspaceName = args[0];
+    		if ( !this.snapshotCFFilter.containsKey(keyspaceName) ) {
+    			return false;
+    		}
+    		
+    		String cfName = args[1];
+    		List<String> cfsFilter = this.snapshotCFFilter.get(keyspaceName);
+			for (int i=0; i < cfsFilter.size(); i++) {
+				Pattern p = Pattern.compile(cfsFilter.get(i));
+				Matcher m = p.matcher(cfName);
+				if (m.find()) {
+    				logger.info(keyspaceName + "." +  cfName + " matched filter");
+    				return true;
+				}
+			}        	
+    	}
+    	
+    	return false; //if here, current input are not part of keyspae and cf filters
+
     }
 
     private File getValidSnapshot(File columnFamilyDir, File snpDir, String snapshotName)

@@ -71,7 +71,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.config = config;
     }
 
-    public String formatDate(Date d)
+    public static String formatDate(Date d)
     {
         return new DateTime(d).toString(FMT);
     }
@@ -84,7 +84,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public InputStream localReader() throws IOException
     {
         assert backupFile != null;
-        return new RafInputStream(RandomAccessReader.open(backupFile, true));
+        return new RafInputStream(RandomAccessReader.open(backupFile));
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException

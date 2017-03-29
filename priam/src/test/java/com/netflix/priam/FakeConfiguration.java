@@ -2,6 +2,7 @@ package com.netflix.priam;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
@@ -551,6 +552,16 @@ public class FakeConfiguration implements IConfiguration
 		return "hsha";
 	}
 
+    @Override
+    public int getRpcMinThreads() {
+        return 16;
+    }
+
+    @Override
+    public int getRpcMaxThreads() {
+        return 2048;
+    }
+
 	@Override
 	public int getIndexInterval() {
 		return 0;
@@ -569,4 +580,117 @@ public class FakeConfiguration implements IConfiguration
         // TODO Auto-generated method stub
         return false;
     }
+
+    @Override
+    public String getDseClusterType() {
+        // TODO Auto-generated method stub
+        return "cassandra";
+    }
+
+	@Override
+	public boolean isCreateNewTokenEnable() {
+		return true;  //allow Junit test to create new tokens
+	}
+
+	@Override
+	public String getPrivateKeyLocation() {
+		return null;
+	}
+
+	@Override
+	public String getRestoreSourceType() {
+		return null;
+	}
+
+	@Override
+	public boolean isEncryptBackupEnabled() {
+		return false;
+	}
+
+	@Override
+	public String getAWSRoleAssumptionArn() {
+		return null;
+	}
+
+	@Override
+	public String getGcsServiceAccountId() {
+		return null;
+	}
+
+	@Override
+	public String getGcsServiceAccountPrivateKeyLoc() {
+		return null;
+	}
+
+	@Override
+	public String getPgpPasswordPhrase() {
+		return null;
+	}
+
+	@Override
+	public String getPgpPublicKeyLoc() {
+		return null;
+	}
+
+    /**
+     * Use this method for adding extra/ dynamic cassandra startup options or env properties
+     *
+     * @return
+     */
+    @Override
+    public Map<String, String> getExtraEnvParams() {
+        return null;
+    }
+
+    @Override
+    public String getRestoreKeyspaceFilter()
+    {
+        return null;
+    }
+	
+    @Override
+    public String getRestoreCFFilter() {
+    	return null;
+    }
+    
+   @Override
+    public String getIncrementalKeyspaceFilters() {
+    	return null;
+    }
+   
+    @Override
+    public String getIncrementalCFFilter() {
+    	return null;
+    }
+    
+    @Override
+    public String getSnapshotKeyspaceFilters() {
+    	return null;
+    }
+    
+    @Override
+    public String getSnapshotCFFilter() {
+    	return null;
+    }
+
+    @Override
+    public String getVpcId() {
+    	return "";
+    }
+    
+	@Override
+	public Boolean isIncrBackupParallelEnabled() {
+		return false;
+	}
+
+	@Override
+	public int getIncrementalBkupMaxConsumers() {
+		return 2;
+	}
+
+	@Override
+	public int getUncrementalBkupQueueSize() {
+		return 100;
+	}
+
 }

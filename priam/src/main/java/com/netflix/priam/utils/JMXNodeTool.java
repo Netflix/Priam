@@ -24,14 +24,17 @@ import java.net.UnknownHostException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
 import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
@@ -50,11 +53,13 @@ import com.netflix.priam.IConfiguration;
  * Class to get data out of Cassandra JMX
  */
 @Singleton
-public class JMXNodeTool extends NodeProbe
+public class JMXNodeTool extends NodeProbe implements INodeToolObservable
 {
     private static final Logger logger = LoggerFactory.getLogger(JMXNodeTool.class);
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
+    
+    private static Set<INodeToolObserver> observers = new HashSet<INodeToolObserver>();
 
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -77,6 +82,7 @@ public class JMXNodeTool extends NodeProbe
 
     /**
      * try to create if it is null.
+     * @throws JMXConnectionException 
      * @throws IOException 
      */
     public static JMXNodeTool instance(IConfiguration config) throws JMXConnectionException
@@ -86,20 +92,13 @@ public class JMXNodeTool extends NodeProbe
         return tool;
     }
 
-    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean)
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws JMXConnectionException, IOException, MalformedObjectNameException
     {
-        try
-        {
-            if (mxbean)
-                return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
-            else
-                return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
-        }
-        catch (Exception e)
-        {
-            logger.error(e.getMessage(), e);
-        }
-        return null;
+        if (mxbean)
+            return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
+        else
+            return JMX.newMBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, new ObjectName(mbeanName), clazz);
+
     }
 
     /**
@@ -115,50 +114,105 @@ public class JMXNodeTool extends NodeProbe
         
         try
         {
-            tool.isInitialized();
+        	MBeanServerConnection serverConn = tool.mbeanServerConn;
+        	if (serverConn == null) {
+        		logger.info("Test connection to remove MBean server failed as there is no connection.");
+        		return false;
+        	}
+        	
+            if ( serverConn.getMBeanCount() < 1 ) { //If C* is up, it should have at multiple MBeans registered.
+            	logger.info("Test connection to remove MBean server failed as there is no registered MBeans.");
+            	return false;
+            }
         }
         catch (Throwable ex)
         {
             SystemUtils.closeQuietly(tool);
+            logger.error("Exception while checking JXM connection to C*, msg: " + ex.getLocalizedMessage());
             return false;
         }
         return true;
     }
 
+    /*
+     * A means to clean up existing and recreate the JMX connection to the Cassandra process.
+     * @return the new connection.
+     */
+    public static synchronized JMXNodeTool createNewConnection(final IConfiguration config) throws JMXConnectionException {
+    	return createConnection(config);
+    }    
+    
     public static synchronized JMXNodeTool connect(final IConfiguration config) throws JMXConnectionException
     {
-    		JMXNodeTool jmxNodeTool = null;
-    		
+    	//lets make sure some other monitor didn't sneak in the recreated the connection already
+		if (!testConnection()) {
+			
+        	if (tool != null) {
+            	try {
+    				tool.close(); //Ensure we properly close any existing (even if it's corrupted) connection to the remote jmx agent
+    			} catch (IOException e) {
+    				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+    			}        		
+        	}
+        	
+		} else {
+			//Someone beat you and already created the connection, nothing you need to do..
+			return tool;
+		}
+    	
+		return createConnection(config);
+    }
+    
+    private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
 		// If Cassandra is started then only start the monitoring
 		if (!CassandraMonitor.isCassadraStarted()) {
-			String exceptionMsg = "Cassandra is not yet started, check back again later";
+			String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
 			logger.debug(exceptionMsg);
 			throw new JMXConnectionException(exceptionMsg);
-		}        		
+		}
+		
+    	if (tool != null) { //lets make sure we properly close any existing (even if it's corrupted) connection to the remote jmx agent 
+        	try {
+				tool.close();
+			} catch (IOException e) {
+				logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+			}        		
+    	}
     		
-    		try {
-    				jmxNodeTool = new BoundedExponentialRetryCallable<JMXNodeTool>()
-						{
-							@Override
-							public JMXNodeTool retriableCall() throws Exception
-							{
-								JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
-								Field fields[] = NodeProbe.class.getDeclaredFields();
-								for (int i = 0; i < fields.length; i++)
-								{
-									if (!fields[i].getName().equals("mbeanServerConn"))
-										continue;
-									fields[i].setAccessible(true);
-									nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
-								}
-								return nodetool;
-							}
-						}.call();
-			} catch (Exception e) {
-				logger.error(e.getMessage(), e);
-				throw new JMXConnectionException(e.getMessage());
-			}
-    		return jmxNodeTool;
+		try {
+			
+			tool = new BoundedExponentialRetryCallable<JMXNodeTool>()
+			{
+				@Override
+				public JMXNodeTool retriableCall() throws Exception
+				{
+					JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+					Field fields[] = NodeProbe.class.getDeclaredFields();
+					for (int i = 0; i < fields.length; i++)
+					{
+						if (!fields[i].getName().equals("mbeanServerConn"))
+							continue;
+						fields[i].setAccessible(true);
+						nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
+					}
+					
+					return nodetool;
+				}
+			}.call();
+			
+		} catch (Exception e) {
+			logger.error(e.getMessage(), e);
+			throw new JMXConnectionException(e.getMessage());
+		}
+		
+		logger.info("Connected to remote jmx agent, will notify interested parties!");
+		Iterator<INodeToolObserver> it = observers.iterator();
+		while (it.hasNext()) {
+			INodeToolObserver observer = it.next();
+			observer.nodeToolHasChanged(tool);
+		}
+		
+		return tool;    	
     }
 
     /**
@@ -287,8 +341,10 @@ public class JMXNodeTool extends NodeProbe
 
     public void compact() throws IOException, ExecutionException, InterruptedException
     {
-        for (String keyspace : getKeyspaces())
-            forceTableCompaction(keyspace, new String[0]);
+        for (String keyspace : getKeyspaces()) {
+        	forceKeyspaceCompaction(keyspace, new String[0]);
+        }
+        	
     }
 
     public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException
@@ -299,21 +355,21 @@ public class JMXNodeTool extends NodeProbe
     {
         for (String keyspace : getKeyspaces())
             if (primaryRange)
-                forceTableRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            	forceKeyspaceRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
             else
-                forceTableRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            	forceKeyspaceRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces())
-            forceTableCleanup(keyspace, new String[0]);
+        	forceKeyspaceCleanup(keyspace, new String[0]);
     }
 
     public void flush() throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces())
-            forceTableFlush(keyspace, new String[0]);
+        	forceKeyspaceFlush(keyspace, new String[0]);
     }
 
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException
@@ -338,5 +394,28 @@ public class JMXNodeTool extends NodeProbe
             tool = null;
             super.close();
         }
+    }
+    
+	/*
+	 * @param observer to add to list of internal observers.  This behavior is thread-safe.
+	 */
+    @Override
+	public void addObserver(INodeToolObserver observer) {
+    	if (observer == null) 
+    		throw new NullPointerException("Cannot not observer.");
+    	synchronized(observers) {
+    	   	observers.add(observer);  //if observer exist, it's a noop   		
+    	}
+    	
+    }
+    
+    /*
+     * @param observer to be removed; behavior is thread-safe.
+     */
+    @Override
+    public void deleteObserver(INodeToolObserver observer) {
+    	synchronized(observers) {
+        	observers.remove(observer);    		
+    	}
     }
 }

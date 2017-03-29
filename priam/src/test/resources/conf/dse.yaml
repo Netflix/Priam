@@ -1,0 +1,109 @@
+hive_meta_store_enabled: true
+kerberos_options:
+  keytab: resources/dse/conf/dse.keytab
+  service_principal: dse/_HOST@REALM
+  http_principal: HTTP/_HOST@REALM
+  qop: auth
+ldap_options:
+  server_host: localhost
+  server_port: 389
+  search_dn: cn=Admin
+  search_password: secret
+  use_ssl: false
+  use_tls: false
+  truststore_path: null
+  truststore_password: null
+  truststore_type: jks
+  user_search_base: ou=users,dc=example,dc=com
+  user_search_filter: (uid={0})
+  credentials_validity_in_ms: 0
+  search_validity_in_seconds: 0
+  connection_pool:
+    max_active: 8
+    max_idle: 8
+ttl_index_rebuild_options:
+  fixed_rate_period: 300
+  initial_delay: 20
+  max_docs_per_batch: 200
+shard_transport_options:
+  type: netty
+  netty_server_port: 8984
+cql_slow_log_options:
+  enabled: false
+  threshold_ms: 100
+  ttl_seconds: 86400
+  async_writers: 1
+cql_system_info_options:
+  enabled: false
+  refresh_rate_ms: 10000
+resource_level_latency_tracking_options:
+  enabled: false
+  refresh_rate_ms: 10000
+db_summary_stats_options:
+  enabled: false
+  refresh_rate_ms: 10000
+cluster_summary_stats_options:
+  enabled: false
+  refresh_rate_ms: 10000
+histogram_data_options:
+  enabled: false
+  refresh_rate_ms: 10000
+  retention_count: 3
+user_level_latency_tracking_options:
+  enabled: false
+  refresh_rate_ms: 10000
+  top_stats_limit: 100
+  quantiles: false
+solr_indexing_error_log_options:
+  enabled: false
+  ttl_seconds: 604800
+  async_writers: 1
+solr_slow_sub_query_log_options:
+  enabled: false
+  ttl_seconds: 604800
+  async_writers: 1
+  threshold_ms: 100
+solr_update_handler_metrics_options:
+  enabled: false
+  ttl_seconds: 604800
+  refresh_rate_ms: 60000
+solr_request_handler_metrics_options:
+  enabled: false
+  ttl_seconds: 604800
+  refresh_rate_ms: 60000
+solr_index_stats_options:
+  enabled: false
+  ttl_seconds: 604800
+  refresh_rate_ms: 60000
+solr_cache_stats_options:
+  enabled: false
+  ttl_seconds: 604800
+  refresh_rate_ms: 60000
+solr_latency_snapshot_options:
+  enabled: false
+  ttl_seconds: 604800
+  refresh_rate_ms: 60000
+system_key_directory: /etc/dse/conf
+config_encryption_active: false
+config_encryption_key_name: system_key
+initial_spark_worker_resources: 0.7
+audit_logging_options:
+  enabled: false
+  logger: Log4JAuditWriter
+  retention_time: 0
+  cassandra_audit_writer_options:
+    mode: sync
+    batch_size: 50
+    flush_time: 500
+    num_writers: 10
+    queue_size: 10000
+    write_consistency: QUORUM
+system_info_encryption:
+  enabled: false
+  cipher_algorithm: AES
+  secret_key_strength: 128
+  chunk_length_kb: 64
+  key_name: system_table_keytab
+hive_options:
+  insert_max_retries: 6
+  insert_retry_sleep_period: 50

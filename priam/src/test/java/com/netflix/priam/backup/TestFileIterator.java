@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import mockit.Mock;
-import mockit.Mocked;
-import mockit.Mockit;
+import mockit.MockUp;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -42,7 +41,6 @@ public class TestFileIterator
     private static Date startTime, endTime;
     private static Calendar cal;
 
-    @Mocked
     private static AmazonS3Client s3client;
     
     private static IConfiguration conf;
@@ -50,13 +48,12 @@ public class TestFileIterator
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
     {
+	s3client = new MockAmazonS3Client().getMockInstance();
+	new MockObjectListing();
+
         injector = Guice.createInjector(new BRTestModule());
         conf = injector.getInstance(IConfiguration.class);
         factory = injector.getInstance(InstanceIdentity.class);
-
-        Mockit.setUpMock(AmazonS3Client.class, MockAmazonS3Client.class);
-        Mockit.setUpMock(ObjectListing.class, MockObjectListing.class);
-        s3client = new AmazonS3Client();
 
         cal = Calendar.getInstance();
         cal.set(2011, 7, 11, 0, 30, 0);
@@ -68,7 +65,7 @@ public class TestFileIterator
 
     // MockAmazonS3Client class
     @Ignore
-    public static class MockAmazonS3Client
+    public static class MockAmazonS3Client extends MockUp<AmazonS3Client>
     {
         public static String bucketName = "";
         public static String prefix = "";
@@ -82,6 +79,7 @@ public class TestFileIterator
             return listing;
         }
 
+	@Mock
         public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException, AmazonServiceException
         {
             ObjectListing listing = new ObjectListing();
@@ -93,7 +91,7 @@ public class TestFileIterator
 
     // MockObjectListing class
     @Ignore
-    public static class MockObjectListing
+    public static class MockObjectListing extends MockUp<ObjectListing>
     {
         public static boolean truncated = true;
         public static boolean firstcall = true;

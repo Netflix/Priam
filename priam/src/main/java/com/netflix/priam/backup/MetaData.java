@@ -34,6 +34,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.utils.RetryableCallable;
@@ -51,11 +52,11 @@ public class MetaData
     private final IBackupFileSystem fs;
 
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathFactory,@Named("backup")IBackupFileSystem fs)
+    public MetaData(Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx, IConfiguration config)
 
     {
         this.pathFactory = pathFactory;
-        this.fs = fs;
+        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
     @SuppressWarnings("unchecked")
@@ -92,6 +93,13 @@ public class MetaData
         }
     }
 
+    /*
+     * A list of data files within a meta backup file.  The meta backup file can be
+     * daily snapshot (meta.json) or incrementals (meta_keyspace_cf_date.json)
+     * 
+     * @param meta data file to derive the list of data files.  The meta data file can be meta.json or meta_keyspace_cf_date.json
+     * @return a list of data files (*.db)
+     */
     public List<AbstractBackupPath> get(final AbstractBackupPath meta)
     {
         List<AbstractBackupPath> files = Lists.newArrayList();
@@ -123,6 +131,35 @@ public class MetaData
         return files;
     }
 
+    /*
+     * Determines the existence of the backup meta file.  This meta file could be snapshot (meta.json) or 
+     * incrementals (meta_keyspace_cf..json).
+     * 
+     * @param backup meta file to search
+     * @return true if backup meta file exist, false otherwise.
+     */
+    public Boolean doesExist(final AbstractBackupPath meta) {
+    	try {
+        	new RetryableCallable<Void>() {
+                @Override
+                public Void retriableCall() throws Exception {
+                    fs.download(meta, new FileOutputStream(meta.newRestoreFile())); //download actual file to disk
+                    return null;
+                }
+        	}.call();
+        	
+    	} catch (Exception e) {
+    		logger.error("Error downloading the Meta data try with a diffrent date...", e);
+    	}
+
+    	if (meta.newRestoreFile().exists()) {
+    		return true;
+    	} else {
+        	return false;    		
+    	}
+
+    }
+    
     private void upload(final AbstractBackupPath bp) throws Exception
     {
         new RetryableCallable<Void>()
@@ -136,7 +173,7 @@ public class MetaData
         }.call();
     }
     
-    public static File createTmpMetaFile() throws IOException{
+    public File createTmpMetaFile() throws IOException{
         File metafile = File.createTempFile("meta", ".json");
         File destFile = new File(metafile.getParent(), "meta.json");
         if(destFile.exists())
@@ -166,5 +203,25 @@ public class MetaData
 	protected void addToRemotePath(String remotePath) {
 		metaRemotePaths.add(remotePath);
 	}
+	
+    public List<AbstractBackupPath> toJson(File input) {
+    	List<AbstractBackupPath> files = Lists.newArrayList();
+    	try{
+    		
+            JSONArray jsonObj = (JSONArray) new JSONParser().parse(new FileReader(input));
+            for (int i = 0; i < jsonObj.size(); i++)
+            {
+                AbstractBackupPath p = pathFactory.get();
+                p.parseRemote((String) jsonObj.get(i));
+                files.add(p);
+            }
+            
+    	} catch (Exception ex) {
+    		throw new RuntimeException("Error transforming file " + input.getAbsolutePath() + " to JSON format.  Msg:" + ex.getLocalizedMessage(), ex);
+    	}
+
+        logger.debug("Transformed file " + input.getAbsolutePath() + " to JSON.  Number of JSON elements: " + files.size());
+        return files;
+    }	
 
 }

@@ -15,25 +15,47 @@
  */
 package com.netflix.priam.backup;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.io.IOUtils;
+import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup.DIRECTORYTYPE;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 
+/*
+ * A means to perform a restore.  This class contains the following characteristics:
+ * - It is agnostic to the source type of the restore, this is determine by the injected IBackupFileSystem.
+ * - This class can be scheduled, i.e. it is a "Task".
+ * - When this class is executed, it uses its own thread pool to execute the restores.
+ */
 public abstract class AbstractRestore extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
@@ -46,6 +68,8 @@ public abstract class AbstractRestore extends Task
     
     protected final IConfiguration config;
     protected final ThreadPoolExecutor executor;
+    private final Map<String, List<String>> restoreCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
+	private final Map<String, Object> restoreKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
 
     public static BigInteger restoreToken;
     
@@ -59,9 +83,79 @@ public abstract class AbstractRestore extends Task
         this.sleeper = sleeper;
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
         executor.allowCoreThreadTimeOut(true);
+        
+        init();
+    }
+    
+    private void init() {
+    	populateRestoreFilters();
+    }
+    
+    private void populateRestoreFilters() {
+    	String keyspaceFilters = this.config.getRestoreKeyspaceFilter();
+    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
+    		
+    		logger.info("No keyspace filter set for restore.");
+    		
+    	} else {
+
+        	String[] keyspaces = keyspaceFilters.split(",");
+        	for (int i=0; i < keyspaces.length; i++ ) {
+        		logger.info("Adding restore keyspace filter: " + keyspaces[i]);
+        		this.restoreKeyspaceFilter.put(keyspaces[i], null);
+        	}    		
+    		
+    	}
+    	
+    	String cfFilters = this.config.getRestoreCFFilter();
+    	if (cfFilters == null || cfFilters.isEmpty()) {
+    		
+    		logger.info("No column family filter set for restore.");
+    		
+    	} else {
+
+        	String[] filters = cfFilters.split(",");
+        	for (int i=0; i < filters.length; i++) { //process each filter
+        		
+        		if (isValidCFFilterFormat(filters[i])) {
+        			String[] filter = filters[i].split("\\.");
+        			String ksName = filter[0];
+        			String cfName = filter[1];
+        			logger.info("Adding restore CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
+        			
+        			if (this.restoreCFFilter.containsKey(ksName)) {
+        				//add cf to existing filter
+        				List<String> cfs = this.restoreCFFilter.get(ksName);
+        				cfs.add(cfName);
+        				this.restoreCFFilter.put(ksName, cfs);
+        				
+        			} else {
+        				
+        				List<String> cfs = new ArrayList<String>();
+        				cfs.add(cfName);
+        				this.restoreCFFilter.put(ksName, cfs);
+        			}
+            		        			
+        		} else {
+        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
+        		}
+        	} //end processing each filter    		
+    		
+    	}
+    }
+    
+    /*
+     * search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
+     * @param input string
+     * @return true if input string matches search pattern; otherwise, false
+     */
+    private boolean isValidCFFilterFormat(String cfFilter) {
+    	Pattern p = Pattern.compile(".\\..");
+    	Matcher m = p.matcher(cfFilter);
+    	return m.find();
     }
 
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter) throws Exception
+    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception
     {
         while (fsIterator.hasNext())
         {
@@ -69,17 +163,70 @@ public abstract class AbstractRestore extends Task
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
             
-            if (temp.getType() == filter)
+            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //keyspace filtered?
+            	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as its keyspace: \"" + temp.getKeyspace() + "\" is part of the filter list");
+            	continue;
+            }
+            
+            if (isFiltered(DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
+            	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: "
+            			+ temp.getKeyspace() + ":" + temp.getColumnFamily());
+            	continue;
+            }
+            
+            if (temp.getType() == bkupFileType)
             {   
             	File localFileHandler = temp.newRestoreFile();
-            	logger.debug("Created local file name: %s", localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+            	logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
                 download(temp, localFileHandler);
             }   
         }
         waitToComplete();
     }
     
-    private class BoundedList<E> extends LinkedList<E> {
+    /*
+     * @param keyspace or columnfamily directory type.
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
+    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
+    	if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
+        	String keyspaceName = args[0];
+    		//Apply each keyspace filter to input string
+    		java.util.Set<String> ksFilters = this.restoreKeyspaceFilter.keySet();
+    		Iterator<String> it = ksFilters.iterator();
+    		while (it.hasNext()) {
+    			String ksFilter = it.next();
+    			Pattern p = Pattern.compile(ksFilter);
+    			Matcher m = p.matcher(keyspaceName);
+    			if (m.find()) {
+    				logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
+    				return true;
+    			}
+    		}    
+    	}
+		
+    	if (directoryType.equals(DIRECTORYTYPE.CF)) {  //parent (keyspace) is not filtered, now see if the child (CF) is filtered
+    		String keyspaceName = args[0];
+    		if ( !this.restoreCFFilter.containsKey(keyspaceName) ) {
+    			return false;
+    		}
+    		
+    		String cfName = args[1];
+    		List<String> cfsFilter = this.restoreCFFilter.get(keyspaceName);
+			for (int i=0; i < cfsFilter.size(); i++) {
+				Pattern p = Pattern.compile(cfsFilter.get(i));
+				Matcher m = p.matcher(cfName);
+				if (m.find()) {
+    				logger.info(keyspaceName + "." +  cfName + " matched filter");
+    				return true;
+				}
+			}
+    	}
+
+    	return false; //if here, current input are not part of keyspae and cf filters
+    }
+    
+    public class BoundedList<E> extends LinkedList<E> {
 
         private final int limit;
 
@@ -132,15 +279,172 @@ public abstract class AbstractRestore extends Task
             @Override
             public Integer retriableCall() throws Exception
             {
-                logger.info("Downloading file: " + path + " to: " + restoreLocation);
+                logger.info("Downloading file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
                 fs.download(path, new FileOutputStream(restoreLocation),restoreLocation.getAbsolutePath());
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
+                
+                
+                logger.info("Completed download of file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
                 return count.decrementAndGet();
             }
         });
     }
     
+    
+    /*
+     * An overloaded download where it will not only download the object but decrypt and uncompress the
+     * 
+     *  @param path - path of object to download from source.
+     *  @param out - handle to the FINAL destination stream.
+     *  Note: if this behavior is successfull, it will close the output stream.
+     *  
+     *  @param temp - file handlle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatability with various encryption/decryption
+     *  
+     *  Note: the temp file will be removed on successful processing.
+     *  
+     *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
+     *  @param fileCrypotography - the implemented cryptography algorithm use to decrypt.
+     *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     */
+    public void download(final AbstractBackupPath path, final OutputStream finalDestination,  final File tempFile
+		, final IFileCryptography fileCryptography
+		, final char[] passPhrase
+		, final ICompression compress) {
+    	
+        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
+            return;
+        
+        count.incrementAndGet();
+        executor.submit(new RetryableCallable<Integer>() {
+        	
+        	@Override
+        	public Integer retriableCall() throws Exception {
+        	
+            	//== download object from source bucket
+                try {
+                	
+                    logger.info("Downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
+                    fs.download(path, new FileOutputStream(tempFile),tempFile.getAbsolutePath());                    
+                    tracker.adjustAndAdd(path);
+                    logger.info("Completed downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
+                    
+                	
+                } catch (Exception ex) {
+                	//This behavior is retryable; therefore, lets get to a clean state before each retry.
+                	if (tempFile.exists()) {
+                		tempFile.createNewFile();
+                	}                	
+                	
+                	throw new Exception("Exception downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath(), ex);
+                } 
+                
+                //== object downloaded successfully from source, decrypt it.
+                OutputStream fOut = null;  //destination file after decryption
+                File decryptedFile = new File(tempFile.getAbsolutePath() + ".decrypted");
+                try {
+
+                	InputStream in = new BufferedInputStream(new FileInputStream(tempFile.getAbsolutePath()));
+                    InputStream encryptedDataInputStream = fileCryptography.decryptStream(in, passPhrase, tempFile.getAbsolutePath());
+                    fOut = new BufferedOutputStream(new FileOutputStream(decryptedFile));
+                    Streams.pipeAll(encryptedDataInputStream, fOut);
+                    logger.info("completed decrypting file: " + tempFile.getAbsolutePath() + "to final file dest: " + decryptedFile.getAbsolutePath());                	
+                	
+                } catch (Exception ex) {
+                	//This behavior is retryable; therefore, lets get to a clean state before each retry.
+                	if (tempFile.exists()) {
+                		tempFile.createNewFile();
+                	}
+                	
+                	if (decryptedFile.exists()) {
+                		decryptedFile.createNewFile();
+                	}
+                	                	
+                	throw new Exception("Exception during decryption file:  " + decryptedFile.getAbsolutePath(), ex);
+
+                } finally {
+                	if (fOut != null ) {
+                		fOut.close();
+                	}
+                }
+                                
+                //== object downloaded and decrypted successfully, now uncompress it
+                logger.info("Start uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
+            	FileInputStream fileIs = null;
+            	InputStream is = null;
+            	
+            	try {
+
+            		fileIs = new FileInputStream(decryptedFile);
+	            	is = new BufferedInputStream(fileIs);
+	            
+	            	compress.decompressAndClose(is, finalDestination);	            		
+            		
+            	} catch (Exception ex) {
+            		IOUtils.closeQuietly(is);                	
+            		throw new Exception("Exception uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
+            	}
+            	
+            	logger.info("Completed uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream " 
+            			+ " current worker: " + Thread.currentThread().getName());                
+            	//if here, everything was successful for this object, lets remove unneeded file(s)
+            	if (tempFile.exists())
+            		tempFile.delete();
+            	
+            	if (decryptedFile.exists()) {
+            		decryptedFile.delete();  
+            	}
+            	
+            	//Note: removal of the tempFile is responsbility of the caller as this behavior did not create it.
+                
+                return count.decrementAndGet();                
+        		
+        	}
+        	
+        });
+    	
+    }
+    
+    
+    
+    /*
+     * An overloaded download where it will not only download the object but also decrypt and uncompress.
+     * 
+     *  @param path - path of object to download from source.
+     *  @param restoreLocation - file handle to the FINAL file on disk
+     *  @param temp - file handlle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatability with various encryption/decryption
+     *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
+     *  @param fileCrypotography - the implemented cryptography algorithm use to decrypt.
+     *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     */
+    public void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
+    		, final IFileCryptography fileCryptography
+    		, final char[] passPhrase
+    		, final ICompression compress
+    		) throws Exception
+    {
+    	
+    	FileOutputStream fileOs = null;
+    	BufferedOutputStream os = null;
+    	try {
+        	fileOs = new FileOutputStream(restoreLocation);
+        	os = new BufferedOutputStream(fileOs);
+        	download(path, os, tempFile, fileCryptography, passPhrase, compress);
+    	} catch (Exception e) {
+    		fileOs.close();
+    		throw new Exception("Exception in download of:  " + path.getFileName() + ", msg: " + e.getLocalizedMessage(), e );
+    		
+    	} finally {
+    	
+    		//Note: no need to close buffered outpust stream as it is done within the called download() behavior
+    	}
+		
+    } 
+    
+    /*
+     * A means to wait until until all threads have completed.  It blocks calling thread
+     * until all tasks (ala counter "count" is 0) are completed.
+     */
     protected void waitToComplete()
     {
         while (count.get() != 0)

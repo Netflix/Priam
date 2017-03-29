@@ -1,14 +1,9 @@
 package com.netflix.priam.stream;
 
-import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
 
-import com.netflix.priam.defaultimpl.StandardTuner;
 import junit.framework.Assert;
 
-import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
-import org.apache.cassandra.streaming.PendingFile;
 import org.junit.Test;
 
 import com.google.inject.Guice;
@@ -18,7 +13,6 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backup.IncrementalRestore;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FifoQueue;
 
@@ -27,9 +21,6 @@ public class StreamingTest
     public void teststream() throws IOException, InterruptedException
     {
         IConfiguration config = new FakeConfiguration("test", "cass_upg107_ccs", "test", "ins_id");
-        SSTableLoaderWrapper loader = new SSTableLoaderWrapper(config, new StandardTuner(config));
-        Collection<PendingFile> ssts = loader.stream(new File("/tmp/Keyspace2/"));
-        loader.deleteCompleted(ssts);
     }
 
     @Test
@@ -90,9 +81,7 @@ public class StreamingTest
                 "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Filter.db", "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Data.db",
                 "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Statistics.db", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Filter.db",
                 "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Digest.sha1", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Statistics.db", "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Data.db" };
-        Assert.assertFalse(IncrementalRestore.SECONDRY_INDEX_PATTERN.matcher("cfname_test_name_idx-hc.db").matches());
-        for (String input : testInputs)
-            Assert.assertTrue(IncrementalRestore.SECONDRY_INDEX_PATTERN.matcher(input).matches());
+
     }
 
 }

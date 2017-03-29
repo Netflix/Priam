@@ -26,14 +26,14 @@ import java.util.Map;
  *  to register, update, delete or list instances from the registry 
  */
 @ImplementedBy(SDBInstanceFactory.class)
-public interface IPriamInstanceFactory
+public interface IPriamInstanceFactory<T>
 {
     /**
      * Return a list of all Cassandra server nodes registered.
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
-    public List<PriamInstance> getAllIds(String appName);
+    public List<T> getAllIds(String appName);
 
     /**
      * Return the Cassandra server node with the given {@code id}.
@@ -73,7 +73,7 @@ public interface IPriamInstanceFactory
      * Sort the list by instance ID
      * @param return_ the list of nodes to sort
      */
-    public void sort(List<PriamInstance> return_);
+    public void sort(List<T> return_);
 
     /**
      * Attach volumes if required

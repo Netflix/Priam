@@ -436,7 +436,7 @@ public class CassandraAdmin
             rootObj.put(key, obj);
         return rootObj;
     }
-
+    
     @GET
     @Path("/netstats")
     public Response netstats(@QueryParam("host") String hostname) throws IOException, ExecutionException, InterruptedException, JSONException

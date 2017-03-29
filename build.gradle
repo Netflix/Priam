@@ -1,21 +1,20 @@
 plugins {
-    id 'nebula.netflixoss' version '3.2.3'
+    id 'nebula.netflixoss' version '3.6.0'
     id 'nebula.provided-base' version '3.0.3'
 }
 
+// Establish version and status
 ext.githubProjectName = 'Priam'
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
     apply plugin: 'java'
     apply plugin: 'nebula.provided-base'
-
     group = 'com.netflix.priam'
 
     repositories {
         jcenter()
     }
-
     dependencies {
       compile 'commons-lang:commons-lang:2.6'
       compile 'commons-logging:commons-logging:1.1.3'

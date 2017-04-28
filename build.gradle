@@ -1,6 +1,5 @@
 plugins {
-    id 'nebula.netflixoss' version '3.2.3'
-    id 'nebula.provided-base' version '3.0.3'
+    id 'nebula.netflixoss' version '3.6.0'
 }
 
 // Establish version and status
@@ -9,7 +8,8 @@ ext.githubProjectName = 'Priam'
 subprojects {
     apply plugin: 'nebula.netflixoss'
     apply plugin: 'java'
-    apply plugin: 'nebula.provided-base'
+    apply plugin: 'nebula.compile-api'
+
 
     group = 'com.netflix.priam'
 
@@ -56,7 +56,7 @@ subprojects {
       }
       compile 'com.google.apis:google-api-services-storage:v1-rev9-1.19.0'
       compile 'com.google.http-client:google-http-client-jackson2:1.19.0'
-      provided 'javax.servlet:servlet-api:2.5'
+      compileOnly 'javax.servlet:servlet-api:2.5'
       testCompile 'org.jmockit:jmockit:1.19'
       testCompile 'junit:junit:4.8'
     }

@@ -212,7 +212,7 @@ public class S3FileSystemBase {
     Reinitializtion which should be performed before uploading a file
      */
     protected void reinitialize() {
-        bytesUploaded = new AtomicLong(0); //initi
+        bytesUploaded = new AtomicLong(0); //initialize
         this.awsSlowDownExceptionCounter = 0;
     }
 

@@ -78,11 +78,16 @@ public class IncrementalRestore extends AbstractRestore
     @Override
     public void execute() throws Exception
     {
-    		String prefix = config.getRestorePrefix();
+        String prefix = config.getRestorePrefix();
         if (Strings.isNullOrEmpty(prefix))
         {
             logger.error("Restore prefix is not set, skipping incremental restore to avoid looping over the incremental backups. Plz check the configurations");
             return; // No point in restoring the files which was just backedup.
+        }
+
+        if (tracker.isEmpty()) {
+            logger.error("You should perform full restore before incremental restore, skipping incremental restore.");
+            return;
         }
 
         if (config.isRestoreClosestToken())

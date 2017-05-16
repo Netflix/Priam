@@ -30,6 +30,7 @@ import org.apache.cassandra.streaming.FileStreamTask;
 import org.apache.cassandra.streaming.OperationType;
 import org.apache.cassandra.streaming.PendingFile;
 import org.apache.cassandra.streaming.StreamHeader;
+import org.apache.cassandra.streaming.compress.CompressionInfo;
 import org.apache.cassandra.utils.OutputHandler;
 import org.apache.cassandra.utils.Pair;
 import org.apache.commons.lang.StringUtils;
@@ -124,7 +125,17 @@ public class SSTableLoaderWrapper
         {
             Descriptor desc = sstable.descriptor;
             List<Pair<Long, Long>> sections = Lists.newArrayList(Pair.create(0L, sstable.onDiskLength()));
-            PendingFile pending = new PendingFile(sstable, desc, SSTable.COMPONENT_DATA, sections, OperationType.BULK_LOAD);
+            PendingFile pending = new PendingFile(sstable,
+                    desc,
+                    SSTable.COMPONENT_DATA,
+                    sections,
+                    OperationType.BULK_LOAD,
+                    sstable.estimatedKeys(),
+                    sstable.compression ?
+                            new CompressionInfo(
+                                    sstable.getCompressionMetadata().getChunksForSections(sections),
+                                    sstable.getCompressionMetadata().parameters) :
+                            null);
             StreamHeader header = new StreamHeader(directory.getName(), UUID.randomUUID(), pending, Collections.singleton(pending));
             logger.info("Streaming to {}", InetAddress.getLocalHost());
             new FileStreamTask(header, InetAddress.getLocalHost()).run();

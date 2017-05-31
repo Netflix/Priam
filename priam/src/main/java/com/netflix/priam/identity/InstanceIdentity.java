@@ -15,7 +15,6 @@
  */
 package com.netflix.priam.identity;
 
-import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
@@ -31,29 +30,15 @@ import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
-
-import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONObject;
-import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Random;
-import java.util.Set;
-
-import javax.ws.rs.core.MediaType;
 
 /**
  * This class provides the central place to create and consume the identity of
@@ -80,10 +65,15 @@ public class InstanceIdentity
     private final ITokenManager tokenManager;
 
     private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
-    		@Override
-    		public boolean apply(PriamInstance instance) {
-    			return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostName().equals(myInstance.getHostName()));
-    		}
+        @Override
+        public boolean apply(PriamInstance instance) {
+            return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostName().equals(myInstance.getHostName()));
+        }
+
+        @Override
+        public boolean test(PriamInstance input) {
+            return apply(input);
+        }
     };
    
     private PriamInstance myInstance;

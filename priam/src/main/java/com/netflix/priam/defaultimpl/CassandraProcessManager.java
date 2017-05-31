@@ -26,7 +26,7 @@ import java.util.Map;
 import com.google.common.collect.Lists;
 
 import com.netflix.priam.utils.Sleeper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

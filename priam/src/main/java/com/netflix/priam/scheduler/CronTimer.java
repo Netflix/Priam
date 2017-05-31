@@ -15,14 +15,11 @@
  */
 package com.netflix.priam.scheduler;
 
-import java.text.ParseException;
-
-import org.quartz.CronExpression;
-import org.quartz.CronTrigger;
-import org.quartz.Scheduler;
-import org.quartz.Trigger;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.text.ParseException;
 
 /**
  * Runs jobs at the specified absolute time and frequency
@@ -89,7 +86,7 @@ public class CronTimer implements TaskTimer
 
     public Trigger getTrigger() throws ParseException
     {
-        return new CronTrigger(name, Scheduler.DEFAULT_GROUP, cronExpression);
+        return TriggerBuilder.newTrigger().withIdentity(name, Scheduler.DEFAULT_GROUP).withSchedule(CronScheduleBuilder.cronSchedule(cronExpression)).build();
     }
 
     @Override

@@ -27,7 +27,7 @@ import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
 import com.netflix.priam.merics.BackupUploadRateMeasurement;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

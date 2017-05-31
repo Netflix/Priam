@@ -15,26 +15,23 @@
  */
 package com.netflix.priam.resources;
 
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import com.google.inject.Inject;
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.identity.DoubleRing;
+import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONValue;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
-import com.netflix.priam.IConfiguration;
-import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONValue;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.identity.DoubleRing;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * This servlet will provide the configuration API service as and when Cassandra

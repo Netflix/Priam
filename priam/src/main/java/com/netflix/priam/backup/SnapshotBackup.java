@@ -30,7 +30,7 @@ import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.ThreadSleeper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -279,7 +279,8 @@ public class SnapshotBackup extends AbstractBackup {
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
                 JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.takeSnapshot(snapshotName, null, new String[0]);
+                nodetool.takeSnapshot(snapshotName, null);
+                //nodetool.takeSnapshot(snapshotName, null, new String[0]);
                 return null;
             }
         }.call();

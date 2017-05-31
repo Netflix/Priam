@@ -18,10 +18,7 @@ package com.netflix.priam.scheduler;
 import java.text.ParseException;
 
 import com.netflix.priam.utils.Sleeper;
-import org.quartz.JobDetail;
-import org.quartz.Scheduler;
-import org.quartz.SchedulerException;
-import org.quartz.SchedulerFactory;
+import org.quartz.*;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -61,7 +58,7 @@ public class PriamScheduler
     public void addTask(String name, Class<? extends Task> taskclass, TaskTimer timer) throws SchedulerException, ParseException
     {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
-        JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
+        JobDetail job = JobBuilder.newJob().withIdentity(name, Scheduler.DEFAULT_GROUP).ofType(taskclass).build();//new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
         if (timer.getCronExpression() != null && !timer.getCronExpression().isEmpty() ) {
             logger.info("Scheduled task metadata.  Task name: " + taskclass.getName()
                     + ", cron expression: " + timer.getCronExpression());
@@ -78,7 +75,7 @@ public class PriamScheduler
     public void addTaskWithDelay(final String name, Class<? extends Task> taskclass, final TaskTimer timer, final int delayInSeconds) throws SchedulerException, ParseException
     {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
-        final JobDetail job = new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
+        final JobDetail job = JobBuilder.newJob().withIdentity(name, Scheduler.DEFAULT_GROUP).ofType(taskclass).build();//new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
         
         //we know Priam doesn't do too many new tasks, so this is probably easy/safe/simple
         new Thread(new Runnable(){
@@ -108,7 +105,7 @@ public class PriamScheduler
 
     public void deleteTask(String name) throws SchedulerException, ParseException
     {
-        scheduler.deleteJob(name, Scheduler.DEFAULT_GROUP);
+        scheduler.deleteJob(new JobKey(name, Scheduler.DEFAULT_GROUP));
     }
 
     public final Scheduler getScheduler()

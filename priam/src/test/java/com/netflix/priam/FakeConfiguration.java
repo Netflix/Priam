@@ -314,7 +314,7 @@ public class FakeConfiguration implements IConfiguration
     public String getCassStartupScript()
     {
         // TODO Auto-generated method stub
-        return "true";
+        return "/usr/bin/false";
     }
 
     @Override

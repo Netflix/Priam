@@ -59,11 +59,15 @@ public class Flush implements IClusterManagement<String> {
             if (!this.jmxConnectorMgr.getKeyspaces().contains(keyspace)) {
                 throw new IllegalArgumentException("Keyspace [" + keyspace + "] does not exist.");
             }
-        }
+       /* }
 
-        for (String keyspace : keyspaces) { //flush each keyspace with the CFs.
+        for (String keyspace : keyspaces) { //flush each keyspace with the CFs.*/
             if (Keyspace.SYSTEM_KS.equals(keyspace)) //no need to flush system keyspaces.
                 continue;
+
+        /* *****Replace with this in 3.10 Cassandra.
+            if (SchemaConstants.isSystemKeyspace(keyspace)) //no need to flush system keyspaces.
+                continue;*/
 
             try {
                 this.jmxConnectorMgr.forceKeyspaceFlush(keyspace, new String[0]);

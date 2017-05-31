@@ -16,20 +16,15 @@
 package com.netflix.priam.utils;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryUsage;
 import java.lang.reflect.Field;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import javax.management.JMX;
@@ -342,7 +337,8 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     public void compact() throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces()) {
-        	forceKeyspaceCompaction(keyspace, new String[0]);
+            forceKeyspaceCompaction(keyspace);
+        	//forceKeyspaceCompaction(keyspace, new String[0]);
         }
         	
     }
@@ -353,17 +349,33 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
     }
     public void repair(boolean isSequential, boolean localDataCenterOnly, boolean primaryRange) throws IOException, ExecutionException, InterruptedException
     {
+        /**** Replace with this in 3.10 cassandra-all.
+        Map<String, String> repairOptions = new HashMap<>();
+        String isParallel = !isSequential?"true":"false";
+        repairOptions.put(RepairOption.PARALLELISM_KEY, isParallel);
+        repairOptions.put(RepairOption.PRIMARY_RANGE_KEY, primaryRange+"");
+        if (localDataCenterOnly)
+            repairOptions.put(RepairOption.DATACENTERS_KEY, getDataCenter()); */
+
+        PrintStream printStream = new PrintStream("repair.log");
+        Set<String> datacenters = null;
+        if (localDataCenterOnly)
+            datacenters.add(getDataCenter());
+
         for (String keyspace : getKeyspaces())
-            if (primaryRange)
+            forceRepairAsync(printStream, keyspace, isSequential, datacenters, null, primaryRange, true);
+            /*if (primaryRange)
             	forceKeyspaceRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
             else
-            	forceKeyspaceRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);
+            	forceKeyspaceRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);*/
+
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException
     {
         for (String keyspace : getKeyspaces())
-        	forceKeyspaceCleanup(keyspace, new String[0]);
+            forceKeyspaceCleanup(0, keyspace);
+        	//forceKeyspaceCleanup(keyspace, new String[0]);
     }
 
     public void flush() throws IOException, ExecutionException, InterruptedException

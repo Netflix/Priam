@@ -60,4 +60,9 @@ subprojects {
       testCompile 'junit:junit:4.12'
       //testCompile 'mockit:mockit:0.999'
     }
+    
+    compileJava {
+        sourceCompatibility = 1.8
+        targetCompatibility = 1.8
+    }
 }

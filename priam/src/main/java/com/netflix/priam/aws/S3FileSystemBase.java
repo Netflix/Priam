@@ -27,7 +27,7 @@ import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
 import com.netflix.priam.merics.BackupUploadRateMeasurement;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,7 +212,7 @@ public class S3FileSystemBase {
     Reinitializtion which should be performed before uploading a file
      */
     protected void reinitialize() {
-        bytesUploaded = new AtomicLong(0); //initi
+        bytesUploaded = new AtomicLong(0); //initialize
         this.awsSlowDownExceptionCounter = 0;
     }
 

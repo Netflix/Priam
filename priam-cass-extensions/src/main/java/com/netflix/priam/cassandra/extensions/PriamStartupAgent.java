@@ -15,18 +15,13 @@
  */
 package com.netflix.priam.cassandra.extensions;
 
-import java.lang.instrument.Instrumentation;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-
-
 import org.apache.cassandra.utils.FBUtilities;
-import org.apache.commons.lang.StringUtils;
-import org.json.simple.JSONArray;
+import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
+
+import java.lang.instrument.Instrumentation;
+import java.util.Iterator;
 
 
 /**

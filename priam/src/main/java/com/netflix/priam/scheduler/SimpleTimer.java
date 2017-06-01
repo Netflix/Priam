@@ -18,9 +18,8 @@ package com.netflix.priam.scheduler;
 import java.text.ParseException;
 import java.util.Date;
 
-import org.quartz.Scheduler;
-import org.quartz.SimpleTrigger;
-import org.quartz.Trigger;
+import com.amazonaws.services.pinpoint.model.Schedule;
+import org.quartz.*;
 
 /**
  * SimpleTimer allows jobs to run starting from specified time occurring at
@@ -28,11 +27,16 @@ import org.quartz.Trigger;
  */
 public class SimpleTimer implements TaskTimer
 {
-    private SimpleTrigger trigger;
+    private Trigger trigger;
 
     public SimpleTimer(String name, long interval)
     {
-        this.trigger = new SimpleTrigger(name, SimpleTrigger.REPEAT_INDEFINITELY, interval);
+        this.trigger = TriggerBuilder.newTrigger()
+                .withIdentity(name)
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(interval)
+                        .repeatForever().withMisfireHandlingInstructionFireNow())
+                .build();
+        //.new SimpleTrigger(name, SimpleTrigger.REPEAT_INDEFINITELY, interval);
     }
 
     /**
@@ -40,7 +44,12 @@ public class SimpleTimer implements TaskTimer
      */
     public SimpleTimer(String name, String group, long startTime)
     {
-        this.trigger = new SimpleTrigger(name, group, new Date(startTime));
+        this.trigger = TriggerBuilder.newTrigger()
+                .withIdentity(name, group)
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
+                .startAt(new Date(startTime))
+                .build();
+        //new SimpleTrigger(name, group, new Date(startTime));
     }
 
     /**
@@ -48,12 +57,16 @@ public class SimpleTimer implements TaskTimer
      */
     public SimpleTimer(String name)
     {
-        this.trigger = new SimpleTrigger(name, Scheduler.DEFAULT_GROUP);
+        this.trigger = TriggerBuilder.newTrigger()
+                .withIdentity(name, Scheduler.DEFAULT_GROUP)
+                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
+                .startNow()
+                .build();
+        //new SimpleTrigger(name, Scheduler.DEFAULT_GROUP);
     }
 
     public Trigger getTrigger() throws ParseException
     {
-        trigger.setMisfireInstruction(SimpleTrigger.MISFIRE_INSTRUCTION_FIRE_NOW);
         return trigger;
     }
 

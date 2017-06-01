@@ -2,6 +2,9 @@ package com.netflix.priam.resources;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
@@ -13,22 +16,16 @@ import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
-
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.NonStrictExpectations;
 import mockit.integration.junit4.JMockit;
-import mockit.internal.expectations.TestOnlyPhase;
-
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.annotation.Nonnull;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import java.util.Date;
 import java.util.List;
 
@@ -38,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 public class BackupServletTest
 {
     private @Mocked PriamServer priamServer;
-    private @Mocked IConfiguration config;
+    private IConfiguration config;
     private @Mocked IBackupFileSystem bkpFs;
     private @Mocked IBackupFileSystem bkpStatusFs;
     private @Mocked Restore restoreObj;
@@ -52,10 +49,13 @@ public class BackupServletTest
     private BackupServlet resource;
     private RestoreServlet restoreResource;
     private BackupVerification backupVerification;
+    private static Injector injector;
 
     @Before
     public void setUp()
     {
+        injector = Guice.createInjector(new BRTestModule());
+        config = injector.getInstance(IConfiguration.class);
         this.tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
             tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr,backupVerification);
@@ -89,7 +89,7 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
+        new Expectations() {
             {
               priamServer.getId(); result = identity; times = 2;
             }
@@ -132,7 +132,7 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
+        new Expectations() {
             {
               priamServer.getId(); result = identity; times = 2;
             }
@@ -144,17 +144,17 @@ public class BackupServletTest
                 backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
                 backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
-                config.getDC(); result = oldRegion;
+//                config.getDC(); result = oldRegion;
                 identity.getInstance(); result = instance; times = 2;
                 instance.getToken(); result = oldToken;
 
-                config.isRestoreClosestToken(); result = false;
+ //               config.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore(
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
 
-                config.setDC(oldRegion);
+ //               config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
@@ -235,7 +235,7 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-        new NonStrictExpectations() {
+        new Expectations() {
             {
               priamServer.getId(); result = identity; times = 3;
             }
@@ -248,7 +248,7 @@ public class BackupServletTest
                 instance.getToken(); result = oldToken;
                 instance.setToken(newToken);
 
-                config.isRestoreClosestToken(); result = false;
+                //config.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 
@@ -278,7 +278,7 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-       new NonStrictExpectations() {
+       new Expectations() {
             {
               config.getDC(); result = oldRegion;
               config.isRestoreClosestToken(); result = false;
@@ -329,15 +329,15 @@ public class BackupServletTest
         final String oldToken = "1234";
         final String appName = "myApp";
 
-        new NonStrictExpectations() {
-          {
-            config.getDC(); result = oldRegion; times = 2;
-            priamServer.getId(); result = identity; times = 5;
-            config.isRestoreClosestToken(); result = true;
-            config.getAppName(); result = appName;
-            config.setDC(oldRegion);
-          }
-        };
+        instance.setDC(oldRegion);
+        instance1.setDC(oldRegion);
+        instance2.setDC(oldRegion);
+        instance3.setDC(oldRegion);
+        instance.setToken(oldToken);
+        instance1.setToken("1234");
+        instance2.setToken("5678");
+        instance3.setToken("9000");
+
         new Expectations() {
 
             {
@@ -345,27 +345,27 @@ public class BackupServletTest
                 backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
                 backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
 
-                identity.getInstance(); result = instance; times = 5;
-                instance.getToken(); result = oldToken;
-                instance.setToken(newToken);
-
-                instance.getToken(); result = oldToken;
-                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
-                instance.getDC();  result = oldRegion;
-                instance.getToken(); result = oldToken;
-                instance1.getDC(); result = oldRegion;
-                instance2.getDC(); result = oldRegion;
-                instance3.getDC(); result = oldRegion;
-                instance1.getToken(); result = "1234";
-                instance2.getToken(); result = "5678";
-                instance3.getToken(); result = "9000";
-                instance.setToken((String) any); // TODO: test mocked closest token
+//                identity.getInstance(); result = instance; times = 5;
+//                instance.getToken(); result = oldToken;
+//                instance.setToken(newToken);
+//
+//                instance.getToken(); result = oldToken;
+//                factory.getAllIds(appName); result = ImmutableList.of(instance, instance1, instance2, instance3);
+//                instance.getDC();  result = oldRegion;
+//                instance.getToken(); result = oldToken;
+//                instance1.getDC(); result = oldRegion;
+//                instance2.getDC(); result = oldRegion;
+//                instance3.getDC(); result = oldRegion;
+//                instance1.getToken(); result = "1234";
+//                instance2.getToken(); result = "5678";
+//                instance3.getToken(); result = "9000";
+//                instance.setToken((String) any); // TODO: test mocked closest token
 
                 restoreObj.restore(
                     new DateTime(2011, 01, 01, 00, 00).toDate(),
                     new DateTime(2011, 12, 31, 23, 59).toDate());
 
-                instance.setToken(oldToken);
+               // instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
@@ -380,7 +380,7 @@ public class BackupServletTest
 
     // TODO: create CassandraController interface and inject, instead of static util method
     private Expectations expectCassandraStartup() {
-        return new NonStrictExpectations() {{
+        return new Expectations() {{
             config.getCassStartupScript(); result = "/usr/bin/false";
             config.getHeapNewSize(); result = "2G";
             config.getHeapSize(); result = "8G";

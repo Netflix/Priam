@@ -15,19 +15,6 @@
  */
 package com.netflix.priam.resources;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.net.InetAddress;
-import java.text.DecimalFormat;
-import java.util.*;
-import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
-
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
@@ -35,34 +22,33 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.compress.SnappyCompression;
-import com.netflix.priam.utils.*;
-
+import com.netflix.priam.utils.JMXConnectionException;
+import com.netflix.priam.utils.JMXConnectorMgr;
+import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.cassandra.net.MessagingServiceMBean;
 import org.apache.cassandra.utils.EstimatedHistogram;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.JMXNodeTool;
-
-import org.apache.cassandra.net.MessagingServiceMBean;
-import org.apache.cassandra.utils.EstimatedHistogram;
-import org.apache.commons.lang.StringUtils;
-import org.codehaus.jettison.json.JSONArray;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Do general operations. Start/Stop and some JMX node tool commands

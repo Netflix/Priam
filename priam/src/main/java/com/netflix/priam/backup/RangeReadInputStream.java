@@ -76,13 +76,11 @@ public class RangeReadInputStream extends InputStream
                     {
                         is = s3Client.getObject(req).getObjectContent();
 
-                        byte[] readBuf = new byte[4092];
                         int rCnt;
                         int readTotal = 0;
                         int incomingOffet = off;
-                        while ((rCnt = is.read(readBuf, 0, readBuf.length)) >= 0)
+                        while ((rCnt = is.read(b, incomingOffet, 4096)) >= 0)
                         {
-                            System.arraycopy(readBuf, 0, b, incomingOffet, rCnt);
                             readTotal += rCnt;
                             incomingOffet += rCnt;
 //                            logger.info("    local read cnt = " + rCnt + "Current Thread Name = "+Thread.currentThread().getName());

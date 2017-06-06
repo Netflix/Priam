@@ -7,7 +7,7 @@ import java.io.IOException;
 import java.util.List;
 
 import com.amazonaws.services.s3.model.*;
-import junit.framework.Assert;
+import org.junit.Assert;
 import mockit.Mock;
 import mockit.MockUp;
 

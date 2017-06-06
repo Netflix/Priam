@@ -7,12 +7,11 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
 
-import junit.framework.Assert;
-
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Assert;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

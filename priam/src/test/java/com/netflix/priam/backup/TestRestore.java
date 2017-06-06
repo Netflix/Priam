@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;

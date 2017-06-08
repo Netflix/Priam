@@ -7,16 +7,12 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.Set;
 
-import junit.framework.Assert;
 import mockit.Mock;
 import mockit.MockUp;
 
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

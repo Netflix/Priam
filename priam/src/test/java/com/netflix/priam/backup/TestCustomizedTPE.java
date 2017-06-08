@@ -1,7 +1,6 @@
 package com.netflix.priam.backup;
 
-import static junit.framework.Assert.*;
-
+import org.junit.Assert;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -38,7 +37,7 @@ public class TestCustomizedTPE
             });
         }
         startTest.sleepTillEmpty();
-        assertEquals(100, count.get());
+        Assert.assertEquals(100, count.get());
     }
 
     @Test
@@ -65,7 +64,7 @@ public class TestCustomizedTPE
         {
             success = true;
         }
-        assertTrue("Failure to timeout...", success);
+        Assert.assertTrue("Failure to timeout...", success);
     }
 
 }

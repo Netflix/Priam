@@ -8,7 +8,7 @@ import org.junit.Test;
 
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
-import junit.framework.Assert;
+import org.junit.Assert;
 
 public class CassandraProcessManagerTest
 {

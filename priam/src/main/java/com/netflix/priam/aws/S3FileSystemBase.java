@@ -50,7 +50,7 @@ public class S3FileSystemBase {
 	protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
     protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
-	protected AmazonS3Client s3Client;
+	protected AmazonS3 s3Client;
     protected IMetricPublisher metricPublisher;
     protected IMeasurement awsSlowDownMeasurement;
     protected int awsSlowDownExceptionCounter = 0;

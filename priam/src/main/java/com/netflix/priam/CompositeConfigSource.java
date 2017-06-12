@@ -34,8 +34,8 @@ import java.util.Collection;
 public class CompositeConfigSource extends AbstractConfigSource 
 {
 
-    private final ImmutableCollection<?  IConfigSource> sources;
-extends
+    private final ImmutableCollection<? extends IConfigSource> sources;
+
     public CompositeConfigSource(final ImmutableCollection<? extends IConfigSource> sources) 
     {
         Preconditions.checkArgument(!sources.isEmpty(), "Can not create a composite config source without config sources!");

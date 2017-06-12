@@ -40,7 +40,6 @@ public class IncrementalConsumer implements Runnable {
      * error.
      * 
      * @param bp - the file to upload with additional metada
-     * @param incremental file - handle to the actual file to upload
      */
 	public IncrementalConsumer(AbstractBackupPath bp, IBackupFileSystem fs
 			, BackupPostProcessingCallback<AbstractBackupPath> callback

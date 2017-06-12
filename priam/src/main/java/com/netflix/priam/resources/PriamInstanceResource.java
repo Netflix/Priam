@@ -76,11 +76,10 @@ public class PriamInstanceResource
     }
 
     /**
-     * Returns an individual priam instance by id
+     * Returns an individual priam instance by id or WebApplicationException (404) if not found
      * 
      * @param id the node id
      * @return the priam instance
-     * @throws WebApplicationException(404) if no priam instance found with {@code id}
      */
     @GET
     @Path("{id}")
@@ -114,7 +113,6 @@ public class PriamInstanceResource
      * 
      * @param id the node id
      * @return Response (204) if the instance was deleted
-     * @throws WebApplicationException (404) if no priam instance found with {@code id}
      */
     @DELETE
     @Path("{id}")
@@ -127,11 +125,10 @@ public class PriamInstanceResource
 
     /**
      * Returns the PriamInstance with the given {@code id}, or
-     * throws a WebApplicationException if none found.
+     * throws a WebApplicationException(400) if none found.
      * 
      * @param id the node id
      * @return PriamInstance with the given {@code id}
-     * @throws WebApplicationException (400)
      */
     private PriamInstance getByIdIfFound(int id)
     {

@@ -1,5 +1,5 @@
 plugins {
-  id 'jetty'
+    id 'org.akhikhl.gretty' version '1.4.2'
 }
 
 apply plugin: 'war'

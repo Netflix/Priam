@@ -774,7 +774,7 @@ public class FakeConfiguration implements IConfiguration
 
     @Override
     public String getFlushKeyspaces() {
-        return new String();
+        return "";
     }
 
     @Override

@@ -322,7 +322,7 @@ public class BackupServlet {
      *
      * Similar to Restore call and few additional params.
      *
-     *      daterange 		: Can not be Null or Default. Comma separated Start & End date eg. 201311250000,201311260000
+     *      daterange 		: Can not be Null or Default. Comma separated Start and End date eg. 201311250000,201311260000
      *      rowkey    		: rowkey to search (In Hex format)
      *      ks        		: keyspace of mentioned rowkey
      *      cf        		: column family of mentioned rowkey
@@ -379,7 +379,7 @@ public class BackupServlet {
             config.setRestorePrefix(origRestorePrefix);
 
             while (!CassandraMonitor.isCassadraStarted())
-                Thread.sleep(1000l);
+                Thread.sleep(1000L);
 
             // initialize json file name
             JSON_FILE_PATH = daterange.split(",")[0].substring(0, 8) + ".json";
@@ -410,7 +410,7 @@ public class BackupServlet {
      *            End time upto which the restore should fetch data
      * @param keyspaces
      *            Comma seperated list of keyspaces to restore
-     * @throws Exception
+     * @throws Exception if restore is not successful
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {
         String origRegion = config.getDC();
@@ -524,10 +524,10 @@ public class BackupServlet {
         try {
             logger.info("Starting SSTable2Json conversion ...");
             //Setting timeout to 10 Mins
-            long TIMEOUT_PERIOD = 10l;
+            long TIMEOUT_PERIOD = 10L;
             String unixCmd = formulateCommandToRun(rowkey, keyspace, cf, fileExtension, jsonFilePath);
 
-            String[] cmd = {"/bin/sh", "-c", unixCmd.toString()};
+            String[] cmd = {"/bin/sh", "-c", unixCmd};
             final Process p = Runtime
                     .getRuntime()
                     .exec(cmd);

@@ -182,7 +182,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     		if (this.incrementalKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
     			return true;
     		} else {
-    			StringBuffer strBuf = new StringBuffer();
+    			StringBuilder strBuf = new StringBuilder();
     			strBuf.append(keyspaceName);
     			strBuf.append('.');
     			strBuf.append(cfName);

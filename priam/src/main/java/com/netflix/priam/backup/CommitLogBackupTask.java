@@ -39,7 +39,7 @@ public class CommitLogBackupTask extends AbstractBackup
 {
     public static String JOBNAME = "CommitLogBackup";
     
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
+    private static final Logger logger = LoggerFactory.getLogger(CommitLogBackupTask.class);
     private final List<String> clRemotePaths = new ArrayList<String>();
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final CommitLogBackup clBackup;

@@ -176,7 +176,7 @@ public abstract class AbstractBackup extends Task
             return false;
         String keyspaceName = keyspaceDir.getName();
         if (FILTER_KEYSPACE.contains(keyspaceName)) {
-        	logger.debug(keyspaceName + " is not consider a valid keyspace backup directory, will be bypass.");
+            logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
             return false;        	
         }
 
@@ -184,7 +184,7 @@ public abstract class AbstractBackup extends Task
 
         String columnFamilyName = dirName.split("-")[0];
         if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName)) {
-            logger.debug(dirName + " is not consider a valid CF backup directory, will be bypass.");
+            logger.debug("{} is not consider a valid CF backup directory, will be bypass.", dirName);
             return false;        	
         }
 

@@ -202,7 +202,7 @@ public interface IConfiguration {
 
     /**
      * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use
-     * @link this.getBackupHour(). If value of "CRON" is provided it starts using @link getBackupCronExpression.
+     * @link #getBackupHour(). If value of "CRON" is provided it starts using @link #getBackupCronExpression().
      */
     public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
 

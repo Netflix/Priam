@@ -15,6 +15,7 @@
  */
 package com.netflix.priam.aws;
 
+import com.amazonaws.services.s3.AmazonS3;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +40,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 public class S3CrossAccountFileSystem  {
 	private static final Logger logger = LoggerFactory.getLogger(S3CrossAccountFileSystem.class);
 	
-	private AmazonS3Client s3Client;
+	private AmazonS3 s3Client;
 	private S3FileSystem s3fs;
 	private IConfiguration config;
 	private IS3Credential s3Credential;
@@ -58,7 +59,7 @@ public class S3CrossAccountFileSystem  {
 		return this.s3fs;
 	}
 	
-	public AmazonS3Client getCrossAcctS3Client() {
+	public AmazonS3 getCrossAcctS3Client() {
 		if (this.s3Client == null ) {
 			
 			synchronized(this) {
@@ -67,13 +68,13 @@ public class S3CrossAccountFileSystem  {
 				
 					try {
 
-						this.s3Client = new AmazonS3Client(s3Credential.getAwsCredentialProvider());
+						this.s3Client = AmazonS3Client.builder().withCredentials(s3Credential.getAwsCredentialProvider()).withRegion(config.getDC()).build();//new AmazonS3Client(s3Credential.getAwsCredentialProvider());
 
 					} catch (Exception e) {
 						throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);
 						
 					}
-					this.s3Client.setEndpoint(s3fs.getS3Endpoint(config));
+					//this.s3Client.setEndpoint(s3fs.getS3Endpoint(config));
 					
 					//Lets leverage the IBackupFileSystem behaviors except we want it to use our amazon S3 client which has cross AWS account api capability.
 					this.s3fs.setS3Client(s3Client);

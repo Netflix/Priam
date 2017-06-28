@@ -248,7 +248,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	}
 	
     /**
-     * Run every 10 Sec
+     * @return Timer that run every 10 Sec
      */
     public static TaskTimer getTimer()
     {

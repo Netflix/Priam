@@ -15,7 +15,9 @@
  */
 package com.netflix.priam;
 
+import com.amazonaws.services.simpledb.AmazonSimpleDB;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
+import com.amazonaws.services.simpledb.AmazonSimpleDBClientBuilder;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
@@ -34,7 +36,7 @@ import java.util.Map;
  * Loads config data from SimpleDB.  {@link #intialize(String, String)} will query the SimpleDB domain "PriamProperties"
  * for any potential configurations.  The domain is set up to support multiple different clusters; this is done by using
  * amazon's auto scaling groups (ASG).
- * <p/>
+ * <p></p>
  * Schema <ul>
  *   <li>"appId" // ASG up to first instance of '-'.  So ASG name priam-test will create appId priam, ASG priam_test
  *   will create appId priam_test.</li>
@@ -65,7 +67,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
         super.intialize(asgName, region);
 
         // End point is us-east-1
-        AmazonSimpleDBClient simpleDBClient = new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
+        AmazonSimpleDB simpleDBClient = AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).build();
 
         String nextToken = null;
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;

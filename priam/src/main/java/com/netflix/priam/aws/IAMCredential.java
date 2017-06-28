@@ -26,7 +26,7 @@ public class IAMCredential implements ICredential
 
     public IAMCredential()
     {
-        this.iamCredProvider = new InstanceProfileCredentialsProvider();
+        this.iamCredProvider = InstanceProfileCredentialsProvider.getInstance();
     }
 
     public String getAccessKeyId()

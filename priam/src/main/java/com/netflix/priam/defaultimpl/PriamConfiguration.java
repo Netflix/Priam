@@ -798,7 +798,7 @@ public class PriamConfiguration implements IConfiguration
     }
 
     /**
-     *   memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) ==> 0.11
+     *   memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) = 0.11
      */
     public double getMemtableCleanupThreshold(){return config.get(CONFIG_MEMTABLE_CLEANUP_THRESHOLD, 0.11);
     }

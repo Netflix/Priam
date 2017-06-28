@@ -87,8 +87,8 @@ public abstract class AbstractBackup extends Task
      *            Parent dir
      * @param type
      *            Type of file (META, SST, SNAP etc)
-     * @return
-     * @throws Exception
+     * @return List of files that are successfully uploaded as part of backup
+     * @throws Exception when there is failure in uploading files.
      */
     protected List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception
     {
@@ -133,6 +133,9 @@ public abstract class AbstractBackup extends Task
 
     /**
      * Upload specified file (RandomAccessFile) with retries
+     *
+     * @param bp
+     *          backup path to be uplaoded.
      */
     protected void upload(final AbstractBackupPath bp) throws Exception
     {

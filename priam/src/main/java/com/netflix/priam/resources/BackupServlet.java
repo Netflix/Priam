@@ -320,7 +320,7 @@ public class BackupServlet {
      *    subsequent runs. 
      * <p>
      *
-     * @param: Similar to Restore call and few additional params.
+     * Similar to Restore call and few additional params.
      *
      *      daterange 		: Can not be Null or Default. Comma separated Start & End date eg. 201311250000,201311260000
      *      rowkey    		: rowkey to search (In Hex format)

@@ -27,7 +27,7 @@ import com.netflix.priam.defaultimpl.ClearCredential;
 public interface ICredential
 {
     /**
-     * Retrieve AWS Credential Provider object 
+     * @return AWS Credential Provider object
      */
     AWSCredentialsProvider getAwsCredentialProvider();
 }

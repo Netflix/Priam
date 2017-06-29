@@ -1,12 +1,12 @@
 /**
  * Copyright 2013 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,9 +27,8 @@ import java.util.Map;
  * Interface for Priam's configuration
  */
 @ImplementedBy(PriamConfiguration.class)
-public interface IConfiguration
-{
-	
+public interface IConfiguration {
+
     public void intialize();
 
     /**
@@ -51,24 +50,24 @@ public interface IConfiguration
 
     /**
      * Eg: 'my_backup' will result in all files stored under this dir/prefix
-     * 
+     *
      * @return Prefix that will be added to remote backup location
      */
     public String getBackupLocation();
-    
-    /** 
+
+    /**
      * @return Get Backup retention in days
      */
     public int getBackupRetentionDays();
 
-    /** 
+    /**
      * @return Get list of racs to backup. Backup all racs if empty
      */
     public List<String> getBackupRacs();
 
     /**
      * Bucket name in case of AWS
-     * 
+     *
      * @return Bucket name used for backups
      */
     public String getBackupPrefix();
@@ -78,7 +77,7 @@ public interface IConfiguration
      * to the clusters backup
      */
     public String getRestorePrefix();
-    
+
     /**
      * @param prefix
      *            Set the current restore prefix
@@ -136,7 +135,7 @@ public interface IConfiguration
      * Cassandra storage/cluster communication port
      */
     public int getStoragePort();
-    
+
     public int getSSLStoragePort();
 
     /**
@@ -196,21 +195,22 @@ public interface IConfiguration
 
     /**
      * @return Backup cron expression for snapshots
-     * @link http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html
-     * @link http://www.cronmaker.com  To build new cron timer
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>}
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
     public String getBackupCronExpression();
 
     /**
-     * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use
-     * @link this.getBackupHour(). If value of "CRON" is provided it starts using @link getBackupCronExpression.
+     * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use @see #getBackupHour().
+     * If value of "CRON" is provided it starts using @see #getBackupCronExpression().
      */
     public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
+
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
     public String getSnapshotKeyspaceFilters();
-    
+
     /*
      * Column Family(ies), comma delimited, to filter from backup.
      * *Note:  the expected format is keyspace.cfname  
@@ -218,12 +218,12 @@ public interface IConfiguration
      * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
      */
     public String getSnapshotCFFilter();
-    
+
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
     public String getIncrementalKeyspaceFilters();
-    
+
     /*
      * Column Family(ies), comma delimited, to filter from backup.
      * *Note:  the expected format is keyspace.cfname  
@@ -231,24 +231,24 @@ public interface IConfiguration
      * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
      */
     public String getIncrementalCFFilter();
-    
+
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
     public String getRestoreKeyspaceFilter();
-    
+
     /*
      * Column Family(ies), comma delimited, to filter from backup.
      * Note:  the expected format is keyspace.cfname  
      * 
      * @return Column Family(ies), comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
-    public String getRestoreCFFilter();    
+    public String getRestoreCFFilter();
 
     /**
      * Specifies the start and end time used for restoring data (yyyyMMddHHmm
      * format) Eg: 201201132030,201201142030
-     * 
+     *
      * @return Snapshot to be searched and restored
      */
     public String getRestoreSnapshot();
@@ -327,14 +327,14 @@ public interface IConfiguration
 
     /**
      * @return Compaction throughput
-     */    
+     */
     public int getCompactionThroughput();
 
     /**
      * @return compaction_throughput_mb_per_sec
      */
     public int getMaxHintWindowInMS();
-    
+
     /**
      * @return hinted_handoff_throttle_in_kb
      */
@@ -354,8 +354,8 @@ public interface IConfiguration
      * @return Bootstrap cluster name (depends on another cass cluster)
      */
     public String getBootClusterName();
-    
-    /** 
+
+    /**
      * @return Get the name of seed provider
      */
     public String getSeedProviderName();
@@ -369,12 +369,12 @@ public interface IConfiguration
      * @return memtable_cleanup_threshold in C* yaml
      */
     double getMemtableCleanupThreshold();
-    
+
     /**
      * @return stream_throughput_outbound_megabits_per_sec in yaml
      */
     public int getStreamingThroughputMB();
-    
+
     /**
      * @return multithreaded_compaction in yaml
      */
@@ -413,7 +413,7 @@ public interface IConfiguration
     public String getCassProcessName();
 
     /**
-    * Defaults to 'allow all'.
+     * Defaults to 'allow all'.
      */
     public String getAuthenticator();
 
@@ -429,7 +429,7 @@ public interface IConfiguration
      * @return New Keyspace Name on Target Cluster
      */
     public String getTargetKSName();
-    
+
     /**
      * This can be used during cluster migration.
      * When on Target Cluster, Column Family name is different
@@ -437,7 +437,7 @@ public interface IConfiguration
      * @return New Column Family Name on Target Cluster
      */
     public String getTargetCFName();
-    
+
     /**
      * @return true/false, if Cassandra needs to be started manually
      */
@@ -447,7 +447,7 @@ public interface IConfiguration
      * @return possible values: all, dc, none
      */
     public String getInternodeCompression();
-   
+
     public boolean isBackingUpCommitLogs();
 
     public String getCommitLogBackupPropsFile();
@@ -459,7 +459,7 @@ public interface IConfiguration
     public String getCommitLogBackupRestoreFromDirs();
 
     public String getCommitLogBackupRestorePointInTime();
-    
+
     public int maxCommitLogsRestore();
 
     /**
@@ -478,31 +478,39 @@ public interface IConfiguration
     public boolean isThriftEnabled();
 
     public boolean isNativeTransportEnabled();
+
     public String getS3EndPoint();
 
     public int getConcurrentReadsCnt();
+
     public int getConcurrentWritesCnt();
+
     public int getConcurrentCompactorsCnt();
-    
+
     public String getRpcServerType();
+
     public int getRpcMinThreads();
+
     public int getRpcMaxThreads();
+
     public int getIndexInterval();
-    
+
     public String getExtraConfigParams();
-    
+
     public String getCassYamlVal(String priamKey);
 
     public boolean getAutoBoostrap();
-    
+
     //if using with Datastax Enterprise
     public String getDseClusterType();
+
     public boolean isCreateNewTokenEnable();
-    
+
     /*
      * @return the location on disk of the private key used by the cryptography algorithm
      */
     public String getPrivateKeyLocation();
+
     /*
      * @return the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
@@ -516,37 +524,42 @@ public interface IConfiguration
      * 
      */
     public String getRestoreSourceType();
+
     /*
      * @return true to enable encryption of backup (snapshots, incrementals, commit logs).
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     public boolean isEncryptBackupEnabled();
+
     /*
      * @return the Amazon Resource Name (ARN).  This is applicable when restoring from an AWS account which requires cross account assumption. 
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     public String getAWSRoleAssumptionArn();
+
     /*
      * @return Google Cloud Storage service account id to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     public String getGcsServiceAccountId();
+
     /*
      * @return the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).  
      * This information is to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     public String getGcsServiceAccountPrivateKeyLoc();
-    
+
     /*
      * @return the pass phrase use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     public String getPgpPasswordPhrase();
+
     /*
      * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
-     */    
+     */
     public String getPgpPublicKeyLoc();
 
     /**
@@ -554,32 +567,34 @@ public interface IConfiguration
      * @return
      */
     Map<String, String> getExtraEnvParams();
-    
+
     /*
      * @return the vpc id of the running instance.
      */
     public String getVpcId();
-    
+
     /*
      * @return the Amazon Resource Name (ARN) for EC2 classic. 
      */
-	public String getClassicEC2RoleAssumptionArn();
-		
+    public String getClassicEC2RoleAssumptionArn();
+
     /*
      * @return the Amazon Resource Name (ARN) for VPC. 
      */
-	public String getVpcEC2RoleAssumptionArn();
-	
-	/*
-	 * @return if the dual account support
-	 */
-	public boolean isDualAccount();
+    public String getVpcEC2RoleAssumptionArn();
+
+    /*
+     * @return if the dual account support
+     */
+    public boolean isDualAccount();
 
     public Boolean isIncrBackupParallelEnabled();
+
     /*
      * The number of workers for parallel uploads.
      */
     public int getIncrementalBkupMaxConsumers();
+
     /*
      * The max number of files queued to be uploaded.
      */
@@ -589,10 +604,12 @@ public interface IConfiguration
      * @return tombstone_warn_threshold in C* yaml
      */
     int getTombstoneWarnThreshold();
+
     /**
      * @return tombstone_failure_threshold in C* yaml
      */
     int getTombstoneFailureThreshold();
+
     /**
      * @return streaming_socket_timeout_in_ms in C* yaml
      */
@@ -602,6 +619,7 @@ public interface IConfiguration
      * @return a comma delimited list of keyspaces to flush
      */
     public String getFlushKeyspaces();
+
     /*
      * @return the interval to run the flush task.  Format is name=value where
      * “name” is an enum of hour, daily, value is ...

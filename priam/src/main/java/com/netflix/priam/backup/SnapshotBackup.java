@@ -53,7 +53,7 @@ public class SnapshotBackup extends AbstractBackup {
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
-    private final long WAIT_TIME_MS = 60 * 1000 * 10;
+    private static final long WAIT_TIME_MS = 60 * 1000 * 10;
     private final CommitLogBackup clBackup;
     private final Map<String, List<String>> snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
     private final Map<String, Object> snapshotKeyspaceFilter = new HashMap<String, Object>(); //key: keyspace, value: null

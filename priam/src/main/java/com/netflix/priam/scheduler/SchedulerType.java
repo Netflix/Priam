@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 public enum SchedulerType {
     HOUR("HOUR"),CRON("CRON");
 
-    private static final Logger logger = LoggerFactory.getLogger(CronTimer.class);
+    private static final Logger logger = LoggerFactory.getLogger(SchedulerType.class);
     private final String schedulerType;
 
     SchedulerType(String schedulerType)

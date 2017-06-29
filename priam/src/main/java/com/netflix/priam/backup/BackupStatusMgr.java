@@ -243,7 +243,7 @@ public class BackupStatusMgr implements IBackupStatusMgr{
     @param backup format of yyyymmddhhss
      */
 	private String marshall(BackupMetadata b, String backup) {
-		StringBuffer buffer = new StringBuffer();
+		StringBuilder buffer = new StringBuilder();
 		buffer.append(b.getKey());
 		buffer.append('=');
 		buffer.append(backup);

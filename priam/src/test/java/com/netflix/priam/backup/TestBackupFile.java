@@ -35,7 +35,7 @@ public class TestBackupFile
             if (!dir1.exists())
                 dir1.mkdirs();
             byte b = 8;
-            long oneKB = (1L * 1024);
+            long oneKB = (1024L);
             System.out.println(oneKB);
             BufferedOutputStream bos1 = new BufferedOutputStream(new FileOutputStream(file));
             for (long i = 0; i < oneKB; i++)

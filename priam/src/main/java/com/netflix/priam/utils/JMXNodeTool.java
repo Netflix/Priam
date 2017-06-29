@@ -77,8 +77,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
 
     /**
      * try to create if it is null.
-     * @throws JMXConnectionException 
-     * @throws IOException 
+     * @throws JMXConnectionException
      */
     public static JMXNodeTool instance(IConfiguration config) throws JMXConnectionException
     {
@@ -330,7 +329,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable
         object.put("state", state);
         object.put("load", load);
         object.put("owns", owns);
-        object.put("token", token.toString());
+        object.put("token", token);
         return object;
     }
 

@@ -87,8 +87,8 @@ public abstract class AbstractBackup extends Task
      *            Parent dir
      * @param type
      *            Type of file (META, SST, SNAP etc)
-     * @return
-     * @throws Exception
+     * @return List of files that are successfully uploaded as part of backup
+     * @throws Exception when there is failure in uploading files.
      */
     protected List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception
     {
@@ -133,6 +133,9 @@ public abstract class AbstractBackup extends Task
 
     /**
      * Upload specified file (RandomAccessFile) with retries
+     *
+     * @param bp
+     *          backup path to be uplaoded.
      */
     protected void upload(final AbstractBackupPath bp) throws Exception
     {
@@ -173,7 +176,7 @@ public abstract class AbstractBackup extends Task
             return false;
         String keyspaceName = keyspaceDir.getName();
         if (FILTER_KEYSPACE.contains(keyspaceName)) {
-        	logger.debug(keyspaceName + " is not consider a valid keyspace backup directory, will be bypass.");
+            logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
             return false;        	
         }
 
@@ -181,7 +184,7 @@ public abstract class AbstractBackup extends Task
 
         String columnFamilyName = dirName.split("-")[0];
         if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName)) {
-            logger.debug(dirName + " is not consider a valid CF backup directory, will be bypass.");
+            logger.debug("{} is not consider a valid CF backup directory, will be bypass.", dirName);
             return false;        	
         }
 

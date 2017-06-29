@@ -30,7 +30,7 @@ public class TestCompression
     {
         File f = new File("/tmp/compress-test.txt");
         FileOutputStream stream = new FileOutputStream(f);
-        for (int i = 0; i < 1 * 1000 * 1000; i++)
+        for (int i = 0; i < (1000 * 1000); i++)
         {
             stream.write("This is a test... Random things happen... and you are responsible for it...\n".getBytes("UTF-8"));
             stream.write("The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.\n".getBytes("UTF-8"));

@@ -22,7 +22,7 @@ import com.netflix.priam.backup.IncrementalBackup;
 
 public class IncrementalBackuper
 {
-    private static final Logger logger = LoggerFactory.getLogger(Backuper.class);
+    private static final Logger logger = LoggerFactory.getLogger(IncrementalBackuper.class);
 
     public static void main(String[] args)
     {

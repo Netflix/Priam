@@ -94,7 +94,7 @@ public class BackupMetadata {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("BackupMetadata{");
+        final StringBuilder sb = new StringBuilder("BackupMetadata{");
         sb.append("backups=").append(backups);
         sb.append(", key='").append(key).append('\'');
         sb.append(", token='").append(token).append('\'');

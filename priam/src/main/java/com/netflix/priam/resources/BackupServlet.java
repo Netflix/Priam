@@ -284,7 +284,6 @@ public class BackupServlet {
             endTime = DateUtil.getDate(dates[1]);
         }
 
-        //Date parsedInputDateTime = getDate(date);
         JSONObject jsonReply = new JSONObject();
         jsonReply.put("inputStartDate", DateUtil.formatyyyyMMddHHmm(startTime));
         jsonReply.put("inputEndDate", DateUtil.formatyyyyMMddHHmm(endTime));

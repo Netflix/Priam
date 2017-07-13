@@ -17,15 +17,22 @@ package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
 
+
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by aagrawal on 1/30/17.
  */
-@ImplementedBy(BackupStatusMgr.class)
+@ImplementedBy(FileSnapshotStatusMgr.class)
 public interface IBackupStatusMgr {
-
-    public void add(IMessageObserver.BACKUP_MESSAGE_TYPE message_type, String backup, Date startTime, Date completedTime);
-    public BackupMetadata locate(IMessageObserver.BACKUP_MESSAGE_TYPE message_type, String date);
+    List<BackupMetadata> locate(Date snapshotDate);
+    List<BackupMetadata> locate(String snapshotDate);
+    void start(BackupMetadata backupMetadata);
+    void finish(BackupMetadata backupMetadata);
+    void failed(BackupMetadata backupMetadata);
+    int getCapacity();
+    Map<String, LinkedList<BackupMetadata>> getAllSnapshotStatus();
 }

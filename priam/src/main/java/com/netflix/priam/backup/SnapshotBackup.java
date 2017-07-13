@@ -23,13 +23,11 @@ import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.CassandraMonitor;
-import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.RetryableCallable;
-import com.netflix.priam.utils.ThreadSleeper;
+import com.netflix.priam.utils.*;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.quartz.CronExpression;
@@ -57,20 +55,21 @@ public class SnapshotBackup extends AbstractBackup {
     private final CommitLogBackup clBackup;
     private final Map<String, List<String>> snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
     private final Map<String, Object> snapshotKeyspaceFilter = new HashMap<String, Object>(); //key: keyspace, value: null
-
-    private IBackupStatusMgr completedBackups;
+    private PriamInstance priamInstance;
+    private IBackupStatusMgr snapshotStatusMgr;
 
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
-            , IBackupStatusMgr completedBackups
-            , BackupNotificationMgr backupNotificationMgr
+            , IBackupStatusMgr snapshotStatusMgr
+            , BackupNotificationMgr backupNotificationMgr, PriamInstance priamInstance
     ) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData;
         this.clBackup = clBackup;
-        this.completedBackups = completedBackups;
+        this.snapshotStatusMgr = snapshotStatusMgr;
+        this.priamInstance = priamInstance;
         init();
     }
 
@@ -141,14 +140,20 @@ public class SnapshotBackup extends AbstractBackup {
             sleeper.sleep(WAIT_TIME_MS);
         }
 
-        Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-        Date startTime = cal.getTime();
-        String snapshotName = pathFactory.get().formatDate(cal.getTime());
+        Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
+        String snapshotName = pathFactory.get().formatDate(startTime);
+        String token = priamInstance.getToken();
+
+        // Save start snapshot status
+        BackupMetadata backupMetadata = new BackupMetadata(token, startTime);
+        snapshotStatusMgr.start(backupMetadata);
+
         try {
             logger.info("Starting snapshot " + snapshotName);
             //Clearing remotePath List
             snapshotRemotePaths.clear();
             takeSnapshot(snapshotName);
+
             // Collect all snapshot dir's under keyspace dir's
             List<AbstractBackupPath> bps = Lists.newArrayList();
             File dataDir = new File(config.getDataFileLocation());
@@ -160,7 +165,6 @@ public class SnapshotBackup extends AbstractBackup {
                     logger.info(keyspaceDir.getName() + " is part of keyspace filter, will not be backed up.");
                     continue;
                 }
-
 
                 logger.debug("Entering {} keyspace..", keyspaceDir.getName());
                 for (File columnFamilyDir : keyspaceDir.listFiles()) {
@@ -194,15 +198,22 @@ public class SnapshotBackup extends AbstractBackup {
 
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(bps, snapshotName);
+
             logger.info("Snapshot upload complete for " + snapshotName);
-            Calendar completed = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
-            postProcesing(snapshotName, startTime, completed.getTime(), metaJson);
+            postProcesing(metaJson);
+            backupMetadata.setSnapshotLocation(metaJson.getBaseDir() + File.separator + metaJson.getRemotePath());
+            snapshotStatusMgr.finish(backupMetadata);
 
             if (snapshotRemotePaths.size() > 0) {
                 notifyObservers();
             }
 
-        } finally {
+        } catch (Exception e)
+        {
+            logger.error("Exception occured while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
+            snapshotStatusMgr.failed(backupMetadata);
+            throw e;
+        } finally{
             try {
                 clearSnapshot(snapshotName);
             } catch (Exception e) {
@@ -217,8 +228,7 @@ public class SnapshotBackup extends AbstractBackup {
      * @param name of the snapshotname, format is yyyymmddhhs
      * @param start time of backup
      */
-    private void postProcesing(String snapshotname, Date start, Date completed, AbstractBackupPath adp) throws JSONException {
-        this.completedBackups.add(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, snapshotname, start, completed);
+    private void postProcesing(AbstractBackupPath adp) throws JSONException {
         backupNotificationMgr.notify(adp, BackupNotificationMgr.SUCCESS_VAL);
     }
 

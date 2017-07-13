@@ -288,7 +288,7 @@ public class BackupServlet {
         JSONObject jsonReply = new JSONObject();
         jsonReply.put("inputStartDate", DateUtil.formatyyyyMMddHHmm(startTime));
         jsonReply.put("inputEndDate", DateUtil.formatyyyyMMddHHmm(endTime));
-        logger.info("Will try to validate latest backup during startTime: " + DateUtil.formatyyyyMMdd(startTime) + ", and endTime: " + DateUtil.formatyyyyMMdd(endTime));
+        logger.info("Will try to validate latest backup during startTime: " + DateUtil.formatyyyyMMddHHmm(startTime) + ", and endTime: " + DateUtil.formatyyyyMMddHHmm(endTime));
 
         List<BackupMetadata> metadata = getLatestBackupMetadata(startTime, endTime);
         BackupVerificationResult result = backupVerification.verifyBackup(metadata, startTime);

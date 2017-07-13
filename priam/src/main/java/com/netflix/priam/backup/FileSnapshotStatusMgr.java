@@ -72,7 +72,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
     }
 
     @Override
-    void save(BackupMetadata backupMetadata) {
+    public void save(BackupMetadata backupMetadata) {
         //Will save entire list to file.
         try(final ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename));) {
             out.writeObject(backupMetadataMap);
@@ -84,7 +84,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
     }
 
     @Override
-    LinkedList<BackupMetadata> fetch(String snapshotDate) {
+    public LinkedList<BackupMetadata> fetch(String snapshotDate) {
         //No need to fetch from local machine as it was read once at start. No point reading again and again.
         return backupMetadataMap.get(snapshotDate);
     }

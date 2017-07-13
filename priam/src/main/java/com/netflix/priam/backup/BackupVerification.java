@@ -30,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by aagrawal on 2/16/17.
@@ -61,9 +62,9 @@ public class BackupVerification {
         // All the dates should be same.
         result.selectedDate = metadata.get(0).getSnapshotDate();
 
-        logger.info("Snapshots found for {} : [{}]", result.selectedDate, metadata.stream().map(backupMetadata ->
-        DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())
-        ));
+        List<String> backups = metadata.stream().map(backupMetadata ->
+                DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList());
+        logger.info("Snapshots found for {} : [{}]", result.selectedDate, backups);
 
         //find the latest date (default) or verify if one provided
         Date latestDate = null;
@@ -71,20 +72,22 @@ public class BackupVerification {
             if (latestDate == null || latestDate.before(backupMetadata.getStart()))
                 latestDate = backupMetadata.getStart();
 
-            if (startTime != null && backupMetadata.getStart().equals(startTime)) {
+            if (startTime != null &&
+                    DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart()).equals(DateUtil.formatyyyyMMddHHmm(startTime))) {
                 latestDate = startTime;
                 break;
             }
         }
 
         result.snapshotTime = DateUtil.formatyyyyMMddHHmm(latestDate);
-        logger.info("Latest/Requested snapshot date found: " + DateUtil.formatyyyyMMddHHmm(latestDate) + ", for selected/provided date: " + result.selectedDate);
+        logger.info("Latest/Requested snapshot date found: " + result.snapshotTime + ", for selected/provided date: " + result.selectedDate);
 
         //Get Backup File Iterator
         String prefix = config.getBackupPrefix();
         logger.info("Looking for meta file in the location:  " + prefix);
 
-        Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, latestDate, latestDate);
+        Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
+        Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
         //Return validation fail if backup filesystem listing failed.
         if (!backupfiles.hasNext())
         {

@@ -150,9 +150,9 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr{
 		save(backupMetadata);
 	}
 
-	abstract void save(BackupMetadata backupMetadata);
+	public abstract void save(BackupMetadata backupMetadata);
 
-	abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
+	public abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
 
 	@Override
 	public String toString() {

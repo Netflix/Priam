@@ -16,6 +16,7 @@
 package com.netflix.priam.backup;
 
 import com.netflix.priam.utils.DateUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -27,16 +28,19 @@ import java.util.Date;
 /*
  * Encapsulates metadata for a snapshot.
  */
-public class BackupMetadata implements Serializable {
+final public class BackupMetadata implements Serializable {
     private String snapshotDate;
     private String token;
     private Date start, completed;
     private Status status;
     private String snapshotLocation;
 
-    enum Status {STARTED, FINISHED, FAILED}
+    public enum Status {STARTED, FINISHED, FAILED}
 
-    public BackupMetadata(String token, Date start) {
+    public BackupMetadata(String token, Date start) throws Exception {
+        if (start == null || token == null || StringUtils.isEmpty(token))
+            throw new Exception(String.format("Invalid Input: Token: {} or start date:{} is null or empty.", token, start));
+
         this.snapshotDate = DateUtil.formatyyyyMMdd(start);
         this.token = token;
         this.start = start;
@@ -97,13 +101,6 @@ public class BackupMetadata implements Serializable {
 
     public void setSnapshotLocation(String snapshotLocation) {
         this.snapshotLocation = snapshotLocation;
-    }
-
-    public static BackupMetadata clone(BackupMetadata backupMetadata) {
-        BackupMetadata metadata = new BackupMetadata(backupMetadata.token, backupMetadata.start);
-        metadata.setStatus(backupMetadata.getStatus());
-        metadata.setCompleted(backupMetadata.getCompleted());
-        return metadata;
     }
 
     @Override

@@ -23,6 +23,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
@@ -55,7 +56,7 @@ public class SnapshotBackup extends AbstractBackup {
     private final CommitLogBackup clBackup;
     private final Map<String, List<String>> snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
     private final Map<String, Object> snapshotKeyspaceFilter = new HashMap<String, Object>(); //key: keyspace, value: null
-    private PriamInstance priamInstance;
+    private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
 
 
@@ -63,13 +64,13 @@ public class SnapshotBackup extends AbstractBackup {
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , BackupNotificationMgr backupNotificationMgr, PriamInstance priamInstance
+            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity
     ) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
-        this.priamInstance = priamInstance;
+        this.instanceIdentity = instanceIdentity;
         init();
     }
 
@@ -142,7 +143,7 @@ public class SnapshotBackup extends AbstractBackup {
 
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
         String snapshotName = pathFactory.get().formatDate(startTime);
-        String token = priamInstance.getToken();
+        String token = instanceIdentity.getInstance().getToken();
 
         // Save start snapshot status
         BackupMetadata backupMetadata = new BackupMetadata(token, startTime);
@@ -201,7 +202,7 @@ public class SnapshotBackup extends AbstractBackup {
 
             logger.info("Snapshot upload complete for " + snapshotName);
             postProcesing(metaJson);
-            backupMetadata.setSnapshotLocation(metaJson.getBaseDir() + File.separator + metaJson.getRemotePath());
+            backupMetadata.setSnapshotLocation(config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
 
             if (snapshotRemotePaths.size() > 0) {

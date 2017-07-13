@@ -58,7 +58,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusAddFinish()
+    public void testSnapshotStatusAddFinish() throws Exception
     {
         Date startTime = DateUtil.getDate("198407110720");
 
@@ -82,7 +82,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusAddFailed()
+    public void testSnapshotStatusAddFailed() throws Exception
     {
         Date startTime = DateUtil.getDate("198407120720");
 
@@ -106,7 +106,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusMultiAddFinishInADay()
+    public void testSnapshotStatusMultiAddFinishInADay() throws Exception
     {
         final int noOfEntries = 10;
         Date startTime = DateUtil.getDate("19840101");
@@ -137,7 +137,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusSize()
+    public void testSnapshotStatusSize() throws Exception
     {
         final int noOfEntries = backupStatusMgr.getCapacity() + 1;
         Date startTime = DateUtil.getDate("19850101");

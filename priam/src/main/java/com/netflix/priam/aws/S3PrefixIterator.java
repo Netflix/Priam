@@ -49,7 +49,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
     private String bucket = "";
     private String clusterPath = "";
     private SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");
-    private ObjectListing objectListing;
+    private ObjectListing objectListing = null;
     Date date;
 
     @Inject
@@ -68,7 +68,6 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
         String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
         bucket = paths[0];
         this.clusterPath = remotePrefix(path);
-        objectListing = null;
         iterator = createIterator();
     }
 

@@ -784,6 +784,6 @@ public class FakeConfiguration implements IConfiguration
 
     @Override
     public String getBackupStatusFileLoc() {
-        return null;
+        return "backupstatus.ser";
     }
 }

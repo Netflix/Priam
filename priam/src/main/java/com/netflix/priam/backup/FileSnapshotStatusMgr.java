@@ -25,9 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Singleton;
 import java.io.*;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.Map;
 
 /**
+ * Default implementation for {@link IBackupStatusMgr}. This will save the snapshot status in local file.
  * Created by aagrawal on 7/11/17.
  */
 @Singleton
@@ -37,6 +39,11 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
     private IConfiguration config;
     private String filename;
 
+    /**
+     * Constructor to initialize the file based snapshot status manager.
+     *
+     * @param config {@link IConfiguration} of priam to find where file should be saved/read from.
+     */
     @Inject
     public FileSnapshotStatusMgr(IConfiguration config) {
         super(IN_MEMORY_SNAPSHOT_CAPACITY); //Fetch capacity from properties, if required.
@@ -45,19 +52,16 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
         init();
     }
 
-    private void init()
-    {
+    private void init() {
         //Retrieve entire file and re-populate the list.
         File snapshotFile = new File(filename);
-        if (!snapshotFile.exists())
-        {
+        if (!snapshotFile.exists()) {
             logger.info("Snapshot status file do not exist on system. Bypassing initilization phase.");
             return;
         }
 
-        try(final ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(snapshotFile));)
-        {
-            backupMetadataMap = (Map<String, LinkedList<BackupMetadata>>)inputStream.readObject();
+        try (final ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(snapshotFile));) {
+            backupMetadataMap = (Map<String, LinkedList<BackupMetadata>>) inputStream.readObject();
             logger.info("Snapshot status of size {} fetched successfully from {}", backupMetadataMap.size(), filename);
         } catch (IOException e) {
             logger.error("Error while trying to fetch snapshot status from {}. Error: {}. If this is first time after upgrading Priam, ignore this.", filename, e.getLocalizedMessage());
@@ -73,12 +77,16 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
 
     @Override
     public void save(BackupMetadata backupMetadata) {
+        File snapshotFile = new File(filename);
+        if (!snapshotFile.exists())
+            snapshotFile.mkdirs();
+
         //Will save entire list to file.
-        try(final ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename));) {
+        try (final ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename));) {
             out.writeObject(backupMetadataMap);
             out.flush();
             logger.info("Snapshot status of size {} is saved to {}", backupMetadataMap.size(), filename);
-        }catch (IOException e) {
+        } catch (IOException e) {
             logger.error("Error while trying to persist snapshot status to {}. Error: {}", filename, e.getLocalizedMessage());
         }
     }

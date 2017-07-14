@@ -22,12 +22,10 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
+ * POJO to encapsulate the metadata for a snapshot
  * Created by aagrawal on 1/31/17.
  */
 
-/*
- * Encapsulates metadata for a snapshot.
- */
 final public class BackupMetadata implements Serializable {
     private String snapshotDate;
     private String token;
@@ -35,7 +33,23 @@ final public class BackupMetadata implements Serializable {
     private Status status;
     private String snapshotLocation;
 
-    public enum Status {STARTED, FINISHED, FAILED}
+    /**
+     * Enum to describe the status of the snapshot
+     */
+    public enum Status {
+        /**
+         * Denotes snapshot has started successfully.
+         */
+        STARTED,
+        /**
+         * Denotes snapshot has uploaded successfully.
+         */
+        FINISHED,
+        /**
+         * Denotes snapshot has failed to upload successfully or there was a failure marking the snapshot as failure.
+         */
+        FAILED
+    }
 
     public BackupMetadata(String token, Date start) throws Exception {
         if (start == null || token == null || StringUtils.isEmpty(token))
@@ -67,38 +81,84 @@ final public class BackupMetadata implements Serializable {
         return result;
     }
 
+    /**
+     * Get the snapshot date formatted in yyyyMMdd.
+     *
+     * @return snapshot date formatted in yyyyMMdd.
+     */
     public String getSnapshotDate() {
         return this.snapshotDate;
     }
 
+    /**
+     * Get the token for which snapshot was initiated.
+     *
+     * @return snapshot token.
+     */
     public String getToken() {
         return this.token;
     }
 
+    /**
+     * Get the start date on which snapshot was initiated.
+     *
+     * @return start date of snapshot.
+     */
     public Date getStart() {
         return this.start;
     }
+
+    /**
+     * Get the date on which snapshot was marked as finished/failed etc.
+     *
+     * @return completion date of snapshot.
+     */
 
     public Date getCompleted() {
         return this.completed;
     }
 
+    /**
+     * Get the status of the snapshot.
+     *
+     * @return snapshot status
+     */
     public BackupMetadata.Status getStatus() {
         return this.status;
     }
 
+    /**
+     * Set the completion date of snashot status.
+     *
+     * @param completed date of completion for a snapshot.
+     */
     public void setCompleted(Date completed) {
         this.completed = completed;
     }
 
+    /**
+     * Set the status of the snapshot.
+     *
+     * @param status of the snapshot.
+     */
     public void setStatus(Status status) {
         this.status = status;
     }
 
+    /**
+     * Get the snapshot location where snapshot is uploaded.
+     *
+     * @return snapshot upload location for the meta file.
+     */
     public String getSnapshotLocation() {
         return this.snapshotLocation;
     }
 
+    /**
+     * Set the snapshot location where snapshot is uploaded.
+     *
+     * @param snapshotLocation where snapshot meta file is uploaded.
+     */
     public void setSnapshotLocation(String snapshotLocation) {
         this.snapshotLocation = snapshotLocation;
     }

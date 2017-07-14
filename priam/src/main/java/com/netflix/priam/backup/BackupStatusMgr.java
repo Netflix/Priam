@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -28,138 +28,147 @@ import java.util.*;
  * A means to manage metadata for various types of backups (snapshots, incrementals)
  */
 @Singleton
-public abstract class BackupStatusMgr implements IBackupStatusMgr{
+public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
-	private static final Logger logger = LoggerFactory.getLogger(BackupStatusMgr.class);
-	
-	 /*
-	  * completed bkups represented by its snapshot name (yyyymmddhhmm)
-	  * Note:  A linkedlist was chosen for fastest removal of the oldest backup.
-	  */
-	Map<String, LinkedList<BackupMetadata>> backupMetadataMap;
-	int capacity;
+    private static final Logger logger = LoggerFactory.getLogger(BackupStatusMgr.class);
 
-	public BackupStatusMgr(int capacity) {
-		this.capacity = capacity;
-		// This is to avoid us loading lot of status in memory.
-		// We will fetch previous status from backend service, if required.
-		backupMetadataMap = new MaxSizeHashMap<>(capacity);
-	}
+    /**
+     * Map<yyyymmdd, List<{@link BackupMetadata}>: Map of completed snapshots represented by its snapshot day (yyyymmdd)
+     * and a list of snapshots started on that day
+     * Note:  A {@link LinkedList} was chosen for fastest retrieval of latest snapshot.
+     */
+    Map<String, LinkedList<BackupMetadata>> backupMetadataMap;
+    int capacity;
 
-	@Override
-	public int getCapacity()
-	{
-		return capacity;
-	}
+    /**
+     * @param capacity Capacity to hold in-memory snapshot status days.
+     */
+    public BackupStatusMgr(int capacity) {
+        this.capacity = capacity;
+        // This is to avoid us loading lot of status in memory.
+        // We will fetch previous status from backend service, if required.
+        backupMetadataMap = new MaxSizeHashMap<>(capacity);
+    }
 
-	@Override
-	public Map<String, LinkedList<BackupMetadata>> getAllSnapshotStatus()
-	{
-		return backupMetadataMap;
-	}
+    @Override
+    public int getCapacity() {
+        return capacity;
+    }
 
-	@Override
-	public LinkedList<BackupMetadata> locate(Date snapshotDate) {
-		return locate(DateUtil.formatyyyyMMdd(snapshotDate));
-	}
+    @Override
+    public Map<String, LinkedList<BackupMetadata>> getAllSnapshotStatus() {
+        return backupMetadataMap;
+    }
 
-	@Override
-	public LinkedList<BackupMetadata> locate(String snapshotDate) {
-		if (StringUtils.isEmpty(snapshotDate))
-			return null;
+    @Override
+    public LinkedList<BackupMetadata> locate(Date snapshotDate) {
+        return locate(DateUtil.formatyyyyMMdd(snapshotDate));
+    }
 
-		// See if in memory
-		if (backupMetadataMap.containsKey(snapshotDate))
-			return backupMetadataMap.get(snapshotDate);
+    @Override
+    public LinkedList<BackupMetadata> locate(String snapshotDate) {
+        if (StringUtils.isEmpty(snapshotDate))
+            return null;
 
-		LinkedList<BackupMetadata> metadataLinkedList = fetch(snapshotDate);
+        // See if in memory
+        if (backupMetadataMap.containsKey(snapshotDate))
+            return backupMetadataMap.get(snapshotDate);
 
-		//Save the result in local cache so we don't hit data store/file.
-		backupMetadataMap.put(snapshotDate, metadataLinkedList);
+        LinkedList<BackupMetadata> metadataLinkedList = fetch(snapshotDate);
 
-		return metadataLinkedList;
-	}
+        //Save the result in local cache so we don't hit data store/file.
+        backupMetadataMap.put(snapshotDate, metadataLinkedList);
 
-	@Override
-	public void start(BackupMetadata backupMetadata) {
-		LinkedList<BackupMetadata> metadataLinkedList = locate(backupMetadata.getSnapshotDate());
+        return metadataLinkedList;
+    }
 
-		if (metadataLinkedList == null)
-		{
-			metadataLinkedList = new LinkedList<>();
-		}
+    @Override
+    public void start(BackupMetadata backupMetadata) {
+        LinkedList<BackupMetadata> metadataLinkedList = locate(backupMetadata.getSnapshotDate());
 
-		metadataLinkedList.addFirst(backupMetadata);
-		backupMetadataMap.put(backupMetadata.getSnapshotDate(), metadataLinkedList);
+        if (metadataLinkedList == null) {
+            metadataLinkedList = new LinkedList<>();
+        }
 
-		//Save the backupMetaDataMap
-		save(backupMetadata);
-	}
+        metadataLinkedList.addFirst(backupMetadata);
+        backupMetadataMap.put(backupMetadata.getSnapshotDate(), metadataLinkedList);
 
-	@Override
-	public void finish(BackupMetadata backupMetadata) {
-		//validate that it has actually finished. If not, then set the status and current date.
-		if (backupMetadata.getStatus() != BackupMetadata.Status.FINISHED)
-			backupMetadata.setStatus(BackupMetadata.Status.FINISHED);
+        //Save the backupMetaDataMap
+        save(backupMetadata);
+    }
 
-		if (backupMetadata.getCompleted() == null)
-			backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
+    @Override
+    public void finish(BackupMetadata backupMetadata) {
+        //validate that it has actually finished. If not, then set the status and current date.
+        if (backupMetadata.getStatus() != BackupMetadata.Status.FINISHED)
+            backupMetadata.setStatus(BackupMetadata.Status.FINISHED);
 
-		//Retrieve the snapshot metadata and then update the finish date/status.
-		retrieveAndUpdate(backupMetadata);
+        if (backupMetadata.getCompleted() == null)
+            backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
 
-		//Save the backupMetaDataMap
-		save(backupMetadata);
+        //Retrieve the snapshot metadata and then update the finish date/status.
+        retrieveAndUpdate(backupMetadata);
 
-	}
+        //Save the backupMetaDataMap
+        save(backupMetadata);
 
-	private void retrieveAndUpdate(final BackupMetadata backupMetadata)
-	{
-		//Retrieve the snapshot metadata and then update the date/status.
-		LinkedList<BackupMetadata> metadataLinkedList = locate(backupMetadata.getSnapshotDate());
+    }
 
-		if (metadataLinkedList == null || metadataLinkedList.isEmpty()) {
-			logger.error("No previous backupMetaData found. This should not happen. Creating new to ensure app keeps running.");
-			metadataLinkedList = new LinkedList<>();
-			metadataLinkedList.addFirst(backupMetadata);
-		}
+    private void retrieveAndUpdate(final BackupMetadata backupMetadata) {
+        //Retrieve the snapshot metadata and then update the date/status.
+        LinkedList<BackupMetadata> metadataLinkedList = locate(backupMetadata.getSnapshotDate());
 
-		metadataLinkedList.forEach(backupMetadata1 -> {
-			if (backupMetadata1.equals(backupMetadata)){
-				backupMetadata1.setCompleted(backupMetadata.getCompleted());
-				backupMetadata1.setStatus(backupMetadata.getStatus());
-				return;
-			}
-		});
-	}
+        if (metadataLinkedList == null || metadataLinkedList.isEmpty()) {
+            logger.error("No previous backupMetaData found. This should not happen. Creating new to ensure app keeps running.");
+            metadataLinkedList = new LinkedList<>();
+            metadataLinkedList.addFirst(backupMetadata);
+        }
 
-	@Override
-	public void failed(BackupMetadata backupMetadata) {
-		//validate that it has actually failed. If not, then set the status and current date.
-		if (backupMetadata.getCompleted() == null)
-			backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
+        metadataLinkedList.forEach(backupMetadata1 -> {
+            if (backupMetadata1.equals(backupMetadata)) {
+                backupMetadata1.setCompleted(backupMetadata.getCompleted());
+                backupMetadata1.setStatus(backupMetadata.getStatus());
+                return;
+            }
+        });
+    }
 
-		//Set this later to ensure the status
-		if (backupMetadata.getStatus() != BackupMetadata.Status.FAILED)
-			backupMetadata.setStatus(BackupMetadata.Status.FAILED);
+    @Override
+    public void failed(BackupMetadata backupMetadata) {
+        //validate that it has actually failed. If not, then set the status and current date.
+        if (backupMetadata.getCompleted() == null)
+            backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
 
-		//Retrieve the snapshot metadata and then update the failure date/status.
-		retrieveAndUpdate(backupMetadata);
+        //Set this later to ensure the status
+        if (backupMetadata.getStatus() != BackupMetadata.Status.FAILED)
+            backupMetadata.setStatus(BackupMetadata.Status.FAILED);
 
-		//Save the backupMetaDataMap
-		save(backupMetadata);
-	}
+        //Retrieve the snapshot metadata and then update the failure date/status.
+        retrieveAndUpdate(backupMetadata);
 
-	public abstract void save(BackupMetadata backupMetadata);
+        //Save the backupMetaDataMap
+        save(backupMetadata);
+    }
 
-	public abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
+    /**
+     * Implementation on how to save the backup metadata
+     * @param backupMetadata BackupMetadata to be saved
+     */
+    public abstract void save(BackupMetadata backupMetadata);
 
-	@Override
-	public String toString() {
-		final StringBuffer sb = new StringBuffer("BackupStatusMgr{");
-		sb.append("backupMetadataMap=").append(backupMetadataMap);
-		sb.append(", capacity=").append(capacity);
-		sb.append('}');
-		return sb.toString();
-	}
+    /**
+     * Implementation on how to retrieve the backup metadata(s) for a given date from store.
+     * @param snapshotDate Snapshot date to be retrieved from datastore in format of yyyyMMdd
+     * @return The list of snapshots started on the snapshot day in descending order of snapshot start time.
+     */
+    public abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("BackupStatusMgr{");
+        sb.append("backupMetadataMap=").append(backupMetadataMap);
+        sb.append(", capacity=").append(capacity);
+        sb.append('}');
+        return sb.toString();
+    }
 }

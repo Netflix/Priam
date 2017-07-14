@@ -43,8 +43,6 @@ import java.util.List;
 public class SystemUtils
 {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
-    private static final SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat("yyyyMMdd");
-    private static final SimpleDateFormat simpleDateFormatTime = new SimpleDateFormat("yyyyMMddHHmm");
 
     public static String getDataFromUrl(String url)
     {
@@ -75,39 +73,7 @@ public class SystemUtils
         }
 
     }
-    
-    /*
-     * @param datae to format
-     * @param e.g. yyyymmddhhmm
-     * @return formatted date
-     */
-    public static String formatDate(Date date, String format) {
-		String s = new DateTime(date).toString(format);
-		return s;
-    }
 
-    public static Date getDate(String date) {
-        /*
-         * Try to parse in the format of yyyyMMddHHmm else move to yyyyMMdd
-         */
-
-        Date parseTime = parseDate(date, simpleDateFormatTime);
-        if (parseTime == null)
-            parseTime = parseDate(date, simpleDateFormatDate);
-
-        return parseTime;
-    }
-
-    private static Date parseDate(String date, SimpleDateFormat format)
-    {
-        try
-        {
-            return format.parse(date);
-        }catch (ParseException e)
-        {
-            return null;
-        }
-    }
 
     /**
      * delete all the files/dirs in the given Directory but dont delete the dir

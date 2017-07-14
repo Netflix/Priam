@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.json.simple.parser.JSONParser;
@@ -29,6 +30,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Created by aagrawal on 2/16/17.
@@ -41,8 +43,6 @@ import java.util.*;
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat("yyyyMMdd");
-    private final SimpleDateFormat simpleDateFormatTime = new SimpleDateFormat("yyyyMMddHHmm");
     private IBackupFileSystem bkpStatusFs;
     private IConfiguration config;
 
@@ -52,37 +52,42 @@ public class BackupVerification {
         this.config = config;
     }
 
-    public BackupVerificationResult verifyBackup(BackupMetadata metadata, Date startTime) {
+    public BackupVerificationResult verifyBackup(List<BackupMetadata> metadata, Date startTime) {
         BackupVerificationResult result = new BackupVerificationResult();
 
-        if (metadata == null || metadata.getBackups().isEmpty())
+        if (metadata == null || metadata.isEmpty())
             return result;
 
         result.snapshotAvailable = true;
-        result.selectedDate = metadata.getKey();
+        // All the dates should be same.
+        result.selectedDate = metadata.get(0).getSnapshotDate();
 
-        logger.info("Snapshots found for : " + metadata.getKey() + " [" + metadata.getBackups() + "]");
+        List<String> backups = metadata.stream().map(backupMetadata ->
+                DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList());
+        logger.info("Snapshots found for {} : [{}]", result.selectedDate, backups);
+
         //find the latest date (default) or verify if one provided
         Date latestDate = null;
-        for (String backupTime : metadata.getBackups()) {
-            Date parsedBackupTime = SystemUtils.getDate(backupTime);
-            if (latestDate == null || latestDate.before(parsedBackupTime))
-                latestDate = parsedBackupTime;
+        for (BackupMetadata backupMetadata : metadata) {
+            if (latestDate == null || latestDate.before(backupMetadata.getStart()))
+                latestDate = backupMetadata.getStart();
 
-            if (startTime != null && parsedBackupTime.equals(startTime)) {
+            if (startTime != null &&
+                    DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart()).equals(DateUtil.formatyyyyMMddHHmm(startTime))) {
                 latestDate = startTime;
                 break;
             }
         }
 
-        result.snapshotTime = simpleDateFormatTime.format(latestDate);
-        logger.info("Latest/Requested snapshot date found: " + simpleDateFormatTime.format(latestDate) + ", for selected/provided date: " + metadata.getKey());
+        result.snapshotTime = DateUtil.formatyyyyMMddHHmm(latestDate);
+        logger.info("Latest/Requested snapshot date found: " + result.snapshotTime + ", for selected/provided date: " + result.selectedDate);
 
         //Get Backup File Iterator
         String prefix = config.getBackupPrefix();
         logger.info("Looking for meta file in the location:  " + prefix);
 
-        Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, latestDate, latestDate);
+        Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
+        Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
         //Return validation fail if backup filesystem listing failed.
         if (!backupfiles.hasNext())
         {
@@ -104,7 +109,7 @@ public class BackupVerification {
         }
 
         if (metas.size() == 0) {
-            logger.error("No meta found for snapshotdate: " + simpleDateFormatTime.format(latestDate));
+            logger.error("No meta found for snapshotdate: " + DateUtil.formatyyyyMMddHHmm(latestDate));
             return result;
         }
 

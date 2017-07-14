@@ -27,10 +27,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.utils.CassandraMonitor;
-import com.netflix.priam.utils.CassandraTuner;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -52,6 +49,7 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 
 @Path("/v1/backup")
 @Produces(MediaType.APPLICATION_JSON)
@@ -91,7 +89,6 @@ public class BackupServlet {
     private MetaData metaData;
 
     private IBackupStatusMgr completedBkups;
-    private SimpleDateFormat simpleDateFormatDate = new SimpleDateFormat("yyyyMMdd");
 
     @Inject
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
@@ -185,9 +182,11 @@ public class BackupServlet {
     @Produces(MediaType.APPLICATION_JSON)
     public Response statusByDate(@PathParam("date") String date) throws Exception {
         JSONObject object = new JSONObject();
-        BackupMetadata bkupMetadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
+        List<BackupMetadata> metadataLinkedList = this.completedBkups.locate(date);
 
-        if (bkupMetadata != null) { //backup exist base on requested date, lets fetch more of its metadata
+        if (metadataLinkedList != null && !metadataLinkedList.isEmpty()) {
+            // backup exist base on requested date, lets fetch more of its metadata
+            BackupMetadata bkupMetadata = metadataLinkedList.get(0);
             object.put("Snapshotstatus", true);
             String token = bkupMetadata.getToken();
             if (token != null && !token.isEmpty()) {
@@ -195,15 +194,14 @@ public class BackupServlet {
             } else {
                 object.put("token", "not available");
             }
-            if (bkupMetadata.getStartTime() != null) {
-                object.put("starttime", SystemUtils.formatDate(bkupMetadata.getStartTime(), "yyyyMMddHHmm"));
+            if (bkupMetadata.getStart() != null) {
+                object.put("starttime", DateUtil.formatyyyyMMddHHmm(bkupMetadata.getStart()));
             } else {
                 object.put("starttime", "not available");
             }
 
-            Date completeTime = bkupMetadata.getCompletedTime();
-            if (bkupMetadata.getCompletedTime() != null) {
-                object.put("completetime", SystemUtils.formatDate(bkupMetadata.getCompletedTime(), "yyyyMMddHHmm"));
+            if (bkupMetadata.getCompleted() != null) {
+                object.put("completetime", DateUtil.formatyyyyMMddHHmm(bkupMetadata.getCompleted()));
             } else {
                 object.put("completetime", "not_available");
             }
@@ -231,34 +229,34 @@ public class BackupServlet {
     @Path("/status/{date}/snapshots")
     @Produces(MediaType.APPLICATION_JSON)
     public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
-        BackupMetadata metadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, date);
+        List<BackupMetadata> metadata = this.completedBkups.locate(date);
         JSONObject object = new JSONObject();
         List<String> snapshots = new ArrayList<String>();
 
-        if (metadata != null)
-            snapshots.addAll(metadata.getBackups());
+        if (metadata != null && !metadata.isEmpty())
+            snapshots.addAll(metadata.stream().map(backupMetadata -> DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList()));
 
         object.put("Snapshots", snapshots);
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 
-    private BackupMetadata getLatestBackupMetadata(Date startTime, Date endTime) {
-        BackupMetadata backupMetadata = this.completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, simpleDateFormatDate.format(endTime));
-        if (backupMetadata != null)
+    private List<BackupMetadata> getLatestBackupMetadata(Date startTime, Date endTime) {
+        List<BackupMetadata> backupMetadata = this.completedBkups.locate(endTime);
+        if (backupMetadata != null && !backupMetadata.isEmpty())
             return backupMetadata;
-        if (simpleDateFormatDate.format(startTime).equals(simpleDateFormatDate.format(endTime))) {
-            logger.info("Start & end date are same. No SNAPSHOT found for date: " + simpleDateFormatDate.format(endTime));
+        if (DateUtil.formatyyyyMMdd(startTime).equals(DateUtil.formatyyyyMMdd(endTime))) {
+            logger.info("Start & end date are same. No SNAPSHOT found for date: " + DateUtil.formatyyyyMMdd(endTime));
             return null;
         } else {
             Date previousDay = new Date(endTime.getTime());
             do {
                 //We need to find the latest backupmetadata in this date range.
                 previousDay = new DateTime(previousDay.getTime()).minusDays(1).toDate();
-                logger.info("Will try to find snapshot for previous day: " + simpleDateFormatDate.format(previousDay));
-                backupMetadata = completedBkups.locate(IMessageObserver.BACKUP_MESSAGE_TYPE.SNAPSHOT, simpleDateFormatDate.format(previousDay));
-                if (backupMetadata != null)
+                logger.info("Will try to find snapshot for previous day: " + DateUtil.formatyyyyMMdd(previousDay));
+                backupMetadata = completedBkups.locate(previousDay);
+                if (backupMetadata != null && !backupMetadata.isEmpty())
                     return backupMetadata;
-            } while (!simpleDateFormatDate.format(startTime).equals(simpleDateFormatDate.format(previousDay)));
+            } while (!DateUtil.formatyyyyMMdd(startTime).equals(DateUtil.formatyyyyMMdd(previousDay)));
         }
         return null;
     }
@@ -282,17 +280,16 @@ public class BackupServlet {
             endTime = new DateTime().toDate();
         } else {
             String[] dates = daterange.split(",");
-            startTime = SystemUtils.getDate(dates[0]);
-            endTime = SystemUtils.getDate(dates[1]);
+            startTime = DateUtil.getDate(dates[0]);
+            endTime = DateUtil.getDate(dates[1]);
         }
 
-        //Date parsedInputDateTime = getDate(date);
         JSONObject jsonReply = new JSONObject();
-        jsonReply.put("inputStartDate", SystemUtils.formatDate(startTime, "yyyyMMddHHmm"));
-        jsonReply.put("inputEndDate", SystemUtils.formatDate(endTime, "yyyyMMddHHmm"));
-        logger.info("Will try to validate latest backup during startTime: " + simpleDateFormatDate.format(startTime) + ", and endTime: " + simpleDateFormatDate.format(endTime));
+        jsonReply.put("inputStartDate", DateUtil.formatyyyyMMddHHmm(startTime));
+        jsonReply.put("inputEndDate", DateUtil.formatyyyyMMddHHmm(endTime));
+        logger.info("Will try to validate latest backup during startTime: " + DateUtil.formatyyyyMMddHHmm(startTime) + ", and endTime: " + DateUtil.formatyyyyMMddHHmm(endTime));
 
-        BackupMetadata metadata = getLatestBackupMetadata(startTime, endTime);
+        List<BackupMetadata> metadata = getLatestBackupMetadata(startTime, endTime);
         BackupVerificationResult result = backupVerification.verifyBackup(metadata, startTime);
         jsonReply.put("snapshotAvailable", result.snapshotAvailable);
         jsonReply.put("valid", result.valid);

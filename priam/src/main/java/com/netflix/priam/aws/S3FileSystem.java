@@ -32,6 +32,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.*;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.*;
@@ -105,8 +106,8 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             throw new RuntimeException(e);
         }        
         
-        super.s3Client = new AmazonS3Client(cred.getAwsCredentialProvider());
-        super.s3Client.setEndpoint(super.getS3Endpoint(this.config));
+        super.s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+        //super.s3Client.setEndpoint(super.getS3Endpoint(this.config));
     }
 
     @Override
@@ -242,7 +243,7 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
     /*
      * A means to change the default handle to the S3 client.
      */
-    public void setS3Client(AmazonS3Client client) {
+    public void setS3Client(AmazonS3 client) {
     	super.s3Client = client;
     }
 

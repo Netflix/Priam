@@ -60,23 +60,6 @@ public class S3FileSystemBase {
         awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement(); //a counter of AWS warning for all uploads
     }
 
-//    /*
-//     * S3 End point information
-//     * http://docs.aws.amazon.com/general/latest/gr/rande.html#s3_region
-//     */
-//    protected String getS3Endpoint(IConfiguration config)
-//    {
-//    	 final String curRegion = config.getDC();
-//         if("us-east-1".equalsIgnoreCase(curRegion) ||
-//            "us-west-1".equalsIgnoreCase(curRegion) ||
-//            "us-west-2".equalsIgnoreCase(curRegion)	||
-//            "eu-west-1".equalsIgnoreCase(curRegion) ||
-//            "sa-east-1".equalsIgnoreCase(curRegion) ||
-//            "eu-central-1".equalsIgnoreCase(curRegion))
-//             return config.getS3EndPoint();
-//
-//         throw new IllegalStateException("Unsupported region for this application: " + curRegion);
-//    }
     
     public AmazonS3 getS3Client()
     {

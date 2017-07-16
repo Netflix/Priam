@@ -27,7 +27,10 @@ import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.JMXConnectorMgr;
+import org.apache.commons.lang3.StringUtils;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -86,24 +89,59 @@ public class FlushTask extends Task {
         return JOBNAME;
     }
 
-    /*
-    @return the hourly or daily time to execute the flush
+    /**
+     * Timer to be used for flush interval.
+     * @param config {@link IConfiguration} to get configuration details from priam.
+     * @return the timer to be used for flush interval.
+     * <p>
+     * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#HOUR} then it expects {@link IConfiguration#getFlushInterval()} in the format of hour=x or daily=x
+     * <p>
+     * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression from {@link IConfiguration#getFlushCronExpression()}
      */
-    public static TaskTimer getTimer(IConfiguration config) {
-        String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10
-        String s[] = timerVal.split("=");
-        if (s.length != 2 ){
-            throw new IllegalArgumentException("Flush interval format is invalid.  Expecting name=value, received: " + timerVal);
-        }
-        String name = s[0];
-        Integer time = new Integer(s[1]);
+    public static TaskTimer getTimer(IConfiguration config) throws Exception{
 
-        if (name.equalsIgnoreCase("hour")) {
-            return new CronTimer(JOBNAME, time, 0); //minute, sec after each hour
-        } if (name.equalsIgnoreCase("daily")) {
-            return new CronTimer(JOBNAME, time, 0 , 0); //hour, minute, sec to run on a daily basis
-        } else {
-            throw new IllegalArgumentException("Flush interval type is invalid.  Expecting \"hour, daily\", received: " + name);
+        CronTimer cronTimer = null;
+        switch (config.getFlushSchedulerType())
+        {
+            case HOUR:
+                String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10
+                if (timerVal == null)
+                    return null;
+                String s[] = timerVal.split("=");
+                if (s.length != 2 ){
+                    throw new IllegalArgumentException("Flush interval format is invalid.  Expecting name=value, received: " + timerVal);
+                }
+                String name = s[0].toUpperCase();
+                Integer time = new Integer(s[1]);
+                switch(name)
+                {
+                    case "HOUR":
+                        cronTimer = new CronTimer(JOBNAME, time, 0); //minute, sec after each hour
+                        break;
+                    case "DAILY":
+                        cronTimer = new CronTimer(JOBNAME, time, 0 , 0); //hour, minute, sec to run on a daily basis
+                        break;
+                    default:
+                        throw new UnsupportedTypeException("Flush interval type is invalid.  Expecting \"hour, daily\", received: " + name);
+                }
+
+            break;
+            case CRON:
+                String cronExpression = config.getFlushCronExpression();
+
+                if(StringUtils.isEmpty(cronExpression)){
+                    logger.info("Skipping flush as flush cron is not set.");
+                }else
+                {
+                    if(!CronExpression.isValidExpression(cronExpression))
+                        throw new Exception("Invalid CRON expression: " + cronExpression +
+                                ". Please remove cron expression if you wish to disable flush else fix the CRON expression and try again!");
+
+                    cronTimer = new CronTimer(JOBNAME, cronExpression);
+                    logger.info(String.format("Starting flush with CRON expression %s", cronTimer.getCronExpression()));
+                }
+                break;
         }
+        return cronTimer;
     }
 }

@@ -631,6 +631,17 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
+    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException{
+        String schedulerType = config.get(PRIAM_PRE + ".flush.schedule.type", SchedulerType.HOUR.getSchedulerType());
+        return SchedulerType.lookup(schedulerType);
+    }
+
+    @Override
+    public String getFlushCronExpression() {
+        return config.get(PRIAM_PRE + ".flush.cron");
+    }
+
+    @Override
     public String getSnapshotKeyspaceFilters() {
     	return config.get(CONFIG_SNAPSHOT_KEYSPACE_FILTER);
     }

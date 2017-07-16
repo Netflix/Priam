@@ -8,6 +8,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
 import com.netflix.priam.scheduler.SchedulerType;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 @Singleton
 public class FakeConfigurationMurmur3 implements IConfiguration
@@ -785,5 +786,15 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     @Override
     public String getBackupStatusFileLoc() {
         return "backupstatus.ser";
+    }
+
+    @Override
+    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
+        return SchedulerType.HOUR;
+    }
+
+    @Override
+    public String getFlushCronExpression() {
+        return null;
     }
 }

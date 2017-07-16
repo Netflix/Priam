@@ -194,15 +194,17 @@ public interface IConfiguration {
     public int getBackupHour();
 
     /**
+     * Cron expression to be used for snapshot backups.
      * @return Backup cron expression for snapshots
-     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>}
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
     public String getBackupCronExpression();
 
     /**
-     * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use @see #getBackupHour().
-     * If value of "CRON" is provided it starts using @see #getBackupCronExpression().
+     * Backup scheduler type to use for backup.
+     * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use {@link #getBackupHour()}.
+     * If value of "CRON" is provided it starts using {@link #getBackupCronExpression()}.
      */
     public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
 
@@ -615,18 +617,35 @@ public interface IConfiguration {
      */
     int getStreamingSocketTimeoutInMS();
 
-    /*
+    /**
+     * List of keyspaces to flush. Default: all keyspaces.
      * @return a comma delimited list of keyspaces to flush
      */
     public String getFlushKeyspaces();
 
-    /*
+    /**
+     * Interval to be used for flush.
      * @return the interval to run the flush task.  Format is name=value where
      * “name” is an enum of hour, daily, value is ...
      */
     public String getFlushInterval();
 
-    /*
+    /**
+     *  Scheduler type to use for flush.
+     * @return Type of scheduler to use for flush.  Note the default is TIMER based i.e. to use {@link #getFlushInterval()}.
+     * If value of "CRON" is provided it starts using {@link #getFlushCronExpression()}.
+     */
+    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
+
+    /**
+     * Cron expression to be used for flush.
+     * @return Cron expression for flush
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     */
+    public String getFlushCronExpression();
+
+    /**
     @return the absolute path to store the backup status on disk
      */
     public String getBackupStatusFileLoc();

@@ -99,7 +99,6 @@ public class PriamServer {
                     logger.info("Added incremental async-synchronous bkup, next fired time: " + IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
                 }
             }
-
         }
 
         if (config.isBackingUpCommitLogs()) {

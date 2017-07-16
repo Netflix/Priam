@@ -31,6 +31,7 @@ import com.netflix.priam.restore.EncryptedRestoreStrategy;
 import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TuneCassandra;
@@ -173,9 +174,9 @@ public class PriamServer {
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
 
         //Set up nodetool flush task
-        String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10)
-        if (timerVal != null && !timerVal.isEmpty()) {
-            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, FlushTask.getTimer(config));
+        TaskTimer flushTaskTimer = FlushTask.getTimer(config);
+        if (flushTaskTimer != null) {
+            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
         }
     }

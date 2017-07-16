@@ -59,7 +59,6 @@ public class S3FileSystemBase {
         this.metricPublisher = metricPublisher;
         awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement(); //a counter of AWS warning for all uploads
     }
-
     
     public AmazonS3 getS3Client()
     {

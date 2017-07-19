@@ -54,7 +54,7 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
 	@Override
 	public PriamInstance get() throws Exception {
     	
-		logger.info("Generating my own and new token");
+		logger.info("Generating my own and grabbing new token");
         // Sleep random interval - upto 15 sec
         sleeper.sleep(new Random().nextInt(15000));
         int hash = tokenManager.regionOffset(config.getDC());
@@ -70,7 +70,8 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         
         if (hash == max && locMap.get(config.getRac()).size() == 0) {
             int idx = config.getRacs().indexOf(config.getRac());
-            Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());
+			if (idx < 0)
+				throw new Exception(String.format("Rac %s is not in Racs %s", config.getRac(), config.getRacs()));
             my_slot = idx + maxSlot;
         } else
             my_slot = config.getRacs().size() + maxSlot;

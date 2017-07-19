@@ -21,6 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import junit.framework.Assert;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -29,13 +30,16 @@ import org.junit.Test;
  */
 public class TestCassandraMonitor {
 
-    private static Injector injector;
-    private static CassandraMonitor monitor;
+    private Injector injector;
+    private CassandraMonitor monitor;
 
     @Before
     public void setUp() {
-        injector = Guice.createInjector(new BRTestModule());
-        monitor = injector.getInstance(CassandraMonitor.class);
+        if (injector == null)
+            injector = Guice.createInjector(new BRTestModule());
+
+        if (monitor == null)
+            monitor = injector.getInstance(CassandraMonitor.class);
     }
 
     @Test
@@ -49,4 +53,5 @@ public class TestCassandraMonitor {
         monitor.execute();
         Assert.assertFalse(monitor.isCassadraStarted());
     }
+
 }

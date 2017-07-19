@@ -67,7 +67,7 @@ public class InstanceIdentity
     private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
         @Override
         public boolean apply(PriamInstance instance) {
-            return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID)));
+            return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID));
         }
 
         @Override

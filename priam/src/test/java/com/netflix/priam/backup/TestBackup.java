@@ -55,24 +55,23 @@ public class TestBackup
     {
     		filesystem.setupTest();
         SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
-        CassandraMonitor cassMon = injector.getInstance(CassandraMonitor.class);
-        cassMon.setIsCassadraStarted();
-        /* *
-        backup.execute();
-        Assert.assertEquals(3, filesystem.uploadedFiles.size());
-        System.out.println("***** "+filesystem.uploadedFiles.size());
-        boolean metafile = false;
-        for (String filePath : expectedFiles)
-            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
-            
-        for(String filepath : filesystem.uploadedFiles){
-            if( filepath.endsWith("meta.json")){             
-                metafile = true;
-                break;
-            }
-        }        
-        Assert.assertTrue(metafile);
-        * */
+
+//
+//        backup.execute();
+//        Assert.assertEquals(3, filesystem.uploadedFiles.size());
+//        System.out.println("***** "+filesystem.uploadedFiles.size());
+//        boolean metafile = false;
+//        for (String filePath : expectedFiles)
+//            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+//
+//        for(String filepath : filesystem.uploadedFiles){
+//            if( filepath.endsWith("meta.json")){
+//                metafile = true;
+//                break;
+//            }
+//        }
+//        Assert.assertTrue(metafile);
+
     }
 
     @Test

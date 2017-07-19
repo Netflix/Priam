@@ -70,8 +70,9 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         
         if (hash == max && locMap.get(config.getRac()).size() == 0) {
             int idx = config.getRacs().indexOf(config.getRac());
-            Preconditions.checkState(idx >= 0, "Rac %s is not in Racs %s", config.getRac(), config.getRacs());
-            my_slot = idx + maxSlot;
+			if (idx < 0)
+				throw new Exception(String.format("Rac %s is not in Racs %s", config.getRac(), config.getRacs()));
+			my_slot = idx + maxSlot;
         } else
             my_slot = config.getRacs().size() + maxSlot;
 

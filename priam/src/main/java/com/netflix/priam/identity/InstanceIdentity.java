@@ -66,6 +66,10 @@ public class InstanceIdentity
 
     private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
         @Override
+        /**
+         * This is used to provide the list of seed providers.
+         * Since 3.x backported the @see <a href="https://issues.apache.org/jira/browse/CASSANDRA-10134">CASSANDRA-10134</a> we need to ensure that seed list contains all the seed(including itself) or cluster would never come up.
+         */
         public boolean apply(PriamInstance instance) {
             return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID));
         }

@@ -79,6 +79,11 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     }
 
     @Override
+    public String getHintsLocation() {
+        return "target/hints";
+    }
+
+    @Override
     public String getCacheLocation()
     {
         // TODO Auto-generated method stub

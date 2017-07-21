@@ -96,6 +96,10 @@ public interface IConfiguration {
     public String getDataFileLocation();
 
     /**
+     * @return Location of the hints data directory
+     */
+    public String getHintsLocation();
+    /**
      * @return Location of local cache
      */
     public String getCacheLocation();

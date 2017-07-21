@@ -71,6 +71,7 @@ public class StandardTuner implements CassandraTuner
         
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
+        map.put("hints_directory", config.getHintsLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
         boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);

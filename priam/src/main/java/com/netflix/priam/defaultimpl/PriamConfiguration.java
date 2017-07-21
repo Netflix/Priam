@@ -209,6 +209,7 @@ public class PriamConfiguration implements IConfiguration
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
+    private final String DEFAULT_HINTS_DIR_LOCATION = "/var/lib/cassandra/hints";
     private final String DEFAULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
     private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.extensions.NFSeedProvider";
     private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
@@ -325,6 +326,7 @@ public class PriamConfiguration implements IConfiguration
         SystemUtils.createDirs(getCommitLogLocation());
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
+        SystemUtils.createDirs(getHintsLocation());
     }
     
     private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException
@@ -488,6 +490,11 @@ public class PriamConfiguration implements IConfiguration
     public String getDataFileLocation()
     {
         return config.get(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
+    }
+
+    @Override
+    public String getHintsLocation() {
+        return config.get(PRIAM_PRE + ".hints.location", DEFAULT_HINTS_DIR_LOCATION);
     }
 
     @Override

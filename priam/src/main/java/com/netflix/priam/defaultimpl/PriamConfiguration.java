@@ -1067,7 +1067,12 @@ public class PriamConfiguration implements IConfiguration
     public int getIndexInterval() {
     	return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }
-    
+
+    @Override
+    public int getCompactionLargePartitionWarnThreshold() {
+        return config.get(PRIAM_PRE + ".compaction.large.partition.warn.threshold", 100);
+    }
+
     public String getExtraConfigParams() {
     	return config.get(CONFIG_EXTRA_PARAMS);
     }

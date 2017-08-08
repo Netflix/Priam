@@ -501,6 +501,12 @@ public interface IConfiguration {
 
     public int getIndexInterval();
 
+    /*
+     * @return the warning threshold in MB's for large partitions encountered during compaction.
+     * Default value of 100 is used (default from cassandra.yaml)
+     */
+    public int getCompactionLargePartitionWarnThreshold();
+
     public String getExtraConfigParams();
 
     public String getCassYamlVal(String priamKey);

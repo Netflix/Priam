@@ -609,7 +609,7 @@ public class FakeConfigurationMurmur3 implements IConfiguration
 	}
 
     @Override
-    public int getCompactionLargePartitionWarnThreshold() {
+    public int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
     }
 

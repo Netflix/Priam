@@ -112,7 +112,7 @@ public class StandardTuner implements CassandraTuner
         map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
 
         map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
-        map.put("compaction_large_partition_warning_threshold_mb", config.getCompactionLargePartitionWarnThreshold());
+        map.put("compaction_large_partition_warning_threshold_mb", config.getCompactionLargePartitionWarnThresholdInMB());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

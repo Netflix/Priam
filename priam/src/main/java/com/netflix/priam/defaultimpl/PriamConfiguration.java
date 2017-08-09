@@ -1076,7 +1076,7 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
-    public int getCompactionLargePartitionWarnThreshold() {
+    public int getCompactionLargePartitionWarnThresholdInMB() {
         return config.get(PRIAM_PRE + ".compaction.large.partition.warn.threshold", 100);
     }
 

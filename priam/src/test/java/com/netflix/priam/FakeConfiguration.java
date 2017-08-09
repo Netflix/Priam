@@ -614,7 +614,7 @@ public class FakeConfiguration implements IConfiguration
 	}
 
     @Override
-    public int getCompactionLargePartitionWarnThreshold() {
+    public int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
     }
 

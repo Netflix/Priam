@@ -18,7 +18,10 @@ public class DseTunerTest
 {
     IConfiguration config;
     DseConfigStub dseConfig;
-    DseTuner dseTuner;
+    DseTuner dseTunerYaml;
+    DseTuner dseTunerLog4j;
+    AuditLogTunerYaml auditLogTunerYaml;
+    AuditLogTunerLog4J auditLogTunerLog4j;
     File targetFile;
     File targetDseYamlFile;
 
@@ -27,36 +30,39 @@ public class DseTunerTest
     {
         config = new FakeConfiguration();
         dseConfig = new DseConfigStub();
-        dseTuner = new DseTuner(config, dseConfig);
+        auditLogTunerYaml = new AuditLogTunerYaml(dseConfig);
+        auditLogTunerLog4j = new AuditLogTunerLog4J(config, dseConfig);
+        dseTunerYaml = new DseTuner(config, dseConfig, auditLogTunerYaml);
+        dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
 
         File targetDir = new File(config.getCassHome() + "/conf");
         if(!targetDir.exists())
             targetDir.mkdirs();
 
-        targetFile = new File(config.getCassHome() + DseTuner.AUDIT_LOG_FILE);
-        Files.copy(new File("src/test/resources/" + DseTuner.AUDIT_LOG_FILE), targetFile);
+        targetFile = new File(config.getCassHome() + auditLogTunerLog4j.AUDIT_LOG_FILE);
+        Files.copy(new File("src/test/resources/" + auditLogTunerLog4j.AUDIT_LOG_FILE), targetFile);
     }
 
     @Test
     public void auditLogProperties_Enabled() throws IOException
     {
         dseConfig.setAuditLogEnabled(true);
-        dseTuner.writeAuditLogProperties();
+        auditLogTunerLog4j.tuneAuditLog();
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertTrue(p.containsKey(DseTuner.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertTrue(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     @Test
     public void auditLogProperties_Disabled() throws IOException
     {
         dseConfig.setAuditLogEnabled(false);
-        dseTuner.writeAuditLogProperties();
+        auditLogTunerLog4j.tuneAuditLog();
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertFalse(p.containsKey(DseTuner.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertFalse(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     /**
@@ -103,7 +109,7 @@ public class DseTunerTest
 
 
         dseConfig.setAuditLogEnabled(true);
-        dseTuner.writeDseYaml();
+        auditLogTunerYaml.tuneAuditLog();
 
     }
 
@@ -120,7 +126,6 @@ public class DseTunerTest
 
 
         dseConfig.setAuditLogEnabled(false);
-        dseTuner.writeDseYaml();
-
+        auditLogTunerYaml.tuneAuditLog();
     }
 }

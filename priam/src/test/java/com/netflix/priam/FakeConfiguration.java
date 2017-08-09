@@ -607,8 +607,13 @@ public class FakeConfiguration implements IConfiguration
 	public int getIndexInterval() {
 		return 0;
 	}
-	
-	public String getExtraConfigParams() {
+
+    @Override
+    public int getCompactionLargePartitionWarnThresholdInMB() {
+        return 100;
+    }
+
+    public String getExtraConfigParams() {
 		return null;
 	}
 	

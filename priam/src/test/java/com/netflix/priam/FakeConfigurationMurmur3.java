@@ -608,7 +608,12 @@ public class FakeConfigurationMurmur3 implements IConfiguration
 		return 0;
 	}
 
-	public String getExtraConfigParams() {
+    @Override
+    public int getCompactionLargePartitionWarnThresholdInMB() {
+        return 100;
+    }
+
+    public String getExtraConfigParams() {
 		return null;
 	}
 

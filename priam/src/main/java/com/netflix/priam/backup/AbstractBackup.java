@@ -39,16 +39,13 @@ import java.util.regex.Pattern;
 /**
  * Abstract Backup class for uploading files to backup location
  */
-public abstract class AbstractBackup extends Task implements EventGenerator<BackupEvent> {
+public abstract class AbstractBackup extends AbstractBackupRestore implements EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
-
-    public static String JOBNAME = "AbstractBackup";
 
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
     protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo"));
     protected final Provider<AbstractBackupPath> pathFactory;
-    protected final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
-    protected final Map<String, Object> keyspaceFilter = new HashMap<>(); //key: keyspace, value: null
+
     private final Object MUTEX = new Object();
     protected IBackupFileSystem fs;
     private List<EventObserver> observers = new ArrayList<>();
@@ -68,17 +65,6 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
      */
     protected void setFileSystem(IBackupFileSystem fs) {
         this.fs = fs;
-    }
-
-    /*
-     * search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
-     * @param input string
-     * @return true if input string matches search pattern; otherwise, false
-     */
-    protected boolean isValidCFFilterFormat(String cfFilter) {
-        Pattern p = Pattern.compile(".\\..");
-        Matcher m = p.matcher(cfFilter);
-        return m.find();
     }
 
     /**
@@ -227,109 +213,4 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     private boolean shouldNotifyObservers() {
         return (observers != null && !observers.isEmpty());
     }
-
-    /*
-    * @param keyspace or columnfamily directory type.
-    * @return true if directory should be filter from processing; otherwise, false.
-    */
-    protected boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
-
-        if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
-            //Apply each keyspace filter to input string
-            String keyspaceName = args[0];
-
-            java.util.Set<String> ksFilters = keyspaceFilter.keySet();
-            Iterator<String> it = ksFilters.iterator();
-            while (it.hasNext()) {
-                String ksFilter = it.next();
-                Pattern p = Pattern.compile(ksFilter);
-                Matcher m = p.matcher(keyspaceName);
-                if (m.find()) {
-                    logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
-                    return true;
-                }
-            }
-
-        }
-
-        if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
-            String keyspaceName = args[0];
-            if (!columnFamilyFilter.containsKey(keyspaceName)) {
-                return false;
-            }
-
-            String cfName = args[1];
-            List<String> cfsFilter = columnFamilyFilter.get(keyspaceName);
-            for (int i = 0; i < cfsFilter.size(); i++) {
-                Pattern p = Pattern.compile(cfsFilter.get(i));
-                Matcher m = p.matcher(cfName);
-                if (m.find()) {
-                    logger.info(keyspaceName + "." + cfName + " matched filter");
-                    return true;
-                }
-            }
-        }
-
-        return false; //if here, current input are not part of keyspae and cf filters
-    }
-
-    protected void populateFilters() {
-        String configKeyspaceFilter = getConfigKeyspaceFilter();
-        if (configKeyspaceFilter == null || configKeyspaceFilter.isEmpty()) {
-            logger.info(String.format("No keyspace filter set for {}.", JOBNAME));
-        } else {
-            String[] keyspaces = configKeyspaceFilter.split(",");
-            for (int i = 0; i < keyspaces.length; i++) {
-                logger.info(String.format("Adding {} keyspace filter: {}", JOBNAME, keyspaces[i]));
-                this.keyspaceFilter.put(keyspaces[i], null);
-            }
-
-        }
-
-        String configColumnfamilyFilter = getConfigColumnfamilyFilter();
-        if (configColumnfamilyFilter == null || configColumnfamilyFilter.isEmpty()) {
-
-            logger.info(String.format("No column family filter set for {}.", JOBNAME));
-
-        } else {
-
-            String[] filters = configColumnfamilyFilter.split(",");
-            for (int i = 0; i < filters.length; i++) { //process each filter
-                if (isValidCFFilterFormat(filters[i])) {
-
-                    String[] filter = filters[i].split("\\.");
-                    String ksName = filter[0];
-                    String cfName = filter[1];
-                    logger.info(String.format("Adding {} CF filter: {}.{}", JOBNAME, ksName, cfName));
-
-                    if (this.columnFamilyFilter.containsKey(ksName)) {
-                        //add cf to existing filter
-                        List<String> cfs = this.columnFamilyFilter.get(ksName);
-                        cfs.add(cfName);
-                        this.columnFamilyFilter.put(ksName, cfs);
-
-                    } else {
-
-                        List<String> cfs = new ArrayList<String>();
-                        cfs.add(cfName);
-                        this.columnFamilyFilter.put(ksName, cfs);
-
-                    }
-
-                } else {
-                    throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
-                }
-            } //end processing each filter
-
-        }
-    }
-
-    protected abstract String getConfigKeyspaceFilter();
-
-    protected abstract String getConfigColumnfamilyFilter();
-
-    public enum DIRECTORYTYPE {
-        KEYSPACE, CF
-    }
-
 }

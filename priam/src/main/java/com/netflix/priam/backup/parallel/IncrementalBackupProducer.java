@@ -42,13 +42,10 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class IncrementalBackupProducer extends AbstractBackup implements IIncrementalBackup {
 
-	public static final String JOBNAME = "INCR_PARALLEL_BACKUP_THREAD";
+	public static final String JOBNAME = "ParallelIncremental";
 	private static final Logger logger = LoggerFactory.getLogger(IncrementalBackupProducer.class);
 	 
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
-    private final Map<String, Object> incrementalCFFilter = new HashMap<String, Object>();
-	private final Map<String, Object> incrementalKeyspaceFilter  = new HashMap<String, Object>();
-
 	private IncrementalMetaData metaData;
 	private IncrementalConsumerMgr incrementalConsumerMgr;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
@@ -68,9 +65,9 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     }
     
     private void init(IFileSystemContext backupFileSystemCtx) {
-    	populateIncrementalFilters(); 
+    	populateFilters();
     	//"this" is a producer, lets wake up the "consumers"
-    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config, super.backupNotificationMgr);
+    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config);
     	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
     	consumerMgr.start();
     	
@@ -170,33 +167,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         * */
 	
 	}
-		
-    /*	
-     * 
-     * @return true if directory should be filter from processing; otherwise, false.
-     */
-    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
-    	if (directoryType.equals(DIRECTORYTYPE.CF)) {
-    		String keyspaceName = args[0];
-    		String cfName = args[1];
-    		if (this.incrementalKeyspaceFilter.containsKey(keyspaceName)) { //account for keyspace which we want to filter
-    			return true;
-    		} else {
-    			StringBuilder strBuf = new StringBuilder();
-    			strBuf.append(keyspaceName);
-    			strBuf.append('.');
-    			strBuf.append(cfName);
-            	return this.incrementalCFFilter.containsKey(strBuf.toString());    			
-    		}
-        	
-    	} else if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) {
-    		return this.incrementalKeyspaceFilter.containsKey(args[0]);
-    		
-    	} else {
-    		throw new UnsupportedOperationException("Directory type not supported.  Invalid input: " + directoryType.name());
-    	}
-
-    }
 
 	@Override
 	/*
@@ -205,42 +175,17 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	public String getName() {
 		return JOBNAME;
 	}
-	
-    private void populateIncrementalFilters() {
-    	String keyspaceFilters = this.config.getIncrementalKeyspaceFilters();
-    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
-    		
-    		logger.info("No keyspace filter set for incremental.");
-    		
-    	} else {
 
-        	String[] keyspaces = keyspaceFilters.split(",");
-        	for (int i=0; i < keyspaces.length; i++ ) {
-        		logger.info("Adding incremental keyspace filter: " + keyspaces[i]);
-        		this.incrementalKeyspaceFilter.put(keyspaces[i], null);
-        	}    		
-    		
-    	}
-    	
-    	String cfFilters = this.config.getIncrementalCFFilter();
-    	if (cfFilters == null || cfFilters.isEmpty()) {
-    		
-    		logger.info("No column family filter set for snapshot.");
-    		
-    	} else {
+	@Override
+	protected final String getConfigKeyspaceFilter(){
+		return config.getIncrementalKeyspaceFilters();
+	}
 
-        	String[] cf = cfFilters.split(",");
-        	for (int i=0; i < cf.length; i++) {
-        		if (isValidCFFilterFormat(cf[i])) {
-        			logger.info("Adding incremental CF filter: " + cf[i]);
-            		this.incrementalCFFilter.put(cf[i], null);        			
-        		} else {
-        			throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cf[i]);
-        		}
-        	}    		
-    		
-    	}    	
-    }
+	@Override
+	protected final String getConfigColumnfamilyFilter()
+	{
+		return config.getIncrementalCFFilter();
+	}
 
 	@Override
 	public long getNumPendingFiles() {

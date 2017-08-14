@@ -75,8 +75,6 @@ public class BRTestModule extends AbstractModule
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
-        bind(IMetricPublisher.class).annotatedWith(Names.named("defaultmetricpublisher")).to(NoOpMetricPublisher.class);
-        bind(INotificationService.class).annotatedWith(Names.named("defaultnotificationservice")).to(NoOpNotificationService.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
     }
 }

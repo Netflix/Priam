@@ -18,13 +18,13 @@ package com.netflix.priam.backup;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.regex.Pattern;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.notification.BackupEvent;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang3.StringUtils;

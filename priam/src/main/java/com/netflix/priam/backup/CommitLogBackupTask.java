@@ -115,4 +115,14 @@ public class CommitLogBackupTask extends AbstractBackup
 		clRemotePaths.add(remotePath);		
 	}
 
+    @Override
+    protected final String getConfigKeyspaceFilter() {
+        return null;
+    }
+
+    @Override
+    protected final String getConfigColumnfamilyFilter() {
+        return null;
+    }
+
 }

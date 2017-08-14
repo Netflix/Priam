@@ -43,17 +43,13 @@ public class IncrementalConsumerMgr implements Runnable {
 	private IBackupFileSystem fs;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
 	private BackupPostProcessingCallback<AbstractBackupPath> callback;
-	private BackupNotificationMgr backupNotificationMgr;
-
 	
 	public IncrementalConsumerMgr(ITaskQueueMgr<AbstractBackupPath> taskQueueMgr, IBackupFileSystem fs
 			, IConfiguration config
-			, BackupNotificationMgr backupNotificationMgr
 		) {
 		this.taskQueueMgr = taskQueueMgr;
 		this.fs = fs;
-		this.backupNotificationMgr = backupNotificationMgr;
-		
+
 		/*
 		 * Too few threads, the queue will build up, consuming a lot of memory.
 		 * Too many threads on the other hand will slow down the whole system due to excessive context switches - and lead to same symptoms.
@@ -90,7 +86,7 @@ public class IncrementalConsumerMgr implements Runnable {
 				try {
 					AbstractBackupPath bp = this.taskQueueMgr.take();
 					
-					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback, this.backupNotificationMgr);
+					IncrementalConsumer task = new IncrementalConsumer(bp, this.fs, this.callback);
 					executor.submit(task); //non-blocking, will be rejected if the task cannot be scheduled
 
 					

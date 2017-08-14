@@ -33,7 +33,6 @@ public class IncrementalConsumer implements Runnable {
 	private AbstractBackupPath bp;
 	private IBackupFileSystem fs;
 	private BackupPostProcessingCallback<AbstractBackupPath> callback;
-	private BackupNotificationMgr backupNotificationMgr;
 
     /**
      * Upload files. Does not delete the file in case of
@@ -43,13 +42,11 @@ public class IncrementalConsumer implements Runnable {
      */
 	public IncrementalConsumer(AbstractBackupPath bp, IBackupFileSystem fs
 			, BackupPostProcessingCallback<AbstractBackupPath> callback
-			, BackupNotificationMgr backupNotificationMgr
 	        ) {
 		this.bp = bp;
 		this.bp.setType(AbstractBackupPath.BackupFileType.SST);  //Tag this is an incremental upload, not snapshot
 		this.fs = fs;
 		this.callback = callback;
-		this.backupNotificationMgr = backupNotificationMgr;
 	}
 
 	@Override
@@ -60,12 +57,6 @@ public class IncrementalConsumer implements Runnable {
 	public void run() {
 		
 		logger.info("Consumer - about to upload file: " + this.bp.getFileName());
-		try {
-			this.backupNotificationMgr.notify(bp, BackupNotificationMgr.STARTED);
-		} catch (JSONException e) {
-			logger.error(String.format("JSon exception during precondition notifcation file upload.  Local file %s. Ignoring to continue with rest of backup.  Msg: %s"
-					, this.bp.getFileName(), e.getLocalizedMessage()));
-		}
 
 		try {
 			
@@ -106,8 +97,6 @@ public class IncrementalConsumer implements Runnable {
 			
 			this.bp.getBackupFile().delete(); //resource cleanup
 			this.callback.postProcessing(bp); //post processing
-			this.backupNotificationMgr.notify(bp, BackupNotificationMgr.SUCCESS_VAL);
-			
 		} catch (Exception e) {
 			if (e instanceof java.util.concurrent.CancellationException) {
 				logger.debug(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
@@ -115,13 +104,6 @@ public class IncrementalConsumer implements Runnable {
 			} else {
 				logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
 						, this.bp.getFileName(), e.getLocalizedMessage()));				
-			}
-
-			try {
-				this.backupNotificationMgr.notify(bp, BackupNotificationMgr.FAILED_VAL);
-			} catch (JSONException e1) {
-				logger.error(String.format("JSon exception during notifcation for failed upload.  Local file %s. Ignoring to continue with rest of backup.  Msg: %s"
-						, this.bp.getFileName(), e.getLocalizedMessage()));
 			}
 		}
 	}

@@ -25,7 +25,9 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.*;
@@ -44,9 +46,7 @@ import java.util.regex.Pattern;
  * Task for running daily snapshots
  */
 @Singleton
-public class SnapshotBackup extends AbstractBackup {
-    public static String JOBNAME = "SnapshotBackup";
-
+public class SnapshotBackup extends AbstractBackup{
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
@@ -54,8 +54,6 @@ public class SnapshotBackup extends AbstractBackup {
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
     private final CommitLogBackup clBackup;
-    private final Map<String, List<String>> snapshotCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
-    private final Map<String, Object> snapshotKeyspaceFilter = new HashMap<String, Object>(); //key: keyspace, value: null
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
 
@@ -64,9 +62,9 @@ public class SnapshotBackup extends AbstractBackup {
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity
-    ) {
+            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+        JOBNAME = "SnapshotBackup";
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
@@ -75,63 +73,20 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     private void init() {
-        populateSnapshotFilters();
+        populateFilters();
     }
 
-    private void populateSnapshotFilters() {
-        String keyspaceFilters = this.config.getSnapshotKeyspaceFilters();
-        if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
-
-            logger.info("No keyspace filter set for snapshot.");
-
-        } else {
-
-            String[] keyspaces = keyspaceFilters.split(",");
-            for (int i = 0; i < keyspaces.length; i++) {
-                logger.info("Adding snapshot keyspace filter: " + keyspaces[i]);
-                this.snapshotKeyspaceFilter.put(keyspaces[i], null);
-            }
-
-        }
-
-        String cfFilters = this.config.getSnapshotCFFilter();
-        if (cfFilters == null || cfFilters.isEmpty()) {
-
-            logger.info("No column family filter set for snapshot.");
-
-        } else {
-
-            String[] filters = cfFilters.split(",");
-            for (int i = 0; i < filters.length; i++) { //process each filter
-
-                if (isValidCFFilterFormat(filters[i])) {
-
-                    String[] filter = filters[i].split("\\.");
-                    String ksName = filter[0];
-                    String cfName = filter[1];
-                    logger.info("Adding snapshot CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
-
-                    if (this.snapshotCFFilter.containsKey(ksName)) {
-                        //add cf to existing filter
-                        List<String> cfs = this.snapshotCFFilter.get(ksName);
-                        cfs.add(cfName);
-                        this.snapshotCFFilter.put(ksName, cfs);
-
-                    } else {
-
-                        List<String> cfs = new ArrayList<String>();
-                        cfs.add(cfName);
-                        this.snapshotCFFilter.put(ksName, cfs);
-
-                    }
-
-                } else {
-                    throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
-                }
-
-            } //end processing each filter
-        }
+    @Override
+    protected final String getConfigKeyspaceFilter(){
+        return config.getSnapshotKeyspaceFilters();
     }
+
+    @Override
+    protected final String getConfigColumnfamilyFilter()
+    {
+        return config.getSnapshotCFFilter();
+    }
+
 
     @Override
     public void execute() throws Exception {
@@ -195,13 +150,13 @@ public class SnapshotBackup extends AbstractBackup {
             File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
             metaJsonAbp.setCompressedFileSize(0);
-            backupNotificationMgr.notify(metaJsonAbp, BackupNotificationMgr.STARTED);
+            notifyEventStart(new BackupEvent(metaJsonAbp));
 
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(bps, snapshotName);
 
             logger.info("Snapshot upload complete for " + snapshotName);
-            postProcesing(metaJson);
+            notifyEventSuccess(new BackupEvent(metaJsonAbp));
             backupMetadata.setSnapshotLocation(config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
 
@@ -221,62 +176,6 @@ public class SnapshotBackup extends AbstractBackup {
                 logger.error(e.getMessage(), e);
             }
         }
-    }
-
-    /*
-     * Performs any post processing (e.g. log success of backup).
-     * 
-     * @param name of the snapshotname, format is yyyymmddhhs
-     * @param start time of backup
-     */
-    private void postProcesing(AbstractBackupPath adp) throws JSONException {
-        backupNotificationMgr.notify(adp, BackupNotificationMgr.SUCCESS_VAL);
-    }
-
-    /*
-     * @param keyspace or columnfamily directory type.
-     * @return true if directory should be filter from processing; otherwise, false.
-     */
-    private boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
-
-        if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
-            //Apply each keyspace filter to input string
-            String keyspaceName = args[0];
-
-            java.util.Set<String> ksFilters = this.snapshotKeyspaceFilter.keySet();
-            Iterator<String> it = ksFilters.iterator();
-            while (it.hasNext()) {
-                String ksFilter = it.next();
-                Pattern p = Pattern.compile(ksFilter);
-                Matcher m = p.matcher(keyspaceName);
-                if (m.find()) {
-                    logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
-                    return true;
-                }
-            }
-
-        }
-
-        if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
-            String keyspaceName = args[0];
-            if (!this.snapshotCFFilter.containsKey(keyspaceName)) {
-                return false;
-            }
-
-            String cfName = args[1];
-            List<String> cfsFilter = this.snapshotCFFilter.get(keyspaceName);
-            for (int i = 0; i < cfsFilter.size(); i++) {
-                Pattern p = Pattern.compile(cfsFilter.get(i));
-                Matcher m = p.matcher(cfName);
-                if (m.find()) {
-                    logger.info(keyspaceName + "." + cfName + " matched filter");
-                    return true;
-                }
-            }
-        }
-
-        return false; //if here, current input are not part of keyspae and cf filters
-
     }
 
     private File getValidSnapshot(File columnFamilyDir, File snpDir, String snapshotName) {
@@ -366,5 +265,4 @@ public class SnapshotBackup extends AbstractBackup {
     protected void addToRemotePath(String remotePath) {
         snapshotRemotePaths.add(remotePath);
     }
-
 }

@@ -44,14 +44,10 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup
 {
-    public static final String JOBNAME = "INCR_BACKUP_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
 	private IncrementalMetaData metaData;
-	
-	private final Map<String, List<String>> incrementalCFFilter = new HashMap<String, List<String>>(); //key: keyspace, value: a list of CFs within the keyspace
-	private final Map<String, Object> incrementalKeyspaceFilter  = new HashMap<String, Object>(); //key: keyspace, value: null
 
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
@@ -63,67 +59,25 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
-        
+		JOBNAME = "IncrementalBackup";
         init();
     }
     
     private void init() {
-    	populateIncrementalFilters();
-    } 
-    
-    private void populateIncrementalFilters() {
-    	String keyspaceFilters = this.config.getIncrementalKeyspaceFilters();
-    	if (keyspaceFilters == null || keyspaceFilters.isEmpty()) {
-    		
-    		logger.info("No keyspace filter set for incremental.");
-    		
-    	} else {
-
-        	String[] keyspaces = keyspaceFilters.split(",");
-        	for (int i=0; i < keyspaces.length; i++ ) {
-        		logger.info("Adding incremental keyspace filter: " + keyspaces[i]);
-        		this.incrementalKeyspaceFilter.put(keyspaces[i], null);
-        	}    		
-    		
-    	}
-    	
-    	String cfFilters = this.config.getIncrementalCFFilter();
-    	if (cfFilters == null || cfFilters.isEmpty()) {
-    		
-    		logger.info("No column family filter set for incremental.");
-    		
-    	} else {
-
-    		String[] filters = cfFilters.split(",");
-    		for (int i=0; i < filters.length; i++) { //process each filter
-    			if (isValidCFFilterFormat(filters[i])) {
-    				
-        			String[] filter = filters[i].split("\\.");
-        			String ksName = filter[0];
-        			String cfName = filter[1];
-        			logger.info("Adding incremental CF filter, keyspaceName: " + ksName + ", cf: " + cfName);
-        			
-        			if (this.incrementalCFFilter.containsKey(ksName)) {
-        				//add cf to existing filter
-        				List<String> cfs = this.incrementalCFFilter.get(ksName);
-        				cfs.add(cfName);
-        				this.incrementalCFFilter.put(ksName, cfs);
-        				
-        			} else {
-        				
-        				List<String> cfs = new ArrayList<String>();
-        				cfs.add(cfName);
-        				this.incrementalCFFilter.put(ksName, cfs);
-        				
-        			}
-        			
-    			}  else {
-    				throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
-    			}
-    		} //end processing each filter		
-    		
-    	}    	
+    	populateFilters();
     }
+
+	@Override
+	protected final String getConfigKeyspaceFilter(){
+		return config.getIncrementalKeyspaceFilters();
+	}
+
+	@Override
+	protected final String getConfigColumnfamilyFilter()
+	{
+		return config.getIncrementalCFFilter();
+	}
+
     
     @Override
     public void execute() throws Exception
@@ -181,49 +135,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 		}
 
     }
-    
-    /*
-     * @return true if directory should be filter from processing; otherwise, false.
-     */
-    private boolean isFiltered(DIRECTORYTYPE directoryType, String...args) {
-    	if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
-    		String keyspaceName = args[0];
-    		//Apply each keyspace filter to input string
-    		java.util.Set<String> ksFilters = this.incrementalKeyspaceFilter.keySet();
-    		Iterator<String> it = ksFilters.iterator();
-    		while (it.hasNext()) {
-    			String ksFilter = it.next();
-    			Pattern p = Pattern.compile(ksFilter);
-    			Matcher m = p.matcher(keyspaceName);
-    			if (m.find()) {
-    				logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
-    				return true;
-    			}
-    		}    
-    		
-    	}
-    	
-    	if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
-    		String keyspaceName = args[0];
-    		if ( !this.incrementalCFFilter.containsKey(keyspaceName) ) {
-    			return false;
-    		}
-    		
-    		String cfName = args[1];
-    		List<String> cfsFilter = this.incrementalCFFilter.get(keyspaceName);
-			for (int i=0; i < cfsFilter.size(); i++) {
-				Pattern p = Pattern.compile(cfsFilter.get(i));
-				Matcher m = p.matcher(cfName);
-				if (m.find()) {
-    				logger.info(keyspaceName + "." +  cfName + " matched filter");
-    				return true;
-				}
-			}
-    	} 
-    	
-    	return false; //if here, current input are not part of keyspae and cf filters
 
-    }
 
     /**
      * Run every 10 Sec

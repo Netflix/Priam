@@ -37,6 +37,7 @@ import com.amazonaws.services.s3.model.*;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.apache.commons.io.IOUtils;
 
 import com.google.common.collect.Lists;
@@ -64,36 +65,19 @@ import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
  * Implementation of IBackupFileSystem for S3
  */
 @Singleton
-public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem, S3FileSystemMBean
+public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean
 {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
-    
-    private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
-    
-    private final Provider<AbstractBackupPath> pathProvider;
-    private final ICompression compress;
-    private final IConfiguration config;
-    private BlockingSubmitThreadPoolExecutor executor;
-    private RateLimiter rateLimiter;
-    private IBackupMetrics backupMetricsMgr;
 
     @Inject
-    public S3FileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config
-                        , @Named("awss3roleassumption")IS3Credential cred
-                        , @Named("defaultmetricpublisher") IMetricPublisher metricPublisher
-                        , IBackupMetrics backupMetricsMgr
-                    )
+    public S3FileSystem(@Named("awss3roleassumption")IS3Credential cred, Provider<AbstractBackupPath> pathProvider,
+                        ICompression compress,
+                        final IConfiguration config,
+                        IMetricPublisher metricPublisher,
+                        IBackupMetrics backupMetricsMgr,
+                        BackupNotificationMgr backupNotificationMgr)
     {
-        super(metricPublisher);
-        this.pathProvider = pathProvider;
-        this.compress = compress;
-        this.config = config;
-        this.backupMetricsMgr = backupMetricsMgr;
-        int threads = config.getMaxBackupUploadThreads();
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
-        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT); //Provide 2 hours to upload all chunks of a file
-        double throttleLimit = config.getUploadThrottle();
-        rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
+        super(pathProvider, compress, config, metricPublisher, backupMetricsMgr, backupNotificationMgr);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = MBEAN_NAME;
@@ -106,49 +90,33 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             throw new RuntimeException(e);
         }        
         
-        super.s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
-        //super.s3Client.setEndpoint(super.getS3Endpoint(this.config));
+        s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
+    public void downloadFile(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
     {
         try
         {
-            logger.info("Downloading " + path.getRemotePath() + " from S3 bucket " + getPrefix(this.config));
-            downloadCount.incrementAndGet();
-            final AmazonS3 client = super.getS3Client();
-            long contentLen = client.getObjectMetadata(getPrefix(this.config), path.getRemotePath()).getContentLength();
-            path.setSize(contentLen);
-            RangeReadInputStream rris = new RangeReadInputStream(client, getPrefix(this.config), path);
-            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > contentLen ? contentLen : MAX_BUFFERED_IN_STREAM_SIZE;
-            
+            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(this.config), path);
+            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > path.getSize() ? path.getSize() : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int)bufSize), os);
-            
-            bytesDownloaded.addAndGet(contentLen);
         }
         catch (Exception e)
         {
-
-            throw new BackupRestoreException(e.getMessage(), e);
+            throw new BackupRestoreException("Exception encountered downloading " + path.getRemotePath() + " from S3 bucket " + getPrefix(config)
+                    + ", Msg: " + e.getMessage(), e);
         }
     }
     
     @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
+    public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException
     {
-        reinitialize();  //perform before file upload
-        super.uploadCount.incrementAndGet();
-
-        AmazonS3 s3Client = super.getS3Client();
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
-        long chunkSize = config.getBackupChunkSize();
-        if (path.getSize() > 0)
-            chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize;
-        logger.info(String.format("Uploading to %s/%s with chunk size %d", config.getBackupPrefix(), path.getRemotePath(), chunkSize));
+
         try
         {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
@@ -156,7 +124,6 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             int partNum = 0;
             AtomicInteger partsUploaded = new AtomicInteger(0);
 
-            long startTime = System.nanoTime();; //initialize for each file upload
             while (chunks.hasNext())
             {
                 byte[] chunk = chunks.next();
@@ -168,23 +135,12 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
             }
             executor.sleepTillEmpty();
             logger.info("All chunks uploaded for file " + path.getFileName() + ", num of expected parts:" + partNum + ", num of actual uploaded parts: " + partsUploaded.get());
+
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
+
             CompleteMultipartUploadResult resultS3MultiPartUploadComplete = new S3PartUploader(s3Client, part, partETags).completeUpload();
-
-            if(null != resultS3MultiPartUploadComplete &&  null != resultS3MultiPartUploadComplete.getETag()) {
-                String eTagObjectId = resultS3MultiPartUploadComplete.getETag(); //unique id of the whole object
-                logDiagnosticInfo(path, resultS3MultiPartUploadComplete);
-            }
-            else
-            {
-                this.backupMetricsMgr.incrementInvalidUploads();
-                throw new BackupRestoreException("Error uploading file as ETag or CompleteMultipartUploadResult is NULL -" + path.getFileName());
-            }
-
-            long completedTime = System.nanoTime();
-
-            postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
+            checkSuccessfulUpload(resultS3MultiPartUploadComplete, path);
             
             if (logger.isDebugEnabled())
             {	
@@ -194,19 +150,9 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
                logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
             }
 
-        } catch(AmazonS3Exception e) {
-            this.backupMetricsMgr.incrementInvalidUploads();
-            lookForS3Throttling(e, path);
-            logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
-            new S3PartUploader(s3Client, part, partETags).abortUpload();
-            throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
-
         } catch (Exception e)
         {
-            this.backupMetricsMgr.incrementInvalidUploads();
-            logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
-            new S3PartUploader(s3Client, part, partETags).abortUpload(); //Tells S3 to abandon the upload
-            throw new BackupRestoreException("Error uploading file " + path.getFileName(), e);
+            throw encounterError(path, new S3PartUploader(s3Client, part, partETags), e);
         } finally {
             IOUtils.closeQuietly(in);
         }
@@ -218,40 +164,6 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         return executor.getActiveCount();
     }
 
-    @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till)
-    {
-        return new S3FileIterator(pathProvider, super.getS3Client(), path, start, till);
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date)
-    {
-        return new S3PrefixIterator(config, pathProvider, super.getS3Client(), date);
-    }
-
-    /**
-     * Note: Current limitation allows only 100 object expiration rules to be
-     * set. Removes the rule is set to 0.
-     */
-    @Override
-    public void cleanup()
-    {
-    	super.cleanUp(this.config, this.pathProvider);
-    }
-
-    /*
-     * A means to change the default handle to the S3 client.
-     */
-    public void setS3Client(AmazonS3 client) {
-    	super.s3Client = client;
-    }
-
-    public void shutdown()
-    {
-        if (executor != null)
-            executor.shutdown();
-    }
 
     @Override
     public int downloadCount()
@@ -275,38 +187,11 @@ public class S3FileSystem extends S3FileSystemBase implements IBackupFileSystem,
         return super.bytesUploaded.get();
     }
 
-    @Override
-    public long getBytesUploaded() {
-        return super.bytesUploaded.get();
-    }
-
-    @Override
-    public int getAWSSlowDownExceptionCounter() {
-        return super.awsSlowDownExceptionCounter;
-    }
 
     @Override
     public long bytesDownloaded()
     {
         return bytesDownloaded.get();
     }
-
-    /**
-     * This method does exactly as other download method.(Supposed to be overridden)
-     * filePath parameter provides the diskPath of the downloaded file.
-     * This path can be used to correlate the files which are Streamed In 
-     * during Incremental Restores
-     */
-	@Override
-	public void download(AbstractBackupPath path, OutputStream os,
-			String filePath) throws BackupRestoreException {
-		try {
-			// Calling original Download method
-			download(path, os);
-		} catch (Exception e) {
-			throw new BackupRestoreException(e.getMessage(), e);
-		}
-
-	}
 
 }

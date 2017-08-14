@@ -68,7 +68,7 @@ public class S3CrossAccountFileSystem  {
 				
 					try {
 
-						this.s3Client = AmazonS3Client.builder().withCredentials(s3Credential.getAwsCredentialProvider()).withRegion(config.getDC()).build();//new AmazonS3Client(s3Credential.getAwsCredentialProvider());
+						this.s3Client = AmazonS3Client.builder().withCredentials(s3Credential.getAwsCredentialProvider()).withRegion(config.getDC()).build();
 
 					} catch (Exception e) {
 						throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);

@@ -47,7 +47,7 @@ public class FlushTask extends Task {
     private IMeasurement measurement;
 
     @Inject
-    public FlushTask(IConfiguration config, @Named("defaultmetricpublisher") IMetricPublisher metricPublisher) {
+    public FlushTask(IConfiguration config, IMetricPublisher metricPublisher) {
         super(config);
         this.metricPublisher = metricPublisher;
         measurement = new NodeToolFlushMeasurement();

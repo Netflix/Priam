@@ -35,7 +35,7 @@ import java.util.LinkedList;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
-/*
+/**
  * A means to perform a restore.  This class contains the following characteristics:
  * - It is agnostic to the source type of the restore, this is determine by the injected IBackupFileSystem.
  * - This class can be scheduled, i.e. it is a "Task".
@@ -179,20 +179,21 @@ public abstract class AbstractRestore extends AbstractBackupRestore
     }
     
     
-    /*
+    /**
      * An overloaded download where it will not only download the object but decrypt and uncompress the
      * 
      *  @param path - path of object to download from source.
-     *  @param out - handle to the FINAL destination stream.
+     *  @param finalDestination - handle to the FINAL destination stream.
      *  Note: if this behavior is successful, it will close the output stream.
      *  
-     *  @param temp - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
+     *  @param tempFile - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
      *  
      *  Note: the temp file will be removed on successful processing.
      *  
      *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     *  @param fileCrypotography - the implemented cryptography algorithm use to decrypt.
+     *  @param fileCryptography - the implemented cryptography algorithm use to decrypt.
      *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     *  @param compress - Compression algorithm to use to decompress.
      */
     public void download(final AbstractBackupPath path, final OutputStream finalDestination,  final File tempFile
 		, final IFileCryptography fileCryptography
@@ -294,15 +295,16 @@ public abstract class AbstractRestore extends AbstractBackupRestore
     
     
     
-    /*
+    /**
      * An overloaded download where it will not only download the object but also decrypt and uncompress.
      * 
      *  @param path - path of object to download from source.
      *  @param restoreLocation - file handle to the FINAL file on disk
-     *  @param temp - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
+     *  @param tempFile - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
      *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     *  @param fileCrypotography - the implemented cryptography algorithm use to decrypt.
+     *  @param fileCryptography - the implemented cryptography algorithm use to decrypt.
      *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     *  @param compress - Compression algorithm to use to decompress.
      */
     public void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
     		, final IFileCryptography fileCryptography
@@ -328,7 +330,7 @@ public abstract class AbstractRestore extends AbstractBackupRestore
 		
     } 
     
-    /*
+    /**
      * A means to wait until until all threads have completed.  It blocks calling thread
      * until all tasks (ala counter "count" is 0) are completed.
      */

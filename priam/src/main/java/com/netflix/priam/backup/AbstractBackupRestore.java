@@ -38,28 +38,37 @@ public abstract class AbstractBackupRestore extends Task {
     protected final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
     protected final Map<String, Object> keyspaceFilter = new HashMap<>(); //key: keyspace, value: null
 
+    private Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
+
     @Inject
-    public AbstractBackupRestore(IConfiguration config)
-    {
+    public AbstractBackupRestore(IConfiguration config) {
         super(config);
         this.config = config;
     }
 
-    /*
- * search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
- * @param input string
- * @return true if input string matches search pattern; otherwise, false
- */
+    /**
+     * Search for "1:* alphanumeric chars including special chars""literal period"" 1:* alphanumeric chars  including special chars"
+     *
+     * @param cfFilter input string
+     * @return true if input string matches search pattern; otherwise, false
+     */
     protected final boolean isValidCFFilterFormat(String cfFilter) {
-        Pattern p = Pattern.compile(".\\..");
-        Matcher m = p.matcher(cfFilter);
-        return m.find();
+        return columnFamilyFilterPattern.matcher(cfFilter).find();
     }
 
+    /**
+     * @return Name of keyspaces to be filtered.
+     */
     protected abstract String getConfigKeyspaceFilter();
 
+    /**
+     * @return Name of fully qualified kesypace.columnfamilies to be filtered.
+     */
     protected abstract String getConfigColumnfamilyFilter();
 
+    /**
+     * Populate the filters for backup/restore as configured for internal use.
+     */
     protected final void populateFilters() {
         String configKeyspaceFilter = getConfigKeyspaceFilter();
         if (configKeyspaceFilter == null || configKeyspaceFilter.isEmpty()) {
@@ -91,9 +100,9 @@ public abstract class AbstractBackupRestore extends Task {
 
                     if (this.columnFamilyFilter.containsKey(ksName)) {
                         //add cf to existing filter
-                        List<String> cfs = this.columnFamilyFilter.get(ksName);
-                        cfs.add(cfName);
-                        this.columnFamilyFilter.put(ksName, cfs);
+                        List<String> columnfamilies = this.columnFamilyFilter.get(ksName);
+                        columnfamilies.add(cfName);
+                        this.columnFamilyFilter.put(ksName, columnfamilies);
 
                     } else {
 
@@ -111,10 +120,10 @@ public abstract class AbstractBackupRestore extends Task {
         }
     }
 
-    /*
-   * @param keyspace or columnfamily directory type.
-   * @return true if directory should be filter from processing; otherwise, false.
-   */
+    /**
+     * @param directoryType keyspace or columnfamily directory type.
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
     protected final boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
 
         if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
@@ -125,14 +134,13 @@ public abstract class AbstractBackupRestore extends Task {
             Iterator<String> it = ksFilters.iterator();
             while (it.hasNext()) {
                 String ksFilter = it.next();
-                Pattern p = Pattern.compile(ksFilter);
-                Matcher m = p.matcher(keyspaceName);
-                if (m.find()) {
+                Pattern pattern = Pattern.compile(ksFilter);
+                Matcher matcher = pattern.matcher(keyspaceName);
+                if (matcher.find()) {
                     logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
                     return true;
                 }
             }
-
         }
 
         if (directoryType.equals(DIRECTORYTYPE.CF)) { //parent (keyspace) is not filtered, now see if the child (CF) is filtered
@@ -144,9 +152,9 @@ public abstract class AbstractBackupRestore extends Task {
             String cfName = args[1];
             List<String> cfsFilter = columnFamilyFilter.get(keyspaceName);
             for (int i = 0; i < cfsFilter.size(); i++) {
-                Pattern p = Pattern.compile(cfsFilter.get(i));
-                Matcher m = p.matcher(cfName);
-                if (m.find()) {
+                Pattern pattern = Pattern.compile(cfsFilter.get(i));
+                Matcher matcher = pattern.matcher(cfName);
+                if (matcher.find()) {
                     logger.info(keyspaceName + "." + cfName + " matched filter");
                     return true;
                 }

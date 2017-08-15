@@ -26,15 +26,15 @@ import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
-import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Abstract Backup class for uploading files to backup location
@@ -60,7 +60,7 @@ public abstract class AbstractBackup extends AbstractBackupRestore implements Ev
         this.addObserver(backupNotificationMgr);
     }
 
-    /*
+    /**
      * A means to override the type of backup strategy chosen via BackupFileSystemContext
      */
     protected void setFileSystem(IBackupFileSystem fs) {

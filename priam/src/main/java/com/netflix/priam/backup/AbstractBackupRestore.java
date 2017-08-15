@@ -70,13 +70,17 @@ public abstract class AbstractBackupRestore extends Task {
      * Populate the filters for backup/restore as configured for internal use.
      */
     protected final void populateFilters() {
+        //Clear the filters as we will (re)populate the filters.
+        keyspaceFilter.clear();
+        columnFamilyFilter.clear();
+
         String configKeyspaceFilter = getConfigKeyspaceFilter();
         if (configKeyspaceFilter == null || configKeyspaceFilter.isEmpty()) {
-            logger.info(String.format("No keyspace filter set for {}.", JOBNAME));
+            logger.info("No keyspace filter set for {}.", JOBNAME);
         } else {
             String[] keyspaces = configKeyspaceFilter.split(",");
             for (int i = 0; i < keyspaces.length; i++) {
-                logger.info(String.format("Adding {} keyspace filter: {}", JOBNAME, keyspaces[i]));
+                logger.info("Adding {} keyspace filter: {}", JOBNAME, keyspaces[i]);
                 this.keyspaceFilter.put(keyspaces[i], null);
             }
 
@@ -85,7 +89,7 @@ public abstract class AbstractBackupRestore extends Task {
         String configColumnfamilyFilter = getConfigColumnfamilyFilter();
         if (configColumnfamilyFilter == null || configColumnfamilyFilter.isEmpty()) {
 
-            logger.info(String.format("No column family filter set for {}.", JOBNAME));
+            logger.info("No column family filter set for {}.", JOBNAME);
 
         } else {
 
@@ -96,7 +100,7 @@ public abstract class AbstractBackupRestore extends Task {
                     String[] filter = filters[i].split("\\.");
                     String ksName = filter[0];
                     String cfName = filter[1];
-                    logger.info(String.format("Adding {} CF filter: {}.{}", JOBNAME, ksName, cfName));
+                    logger.info("Adding {} CF filter: {}.{}", JOBNAME, ksName, cfName);
 
                     if (this.columnFamilyFilter.containsKey(ksName)) {
                         //add cf to existing filter

@@ -139,19 +139,43 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
         }.call();
     }
 
-    protected final void uploadBackup(String monitoringFolder)
-    {
+    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws IllegalArgumentException, Exception {
 
         File dataDir = new File(config.getDataFileLocation());
-         if (!dataDir.exists())
-             
-        { throw new IllegalArgumentException("The configured 'data file location' does not exist: "  + config.getDataFileLocation())
-            ; } 
+        if (!dataDir.exists()) {
+            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
+                    + config.getDataFileLocation());
+        }
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
+        for (File keyspaceDir : dataDir.listFiles()) {
+            if (keyspaceDir.isFile())
+                continue;
+
+            if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
+                logger.info("Skipping: " + keyspaceDir.getName() + " is part of keyspace filter");
+                continue;
+            }
+            logger.debug("Entering {} keyspace..", keyspaceDir.getName());
+
+            for (File columnFamilyDir : keyspaceDir.listFiles()) {
+                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
+                    logger.info("Skipping: keyspace: " + keyspaceDir.getName()
+                            + ", CF: " + columnFamilyDir.getName() + " is part of CF filter list.");
+                    continue;
+                }
+
+                File backupDir = new File(columnFamilyDir, monitoringFolder);
+                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
+                    continue;
+                }
+
+                backupUploadFlow(backupDir);
+            } //end processing all CFs for keyspace
+        } //end processing keyspaces under the C* data dir
 
     }
 
-    abstract void customBackupUploadFlow();
+    protected abstract void backupUploadFlow(File backupDir) throws Exception;
 
     /**
      * Filters unwanted keyspaces and column families

@@ -67,56 +67,11 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     {   	
 		//Clearing remotePath List
 		incrementalRemotePaths.clear();
-		File dataDir = new File(config.getDataFileLocation());
-		if (!dataDir.exists())
-		{
-			throw new IllegalArgumentException("The configured 'data file location' does not exist: "
-                + config.getDataFileLocation());
-		}
-		logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
-		for (File keyspaceDir : dataDir.listFiles())
-		{
-			if (keyspaceDir.isFile())
-    			continue;
-        
-			if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
-				logger.info(keyspaceDir.getName() + " is part of keyspace filter, incremental not done.");
-				continue;
-			}
-        
-			for (File columnFamilyDir : keyspaceDir.listFiles())
-			{
-        	
-				if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
-					logger.info("keyspace: " + keyspaceDir.getName() 
-            			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, incrmental not done.");
-					continue;
-				}
-        	
-				File backupDir = new File(columnFamilyDir, "backups");
-				if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
-					continue;
-				}
-            
-				List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
-            
-				if ( ! uploadedFiles.isEmpty() ) {
-					String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
-					String metaFileName = "meta_" + columnFamilyDir.getName() + "_" + incrementalUploadTime;
-					logger.info("Uploading meta file for incremental backup: " + metaFileName); 
-					this.metaData.setMetaFileName(metaFileName);
-					this.metaData.set(uploadedFiles, incrementalUploadTime);
-					logger.info("Uploaded meta file for incremental backup: " + metaFileName);                	
-				}
-
-			}
-		}
- 		
+		initiateBackup("backups", backupRestoreUtil);
 		if(incrementalRemotePaths.size() > 0)
 		{
 			notifyObservers();
 		}
-
     }
 
 
@@ -157,6 +112,21 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         			logger.info("Observer is Null, hence can not notify ...");
         }
     }
+
+	@Override
+	protected void backupUploadFlow(File backupDir) throws Exception{
+		List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
+
+		if ( ! uploadedFiles.isEmpty() ) {
+			String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
+			String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
+			logger.info("Uploading meta file for incremental backup: " + metaFileName);
+			this.metaData.setMetaFileName(metaFileName);
+			this.metaData.set(uploadedFiles, incrementalUploadTime);
+			logger.info("Uploaded meta file for incremental backup: " + metaFileName);
+		}
+
+	}
 
 	@Override
 	protected void addToRemotePath(String remotePath) {

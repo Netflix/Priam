@@ -24,23 +24,18 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.*;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Task for running daily snapshots
@@ -58,6 +53,8 @@ public class SnapshotBackup extends AbstractBackup{
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
+    private String snapshotName = null;
+    private List<AbstractBackupPath> abstractBackupPaths = null;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
@@ -81,7 +78,7 @@ public class SnapshotBackup extends AbstractBackup{
         }
 
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
-        String snapshotName = pathFactory.get().formatDate(startTime);
+        snapshotName = pathFactory.get().formatDate(startTime);
         String token = instanceIdentity.getInstance().getToken();
 
         // Save start snapshot status
@@ -95,40 +92,8 @@ public class SnapshotBackup extends AbstractBackup{
             takeSnapshot(snapshotName);
 
             // Collect all snapshot dir's under keyspace dir's
-            List<AbstractBackupPath> bps = Lists.newArrayList();
-            File dataDir = new File(config.getDataFileLocation());
-            for (File keyspaceDir : dataDir.listFiles()) {
-                if (keyspaceDir.isFile())
-                    continue;
-
-                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
-                    logger.info(keyspaceDir.getName() + " is part of keyspace filter, will not be backed up.");
-                    continue;
-                }
-
-                logger.debug("Entering {} keyspace..", keyspaceDir.getName());
-                for (File columnFamilyDir : keyspaceDir.listFiles()) {
-                    if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
-                        logger.info("keyspace: " + keyspaceDir.getName()
-                                + ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, will not be backed up.");
-                        continue;
-                    }
-
-                    logger.debug("Entering {} columnFamily..", columnFamilyDir.getName());
-                    File snpDir = new File(columnFamilyDir, "snapshots");
-                    if (!isValidBackupDir(keyspaceDir, columnFamilyDir, snpDir)) {
-                        continue;
-                    }
-
-                    File snapshotDir = getValidSnapshot(columnFamilyDir, snpDir, snapshotName);
-                    // Add files to this dir
-                    if (null != snapshotDir)
-                        bps.addAll(upload(snapshotDir, BackupFileType.SNAP));
-                    else
-                        logger.warn("{} folder does not contain {} snapshots", snpDir, snapshotName);
-                }
-
-            }
+            abstractBackupPaths = Lists.newArrayList();
+            initiateBackup("snapshots", backupRestoreUtil);
 
             //pre condition notifiy of meta.json upload
             File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
@@ -137,7 +102,7 @@ public class SnapshotBackup extends AbstractBackup{
             notifyEventStart(new BackupEvent(metaJsonAbp));
 
             // Upload meta file
-            AbstractBackupPath metaJson = metaData.set(bps, snapshotName);
+            AbstractBackupPath metaJson = metaData.set(abstractBackupPaths, snapshotName);
 
             logger.info("Snapshot upload complete for " + snapshotName);
             notifyEventSuccess(new BackupEvent(metaJsonAbp));
@@ -162,7 +127,7 @@ public class SnapshotBackup extends AbstractBackup{
         }
     }
 
-    private File getValidSnapshot(File columnFamilyDir, File snpDir, String snapshotName) {
+    private File getValidSnapshot(File snpDir, String snapshotName) {
         for (File snapshotDir : snpDir.listFiles())
             if (snapshotDir.getName().matches(snapshotName))
                 return snapshotDir;
@@ -243,6 +208,17 @@ public class SnapshotBackup extends AbstractBackup{
             } else
                 logger.info("Observer is Null, hence can not notify ...");
         }
+    }
+
+    @Override
+    protected void backupUploadFlow(File backupDir) throws Exception {
+
+        File snapshotDir = getValidSnapshot(backupDir, snapshotName);
+        // Add files to this dir
+        if (null != snapshotDir)
+            abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP));
+        else
+            logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
     }
 
     @Override

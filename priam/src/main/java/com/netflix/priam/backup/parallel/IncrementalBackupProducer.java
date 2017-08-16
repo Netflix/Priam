@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,109 +38,73 @@ import com.netflix.priam.scheduler.TaskTimer;
 @Singleton
 public class IncrementalBackupProducer extends AbstractBackup implements IIncrementalBackup {
 
-	public static final String JOBNAME = "ParallelIncremental";
-	private static final Logger logger = LoggerFactory.getLogger(IncrementalBackupProducer.class);
-	 
+    public static final String JOBNAME = "ParallelIncremental";
+    private static final Logger logger = LoggerFactory.getLogger(IncrementalBackupProducer.class);
+
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
-	private IncrementalMetaData metaData;
-	private IncrementalConsumerMgr incrementalConsumerMgr;
-	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
-	private BackupRestoreUtil backupRestoreUtil;
-    
+    private IncrementalMetaData metaData;
+    private IncrementalConsumerMgr incrementalConsumerMgr;
+    private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
+    private BackupRestoreUtil backupRestoreUtil;
+
     @Inject
     public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
-    		, IncrementalMetaData metaData
-    		, @Named("backup") ITaskQueueMgr taskQueueMgr
-			, BackupNotificationMgr backupNotificationMgr
-			) {
-    	
+            , IncrementalMetaData metaData
+            , @Named("backup") ITaskQueueMgr taskQueueMgr
+            , BackupNotificationMgr backupNotificationMgr
+    ) {
+
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.taskQueueMgr = taskQueueMgr;
         this.metaData = metaData;
-        
+
         init(backupFileSystemCtx);
     }
-    
+
     private void init(IFileSystemContext backupFileSystemCtx) {
-    	backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
-    	//"this" is a producer, lets wake up the "consumers"
-    	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config);
-    	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
-    	consumerMgr.start();
-    	
+        backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
+        //"this" is a producer, lets wake up the "consumers"
+        this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config);
+        Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
+        consumerMgr.start();
+
     }
-	
-	@Override
-	/*
+
+    @Override
+    protected void backupUploadFlow(File backupDir) throws Exception {
+        for (final File file : backupDir.listFiles()) {
+            try {
+                final AbstractBackupPath bp = pathFactory.get();
+                bp.parseLocal(file, BackupFileType.SST);
+                this.taskQueueMgr.add(bp); //producer -- populate the queue of files.  *Note: producer will block if queue is full.
+            } catch (Exception e) {
+                logger.warn("Unable to queue incremental file, treating as non-fatal and moving on to next.  Msg: "
+                        + e.getLocalizedMessage()
+                        + " Fail to queue file: "
+                        + file.getAbsolutePath());
+            }
+
+        } //end enqueuing all incremental files for a CF
+    }
+
+    @Override
+    /*
 	 * Keeping track of successfully uploaded files.
 	 */
-	protected void addToRemotePath(String remotePath) {
-		incrementalRemotePaths.add(remotePath);		
-	}
-	
+    protected void addToRemotePath(String remotePath) {
+        incrementalRemotePaths.add(remotePath);
+    }
 
-	@Override
-	public void execute() throws Exception {
 
-    	//Clearing remotePath List
-    	incrementalRemotePaths.clear();
-        File dataDir = new File(config.getDataFileLocation());
-        if (!dataDir.exists())
-        {
-            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
-                    + config.getDataFileLocation());
-        }
-        logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
-        for (File keyspaceDir : dataDir.listFiles())
-        {
-        	if (keyspaceDir.isFile())
-    			continue;
-        	
-        	if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
-            	logger.info(keyspaceDir.getName() + " is part of keyspace filter, incremental not done.");
-            	continue;
-            }
-        	
-        	for (File columnFamilyDir : keyspaceDir.listFiles())
-            {
-                if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
-                	logger.info("keyspace: " + keyspaceDir.getName() 
-                			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, incrmental not done.");
-                	continue;
-                }
-                
-                File backupDir = new File(columnFamilyDir, "backups");
-                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
-                	continue;
-                }
-
-                //Custom logic
-                for (final File file : backupDir.listFiles()){
-                    try
-                    {
-                        final AbstractBackupPath bp = pathFactory.get();
-                        bp.parseLocal(file, BackupFileType.SST);
-                        
-                		this.taskQueueMgr.add(bp); //producer -- populate the queue of files.  *Note: producer will block if queue is full.
-                    	
-                    }
-                    catch(Exception e)
-                    {
-                		logger.warn("Unable to queue incremental file, treating as non-fatal and moving on to next.  Msg: "
-                				+ e.getLocalizedMessage()
-                				+ " Fail to queue file: "
-                				+ file.getAbsolutePath());
-                    }
-
-                } //end enqueuing all incremental files for a CF
-				//End custom logic.
-            } //end processing all CFs for keyspace
-        } //end processing keyspaces under the C* data dir
-     
+    @Override
+    public void execute() throws Exception {
+        //Clearing remotePath List
+        incrementalRemotePaths.clear();
+        initiateBackup("backups", backupRestoreUtil);
         return;
-	}
-	
-	public void postProcessing() {
+    }
+
+    public void postProcessing() {
         /*
         *
         * Upload the audit file of completed uploads
@@ -164,33 +128,32 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         	notifyObservers();
         }
         * */
-	
-	}
 
-	@Override
+    }
+
+    @Override
 	/*
 	 * @return an identifier of purpose of the task.
 	 */
-	public String getName() {
-		return JOBNAME;
-	}
+    public String getName() {
+        return JOBNAME;
+    }
 
-	@Override
-	public long getNumPendingFiles() {
-		throw new UnsupportedOperationException();
-	}
-	
+    @Override
+    public long getNumPendingFiles() {
+        throw new UnsupportedOperationException();
+    }
+
     /**
      * @return Timer that run every 10 Sec
      */
-    public static TaskTimer getTimer()
-    {
+    public static TaskTimer getTimer() {
         return new SimpleTimer(JOBNAME, INCREMENTAL_INTERVAL_IN_MILLISECS);
     }
-    
-	@Override
-	public String getJobName() {
-		return JOBNAME;
-	}
+
+    @Override
+    public String getJobName() {
+        return JOBNAME;
+    }
 
 }

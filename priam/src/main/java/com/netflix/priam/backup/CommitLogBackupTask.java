@@ -16,6 +16,7 @@
 package com.netflix.priam.backup;
 
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,7 +111,12 @@ public class CommitLogBackupTask extends AbstractBackup
         }
     }
 
-	@Override
+    @Override
+    protected void backupUploadFlow(File backupDir) throws Exception {
+        //Do nothing.
+    }
+
+    @Override
 	protected void addToRemotePath(String remotePath) {		
 		clRemotePaths.add(remotePath);		
 	}

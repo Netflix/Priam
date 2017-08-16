@@ -20,6 +20,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
+import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -41,9 +42,10 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - This class can be scheduled, i.e. it is a "Task".
  * - When this class is executed, it uses its own thread pool to execute the restores.
  */
-public abstract class AbstractRestore extends AbstractBackupRestore
+public abstract class AbstractRestore extends Task
 {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
+    private static final String JOBNAME = "AbstractRestore";
     private static final String SYSTEM_KEYSPACE = "system";
     // keeps track of the last few download which was executed.
     // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
@@ -53,36 +55,18 @@ public abstract class AbstractRestore extends AbstractBackupRestore
     
     protected final ThreadPoolExecutor executor;
     public static BigInteger restoreToken;
-    
+    private BackupRestoreUtil backupRestoreUtil;
     protected final Sleeper sleeper;
     
     public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper)
     {
         super(config);
-        JOBNAME = "AbstractRestore";
         this.fs = fs;
         this.sleeper = sleeper;
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
         executor.allowCoreThreadTimeOut(true);
-        
-        init();
+        backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(),config.getRestoreCFFilter());
     }
-    
-    private void init() {
-    	populateFilters();
-    }
-
-	@Override
-	protected final String getConfigKeyspaceFilter(){
-		return config.getRestoreKeyspaceFilter();
-	}
-
-	@Override
-	protected final String getConfigColumnfamilyFilter()
-	{
-		return config.getRestoreCFFilter();
-	}
-
 
     protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception
     {
@@ -92,12 +76,12 @@ public abstract class AbstractRestore extends AbstractBackupRestore
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
                 continue;
             
-            if ( isFiltered(DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //keyspace filtered?
+            if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())  ) { //keyspace filtered?
             	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as its keyspace: \"" + temp.getKeyspace() + "\" is part of the filter list");
             	continue;
             }
             
-            if (isFiltered(DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
+            if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
             	logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: "
             			+ temp.getKeyspace() + ":" + temp.getColumnFamily());
             	continue;

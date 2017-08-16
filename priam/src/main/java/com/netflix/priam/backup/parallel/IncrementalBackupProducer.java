@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.netflix.priam.backup.*;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,12 +31,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackup;
-import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backup.IIncrementalBackup;
-import com.netflix.priam.backup.IncrementalMetaData;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 
@@ -49,6 +45,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	private IncrementalMetaData metaData;
 	private IncrementalConsumerMgr incrementalConsumerMgr;
 	private ITaskQueueMgr<AbstractBackupPath> taskQueueMgr;
+	private BackupRestoreUtil backupRestoreUtil;
     
     @Inject
     public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
@@ -65,7 +62,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     }
     
     private void init(IFileSystemContext backupFileSystemCtx) {
-    	populateFilters();
+    	backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
     	//"this" is a producer, lets wake up the "consumers"
     	this.incrementalConsumerMgr = new IncrementalConsumerMgr(this.taskQueueMgr, backupFileSystemCtx.getFileStrategy(config), super.config);
     	Thread consumerMgr = new Thread(this.incrementalConsumerMgr);
@@ -99,14 +96,14 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         	if (keyspaceDir.isFile())
     			continue;
         	
-        	if ( isFiltered(DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
+        	if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
             	logger.info(keyspaceDir.getName() + " is part of keyspace filter, incremental not done.");
             	continue;
             }
         	
         	for (File columnFamilyDir : keyspaceDir.listFiles())
             {
-                if ( isFiltered(DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
+                if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
                 	logger.info("keyspace: " + keyspaceDir.getName() 
                 			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, incrmental not done.");
                 	continue;
@@ -116,7 +113,8 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
                 if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
                 	continue;
                 }
-                
+
+                //Custom logic
                 for (final File file : backupDir.listFiles()){
                     try
                     {
@@ -135,6 +133,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
                     }
 
                 } //end enqueuing all incremental files for a CF
+				//End custom logic.
             } //end processing all CFs for keyspace
         } //end processing keyspaces under the C* data dir
      
@@ -174,17 +173,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 	 */
 	public String getName() {
 		return JOBNAME;
-	}
-
-	@Override
-	protected final String getConfigKeyspaceFilter(){
-		return config.getIncrementalKeyspaceFilters();
-	}
-
-	@Override
-	protected final String getConfigColumnfamilyFilter()
-	{
-		return config.getIncrementalCFFilter();
 	}
 
 	@Override

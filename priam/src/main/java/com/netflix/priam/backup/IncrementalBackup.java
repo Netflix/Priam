@@ -45,10 +45,10 @@ import com.netflix.priam.scheduler.TaskTimer;
 public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup
 {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
-    
+    public static final String JOBNAME = "IncrementalBackup";
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
 	private IncrementalMetaData metaData;
-
+	private BackupRestoreUtil backupRestoreUtil;
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
@@ -59,25 +59,8 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
-		JOBNAME = "IncrementalBackup";
-        init();
+		backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
     }
-    
-    private void init() {
-    	populateFilters();
-    }
-
-	@Override
-	protected final String getConfigKeyspaceFilter(){
-		return config.getIncrementalKeyspaceFilters();
-	}
-
-	@Override
-	protected final String getConfigColumnfamilyFilter()
-	{
-		return config.getIncrementalCFFilter();
-	}
-
     
     @Override
     public void execute() throws Exception
@@ -96,7 +79,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 			if (keyspaceDir.isFile())
     			continue;
         
-			if ( isFiltered(DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
+			if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) ) { //keyspace filtered?
 				logger.info(keyspaceDir.getName() + " is part of keyspace filter, incremental not done.");
 				continue;
 			}
@@ -104,7 +87,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 			for (File columnFamilyDir : keyspaceDir.listFiles())
 			{
         	
-				if ( isFiltered(DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
+				if ( backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) ) { //CF filtered?
 					logger.info("keyspace: " + keyspaceDir.getName() 
             			+ ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, incrmental not done.");
 					continue;

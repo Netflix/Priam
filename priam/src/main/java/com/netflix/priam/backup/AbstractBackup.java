@@ -26,6 +26,7 @@ import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
+import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +40,7 @@ import java.util.Map;
 /**
  * Abstract Backup class for uploading files to backup location
  */
-public abstract class AbstractBackup extends AbstractBackupRestore implements EventGenerator<BackupEvent> {
+public abstract class AbstractBackup extends Task implements EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
 
     protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
@@ -137,6 +138,20 @@ public abstract class AbstractBackup extends AbstractBackupRestore implements Ev
             }
         }.call();
     }
+
+    protected final void uploadBackup(String monitoringFolder)
+    {
+
+        File dataDir = new File(config.getDataFileLocation());
+         if (!dataDir.exists())
+             
+        { throw new IllegalArgumentException("The configured 'data file location' does not exist: "  + config.getDataFileLocation())
+            ; } 
+        logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
+
+    }
+
+    abstract void customBackupUploadFlow();
 
     /**
      * Filters unwanted keyspaces and column families

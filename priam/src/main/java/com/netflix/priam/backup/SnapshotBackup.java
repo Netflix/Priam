@@ -48,6 +48,7 @@ import java.util.regex.Pattern;
 @Singleton
 public class SnapshotBackup extends AbstractBackup{
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
+    public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
@@ -56,7 +57,7 @@ public class SnapshotBackup extends AbstractBackup{
     private final CommitLogBackup clBackup;
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
-
+    private BackupRestoreUtil backupRestoreUtil;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
@@ -64,29 +65,12 @@ public class SnapshotBackup extends AbstractBackup{
             , IBackupStatusMgr snapshotStatusMgr
             , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
-        JOBNAME = "SnapshotBackup";
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
-        init();
+        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
     }
-
-    private void init() {
-        populateFilters();
-    }
-
-    @Override
-    protected final String getConfigKeyspaceFilter(){
-        return config.getSnapshotKeyspaceFilters();
-    }
-
-    @Override
-    protected final String getConfigColumnfamilyFilter()
-    {
-        return config.getSnapshotCFFilter();
-    }
-
 
     @Override
     public void execute() throws Exception {
@@ -117,14 +101,14 @@ public class SnapshotBackup extends AbstractBackup{
                 if (keyspaceDir.isFile())
                     continue;
 
-                if (isFiltered(DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
+                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
                     logger.info(keyspaceDir.getName() + " is part of keyspace filter, will not be backed up.");
                     continue;
                 }
 
                 logger.debug("Entering {} keyspace..", keyspaceDir.getName());
                 for (File columnFamilyDir : keyspaceDir.listFiles()) {
-                    if (isFiltered(DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
+                    if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
                         logger.info("keyspace: " + keyspaceDir.getName()
                                 + ", CF: " + columnFamilyDir.getName() + " is part of CF filter list, will not be backed up.");
                         continue;

@@ -18,8 +18,6 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.scheduler.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,20 +28,27 @@ import java.util.regex.Pattern;
 /**
  * Created by aagrawal on 8/14/17.
  */
-public abstract class AbstractBackupRestore extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupRestore.class);
-    public static String JOBNAME = "AbstractBackupRestore";
+public class BackupRestoreUtil {
+    private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
+    public static String JOBNAME = "BackupRestoreUtil";
 
-    protected IConfiguration config;
     protected final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
     protected final Map<String, Object> keyspaceFilter = new HashMap<>(); //key: keyspace, value: null
 
     private Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
+    private String configKeyspaceFilter;
+    private String configColumnfamilyFilter;
 
     @Inject
-    public AbstractBackupRestore(IConfiguration config) {
-        super(config);
-        this.config = config;
+    public BackupRestoreUtil(String configKeyspaceFilter, String configColumnfamilyFilter) {
+        setFilters(configKeyspaceFilter, configColumnfamilyFilter);
+    }
+
+    public BackupRestoreUtil setFilters(String configKeyspaceFilter, String configColumnfamilyFilter) {
+        this.configColumnfamilyFilter = configColumnfamilyFilter;
+        this.configKeyspaceFilter = configKeyspaceFilter;
+        populateFilters();
+        return this;
     }
 
     /**
@@ -52,29 +57,18 @@ public abstract class AbstractBackupRestore extends Task {
      * @param cfFilter input string
      * @return true if input string matches search pattern; otherwise, false
      */
-    protected final boolean isValidCFFilterFormat(String cfFilter) {
+    private final boolean isValidCFFilterFormat(String cfFilter) {
         return columnFamilyFilterPattern.matcher(cfFilter).find();
     }
 
     /**
-     * @return Name of keyspaces to be filtered.
-     */
-    protected abstract String getConfigKeyspaceFilter();
-
-    /**
-     * @return Name of fully qualified kesypace.columnfamilies to be filtered.
-     */
-    protected abstract String getConfigColumnfamilyFilter();
-
-    /**
      * Populate the filters for backup/restore as configured for internal use.
      */
-    protected final void populateFilters() {
+    private final void populateFilters() {
         //Clear the filters as we will (re)populate the filters.
         keyspaceFilter.clear();
         columnFamilyFilter.clear();
 
-        String configKeyspaceFilter = getConfigKeyspaceFilter();
         if (configKeyspaceFilter == null || configKeyspaceFilter.isEmpty()) {
             logger.info("No keyspace filter set for {}.", JOBNAME);
         } else {
@@ -86,7 +80,6 @@ public abstract class AbstractBackupRestore extends Task {
 
         }
 
-        String configColumnfamilyFilter = getConfigColumnfamilyFilter();
         if (configColumnfamilyFilter == null || configColumnfamilyFilter.isEmpty()) {
 
             logger.info("No column family filter set for {}.", JOBNAME);
@@ -128,7 +121,7 @@ public abstract class AbstractBackupRestore extends Task {
      * @param directoryType keyspace or columnfamily directory type.
      * @return true if directory should be filter from processing; otherwise, false.
      */
-    protected final boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
+    public final boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
 
         if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
             //Apply each keyspace filter to input string

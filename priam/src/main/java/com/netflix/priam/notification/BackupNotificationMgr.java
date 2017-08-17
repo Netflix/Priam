@@ -57,7 +57,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("compressfilesize", abp.getCompressedFileSize());
             jsonObject.put("backuptype", abp.getType().name());
             jsonObject.put("uploadstatus", uploadStatus);
-            this.notificationService.notifiy(jsonObject.toString());
+            this.notificationService.notify(jsonObject.toString());
         }catch (JSONException exception)
         {
             logger.error(String.format("JSON exception during generation of notification for upload %s.  Local file %s. Ignoring to continue with rest of backup.  Msg: %s"

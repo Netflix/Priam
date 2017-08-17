@@ -20,7 +20,7 @@ package com.netflix.priam.notification;
  */
 public class NoOpNotificationService implements INotificationService {
     @Override
-    public void notifiy(String msg) {
+    public void notify(String msg) {
         //NO OP
     }
 }

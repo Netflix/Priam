@@ -22,5 +22,5 @@ import com.google.inject.ImplementedBy;
  */
 @ImplementedBy(NoOpNotificationService.class)
 public interface INotificationService {
-    public void notifiy(String msg);
+    public void notify(String msg);
 }

@@ -794,6 +794,11 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public boolean useSudo() {
+        return true;
+    }
+
+    @Override
     public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
         return SchedulerType.HOUR;
     }

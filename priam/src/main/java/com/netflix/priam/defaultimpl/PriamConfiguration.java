@@ -47,6 +47,7 @@ public class PriamConfiguration implements IConfiguration
     private static final String CONFIG_CASS_HOME_DIR = PRIAM_PRE + ".cass.home";
     private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";
     private static final String CONFIG_CASS_STOP_SCRIPT = PRIAM_PRE + ".cass.stopscript";
+    private static final String CONFIG_CASS_USE_SUDO = PRIAM_PRE + ".cass.usesudo";
     private static final String CONFIG_CLUSTER_NAME = PRIAM_PRE + ".clustername";
     private static final String CONFIG_SEED_PROVIDER_NAME = PRIAM_PRE + ".seed.provider";
     private static final String CONFIG_LOAD_LOCAL_PROPERTIES = PRIAM_PRE + ".localbootstrap.enable";
@@ -1238,6 +1239,12 @@ public class PriamConfiguration implements IConfiguration
     @Override
     public String getBackupStatusFileLoc() {
         return "backup.status";
+    }
+
+
+    @Override
+    public boolean useSudo() {
+        return config.get(CONFIG_CASS_USE_SUDO, true);
     }
 
 }

@@ -67,11 +67,14 @@ public class CassandraProcessManager implements ICassandraProcess
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
 
         List<String> command = Lists.newArrayList();
-        if (!"root".equals(System.getProperty("user.name")))
-        {
-            command.add(SUDO_STRING);
-            command.add("-n");
-            command.add("-E");
+
+        if(config.useSudo()) {
+            logger.info("Configured to use sudo to start C*");
+            if (!"root".equals(System.getProperty("user.name"))) {
+                command.add(SUDO_STRING);
+                command.add("-n");
+                command.add("-E");
+            }
         }
         command.addAll(getStartCommand());
 

@@ -659,4 +659,6 @@ public interface IConfiguration {
     @return the absolute path to store the backup status on disk
      */
     public String getBackupStatusFileLoc();
+
+    public boolean useSudo();
 }

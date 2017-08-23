@@ -79,6 +79,11 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     }
 
     @Override
+    public String getLogDirLocation() {
+        return null;
+    }
+
+    @Override
     public String getHintsLocation() {
         return "target/hints";
     }

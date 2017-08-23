@@ -50,7 +50,7 @@ public class CassandraProcessManager implements ICassandraProcess
         this.sleeper = sleeper;
     }
 
-    protected void setEnv(Map<String, String> env) {   
+    protected void setEnv(Map<String, String> env) {
         env.put("HEAP_NEWSIZE", config.getHeapNewSize());
         env.put("MAX_HEAP_SIZE", config.getHeapSize());
         env.put("DATA_DIR", config.getDataFileLocation());
@@ -60,9 +60,9 @@ public class CassandraProcessManager implements ICassandraProcess
         env.put("JMX_PORT", "" + config.getJmxPort());
         env.put("LOCAL_JMX", config.enableRemoteJMX()?"no":"yes");
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
-        env.put("cassandra.logdir", config.getLogDirLocation());
+        env.put("CASS_LOGS_DIR", config.getLogDirLocation());
     }
-    
+
     public void start(boolean join_ring) throws IOException
     {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
@@ -80,31 +80,33 @@ public class CassandraProcessManager implements ICassandraProcess
         command.addAll(getStartCommand());
 
         ProcessBuilder startCass = new ProcessBuilder(command);
-        
+
         Map<String, String> env = startCass.environment();
         setEnv(env);
         env.put("cassandra.join_ring", join_ring ? "true" : "false");
-        
+
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
         logger.info("Start cmd: " + startCass.command().toString());
         logger.info("Start env: " + startCass.environment().toString());
         Process starter = startCass.start();
-        
-        logger.info("Starting cassandra server ....");
-		try {
-			sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
-			int code = starter.exitValue();
-			if (code == 0)
-				logger.info("Cassandra server has been started");
-			else
-				logger.error("Unable to start cassandra server. Error code: {}", code);
 
-			logProcessOutput(starter);
-		} catch (Exception e) 
-                {
-                     logger.warn("Starting Cassandra has an error", e);
-		}
+        logger.info("Starting cassandra server ....");
+        try {
+
+            sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
+            int code = starter.exitValue();
+            if (code == 0)
+                logger.info("Cassandra server has been started");
+            else
+                logger.error("Unable to start cassandra server. Error code: {}", code);
+
+            logProcessOutput(starter);
+        }
+        catch (Exception e)
+        {
+            logger.warn("Starting Cassandra has an error", e);
+        }
     }
 
     protected List<String> getStartCommand()
@@ -147,11 +149,14 @@ public class CassandraProcessManager implements ICassandraProcess
     {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
-        if (!"root".equals(System.getProperty("user.name")))
-        {
-            command.add(SUDO_STRING);
-            command.add("-n");
-            command.add("-E");
+        if(config.useSudo()) {
+            logger.info("Configured to use sudo to stop C*");
+
+            if (!"root".equals(System.getProperty("user.name"))) {
+                command.add(SUDO_STRING);
+                command.add("-n");
+                command.add("-E");
+            }
         }
         for(String param : config.getCassStopScript().split(" ")){
             if( StringUtils.isNotBlank(param))

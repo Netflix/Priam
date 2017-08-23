@@ -96,6 +96,11 @@ public interface IConfiguration {
     public String getDataFileLocation();
 
     /**
+     * @return Location of the logs directory
+     */
+    String getLogDirLocation();
+
+    /**
      * @return Location of the hints data directory
      */
     public String getHintsLocation();

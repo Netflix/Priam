@@ -60,6 +60,7 @@ public class CassandraProcessManager implements ICassandraProcess
         env.put("JMX_PORT", "" + config.getJmxPort());
         env.put("LOCAL_JMX", config.enableRemoteJMX()?"no":"yes");
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
+        env.put("cassandra.logdir", config.getLogDirLocation());
     }
     
     public void start(boolean join_ring) throws IOException

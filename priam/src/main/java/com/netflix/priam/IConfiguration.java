@@ -95,6 +95,8 @@ public interface IConfiguration {
      */
     public String getDataFileLocation();
 
+    String getLogDirLocation();
+
     /**
      * @return Location of local cache
      */

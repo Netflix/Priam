@@ -43,7 +43,7 @@ import com.netflix.priam.backup.Restore;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.CassandraTuner;
+import com.netflix.priam.optionTuner.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 
 @Path("/v1")

@@ -1,4 +1,4 @@
-package com.netflix.priam.dse;
+package com.netflix.priam.optionTuner.dse;
 
 import com.netflix.priam.FakeConfiguration;
 

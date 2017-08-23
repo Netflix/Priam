@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.optionTuner;
 
 import java.io.*;
 import java.util.List;
@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.Restore;
-import com.netflix.priam.utils.CassandraTuner;
 
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;

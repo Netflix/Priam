@@ -76,11 +76,6 @@ class TestFlushTask extends Specification {
         public String getFlushInterval() {
             return flushInterval;
         }
-        @Override
-        boolean useSudo()
-        {
-            return true;
-        }
     }
 
 }

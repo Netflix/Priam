@@ -52,6 +52,13 @@ public class JVMOptionsTuner {
     public void updateJVMOptions(final String outputFile) throws Exception {
         List<String> configuredJVMOptions = updateJVMOptions();
 
+        if (logger.isInfoEnabled())
+        {
+            StringBuffer buffer = new StringBuffer("\n");
+            configuredJVMOptions.stream().forEach(line -> buffer.append(line).append("\n"));
+            logger.info("Updating jvm.options with following values: " + buffer.toString());
+        }
+
         //Verify we can write to output file and it is not directory.
         File file = new File(outputFile);
         if (file.exists() && !file.canWrite()) {

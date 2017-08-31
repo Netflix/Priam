@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.optionTuner;
+package com.netflix.priam.tuner;
 
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +23,6 @@ import java.io.IOException;
 import com.google.common.io.Files;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.optionTuner.StandardTuner;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

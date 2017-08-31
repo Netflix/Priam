@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.optionTuner.dse;
+package com.netflix.priam.tuner.dse;
 
 import com.google.inject.Inject;
 import org.slf4j.Logger;

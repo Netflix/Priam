@@ -1,52 +1,49 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.optionTuner;
+package com.netflix.priam.tuner;
+
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.Restore;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.Restore;
-
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-
-public class StandardTuner implements CassandraTuner
-{
+/**
+ * Tune the standard cassandra parameters/configurations. eg. cassandra.yaml, jvm.options, bootstrap etc.
+ */
+public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
 
     @Inject
-    public StandardTuner(IConfiguration config)
-    {
+    public StandardTuner(IConfiguration config) {
         this.config = config;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException
-    {
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -67,7 +64,7 @@ public class StandardTuner implements CassandraTuner
         } else {
             map.put("auto_bootstrap", false);
         }
-        
+
         map.put("saved_caches_directory", config.getCacheLocation());
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("hints_directory", config.getHintsLocation());
@@ -76,18 +73,18 @@ public class StandardTuner implements CassandraTuner
         map.put("incremental_backups", enableIncremental);
         map.put("endpoint_snitch", config.getSnitch());
         if (map.containsKey("in_memory_compaction_limit_in_mb")) {
-        	map.remove("in_memory_compaction_limit_in_mb");
+            map.remove("in_memory_compaction_limit_in_mb");
         }
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
         map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
 
         if (map.containsKey("memtable_total_space_in_mb")) {
-        	map.remove("memtable_total_space_in_mb");
+            map.remove("memtable_total_space_in_mb");
         }
 
         map.put("stream_throughput_outbound_megabits_per_sec", config.getStreamingThroughputMB());
         if (map.containsKey("multithreaded_compaction")) {
-        	map.remove("multithreaded_compaction");
+            map.remove("multithreaded_compaction");
         }
 
         map.put("max_hint_window_in_ms", config.getMaxHintWindowInMS());
@@ -100,7 +97,7 @@ public class StandardTuner implements CassandraTuner
         map.put("concurrent_reads", config.getConcurrentReadsCnt());
         map.put("concurrent_writes", config.getConcurrentWritesCnt());
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
-        
+
         map.put("rpc_server_type", config.getRpcServerType());
         map.put("rpc_min_threads", config.getRpcMinThreads());
         map.put("rpc_max_threads", config.getRpcMaxThreads());
@@ -121,15 +118,15 @@ public class StandardTuner implements CassandraTuner
         configfureSecurity(map);
         configureGlobalCaches(config, map);
         //force to 1 until vnodes are properly supported
-	    map.put("num_tokens", 1);
-	    
-	    
-	    addExtraCassParams(map);
+        map.put("num_tokens", 1);
 
-	    //remove troublesome properties
-	    map.remove("flush_largest_memtables_at");
-	    map.remove("reduce_cache_capacity_to");
-	    
+
+        addExtraCassParams(map);
+
+        //remove troublesome properties
+        map.remove("flush_largest_memtables_at");
+        map.remove("reduce_cache_capacity_to");
+
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 
@@ -141,64 +138,57 @@ public class StandardTuner implements CassandraTuner
      *
      * @return Sntich to be used by this cluster
      */
-    protected String getSnitch()
-    {
+    protected String getSnitch() {
         return config.getSnitch();
     }
 
     /**
      * Setup the cassandra 1.1 global cache values
      */
-    private void configureGlobalCaches(IConfiguration config, Map yaml)
-    {
+    private void configureGlobalCaches(IConfiguration config, Map yaml) {
         final String keyCacheSize = config.getKeyCacheSizeInMB();
-        if(keyCacheSize != null)
-        {
+        if (keyCacheSize != null) {
             yaml.put("key_cache_size_in_mb", Integer.valueOf(keyCacheSize));
 
             final String keyCount = config.getKeyCacheKeysToSave();
-            if(keyCount != null)
+            if (keyCount != null)
                 yaml.put("key_cache_keys_to_save", Integer.valueOf(keyCount));
         }
 
         final String rowCacheSize = config.getRowCacheSizeInMB();
-        if(rowCacheSize != null)
-        {
+        if (rowCacheSize != null) {
             yaml.put("row_cache_size_in_mb", Integer.valueOf(rowCacheSize));
 
             final String rowCount = config.getRowCacheKeysToSave();
-            if(rowCount != null)
+            if (rowCount != null)
                 yaml.put("row_cache_keys_to_save", Integer.valueOf(rowCount));
         }
     }
 
-    String derivePartitioner(String fromYaml, String fromConfig)
-    {
-        if(fromYaml == null || fromYaml.isEmpty())
+    String derivePartitioner(String fromYaml, String fromConfig) {
+        if (fromYaml == null || fromYaml.isEmpty())
             return fromConfig;
         //this check is to prevent against overwriting an existing yaml file that has
         // a partitioner not RandomPartitioner or (as of cass 1.2) Murmur3Partitioner.
         //basically we don't want to hose existing deployments by changing the partitioner unexpectedly on them
         final String lowerCase = fromYaml.toLowerCase();
-        if(lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
+        if (lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
             return fromConfig;
         return fromYaml;
     }
 
-    protected void configfureSecurity(Map map)
-    {
+    protected void configfureSecurity(Map map) {
         //the client-side ssl settings
         Map clientEnc = (Map) map.get("client_encryption_options");
         clientEnc.put("enabled", config.isClientSslEnabled());
 
         //the server-side (internode) ssl settings
-        Map serverEnc = (Map)map.get("server_encryption_options");
+        Map serverEnc = (Map) map.get("server_encryption_options");
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
-    protected void configureCommitLogBackups() throws IOException
-    {
-        if(!config.isBackingUpCommitLogs())
+    protected void configureCommitLogBackups() throws IOException {
+        if (!config.isBackingUpCommitLogs())
             return;
         Properties props = new Properties();
         props.put("archive_command", config.getCommitLogBackupArchiveCmd());
@@ -207,19 +197,15 @@ public class StandardTuner implements CassandraTuner
         props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
 
         FileOutputStream fos = null;
-        try
-        {
+        try {
             fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()));
             props.store(fos, "cassandra commit log archive props, as written by priam");
-        }
-        finally
-        {
+        } finally {
             IOUtils.closeQuietly(fos);
         }
     }
 
-    public void updateAutoBootstrap(String yamlFile, boolean autobootstrap) throws IOException
-    {
+    public void updateAutoBootstrap(String yamlFile, boolean autobootstrap) throws IOException {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -230,25 +216,30 @@ public class StandardTuner implements CassandraTuner
         logger.info("Updating yaml" + yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
     }
-    
-    public void addExtraCassParams(Map map) 
-    {
-    	String params = config.getExtraConfigParams();
-    	if (params == null) {
-    		logger.info("Updating yaml: no extra cass params");
-    		return;
-    	}
-    	
-    	String[] pairs = params.split(",");
-    	logger.info("Updating yaml: adding extra cass params");
-    	for(int i=0; i<pairs.length; i++) 
-    	{
-    		String[] pair = pairs[i].split("=");
-    		String priamKey = pair[0];
-    		String cassKey = pair[1];
-    		String cassVal = config.getCassYamlVal(priamKey);
-    		logger.info("Updating yaml: Priamkey[" + priamKey + "], CassKey[" + cassKey + "], Val[" + cassVal + "]");
-    		map.put(cassKey, cassVal);
-    	}
+
+    @Override
+    public final void updateJVMOptions() throws Exception {
+        JVMOptionsTuner tuner = new JVMOptionsTuner(config);
+        //Overwrite default jvm.options file.
+        tuner.updateJVMOptions(config.getJVMOptionsFileLocation());
+    }
+
+    public void addExtraCassParams(Map map) {
+        String params = config.getExtraConfigParams();
+        if (params == null) {
+            logger.info("Updating yaml: no extra cass params");
+            return;
+        }
+
+        String[] pairs = params.split(",");
+        logger.info("Updating yaml: adding extra cass params");
+        for (int i = 0; i < pairs.length; i++) {
+            String[] pair = pairs[i].split("=");
+            String priamKey = pair[0];
+            String cassKey = pair[1];
+            String cassVal = config.getCassYamlVal(priamKey);
+            logger.info("Updating yaml: Priamkey[" + priamKey + "], CassKey[" + cassKey + "], Val[" + cassVal + "]");
+            map.put(cassKey, cassVal);
+        }
     }
 }

@@ -29,15 +29,16 @@ import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
+import com.netflix.priam.tuner.GCType;
+import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Singleton
 public class PriamConfiguration implements IConfiguration
@@ -646,6 +647,29 @@ public class PriamConfiguration implements IConfiguration
     }
 
     @Override
+    public GCType getGCType() throws UnsupportedTypeException{
+        String gcType = config.get(PRIAM_PRE + ".gc.type", GCType.CMS.getGcType());
+        return GCType.lookup(gcType);
+    }
+
+    @Override
+    public Map<String, JVMOption> getJVMExcludeSet() {
+        return parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.exclude"));
+    }
+
+    @Override
+    public Map<String, JVMOption> getJVMUpsertSet() {
+        return parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.upsert"));
+    }
+
+    private Map<String, JVMOption> parseJVMOptions(String property) {
+        if (StringUtils.isEmpty(property))
+            return null;
+        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
+                .map(line -> JVMOption.parse(line)).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
+    }
+
+    @Override
     public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException{
         String schedulerType = config.get(PRIAM_PRE + ".flush.schedule.type", SchedulerType.HOUR.getSchedulerType());
         return SchedulerType.lookup(schedulerType);
@@ -879,6 +903,12 @@ public class PriamConfiguration implements IConfiguration
     public String getYamlLocation()
     {
         return config.get(CONFIG_YAML_LOCATION, getCassHome() + "/conf/cassandra.yaml");
+    }
+
+    @Override
+    public String getJVMOptionsFileLocation()
+    {
+        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm.options");
     }
 
     public String getAuthenticator()

@@ -43,7 +43,7 @@ import com.netflix.priam.backup.Restore;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.optionTuner.CassandraTuner;
+import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 
 @Path("/v1")
@@ -63,13 +63,13 @@ public class RestoreServlet {
 	private Provider<AbstractBackupPath> pathProvider;
 	private PriamServer priamServer;
 	private IPriamInstanceFactory factory;
-	private CassandraTuner tuner;
+	private ICassandraTuner tuner;
 	private ICassandraProcess cassProcess;
 	private ITokenManager tokenManager;
 
 	@Inject
 	public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-			, IPriamInstanceFactory factory, CassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager) {
+			, IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager) {
 		this.config = config;
 		this.restoreObj = restoreObj;
 		this.pathProvider = pathProvider;

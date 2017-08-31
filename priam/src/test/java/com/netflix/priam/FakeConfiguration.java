@@ -1,14 +1,16 @@
 package com.netflix.priam;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
+import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
+import org.apache.commons.lang3.StringUtils;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -472,6 +474,35 @@ public class FakeConfiguration implements IConfiguration
     {
         return "conf/cassandra.yaml";
     }
+
+    @Override
+    public String getJVMOptionsFileLocation() {
+        return "src/test/resources/conf/jvm.options";
+    }
+
+    @Override
+    public GCType getGCType() throws UnsupportedTypeException {
+        return GCType.CMS;
+    }
+
+    @Override
+    public Map<String, JVMOption> getJVMExcludeSet() {
+        return null;
+    }
+
+    @Override
+    public Map<String, JVMOption> getJVMUpsertSet() {
+        return null;
+    }
+
+    protected Map<String, JVMOption> parseJVMOptions(String property)
+    {
+        if (StringUtils.isEmpty(property))
+            return null;
+        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
+                .map(line -> JVMOption.parse(line)).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
+    }
+
 
     public String getAuthenticator()
     {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.optionTuner.dse;
+package com.netflix.priam.tuner.dse;
 
 import java.io.*;
 import java.util.*;
@@ -23,10 +23,10 @@ import org.slf4j.LoggerFactory;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.optionTuner.StandardTuner;
+import com.netflix.priam.tuner.StandardTuner;
 import org.apache.cassandra.io.util.FileUtils;
 
-import static com.netflix.priam.optionTuner.dse.IDseConfiguration.NodeType;
+import static com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
 import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 
 /**

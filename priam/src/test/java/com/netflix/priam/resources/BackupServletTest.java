@@ -12,7 +12,7 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.optionTuner.CassandraTuner;
+import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
 import mockit.Expectations;
@@ -39,7 +39,8 @@ public class BackupServletTest
     private @Mocked IBackupFileSystem bkpStatusFs;
     private @Mocked Restore restoreObj;
     private @Mocked Provider<AbstractBackupPath> pathProvider;
-    private @Mocked CassandraTuner tuner;
+    private @Mocked
+    ICassandraTuner tuner;
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
     private @Mocked ICassandraProcess cassProcess;

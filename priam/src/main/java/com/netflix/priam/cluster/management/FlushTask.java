@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,14 +15,11 @@
  */
 package com.netflix.priam.cluster.management;
 
-import com.amazonaws.services.lambda.model.Runtime;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
-import com.netflix.priam.merics.NoOpMetricPublisher;
 import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
@@ -98,42 +95,39 @@ public class FlushTask extends Task {
      * <p>
      * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression from {@link IConfiguration#getFlushCronExpression()}
      */
-    public static TaskTimer getTimer(IConfiguration config) throws Exception{
+    public static TaskTimer getTimer(IConfiguration config) throws Exception {
 
         CronTimer cronTimer = null;
-        switch (config.getFlushSchedulerType())
-        {
+        switch (config.getFlushSchedulerType()) {
             case HOUR:
                 String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10
                 if (timerVal == null)
                     return null;
                 String s[] = timerVal.split("=");
-                if (s.length != 2 ){
+                if (s.length != 2) {
                     throw new IllegalArgumentException("Flush interval format is invalid.  Expecting name=value, received: " + timerVal);
                 }
                 String name = s[0].toUpperCase();
                 Integer time = new Integer(s[1]);
-                switch(name)
-                {
+                switch (name) {
                     case "HOUR":
                         cronTimer = new CronTimer(JOBNAME, time, 0); //minute, sec after each hour
                         break;
                     case "DAILY":
-                        cronTimer = new CronTimer(JOBNAME, time, 0 , 0); //hour, minute, sec to run on a daily basis
+                        cronTimer = new CronTimer(JOBNAME, time, 0, 0); //hour, minute, sec to run on a daily basis
                         break;
                     default:
                         throw new UnsupportedTypeException("Flush interval type is invalid.  Expecting \"hour, daily\", received: " + name);
                 }
 
-            break;
+                break;
             case CRON:
                 String cronExpression = config.getFlushCronExpression();
 
-                if(StringUtils.isEmpty(cronExpression)){
+                if (StringUtils.isEmpty(cronExpression)) {
                     logger.info("Skipping flush as flush cron is not set.");
-                }else
-                {
-                    if(!CronExpression.isValidExpression(cronExpression))
+                } else {
+                    if (!CronExpression.isValidExpression(cronExpression))
                         throw new Exception("Invalid CRON expression: " + cronExpression +
                                 ". Please remove cron expression if you wish to disable flush else fix the CRON expression and try again!");
 

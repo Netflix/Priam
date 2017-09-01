@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Netflix, Inc.
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,13 +40,11 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
     private static final Logger logger = LoggerFactory.getLogger(AuditLogTunerYaml.class);
 
     @Inject
-    public AuditLogTunerYaml(IDseConfiguration dseConfig)
-    {
+    public AuditLogTunerYaml(IDseConfiguration dseConfig) {
         this.dseConfig = dseConfig;
     }
 
-    public void tuneAuditLog()
-    {
+    public void tuneAuditLog() {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -69,12 +67,9 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
 
             logger.info("Updating dse-yaml:\n" + yaml.dump(map));
             yaml.dump(map, new FileWriter(dseYaml));
-        }catch (FileNotFoundException fileNotFound)
-        {
+        } catch (FileNotFoundException fileNotFound) {
             logger.error(String.format("FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml));
-        }
-        catch (IOException e)
-        {
+        } catch (IOException e) {
             logger.error(String.format("IOException while trying to write yaml file for audit log tuning: {}", dseYaml));
         }
     }

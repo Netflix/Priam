@@ -15,25 +15,22 @@
  */
 package com.netflix.priam.backup.parallel;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import com.netflix.priam.backup.*;
-import com.netflix.priam.notification.BackupNotificationMgr;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
 
 @Singleton
 public class IncrementalBackupProducer extends AbstractBackup implements IIncrementalBackup {
@@ -89,7 +86,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
 
     @Override
     /*
-	 * Keeping track of successfully uploaded files.
+     * Keeping track of successfully uploaded files.
 	 */
     protected void addToRemotePath(String remotePath) {
         incrementalRemotePaths.add(remotePath);

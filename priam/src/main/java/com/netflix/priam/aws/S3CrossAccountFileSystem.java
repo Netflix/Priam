@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -16,16 +16,15 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.amazonaws.services.s3.AmazonS3Client;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * A version of S3FileSystem which allows it api access across different AWS accounts.
@@ -37,56 +36,56 @@ import com.amazonaws.services.s3.AmazonS3Client;
  * - 
  */
 @Singleton
-public class S3CrossAccountFileSystem  {
-	private static final Logger logger = LoggerFactory.getLogger(S3CrossAccountFileSystem.class);
-	
-	private AmazonS3 s3Client;
-	private S3FileSystem s3fs;
-	private IConfiguration config;
-	private IS3Credential s3Credential;
-	
-	@Inject
-	public S3CrossAccountFileSystem(@Named("backup") IBackupFileSystem fs, @Named("awss3roleassumption") IS3Credential s3Credential, IConfiguration config) {
-	
-		
-		this.s3fs = (S3FileSystem) fs;
-		this.config = config;
-		this.s3Credential = s3Credential;
-		        
-	}
-	
-	public IBackupFileSystem getBackupFileSystem() {
-		return this.s3fs;
-	}
-	
-	public AmazonS3 getCrossAcctS3Client() {
-		if (this.s3Client == null ) {
-			
-			synchronized(this) {
-				
-				if (this.s3Client == null ) {
-				
-					try {
+public class S3CrossAccountFileSystem {
+    private static final Logger logger = LoggerFactory.getLogger(S3CrossAccountFileSystem.class);
 
-						this.s3Client = AmazonS3Client.builder().withCredentials(s3Credential.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+    private AmazonS3 s3Client;
+    private S3FileSystem s3fs;
+    private IConfiguration config;
+    private IS3Credential s3Credential;
 
-					} catch (Exception e) {
-						throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);
-						
-					}
-					//this.s3Client.setEndpoint(s3fs.getS3Endpoint(config));
-					
-					//Lets leverage the IBackupFileSystem behaviors except we want it to use our amazon S3 client which has cross AWS account api capability.
-					this.s3fs.setS3Client(s3Client);
-					
-				}		
-				
-			}
-			
-		}
-		
-		
-		return this.s3Client;
-	}
-		
+    @Inject
+    public S3CrossAccountFileSystem(@Named("backup") IBackupFileSystem fs, @Named("awss3roleassumption") IS3Credential s3Credential, IConfiguration config) {
+
+
+        this.s3fs = (S3FileSystem) fs;
+        this.config = config;
+        this.s3Credential = s3Credential;
+
+    }
+
+    public IBackupFileSystem getBackupFileSystem() {
+        return this.s3fs;
+    }
+
+    public AmazonS3 getCrossAcctS3Client() {
+        if (this.s3Client == null) {
+
+            synchronized (this) {
+
+                if (this.s3Client == null) {
+
+                    try {
+
+                        this.s3Client = AmazonS3Client.builder().withCredentials(s3Credential.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+
+                    } catch (Exception e) {
+                        throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);
+
+                    }
+                    //this.s3Client.setEndpoint(s3fs.getS3Endpoint(config));
+
+                    //Lets leverage the IBackupFileSystem behaviors except we want it to use our amazon S3 client which has cross AWS account api capability.
+                    this.s3fs.setS3Client(s3Client);
+
+                }
+
+            }
+
+        }
+
+
+        return this.s3Client;
+    }
+
 }

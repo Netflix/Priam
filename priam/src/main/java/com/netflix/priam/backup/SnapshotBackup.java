@@ -1,17 +1,18 @@
-/**
- * Copyright 2013 Netflix, Inc.
- * <p>
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.backup;
 
@@ -28,7 +29,10 @@ import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.*;
+import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.utils.JMXNodeTool;
+import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.ThreadSleeper;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -41,7 +45,7 @@ import java.util.*;
  * Task for running daily snapshots
  */
 @Singleton
-public class SnapshotBackup extends AbstractBackup{
+public class SnapshotBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
@@ -113,12 +117,11 @@ public class SnapshotBackup extends AbstractBackup{
                 notifyObservers();
             }
 
-        } catch (Exception e)
-        {
+        } catch (Exception e) {
             logger.error("Exception occured while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
             snapshotStatusMgr.failed(backupMetadata);
             throw e;
-        } finally{
+        } finally {
             try {
                 clearSnapshot(snapshotName);
             } catch (Exception e) {
@@ -160,26 +163,24 @@ public class SnapshotBackup extends AbstractBackup{
         return JOBNAME;
     }
 
-    public static TaskTimer getTimer(IConfiguration config) throws Exception{
+    public static TaskTimer getTimer(IConfiguration config) throws Exception {
         CronTimer cronTimer = null;
-        switch (config.getBackupSchedulerType())
-        {
+        switch (config.getBackupSchedulerType()) {
             case HOUR:
                 int hour = config.getBackupHour();
                 if (hour >= 0) {
                     cronTimer = new CronTimer(JOBNAME, hour, 1, 0);
                     logger.info("Starting snapshot backup with backup hour: " + hour);
-                }else
+                } else
                     logger.info("Skipping snapshot backup as backup hour is less than 0: " + hour);
                 break;
             case CRON:
                 String cronExpression = config.getBackupCronExpression();
 
-                if(!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")){
+                if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")) {
                     logger.info("Skipping snapshot backup as backup cron is set to NA");
-                }else
-                {
-                    if(StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
+                } else {
+                    if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
                         throw new Exception("Invalid CRON expression: " + cronExpression +
                                 ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
 

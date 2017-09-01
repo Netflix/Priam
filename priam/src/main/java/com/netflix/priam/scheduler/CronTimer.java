@@ -1,21 +1,25 @@
-/**
- * Copyright 2013 Netflix, Inc.
+/*
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.scheduler;
 
-import org.quartz.*;
+import org.quartz.CronScheduleBuilder;
+import org.quartz.Scheduler;
+import org.quartz.Trigger;
+import org.quartz.TriggerBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,14 +28,12 @@ import java.text.ParseException;
 /**
  * Runs jobs at the specified absolute time and frequency
  */
-public class CronTimer implements TaskTimer
-{
+public class CronTimer implements TaskTimer {
     private static final Logger logger = LoggerFactory.getLogger(CronTimer.class);
     private String cronExpression;
     private String name;
 
-    public enum DayOfWeek
-    {
+    public enum DayOfWeek {
         SUN, MON, TUE, WED, THU, FRI, SAT
     }
 
@@ -46,8 +48,7 @@ public class CronTimer implements TaskTimer
     /**
      * Hourly cron.
      */
-    public CronTimer(String name, int minute, int sec)
-    {
+    public CronTimer(String name, int minute, int sec) {
         this.name = name;
         cronExpression = sec + " " + minute + " 0/1 * * ?";
     }
@@ -55,8 +56,7 @@ public class CronTimer implements TaskTimer
     /**
      * Daily Cron
      */
-    public CronTimer(String name, int hour, int minute, int sec)
-    {
+    public CronTimer(String name, int hour, int minute, int sec) {
         this.name = name;
         cronExpression = sec + " " + minute + " " + hour + " * * ?";
     }
@@ -64,8 +64,7 @@ public class CronTimer implements TaskTimer
     /**
      * Weekly cron jobs
      */
-    public CronTimer(String name, DayOfWeek dayofweek, int hour, int minute, int sec)
-    {
+    public CronTimer(String name, DayOfWeek dayofweek, int hour, int minute, int sec) {
         this.name = name;
         cronExpression = sec + " " + minute + " " + hour + " * * " + dayofweek;
     }
@@ -73,19 +72,16 @@ public class CronTimer implements TaskTimer
     /**
      * Cron Expression.
      */
-    public CronTimer(String expression)
-    {
+    public CronTimer(String expression) {
         this.cronExpression = expression;
     }
 
-    public CronTimer(String name, String expression)
-    {
+    public CronTimer(String name, String expression) {
         this.name = name;
         this.cronExpression = expression;
     }
 
-    public Trigger getTrigger() throws ParseException
-    {
+    public Trigger getTrigger() throws ParseException {
         return TriggerBuilder.newTrigger().withIdentity(name, Scheduler.DEFAULT_GROUP).withSchedule(CronScheduleBuilder.cronSchedule(cronExpression)).build();
     }
 

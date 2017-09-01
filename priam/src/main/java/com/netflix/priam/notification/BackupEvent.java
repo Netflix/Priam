@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Netflix, Inc.
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,9 @@ package com.netflix.priam.notification;
 import com.netflix.priam.backup.AbstractBackupPath;
 
 /**
+ * POJO to encapsulate the details of backup of a file.
+ * Use this class to notify of the backup and its status. This will allow us to add more details about the backup event
+ * without modifying AbstractBackupPath.
  * Created by aagrawal on 8/11/17.
  */
 public class BackupEvent {

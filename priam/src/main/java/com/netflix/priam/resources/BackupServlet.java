@@ -1,17 +1,18 @@
-/**
- * Copyright 2013 Netflix, Inc.
- * <p>
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.resources;
 
@@ -43,7 +44,6 @@ import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
@@ -91,10 +91,9 @@ public class BackupServlet {
     private IBackupStatusMgr completedBkups;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
-    		,IBackupStatusMgr completedBkups, BackupVerification backupVerification)
-    {
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
+                         SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+            , IBackupStatusMgr completedBkups, BackupVerification backupVerification) {
         this.priamServer = priamServer;
         this.config = config;
         this.backupFs = backupFs;
@@ -306,29 +305,29 @@ public class BackupServlet {
     /**
      * <p>
      * Life_Of_C*Row : With this REST call, mutations/existence of a rowkey can be found.
-     * It uses SSTable2Json utility which will convert SSTables on disk to JSON format and 
+     * It uses SSTable2Json utility which will convert SSTables on disk to JSON format and
      * Search for the desired rowkey.
-     *
+     * <p>
      * Steps include:
      * 1. Restoring data for given data range and other params
      * 2. Searching provided rowkey in SSTables and writing search result to JSON
      * 3. Delete all the files under Keyspace Directory.
-     *    Deletion is done for efficient space usage, so that same node can be reused for
-     *    subsequent runs. 
+     * Deletion is done for efficient space usage, so that same node can be reused for
+     * subsequent runs.
      * <p>
-     *
+     * <p>
      * Similar to Restore call and few additional params.
-     *
-     *      daterange 		: Can not be Null or Default. Comma separated Start and End date eg. 201311250000,201311260000
-     *      rowkey    		: rowkey to search (In Hex format)
-     *      ks        		: keyspace of mentioned rowkey
-     *      cf        		: column family of mentioned rowkey
-     *      fileExtension 	: Part of SSTable Data file names 
-     *      					  eg. if file name = KS1-CF1-hf-100-Data.db
-     *      						  then fileExtension = KS1-CF1-hf
+     * <p>
+     * daterange 		: Can not be Null or Default. Comma separated Start and End date eg. 201311250000,201311260000
+     * rowkey    		: rowkey to search (In Hex format)
+     * ks        		: keyspace of mentioned rowkey
+     * cf        		: column family of mentioned rowkey
+     * fileExtension 	: Part of SSTable Data file names
+     * eg. if file name = KS1-CF1-hf-100-Data.db
+     * then fileExtension = KS1-CF1-hf
      *
      * @return Creates JSON file based on the passed date at hardcoded dir location : /tmp/priam_sstables
-     * 		   If rowkey is not found in the SSTable, JSON file will be empty.
+     * If rowkey is not found in the SSTable, JSON file will be empty.
      */
     @GET
     @Path("/life_of_crow")
@@ -397,16 +396,11 @@ public class BackupServlet {
     /**
      * Restore with the specified start and end time.
      *
-     * @param token
-     *            Overrides the current token with this one, if specified
-     * @param region
-     *            Override the region for searching backup
-     * @param startTime
-     *            Start time
-     * @param endTime
-     *            End time upto which the restore should fetch data
-     * @param keyspaces
-     *            Comma seperated list of keyspaces to restore
+     * @param token     Overrides the current token with this one, if specified
+     * @param region    Override the region for searching backup
+     * @param startTime Start time
+     * @param endTime   End time upto which the restore should fetch data
+     * @param keyspaces Comma seperated list of keyspaces to restore
      * @throws Exception if restore is not successful
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {

@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,20 +19,20 @@ import java.io.InputStream;
 import java.util.Iterator;
 
 public interface IFileCryptography {
-	
+
     /*
      * @param in - a handle to the encrypted, compressed data stream
      * @param pass - pass phrase used to extract the PGP private key from the encrypted content.
      * @param objectName - name of the object we are decrypting, currently use for debugging purposes only.
      * @return a handle to the decrypted, uncompress data stream.
-     */    
-	public InputStream decryptStream(InputStream in, char[] passwd, String objectName) throws Exception;
-	
-	/*
-	 * @aparam is - a handle to the plaintext data stream
-	 * @return - an iterate of the ciphertext stream
-	 */
-	public Iterator<byte[]> encryptStream(InputStream is, String fileName) throws Exception;
-    
-    
+     */
+    public InputStream decryptStream(InputStream in, char[] passwd, String objectName) throws Exception;
+
+    /*
+     * @aparam is - a handle to the plaintext data stream
+     * @return - an iterate of the ciphertext stream
+     */
+    public Iterator<byte[]> encryptStream(InputStream is, String fileName) throws Exception;
+
+
 }

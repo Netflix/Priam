@@ -152,12 +152,14 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
     /**
      * Implementation on how to save the backup metadata
+     *
      * @param backupMetadata BackupMetadata to be saved
      */
     public abstract void save(BackupMetadata backupMetadata);
 
     /**
      * Implementation on how to retrieve the backup metadata(s) for a given date from store.
+     *
      * @param snapshotDate Snapshot date to be retrieved from datastore in format of yyyyMMdd
      * @return The list of snapshots started on the snapshot day in descending order of snapshot start time.
      */

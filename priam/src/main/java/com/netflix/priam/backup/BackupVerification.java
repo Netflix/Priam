@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
-import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileOutputStream;
 import java.io.FileReader;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -89,8 +87,7 @@ public class BackupVerification {
         Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
         Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
         //Return validation fail if backup filesystem listing failed.
-        if (!backupfiles.hasNext())
-        {
+        if (!backupfiles.hasNext()) {
             logger.warn("ERROR: No files available while doing backup filesystem listing. Declaring the verification failed.");
             return result;
         }

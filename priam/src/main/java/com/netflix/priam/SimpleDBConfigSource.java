@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -17,7 +17,6 @@ package com.netflix.priam;
 
 import com.amazonaws.services.simpledb.AmazonSimpleDB;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
-import com.amazonaws.services.simpledb.AmazonSimpleDBClientBuilder;
 import com.amazonaws.services.simpledb.model.Attribute;
 import com.amazonaws.services.simpledb.model.Item;
 import com.amazonaws.services.simpledb.model.SelectRequest;
@@ -45,8 +44,7 @@ import java.util.Map;
  *   <li>"region" // region the config belongs to.  If left empty, then applies to all regions.</li>
  * </ul> }
  */
-public final class SimpleDBConfigSource extends AbstractConfigSource 
-{
+public final class SimpleDBConfigSource extends AbstractConfigSource {
     private static final Logger logger = LoggerFactory.getLogger(SimpleDBConfigSource.class.getName());
 
     private static final String DOMAIN = "PriamProperties";
@@ -56,14 +54,12 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
     private final ICredential provider;
 
     @Inject
-    public SimpleDBConfigSource(final ICredential provider) 
-    {
+    public SimpleDBConfigSource(final ICredential provider) {
         this.provider = provider;
     }
 
     @Override
-    public void intialize(final String asgName, final String region) 
-    {
+    public void intialize(final String asgName, final String region) {
         super.intialize(asgName, region);
 
         // End point is us-east-1
@@ -72,36 +68,32 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
         String nextToken = null;
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;
         logger.info(String.format("appid used to fetch properties is: %s", appid));
-        do 
-        {
+        do {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
             Iterator<Item> itemiter = result.getItems().iterator();
             while (itemiter.hasNext())
-              addProperty(itemiter.next());
+                addProperty(itemiter.next());
 
-        } 
+        }
         while (nextToken != null);
     }
 
-    private static class Attributes 
-    {
+    private static class Attributes {
         public final static String APP_ID = "appId"; // ASG
         public final static String PROPERTY = "property";
         public final static String PROPERTY_VALUE = "value";
         public final static String REGION = "region";
     }
 
-    private void addProperty(Item item) 
-    {
+    private void addProperty(Item item) {
         Iterator<Attribute> attrs = item.getAttributes().iterator();
         String prop = "";
         String value = "";
         String dc = "";
-        while (attrs.hasNext()) 
-        {
+        while (attrs.hasNext()) {
             Attribute att = attrs.next();
             if (att.getName().equals(Attributes.PROPERTY))
                 prop = att.getValue();
@@ -120,20 +112,17 @@ public final class SimpleDBConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public int size() 
-    {
+    public int size() {
         return data.size();
     }
 
     @Override
-    public String get(final String key) 
-    {
+    public String get(final String key) {
         return data.get(key);
     }
 
     @Override
-    public void set(final String key, final String value) 
-    {
+    public void set(final String key, final String value) {
         Preconditions.checkNotNull(value, "Value can not be null for configurations.");
         data.put(key, value);
     }

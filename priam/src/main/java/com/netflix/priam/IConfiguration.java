@@ -1,17 +1,18 @@
-/**
+/*
  * Copyright 2013 Netflix, Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam;
 
@@ -102,14 +103,13 @@ public interface IConfiguration {
     public String getRestorePrefix();
 
     /**
-     * @param prefix
-     *            Set the current restore prefix
+     * @param prefix Set the current restore prefix
      */
     public void setRestorePrefix(String prefix);
 
     /**
      * @return List of keyspaces to restore. If none, all keyspaces are
-     *         restored.
+     * restored.
      */
     public List<String> getRestoreKeySpaces();
 
@@ -227,6 +227,7 @@ public interface IConfiguration {
 
     /**
      * Cron expression to be used for snapshot backups.
+     *
      * @return Backup cron expression for snapshots
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
@@ -235,6 +236,7 @@ public interface IConfiguration {
 
     /**
      * Backup scheduler type to use for backup.
+     *
      * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use {@link #getBackupHour()}.
      * If value of "CRON" is provided it starts using {@link #getBackupCronExpression()}.
      */
@@ -293,8 +295,7 @@ public interface IConfiguration {
     public String getDC();
 
     /**
-     * @param region
-     *            Set the current data center
+     * @param region Set the current data center
      */
     public void setDC(String region);
 
@@ -315,7 +316,7 @@ public interface IConfiguration {
 
     /**
      * @return true if restore should search for nearest token if current token
-     *         is not found
+     * is not found
      */
     public boolean isRestoreClosestToken();
 
@@ -460,6 +461,7 @@ public interface IConfiguration {
      * This can be used during cluster migration.
      * When on Target Cluster, keyspace name is different
      * than the original one.
+     *
      * @return New Keyspace Name on Target Cluster
      */
     public String getTargetKSName();
@@ -468,6 +470,7 @@ public interface IConfiguration {
      * This can be used during cluster migration.
      * When on Target Cluster, Column Family name is different
      * than the original one.
+     *
      * @return New Column Family Name on Target Cluster
      */
     public String getTargetCFName();
@@ -604,6 +607,7 @@ public interface IConfiguration {
 
     /**
      * Use this method for adding extra/ dynamic cassandra startup options or env properties
+     *
      * @return
      */
     Map<String, String> getExtraEnvParams();
@@ -657,19 +661,22 @@ public interface IConfiguration {
 
     /**
      * List of keyspaces to flush. Default: all keyspaces.
+     *
      * @return a comma delimited list of keyspaces to flush
      */
     public String getFlushKeyspaces();
 
     /**
      * Interval to be used for flush.
+     *
      * @return the interval to run the flush task.  Format is name=value where
      * “name” is an enum of hour, daily, value is ...
      */
     public String getFlushInterval();
 
     /**
-     *  Scheduler type to use for flush.
+     * Scheduler type to use for flush.
+     *
      * @return Type of scheduler to use for flush.  Note the default is TIMER based i.e. to use {@link #getFlushInterval()}.
      * If value of "CRON" is provided it starts using {@link #getFlushCronExpression()}.
      */
@@ -677,6 +684,7 @@ public interface IConfiguration {
 
     /**
      * Cron expression to be used for flush.
+     *
      * @return Cron expression for flush
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
@@ -684,7 +692,7 @@ public interface IConfiguration {
     public String getFlushCronExpression();
 
     /**
-    @return the absolute path to store the backup status on disk
+     * @return the absolute path to store the backup status on disk
      */
     public String getBackupStatusFileLoc();
 

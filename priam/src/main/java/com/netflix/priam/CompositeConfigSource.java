@@ -1,12 +1,12 @@
 /**
  * Copyright 2017 Netflix, Inc.
- *
+ * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -31,74 +31,60 @@ import java.util.Collection;
  * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underlying
  * source overrides one of these methods, then that implementation will be ignored.
  */
-public class CompositeConfigSource extends AbstractConfigSource 
-{
+public class CompositeConfigSource extends AbstractConfigSource {
 
     private final ImmutableCollection<? extends IConfigSource> sources;
 
-    public CompositeConfigSource(final ImmutableCollection<? extends IConfigSource> sources) 
-    {
+    public CompositeConfigSource(final ImmutableCollection<? extends IConfigSource> sources) {
         Preconditions.checkArgument(!sources.isEmpty(), "Can not create a composite config source without config sources!");
         this.sources = sources;
     }
 
-    public CompositeConfigSource(final Collection<? extends IConfigSource> sources) 
-    {
+    public CompositeConfigSource(final Collection<? extends IConfigSource> sources) {
         this(ImmutableList.copyOf(sources));
     }
 
-    public CompositeConfigSource(final Iterable<? extends IConfigSource> sources) 
-    {
+    public CompositeConfigSource(final Iterable<? extends IConfigSource> sources) {
         this(ImmutableList.copyOf(sources));
     }
 
-    public CompositeConfigSource(final IConfigSource... sources) 
-    {
+    public CompositeConfigSource(final IConfigSource... sources) {
         this(ImmutableList.copyOf(sources));
     }
 
     @Override
-    public void intialize(final String asgName, final String region) 
-    {
-        for (final IConfigSource source : sources) 
-        {
+    public void intialize(final String asgName, final String region) {
+        for (final IConfigSource source : sources) {
             //TODO should this catch any potential exceptions?
             source.intialize(asgName, region);
         }
     }
 
     @Override
-    public int size() 
-    {
+    public int size() {
         int size = 0;
-        for (final IConfigSource c : sources) 
-        {
+        for (final IConfigSource c : sources) {
             size += c.size();
         }
         return size;
     }
 
     @Override
-    public boolean isEmpty() 
-    {
+    public boolean isEmpty() {
         return size() == 0;
     }
 
     @Override
-    public boolean contains(final String key) 
-    {
+    public boolean contains(final String key) {
         return get(key) != null;
     }
 
     @Override
-    public String get(final String key) 
-    {
+    public String get(final String key) {
         Preconditions.checkNotNull(key);
-        for (final IConfigSource c : sources) 
-        {
+        for (final IConfigSource c : sources) {
             final String value = c.get(key);
-            if (value != null) 
-            {
+            if (value != null) {
                 return value;
             }
         }
@@ -106,8 +92,7 @@ public class CompositeConfigSource extends AbstractConfigSource
     }
 
     @Override
-    public void set(final String key, final String value) 
-    {
+    public void set(final String key, final String value) {
         Preconditions.checkNotNull(value, "Value can not be null for configurations.");
         final IConfigSource firstSource = Iterables.getFirst(sources, null);
         // firstSource shouldn't be null because the collection is immutable, and the collection is non empty.

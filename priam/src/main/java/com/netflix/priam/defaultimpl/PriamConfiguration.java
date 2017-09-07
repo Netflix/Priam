@@ -31,6 +31,7 @@ import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.tuner.JVMOption;
+import com.netflix.priam.tuner.JVMOptionsTuner;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -654,19 +655,12 @@ public class PriamConfiguration implements IConfiguration
 
     @Override
     public Map<String, JVMOption> getJVMExcludeSet() {
-        return parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.exclude"));
+        return JVMOptionsTuner.parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.exclude"));
     }
 
     @Override
     public Map<String, JVMOption> getJVMUpsertSet() {
-        return parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.upsert"));
-    }
-
-    private Map<String, JVMOption> parseJVMOptions(String property) {
-        if (StringUtils.isEmpty(property))
-            return null;
-        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
-                .map(line -> JVMOption.parse(line)).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
+        return JVMOptionsTuner.parseJVMOptions(config.get(PRIAM_PRE + ".jvm.options.upsert"));
     }
 
     @Override

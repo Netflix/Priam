@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Netflix, Inc.
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package com.netflix.priam.tuner;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,11 +50,10 @@ public class JVMOptionsTuner {
      * @param outputFile File name with which this configured JVM options should be written.
      * @throws Exception when encountered with invalid configured GC type. {@link IConfiguration#getGCType()}
      */
-    public void updateJVMOptions(final String outputFile) throws Exception {
+    public void updateAndSaveJVMOptions(final String outputFile) throws Exception {
         List<String> configuredJVMOptions = updateJVMOptions();
 
-        if (logger.isInfoEnabled())
-        {
+        if (logger.isInfoEnabled()) {
             StringBuffer buffer = new StringBuffer("\n");
             configuredJVMOptions.stream().forEach(line -> buffer.append(line).append("\n"));
             logger.info("Updating jvm.options with following values: " + buffer.toString());
@@ -80,7 +80,6 @@ public class JVMOptionsTuner {
         validate(jvmOptionsFile);
         final GCType configuredGC = config.getGCType();
 
-        //Read file line by line.
         final Map<String, JVMOption> excludeSet = config.getJVMExcludeSet();
 
         //Make a copy of upsertSet, so we can delete the entries as we process them.
@@ -90,8 +89,7 @@ public class JVMOptionsTuner {
         //already in jvm.options file.
         List<String> optionsFromFile = Files.lines(jvmOptionsFile.toPath()).collect(Collectors.toList());
         List<String> configuredOptions = new LinkedList<>();
-        for (String line: optionsFromFile)
-        {
+        for (String line : optionsFromFile) {
             configuredOptions.add(updateConfigurationValue(line, configuredGC, upsertSet, excludeSet));
         }
 
@@ -103,20 +101,48 @@ public class JVMOptionsTuner {
             configuredOptions.add("#################");
 
             configuredOptions.addAll(upsertSet.values().stream()
-                    .map(jvmOption -> jvmOption.toString()).collect(Collectors.toList()));
+                    .map(jvmOption -> jvmOption.toJVMOptionString()).collect(Collectors.toList()));
         }
 
         return configuredOptions;
     }
 
+    private void setHeapSetting(String configuredValue, JVMOption option) {
+        if (!StringUtils.isEmpty(configuredValue))
+            option.setCommented(false).setValue(configuredValue);
+    }
+
+    /**
+     * @param line         a line as read from jvm.options file.
+     * @param configuredGC GCType configured by user for Cassandra.
+     * @param upsertSet    configured upsert set of JVM properties as provided by user for Cassandra.
+     * @param excludeSet   configured exclude set of JVM properties as provided by user for Cassandra.
+     * @return the "comment" as is, if not a valid JVM option. Else, a string representation of JVM option
+     */
     private String updateConfigurationValue(final String line, GCType configuredGC, Map<String, JVMOption> upsertSet, Map<String, JVMOption> excludeSet) {
 
         JVMOption option = JVMOption.parse(line);
         if (option == null)
             return line;
 
+        //Is parameter for heap setting.
+        if (option.isHeapJVMOption()) {
+            String configuredValue = null;
+            switch (option.getJvmOption()) {
+                //Special handling for heap new size ("Xmn")
+                case "-Xmn":
+                    configuredValue = config.getHeapNewSize();
+                    break;
+                //Set min and max heap size to same value
+                default:
+                    configuredValue = config.getHeapSize();
+                    break;
+            }
+            setHeapSetting(configuredValue, option);
+        }
+
         //Is parameter for GC.
-        GCType gcType = GCTuner.isOptionAvailable(option);
+        GCType gcType = GCTuner.getGCType(option);
         if (gcType != null) {
             option.setCommented(gcType != configuredGC);
         }
@@ -134,7 +160,7 @@ public class JVMOptionsTuner {
         if (excludeSet != null && excludeSet.containsKey(option.getJvmOption()))
             option.setCommented(true);
 
-        return option.toString();
+        return option.toJVMOptionString();
     }
 
     private void validate(File jvmOptionsFile) throws Exception {
@@ -147,6 +173,20 @@ public class JVMOptionsTuner {
         if (!jvmOptionsFile.canRead() || !jvmOptionsFile.canWrite())
             throw new Exception("JVM Option File does not have right permission: " + jvmOptionsFile.getAbsolutePath());
 
+    }
+
+    /**
+     * Util function to parse comma separated list of jvm options to a Map <JVMOptionName, JVMOption>.
+     * It will ignore anything which is not a valid JVM option.
+     *
+     * @param property comma separated list of JVM options.
+     * @return Map of jvmOptionName -> JVMOption.
+     */
+    public static final Map<String, JVMOption> parseJVMOptions(String property) {
+        if (StringUtils.isEmpty(property))
+            return null;
+        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
+                .map(line -> JVMOption.parse(line)).filter(jvmOption -> jvmOption != null).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
     }
 
 }

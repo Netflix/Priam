@@ -221,7 +221,7 @@ public class StandardTuner implements ICassandraTuner {
     public final void updateJVMOptions() throws Exception {
         JVMOptionsTuner tuner = new JVMOptionsTuner(config);
         //Overwrite default jvm.options file.
-        tuner.updateJVMOptions(config.getJVMOptionsFileLocation());
+        tuner.updateAndSaveJVMOptions(config.getJVMOptionsFileLocation());
     }
 
     public void addExtraCassParams(Map map) {

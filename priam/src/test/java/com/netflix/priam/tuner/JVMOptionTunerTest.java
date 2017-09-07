@@ -36,11 +36,11 @@ public class JVMOptionTunerTest {
     @Test
     public void testCMS() throws Exception
     {
-        config = new GCConfiguration(GCType.CMS, null, null);
+        config = new GCConfiguration(GCType.CMS, null, null, null, null);
         List<JVMOption> jvmOptionMap = getConfiguredJVMOptions(config);
         //Validate that all CMS options should be uncommented.
         long failedVerification = jvmOptionMap.stream().map(jvmOption -> {
-            GCType gcType = GCTuner.isOptionAvailable(jvmOption);
+            GCType gcType = GCTuner.getGCType(jvmOption);
             if (gcType != null && gcType != GCType.CMS)
             {
                 return 1;
@@ -55,11 +55,11 @@ public class JVMOptionTunerTest {
     @Test
     public void testG1GC() throws Exception
     {
-        config = new GCConfiguration(GCType.G1GC, null, null);
+        config = new GCConfiguration(GCType.G1GC, null, null, null, null);
         List<JVMOption> jvmOptionMap = getConfiguredJVMOptions(config);
         //Validate that all G1GC options should be uncommented.
         long failedVerification = jvmOptionMap.stream().map(jvmOption -> {
-            GCType gcType = GCTuner.isOptionAvailable(jvmOption);
+            GCType gcType = GCTuner.getGCType(jvmOption);
             if (gcType != null && gcType != GCType.G1GC)
             {
                 return 1;
@@ -75,28 +75,37 @@ public class JVMOptionTunerTest {
     public void testCMSUpsert() throws Exception
     {
         JVMOption option1 = new JVMOption("-Dsample");
-        JVMOption option2 = new JVMOption("-Dsample2", "10", false);
-        JVMOption option3 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false);
+        JVMOption option2 = new JVMOption("-Dsample2", "10", false, false);
+        JVMOption option3 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false, false);
 
-        StringBuffer buffer = new StringBuffer(option1 + "," + option2 + "," + option3);
-        config = new GCConfiguration(GCType.CMS, null, buffer.toString());
+        JVMOption xmnOption = new JVMOption("-Xmn", "3G", false, true);
+        JVMOption xmxOption = new JVMOption("-Xmx", "20G", false, true);
+        JVMOption xmsOption = new JVMOption("-Xms", "20G", false, true);
+
+        StringBuffer buffer = new StringBuffer(option1.toJVMOptionString() + "," + option2.toJVMOptionString() + "," + option3.toJVMOptionString());
+        config = new GCConfiguration(GCType.CMS, null, buffer.toString(), xmnOption.getValue(), xmxOption.getValue());
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
 
         //Verify all the options do exist.
         Assert.assertTrue(jvmOptions.contains(option3));
         Assert.assertTrue(jvmOptions.contains(option2));
         Assert.assertTrue(jvmOptions.contains(option1));
+
+        //Verify heap options exist with the value provided.
+        Assert.assertTrue(jvmOptions.contains(xmnOption));
+        Assert.assertTrue(jvmOptions.contains(xmxOption));
+        Assert.assertTrue(jvmOptions.contains(xmsOption));
     }
 
     @Test
     public void testCMSExclude() throws Exception
     {
         JVMOption option1 = new JVMOption("-XX:+UseParNewGC");
-        JVMOption option2 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false);
-        JVMOption option3 = new JVMOption("-XX:+UseG1GC", null, false);
+        JVMOption option2 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false, false);
+        JVMOption option3 = new JVMOption("-XX:+UseG1GC", null, false, false);
 
-        StringBuffer buffer = new StringBuffer(option1 + "," + option2 + "," + option3);
-        config = new GCConfiguration(GCType.CMS, buffer.toString(), null);
+        StringBuffer buffer = new StringBuffer(option1.toJVMOptionString() + "," + option2.toJVMOptionString() + "," + option3.toJVMOptionString());
+        config = new GCConfiguration(GCType.CMS, buffer.toString(), null, null, null);
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
 
         //Verify all the options do not exist.
@@ -109,15 +118,15 @@ public class JVMOptionTunerTest {
     public void testG1GCUpsertExclude() throws Exception
     {
         JVMOption option1 = new JVMOption("-Dsample");
-        JVMOption option2 = new JVMOption("-Dsample2", "10", false);
-        JVMOption option3 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false);
-        StringBuffer upsert = new StringBuffer(option1 + "," + option2 + "," + option3);
+        JVMOption option2 = new JVMOption("-Dsample2", "10", false, false);
+        JVMOption option3 = new JVMOption("-XX:NumberOfGCLogFiles", "20", false, false);
+        StringBuffer upsert = new StringBuffer(option1.toJVMOptionString() + "," + option2.toJVMOptionString() + "," + option3.toJVMOptionString());
 
-        JVMOption option4 = new JVMOption("-XX:NumberOfGCLogFiles", null, false);
-        JVMOption option5 = new JVMOption("-XX:+UseG1GC", null, false);
-        StringBuffer exclude = new StringBuffer(option4 + "," + option5);
+        JVMOption option4 = new JVMOption("-XX:NumberOfGCLogFiles", null, false, false);
+        JVMOption option5 = new JVMOption("-XX:+UseG1GC", null, false, false);
+        StringBuffer exclude = new StringBuffer(option4.toJVMOptionString() + "," + option5.toJVMOptionString());
 
-        config = new GCConfiguration(GCType.G1GC, exclude.toString(), upsert.toString());
+        config = new GCConfiguration(GCType.G1GC, exclude.toString(), upsert.toString(), null, null);
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
 
         //Verify upserts exist
@@ -146,12 +155,16 @@ public class JVMOptionTunerTest {
         private GCType gcType;
         private String configuredJVMExclude;
         private String configuredJVMUpsert;
+        private String configuredHeapNewSize;
+        private String configuredHeapSize;
 
-        GCConfiguration(GCType gcType, String configuredJVMExclude,String configuredJVMUpsert)
+        GCConfiguration(GCType gcType, String configuredJVMExclude,String configuredJVMUpsert, String configuredHeapNewSize, String configuredHeapSize)
         {
             this.gcType = gcType;
             this.configuredJVMExclude = configuredJVMExclude;
             this.configuredJVMUpsert = configuredJVMUpsert;
+            this.configuredHeapNewSize = configuredHeapNewSize;
+            this.configuredHeapSize = configuredHeapSize;
         }
 
         @Override
@@ -161,12 +174,22 @@ public class JVMOptionTunerTest {
 
         @Override
         public Map<String, JVMOption> getJVMExcludeSet(){
-            return parseJVMOptions(configuredJVMExclude);
+            return JVMOptionsTuner.parseJVMOptions(configuredJVMExclude);
+        }
+
+        @Override
+        public String getHeapSize(){
+            return configuredHeapSize;
+        }
+
+        @Override
+        public String getHeapNewSize(){
+            return configuredHeapNewSize;
         }
 
         @Override
         public Map<String, JVMOption> getJVMUpsertSet(){
-            return parseJVMOptions(configuredJVMUpsert);
+            return JVMOptionsTuner.parseJVMOptions(configuredJVMUpsert);
         }
     }
 

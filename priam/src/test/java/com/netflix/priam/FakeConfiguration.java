@@ -495,15 +495,6 @@ public class FakeConfiguration implements IConfiguration
         return null;
     }
 
-    protected Map<String, JVMOption> parseJVMOptions(String property)
-    {
-        if (StringUtils.isEmpty(property))
-            return null;
-        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
-                .map(line -> JVMOption.parse(line)).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
-    }
-
-
     public String getAuthenticator()
     {
         return PriamConfiguration.DEFAULT_AUTHENTICATOR;

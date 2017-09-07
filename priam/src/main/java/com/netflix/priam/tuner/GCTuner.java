@@ -80,7 +80,7 @@ public class GCTuner {
             "-XX:G1RSetUpdatingPauseTimePercent"
     ));
 
-    final static GCType isOptionAvailable(String option) {
+    final static GCType getGCType(String option) {
         if (cmsOptions.contains(option))
             return GCType.CMS;
 
@@ -90,9 +90,9 @@ public class GCTuner {
         return null;
     }
 
-    final static GCType isOptionAvailable(JVMOption jvmOption)
+    final static GCType getGCType(JVMOption jvmOption)
     {
-        return isOptionAvailable(jvmOption.getJvmOption());
+        return getGCType(jvmOption.getJvmOption());
     }
 
     public Set<String> getCmsOptions(){

@@ -30,26 +30,32 @@ public class JVMOption {
     private String jvmOption;
     private String value;
     private boolean isCommented;
+    private boolean isHeapJVMOption;
     private static final Pattern pattern = Pattern.compile("(#)*(-[^=]+)=?(.*)?");
+    //A new pattern is required because heap do not separate JVM key,value with "=".
+    private static final Pattern heapPattern = Pattern.compile("(#)*(-Xm[x|s|n])([0-9]+[K|M|G])?"); //Pattern.compile("(#)*-(Xm[x|s|n])([0-9]+)(K|M|G)?");
 
     public JVMOption(String jvmOption) {
         this.jvmOption = jvmOption;
     }
 
-    public JVMOption(String jvmOption, String value, boolean isCommented) {
+    public JVMOption(String jvmOption, String value, boolean isCommented, boolean isHeapJVMOption) {
         this.jvmOption = jvmOption;
         this.value = value;
         this.isCommented = isCommented;
+        this.isHeapJVMOption = isHeapJVMOption;
     }
 
-    @Override
-    public String toString() {
+    public String toJVMOptionString() {
         final StringBuffer sb = new StringBuffer();
         if (isCommented)
             sb.append("#");
         sb.append(jvmOption);
-        if (value != null)
-            sb.append("=").append(value);
+        if (value != null) {
+            if (!isHeapJVMOption)
+                sb.append("=");
+            sb.append(value);
+        }
         return sb.toString();
     }
 
@@ -59,13 +65,14 @@ public class JVMOption {
         if (o == null || getClass() != o.getClass()) return false;
         JVMOption jvmOption1 = (JVMOption) o;
         return isCommented == jvmOption1.isCommented &&
+                isHeapJVMOption == jvmOption1.isHeapJVMOption &&
                 Objects.equals(jvmOption, jvmOption1.jvmOption) &&
                 Objects.equals(value, jvmOption1.value);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(jvmOption, value, isCommented);
+        return Objects.hash(jvmOption, value, isCommented, isHeapJVMOption);
     }
 
     public String getJvmOption() {
@@ -97,14 +104,31 @@ public class JVMOption {
         return this;
     }
 
-    public static JVMOption parse(String line){
+    public boolean isHeapJVMOption() {
+        return isHeapJVMOption;
+    }
+
+    public JVMOption setHeapJVMOption(boolean heapJVMOption) {
+        isHeapJVMOption = heapJVMOption;
+        return this;
+    }
+
+    public static JVMOption parse(String line) {
         JVMOption result = null;
 
-            Matcher matcher = pattern.matcher(line);
-            if (matcher.matches()) {
-                boolean isCommented = (matcher.group(1) != null);
-                return new JVMOption(matcher.group(2)).setCommented(isCommented).setValue(matcher.group(3));
-            }
+        //See if it is heap JVM option.
+        Matcher matcher = heapPattern.matcher(line);
+        if (matcher.matches()) {
+            boolean isCommented = (matcher.group(1) != null);
+            return new JVMOption(matcher.group(2)).setCommented(isCommented).setValue(matcher.group(3)).setHeapJVMOption(true);
+        }
+
+        //See if other heap option.
+        matcher = pattern.matcher(line);
+        if (matcher.matches()) {
+            boolean isCommented = (matcher.group(1) != null);
+            return new JVMOption(matcher.group(2)).setCommented(isCommented).setValue(matcher.group(3));
+        }
 
         return result;
     }

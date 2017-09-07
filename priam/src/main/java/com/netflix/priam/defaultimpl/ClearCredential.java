@@ -31,9 +31,8 @@ import java.util.Properties;
  * This is a basic implementation of ICredentials. User should prefer to
  * implement their own versions for more secured access. This class requires
  * clear AWS key and access.
- *
- * Set the following properties in "conf/awscredntial.properties" 
- *
+ * <p>
+ * Set the following properties in "conf/awscredntial.properties"
  */
 public class ClearCredential implements ICredential {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);

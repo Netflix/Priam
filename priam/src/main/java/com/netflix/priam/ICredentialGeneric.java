@@ -16,7 +16,7 @@
 package com.netflix.priam;
 
 /**
- * Credential file interface for services supporting 
+ * Credential file interface for services supporting
  * Access ID and key authentication for non-AWS
  */
 public interface ICredentialGeneric extends ICredential {

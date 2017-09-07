@@ -27,19 +27,29 @@ public interface IDseConfiguration {
      * Using Datastax's terms here for the different types of nodes.
      */
     public enum NodeType {
-        /** vanilla Cassandra node */
+        /**
+         * vanilla Cassandra node
+         */
         REAL_TIME_QUERY("cassandra"),
 
-        /** Hadoop node */
+        /**
+         * Hadoop node
+         */
         ANALYTIC_HADOOP("hadoop"),
 
-        /** Spark node */
+        /**
+         * Spark node
+         */
         ANALYTIC_SPARK("spark"),
 
-        /** Hadoop and Spark node */
+        /**
+         * Hadoop and Spark node
+         */
         ANALYTIC_HADOOP_SPARK("hadoop-spark"),
 
-        /** Solr node */
+        /**
+         * Solr node
+         */
         SEARCH("solr");
 
         private final String altName;
@@ -69,7 +79,9 @@ public interface IDseConfiguration {
 
     boolean isAuditLogEnabled();
 
-    /** @return comma-delimited list of keyspace names  */
+    /**
+     * @return comma-delimited list of keyspace names
+     */
     String getAuditLogExemptKeyspaces();
 
     /**

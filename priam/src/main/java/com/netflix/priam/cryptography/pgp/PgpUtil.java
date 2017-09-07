@@ -32,8 +32,8 @@ public class PgpUtil {
      * exists.
      *
      * @param pgpSec a secret key ring collection.
-     * @param keyID keyID we want.
-     * @param pass passphrase to decrypt secret key with.
+     * @param keyID  keyID we want.
+     * @param pass   passphrase to decrypt secret key with.
      * @return
      * @throws PGPException
      * @throws NoSuchProviderException

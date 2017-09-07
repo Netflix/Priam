@@ -26,7 +26,7 @@ import java.util.List;
 
 /**
  * Utility to flush 1:8 Keyspaces from memtable to disk
- *
+ * <p>
  * Created by vinhn on 10/12/16.
  */
 public class Flush implements IClusterManagement<String> {

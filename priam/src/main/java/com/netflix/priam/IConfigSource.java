@@ -138,7 +138,7 @@ public interface IConfigSource {
     /**
      * Get a list of strings associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @return value from config or an immutable list if not present.
      */
     List<String> getList(String key);

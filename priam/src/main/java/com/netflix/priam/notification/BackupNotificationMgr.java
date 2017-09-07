@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A means to nofity interested party(ies) of an uploaded file, success or failed.
- *
+ * <p>
  * Created by vinhn on 10/30/16.
  */
 public class BackupNotificationMgr implements EventObserver<BackupEvent> {

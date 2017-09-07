@@ -48,7 +48,7 @@ public class IncrementalConsumer implements Runnable {
 
     @Override
     /*
-	 * Upload specified file, with retries logic.
+     * Upload specified file, with retries logic.
 	 * File will be deleted only if uploaded successfully.
 	 */
     public void run() {

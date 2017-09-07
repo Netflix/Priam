@@ -155,18 +155,17 @@ public abstract class AbstractRestore extends Task {
     /**
      * An overloaded download where it will not only download the object but decrypt and uncompress the
      *
-     *  @param path - path of object to download from source.
-     *  @param finalDestination - handle to the FINAL destination stream.
-     *  Note: if this behavior is successful, it will close the output stream.
-     *
-     *  @param tempFile - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
-     *
-     *  Note: the temp file will be removed on successful processing.
-     *
-     *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     *  @param fileCryptography - the implemented cryptography algorithm use to decrypt.
-     *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
-     *  @param compress - Compression algorithm to use to decompress.
+     * @param path             - path of object to download from source.
+     * @param finalDestination - handle to the FINAL destination stream.
+     *                         Note: if this behavior is successful, it will close the output stream.
+     * @param tempFile         - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
+     *                         <p>
+     *                         Note: the temp file will be removed on successful processing.
+     *                         <p>
+     *                         algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
+     * @param fileCryptography - the implemented cryptography algorithm use to decrypt.
+     * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     * @param compress         - Compression algorithm to use to decompress.
      */
     public void download(final AbstractBackupPath path, final OutputStream finalDestination, final File tempFile
             , final IFileCryptography fileCryptography
@@ -270,13 +269,13 @@ public abstract class AbstractRestore extends Task {
     /**
      * An overloaded download where it will not only download the object but also decrypt and uncompress.
      *
-     *  @param path - path of object to download from source.
-     *  @param restoreLocation - file handle to the FINAL file on disk
-     *  @param tempFile - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
-     *  algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     *  @param fileCryptography - the implemented cryptography algorithm use to decrypt.
-     *  @param passPhrase - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
-     *  @param compress - Compression algorithm to use to decompress.
+     * @param path             - path of object to download from source.
+     * @param restoreLocation  - file handle to the FINAL file on disk
+     * @param tempFile         - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
+     *                         algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
+     * @param fileCryptography - the implemented cryptography algorithm use to decrypt.
+     * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
+     * @param compress         - Compression algorithm to use to decompress.
      */
     public void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
             , final IFileCryptography fileCryptography

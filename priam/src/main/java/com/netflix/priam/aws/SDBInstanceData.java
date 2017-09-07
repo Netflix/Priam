@@ -58,7 +58,7 @@ public class SDBInstanceData {
      * Get the instance details from SimpleDB
      *
      * @param app Cluster name
-     * @param id Node ID
+     * @param id  Node ID
      * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
     public PriamInstance getInstance(String app, String dc, int id) {

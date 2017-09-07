@@ -51,8 +51,8 @@ public class CassandraProcessManager implements ICassandraProcess
     }
 
     protected void setEnv(Map<String, String> env) {   
-        env.put("HEAP_NEWSIZE", config.getHeapNewSize());
-        env.put("MAX_HEAP_SIZE", config.getHeapSize());
+//        env.put("HEAP_NEWSIZE", config.getHeapNewSize());
+//        env.put("MAX_HEAP_SIZE", config.getHeapSize());
         env.put("DATA_DIR", config.getDataFileLocation());
         env.put("COMMIT_LOG_DIR", config.getCommitLogLocation());
         env.put("LOCAL_BACKUP_DIR", config.getBackupLocation());

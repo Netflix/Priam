@@ -11,7 +11,7 @@ import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 @Singleton
-public class FakeConfigurationMurmur3 implements IConfiguration
+public class FakeConfigurationMurmur3 extends FakeConfiguration
 {
 
 	public static final String FAKE_REGION = "us-east-1";

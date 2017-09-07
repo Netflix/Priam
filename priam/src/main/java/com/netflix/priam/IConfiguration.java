@@ -16,12 +16,15 @@
 package com.netflix.priam;
 
 import com.google.inject.ImplementedBy;
+import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Interface for Priam's configuration
@@ -37,6 +40,26 @@ public interface IConfiguration {
     public String getCassHome();
 
     public String getYamlLocation();
+
+    /**
+     * @return Path to jvm.options file. This is used to pass JVM options to Cassandra.
+     */
+    public String getJVMOptionsFileLocation();
+
+    /**
+     * @return Type of garbage collection mechanism to use for Cassandra. Supported values are CMS,G1GC
+     */
+    public GCType getGCType() throws UnsupportedTypeException;
+
+    /**
+     * @return Set of JVM options to exclude/comment.
+     */
+    public Map<String, JVMOption> getJVMExcludeSet();
+
+    /**
+     * @return Set of JMV options to add/upsert
+     */
+    public Map<String, JVMOption> getJVMUpsertSet();
 
     /**
      * @return Path to Cassandra startup script

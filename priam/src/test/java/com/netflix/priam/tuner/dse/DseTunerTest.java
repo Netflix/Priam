@@ -1,9 +1,8 @@
-package com.netflix.priam.dse;
+package com.netflix.priam.tuner.dse;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
-import java.util.Enumeration;
 import java.util.Properties;
 
 import com.google.common.io.Files;
@@ -11,7 +10,6 @@ import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public class DseTunerTest
@@ -69,7 +67,7 @@ public class DseTunerTest
      * This is different because we test the disabled step using the already used enabled file
      * (not a clean copy over of the original props file from the resources dir), and vice versa
      *
-     * @throws IOException
+     * @throws IOException when file is not found or permissions.
      */
     @Test
     public void auditLogProperties_ThereAndBackAgain() throws IOException

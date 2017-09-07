@@ -54,7 +54,7 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
 
     @Override
     /*
-	 * Add task to queue if it does not already exist.  For performance reasons, this behavior does not acquire a lock on the queue hence
+     * Add task to queue if it does not already exist.  For performance reasons, this behavior does not acquire a lock on the queue hence
 	 * it is up to the caller to handle possible duplicate tasks.
 	 * 
 	 * Note: will block until there is space in the queue.

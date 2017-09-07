@@ -576,7 +576,7 @@ public class CassandraAdmin {
             ConfigurationException {
         throw new UnsupportedOperationException("Unsupported...waiting for Jason to resolve compile error.");
         /*
-    	JMXNodeTool nodetool = null;
+        JMXNodeTool nodetool = null;
 		try {
 			nodetool = JMXNodeTool.instance(config);
 		} catch (JMXConnectionException e) {

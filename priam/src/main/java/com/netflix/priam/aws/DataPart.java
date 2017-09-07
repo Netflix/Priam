@@ -20,7 +20,7 @@ import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Class for holding part data of a backup file,
- * which will be used for multi-part uploading 
+ * which will be used for multi-part uploading
  */
 public class DataPart {
     private final String bucketName;

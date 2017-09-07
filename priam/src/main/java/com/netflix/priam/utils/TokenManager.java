@@ -56,9 +56,9 @@ public class TokenManager implements ITokenManager {
      * Calculate a token for the given position, evenly spaced from other size-1 nodes.  See
      * http://wiki.apache.org/cassandra/Operations.
      *
-     * @param size number of slots by which the token space will be divided
+     * @param size     number of slots by which the token space will be divided
      * @param position slot number, multiplier
-     * @param offset added to token
+     * @param offset   added to token
      * @return MAXIMUM_TOKEN / size * position + offset, if <= MAXIMUM_TOKEN, otherwise wrap around the MINIMUM_TOKEN
      */
     @VisibleForTesting
@@ -79,14 +79,10 @@ public class TokenManager implements ITokenManager {
     /**
      * Creates a token given the following parameter
      *
-     * @param my_slot
-     *            -- Slot where this instance has to be.
-     * @param rac_count
-     *            -- Rac count is the numeber of RAC's
-     * @param rac_size
-     *            -- number of memberships in the rac
-     * @param region
-     *            -- name of the DC where it this token is created.
+     * @param my_slot   -- Slot where this instance has to be.
+     * @param rac_count -- Rac count is the numeber of RAC's
+     * @param rac_size  -- number of memberships in the rac
+     * @param region    -- name of the DC where it this token is created.
      */
     @Override
     public String createToken(int my_slot, int rac_count, int rac_size, String region) {

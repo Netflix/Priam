@@ -25,7 +25,7 @@ import java.io.IOException;
 /**
  * Represents a connection to remote JMX mbean server.  This object differs from JMXNodeTool as it is meant for short
  * lived connection to remote mbean server.
- *
+ * <p>
  * Created by vinhn on 10/11/16.
  */
 public class JMXConnectorMgr extends NodeProbe {

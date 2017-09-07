@@ -329,7 +329,7 @@ public class PgpCryptography implements IFileCryptography {
             int bytesRead = 0; //num of bytes read from the source input stream
 
             while (this.bos.size() < len && (bytesRead = this.srcHandle.read(buff, 0, len)) > 0) { //lets process each chunk from input until we fill our output stream or we reach end of input
-				
+
 				/* TODO: msg was only for debug purposes
 				 * 
 				logger.info("Reading input file: " + this.fileName + ", number of bytes read from input stream: " + bytesRead 

@@ -21,7 +21,7 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.ClearCredential;
 
 /**
- * Credential file interface for services supporting 
+ * Credential file interface for services supporting
  * Access ID and key authentication
  */
 @ImplementedBy(ClearCredential.class)

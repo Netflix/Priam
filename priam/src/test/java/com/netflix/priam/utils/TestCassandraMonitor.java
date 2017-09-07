@@ -21,7 +21,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import junit.framework.Assert;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 

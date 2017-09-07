@@ -118,7 +118,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         */
 
     	/* *
-    	 * Notify observers once all incrremental uploads completed
+         * Notify observers once all incrremental uploads completed
     	 * 
         if(incrementalRemotePaths.size() > 0)
         {

@@ -174,13 +174,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public abstract void parseRemote(String remoteFilePath);
 
     /**
-     *  Parses paths with just token prefixes 
+     * Parses paths with just token prefixes
      */
     public abstract void parsePartialPrefix(String remoteFilePath);
 
     /**
-     * Provides a common prefix that matches all objects that fall between 
-     * the start and end time 
+     * Provides a common prefix that matches all objects that fall between
+     * the start and end time
      */
     public abstract String remotePrefix(Date start, Date end, String location);
 

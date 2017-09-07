@@ -25,6 +25,7 @@ import com.google.inject.ImplementedBy;
 public interface INotificationService {
     /**
      * Notify the message.
+     *
      * @param msg Message that needs to be notified
      */
     public void notify(String msg);

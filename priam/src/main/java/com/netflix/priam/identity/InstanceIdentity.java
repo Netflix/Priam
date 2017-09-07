@@ -43,7 +43,6 @@ import java.util.List;
 /**
  * This class provides the central place to create and consume the identity of
  * the instance - token, seeds etc.
- *
  */
 @Singleton
 public class InstanceIdentity {

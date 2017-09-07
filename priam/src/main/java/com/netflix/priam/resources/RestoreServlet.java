@@ -185,16 +185,11 @@ public class RestoreServlet {
     /**
      * Restore with the specified start and end time.
      *
-     * @param token
-     *            Overrides the current token with this one, if specified
-     * @param region
-     *            Override the region for searching backup
-     * @param startTime
-     *            Start time
-     * @param endTime
-     *            End time upto which the restore should fetch data
-     * @param keyspaces
-     *            Comma seperated list of keyspaces to restore
+     * @param token     Overrides the current token with this one, if specified
+     * @param region    Override the region for searching backup
+     * @param startTime Start time
+     * @param endTime   End time upto which the restore should fetch data
+     * @param keyspaces Comma seperated list of keyspaces to restore
      * @throws Exception
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {

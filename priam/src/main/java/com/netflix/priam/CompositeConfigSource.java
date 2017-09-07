@@ -27,7 +27,7 @@ import java.util.Collection;
  * depend on the {@link IConfigSource}s provided.  If user asks for key 'foo', and this composite has three sources, it
  * will first check if the key is found in the first source, if not it will check the second and if not, the third, else
  * return null or false if {@link #contains(String)} was called.
- *
+ * <p>
  * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underlying
  * source overrides one of these methods, then that implementation will be ignored.
  */

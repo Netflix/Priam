@@ -19,7 +19,6 @@ import com.netflix.priam.utils.SystemUtils;
 
 /**
  * Calls AWS metadata to get info on the location of the running instance within classic environment.
- *
  */
 public class AwsClassicInstanceDataRetriever extends InstanceDataRetrieverBase implements InstanceDataRetriever {
 
@@ -45,7 +44,7 @@ public class AwsClassicInstanceDataRetriever extends InstanceDataRetrieverBase i
 
     @Override
     /*
-	 * @return id of the network interface for running instance
+     * @return id of the network interface for running instance
 	 */
     public String getMac() {
         return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/network/interfaces/macs/").trim();

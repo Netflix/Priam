@@ -88,6 +88,7 @@ public class FlushTask extends Task {
 
     /**
      * Timer to be used for flush interval.
+     *
      * @param config {@link IConfiguration} to get configuration details from priam.
      * @return the timer to be used for flush interval.
      * <p>

@@ -16,9 +16,8 @@
 package com.netflix.priam.merics;
 
 /**
- *
  * Represents a specific measurement for publishing to a metric system
- *
+ * <p>
  * Created by vinhn on 10/14/16.
  */
 public interface IMeasurement<T> {

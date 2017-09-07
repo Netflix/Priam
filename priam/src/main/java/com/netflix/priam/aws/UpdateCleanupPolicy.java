@@ -28,7 +28,6 @@ import com.netflix.priam.utils.RetryableCallable;
 
 /**
  * Updates the cleanup policy for the bucket
- *
  */
 @Singleton
 public class UpdateCleanupPolicy extends Task {

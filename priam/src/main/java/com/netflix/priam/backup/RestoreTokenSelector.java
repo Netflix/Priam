@@ -46,10 +46,8 @@ public class RestoreTokenSelector {
      * Get the closest token to current token from the list of tokens available
      * in the backup
      *
-     * @param tokenToSearch
-     *            Token to search for
-     * @param startDate
-     *            Date for which the backups are available
+     * @param tokenToSearch Token to search for
+     * @param startDate     Date for which the backups are available
      * @return Token as BigInteger
      */
     public BigInteger getClosestToken(BigInteger tokenToSearch, Date startDate) {

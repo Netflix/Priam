@@ -57,9 +57,9 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     /**
      * Hostname and Port to talk to will be same server for now optionally we
      * might want the ip to poll.
-     *
+     * <p>
      * NOTE: This class shouldn't be a singleton and this shouldn't be cached.
-     *
+     * <p>
      * This will work only if cassandra runs.
      */
     public JMXNodeTool(String host, int port) throws IOException, InterruptedException {
@@ -73,6 +73,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
     /**
      * try to create if it is null.
+     *
      * @throws JMXConnectionException
      */
     public static JMXNodeTool instance(IConfiguration config) throws JMXConnectionException {
@@ -92,6 +93,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     /**
      * This method will test if you can connect and query something before handing over the connection,
      * This is required for our retry logic.
+     *
      * @return
      */
     private static boolean testConnection() {

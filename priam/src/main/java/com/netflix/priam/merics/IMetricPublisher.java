@@ -18,10 +18,9 @@ package com.netflix.priam.merics;
 import com.google.inject.ImplementedBy;
 
 /**
- *
  * A means to publish Priam, Cassandra related metrics.
  * The default publisher is a no operation.
- *
+ * <p>
  * Created by vinhn on 10/14/16.
  */
 @ImplementedBy(NoOpMetricPublisher.class)

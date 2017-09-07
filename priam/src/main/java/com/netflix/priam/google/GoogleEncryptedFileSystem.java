@@ -137,7 +137,8 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
         return this.gcsStorageHandle;
     }
 
-    /** Authorizes the installed application to access user's protected data, code from https://developers.google.com/maps-engine/documentation/oauth/serviceaccount
+    /**
+     * Authorizes the installed application to access user's protected data, code from https://developers.google.com/maps-engine/documentation/oauth/serviceaccount
      * and http://javadoc.google-api-java-client.googlecode.com/hg/1.8.0-beta/com/google/api/client/googleapis/auth/oauth2/GoogleCredential.html
      */
     private Credential constructGcsCredential() throws Exception {

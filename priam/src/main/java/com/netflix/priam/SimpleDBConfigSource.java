@@ -35,13 +35,13 @@ import java.util.Map;
  * Loads config data from SimpleDB.  {@link #intialize(String, String)} will query the SimpleDB domain "PriamProperties"
  * for any potential configurations.  The domain is set up to support multiple different clusters; this is done by using
  * amazon's auto scaling groups (ASG).
- *
+ * <p>
  * Schema <ul>
- *   <li>"appId" // ASG up to first instance of '-'.  So ASG name priam-test will create appId priam, ASG priam_test
- *   will create appId priam_test.</li>
- *   <li>"property" // key to use for configs.</li>
- *   <li>"value" // value to set for the given property/key.</li>
- *   <li>"region" // region the config belongs to.  If left empty, then applies to all regions.</li>
+ * <li>"appId" // ASG up to first instance of '-'.  So ASG name priam-test will create appId priam, ASG priam_test
+ * will create appId priam_test.</li>
+ * <li>"property" // key to use for configs.</li>
+ * <li>"value" // value to set for the given property/key.</li>
+ * <li>"region" // region the config belongs to.  If left empty, then applies to all regions.</li>
  * </ul> }
  */
 public final class SimpleDBConfigSource extends AbstractConfigSource {

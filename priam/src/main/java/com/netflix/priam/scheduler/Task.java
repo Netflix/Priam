@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * Task class that should be implemented by all cron tasks. Jobconf will contain
  * any instance specific data
- *
+ * <p>
  * NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to failure
  */
 public abstract class Task implements Job, TaskMBean {

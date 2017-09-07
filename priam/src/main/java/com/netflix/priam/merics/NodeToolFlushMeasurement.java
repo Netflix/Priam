@@ -16,9 +16,8 @@
 package com.netflix.priam.merics;
 
 /**
- *
  * Represents the value to be publish to a telemetry endpoint
- *
+ * <p>
  * Created by vinhn on 10/14/16.
  */
 public class NodeToolFlushMeasurement implements IMeasurement<Object> {

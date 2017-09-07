@@ -50,6 +50,7 @@ public class PriamInstanceResource {
 
     /**
      * Get the list of all priam instances
+     *
      * @return the list of all priam instances
      */
     @GET

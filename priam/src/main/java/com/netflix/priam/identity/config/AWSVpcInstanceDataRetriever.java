@@ -21,7 +21,6 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Calls AWS metadata to get info on the location of the running instance within vpc environment.
- *
  */
 public class AWSVpcInstanceDataRetriever extends InstanceDataRetrieverBase implements InstanceDataRetriever {
     private static final Logger logger = LoggerFactory.getLogger(AWSVpcInstanceDataRetriever.class);
@@ -48,7 +47,7 @@ public class AWSVpcInstanceDataRetriever extends InstanceDataRetrieverBase imple
 
     @Override
     /*
-	 * @return id of the network interface for running instance
+     * @return id of the network interface for running instance
 	 */
     public String getMac() {
         return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/network/interfaces/macs/").trim();

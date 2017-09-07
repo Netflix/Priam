@@ -38,16 +38,15 @@ import java.util.Set;
 /**
  * this class will associate an Public IP's with a new instance so they can talk
  * across the regions.
- *
+ * <p>
  * Requirement: 1) Nodes in the same region needs to be able to talk to each
  * other. 2) Nodes in other regions needs to be able to talk to t`he others in
  * the other region.
- *
+ * <p>
  * Assumption: 1) IPriamInstanceFactory will provide the membership... and will
  * be visible across the regions 2) IMembership amazon or any other
  * implementation which can tell if the instance is part of the group (ASG in
  * amazons case).
- *
  */
 @Singleton
 public class UpdateSecuritySettings extends Task {

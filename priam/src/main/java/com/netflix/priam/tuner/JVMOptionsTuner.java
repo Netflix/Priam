@@ -45,7 +45,9 @@ public class JVMOptionsTuner {
     }
 
     /**
-     * Update the JVM options file for cassandra by updating/removing JVM options {@link IConfiguration#getJVMExcludeSet()} && {@link IConfiguration#getJVMUpsertSet()}, configuring GC {@link IConfiguration#getGCType()}etc.
+     * Update the JVM options file and save to a file for cassandra by updating/removing JVM options
+     * {@link IConfiguration#getJVMExcludeSet()} and {@link IConfiguration#getJVMUpsertSet()},
+     * configuring GC {@link IConfiguration#getGCType()}etc.
      *
      * @param outputFile File name with which this configured JVM options should be written.
      * @throws Exception when encountered with invalid configured GC type. {@link IConfiguration#getGCType()}
@@ -70,7 +72,9 @@ public class JVMOptionsTuner {
     }
 
     /**
-     * Update the JVM options file for cassandra by updating/removing JVM options {@link IConfiguration#getJVMExcludeSet()} && {@link IConfiguration#getJVMUpsertSet()}, configuring GC {@link IConfiguration#getGCType()}etc.
+     * Update the JVM options file for cassandra by updating/removing JVM options
+     * {@link IConfiguration#getJVMExcludeSet()} and {@link IConfiguration#getJVMUpsertSet()},
+     * configuring GC {@link IConfiguration#getGCType()}etc.
      *
      * @return List of Configuration as String after reading the configuration from jvm.options
      * @throws Exception when encountered with invalid configured GC type. {@link IConfiguration#getGCType()}
@@ -176,11 +180,11 @@ public class JVMOptionsTuner {
     }
 
     /**
-     * Util function to parse comma separated list of jvm options to a Map <JVMOptionName, JVMOption>.
+     * Util function to parse comma separated list of jvm options to a Map (jvmOptionName, JVMOption).
      * It will ignore anything which is not a valid JVM option.
      *
      * @param property comma separated list of JVM options.
-     * @return Map of jvmOptionName -> JVMOption.
+     * @return Map of (jvmOptionName, JVMOption).
      */
     public static final Map<String, JVMOption> parseJVMOptions(String property) {
         if (StringUtils.isEmpty(property))

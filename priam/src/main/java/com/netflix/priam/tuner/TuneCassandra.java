@@ -1,6 +1,5 @@
 /*
  * Copyright 2013 Netflix, Inc.
- *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -42,17 +41,12 @@ public class TuneCassandra extends Task {
         this.tuner = tuner;
     }
 
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
-    }
-
-    public void execute() throws IOException, Exception {
+    public void execute() throws IOException {
         boolean isDone = false;
 
         while (!isDone) {
             try {
                 tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
-                tuner.updateJVMOptions();
                 isDone = true;
             } catch (IOException e) {
                 LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);
@@ -64,5 +58,9 @@ public class TuneCassandra extends Task {
     @Override
     public String getName() {
         return "Tune-Cassandra";
+    }
+
+    public static TaskTimer getTimer() {
+        return new SimpleTimer(JOBNAME);
     }
 }

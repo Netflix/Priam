@@ -1,50 +1,41 @@
-/**
+/*
  * Copyright 2013 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.resources;
-
-import java.net.URI;
-
-import java.util.*;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriBuilder;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.UriBuilder;
+import java.net.URI;
+import java.util.List;
 
 /**
  * Resource for manipulating priam instances.
  */
 @Path("/v1/instances")
 @Produces(MediaType.TEXT_PLAIN)
-public class PriamInstanceResource
-{
+public class PriamInstanceResource {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final IConfiguration config;
@@ -52,8 +43,7 @@ public class PriamInstanceResource
 
     @Inject
     //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.    
-    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory)
-    {
+    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory) {
         this.config = config;
         this.factory = factory;
     }
@@ -63,12 +53,10 @@ public class PriamInstanceResource
      * @return the list of all priam instances
      */
     @GET
-    public String getInstances()
-    {
+    public String getInstances() {
         StringBuilder response = new StringBuilder();
-        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName()); 
-        for (PriamInstance node : allInstances)
-        {
+        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
+        for (PriamInstance node : allInstances) {
             response.append(node.toString());
             response.append("\n");
         }
@@ -77,14 +65,13 @@ public class PriamInstanceResource
 
     /**
      * Returns an individual priam instance by id or WebApplicationException (404) if not found
-     * 
+     *
      * @param id the node id
      * @return the priam instance
      */
     @GET
     @Path("{id}")
-    public String getInstance(@PathParam("id") int id)
-    {
+    public String getInstance(@PathParam("id") int id) {
         PriamInstance node = getByIdIfFound(id);
         return node.toString();
     }
@@ -97,12 +84,11 @@ public class PriamInstanceResource
      */
     @POST
     public Response createInstance(
-        @QueryParam("id") int id, @QueryParam("instanceID") String instanceID,
-        @QueryParam("hostname") String hostname, @QueryParam("ip") String ip,
-        @QueryParam("rack") String rack, @QueryParam("token") String token)
-    {
+            @QueryParam("id") int id, @QueryParam("instanceID") String instanceID,
+            @QueryParam("hostname") String hostname, @QueryParam("ip") String ip,
+            @QueryParam("rack") String rack, @QueryParam("token") String token) {
         log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
-            new Object[]{ id, instanceID, hostname, ip, rack, token });
+                new Object[]{id, instanceID, hostname, ip, rack, token});
         PriamInstance instance = factory.create(config.getAppName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();
@@ -110,14 +96,13 @@ public class PriamInstanceResource
 
     /**
      * Deletes the instance with the given {@code id}.
-     * 
+     *
      * @param id the node id
      * @return Response (204) if the instance was deleted
      */
     @DELETE
     @Path("{id}")
-    public Response deleteInstance(@PathParam("id") int id)
-    {
+    public Response deleteInstance(@PathParam("id") int id) {
         PriamInstance instance = getByIdIfFound(id);
         factory.delete(instance);
         return Response.noContent().build();
@@ -126,12 +111,11 @@ public class PriamInstanceResource
     /**
      * Returns the PriamInstance with the given {@code id}, or
      * throws a WebApplicationException(400) if none found.
-     * 
+     *
      * @param id the node id
      * @return PriamInstance with the given {@code id}
      */
-    private PriamInstance getByIdIfFound(int id)
-    {
+    private PriamInstance getByIdIfFound(int id) {
         PriamInstance instance = factory.getInstance(config.getAppName(), config.getDC(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
@@ -139,8 +123,7 @@ public class PriamInstanceResource
         return instance;
     }
 
-    private static WebApplicationException notFound(String message)
-    {
+    private static WebApplicationException notFound(String message) {
         return new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(message).build());
     }
 }

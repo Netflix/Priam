@@ -1,17 +1,18 @@
-/**
+/*
  * Copyright 2013 Netflix, Inc.
- * <p>
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.scheduler;
 
@@ -24,13 +25,12 @@ import org.slf4j.LoggerFactory;
  * Created by aagrawal on 3/8/17.
  */
 public enum SchedulerType {
-    HOUR("HOUR"),CRON("CRON");
+    HOUR("HOUR"), CRON("CRON");
 
     private static final Logger logger = LoggerFactory.getLogger(SchedulerType.class);
     private final String schedulerType;
 
-    SchedulerType(String schedulerType)
-    {
+    SchedulerType(String schedulerType) {
         this.schedulerType = schedulerType.toUpperCase();
     }
 
@@ -48,21 +48,19 @@ public enum SchedulerType {
      * Illegal value     |NA               |False             |UnsupportedTypeException
      */
 
-    public static SchedulerType lookup(String schedulerType, boolean acceptNullOrEmpty, boolean acceptIllegalValue) throws UnsupportedTypeException{
+    public static SchedulerType lookup(String schedulerType, boolean acceptNullOrEmpty, boolean acceptIllegalValue) throws UnsupportedTypeException {
         if (StringUtils.isEmpty(schedulerType))
-            if(acceptNullOrEmpty)
+            if (acceptNullOrEmpty)
                 return null;
-            else
-            {
+            else {
                 String message = String.format("%s is not a supported SchedulerType. Supported values are %s", schedulerType, getSupportedValues());
                 logger.error(message);
                 throw new UnsupportedTypeException(message);
             }
 
-        try{
+        try {
             return SchedulerType.valueOf(schedulerType.toUpperCase());
-        }catch (IllegalArgumentException ex)
-        {
+        } catch (IllegalArgumentException ex) {
             String message = String.format("%s is not a supported SchedulerType. Supported values are %s", schedulerType, getSupportedValues());
 
             if (acceptIllegalValue) {
@@ -76,8 +74,7 @@ public enum SchedulerType {
         }
     }
 
-    private static String getSupportedValues()
-    {
+    private static String getSupportedValues() {
         StringBuffer supportedValues = new StringBuffer();
         boolean first = true;
         for (SchedulerType type : SchedulerType.values()) {
@@ -90,13 +87,11 @@ public enum SchedulerType {
         return supportedValues.toString();
     }
 
-    public static SchedulerType lookup(String schedulerType) throws UnsupportedTypeException
-    {
+    public static SchedulerType lookup(String schedulerType) throws UnsupportedTypeException {
         return lookup(schedulerType, false, false);
     }
 
-    public String getSchedulerType()
-    {
+    public String getSchedulerType() {
         return schedulerType;
     }
 

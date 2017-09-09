@@ -259,15 +259,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final int DEFAULT_TOMBSTONE_WARNING_THRESHOLD = 1000; // C* defaults
     private static final int DEFAULT_TOMBSTONE_FAILURE_THRESHOLD = 100000;// C* defaults
 
-
-    //default S3 endpoints
-    private static final String DEFAULT_US_EAST_1_S3_ENDPOINT = "s3-external-1.amazonaws.com";
-    private static final String DEFAULT_US_WEST_1_S3_ENDPOINT = "s3-us-west-1.amazonaws.com";
-    private static final String DEFAULT_US_WEST_2_S3_ENDPOINT = "s3-us-west-2.amazonaws.com";
-    private static final String DEFAULT_EU_WEST_1_S3_ENDPOINT = "s3-eu-west-1.amazonaws.com";
-    private static final String DEFAULT_SA_EAST_1_S3_ENDPOINT = "s3-sa-east-1.amazonaws.com";
-    private static final String DEFAULT_EU_CENTRAL_1_S3_ENDPOINT = "s3-eu-central-1.amazonaws.com";
-
     // AWS EC2 Dual Account
     private static final boolean DEFAULT_DUAL_ACCOUNT = false;
 
@@ -941,45 +932,6 @@ public class PriamConfiguration implements IConfiguration {
 
     public boolean isNativeTransportEnabled() {
         return config.get(CONFIG_NATIVE_PROTOCOL_ENABLED, false);
-    }
-
-
-    public String getS3EndPoint() {
-        String region = getDC();
-
-        String s3Url = null;
-
-        if (US_EAST_1_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_US_EAST_1_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_US_EAST_1_S3_ENDPOINT : s3Url;
-        }
-
-        if (US_WEST_1_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_US_WEST_1_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_1_S3_ENDPOINT : s3Url;
-        }
-
-        if (US_WEST_2_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_US_WEST_2_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_US_WEST_2_S3_ENDPOINT : s3Url;
-        }
-
-        if (EU_WEST_1_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_EU_WEST_1_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_EU_WEST_1_S3_ENDPOINT : s3Url;
-        }
-
-        if (SA_EAST_1_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_SA_EAST_1_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_SA_EAST_1_S3_ENDPOINT : s3Url;
-        }
-
-        if (EU_CENTRAL_1_REGION.equals(region)) {
-            s3Url = config.get(CONFIG_EU_CENTRAL_1_S3_ENDPOINT);
-            return StringUtils.isBlank(s3Url) ? DEFAULT_EU_CENTRAL_1_S3_ENDPOINT : s3Url;
-        }
-
-        return null;
     }
 
     public int getConcurrentReadsCnt() {

@@ -41,12 +41,13 @@ public class TuneCassandra extends Task {
         this.tuner = tuner;
     }
 
-    public void execute() throws IOException {
+    public void execute() throws IOException, Exception {
         boolean isDone = false;
 
         while (!isDone) {
             try {
                 tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
+                tuner.updateJVMOptions();
                 isDone = true;
             } catch (IOException e) {
                 LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);

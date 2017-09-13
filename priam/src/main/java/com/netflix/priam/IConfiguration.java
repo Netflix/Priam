@@ -484,8 +484,6 @@ public interface IConfiguration {
 
     public boolean isNativeTransportEnabled();
 
-    public String getS3EndPoint();
-
     public int getConcurrentReadsCnt();
 
     public int getConcurrentWritesCnt();

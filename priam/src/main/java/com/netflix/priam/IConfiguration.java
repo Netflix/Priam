@@ -40,6 +40,12 @@ public interface IConfiguration {
      */
     public String getCassHome();
 
+    /**
+     * Path where cassandra logs should be stored. This is passed to Cassandra as where to store logs.
+     * @return Path to cassandra logs.
+     */
+    public String getCassandraLogsLocation();
+
     public String getYamlLocation();
 
     /**

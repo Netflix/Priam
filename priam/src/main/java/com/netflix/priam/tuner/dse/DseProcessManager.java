@@ -18,6 +18,7 @@ package com.netflix.priam.tuner.dse;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
 import com.netflix.priam.utils.Sleeper;
 
@@ -27,8 +28,8 @@ public class DseProcessManager extends CassandraProcessManager {
     private final IDseConfiguration dseConfig;
 
     @Inject
-    public DseProcessManager(IConfiguration config, IDseConfiguration dseConfig, Sleeper sleeper) {
-        super(config, sleeper);
+    public DseProcessManager(IConfiguration config, IDseConfiguration dseConfig, InstanceState instanceState) {
+        super(config, instanceState);
         this.dseConfig = dseConfig;
     }
 

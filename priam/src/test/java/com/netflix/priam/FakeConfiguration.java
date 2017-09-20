@@ -330,7 +330,6 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getBootClusterName()
     {
-        // TODO Auto-generated method stub
         return "cass_bootstrap";
     }
 
@@ -341,16 +340,19 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getCassandraLogsLocation() {
+        return getCassHome() + "/logs";
+    }
+
+    @Override
     public String getCassStartupScript()
     {
-        // TODO Auto-generated method stub
         return "/usr/bin/false";
     }
 
     @Override
     public List<String> getRestoreKeySpaces()
     {
-        // TODO Auto-generated method stub
         return Lists.newArrayList();
     }
 

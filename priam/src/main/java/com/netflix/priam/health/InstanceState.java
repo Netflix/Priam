@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Singleton
 public class InstanceState {
-    private final AtomicBoolean isSideCarProcessAlive = new AtomicBoolean(false);
+    private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean isBootstrapping = new AtomicBoolean(false);
     private final AtomicBoolean firstBootstrap = new AtomicBoolean(true);
     private final AtomicBoolean isBackup = new AtomicBoolean(false);
@@ -39,7 +39,7 @@ public class InstanceState {
         sb.append(", firstBootstrap=").append(firstBootstrap);
         sb.append(", bootstrapTime=").append(bootstrapTime);
 
-        sb.append(", isSideCarProcessAlive=").append(isSideCarProcessAlive);
+        sb.append(", isCassandraProcessAlive=").append(isCassandraProcessAlive);
         sb.append(", isGossipActive=").append(isGossipActive);
         sb.append(", isThriftActive=").append(isThriftActive);
         sb.append(", isNativeTransportActive=").append(isNativeTransportActive);
@@ -94,12 +94,12 @@ public class InstanceState {
         setHealthy();
     }
 
-    public boolean isSideCarProcessAlive() {
-        return isSideCarProcessAlive.get();
+    public boolean isCassandraProcessAlive() {
+        return isCassandraProcessAlive.get();
     }
 
-    public void setSideCarProcessAlive(boolean isSideCarProcessAlive) {
-        this.isSideCarProcessAlive.set(isSideCarProcessAlive);
+    public void setCassandraProcessAlive(boolean isSideCarProcessAlive) {
+        this.isCassandraProcessAlive.set(isSideCarProcessAlive);
         setHealthy();
     }
 
@@ -183,7 +183,7 @@ public class InstanceState {
     }
 
     private void setHealthy() {
-        this.isHealthy.set(isSideCarProcessAlive() && isRequiredDirectoriesExist() && isGossipActive() && (isThriftActive() || isNativeTransportActive()));
+        this.isHealthy.set(isCassandraProcessAlive() && isRequiredDirectoriesExist() && isGossipActive() && (isThriftActive() || isNativeTransportActive()));
     }
 
     public boolean getYmlWritten() {

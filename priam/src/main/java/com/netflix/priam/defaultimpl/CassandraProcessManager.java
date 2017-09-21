@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.utils.Sleeper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -89,7 +88,7 @@ public class CassandraProcessManager implements ICassandraProcess {
             int code =  starter.waitFor();
             if (code == 0) {
                 logger.info("Cassandra server has been started");
-                instanceState.setSideCarProcessAlive(true);
+                instanceState.setCassandraProcessAlive(true);
             }
             else
                 logger.error("Unable to start cassandra server. Error code: {}", code);
@@ -154,7 +153,7 @@ public class CassandraProcessManager implements ICassandraProcess {
             int code = stopper.waitFor();
             if (code == 0) {
                 logger.info("Cassandra server has been stopped");
-                instanceState.setSideCarProcessAlive(false);
+                instanceState.setCassandraProcessAlive(false);
             }
             else {
                 logger.error("Unable to stop cassandra server. Error code: {}", code);

@@ -69,7 +69,7 @@ public class CassandraMonitor extends Task {
             String line = input.readLine();
             if (line != null) {
                 //Setting cassandra flag to true
-                instanceState.setSideCarProcessAlive(true);
+                instanceState.setCassandraProcessAlive(true);
                 isCassandraStarted.set(true);
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
@@ -77,12 +77,12 @@ public class CassandraMonitor extends Task {
                 instanceState.setIsThriftActive(bean.isThriftServerRunning());
             } else if (line == null) {
                 //Setting cassandra flag to false
-                instanceState.setSideCarProcessAlive(false);
+                instanceState.setCassandraProcessAlive(false);
                 isCassandraStarted.set(false);
             }
         } catch (Exception e) {
             logger.warn("Exception thrown while checking if Cassandra is running or not ", e);
-            instanceState.setSideCarProcessAlive(false);
+            instanceState.setCassandraProcessAlive(false);
             isCassandraStarted.set(false);
         } finally {
             if (process != null) {

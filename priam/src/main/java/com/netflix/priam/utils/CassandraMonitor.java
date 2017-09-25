@@ -63,8 +63,11 @@ public class CassandraMonitor extends Task {
         Process process = null;
         BufferedReader input = null;
         try {
-            //This returns pid for the Cassandra process
-            process = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
+            // This returns pid for the Cassandra process
+            // This needs to be sent as command list as "pipe" of results is not allowed. Also, do not try to change
+            // with pgrep as it has limitation of 4K command list (cassandra command can go upto 5-6 KB as cassandra lists all the libraries in command.
+            final String[] cmd = { "/bin/sh", "-c", "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()};
+            process = Runtime.getRuntime().exec(cmd);
             input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = input.readLine();
             if (line != null) {

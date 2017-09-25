@@ -13,12 +13,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 @Singleton
 public class InstanceState {
+    public enum NODE_STATE {
+        JOIN, //This state to be used when Priam is joining the ring for the first time or was already assigned this token.
+        REPLACE; //This state to be used when Priam replaces an instance from the token range.
+    }
+    //TODO: Use bootstrap, backup and restore information.
     private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean isBootstrapping = new AtomicBoolean(false);
-    private final AtomicBoolean firstBootstrap = new AtomicBoolean(true);
-    private final AtomicBoolean isBackup = new AtomicBoolean(false);
+    private NODE_STATE nodeState;
+    private final AtomicBoolean isBackingUp = new AtomicBoolean(false);
     private final AtomicBoolean isBackupSuccessful = new AtomicBoolean(false);
-    private final AtomicBoolean isRestore = new AtomicBoolean(false);
+    private final AtomicBoolean isRestoring = new AtomicBoolean(false);
     private final AtomicBoolean isRestoreSuccessful = new AtomicBoolean(false);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
     private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
@@ -36,7 +41,7 @@ public class InstanceState {
         sb.append("isHealthy=").append(isHealthy);
 
         sb.append(", isBootstrapping=").append(isBootstrapping);
-        sb.append(", firstBootstrap=").append(firstBootstrap);
+        sb.append(", nodeState=").append(nodeState);
         sb.append(", bootstrapTime=").append(bootstrapTime);
 
         sb.append(", isCassandraProcessAlive=").append(isCassandraProcessAlive);
@@ -45,11 +50,11 @@ public class InstanceState {
         sb.append(", isNativeTransportActive=").append(isNativeTransportActive);
         sb.append(", isRequiredDirectoriesExist=").append(isRequiredDirectoriesExist);
 
-        sb.append(", isBackup=").append(isBackup);
+        sb.append(", isBackingUp=").append(isBackingUp);
         sb.append(", isBackupSuccessful=").append(isBackupSuccessful);
         sb.append(", backupTime=").append(backupTime);
 
-        sb.append(", isRestore=").append(isRestore);
+        sb.append(", isRestoring=").append(isRestoring);
         sb.append(", isRestoreSuccessful=").append(isRestoreSuccessful);
         sb.append(", restoreTime=").append(restoreTime);
 
@@ -112,8 +117,8 @@ public class InstanceState {
         this.isBootstrapping.set(isBootstrapping);
     }
 
-    public boolean firstBootstrap() {
-        return firstBootstrap.get();
+    public NODE_STATE getNodeState() {
+        return nodeState;
     }
 
     public long getBootstrapTime() {
@@ -124,17 +129,17 @@ public class InstanceState {
         this.bootstrapTime = bootstrapTime.getMillis();
     }
 
-    public void setFirstBootstrap(boolean firstBootstrap) {
-        this.firstBootstrap.set(firstBootstrap);
+    public void setNodeState(NODE_STATE nodeState) {
+        this.nodeState = nodeState;
     }
 
     /* Backup */
-    public boolean isBackingup() {
-        return isBackup.get();
+    public boolean isBackingUp() {
+        return isBackingUp.get();
     }
 
-    public void setBackingup(boolean isBackup) {
-        this.isBackup.set(isBackup);
+    public void setBackingUp(boolean isBackup) {
+        this.isBackingUp.set(isBackup);
     }
 
     public boolean isBackupSuccessful() {
@@ -149,17 +154,17 @@ public class InstanceState {
         this.backupTime = backupTime.getMillis();
     }
 
-    public void setBackUpStatus(boolean isBackupSuccessful) {
+    public void setBackupSuccessful(boolean isBackupSuccessful) {
         this.isBackupSuccessful.set(isBackupSuccessful);
     }
 
     /* Restore */
     public boolean isRestoring() {
-        return isRestore.get();
+        return isRestoring.get();
     }
 
     public void setRestoring(boolean isRestoring) {
-        this.isRestore.set(isRestoring);
+        this.isRestoring.set(isRestoring);
     }
 
     public boolean isRestoreSuccessful() {
@@ -174,7 +179,7 @@ public class InstanceState {
         this.restoreTime = restoreTime.getMillis();
     }
 
-    public void setRestoreStatus(boolean isRestoreSuccessful) {
+    public void setRestoreSuccessful(boolean isRestoreSuccessful) {
         this.isRestoreSuccessful.set(isRestoreSuccessful);
     }
 
@@ -183,10 +188,10 @@ public class InstanceState {
     }
 
     private void setHealthy() {
-        this.isHealthy.set(isCassandraProcessAlive() && isRequiredDirectoriesExist() && isGossipActive() && (isThriftActive() || isNativeTransportActive()));
+        this.isHealthy.set(isCassandraProcessAlive() && isRequiredDirectoriesExist() && isGossipActive() && isYmlWritten() && (isThriftActive() || isNativeTransportActive()));
     }
 
-    public boolean getYmlWritten() {
+    public boolean isYmlWritten() {
         return this.isYmlWritten.get();
     }
 

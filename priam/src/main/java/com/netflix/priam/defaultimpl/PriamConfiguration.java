@@ -195,8 +195,9 @@ public class PriamConfiguration implements IConfiguration {
 
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
-    private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
-    private final String DEFAULT_LOGS_LOCATION = "/var/lib/cassandra/logs";
+    private final String CASS_BASE_DATA_DIR = "/var/lib/cassandra";
+    private final String DEFAULT_DATA_LOCATION = CASS_BASE_DATA_DIR + "/data";
+    private final String DEFAULT_LOGS_LOCATION = CASS_BASE_DATA_DIR +"/logs";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFAULT_HINTS_DIR_LOCATION = "/var/lib/cassandra/hints";
@@ -304,7 +305,7 @@ public class PriamConfiguration implements IConfiguration {
         SystemUtils.createDirs(getCacheLocation());
         SystemUtils.createDirs(getDataFileLocation());
         SystemUtils.createDirs(getHintsLocation());
-        SystemUtils.createDirs(getCassandraLogsLocation());
+        SystemUtils.createDirs(getLogDirLocation());
     }
 
     private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
@@ -414,11 +415,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getCassHome() {
         return config.get(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
-    }
-
-    @Override
-    public String getCassandraLogsLocation() {
-        return config.get( PRIAM_PRE + ".cass.logs.location", getCassHome() +"/logs");
     }
 
     @Override

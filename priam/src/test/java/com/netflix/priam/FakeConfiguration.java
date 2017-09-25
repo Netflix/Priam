@@ -340,11 +340,6 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getCassandraLogsLocation() {
-        return getCassHome() + "/logs";
-    }
-
-    @Override
     public String getCassStartupScript()
     {
         return "/usr/bin/false";

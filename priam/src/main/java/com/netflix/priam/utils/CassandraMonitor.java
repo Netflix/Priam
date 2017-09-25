@@ -105,7 +105,7 @@ public class CassandraMonitor extends Task {
         checkDirectory(config.getCommitLogLocation());
         checkDirectory(config.getCacheLocation());
         checkDirectory(config.getHintsLocation());
-        checkDirectory(config.getCassandraLogsLocation());
+        checkDirectory(config.getLogDirLocation());
     }
 
     private void checkDirectory(String directory) {

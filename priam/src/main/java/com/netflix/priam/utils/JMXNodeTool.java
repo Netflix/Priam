@@ -114,13 +114,13 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             }
         } catch (Throwable ex) {
             SystemUtils.closeQuietly(tool);
-            logger.error("Exception while checking JXM connection to C*, msg: " + ex.getLocalizedMessage());
+            logger.error("Exception while checking JMX connection to C*, msg: " + ex.getLocalizedMessage());
             return false;
         }
         return true;
     }
 
-    /*
+    /**
      * A means to clean up existing and recreate the JMX connection to the Cassandra process.
      * @return the new connection.
      */
@@ -371,7 +371,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         }
     }
 
-    /*
+    /**
      * @param observer to add to list of internal observers.  This behavior is thread-safe.
      */
     @Override
@@ -384,7 +384,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
     }
 
-    /*
+    /**
      * @param observer to be removed; behavior is thread-safe.
      */
     @Override

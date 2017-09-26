@@ -150,13 +150,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_DSE_CLUSTER_TYPE = PRIAM_PRE + ".dse.cluster.type";
     private static final String CONFIG_EXTRA_ENV_PARAMS = PRIAM_PRE + ".extra.env.params";
 
-    private static final String CONFIG_US_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".useast1.s3url";
-    private static final String CONFIG_US_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".uswest1.s3url";
-    private static final String CONFIG_US_WEST_2_S3_ENDPOINT = PRIAM_PRE + ".uswest2.s3url";
-    private static final String CONFIG_EU_WEST_1_S3_ENDPOINT = PRIAM_PRE + ".euwest1.s3url";
-    private static final String CONFIG_SA_EAST_1_S3_ENDPOINT = PRIAM_PRE + ".saeast1.s3url";
-    private static final String CONFIG_EU_CENTRAL_1_S3_ENDPOINT = PRIAM_PRE + ".eucentral1.s3url";
-
     private static final String CONFIG_RESTORE_SOURCE_TYPE = PRIAM_PRE + ".restore.source.type"; //the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
     private static final String CONFIG_ENCRYPTED_BACKUP_ENABLED = PRIAM_PRE + ".encrypted.backup.enabled"; //enable encryption of backup (snapshots, incrementals, commit logs).
 
@@ -168,14 +161,6 @@ public class PriamConfiguration implements IConfiguration {
     //Restore from Google Cloud Storage
     private static final String CONFIG_GCS_SERVICE_ACCT_ID = PRIAM_PRE + ".gcs.service.acct.id"; //Google Cloud Storage service account id
     private static final String CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC = PRIAM_PRE + ".gcs.service.acct.private.key"; //the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).
-
-
-    private static String US_EAST_1_REGION = "us-east-1";
-    private static String US_WEST_1_REGION = "us-west-1";
-    private static String US_WEST_2_REGION = "us-west-2";
-    private static String EU_WEST_1_REGION = "eu-west-1";
-    private static String SA_EAST_1_REGION = "sa-east-1";
-    private static String EU_CENTRAL_1_REGION = "eu-central-1";
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -400,7 +385,6 @@ public class PriamConfiguration implements IConfiguration {
             if (zone.size() == 3)
                 break;
         }
-//        DEFAULT_AVAILABILITY_ZONES =  StringUtils.join(zone, ",");
         DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);
     }
 

@@ -19,7 +19,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.health.InstanceState;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,12 +37,12 @@ public class CassandraProcessManager implements ICassandraProcess {
     private static final String SUDO_STRING = "/usr/bin/sudo";
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
     protected final IConfiguration config;
-    protected final Sleeper sleeper;
+    private InstanceState instanceState;
 
     @Inject
-    public CassandraProcessManager(IConfiguration config, Sleeper sleeper) {
+    public CassandraProcessManager(IConfiguration config, InstanceState instanceState) {
         this.config = config;
-        this.sleeper = sleeper;
+        this.instanceState = instanceState;
     }
 
     protected void setEnv(Map<String, String> env) {
@@ -82,10 +82,11 @@ public class CassandraProcessManager implements ICassandraProcess {
 
         logger.info("Starting cassandra server ....");
         try {
-            sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
-            int code = starter.exitValue();
-            if (code == 0)
+            int code =  starter.waitFor();
+            if (code == 0) {
                 logger.info("Cassandra server has been started");
+                instanceState.setCassandraProcessAlive(true);
+            }
             else
                 logger.error("Unable to start cassandra server. Error code: {}", code);
 
@@ -141,12 +142,12 @@ public class CassandraProcessManager implements ICassandraProcess {
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);
         Process stopper = stopCass.start();
-
-        sleeper.sleepQuietly(SCRIPT_EXECUTE_WAIT_TIME_MS);
         try {
-            int code = stopper.exitValue();
-            if (code == 0)
+            int code = stopper.waitFor();
+            if (code == 0) {
                 logger.info("Cassandra server has been stopped");
+                instanceState.setCassandraProcessAlive(false);
+            }
             else {
                 logger.error("Unable to stop cassandra server. Error code: {}", code);
                 logProcessOutput(stopper);

@@ -33,24 +33,6 @@ final public class BackupMetadata implements Serializable {
     private Status status;
     private String snapshotLocation;
 
-    /**
-     * Enum to describe the status of the snapshot
-     */
-    public enum Status {
-        /**
-         * Denotes snapshot has started successfully.
-         */
-        STARTED,
-        /**
-         * Denotes snapshot has uploaded successfully.
-         */
-        FINISHED,
-        /**
-         * Denotes snapshot has failed to upload successfully or there was a failure marking the snapshot as failure.
-         */
-        FAILED
-    }
-
     public BackupMetadata(String token, Date start) throws Exception {
         if (start == null || token == null || StringUtils.isEmpty(token))
             throw new Exception(String.format("Invalid Input: Token: {} or start date:{} is null or empty.", token, start));
@@ -123,7 +105,7 @@ final public class BackupMetadata implements Serializable {
      *
      * @return snapshot status
      */
-    public BackupMetadata.Status getStatus() {
+    public Status getStatus() {
         return this.status;
     }
 

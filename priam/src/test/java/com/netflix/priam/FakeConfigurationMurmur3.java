@@ -572,11 +572,7 @@ public class FakeConfigurationMurmur3 implements IConfiguration
     {
         return false;
     }
-
-    @Override
-    public String getS3EndPoint() {
-	return "s3-external-1.amazonaws.com";
-    }
+    
 
     public int getConcurrentReadsCnt()
     {

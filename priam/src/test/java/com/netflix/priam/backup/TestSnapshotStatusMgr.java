@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Netflix, Inc.
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.amazonaws.services.opsworkscm.model.Backup;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.IConfiguration;
@@ -30,8 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -46,7 +43,7 @@ public class TestSnapshotStatusMgr {
     private static IConfiguration configuration;
 
     @BeforeClass
-    public static void setup()  {
+    public static void setup() {
         injector = Guice.createInjector(new BRTestModule());
         //cleanup old saved file, if any
         configuration = injector.getInstance(IConfiguration.class);
@@ -58,8 +55,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusAddFinish() throws Exception
-    {
+    public void testSnapshotStatusAddFinish() throws Exception {
         Date startTime = DateUtil.getDate("198407110720");
 
         BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
@@ -82,8 +78,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusAddFailed() throws Exception
-    {
+    public void testSnapshotStatusAddFailed() throws Exception {
         Date startTime = DateUtil.getDate("198407120720");
 
         BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
@@ -106,13 +101,11 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusMultiAddFinishInADay() throws Exception
-    {
+    public void testSnapshotStatusMultiAddFinishInADay() throws Exception {
         final int noOfEntries = 10;
         Date startTime = DateUtil.getDate("19840101");
 
-        for (int i = 0 ; i < noOfEntries; i++)
-        {
+        for (int i = 0; i < noOfEntries; i++) {
             Date time = new DateTime(startTime.getTime()).plusHours(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);
@@ -125,11 +118,10 @@ public class TestSnapshotStatusMgr {
 
         //Ensure that list is always maintained from latest to eldest
         Date latest = null;
-        for (BackupMetadata backupMetadata: metadataList) {
+        for (BackupMetadata backupMetadata : metadataList) {
             if (latest == null)
                 latest = backupMetadata.getStart();
-            else
-            {
+            else {
                 Assert.assertTrue(backupMetadata.getStart().before(latest));
                 latest = backupMetadata.getStart();
             }
@@ -137,13 +129,11 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusSize() throws Exception
-    {
+    public void testSnapshotStatusSize() throws Exception {
         final int noOfEntries = backupStatusMgr.getCapacity() + 1;
         Date startTime = DateUtil.getDate("19850101");
 
-        for (int i = 0 ; i < noOfEntries; i++)
-        {
+        for (int i = 0; i < noOfEntries; i++) {
             Date time = new DateTime(startTime.getTime()).plusDays(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);

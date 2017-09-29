@@ -1,9 +1,25 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.netflix.priam.resources;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
@@ -32,19 +48,38 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(JMockit.class)
-public class BackupServletTest
-{
-    private @Mocked PriamServer priamServer;
+public class BackupServletTest {
+    private
+    @Mocked
+    PriamServer priamServer;
     private IConfiguration config;
-    private @Mocked IBackupFileSystem bkpFs;
-    private @Mocked IBackupFileSystem bkpStatusFs;
-    private @Mocked Restore restoreObj;
-    private @Mocked Provider<AbstractBackupPath> pathProvider;
-    private @Mocked CassandraTuner tuner;
-    private @Mocked SnapshotBackup snapshotBackup;
-    private @Mocked IPriamInstanceFactory factory;
-    private @Mocked ICassandraProcess cassProcess;
-    private @Mocked BackupStatusMgr bkupStatusMgr;
+    private
+    @Mocked
+    IBackupFileSystem bkpFs;
+    private
+    @Mocked
+    IBackupFileSystem bkpStatusFs;
+    private
+    @Mocked
+    Restore restoreObj;
+    private
+    @Mocked
+    Provider<AbstractBackupPath> pathProvider;
+    private
+    @Mocked
+    CassandraTuner tuner;
+    private
+    @Mocked
+    SnapshotBackup snapshotBackup;
+    private
+    @Mocked
+    IPriamInstanceFactory factory;
+    private
+    @Mocked
+    ICassandraProcess cassProcess;
+    private
+    @Mocked
+    BackupStatusMgr bkupStatusMgr;
     private ITokenManager tokenManager;
     private BackupServlet resource;
     private RestoreServlet restoreResource;
@@ -52,21 +87,19 @@ public class BackupServletTest
     private static Injector injector;
 
     @Before
-    public void setUp()
-    {
+    public void setUp() {
         injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
         this.tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr,backupVerification);
+                tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr, backupVerification);
 
-        restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
-        		, tokenManager);
+        restoreResource = new RestoreServlet(config, restoreObj, pathProvider, priamServer, factory, tuner, cassProcess
+                , tokenManager);
     }
 
     @Test
-    public void backup() throws Exception
-    {
+    public void backup() throws Exception {
         new Expectations() {{
             snapshotBackup.execute();
         }};
@@ -79,8 +112,7 @@ public class BackupServletTest
 
     @Test
     public void restore_minimal(@Mocked final InstanceIdentity identity,
-	 @Mocked final PriamInstance instance) throws Exception
-    {
+                                @Mocked final PriamInstance instance) throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = null;
@@ -91,18 +123,25 @@ public class BackupServletTest
 
         new Expectations() {
             {
-              priamServer.getId(); result = identity; times = 2;
+                priamServer.getId();
+                result = identity;
+                times = 2;
             }
         };
 
         new Expectations() {
 
             {
-                config.getDC(); result = oldRegion;
-                identity.getInstance(); result = instance; times = 2;
-                instance.getToken(); result = oldToken;
+                config.getDC();
+                result = oldRegion;
+                identity.getInstance();
+                result = instance;
+                times = 2;
+                instance.getToken();
+                result = oldToken;
 
-                config.isRestoreClosestToken(); result = false;
+                config.isRestoreClosestToken();
+                result = false;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 
@@ -122,8 +161,7 @@ public class BackupServletTest
 
     @Test
     public void restore_withDateRange(@Mocked final InstanceIdentity identity,
-	@Mocked final PriamInstance instance, @Mocked final AbstractBackupPath backupPath) throws Exception
-    {
+                                      @Mocked final PriamInstance instance, @Mocked final AbstractBackupPath backupPath) throws Exception {
         final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
         final String newToken = null;
@@ -134,27 +172,37 @@ public class BackupServletTest
 
         new Expectations() {
             {
-              priamServer.getId(); result = identity; times = 2;
+                priamServer.getId();
+                result = identity;
+                times = 2;
             }
         };
         new Expectations() {
 
             {
-                pathProvider.get(); result = backupPath;
-                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
-                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
+                pathProvider.get();
+                result = backupPath;
+                backupPath.parseDate(dateRange.split(",")[0]);
+                result = new DateTime(2011, 01, 01, 00, 00).toDate();
+                times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]);
+                result = new DateTime(2011, 12, 31, 23, 59).toDate();
+                times = 1;
 
 //                config.getDC(); result = oldRegion;
-                identity.getInstance(); result = instance; times = 2;
-                instance.getToken(); result = oldToken;
+                identity.getInstance();
+                result = instance;
+                times = 2;
+                instance.getToken();
+                result = oldToken;
 
- //               config.isRestoreClosestToken(); result = false;
+                //               config.isRestoreClosestToken(); result = false;
 
                 restoreObj.restore(
-                    new DateTime(2011, 01, 01, 00, 00).toDate(),
-                    new DateTime(2011, 12, 31, 23, 59).toDate());
+                        new DateTime(2011, 01, 01, 00, 00).toDate(),
+                        new DateTime(2011, 12, 31, 23, 59).toDate());
 
- //               config.setDC(oldRegion);
+                //               config.setDC(oldRegion);
                 instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
@@ -225,8 +273,7 @@ public class BackupServletTest
 
     @Test
     public void restore_withToken(@Mocked final InstanceIdentity identity,
-	@Mocked final PriamInstance instance) throws Exception
-    {
+                                  @Mocked final PriamInstance instance) throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = "myNewToken";
@@ -237,15 +284,21 @@ public class BackupServletTest
 
         new Expectations() {
             {
-              priamServer.getId(); result = identity; times = 3;
+                priamServer.getId();
+                result = identity;
+                times = 3;
             }
         };
         new Expectations() {
 
             {
-                config.getDC(); result = oldRegion;
-                identity.getInstance(); result = instance; times = 3;
-                instance.getToken(); result = oldToken;
+                config.getDC();
+                result = oldRegion;
+                identity.getInstance();
+                result = instance;
+                times = 3;
+                instance.getToken();
+                result = oldToken;
                 instance.setToken(newToken);
 
                 //config.isRestoreClosestToken(); result = false;
@@ -268,8 +321,7 @@ public class BackupServletTest
 
     @Test
     public void restore_withKeyspaces(@Mocked final InstanceIdentity identity,
-	@Mocked final PriamInstance instance) throws Exception
-    {
+                                      @Mocked final PriamInstance instance) throws Exception {
         final String dateRange = null;
         final String newRegion = null;
         final String newToken = null;
@@ -278,25 +330,33 @@ public class BackupServletTest
         final String oldRegion = "us-east-1";
         final String oldToken = "1234";
 
-       new Expectations() {
+        new Expectations() {
             {
-              config.getDC(); result = oldRegion;
-              config.isRestoreClosestToken(); result = false;
+                config.getDC();
+                result = oldRegion;
+                config.isRestoreClosestToken();
+                result = false;
 
-              List<String> restoreKeyspaces = Lists.newArrayList();
-              restoreKeyspaces.clear();
-              restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
+                List<String> restoreKeyspaces = Lists.newArrayList();
+                restoreKeyspaces.clear();
+                restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
 
-              config.getRestoreKeySpaces(); result = restoreKeyspaces;
-              config.setDC(oldRegion);
-              priamServer.getId(); result = identity; times = 2;
+                config.getRestoreKeySpaces();
+                result = restoreKeyspaces;
+                config.setDC(oldRegion);
+                priamServer.getId();
+                result = identity;
+                times = 2;
             }
         };
         new Expectations() {
 
             {
-                identity.getInstance(); result = instance; times = 2;
-                instance.getToken(); result = oldToken;
+                identity.getInstance();
+                result = instance;
+                times = 2;
+                instance.getToken();
+                result = oldToken;
 
                 restoreObj.restore((Date) any, (Date) any); // TODO: test default value
 
@@ -316,10 +376,9 @@ public class BackupServletTest
     // TODO: this should also set/test newRegion and keyspaces
     @Test
     public void restore_maximal(@Mocked final InstanceIdentity identity,
-        @Mocked final PriamInstance instance, @Mocked final PriamInstance instance1,
-        @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3,
-        @Mocked final AbstractBackupPath backupPath) throws Exception
-    {
+                                @Mocked final PriamInstance instance, @Mocked final PriamInstance instance1,
+                                @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3,
+                                @Mocked final AbstractBackupPath backupPath) throws Exception {
         final String dateRange = "201101010000,20111231259";
         final String newRegion = null;
         final String newToken = "5678";
@@ -341,9 +400,14 @@ public class BackupServletTest
         new Expectations() {
 
             {
-                pathProvider.get(); result = backupPath;
-                backupPath.parseDate(dateRange.split(",")[0]); result = new DateTime(2011, 01, 01, 00, 00).toDate(); times = 1;
-                backupPath.parseDate(dateRange.split(",")[1]); result = new DateTime(2011, 12, 31, 23, 59).toDate(); times = 1;
+                pathProvider.get();
+                result = backupPath;
+                backupPath.parseDate(dateRange.split(",")[0]);
+                result = new DateTime(2011, 01, 01, 00, 00).toDate();
+                times = 1;
+                backupPath.parseDate(dateRange.split(",")[1]);
+                result = new DateTime(2011, 12, 31, 23, 59).toDate();
+                times = 1;
 
 //                identity.getInstance(); result = instance; times = 5;
 //                instance.getToken(); result = oldToken;
@@ -362,10 +426,10 @@ public class BackupServletTest
 //                instance.setToken((String) any); // TODO: test mocked closest token
 
                 restoreObj.restore(
-                    new DateTime(2011, 01, 01, 00, 00).toDate(),
-                    new DateTime(2011, 12, 31, 23, 59).toDate());
+                        new DateTime(2011, 01, 01, 00, 00).toDate(),
+                        new DateTime(2011, 12, 31, 23, 59).toDate());
 
-               // instance.setToken(oldToken);
+                // instance.setToken(oldToken);
                 tuner.updateAutoBootstrap(config.getYamlLocation(), false);
             }
         };
@@ -381,15 +445,24 @@ public class BackupServletTest
     // TODO: create CassandraController interface and inject, instead of static util method
     private Expectations expectCassandraStartup() {
         return new Expectations() {{
-            config.getCassStartupScript(); result = "/usr/bin/false";
-            config.getHeapNewSize(); result = "2G";
-            config.getHeapSize(); result = "8G";
-            config.getDataFileLocation(); result = "/var/lib/cassandra/data";
-            config.getCommitLogLocation(); result = "/var/lib/cassandra/commitlog";
-            config.getBackupLocation(); result = "backup";
-            config.getCacheLocation(); result = "/var/lib/cassandra/saved_caches";
-            config.getJmxPort(); result = 7199;
-            config.getMaxDirectMemory(); result = "50G";
+            config.getCassStartupScript();
+            result = "/usr/bin/false";
+            config.getHeapNewSize();
+            result = "2G";
+            config.getHeapSize();
+            result = "8G";
+            config.getDataFileLocation();
+            result = "/var/lib/cassandra/data";
+            config.getCommitLogLocation();
+            result = "/var/lib/cassandra/commitlog";
+            config.getBackupLocation();
+            result = "backup";
+            config.getCacheLocation();
+            result = "/var/lib/cassandra/saved_caches";
+            config.getJmxPort();
+            result = 7199;
+            config.getMaxDirectMemory();
+            result = "50G";
         }};
     }
 }

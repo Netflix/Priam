@@ -1,20 +1,21 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.netflix.priam.backup;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
 
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.AmazonServiceException;
@@ -28,28 +29,35 @@ import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3FileIterator;
 import com.netflix.priam.identity.InstanceIdentity;
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Unit test for backup file iterator
- * 
- * @author Praveen Sadhu
  *
+ * @author Praveen Sadhu
  */
-public class TestFileIterator
-{
+public class TestFileIterator {
     private static Injector injector;
     private static Date startTime, endTime;
     private static Calendar cal;
 
     private static AmazonS3Client s3client;
-    
+
     private static IConfiguration conf;
     private static InstanceIdentity factory;
+
     @BeforeClass
-    public static void setup() throws InterruptedException, IOException
-    {
-	s3client = new MockAmazonS3Client().getMockInstance();
-	new MockObjectListing();
+    public static void setup() throws InterruptedException, IOException {
+        s3client = new MockAmazonS3Client().getMockInstance();
+        new MockObjectListing();
 
         injector = Guice.createInjector(new BRTestModule());
         conf = injector.getInstance(IConfiguration.class);
@@ -65,23 +73,20 @@ public class TestFileIterator
 
     // MockAmazonS3Client class
     @Ignore
-    public static class MockAmazonS3Client extends MockUp<AmazonS3Client>
-    {
+    public static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
         public static String bucketName = "";
         public static String prefix = "";
-        
+
         @Mock
-        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException
-        {
+        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(listObjectsRequest.getBucketName());
             listing.setPrefix(listObjectsRequest.getPrefix());
             return listing;
         }
 
-	@Mock
-        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException, AmazonServiceException
-        {
+        @Mock
+        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException, AmazonServiceException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(previousObjectListing.getBucketName());
             listing.setPrefix(previousObjectListing.getPrefix());
@@ -91,44 +96,36 @@ public class TestFileIterator
 
     // MockObjectListing class
     @Ignore
-    public static class MockObjectListing extends MockUp<ObjectListing>
-    {
+    public static class MockObjectListing extends MockUp<ObjectListing> {
         public static boolean truncated = true;
         public static boolean firstcall = true;
         public static boolean simfilter = false;//Simulate filtering
 
         @Mock
-        public List<S3ObjectSummary> getObjectSummaries()
-        {
-            if (firstcall)
-            {   
+        public List<S3ObjectSummary> getObjectSummaries() {
+            if (firstcall) {
                 firstcall = false;
-                if( simfilter )
-                    return getObjectSummaryEmpty();                    
+                if (simfilter)
+                    return getObjectSummaryEmpty();
                 return getObjectSummary();
-            }
-            else
-            {
-                if( simfilter ){
+            } else {
+                if (simfilter) {
                     simfilter = false;//reset
                     return getObjectSummaryEmpty();
-                }
-                else
+                } else
                     truncated = false;
                 return getNextObjectSummary();
             }
         }
 
         @Mock
-        public boolean isTruncated()
-        {
+        public boolean isTruncated() {
             return truncated;
         }
     }
 
     @Test
-    public void testIteratorEmptySet()
-    {
+    public void testIteratorEmptySet() {
         cal.set(2011, 7, 11, 6, 1, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date stime = cal.getTime();
@@ -137,7 +134,7 @@ public class TestFileIterator
         MockAmazonS3Client.bucketName = "TESTBUCKET";
         MockAmazonS3Client.prefix = conf.getBackupLocation() + "/" + conf.getDC() + "/" + conf.getAppName() + "/" + factory.getInstance().getToken();
         MockAmazonS3Client.prefix += "/20110811";
-        
+
         S3FileIterator fileIterator = new S3FileIterator(injector.getProvider(AbstractBackupPath.class), s3client, "TESTBUCKET", stime, etime);
         Set<String> files = new HashSet<String>();
         while (fileIterator.hasNext())
@@ -146,29 +143,27 @@ public class TestFileIterator
     }
 
     @Test
-    public void testIterator()
-    {
+    public void testIterator() {
         MockObjectListing.truncated = false;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
         MockAmazonS3Client.bucketName = "TESTBUCKET";
         MockAmazonS3Client.prefix = conf.getBackupLocation() + "/" + conf.getDC() + "/" + conf.getAppName() + "/" + factory.getInstance().getToken();
         MockAmazonS3Client.prefix += "/20110811";
-        
+
         S3FileIterator fileIterator = new S3FileIterator(injector.getProvider(AbstractBackupPath.class), s3client, "TESTBUCKET", startTime, endTime);
         Set<String> files = new HashSet<String>();
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(3, files.size());
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
     }
 
     @Test
-    public void testIteratorTruncated()
-    {
+    public void testIteratorTruncated() {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
@@ -181,20 +176,19 @@ public class TestFileIterator
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(5, files.size());
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
 
     }
 
     @Test
-    public void testIteratorTruncatedOOR()
-    {
+    public void testIteratorTruncatedOOR() {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = true;
@@ -207,20 +201,19 @@ public class TestFileIterator
         while (fileIterator.hasNext())
             files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(2, files.size());
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201107110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201107110430/SST/ks1/cf1/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201107110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201107110600/SST/ks1/cf1/f3.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201107110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201107110430/SST/ks1/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201107110030/META/meta.json"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201107110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
-        
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
+
     }
 
     @Test
-    public void testRestorePathIteration()
-    {
+    public void testRestorePathIteration() {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
@@ -236,52 +229,49 @@ public class TestFileIterator
             files.add(fileIterator.next().getRemotePath());
 
         Assert.assertEquals(5, files.size());
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(files.contains("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
+        Assert.assertTrue(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
+        Assert.assertFalse(files.contains("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
 
     }
 
-    public static List<S3ObjectSummary> getObjectSummary()
-    {
+    public static List<S3ObjectSummary> getObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/META/meta.json");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json");
         list.add(summary);
         return list;
     }
 
-    public static List<S3ObjectSummary> getObjectSummaryEmpty()
-    {
+    public static List<S3ObjectSummary> getObjectSummaryEmpty() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         return list;
     }
 
-    public static List<S3ObjectSummary> getNextObjectSummary()
-    {
+    public static List<S3ObjectSummary> getNextObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db");
         list.add(summary);
         summary = new S3ObjectSummary();
-        summary.setKey("test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db");
+        summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db");
         list.add(summary);
         return list;
     }

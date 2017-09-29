@@ -59,10 +59,8 @@ subprojects {
       testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
       testCompile 'junit:junit:4.12'
       //testCompile 'mockit:mockit:0.999'
-    }
-    
-    compileJava {
-        sourceCompatibility = 1.8
-        targetCompatibility = 1.8
+
+      sourceCompatibility = JavaVersion.VERSION_1_8
+      targetCompatibility = JavaVersion.VERSION_1_8
     }
 }

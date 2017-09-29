@@ -1,23 +1,35 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.netflix.priam.backup.identity;
 
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.TokenManager;
-
 import org.junit.Test;
 
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 
-public class InstanceIdentityTest extends InstanceTestUtils
-{
+public class InstanceIdentityTest extends InstanceTestUtils {
 
     @Test
-    public void testCreateToken() throws Exception
-    {
+    public void testCreateToken() throws Exception {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
         int hash = tokenManager.regionOffset(config.getDC());
@@ -49,26 +61,23 @@ public class InstanceIdentityTest extends InstanceTestUtils
         identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
     }
-    
+
     @Test
-    public void testGetSeeds() throws Exception
-    {
+    public void testGetSeeds() throws Exception {
         createInstances();
         identity = createInstanceIdentity("az1", "fakeinstance1");
         assertEquals(3, identity.getSeeds().size());
     }
 
     @Test
-    public void testDoubleSlots() throws Exception
-    {
+    public void testDoubleSlots() throws Exception {
         createInstances();
         int before = factory.getAllIds("fake-app").size();
         new DoubleRing(config, factory, tokenManager).doubleSlots();
         List<PriamInstance> lst = factory.getAllIds(config.getAppName());
         // sort it so it will look good if you want to print it.
         factory.sort(lst);
-        for (int i = 0; i < lst.size(); i++)
-        {
+        for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
             if (0 == i % 2)
                 continue;
@@ -78,8 +87,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
     }
 
     @Test
-    public void testDoubleGrap() throws Exception
-    {
+    public void testDoubleGrap() throws Exception {
         createInstances();
         new DoubleRing(config, factory, tokenManager).doubleSlots();
         config.zone = "az1";
@@ -89,8 +97,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         printInstance(identity.getInstance(), hash);
     }
 
-    public void printInstance(PriamInstance ins, int hash)
-    {
+    public void printInstance(PriamInstance ins, int hash) {
         System.out.println("ID: " + (ins.getId() - hash));
         System.out.println("PayLoad: " + ins.getToken());
 

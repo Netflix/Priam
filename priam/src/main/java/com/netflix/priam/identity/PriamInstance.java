@@ -1,28 +1,28 @@
-/**
+/*
  * Copyright 2013 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
 package com.netflix.priam.identity;
-
-import java.io.Serializable;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class PriamInstance implements Serializable
-{
+import java.io.Serializable;
+import java.util.Map;
+
+public class PriamInstance implements Serializable {
     private static final long serialVersionUID = 5606412386974488659L;
     private static final Logger logger = LoggerFactory.getLogger(PriamInstance.class);
     private String hostname;
@@ -38,127 +38,103 @@ public class PriamInstance implements Serializable
     private String token;
     //Handles Storage objects
     private Map<String, Object> volumes;
-    
-    public String getApp()
-    {
+
+    public String getApp() {
         return app;
     }
 
-    public void setApp(String app)
-    {
+    public void setApp(String app) {
         this.app = app;
     }
 
-    public int getId()
-    {
+    public int getId() {
         return Id;
     }
 
-    public void setId(int id)
-    {
+    public void setId(int id) {
         Id = id;
     }
 
-    public String getInstanceId()
-    {
+    public String getInstanceId() {
         return instanceId;
     }
 
-    public void setInstanceId(String instanceId)
-    {
+    public void setInstanceId(String instanceId) {
         this.instanceId = instanceId;
     }
 
-    public String getRac()
-    {
+    public String getRac() {
         return availabilityZone;
     }
 
-    public void setRac(String availabilityZone)
-    {
+    public void setRac(String availabilityZone) {
         this.availabilityZone = availabilityZone;
     }
 
-    public String getHostName()
-    {
+    public String getHostName() {
         return hostname;
     }
-    
-    public String getHostIP()
-    {
+
+    public String getHostIP() {
         return publicip;
     }
 
-    public void setHost(String hostname, String publicip)
-    {
+    public void setHost(String hostname, String publicip) {
         this.hostname = hostname;
         this.publicip = publicip;
     }
 
-    public void setHost(String hostname)
-    {
+    public void setHost(String hostname) {
         this.hostname = hostname;
     }
 
-    public void setHostIP(String publicip)
-    {
+    public void setHostIP(String publicip) {
         this.publicip = publicip;
     }
 
-    public String getToken()
-    {
+    public String getToken() {
         return token;
     }
 
-    public void setToken(String token)
-    {
+    public void setToken(String token) {
         this.token = token;
     }
 
-    public Map<String, Object> getVolumes()
-    {
+    public Map<String, Object> getVolumes() {
         return volumes;
     }
 
-    public void setVolumes(Map<String, Object> volumes)
-    {
+    public void setVolumes(Map<String, Object> volumes) {
         this.volumes = volumes;
     }
 
     @Override
-    public String toString()
-    {
+    public String toString() {
         return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(),
                 getToken());
     }
 
-    public String getDC()
-    {
+    public String getDC() {
         return location;
     }
-    
-    public void setDC(String location)
-    {
+
+    public void setDC(String location) {
         this.location = location;
     }
 
-    public long getUpdatetime()
-    {
+    public long getUpdatetime() {
         return updatetime;
     }
 
-    public void setUpdatetime(long updatetime)
-    {
+    public void setUpdatetime(long updatetime) {
         this.updatetime = updatetime;
     }
 
-    public boolean isOutOfService()
-    {
+    public boolean isOutOfService() {
         return outOfService;
     }
 
-    public void setOutOfService(boolean outOfService)
-    {
+    public void setOutOfService(boolean outOfService) {
         this.outOfService = outOfService;
     }
 

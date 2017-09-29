@@ -1,21 +1,35 @@
-package com.netflix.priam.dse;
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Properties;
+package com.netflix.priam.dse;
 
 import com.google.common.io.Files;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
-public class DseTunerTest
-{
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Properties;
+
+public class DseTunerTest {
     IConfiguration config;
     DseConfigStub dseConfig;
     DseTuner dseTunerYaml;
@@ -26,8 +40,7 @@ public class DseTunerTest
     File targetDseYamlFile;
 
     @Before
-    public void setup() throws IOException
-    {
+    public void setup() throws IOException {
         config = new FakeConfiguration();
         dseConfig = new DseConfigStub();
         auditLogTunerYaml = new AuditLogTunerYaml(dseConfig);
@@ -36,7 +49,7 @@ public class DseTunerTest
         dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
 
         File targetDir = new File(config.getCassHome() + "/conf");
-        if(!targetDir.exists())
+        if (!targetDir.exists())
             targetDir.mkdirs();
 
         targetFile = new File(config.getCassHome() + auditLogTunerLog4j.AUDIT_LOG_FILE);
@@ -44,8 +57,7 @@ public class DseTunerTest
     }
 
     @Test
-    public void auditLogProperties_Enabled() throws IOException
-    {
+    public void auditLogProperties_Enabled() throws IOException {
         dseConfig.setAuditLogEnabled(true);
         auditLogTunerLog4j.tuneAuditLog();
 
@@ -55,8 +67,7 @@ public class DseTunerTest
     }
 
     @Test
-    public void auditLogProperties_Disabled() throws IOException
-    {
+    public void auditLogProperties_Disabled() throws IOException {
         dseConfig.setAuditLogEnabled(false);
         auditLogTunerLog4j.tuneAuditLog();
 
@@ -72,8 +83,7 @@ public class DseTunerTest
      * @throws IOException
      */
     @Test
-    public void auditLogProperties_ThereAndBackAgain() throws IOException
-    {
+    public void auditLogProperties_ThereAndBackAgain() throws IOException {
         auditLogProperties_Enabled();
         auditLogProperties_Disabled();
         auditLogProperties_Enabled();
@@ -99,7 +109,7 @@ public class DseTunerTest
     @Test
     public void auditLogYamlProperties_Enabled() throws IOException {
         File targetDseDir = new File(config.getCassHome() + "/resources/dse/conf/");
-        if(!targetDseDir.exists()) {
+        if (!targetDseDir.exists()) {
             targetDseDir.mkdirs();
         }
 
@@ -116,7 +126,7 @@ public class DseTunerTest
     @Test
     public void auditLogYamlProperties_Disabled() throws IOException {
         File targetDseDir = new File(config.getCassHome() + "/resources/dse/conf/");
-        if(!targetDseDir.exists()) {
+        if (!targetDseDir.exists()) {
             targetDseDir.mkdirs();
         }
 

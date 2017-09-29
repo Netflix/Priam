@@ -31,46 +31,53 @@ import java.util.Map;
 public interface IBackupStatusMgr {
     /**
      * Return the list of snapshot executed on provided day or null if not present.
+     *
      * @param snapshotDate date on which snapshot was started.
      * @return List of snapshots started on that day in descending order of snapshot start time.
      */
     List<BackupMetadata> locate(Date snapshotDate);
 
     /**
-     Return the list of snapshot executed on provided day or null if not present.
-     @param snapshotDate date on which snapshot was started in the format of yyyyMMdd or yyyyMMddHHmm.
-     @return List of snapshots started on that day in descending order of snapshot start time.
+     * Return the list of snapshot executed on provided day or null if not present.
+     *
+     * @param snapshotDate date on which snapshot was started in the format of yyyyMMdd or yyyyMMddHHmm.
+     * @return List of snapshots started on that day in descending order of snapshot start time.
      */
     List<BackupMetadata> locate(String snapshotDate);
 
     /**
-     Save the status of snapshot BackupMetadata which started in-memory and other implementations, if any.
-     @param backupMetadata backupmetadata that started
+     * Save the status of snapshot BackupMetadata which started in-memory and other implementations, if any.
+     *
+     * @param backupMetadata backupmetadata that started
      */
     void start(BackupMetadata backupMetadata);
 
     /**
-     Save the status of successfully finished snapshot BackupMetadata in-memory and other implementations, if any.
-     @param backupMetadata backupmetadata that finished successfully
+     * Save the status of successfully finished snapshot BackupMetadata in-memory and other implementations, if any.
+     *
+     * @param backupMetadata backupmetadata that finished successfully
      */
     void finish(BackupMetadata backupMetadata);
 
     /**
-     Save the status of failed backupmetadata in-memory and other implementations, if any.
-     @param backupMetadata backupmetadata that failed
+     * Save the status of failed backupmetadata in-memory and other implementations, if any.
+     *
+     * @param backupMetadata backupmetadata that failed
      */
     void failed(BackupMetadata backupMetadata);
 
     /**
-     Get the capacity of in-memory status map holding the snapshot status.
-     @return capacity of in-memory snapshot status map.
+     * Get the capacity of in-memory status map holding the snapshot status.
+     *
+     * @return capacity of in-memory snapshot status map.
      */
     int getCapacity();
 
     /**
-     Get the entire map of snapshot status hold in-memory
-     @return The map of snapshot status in-memory in format.
-     Key is snapshot day in format of yyyyMMdd (start date of snapshot) with a list of snapshots in the descending order of snapshot start time.
+     * Get the entire map of snapshot status hold in-memory
+     *
+     * @return The map of snapshot status in-memory in format.
+     * Key is snapshot day in format of yyyyMMdd (start date of snapshot) with a list of snapshots in the descending order of snapshot start time.
      */
     Map<String, LinkedList<BackupMetadata>> getAllSnapshotStatus();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 Netflix, Inc.
+ * Copyright 2017 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import junit.framework.Assert;
-import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
 

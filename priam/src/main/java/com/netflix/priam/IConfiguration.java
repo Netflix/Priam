@@ -95,6 +95,8 @@ public interface IConfiguration {
      */
     public String getDataFileLocation();
 
+    String getLogDirLocation();
+
     /**
      * @return Location of local cache
      */
@@ -661,4 +663,12 @@ public interface IConfiguration {
      * @return the absolute path to store the backup status on disk
      */
     public String getBackupStatusFileLoc();
+
+
+    /**
+     * @return Decides whether to use sudo to start C* or not
+     */
+    public boolean useSudo();
+
+
 }

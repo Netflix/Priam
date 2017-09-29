@@ -47,11 +47,13 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_CASS_HOME_DIR = PRIAM_PRE + ".cass.home";
     private static final String CONFIG_CASS_START_SCRIPT = PRIAM_PRE + ".cass.startscript";
     private static final String CONFIG_CASS_STOP_SCRIPT = PRIAM_PRE + ".cass.stopscript";
+    private static final String CONFIG_CASS_USE_SUDO = PRIAM_PRE + ".cass.usesudo";
     private static final String CONFIG_CLUSTER_NAME = PRIAM_PRE + ".clustername";
     private static final String CONFIG_SEED_PROVIDER_NAME = PRIAM_PRE + ".seed.provider";
     private static final String CONFIG_LOAD_LOCAL_PROPERTIES = PRIAM_PRE + ".localbootstrap.enable";
     private static final String CONFIG_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.size.";
     private static final String CONFIG_DATA_LOCATION = PRIAM_PRE + ".data.location";
+    private static final String CONFIG_LOGS_LOCATION = PRIAM_PRE + ".logs.location";
     private static final String CONFIG_MR_ENABLE = PRIAM_PRE + ".multiregion.enable";
     private static final String CONFIG_CL_LOCATION = PRIAM_PRE + ".commitlog.location";
     private static final String CONFIG_JMX_LISTERN_PORT_NAME = PRIAM_PRE + ".jmx.port";
@@ -207,6 +209,7 @@ public class PriamConfiguration implements IConfiguration {
     // Defaults 
     private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
     private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
+    private final String DEFAULT_LOGS_LOCATION = "/var/lib/cassandra/logs";
     private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
     private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
     private final String DEFAULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
@@ -460,7 +463,15 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getCacheLocation() {
+
+    public String getLogDirLocation()
+    {
+        return config.get(CONFIG_LOGS_LOCATION, DEFAULT_LOGS_LOCATION);
+    }
+
+    @Override
+    public String getCacheLocation()
+    {
         return config.get(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
     }
 
@@ -1092,6 +1103,12 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getBackupStatusFileLoc() {
         return "backup.status";
+    }
+
+
+    @Override
+    public boolean useSudo() {
+        return config.get(CONFIG_CASS_USE_SUDO, true);
     }
 
 }

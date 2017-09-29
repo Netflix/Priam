@@ -55,16 +55,22 @@ public class CassandraProcessManager implements ICassandraProcess {
         env.put("JMX_PORT", "" + config.getJmxPort());
         env.put("LOCAL_JMX", config.enableRemoteJMX() ? "no" : "yes");
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
+        env.put("CASS_LOGS_DIR", config.getLogDirLocation());
     }
 
-    public void start(boolean join_ring) throws IOException {
+    public void start(boolean join_ring) throws IOException
+    {
         logger.info("Starting cassandra server ....Join ring=" + join_ring);
 
         List<String> command = Lists.newArrayList();
-        if (!"root".equals(System.getProperty("user.name"))) {
-            command.add(SUDO_STRING);
-            command.add("-n");
-            command.add("-E");
+
+        if(config.useSudo()) {
+            logger.info("Configured to use sudo to start C*");
+            if (!"root".equals(System.getProperty("user.name"))) {
+                command.add(SUDO_STRING);
+                command.add("-n");
+                command.add("-E");
+            }
         }
         command.addAll(getStartCommand());
 
@@ -128,10 +134,14 @@ public class CassandraProcessManager implements ICassandraProcess {
     public void stop() throws IOException {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
-        if (!"root".equals(System.getProperty("user.name"))) {
-            command.add(SUDO_STRING);
-            command.add("-n");
-            command.add("-E");
+        if(config.useSudo()) {
+            logger.info("Configured to use sudo to stop C*");
+
+            if (!"root".equals(System.getProperty("user.name"))) {
+                command.add(SUDO_STRING);
+                command.add("-n");
+                command.add("-E");
+            }
         }
         for (String param : config.getCassStopScript().split(" ")) {
             if (StringUtils.isNotBlank(param))

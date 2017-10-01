@@ -19,6 +19,7 @@ package com.netflix.priam.utils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -32,11 +33,13 @@ public class TuneCassandra extends Task {
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
     public static final String JOBNAME = "Tune-Cassandra";
     private final CassandraTuner tuner;
+    private InstanceState instanceState;
 
     @Inject
-    public TuneCassandra(IConfiguration config, CassandraTuner tuner) {
+    public TuneCassandra(IConfiguration config, CassandraTuner tuner, InstanceState instanceState) {
         super(config);
         this.tuner = tuner;
+        this.instanceState = instanceState;
     }
 
     public void execute() throws IOException {
@@ -46,6 +49,7 @@ public class TuneCassandra extends Task {
             try {
                 tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
                 isDone = true;
+                instanceState.setYmlWritten(true);
             } catch (IOException e) {
                 LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);
             }

@@ -19,14 +19,17 @@ package com.netflix.priam.utils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -39,32 +42,50 @@ public class CassandraMonitor extends Task {
     public static final String JOBNAME = "CASS_MONITOR_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(CassandraMonitor.class);
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
+    private InstanceState instanceState;
 
     @Inject
-    protected CassandraMonitor(IConfiguration config) {
+    protected CassandraMonitor(IConfiguration config, InstanceState instanceState) {
         super(config);
+        this.instanceState = instanceState;
     }
 
     @Override
     public void execute() throws Exception {
+        try{
+            checkRequiredDirectories();
+            instanceState.setIsRequiredDirectoriesExist(true);
+        }catch (IllegalStateException e)
+        {
+            instanceState.setIsRequiredDirectoriesExist(false);
+        }
 
         Process process = null;
         BufferedReader input = null;
         try {
-            //This returns pid for the Cassandra process
-            process = Runtime.getRuntime().exec("pgrep -f " + config.getCassProcessName());
+            // This returns pid for the Cassandra process
+            // This needs to be sent as command list as "pipe" of results is not allowed. Also, do not try to change
+            // with pgrep as it has limitation of 4K command list (cassandra command can go upto 5-6 KB as cassandra lists all the libraries in command.
+            final String[] cmd = { "/bin/sh", "-c", "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()};
+            process = Runtime.getRuntime().exec(cmd);
             input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = input.readLine();
-            if (line != null && !isCassadraStarted()) {
+            if (line != null) {
                 //Setting cassandra flag to true
+                instanceState.setCassandraProcessAlive(true);
                 isCassandraStarted.set(true);
-            } else if (line == null && isCassadraStarted()) {
+                NodeProbe bean = JMXNodeTool.instance(this.config);
+                instanceState.setIsGossipActive(bean.isGossipRunning());
+                instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
+                instanceState.setIsThriftActive(bean.isThriftServerRunning());
+            } else if (line == null) {
                 //Setting cassandra flag to false
+                instanceState.setCassandraProcessAlive(false);
                 isCassandraStarted.set(false);
             }
         } catch (Exception e) {
             logger.warn("Exception thrown while checking if Cassandra is running or not ", e);
-            //Setting Cassandra flag to false
+            instanceState.setCassandraProcessAlive(false);
             isCassandraStarted.set(false);
         } finally {
             if (process != null) {
@@ -76,7 +97,25 @@ public class CassandraMonitor extends Task {
             if (input != null)
                 IOUtils.closeQuietly(input);
         }
+    }
 
+    private void checkRequiredDirectories() {
+        checkDirectory(config.getDataFileLocation());
+        checkDirectory(config.getBackupCommitLogLocation());
+        checkDirectory(config.getCommitLogLocation());
+        checkDirectory(config.getCacheLocation());
+    }
+
+    private void checkDirectory(String directory) {
+        checkDirectory(new File(directory));
+    }
+
+    private void checkDirectory(File directory) {
+        if (!directory.exists())
+            throw new IllegalStateException(String.format("Directory: {} does not exist", directory));
+
+        if (!directory.canRead() || !directory.canWrite())
+            throw new IllegalStateException(String.format("Directory: {} does not have read/write permissions."));
     }
 
     public static TaskTimer getTimer() {
@@ -97,4 +136,5 @@ public class CassandraMonitor extends Task {
         //Setting cassandra flag to true
         isCassandraStarted.set(true);
     }
+
 }

@@ -234,7 +234,7 @@ public class AWSMembership implements IMembership {
                         if (perm.getFromPort() == from && perm.getToPort() == to)
                             ipPermissions.addAll(perm.getIpRanges());
 
-                logger.info("Fetch current permissions for classic env of running instance");
+                logger.debug("Fetch current permissions for classic env of running instance");
             } else {
 
                 Filter nameFilter = new Filter().withName("group-name").withValues(config.getACLGroupName());
@@ -251,7 +251,7 @@ public class AWSMembership implements IMembership {
                         if (perm.getFromPort() == from && perm.getToPort() == to)
                             ipPermissions.addAll(perm.getIpRanges());
 
-                logger.info("Fetch current permissions for vpc env of running instance");
+                logger.debug("Fetch current permissions for vpc env of running instance");
             }
 
 

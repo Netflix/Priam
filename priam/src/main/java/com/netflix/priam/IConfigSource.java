@@ -29,6 +29,8 @@ public interface IConfigSource {
     /**
      * Must be called before any other method.  This method will allow implementations to do any setup that they require
      * before being called.
+     * @param asgName: Name of the asg
+     * @param region: Name of the region
      */
     void intialize(String asgName, String region);
 

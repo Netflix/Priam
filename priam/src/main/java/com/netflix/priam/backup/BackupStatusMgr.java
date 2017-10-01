@@ -15,7 +15,9 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.MaxSizeHashMap;
 import org.apache.commons.lang3.StringUtils;
@@ -39,12 +41,16 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      */
     Map<String, LinkedList<BackupMetadata>> backupMetadataMap;
     int capacity;
+    private InstanceState instanceState;
 
     /**
      * @param capacity Capacity to hold in-memory snapshot status days.
+     * @param instanceState Status of the instance encapsulating health and other metadata of Priam and Cassandra.
      */
-    public BackupStatusMgr(int capacity) {
+    @Inject
+    public BackupStatusMgr(int capacity, InstanceState instanceState) {
         this.capacity = capacity;
+        this.instanceState = instanceState;
         // This is to avoid us loading lot of status in memory.
         // We will fetch previous status from backend service, if required.
         backupMetadataMap = new MaxSizeHashMap<>(capacity);
@@ -92,7 +98,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
         metadataLinkedList.addFirst(backupMetadata);
         backupMetadataMap.put(backupMetadata.getSnapshotDate(), metadataLinkedList);
-
+        instanceState.setBackupStatus(backupMetadata.getStatus());
         //Save the backupMetaDataMap
         save(backupMetadata);
     }
@@ -100,11 +106,14 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
     @Override
     public void finish(BackupMetadata backupMetadata) {
         //validate that it has actually finished. If not, then set the status and current date.
-        if (backupMetadata.getStatus() != BackupMetadata.Status.FINISHED)
-            backupMetadata.setStatus(BackupMetadata.Status.FINISHED);
+        if (backupMetadata.getStatus() != Status.FINISHED)
+            backupMetadata.setStatus(Status.FINISHED);
 
         if (backupMetadata.getCompleted() == null)
             backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
+
+        instanceState.setBackupStatus(backupMetadata.getStatus());
+        instanceState.setLastSuccessfulBackupTime(backupMetadata.getCompleted());
 
         //Retrieve the snapshot metadata and then update the finish date/status.
         retrieveAndUpdate(backupMetadata);
@@ -140,8 +149,10 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
             backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
 
         //Set this later to ensure the status
-        if (backupMetadata.getStatus() != BackupMetadata.Status.FAILED)
-            backupMetadata.setStatus(BackupMetadata.Status.FAILED);
+        if (backupMetadata.getStatus() != Status.FAILED)
+            backupMetadata.setStatus(Status.FAILED);
+
+        instanceState.setBackupStatus(backupMetadata.getStatus());
 
         //Retrieve the snapshot metadata and then update the failure date/status.
         retrieveAndUpdate(backupMetadata);

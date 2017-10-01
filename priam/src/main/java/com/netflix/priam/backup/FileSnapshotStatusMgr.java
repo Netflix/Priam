@@ -19,6 +19,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.MaxSizeHashMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,10 +44,11 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
      * Constructor to initialize the file based snapshot status manager.
      *
      * @param config {@link IConfiguration} of priam to find where file should be saved/read from.
+     * @param instanceState Status of the instance encapsulating health and other metadata of Priam and Cassandra.
      */
     @Inject
-    public FileSnapshotStatusMgr(IConfiguration config) {
-        super(IN_MEMORY_SNAPSHOT_CAPACITY); //Fetch capacity from properties, if required.
+    public FileSnapshotStatusMgr(IConfiguration config, InstanceState instanceState) {
+        super(IN_MEMORY_SNAPSHOT_CAPACITY, instanceState); //Fetch capacity from properties, if required.
         this.config = config;
         this.filename = this.config.getBackupStatusFileLoc();
         init();

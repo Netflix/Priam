@@ -1,14 +1,16 @@
 package com.netflix.priam.health;
 
 import com.google.inject.Singleton;
+import com.netflix.priam.backup.Status;
 import org.joda.time.DateTime;
 
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * Contains the state of the health of processed managed by Priam, and
  * maintains the isHealthy flag used for reporting discovery health check.
- *
+ * <p>
  * Created by aagrawal on 9/19/17.
  */
 @Singleton
@@ -17,23 +19,28 @@ public class InstanceState {
         JOIN, //This state to be used when Priam is joining the ring for the first time or was already assigned this token.
         REPLACE; //This state to be used when Priam replaces an instance from the token range.
     }
-    //TODO: Use bootstrap, backup and restore information.
-    private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
+
+    //Bootstrap status
     private final AtomicBoolean isBootstrapping = new AtomicBoolean(false);
     private NODE_STATE nodeState;
-    private final AtomicBoolean isBackingUp = new AtomicBoolean(false);
-    private final AtomicBoolean isBackupSuccessful = new AtomicBoolean(false);
-    private final AtomicBoolean isRestoring = new AtomicBoolean(false);
-    private final AtomicBoolean isRestoreSuccessful = new AtomicBoolean(false);
+    private long bootstrapTime;
+
+    //Cassandra process status
+    private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
     private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
     private final AtomicBoolean isNativeTransportActive = new AtomicBoolean(false);
     private final AtomicBoolean isRequiredDirectoriesExist = new AtomicBoolean(false);
     private final AtomicBoolean isYmlWritten = new AtomicBoolean(false);
     private final AtomicBoolean isHealthy = new AtomicBoolean(false);
-    private long bootstrapTime;
-    private long backupTime;
-    private long restoreTime;
+
+    //Backup status
+    private Status backupStatus = null;
+    private Date lastSuccessfulBackupTime;
+
+    //Restore status
+    private Status restoreStatus = null;
+    private Date restoreTime;
 
     @Override
     public String toString() {
@@ -49,16 +56,13 @@ public class InstanceState {
         sb.append(", isThriftActive=").append(isThriftActive);
         sb.append(", isNativeTransportActive=").append(isNativeTransportActive);
         sb.append(", isRequiredDirectoriesExist=").append(isRequiredDirectoriesExist);
-
-        sb.append(", isBackingUp=").append(isBackingUp);
-        sb.append(", isBackupSuccessful=").append(isBackupSuccessful);
-        sb.append(", backupTime=").append(backupTime);
-
-        sb.append(", isRestoring=").append(isRestoring);
-        sb.append(", isRestoreSuccessful=").append(isRestoreSuccessful);
-        sb.append(", restoreTime=").append(restoreTime);
-
         sb.append(", isYmlWritten=").append(isYmlWritten);
+
+        sb.append(", backupStatus=").append(backupStatus);
+        sb.append(", lastSuccessfulBackupTime=").append(lastSuccessfulBackupTime);
+
+        sb.append(", restoreStatus=").append(restoreStatus);
+        sb.append(", restoreTime=").append(restoreTime);
         sb.append('}');
         return sb.toString();
     }
@@ -134,54 +138,39 @@ public class InstanceState {
     }
 
     /* Backup */
-    public boolean isBackingUp() {
-        return isBackingUp.get();
+    public Status getBackupStatus() {
+        return backupStatus;
     }
 
-    public void setBackingUp(boolean isBackup) {
-        this.isBackingUp.set(isBackup);
+    public void setBackupStatus(Status backupStatus) {
+        this.backupStatus = backupStatus;
     }
 
-    public boolean isBackupSuccessful() {
-        return isBackupSuccessful.get();
+    public Date getLastSuccessfulBackupTime() {
+        return lastSuccessfulBackupTime;
     }
 
-    public long getBackupTime() {
-        return backupTime;
-    }
-
-    public void setBackupTime(DateTime backupTime) {
-        this.backupTime = backupTime.getMillis();
-    }
-
-    public void setBackupSuccessful(boolean isBackupSuccessful) {
-        this.isBackupSuccessful.set(isBackupSuccessful);
+    public void setLastSuccessfulBackupTime(Date lastSuccessfulBackupTime) {
+        this.lastSuccessfulBackupTime = lastSuccessfulBackupTime;
     }
 
     /* Restore */
-    public boolean isRestoring() {
-        return isRestoring.get();
+    public Status getRestoreStatus() {
+        return restoreStatus;
     }
 
-    public void setRestoring(boolean isRestoring) {
-        this.isRestoring.set(isRestoring);
+    public void setRestoreStatus(Status restoreStatus) {
+        this.restoreStatus = restoreStatus;
     }
 
-    public boolean isRestoreSuccessful() {
-        return isRestoreSuccessful.get();
-    }
-
-    public long getRestoreTime() {
+    public Date getRestoreTime() {
         return restoreTime;
     }
 
-    public void setRestoreTime(DateTime restoreTime) {
-        this.restoreTime = restoreTime.getMillis();
+    public void setRestoreTime(Date restoreTime) {
+        this.restoreTime = restoreTime;
     }
 
-    public void setRestoreSuccessful(boolean isRestoreSuccessful) {
-        this.isRestoreSuccessful.set(isRestoreSuccessful);
-    }
 
     public boolean isHealthy() {
         return isHealthy.get();

@@ -76,7 +76,7 @@ public class TestSnapshotStatusMgr {
         Assert.assertNotNull(metadataList);
         Assert.assertTrue(!metadataList.isEmpty());
         Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(BackupMetadata.Status.FINISHED, metadataList.get(0).getStatus());
+        Assert.assertEquals(Status.FINISHED, metadataList.get(0).getStatus());
         Assert.assertTrue(metadataList.get(0).getCompleted() != null);
         logger.info("Snapshot finished: {}", metadataList.get(0));
     }
@@ -100,7 +100,7 @@ public class TestSnapshotStatusMgr {
         Assert.assertNotNull(metadataList);
         Assert.assertTrue(!metadataList.isEmpty());
         Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(BackupMetadata.Status.FAILED, metadataList.get(0).getStatus());
+        Assert.assertEquals(Status.FAILED, metadataList.get(0).getStatus());
         Assert.assertTrue(metadataList.get(0).getCompleted() != null);
         logger.info("Snapshot failed: {}", metadataList.get(0));
     }

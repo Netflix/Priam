@@ -62,7 +62,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
             return;
         }
 
-        try (final ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(snapshotFile));) {
+        try (final ObjectInputStream inputStream = new ObjectInputStream(new FileInputStream(snapshotFile))) {
             backupMetadataMap = (Map<String, LinkedList<BackupMetadata>>) inputStream.readObject();
             logger.info("Snapshot status of size {} fetched successfully from {}", backupMetadataMap.size(), filename);
         } catch (IOException e) {
@@ -84,7 +84,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
             snapshotFile.mkdirs();
 
         //Will save entire list to file.
-        try (final ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename));) {
+        try (final ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(filename))) {
             out.writeObject(backupMetadataMap);
             out.flush();
             logger.info("Snapshot status of size {} is saved to {}", backupMetadataMap.size(), filename);

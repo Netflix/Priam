@@ -104,7 +104,7 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
 	 * the task.
 	 */
     public Boolean hasTasks() {
-        return tasks.isEmpty() ? false : true;
+        return !tasks.isEmpty();
     }
 
     @Override

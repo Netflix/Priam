@@ -89,7 +89,7 @@ public class PriamInstanceResource {
             @QueryParam("hostname") String hostname, @QueryParam("ip") String ip,
             @QueryParam("rack") String rack, @QueryParam("token") String token) {
         log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
-                new Object[]{id, instanceID, hostname, ip, rack, token});
+                id, instanceID, hostname, ip, rack, token);
         PriamInstance instance = factory.create(config.getAppName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();

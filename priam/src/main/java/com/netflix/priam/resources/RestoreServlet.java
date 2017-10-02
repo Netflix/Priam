@@ -22,9 +22,10 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.Restore;
+import com.netflix.priam.restore.Restore;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.restore.RestoreStatus;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
@@ -64,10 +65,11 @@ public class RestoreServlet {
     private CassandraTuner tuner;
     private ICassandraProcess cassProcess;
     private ITokenManager tokenManager;
+    private RestoreStatus restoreStatus;
 
     @Inject
     public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-            , IPriamInstanceFactory factory, CassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager) {
+            , IPriamInstanceFactory factory, CassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, RestoreStatus restoreStatus) {
         this.config = config;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
@@ -76,6 +78,7 @@ public class RestoreServlet {
         this.tuner = tuner;
         this.cassProcess = cassProcess;
         this.tokenManager = tokenManager;
+        this.restoreStatus = restoreStatus;
     }
 
     /*
@@ -88,63 +91,7 @@ public class RestoreServlet {
     @GET
     @Path("/restore/status")
     public Response status() throws Exception {
-        JSONObject object = new JSONObject();
-        Task.STATE state = this.restoreObj.getRestoreState();
-        if (state.equals(Task.STATE.NOT_APPLICABLE)) {
-            object.put("status", this.restoreObj.getRestoreState());
-            object.put("daterange", "NOT_APPLICABLE");
-            object.put("starttime", "NOT_APPLICABLE");
-            object.put("endtime", "NOT_APPLICABLE");
-            object.put("token", "NOT_APPLICABLE");
-
-            return Response.status(503).type(MediaType.APPLICATION_JSON)
-                    .entity(object.toString(2)).build();
-
-        } else if (state.equals(Task.STATE.DONE)) {
-            object.put("status", this.restoreObj.getRestoreState());
-            if (this.restoreObj.getStartDateRange() != null && this.restoreObj.getEndDateRange() != null) {
-                object.put("daterange", this.restoreObj.getStartDateRange() + "," + this.restoreObj.getEndDateRange());
-            }
-            if (this.restoreObj.getExecStartTime() != null) {
-                object.put("starttime", this.restoreObj.getExecStartTime());
-            }
-            if (this.restoreObj.getExecEndTime() != null) {
-                object.put("endtime", this.restoreObj.getExecEndTime());
-            }
-
-            return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
-
-        } else if (state.equals(Task.STATE.RUNNING)) {
-            object.put("status", this.restoreObj.getRestoreState());
-            if (this.restoreObj.getStartDateRange() != null && this.restoreObj.getEndDateRange() != null) {
-                object.put("daterange", this.restoreObj.getStartDateRange() + "," + this.restoreObj.getEndDateRange());
-            }
-            if (this.restoreObj.getExecStartTime() != null) {
-                object.put("starttime", this.restoreObj.getExecStartTime());
-            }
-            if (this.restoreObj.getExecEndTime() != null) {
-                object.put("endtime", this.restoreObj.getExecEndTime());
-            }
-
-            return Response.status(206).type(MediaType.APPLICATION_JSON)
-                    .entity(object.toString(2)).build();
-
-        } else {
-            object.put("status", this.restoreObj.getRestoreState());
-            if (this.restoreObj.getStartDateRange() != null && this.restoreObj.getEndDateRange() != null) {
-                object.put("daterange", this.restoreObj.getStartDateRange() + "," + this.restoreObj.getEndDateRange());
-            }
-            if (this.restoreObj.getExecStartTime() != null) {
-                object.put("starttime", this.restoreObj.getExecStartTime());
-            }
-            if (this.restoreObj.getExecEndTime() != null) {
-                object.put("endtime", this.restoreObj.getExecEndTime());
-            }
-
-            return Response.status(500).type(MediaType.APPLICATION_JSON)
-                    .entity(object.toString(2)).build();
-        }
-
+        return Response.ok(restoreStatus.toJson()).build();
     }
 
     @GET

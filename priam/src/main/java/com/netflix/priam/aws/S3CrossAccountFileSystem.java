@@ -73,7 +73,6 @@ public class S3CrossAccountFileSystem {
                         throw new IllegalStateException("Exception in getting handle to s3 client.  Msg: " + e.getLocalizedMessage(), e);
 
                     }
-                    //this.s3Client.setEndpoint(s3fs.getS3Endpoint(config));
 
                     //Lets leverage the IBackupFileSystem behaviors except we want it to use our amazon S3 client which has cross AWS account api capability.
                     this.s3fs.setS3Client(s3Client);

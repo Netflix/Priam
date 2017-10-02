@@ -29,6 +29,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.ICredentialGeneric.KEY;
+import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
@@ -67,7 +68,6 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
     private IConfiguration config;
     private AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
-    private IBackupMetrics backupMetricsMgr;
 
     private ICredentialGeneric gcsCredential;
 
@@ -80,7 +80,6 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
         this.pathProvider = pathProvider;
         this.config = config;
         this.gcsCredential = credential;
-        this.backupMetricsMgr = backupMetricsMgr;
 
         try {
 
@@ -90,7 +89,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
             throw new IllegalStateException("Unable to create a handle to the Google Http tranport", e);
         }
 
-        this.srcBucketName = GoogleCryptographyRestoreStrategy.getSourcebucket(getPathPrefix());
+        this.srcBucketName = getSourcebucket(getPathPrefix());
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         String mbeanName = MBEAN_NAME;
@@ -99,6 +98,16 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
         } catch (Exception e) {
             throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
         }
+    }
+
+    /*
+    * @param pathprefix - the absolute path (including bucket name) to the object.
+    */
+    private String getSourcebucket(String pathPrefix) {
+
+        String[] paths = pathPrefix.split(String.valueOf(S3BackupPath.PATH_SEP));
+        return paths[0];
+
     }
 
     private Storage.Objects constructObjectResourceHandle() {

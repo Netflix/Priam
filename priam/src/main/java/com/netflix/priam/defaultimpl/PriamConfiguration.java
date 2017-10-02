@@ -447,7 +447,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-
     public String getLogDirLocation()
     {
         return config.get(CONFIG_LOGS_LOCATION, DEFAULT_LOGS_LOCATION);
@@ -473,11 +472,6 @@ public class PriamConfiguration implements IConfiguration {
     public long getBackupChunkSize() {
         long size = config.get(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
         return size * 1024 * 1024L;
-    }
-
-    @Override
-    public boolean isCommitLogBackup() {
-        return config.get(CONFIG_CL_BK_ENABLE, false);
     }
 
     @Override

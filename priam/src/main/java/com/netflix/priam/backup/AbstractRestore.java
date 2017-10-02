@@ -67,7 +67,7 @@ public abstract class AbstractRestore extends Task {
         backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(), config.getRestoreCFFilter());
     }
 
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
+    protected final void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (temp.type == BackupFileType.SST && tracker.contains(temp))
@@ -93,7 +93,7 @@ public abstract class AbstractRestore extends Task {
         waitToComplete();
     }
 
-    public class BoundedList<E> extends LinkedList<E> {
+    public final class BoundedList<E> extends LinkedList<E> {
 
         private final int limit;
 
@@ -132,7 +132,7 @@ public abstract class AbstractRestore extends Task {
     /**
      * Download to specific location
      */
-    public void download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
+    public final void download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
         if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
             return;
         count.incrementAndGet();
@@ -153,7 +153,7 @@ public abstract class AbstractRestore extends Task {
 
 
     /**
-     * An overloaded download where it will not only download the object but decrypt and uncompress the
+     * An overloaded download where it will not only download the object but decrypt and uncompress them
      *
      * @param path             - path of object to download from source.
      * @param finalDestination - handle to the FINAL destination stream.
@@ -167,7 +167,7 @@ public abstract class AbstractRestore extends Task {
      * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
      * @param compress         - Compression algorithm to use to decompress.
      */
-    public void download(final AbstractBackupPath path, final OutputStream finalDestination, final File tempFile
+    private final void download(final AbstractBackupPath path, final OutputStream finalDestination, final File tempFile
             , final IFileCryptography fileCryptography
             , final char[] passPhrase
             , final ICompression compress) {
@@ -277,7 +277,7 @@ public abstract class AbstractRestore extends Task {
      * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
      * @param compress         - Compression algorithm to use to decompress.
      */
-    public void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
+    public final void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
             , final IFileCryptography fileCryptography
             , final char[] passPhrase
             , final ICompression compress
@@ -304,7 +304,7 @@ public abstract class AbstractRestore extends Task {
      * A means to wait until until all threads have completed.  It blocks calling thread
      * until all tasks (ala counter "count" is 0) are completed.
      */
-    protected void waitToComplete() {
+    protected final void waitToComplete() {
         while (count.get() != 0) {
             try {
                 sleeper.sleep(1000);
@@ -315,11 +315,11 @@ public abstract class AbstractRestore extends Task {
         }
     }
 
-    protected AtomicInteger getFileCount() {
+    protected final AtomicInteger getFileCount() {
         return count;
     }
 
-    protected void setFileCount(int cnt) {
+    protected final void setFileCount(int cnt) {
         count.set(cnt);
     }
 }

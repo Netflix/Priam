@@ -485,11 +485,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isCommitLogBackup() {
-        return config.get(CONFIG_CL_BK_ENABLE, false);
-    }
-
-    @Override
     public int getJmxPort() {
         return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
     }

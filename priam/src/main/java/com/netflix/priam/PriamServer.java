@@ -22,7 +22,7 @@ import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.Restore;
+import com.netflix.priam.restore.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.cluster.management.FlushTask;

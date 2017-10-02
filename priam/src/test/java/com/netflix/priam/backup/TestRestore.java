@@ -17,25 +17,24 @@
 
 package com.netflix.priam.backup;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-
-import org.junit.Assert;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.restore.Restore;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 
 public class TestRestore
 {
@@ -134,15 +133,12 @@ public class TestRestore
             cal.add(Calendar.HOUR, 5);
             restore.restore(startTime, cal.getTime());
             Assert.assertFalse(true);//No exception thrown
+        } catch (IllegalStateException e) {
+            //We are ok. No snapshot found.
+        } catch (Exception e) {
+            throw e;
         }
-        catch(java.lang.ArrayIndexOutOfBoundsException e){
-            //We are ok
-        }catch(java.util.NoSuchElementException e){
-            //We are ok
-        }
-        catch (AssertionError e) {
-            Assert.assertEquals("[cass_backup] No snapshots found, Restore Failed.", e.getMessage());
-        }
+
     }
     
     

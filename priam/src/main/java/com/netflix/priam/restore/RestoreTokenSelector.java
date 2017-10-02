@@ -14,10 +14,12 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.backup;
+package com.netflix.priam.restore;
 
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.utils.ITokenManager;
 
 import java.math.BigInteger;

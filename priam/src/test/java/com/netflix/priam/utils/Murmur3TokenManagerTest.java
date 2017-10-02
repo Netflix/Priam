@@ -92,7 +92,7 @@ public class Murmur3TokenManagerTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void findClosestToken_emptyTokenList() {
-        tokenManager.findClosestToken(BigInteger.ZERO, Collections.<BigInteger>emptyList());
+        tokenManager.findClosestToken(BigInteger.ZERO, Collections.emptyList());
     }
 
     @Test

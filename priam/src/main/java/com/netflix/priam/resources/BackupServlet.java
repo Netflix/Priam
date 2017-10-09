@@ -27,6 +27,7 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.restore.Restore;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.*;
 import org.apache.commons.lang3.StringUtils;

@@ -146,7 +146,7 @@ public abstract class AbstractConfigSource implements IConfigSource {
 
     @Override
     public List<String> getList(String prop) {
-        return getList(prop, ImmutableList.<String>of());
+        return getList(prop, ImmutableList.of());
     }
 
     @Override

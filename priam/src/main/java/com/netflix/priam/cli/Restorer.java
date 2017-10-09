@@ -17,7 +17,7 @@
 package com.netflix.priam.cli;
 
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.Restore;
+import com.netflix.priam.restore.Restore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

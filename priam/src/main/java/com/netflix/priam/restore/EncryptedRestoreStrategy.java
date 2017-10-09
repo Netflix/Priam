@@ -25,7 +25,6 @@ import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
-import com.netflix.priam.backup.RestoreTokenSelector;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;

@@ -14,26 +14,36 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.backup;
+package com.netflix.priam.restore;
 
+import com.google.inject.Provider;
+import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupRestoreUtil;
+import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.FifoQueue;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.math.BigInteger;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -57,11 +67,22 @@ public abstract class AbstractRestore extends Task {
     public static BigInteger restoreToken;
     private BackupRestoreUtil backupRestoreUtil;
     protected final Sleeper sleeper;
+    private Provider<AbstractBackupPath> pathProvider;
+    private InstanceIdentity id;
+    private RestoreTokenSelector tokenSelector;
+    private ICassandraProcess cassProcess;
 
-    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper) {
+    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
+                           Provider<AbstractBackupPath> pathProvider,
+                           InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector,
+                           ICassandraProcess cassProcess) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
+        this.pathProvider = pathProvider;
+        this.id = instanceIdentity;
+        this.tokenSelector = tokenSelector;
+        this.cassProcess = cassProcess;
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
         executor.allowCoreThreadTimeOut(true);
         backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(), config.getRestoreCFFilter());
@@ -70,7 +91,7 @@ public abstract class AbstractRestore extends Task {
     protected final void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.type == BackupFileType.SST && tracker.contains(temp))
+            if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
                 continue;
 
             if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())) { //keyspace filtered?
@@ -118,7 +139,7 @@ public abstract class AbstractRestore extends Task {
         BoundedList bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.type == BackupFileType.SST && tracker.contains(temp))
+            if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
                 continue;
 
             if (temp.getType() == filter) {
@@ -133,7 +154,7 @@ public abstract class AbstractRestore extends Task {
      * Download to specific location
      */
     public final void download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
+        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.getKeyspace()) || path.getKeyspace().equals(SYSTEM_KEYSPACE)))
             return;
         count.incrementAndGet();
         executor.submit(new RetryableCallable<Integer>() {
@@ -172,7 +193,7 @@ public abstract class AbstractRestore extends Task {
             , final char[] passPhrase
             , final ICompression compress) {
 
-        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.keyspace) || path.keyspace.equals(SYSTEM_KEYSPACE)))
+        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.getKeyspace()) || path.getKeyspace().equals(SYSTEM_KEYSPACE)))
             return;
 
         count.incrementAndGet();
@@ -315,6 +336,88 @@ public abstract class AbstractRestore extends Task {
         }
     }
 
+    public static final boolean isRestoreEnabled(IConfiguration conf) {
+        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
+        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
+        return (isRestoreMode && isBackedupRac);
+    }
+
+
+    protected final void stopCassProcess() throws IOException {
+        if (config.getRestoreKeySpaces().size() == 0)
+            cassProcess.stop();
+    }
+
+    protected final String getRestorePrefix() {
+        String prefix = "";
+
+        if (StringUtils.isNotBlank(config.getRestorePrefix()))
+            prefix = config.getRestorePrefix();
+        else
+            prefix = config.getBackupPrefix();
+
+        return prefix;
+    }
+
+    /*
+     * Fetches meta.json used to store snapshots metadata.
+     */
+    protected final void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException{
+        logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
+
+        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
+        if (!backupfiles.hasNext()) {
+            throw new IllegalStateException("meta.json not found, restore prefix: " + restorePrefix);
+        }
+
+        while (backupfiles.hasNext()) {
+            AbstractBackupPath path = backupfiles.next();
+            if (path.getType() == BackupFileType.META)
+                //Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
+                if (path.getFileName().equalsIgnoreCase("meta.json")) {
+                    out.add(path);
+                }
+        }
+    }
+
+
+    @Override
+    public void execute() throws Exception {
+        if (isRestoreEnabled(config)) {
+            logger.info("Starting restore for " + config.getRestoreSnapshot());
+            String[] restore = config.getRestoreSnapshot().split(",");
+            AbstractBackupPath path = pathProvider.get();
+            final Date startTime = path.parseDate(restore[0]);
+            final Date endTime = path.parseDate(restore[1]);
+            String origToken = id.getInstance().getToken();
+
+            try {
+                if (config.isRestoreClosestToken()) {
+                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
+                    id.getInstance().setToken(restoreToken.toString());
+                }
+                new RetryableCallable<Void>() {
+                    public Void retriableCall() throws Exception {
+                        logger.info("Attempting restore");
+                        restore(startTime, endTime);
+                        logger.info("Restore completed");
+
+                        // Wait for other server init to complete
+                        sleeper.sleep(30000);
+                        return null;
+                    }
+                }.call();
+            } catch (Exception e) {
+                //TODO; UNCOMMENT >>>>>>>>>>>>>>>>>>>>>>>>>>>>
+//                this.state = STATE.ERROR;
+//                this.execEndTime = new DateTime(new Date());
+            } finally {
+                id.getInstance().setToken(origToken);
+            }
+        }
+        cassProcess.start(true);
+    }
+
     protected final AtomicInteger getFileCount() {
         return count;
     }
@@ -322,4 +425,6 @@ public abstract class AbstractRestore extends Task {
     protected final void setFileCount(int cnt) {
         count.set(cnt);
     }
+
+    public abstract void restore(Date startTime, Date endTime) throws Exception;
 }

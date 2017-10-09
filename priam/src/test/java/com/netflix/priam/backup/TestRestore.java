@@ -23,6 +23,7 @@ import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.restore.Restore;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -126,12 +127,11 @@ public class TestRestore {
             cal.add(Calendar.HOUR, 5);
             restore.restore(startTime, cal.getTime());
             Assert.assertFalse(true);//No exception thrown
-        } catch (java.lang.ArrayIndexOutOfBoundsException e) {
-            //We are ok
-        } catch (java.util.NoSuchElementException e) {
-            //We are ok
-        } catch (AssertionError e) {
-            Assert.assertEquals("[cass_backup] No snapshots found, Restore Failed.", e.getMessage());
+        } catch (IllegalStateException e) {
+            //We are ok. No snapshot found.
+        }catch (Exception e)
+        {
+            throw e;
         }
     }
 

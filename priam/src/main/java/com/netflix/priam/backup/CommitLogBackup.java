@@ -62,12 +62,12 @@ public class CommitLogBackup {
         }
         List bps = Lists.newArrayList();
         for (final File file : archivedCommitLogDir.listFiles()) {
-            logger.debug(String.format("Uploading commit log %s for backup", new Object[]{file.getCanonicalFile()}));
+            logger.debug(String.format("Uploading commit log %s for backup", file.getCanonicalFile()));
             try {
                 AbstractBackupPath abp = (AbstractBackupPath) new RetryableCallable(3, 100L) {
                     public AbstractBackupPath retriableCall() throws Exception {
 
-                        AbstractBackupPath bp = (AbstractBackupPath) pathFactory.get();
+                        AbstractBackupPath bp = pathFactory.get();
                         bp.parseLocal(file, BackupFileType.CL);
                         if (snapshotName != null)
                             bp.time = bp.parseDate(snapshotName);
@@ -83,7 +83,7 @@ public class CommitLogBackup {
                 }
                 addToRemotePath(abp.getRemotePath());
             } catch (Exception e) {
-                logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.", new Object[]{file}), e);
+                logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.", file), e);
             }
         }
         return bps;

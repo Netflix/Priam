@@ -21,6 +21,9 @@ package com.netflix.priam.utils;
 import org.apache.http.client.utils.DateUtils;
 
 import javax.inject.Singleton;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Date;
 
 /**
@@ -33,7 +36,7 @@ public class DateUtil {
     private final static String yyyyMMdd = "yyyyMMdd";
     private final static String yyyyMMddHHmm = "yyyyMMddHHmm";
     private final static String[] patterns = {yyyyMMddHHmm, yyyyMMdd};
-
+    private final static ZoneId defaultZoneId = ZoneId.systemDefault();
     /**
      * Format the given date in format yyyyMMdd
      *
@@ -73,6 +76,38 @@ public class DateUtil {
      */
     public static Date getDate(String date) {
         return DateUtils.parseDate(date, patterns);
+    }
+
+    /**
+     * Convert date to LocalDateTime using system default zone.
+     * @param date Date to be transformed
+     * @return converted date to LocalDateTime
+     */
+    public static LocalDateTime convert(Date date){
+        if (date == null) return null;
+        return date.toInstant().atZone(defaultZoneId).toLocalDateTime();
+    }
+
+    /**
+     * Format the given date in format yyyyMMdd
+     *
+     * @param date to format
+     * @return date formatted in yyyyMMdd
+     */
+    public static String formatyyyyMMdd(LocalDateTime date){
+        if (date == null) return null;
+        return date.format(DateTimeFormatter.ofPattern(yyyyMMdd));
+    }
+
+    /**
+     * Format the given date in format yyyyMMddHHmm
+     *
+     * @param date to format
+     * @return date formatted in yyyyMMddHHmm
+     */
+    public static String formatyyyyMMddHHmm(LocalDateTime date) {
+        if (date == null) return null;
+        return date.format(DateTimeFormatter.ofPattern(yyyyMMddHHmm));
     }
 
 }

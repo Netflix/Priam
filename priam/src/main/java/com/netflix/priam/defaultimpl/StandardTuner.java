@@ -18,7 +18,7 @@ package com.netflix.priam.defaultimpl;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.Restore;
+import com.netflix.priam.restore.Restore;
 import com.netflix.priam.utils.CassandraTuner;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;

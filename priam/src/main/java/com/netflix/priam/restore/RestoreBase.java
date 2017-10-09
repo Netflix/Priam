@@ -21,23 +21,17 @@ import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredentialGeneric;
-import com.netflix.priam.aws.S3FileSystemBase;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -47,10 +41,6 @@ public abstract class RestoreBase extends AbstractRestore implements IRestoreStr
     private static final Logger logger = LoggerFactory.getLogger(RestoreBase.class);
 
     private String jobName;
-    private ICassandraProcess cassProcess;
-    private Provider<AbstractBackupPath> pathProvider;
-    private InstanceIdentity id;
-    private RestoreTokenSelector tokenSelector;
     private ICredentialGeneric pgpCredential;
     private IFileCryptography fileCryptography;
     private ICompression compress;
@@ -60,13 +50,9 @@ public abstract class RestoreBase extends AbstractRestore implements IRestoreStr
                           ICassandraProcess cassProcess, Provider<AbstractBackupPath> pathProvider,
                           InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, ICredentialGeneric pgpCredential,
                           IFileCryptography fileCryptography, ICompression compress, MetaData metaData) {
-        super(config, fs, jobName, sleeper);
+        super(config, fs, jobName, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess);
 
         this.jobName = jobName;
-        this.cassProcess = cassProcess;
-        this.pathProvider = pathProvider;
-        this.id = instanceIdentity;
-        this.tokenSelector = tokenSelector;
         this.pgpCredential = pgpCredential;
         this.fileCryptography = fileCryptography;
         this.compress = compress;
@@ -75,108 +61,14 @@ public abstract class RestoreBase extends AbstractRestore implements IRestoreStr
         logger.info("Trying to restore cassandra cluster with filesystem: " + fs.getClass() + ", RestoreStrategy: " + jobName + ", Encryption: ON, Compression: " + compress.getClass());
     }
 
-    protected static boolean isRestoreEnabled(IConfiguration conf) {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
-        return (isRestoreMode && isBackedupRac);
-    }
-
-    protected void stopCassProcess(ICassandraProcess cassProcess) throws IOException {
-        if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop();
-
-    }
-
-    /*
-     * Fetches all files of type META.
-     */
-    protected void fetchMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) {
-        logger.info("Looking for meta file here:  " + restorePrefix);
-        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == BackupFileType.META)
-                out.add(path);
-        }
-
-        return;
-
-    }
-
-    protected String getRestorePrefix() {
-        String prefix = "";
-
-        if (StringUtils.isNotBlank(config.getRestorePrefix()))
-            prefix = config.getRestorePrefix();
-        else
-            prefix = config.getBackupPrefix();
-
-        return prefix;
-
-    }
-
-    /*
-     * Fetches meta.json used to store snapshots metadata.
-     */
-    protected void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) {
-        logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
-
-        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
-        if (!backupfiles.hasNext()) {
-            throw new IllegalStateException("meta.json not found, restore prefix: " + restorePrefix);
-        }
-
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == BackupFileType.META)
-                //Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
-                if (path.getFileName().equalsIgnoreCase("meta.json")) {
-                    out.add(path);
-                }
-        }
-
-        return;
-    }
-
-    @Override
-    public final void execute() throws Exception {
-        if (isRestoreEnabled(config)) {
-            logger.info("Starting restore for " + config.getRestoreSnapshot()); //get the date range
-            String[] restore = config.getRestoreSnapshot().split(",");
-            AbstractBackupPath path = pathProvider.get();
-            final Date startTime = path.parseDate(restore[0]);
-            final Date endTime = path.parseDate(restore[1]);
-            String origToken = id.getInstance().getToken();
-            try {
-                if (config.isRestoreClosestToken()) {
-                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    id.getInstance().setToken(restoreToken.toString());
-                }
-                new RetryableCallable<Void>() {
-                    public Void retriableCall() throws Exception {
-                        logger.info("Attempting restore");
-                        restore(startTime, endTime);
-                        logger.info("Restore completed");
-                        // Wait for other server init to complete
-                        sleeper.sleep(30000);
-                        return null;
-                    }
-                }.call();
-            } finally {
-                id.getInstance().setToken(origToken);
-            }
-        }
-        cassProcess.start(true);
-    }
 
     @Override
     public void restore(Date startTime, Date endTime) throws Exception {
-        // Stop cassandra if its running and restoring all keyspaces
-        stopCassProcess(this.cassProcess);
+        // Stop cassandra if its running.
+        stopCassProcess();
 
         //== Cleanup local data
         SystemUtils.cleanupDir(super.config.getDataFileLocation(), super.config.getRestoreKeySpaces());
-
 
         //== Generate Json format list of all files to download. This information is derived from meta.json file.
         List<AbstractBackupPath> metas = Lists.newArrayList();

@@ -44,11 +44,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public static final char PATH_SEP = File.separatorChar;
     public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
-    public static enum BackupFileType {
+    public enum BackupFileType {
         SNAP, SST, CL, META
     }
-
-    ;
 
     protected BackupFileType type;
     protected String clusterName;

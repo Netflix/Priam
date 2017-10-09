@@ -149,11 +149,6 @@ public interface IConfiguration {
     public long getBackupChunkSize();
 
     /**
-     * @return true if commit log backup is enabled
-     */
-    public boolean isCommitLogBackup();
-
-    /**
      * @return Cassandra's JMX port
      */
     public int getJmxPort();
@@ -486,6 +481,10 @@ public interface IConfiguration {
      */
     public String getInternodeCompression();
 
+    /**
+     * Enable/disable backup/restore of commit logs.
+     * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default: false.
+     */
     public boolean isBackingUpCommitLogs();
 
     public String getCommitLogBackupPropsFile();

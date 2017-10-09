@@ -77,13 +77,6 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public boolean isCommitLogBackup()
-    {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public String getCommitLogLocation()
     {
         // TODO Auto-generated method stub

@@ -145,9 +145,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
         listReq.setPrefix(tprefix + datestr);
         ObjectListing listing;
         listing = s3Client.listObjects(listReq);
-        if (listing.getObjectSummaries().size() > 0)
-            return true;
-        return false;
+        return listing.getObjectSummaries().size() > 0;
     }
 
 }

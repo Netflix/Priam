@@ -29,6 +29,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -78,7 +79,7 @@ public class BackupServlet {
     private IBackupFileSystem bkpStatusFs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
-    private CassandraTuner tuner;
+    private ICassandraTuner tuner;
     private SnapshotBackup snapshotBackup;
     private IPriamInstanceFactory factory;
     private final ITokenManager tokenManager;
@@ -92,7 +93,7 @@ public class BackupServlet {
     private IBackupStatusMgr completedBkups;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, CassandraTuner tuner,
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
                          SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
             , IBackupStatusMgr completedBkups, BackupVerification backupVerification) {
         this.priamServer = priamServer;

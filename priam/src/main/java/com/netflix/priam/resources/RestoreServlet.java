@@ -22,15 +22,13 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.restore.Restore;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.restore.RestoreStatus;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.CassandraTuner;
+import com.netflix.priam.restore.Restore;
+import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,37 +47,38 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class RestoreServlet {
 
-    private static final Logger logger = LoggerFactory.getLogger(RestoreServlet.class);
-    private static final String REST_HEADER_RANGE = "daterange";
-    private static final String REST_HEADER_REGION = "region";
-    private static final String REST_HEADER_TOKEN = "token";
-    private static final String REST_KEYSPACES = "keyspaces";
-    private static final String REST_RESTORE_PREFIX = "restoreprefix";
-    private static final String REST_SUCCESS = "[\"ok\"]";
+	private static final Logger logger = LoggerFactory.getLogger(RestoreServlet.class);
+	private static final String REST_HEADER_RANGE = "daterange";
+	private static final String REST_HEADER_REGION = "region";
+	private static final String REST_HEADER_TOKEN = "token";
+	private static final String REST_KEYSPACES = "keyspaces";
+	private static final String REST_RESTORE_PREFIX = "restoreprefix";
+	private static final String REST_SUCCESS = "[\"ok\"]";
+	
+	private IConfiguration config;
+	private Restore restoreObj;
+	private Provider<AbstractBackupPath> pathProvider;
+	private PriamServer priamServer;
+	private IPriamInstanceFactory factory;
+	private ICassandraTuner tuner;
+	private ICassandraProcess cassProcess;
+	private ITokenManager tokenManager;
+	private InstanceState instanceState;
 
-    private IConfiguration config;
-    private Restore restoreObj;
-    private Provider<AbstractBackupPath> pathProvider;
-    private PriamServer priamServer;
-    private IPriamInstanceFactory factory;
-    private CassandraTuner tuner;
-    private ICassandraProcess cassProcess;
-    private ITokenManager tokenManager;
-    private RestoreStatus restoreStatus;
+	@Inject
+	public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
+			, IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, InstanceState instanceState) {
+		this.config = config;
+		this.restoreObj = restoreObj;
+		this.pathProvider = pathProvider;
+		this.priamServer = priamServer;
+		this.factory = factory;
+		this.tuner = tuner;
+		this.cassProcess = cassProcess;
+		this.tokenManager = tokenManager;
+		this.instanceState = instanceState;
+	}
 
-    @Inject
-    public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-            , IPriamInstanceFactory factory, CassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, RestoreStatus restoreStatus) {
-        this.config = config;
-        this.restoreObj = restoreObj;
-        this.pathProvider = pathProvider;
-        this.priamServer = priamServer;
-        this.factory = factory;
-        this.tuner = tuner;
-        this.cassProcess = cassProcess;
-        this.tokenManager = tokenManager;
-        this.restoreStatus = restoreStatus;
-    }
 
     /*
      * @return metadata of current restore.  If no restore in progress, returns the metadata of most recent restore attempt.
@@ -91,7 +90,7 @@ public class RestoreServlet {
     @GET
     @Path("/restore/status")
     public Response status() throws Exception {
-        return Response.ok(restoreStatus.toJson()).build();
+        return Response.ok(instanceState.getRestoreStatus().toString()).build();
     }
 
     @GET

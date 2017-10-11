@@ -15,8 +15,14 @@
  */
 package com.netflix.priam.backup;
 
+
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.codehaus.jettison.json.JSONException;
+import org.codehaus.jettison.json.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Date;
@@ -27,6 +33,8 @@ import java.util.Date;
  */
 
 final public class BackupMetadata implements Serializable {
+    private static final Logger logger = LoggerFactory.getLogger(BackupMetadata.class);
+
     private String snapshotDate;
     private String token;
     private Date start, completed;
@@ -147,14 +155,24 @@ final public class BackupMetadata implements Serializable {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("BackupMetadata{");
-        sb.append("snapshotDate='").append(snapshotDate).append('\'');
-        sb.append(", token='").append(token).append('\'');
-        sb.append(", start=").append(start);
-        sb.append(", completed=").append(completed);
-        sb.append(", status=").append(status);
-        sb.append(", snapshotLocation=").append(snapshotLocation);
-        sb.append('}');
-        return sb.toString();
+        return (getJSON() == null) ? null : getJSON().toString();
+    }
+
+    public JSONObject getJSON()
+    {
+        try {
+            JSONObject object = new JSONObject();
+            object.put("snapshotDate", snapshotDate);
+            object.put("token", token);
+            object.put("start", DateUtil.formatyyyyMMddHHmm(start));
+            object.put("completed", DateUtil.formatyyyyMMddHHmm(completed));
+            object.put("status", status);
+            object.put("snapshotLocation", snapshotLocation);
+            return object;
+        }catch (JSONException ex)
+        {
+            logger.error("JSONException during toString representation of InstanceState.", ex);
+        }
+        return null;
     }
 }

@@ -16,34 +16,29 @@
  */
 package com.netflix.priam.restore;
 
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
-import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.BackupRestoreUtil;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.FifoQueue;
-import com.netflix.priam.utils.RetryableCallable;
-import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.time.LocalDateTime;
+import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -53,29 +48,28 @@ import java.util.concurrent.atomic.AtomicInteger;
  * - This class can be scheduled, i.e. it is a "Task".
  * - When this class is executed, it uses its own thread pool to execute the restores.
  */
-public abstract class AbstractRestore extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
-    private static final String JOBNAME = "AbstractRestore";
-    private static final String SYSTEM_KEYSPACE = "system";
+public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     // keeps track of the last few download which was executed.
     // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
     protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
-    private AtomicInteger count = new AtomicInteger();
-    protected final IBackupFileSystem fs;
-
-    protected final ThreadPoolExecutor executor;
+    private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
+    private static final String JOBNAME = "AbstractRestore";
+    private static final String SYSTEM_KEYSPACE = "system";
     public static BigInteger restoreToken;
-    private BackupRestoreUtil backupRestoreUtil;
+    protected final IBackupFileSystem fs;
     protected final Sleeper sleeper;
+    private BackupRestoreUtil backupRestoreUtil;
     private Provider<AbstractBackupPath> pathProvider;
     private InstanceIdentity id;
     private RestoreTokenSelector tokenSelector;
     private ICassandraProcess cassProcess;
+    private InstanceState instanceState;
+    private MetaData metaData;
 
     public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
                            Provider<AbstractBackupPath> pathProvider,
                            InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector,
-                           ICassandraProcess cassProcess) {
+                           ICassandraProcess cassProcess, MetaData metaData, InstanceState instanceState) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
@@ -83,12 +77,18 @@ public abstract class AbstractRestore extends Task {
         this.id = instanceIdentity;
         this.tokenSelector = tokenSelector;
         this.cassProcess = cassProcess;
-        executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), name);
-        executor.allowCoreThreadTimeOut(true);
+        this.metaData = metaData;
+        this.instanceState = instanceState;
         backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(), config.getRestoreCFFilter());
     }
 
-    protected final void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
+    public static final boolean isRestoreEnabled(IConfiguration conf) {
+        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
+        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
+        return (isRestoreMode && isBackedupRac);
+    }
+
+    private final void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
@@ -105,14 +105,199 @@ public abstract class AbstractRestore extends Task {
                 continue;
             }
 
-            if (temp.getType() == bkupFileType) {
+            if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(temp.getKeyspace()) || temp.getKeyspace().equals(SYSTEM_KEYSPACE))) {
+                logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is system keyspace");
+                continue;
+            }
+
+            if (temp.getType() == bkupFileType)
+            {
                 File localFileHandler = temp.newRestoreFile();
-                logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
-                download(temp, localFileHandler);
+                if (logger.isDebugEnabled())
+                    logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+                downloadFile(temp, localFileHandler);
             }
         }
+
+        //Wait for all download to finish that were started from this method.
         waitToComplete();
     }
+
+    private final void downloadCommitLogs(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception {
+        if (fsIterator == null)
+            return;
+
+        BoundedList bl = new BoundedList(lastN);
+        while (fsIterator.hasNext()) {
+            AbstractBackupPath temp = fsIterator.next();
+            if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
+                continue;
+
+            if (temp.getType() == filter) {
+                bl.add(temp);
+            }
+        }
+
+        download(bl.iterator(), filter);
+    }
+
+    private final void stopCassProcess() throws IOException {
+        if (config.getRestoreKeySpaces().size() == 0)
+            cassProcess.stop();
+    }
+
+    private final String getRestorePrefix() {
+        String prefix = "";
+
+        if (StringUtils.isNotBlank(config.getRestorePrefix()))
+            prefix = config.getRestorePrefix();
+        else
+            prefix = config.getBackupPrefix();
+
+        return prefix;
+    }
+
+    /*
+     * Fetches meta.json used to store snapshots metadata.
+     */
+    private final void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException {
+        logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
+
+        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
+        if (!backupfiles.hasNext()) {
+            throw new IllegalStateException("meta.json not found, restore prefix: " + restorePrefix);
+        }
+
+        while (backupfiles.hasNext()) {
+            AbstractBackupPath path = backupfiles.next();
+            if (path.getType() == BackupFileType.META)
+                //Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
+                if (path.getFileName().equalsIgnoreCase("meta.json")) {
+                    out.add(path);
+                }
+        }
+    }
+
+    @Override
+    public void execute() throws Exception {
+        if (!isRestoreEnabled(config))
+            return;
+
+        logger.info("Starting restore for " + config.getRestoreSnapshot());
+        String[] restore = config.getRestoreSnapshot().split(",");
+        AbstractBackupPath path = pathProvider.get();
+        final Date startTime = path.parseDate(restore[0]);
+        final Date endTime = path.parseDate(restore[1]);
+        new RetryableCallable<Void>() {
+            public Void retriableCall() throws Exception {
+                logger.info("Attempting restore");
+                restore(startTime, endTime);
+                logger.info("Restore completed");
+
+                // Wait for other server init to complete
+                sleeper.sleep(30000);
+                return null;
+            }
+        }.call();
+
+    }
+
+    public void restore(Date startTime, Date endTime) throws Exception {
+        //Set the restore status.
+        instanceState.getRestoreStatus().resetStatus();
+        instanceState.getRestoreStatus().setStartDateRange(DateUtil.convert(startTime));
+        instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
+        instanceState.getRestoreStatus().setExecStartTime(LocalDateTime.now());
+        instanceState.setRestoreStatus(Status.STARTED);
+        String origToken = id.getInstance().getToken();
+
+        try {
+            if (config.isRestoreClosestToken()) {
+                restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
+                id.getInstance().setToken(restoreToken.toString());
+            }
+
+            // Stop cassandra if its running and restoring all keyspaces
+            stopCassProcess();
+
+            // Cleanup local data
+            SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
+
+            // Try and read the Meta file.
+            List<AbstractBackupPath> metas = Lists.newArrayList();
+            String prefix = getRestorePrefix();
+            fetchSnapshotMetaFile(prefix, metas, startTime, endTime);
+
+            if (metas.size() == 0) {
+                logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
+                instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+                instanceState.setRestoreStatus(Status.FINISHED);
+                return;
+            }
+
+            Collections.sort(metas);
+            AbstractBackupPath meta = Iterators.getLast(metas.iterator());
+            logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
+            instanceState.getRestoreStatus().setSnapshotMetaFile(meta.getRemotePath());
+
+            //Download the meta.json file.
+            ArrayList<AbstractBackupPath> metaFile = new ArrayList<>();
+            metaFile.add(meta);
+            download(metaFile.iterator(), BackupFileType.META);
+            waitToComplete();
+
+            //Parse meta.json file to find the files required to download from this snapshot.
+            List<AbstractBackupPath> snapshots = metaData.toJson(meta.newRestoreFile());
+
+            // Download snapshot which is listed in the meta file.
+            download(snapshots.iterator(), BackupFileType.SNAP);
+
+            logger.info("Downloading incrementals");
+            // Download incrementals (SST) after the snapshot meta file.
+            Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.getTime(), endTime);
+            download(incrementals, BackupFileType.SST);
+
+            //Downloading CommitLogs
+            if (config.isBackingUpCommitLogs()) {
+                logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
+                SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
+
+                logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
+                SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
+
+                Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.getTime(), endTime);
+                downloadCommitLogs(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());
+            }
+
+            //Ensure all the files are downloaded before declaring restore as finished.
+            waitToComplete();
+            instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+            instanceState.setRestoreStatus(Status.FINISHED);
+
+            //Start cassandra if restore is successful.
+            cassProcess.start(true);
+        } catch (Exception e) {
+            instanceState.setRestoreStatus(Status.FAILED);
+            instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+            logger.error("Error while trying to restore: " + e.getMessage(), e);
+            throw e;
+        } finally {
+            id.getInstance().setToken(origToken);
+        }
+    }
+
+    /**
+     * Download file to the location specified. After downloading the file will be decrypted(optionally) and decompressed before saving to final location.
+     * @param path            - path of object to download from source S3/GCS.
+     * @param restoreLocation - path to the final location of the decompressed and/or decrypted file.
+     */
+    protected abstract void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception;
+
+    /**
+     * A means to wait until until all threads have completed.  It blocks calling thread
+     * until all tasks are completed.
+     */
+    protected abstract void waitToComplete();
 
     public final class BoundedList<E> extends LinkedList<E> {
 
@@ -131,300 +316,4 @@ public abstract class AbstractRestore extends Task {
             return true;
         }
     }
-
-    protected void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception {
-        if (fsIterator == null)
-            return;
-
-        BoundedList bl = new BoundedList(lastN);
-        while (fsIterator.hasNext()) {
-            AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
-                continue;
-
-            if (temp.getType() == filter) {
-                bl.add(temp);
-            }
-        }
-
-        download(bl.iterator(), filter);
-    }
-
-    /**
-     * Download to specific location
-     */
-    public final void download(final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.getKeyspace()) || path.getKeyspace().equals(SYSTEM_KEYSPACE)))
-            return;
-        count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>() {
-            @Override
-            public Integer retriableCall() throws Exception {
-                logger.info("Downloading file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
-                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
-                tracker.adjustAndAdd(path);
-                // TODO: fix me -> if there is exception the why hang?
-
-
-                logger.info("Completed download of file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
-                return count.decrementAndGet();
-            }
-        });
-    }
-
-
-    /**
-     * An overloaded download where it will not only download the object but decrypt and uncompress them
-     *
-     * @param path             - path of object to download from source.
-     * @param finalDestination - handle to the FINAL destination stream.
-     *                         Note: if this behavior is successful, it will close the output stream.
-     * @param tempFile         - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
-     *                         <p>
-     *                         Note: the temp file will be removed on successful processing.
-     *                         <p>
-     *                         algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     * @param fileCryptography - the implemented cryptography algorithm use to decrypt.
-     * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
-     * @param compress         - Compression algorithm to use to decompress.
-     */
-    private final void download(final AbstractBackupPath path, final OutputStream finalDestination, final File tempFile
-            , final IFileCryptography fileCryptography
-            , final char[] passPhrase
-            , final ICompression compress) {
-
-        if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(path.getKeyspace()) || path.getKeyspace().equals(SYSTEM_KEYSPACE)))
-            return;
-
-        count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>() {
-
-            @Override
-            public Integer retriableCall() throws Exception {
-
-                //== download object from source bucket
-                try {
-
-                    logger.info("Downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
-                    fs.download(path, new FileOutputStream(tempFile), tempFile.getAbsolutePath());
-                    tracker.adjustAndAdd(path);
-                    logger.info("Completed downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
-
-
-                } catch (Exception ex) {
-                    //This behavior is retryable; therefore, lets get to a clean state before each retry.
-                    if (tempFile.exists()) {
-                        tempFile.createNewFile();
-                    }
-
-                    throw new Exception("Exception downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath(), ex);
-                }
-
-                //== object downloaded successfully from source, decrypt it.
-                OutputStream fOut = null;  //destination file after decryption
-                File decryptedFile = new File(tempFile.getAbsolutePath() + ".decrypted");
-                try {
-
-                    InputStream in = new BufferedInputStream(new FileInputStream(tempFile.getAbsolutePath()));
-                    InputStream encryptedDataInputStream = fileCryptography.decryptStream(in, passPhrase, tempFile.getAbsolutePath());
-                    fOut = new BufferedOutputStream(new FileOutputStream(decryptedFile));
-                    Streams.pipeAll(encryptedDataInputStream, fOut);
-                    logger.info("completed decrypting file: " + tempFile.getAbsolutePath() + "to final file dest: " + decryptedFile.getAbsolutePath());
-
-                } catch (Exception ex) {
-                    //This behavior is retryable; therefore, lets get to a clean state before each retry.
-                    if (tempFile.exists()) {
-                        tempFile.createNewFile();
-                    }
-
-                    if (decryptedFile.exists()) {
-                        decryptedFile.createNewFile();
-                    }
-
-                    throw new Exception("Exception during decryption file:  " + decryptedFile.getAbsolutePath(), ex);
-
-                } finally {
-                    if (fOut != null) {
-                        fOut.close();
-                    }
-                }
-
-                //== object downloaded and decrypted successfully, now uncompress it
-                logger.info("Start uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
-                FileInputStream fileIs = null;
-                InputStream is = null;
-
-                try {
-
-                    fileIs = new FileInputStream(decryptedFile);
-                    is = new BufferedInputStream(fileIs);
-
-                    compress.decompressAndClose(is, finalDestination);
-
-                } catch (Exception ex) {
-                    IOUtils.closeQuietly(is);
-                    throw new Exception("Exception uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
-                }
-
-                logger.info("Completed uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream "
-                        + " current worker: " + Thread.currentThread().getName());
-                //if here, everything was successful for this object, lets remove unneeded file(s)
-                if (tempFile.exists())
-                    tempFile.delete();
-
-                if (decryptedFile.exists()) {
-                    decryptedFile.delete();
-                }
-
-                //Note: removal of the tempFile is responsbility of the caller as this behavior did not create it.
-
-                return count.decrementAndGet();
-
-            }
-
-        });
-
-    }
-
-
-    /**
-     * An overloaded download where it will not only download the object but also decrypt and uncompress.
-     *
-     * @param path             - path of object to download from source.
-     * @param restoreLocation  - file handle to the FINAL file on disk
-     * @param tempFile         - file handle to the downloaded file (i.e. file not decrypted yet).  To ensure widest compatibility with various encryption/decryption
-     *                         algorithm, we download the file completely to disk and then decrypt.  This is a temporary file and will be deleted once this behavior completes.
-     * @param fileCryptography - the implemented cryptography algorithm use to decrypt.
-     * @param passPhrase       - if necessary, the pass phrase use by the cryptography algorithm to decrypt.
-     * @param compress         - Compression algorithm to use to decompress.
-     */
-    public final void download(final AbstractBackupPath path, final File restoreLocation, final File tempFile
-            , final IFileCryptography fileCryptography
-            , final char[] passPhrase
-            , final ICompression compress
-    ) throws Exception {
-
-        FileOutputStream fileOs = null;
-        BufferedOutputStream os = null;
-        try {
-            fileOs = new FileOutputStream(restoreLocation);
-            os = new BufferedOutputStream(fileOs);
-            download(path, os, tempFile, fileCryptography, passPhrase, compress);
-        } catch (Exception e) {
-            fileOs.close();
-            throw new Exception("Exception in download of:  " + path.getFileName() + ", msg: " + e.getLocalizedMessage(), e);
-
-        } finally {
-
-            //Note: no need to close buffered outpust stream as it is done within the called download() behavior
-        }
-
-    }
-
-    /**
-     * A means to wait until until all threads have completed.  It blocks calling thread
-     * until all tasks (ala counter "count" is 0) are completed.
-     */
-    protected final void waitToComplete() {
-        while (count.get() != 0) {
-            try {
-                sleeper.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted: ", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
-
-    public static final boolean isRestoreEnabled(IConfiguration conf) {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac = (CollectionUtils.isEmpty(conf.getBackupRacs()) || conf.getBackupRacs().contains(conf.getRac()));
-        return (isRestoreMode && isBackedupRac);
-    }
-
-
-    protected final void stopCassProcess() throws IOException {
-        if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop();
-    }
-
-    protected final String getRestorePrefix() {
-        String prefix = "";
-
-        if (StringUtils.isNotBlank(config.getRestorePrefix()))
-            prefix = config.getRestorePrefix();
-        else
-            prefix = config.getBackupPrefix();
-
-        return prefix;
-    }
-
-    /*
-     * Fetches meta.json used to store snapshots metadata.
-     */
-    protected final void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException{
-        logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
-
-        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
-        if (!backupfiles.hasNext()) {
-            throw new IllegalStateException("meta.json not found, restore prefix: " + restorePrefix);
-        }
-
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == BackupFileType.META)
-                //Since there are now meta file for incrementals as well as snapshot, we need to find the correct one (i.e. the snapshot meta file (meta.json))
-                if (path.getFileName().equalsIgnoreCase("meta.json")) {
-                    out.add(path);
-                }
-        }
-    }
-
-
-    @Override
-    public void execute() throws Exception {
-        if (isRestoreEnabled(config)) {
-            logger.info("Starting restore for " + config.getRestoreSnapshot());
-            String[] restore = config.getRestoreSnapshot().split(",");
-            AbstractBackupPath path = pathProvider.get();
-            final Date startTime = path.parseDate(restore[0]);
-            final Date endTime = path.parseDate(restore[1]);
-            String origToken = id.getInstance().getToken();
-
-            try {
-                if (config.isRestoreClosestToken()) {
-                    restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                    id.getInstance().setToken(restoreToken.toString());
-                }
-                new RetryableCallable<Void>() {
-                    public Void retriableCall() throws Exception {
-                        logger.info("Attempting restore");
-                        restore(startTime, endTime);
-                        logger.info("Restore completed");
-
-                        // Wait for other server init to complete
-                        sleeper.sleep(30000);
-                        return null;
-                    }
-                }.call();
-            } catch (Exception e) {
-                //TODO; UNCOMMENT >>>>>>>>>>>>>>>>>>>>>>>>>>>>
-//                this.state = STATE.ERROR;
-//                this.execEndTime = new DateTime(new Date());
-            } finally {
-                id.getInstance().setToken(origToken);
-            }
-        }
-        cassProcess.start(true);
-    }
-
-    protected final AtomicInteger getFileCount() {
-        return count;
-    }
-
-    protected final void setFileCount(int cnt) {
-        count.set(cnt);
-    }
-
-    public abstract void restore(Date startTime, Date endTime) throws Exception;
 }

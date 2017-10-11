@@ -35,7 +35,7 @@ import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.TuneCassandra;
+import com.netflix.priam.tuner.TuneCassandra;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,16 +51,18 @@ public class PriamServer {
     private final InstanceIdentity id;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
+    private final RestoreContext restoreContext;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess) {
+    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess, RestoreContext restoreContext) {
         this.config = config;
         this.scheduler = scheduler;
         this.id = id;
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
+        this.restoreContext = restoreContext;
     }
 
     public void intialize() throws Exception {
@@ -108,52 +110,9 @@ public class PriamServer {
 
 
         // Determine if we need to restore from backup else start cassandra.
-        if (!config.getRestoreSnapshot().equals("")) {
-
-            if (config.getRestoreSourceType() == null || config.getRestoreSourceType().equals("")) {
-                //Restore is needed and it will be done from the primary AWS account
-
-                if (config.isEncryptBackupEnabled()) {
-                    //Data needs to be decrypted as part of the restore.
-                    scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
-                    logger.info("Scheduled task " + Restore.JOBNAME);
-
-                } else {
-                    //Data does NOT need to be decrypted as part of the restore.
-                    scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct -- default
-                    logger.info("Scheduled task " + Restore.JOBNAME);
-
-                }
-
-
-            } else {
-                //Restore is needed and it will be done either from Google or a non-primary AWS account. 
-
-                if (config.isEncryptBackupEnabled()) {
-                    //Data needs to be decrypted as part of the restore.
-
-                    if (config.getRestoreSourceType().equalsIgnoreCase((RestoreContext.SourceType.AWSCROSSACCT.toString()))) {
-                        //Retore from a non-primary AWS account
-                        scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
-                        logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
-
-                    } else if (config.getRestoreSourceType().equalsIgnoreCase(RestoreContext.SourceType.GOOGLE.toString())) {
-                        //Restore from Google Cloud Storage (GCS)
-                        scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
-                        logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
-
-                    } else {
-                        throw new UnsupportedOperationException("Source type (" + config.getRestoreSourceType() + ") for the scheduled restore not supported.");
-                    }
-
-                } else {
-                    throw new UnsupportedOperationException("For this release, Source type (" + config.getRestoreSourceType() + ") for the scheduled restore, we expect the data was encrypted.");
-                }
-
-            }
-
+        if (restoreContext.isRestoreEnabled()){
+            restoreContext.restore();
         } else { //no restores needed
-
             logger.info("No restore needed, task not scheduled");
             if (!config.doesCassandraStartManually())
                 cassProcess.start(true);                                 // Start cassandra.

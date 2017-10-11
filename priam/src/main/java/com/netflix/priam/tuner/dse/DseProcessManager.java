@@ -13,14 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.dse;
+package com.netflix.priam.tuner.dse;
 
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
-import com.netflix.priam.dse.IDseConfiguration.NodeType;
+import com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.utils.Sleeper;
 
 import java.util.Map;
 

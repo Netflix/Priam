@@ -13,13 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.restore.Restore;
-import com.netflix.priam.utils.CassandraTuner;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -32,7 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-public class StandardTuner implements CassandraTuner {
+public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
 

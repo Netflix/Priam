@@ -233,7 +233,7 @@ public class InstanceState {
                 object.put("executionStartTime", DateUtil.formatyyyyMMddHHmm(execStartTime));
                 object.put("executionEndTime", DateUtil.formatyyyyMMddHHmm(execEndTime));
                 object.put("snapshotMetaFile", snapshotMetaFile);
-                object.put("status", status.toString());
+                object.put("status", status);
                 return object;
             }catch (JSONException ex)
             {

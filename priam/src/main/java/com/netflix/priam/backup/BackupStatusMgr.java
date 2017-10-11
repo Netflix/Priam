@@ -98,7 +98,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
         metadataLinkedList.addFirst(backupMetadata);
         backupMetadataMap.put(backupMetadata.getSnapshotDate(), metadataLinkedList);
-        instanceState.setBackupStatus(backupMetadata.getStatus());
+        instanceState.setBackupStatus(backupMetadata);
         //Save the backupMetaDataMap
         save(backupMetadata);
     }
@@ -112,8 +112,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
         if (backupMetadata.getCompleted() == null)
             backupMetadata.setCompleted(Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
 
-        instanceState.setBackupStatus(backupMetadata.getStatus());
-        instanceState.setLastSuccessfulBackupTime(backupMetadata.getCompleted());
+        instanceState.setBackupStatus(backupMetadata);
 
         //Retrieve the snapshot metadata and then update the finish date/status.
         retrieveAndUpdate(backupMetadata);
@@ -152,7 +151,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
         if (backupMetadata.getStatus() != Status.FAILED)
             backupMetadata.setStatus(Status.FAILED);
 
-        instanceState.setBackupStatus(backupMetadata.getStatus());
+        instanceState.setBackupStatus(backupMetadata);
 
         //Retrieve the snapshot metadata and then update the failure date/status.
         retrieveAndUpdate(backupMetadata);

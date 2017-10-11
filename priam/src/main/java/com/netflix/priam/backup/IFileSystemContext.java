@@ -15,8 +15,10 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.inject.ImplementedBy;
 import com.netflix.priam.IConfiguration;
 
+@ImplementedBy(BackupFileSystemContext.class)
 public interface IFileSystemContext {
     public IBackupFileSystem getFileStrategy(IConfiguration config);
 }

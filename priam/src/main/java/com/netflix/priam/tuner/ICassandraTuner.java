@@ -13,15 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.utils;
+package com.netflix.priam.tuner;
 
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.defaultimpl.StandardTuner;
 
 import java.io.IOException;
 
 @ImplementedBy(StandardTuner.class)
-public interface CassandraTuner {
+public interface ICassandraTuner {
     void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException;
 
     void updateAutoBootstrap(String yamlLocation, boolean autobootstrap) throws IOException;

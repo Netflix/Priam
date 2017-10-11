@@ -44,6 +44,8 @@ public class DateUtil {
      * @return date formatted in yyyyMMdd
      */
     public static String formatyyyyMMdd(Date date) {
+        if (date == null)
+            return null;
         return DateUtils.formatDate(date, yyyyMMdd);
     }
 
@@ -54,6 +56,8 @@ public class DateUtil {
      * @return date formatted in yyyyMMddHHmm
      */
     public static String formatyyyyMMddHHmm(Date date) {
+        if (date == null)
+            return null;
         return DateUtils.formatDate(date, yyyyMMddHHmm);
     }
 

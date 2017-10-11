@@ -29,104 +29,76 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.backup.Status;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Main class for restoring data from backup
+ * Main class for restoring data from backup. Backup restored using this way are not encrypted.
  */
 @Singleton
 public class Restore extends AbstractRestore {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
-    private final ICassandraProcess cassProcess;
-    @Inject
-    private MetaData metaData;
-    private RestoreStatus restoreStatus;
+    private final ThreadPoolExecutor executor;
+    private AtomicInteger count = new AtomicInteger();
 
     @Inject
     public Restore(IConfiguration config, @Named("backup") IBackupFileSystem fs, Sleeper sleeper, ICassandraProcess cassProcess,
                    Provider<AbstractBackupPath> pathProvider,
-                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, RestoreStatus restoreStatus) {
-        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess);
-        this.cassProcess = cassProcess;
-        this.restoreStatus = restoreStatus;
+                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState) {
+        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState);
+        executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), JOBNAME);
+        executor.allowCoreThreadTimeOut(true);
     }
 
+    @Override
+    protected final void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception {
+        count.incrementAndGet();
+        executor.submit(new RetryableCallable<Integer>() {
+            @Override
+            public Integer retriableCall() throws Exception {
+                logger.info("Downloading file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
+                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
+                tracker.adjustAndAdd(path);
+                // TODO: fix me -> if there is exception the why hang?
+                logger.info("Completed download of file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
+                return count.decrementAndGet();
+            }
+        });
+    }
 
-    /**
-     * Restore backup data for the specified time range
-     */
-    public void restore(Date startTime, Date endTime) throws Exception {
-
-        restoreStatus.resetStatus();
-        restoreStatus.setStartDateRange(DateUtil.convert(startTime));
-        restoreStatus.setEndDateRange(DateUtil.convert(endTime));
-        restoreStatus.setExecStartTime(LocalDateTime.now());
-        restoreStatus.setStatus(Status.STARTED);
-
-        // Stop cassandra if its running and restoring all keyspaces
-        stopCassProcess();
-
-        // Cleanup local data
-        SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
-
-        // Try and read the Meta file.
-        List<AbstractBackupPath> metas = Lists.newArrayList();
-        String prefix = getRestorePrefix();
-        fetchSnapshotMetaFile(prefix, metas, startTime, endTime);
-
-        if (metas.size() == 0) {
-            logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
-            restoreStatus.setExecEndTime(LocalDateTime.now());
-            restoreStatus.setStatus(Status.FINISHED);
-            return;
+    @Override
+    protected final void waitToComplete() {
+        while (count.get() != 0) {
+            try {
+                sleeper.sleep(1000);
+            } catch (InterruptedException e) {
+                logger.error("Interrupted: ", e);
+                Thread.currentThread().interrupt();
+            }
         }
-
-        Collections.sort(metas);
-        AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-        logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
-        restoreStatus.setSnapshotMetaFile(meta.getRemotePath());
-
-        // Download snapshot which is listed in the meta file.
-        List<AbstractBackupPath> snapshots = metaData.get(meta);
-        download(snapshots.iterator(), BackupFileType.SNAP);
-
-        logger.info("Downloading incrementals");
-        // Download incrementals (SST) after the snapshot meta file.
-        Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.getTime(), endTime);
-        download(incrementals, BackupFileType.SST);
-
-        //Downloading CommitLogs
-        if (config.isBackingUpCommitLogs())  //TODO: will change to isRestoringCommitLogs()
-        {
-            logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
-            SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
-
-            logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
-            SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
-
-            Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.getTime(), endTime);
-            download(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());
-        }
-
-        restoreStatus.setExecEndTime(LocalDateTime.now());
-        restoreStatus.setStatus(Status.FINISHED);
     }
 
     public static TaskTimer getTimer() {

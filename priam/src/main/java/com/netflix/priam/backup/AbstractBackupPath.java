@@ -42,7 +42,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private static final String FMT = "yyyyMMddHHmm";
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern(FMT);
     public static final char PATH_SEP = File.separatorChar;
-    public static final Pattern clPattern = Pattern.compile(".*CommitLog-(\\d{13}).log");
 
     public enum BackupFileType {
         SNAP, SST, CL, META

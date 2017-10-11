@@ -16,41 +16,121 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Inject;
+import com.netflix.priam.IConfiguration;
+import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * At run-time, determine the source type to restore from.
  */
 public class RestoreContext {
-
-    private IRestoreStrategy restoreObj = null;
-    private AwsCrossAccountCryptographyRestoreStrategy awsCrossAccountCryptographyRestoreStrategy;
-    private GoogleCryptographyRestoreStrategy googleCryptographyRestoreStrategy;
+    private final PriamScheduler scheduler;
+    private final IConfiguration config;
+    private static final Logger logger = LoggerFactory.getLogger(RestoreContext.class);
 
     @Inject
-    public RestoreContext(AwsCrossAccountCryptographyRestoreStrategy aws, GoogleCryptographyRestoreStrategy gcs) {
-        this.awsCrossAccountCryptographyRestoreStrategy = aws;
-        this.googleCryptographyRestoreStrategy = gcs;
+    public RestoreContext(IConfiguration config, PriamScheduler scheduler) {
+        this.config = config;
+        this.scheduler = scheduler;
     }
 
-    public IRestoreStrategy getRestoreObj(SourceType srcType) {
-        if (srcType == null) {
-            return null; //not fatal as the client should account for this use case
+    public boolean isRestoreEnabled(){
+        return !StringUtils.isEmpty(config.getRestoreSnapshot());
+    }
+
+    public void restore() throws Exception {
+        if (!isRestoreEnabled())
+            return;
+
+        //Restore is required.
+        if (StringUtils.isEmpty(config.getRestoreSourceType()) && !config.isRestoreEncrypted()) {
+            //Restore is needed and it will be done from the primary AWS account
+            scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct
+            logger.info("Scheduled task " + Restore.JOBNAME);
+        } else if (config.isRestoreEncrypted()) {
+            SourceType sourceType = SourceType.lookup(config.getRestoreSourceType(), true, false);
+
+            if (sourceType == null)
+            {
+                scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
+                logger.info("Scheduled task " + Restore.JOBNAME);
+                return;
+            }
+
+            switch (sourceType) {
+                case AWSCROSSACCT:
+                    scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
+                    logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
+                    break;
+
+                case GOOGLE:
+                    scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
+                    logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
+                    break;
+            }
+        }
+    }
+
+    enum SourceType {
+        AWSCROSSACCT("AWSCROSSACCT"), GOOGLE("GOOGLE");
+
+        private static final Logger logger = LoggerFactory.getLogger(SourceType.class);
+
+        private final String sourceType;
+
+        SourceType(String sourceType) {
+            this.sourceType = sourceType.toUpperCase();
         }
 
-        if (srcType.equals(SourceType.GOOGLE)) {
-            this.restoreObj = this.googleCryptographyRestoreStrategy;
-        } else if (srcType.equals(SourceType.AWSCROSSACCT)) {
-            this.restoreObj = this.awsCrossAccountCryptographyRestoreStrategy;
+        public static SourceType lookup(String sourceType, boolean acceptNullOrEmpty, boolean acceptIllegalValue) throws UnsupportedTypeException {
+            if (StringUtils.isEmpty(sourceType))
+                if (acceptNullOrEmpty)
+                    return null;
+                else {
+                    String message = String.format("%s is not a supported SourceType. Supported values are %s", sourceType, getSupportedValues());
+                    logger.error(message);
+                    throw new UnsupportedTypeException(message);
+                }
+
+            try {
+                return SourceType.valueOf(sourceType.toUpperCase());
+            } catch (IllegalArgumentException ex) {
+                String message = String.format("%s is not a supported SourceType. Supported values are %s", sourceType, getSupportedValues());
+
+                if (acceptIllegalValue) {
+                    message = message + ". Since acceptIllegalValue is set to True, returning NULL instead.";
+                    logger.error(message);
+                    return null;
+                }
+
+                logger.error(message);
+                throw new UnsupportedTypeException(message, ex);
+            }
         }
 
-        return this.restoreObj;
+
+        private static String getSupportedValues() {
+            StringBuffer supportedValues = new StringBuffer();
+            boolean first = true;
+            for (SourceType type : SourceType.values()) {
+                if (!first)
+                    supportedValues.append(",");
+                supportedValues.append(type);
+                first = false;
+            }
+
+            return supportedValues.toString();
+        }
+
+        public static SourceType lookup(String sourceType) throws UnsupportedTypeException {
+            return lookup(sourceType, false, false);
+        }
+
+        public String getSourceType() {
+            return sourceType;
+        }
     }
-
-    public enum SourceType {
-        AWSCROSSACCT, GOOGLE
-    }
-
-    ;
-
-
 }

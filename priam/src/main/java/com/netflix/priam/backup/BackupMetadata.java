@@ -18,6 +18,7 @@ package com.netflix.priam.backup;
 
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -154,25 +155,8 @@ final public class BackupMetadata implements Serializable {
     }
 
     @Override
-    public String toString() {
-        return (getJSON() == null) ? null : getJSON().toString();
-    }
-
-    public JSONObject getJSON()
+    public String toString()
     {
-        try {
-            JSONObject object = new JSONObject();
-            object.put("snapshotDate", snapshotDate);
-            object.put("token", token);
-            object.put("start", DateUtil.formatyyyyMMddHHmm(start));
-            object.put("completed", DateUtil.formatyyyyMMddHHmm(completed));
-            object.put("status", status);
-            object.put("snapshotLocation", snapshotLocation);
-            return object;
-        }catch (JSONException ex)
-        {
-            logger.error("JSONException during toString representation of InstanceState.", ex);
-        }
-        return null;
+        return GsonJsonSerializer.getGson().toJson(this);
     }
 }

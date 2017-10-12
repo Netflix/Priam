@@ -21,9 +21,9 @@ import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +60,7 @@ public class InstanceState {
     private final AtomicBoolean isHealthy = new AtomicBoolean(false);
 
     //Backup status
-    private BackupMetadata backupMetadata;
+    private BackupMetadata backupStatus;
 
     //Restore status
     private RestoreStatus restoreStatus;
@@ -72,30 +72,7 @@ public class InstanceState {
 
     @Override
     public String toString() {
-        try {
-            JSONObject object = new JSONObject();
-            object.put("isHealthy", isHealthy.get());
-            object.put("isBootstrapping", isBootstrapping.get());
-            object.put("nodeState", nodeState);
-            object.put("bootstrapTime", DateUtil.formatyyyyMMddHHmm(bootstrapTime));
-            object.put("isCassandraProcessAlive", isCassandraProcessAlive.get());
-            object.put("isGossipActive", isGossipActive.get());
-            object.put("isThriftActive", isThriftActive.get());
-            object.put("isNativeTransportActive", isNativeTransportActive.get());
-            object.put("isRequiredDirectoriesExist", isRequiredDirectoriesExist.get());
-            object.put("isYamlWritten", isYmlWritten.get());
-
-            if (backupMetadata != null)
-                object.put("backupStatus", backupMetadata.getJSON());
-            else object.put("backupStatus", backupMetadata);
-
-            object.put("restoreStatus", restoreStatus.getJSON());
-            return object.toString();
-        }catch (JSONException ex)
-        {
-            logger.error("JSONException during toString representation of InstanceState.", ex);
-        }
-        return null;
+        return GsonJsonSerializer.getGson().toJson(this);
     }
 
     public boolean isGossipActive() {
@@ -170,11 +147,11 @@ public class InstanceState {
 
     /* Backup */
     public BackupMetadata getBackupStatus() {
-        return backupMetadata;
+        return backupStatus;
     }
 
     public void setBackupStatus(BackupMetadata backupMetadata) {
-        this.backupMetadata = backupMetadata;
+        this.backupStatus = backupMetadata;
     }
 
     /* Restore */
@@ -209,7 +186,7 @@ public class InstanceState {
 
     public static class RestoreStatus {
         private LocalDateTime startDateRange, endDateRange; //Date range to restore from
-        private LocalDateTime execStartTime, execEndTime; //Start-end time of the actual restore execution
+        private LocalDateTime executionStartTime, executionEndTime; //Start-end time of the actual restore execution
         private String snapshotMetaFile; //Location of the snapshot meta file selected for restore.
         private Status status;  //the state of a restore.  Note: this is different than the "status" of a Task.
 
@@ -217,29 +194,12 @@ public class InstanceState {
             this.snapshotMetaFile = null;
             this.status = null;
             this.startDateRange = endDateRange = null;
-            this.execStartTime = this.execEndTime = null;
+            this.executionStartTime = this.executionEndTime = null;
         }
 
         @Override
         public String toString() {
-            return (getJSON() == null) ? null : getJSON().toString();
-        }
-
-        public JSONObject getJSON(){
-            try {
-                JSONObject object = new JSONObject();
-                object.put("startDateRange", DateUtil.formatyyyyMMddHHmm(startDateRange));
-                object.put("endDateRange", DateUtil.formatyyyyMMddHHmm(endDateRange));
-                object.put("executionStartTime", DateUtil.formatyyyyMMddHHmm(execStartTime));
-                object.put("executionEndTime", DateUtil.formatyyyyMMddHHmm(execEndTime));
-                object.put("snapshotMetaFile", snapshotMetaFile);
-                object.put("status", status);
-                return object;
-            }catch (JSONException ex)
-            {
-                logger.error("JSONException during toString representation of RestoreStatus.", ex);
-            }
-            return null;
+            return GsonJsonSerializer.getGson().toJson(this);
         }
 
         public Status getStatus() {
@@ -254,12 +214,12 @@ public class InstanceState {
             this.endDateRange = endDateRange;
         }
 
-        public void setExecStartTime(LocalDateTime execStartTime) {
-            this.execStartTime = execStartTime;
+        public void setExecutionStartTime(LocalDateTime executionStartTime) {
+            this.executionStartTime = executionStartTime;
         }
 
-        public void setExecEndTime(LocalDateTime execEndTime) {
-            this.execEndTime = execEndTime;
+        public void setExecutionEndTime(LocalDateTime executionEndTime) {
+            this.executionEndTime = executionEndTime;
         }
 
         public LocalDateTime getStartDateRange() {
@@ -270,12 +230,12 @@ public class InstanceState {
             return endDateRange;
         }
 
-        public LocalDateTime getExecStartTime() {
-            return execStartTime;
+        public LocalDateTime getExecutionStartTime() {
+            return executionStartTime;
         }
 
-        public LocalDateTime getExecEndTime() {
-            return execEndTime;
+        public LocalDateTime getExecutionEndTime() {
+            return executionEndTime;
         }
 
         public String getSnapshotMetaFile() {

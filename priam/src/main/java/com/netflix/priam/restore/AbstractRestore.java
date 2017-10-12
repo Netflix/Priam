@@ -18,7 +18,6 @@ package com.netflix.priam.restore;
 
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
@@ -26,7 +25,6 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -39,8 +37,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A means to perform a restore.  This class contains the following characteristics:
@@ -207,7 +203,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         instanceState.getRestoreStatus().resetStatus();
         instanceState.getRestoreStatus().setStartDateRange(DateUtil.convert(startTime));
         instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
-        instanceState.getRestoreStatus().setExecStartTime(LocalDateTime.now());
+        instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
         instanceState.setRestoreStatus(Status.STARTED);
         String origToken = id.getInstance().getToken();
 
@@ -230,7 +226,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
             if (metas.size() == 0) {
                 logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
-                instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+                instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
                 instanceState.setRestoreStatus(Status.FINISHED);
                 return;
             }
@@ -271,14 +267,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
             //Ensure all the files are downloaded before declaring restore as finished.
             waitToComplete();
-            instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
 
             //Start cassandra if restore is successful.
             cassProcess.start(true);
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
-            instanceState.getRestoreStatus().setExecEndTime(LocalDateTime.now());
+            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             logger.error("Error while trying to restore: " + e.getMessage(), e);
             throw e;
         } finally {

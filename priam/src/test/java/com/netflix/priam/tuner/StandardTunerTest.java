@@ -15,11 +15,12 @@
  *
  */
 
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.tuner;
 
 import com.google.common.io.Files;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.tuner.StandardTuner;
 import org.junit.Before;
 import org.junit.Test;
 

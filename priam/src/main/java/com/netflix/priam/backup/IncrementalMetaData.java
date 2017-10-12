@@ -29,7 +29,7 @@ public class IncrementalMetaData extends MetaData {
     private String metaFileName = null; //format meta_cf_time (e.g.
 
     @Inject
-    public IncrementalMetaData(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx) {
+    public IncrementalMetaData(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx) {
         super(pathFactory, backupFileSystemCtx, config);
     }
 

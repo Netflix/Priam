@@ -27,6 +27,7 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -38,7 +39,7 @@ import org.slf4j.LoggerFactory;
  * A strategy to restore encrypted data from a primary AWS account
  */
 @Singleton
-public class EncryptedRestoreStrategy extends RestoreBase {
+public class EncryptedRestoreStrategy extends EncryptedRestoreBase {
     private static final Logger logger = LoggerFactory.getLogger(EncryptedRestoreStrategy.class);
     public static final String JOBNAME = "CRYPTOGRAPHY_RESTORE_JOB";
 
@@ -48,10 +49,10 @@ public class EncryptedRestoreStrategy extends RestoreBase {
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
             , @Named("pgpcredential") ICredentialGeneric credential
             , ICompression compress, Provider<AbstractBackupPath> pathProvider,
-                                    InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData
+                                    InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState
     ) {
 
-        super(config, fs, JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData);
+        super(config, fs, JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData, instanceState);
     }
 
     /*

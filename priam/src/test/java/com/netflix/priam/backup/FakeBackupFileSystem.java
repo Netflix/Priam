@@ -73,7 +73,6 @@ public class FakeBackupFileSystem implements IBackupFileSystem {
         flist.add(path);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
         try {
@@ -87,7 +86,10 @@ public class FakeBackupFileSystem implements IBackupFileSystem {
                             jsonObj.add(filePath.getRemotePath());
                     }
                     fr.write(jsonObj.toJSONString());
-                } finally {
+                    fr.flush();
+                }
+                finally
+                {
                     IOUtils.closeQuietly(fr);
                 }
             }
@@ -156,31 +158,10 @@ public class FakeBackupFileSystem implements IBackupFileSystem {
 
     }
 
-    @Override
-    public void download(AbstractBackupPath path, OutputStream os,
-                         String diskPath) throws BackupRestoreException {
-
-        try {
-            if (path.type == BackupFileType.META) {
-                // List all files and generate the file
-                FileWriter fr = new FileWriter(path.newRestoreFile());
-                try {
-                    JSONArray jsonObj = new JSONArray();
-                    for (AbstractBackupPath filePath : flist) {
-                        if (filePath.type == BackupFileType.SNAP)
-                            jsonObj.add(filePath.getRemotePath());
-                    }
-                    fr.write(jsonObj.toJSONString());
-                } finally {
-                    IOUtils.closeQuietly(fr);
-                }
-            }
-            downloadedFiles.add(path.getRemotePath());
-            System.out.println("Downloading " + path.getRemotePath());
-        } catch (IOException io) {
-            throw new BackupRestoreException(io.getMessage(), io);
-        }
-
-    }
+	@Override
+	public void download(AbstractBackupPath path, OutputStream os,
+			String diskPath) throws BackupRestoreException {
+      download(path, os);
+	}
 
 }

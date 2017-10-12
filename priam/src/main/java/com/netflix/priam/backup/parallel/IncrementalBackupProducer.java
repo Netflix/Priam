@@ -45,7 +45,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     private BackupRestoreUtil backupRestoreUtil;
 
     @Inject
-    public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx
+    public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
             , IncrementalMetaData metaData
             , @Named("backup") ITaskQueueMgr taskQueueMgr
             , BackupNotificationMgr backupNotificationMgr

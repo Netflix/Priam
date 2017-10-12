@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.utils;
+package com.netflix.priam.tuner;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -32,11 +32,11 @@ import java.io.IOException;
 public class TuneCassandra extends Task {
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
     public static final String JOBNAME = "Tune-Cassandra";
-    private final CassandraTuner tuner;
+    private final ICassandraTuner tuner;
     private InstanceState instanceState;
 
     @Inject
-    public TuneCassandra(IConfiguration config, CassandraTuner tuner, InstanceState instanceState) {
+    public TuneCassandra(IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {
         super(config);
         this.tuner = tuner;
         this.instanceState = instanceState;

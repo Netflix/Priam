@@ -15,11 +15,15 @@
  *
  */
 
-package com.netflix.priam.dse;
+package com.netflix.priam.tuner.dse;
 
 import com.google.common.io.Files;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.dse.DseConfigStub;
+import com.netflix.priam.tuner.dse.AuditLogTunerLog4J;
+import com.netflix.priam.tuner.dse.AuditLogTunerYaml;
+import com.netflix.priam.tuner.dse.DseTuner;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

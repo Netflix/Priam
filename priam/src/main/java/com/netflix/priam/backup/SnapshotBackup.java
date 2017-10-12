@@ -62,7 +62,7 @@ public class SnapshotBackup extends AbstractBackup {
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
-                          MetaData metaData, CommitLogBackup clBackup, @Named("backup") IFileSystemContext backupFileSystemCtx
+                          MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
             , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);

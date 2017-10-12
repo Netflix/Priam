@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backup;
 
+
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
@@ -29,7 +30,7 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
-import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceEnvIdentity;
@@ -62,18 +63,18 @@ public class BRTestModule extends AbstractModule {
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
-        bind(ICassandraProcess.class).to(CassandraProcessManager.class);
+        //bind(ICassandraProcess.class).to(CassandraProcessManager.class);
 
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class); //for backward compatibility, unit test always create new tokens        
         bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);
 
-        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
+        bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
     }
 }

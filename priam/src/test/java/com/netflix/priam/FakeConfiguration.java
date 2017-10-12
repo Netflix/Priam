@@ -176,6 +176,11 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
+    public boolean isRestoreEncrypted(){
+        return false;
+    }
+
+    @Override
     public String getAppName() {
         return appName;
     }

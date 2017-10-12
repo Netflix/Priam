@@ -541,6 +541,12 @@ public interface IConfiguration {
      */
     public boolean isEncryptBackupEnabled();
 
+    /**
+     * Data that needs to be restored is encrypted?
+     * @return true if data that needs to be restored is encrypted. Note that setting this value does not play any role until {@link #getRestoreSnapshot()} is set to a non-null value.
+     */
+    public boolean isRestoreEncrypted();
+
     /*
      * @return the Amazon Resource Name (ARN).  This is applicable when restoring from an AWS account which requires cross account assumption. 
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.

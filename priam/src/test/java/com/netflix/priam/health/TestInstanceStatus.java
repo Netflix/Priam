@@ -3,7 +3,8 @@ package com.netflix.priam.health;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
-import junit.framework.Assert;
+import com.netflix.priam.backup.Status;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -24,16 +25,21 @@ public class TestInstanceStatus {
     @Test
     public void testHealth(){
         //Verify good health.
-        Assert.assertTrue(testInstanceState.setParams(true, true, true, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true, true, true, true, false, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true, true, true, false, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(false,true, true, true, true, false, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(false,true, true, true, false, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true,false, true, true, false, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true,true, false, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true,true, true, false, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true,true, true, true, true, true, false).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true,true, true, true, false, false, true).isHealthy());
 
         //Negative health case scenarios.
-        Assert.assertFalse(testInstanceState.setParams(false, true, true, false, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(true, false, true, true, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(true, true, false, true, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(true, true, true, true, true, false).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(true, true, true, false, false, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false,false, true, true, false, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false,true, false, true, true, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false,true, true, false, true, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false,true, true, true, true, true, false).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false,true, true, true, false, false, true).isHealthy());
     }
 
     private class TestInstanceState{
@@ -43,13 +49,19 @@ public class TestInstanceStatus {
             this.instanceState = instanceState1;
         }
 
-        InstanceState setParams(boolean isYmlWritten, boolean isCassandraProcessAlive, boolean isGossipEnabled, boolean isThriftEnabled, boolean isNativeEnabled, boolean isRequiredDirectoriesExist){
+        InstanceState setParams(boolean isRestoring, boolean isYmlWritten, boolean isCassandraProcessAlive, boolean isGossipEnabled, boolean isThriftEnabled, boolean isNativeEnabled, boolean isRequiredDirectoriesExist){
             instanceState.setYmlWritten(isYmlWritten);
             instanceState.setCassandraProcessAlive(isCassandraProcessAlive);
             instanceState.setIsNativeTransportActive(isNativeEnabled);
             instanceState.setIsThriftActive(isThriftEnabled);
             instanceState.setIsGossipActive(isGossipEnabled);
             instanceState.setIsRequiredDirectoriesExist(isRequiredDirectoriesExist);
+
+            if (isRestoring)
+                instanceState.setRestoreStatus(Status.STARTED);
+            else
+                instanceState.setRestoreStatus(Status.FINISHED);
+
             return instanceState;
         }
     }

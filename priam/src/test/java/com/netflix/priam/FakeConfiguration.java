@@ -687,7 +687,12 @@ public class FakeConfiguration implements IConfiguration
 		return false;
 	}
 
-	@Override
+    @Override
+    public boolean isRestoreEncrypted() {
+        return false;
+    }
+
+    @Override
 	public String getAWSRoleAssumptionArn() {
 		return null;
 	}

@@ -41,8 +41,6 @@ import com.netflix.priam.identity.AwsInstanceEnvIdentity;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.*;
 import com.netflix.priam.merics.BackupMetricsMgr;
-import com.netflix.priam.restore.EncryptedRestoreStrategy;
-import com.netflix.priam.restore.IRestoreStrategy;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -58,7 +56,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
 
         bind(S3CrossAccountFileSystem.class);
-        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
 
         bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
         bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);
@@ -66,7 +63,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
-        bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
         bind(ICredential.class).to(ClearCredential.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);

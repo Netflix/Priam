@@ -18,6 +18,7 @@
 package com.netflix.priam.utils;
 
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
 
 import javax.inject.Singleton;
@@ -44,6 +45,8 @@ public class DateUtil {
      * @return date formatted in yyyyMMdd
      */
     public static String formatyyyyMMdd(Date date) {
+        if (date == null)
+            return null;
         return DateUtils.formatDate(date, yyyyMMdd);
     }
 
@@ -54,6 +57,8 @@ public class DateUtil {
      * @return date formatted in yyyyMMddHHmm
      */
     public static String formatyyyyMMddHHmm(Date date) {
+        if (date == null)
+            return null;
         return DateUtils.formatDate(date, yyyyMMddHHmm);
     }
 
@@ -75,6 +80,8 @@ public class DateUtil {
      * @return the parsed date or null if input could not be parsed
      */
     public static Date getDate(String date) {
+        if (StringUtils.isEmpty(date))
+            return null;
         return DateUtils.parseDate(date, patterns);
     }
 
@@ -108,6 +115,24 @@ public class DateUtil {
     public static String formatyyyyMMddHHmm(LocalDateTime date) {
         if (date == null) return null;
         return date.format(DateTimeFormatter.ofPattern(yyyyMMddHHmm));
+    }
+
+    /**
+     * Parse the string to LocalDateTime
+     *
+     * @param date to parse. Accepted formats are yyyyMMddHHmm and yyyyMMdd
+     * @return the parsed LocalDateTime or null if input could not be parsed
+     */
+    public static LocalDateTime getLocalDateTime(String date){
+        if (StringUtils.isEmpty(date))
+            return null;
+
+        for (String pattern : patterns){
+            LocalDateTime localDateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(pattern));
+            if (localDateTime != null)
+                return localDateTime;
+        }
+        return null;
     }
 
 }

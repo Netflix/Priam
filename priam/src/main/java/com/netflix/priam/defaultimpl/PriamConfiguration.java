@@ -641,6 +641,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public boolean isRestoreEncrypted(){
+        return config.get(PRIAM_PRE + ".encrypted.restore.enabled", false);
+    }
+
+    @Override
     public String getDC() {
         return config.get(CONFIG_REGION_NAME, "");
     }

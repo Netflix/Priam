@@ -53,7 +53,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     private List<EventObserver> observers = new ArrayList<>();
 
     @Inject
-    public AbstractBackup(IConfiguration config, @Named("backup") IFileSystemContext backupFileSystemCtx,
+    public AbstractBackup(IConfiguration config, IFileSystemContext backupFileSystemCtx,
                           Provider<AbstractBackupPath> pathFactory,
                           BackupNotificationMgr backupNotificationMgr) {
         super(config);

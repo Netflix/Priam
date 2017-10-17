@@ -26,11 +26,11 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
-import com.netflix.priam.restore.RestoreStatus;
 import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.TokenManager;
@@ -69,20 +69,20 @@ public class BackupServletTest
     private RestoreServlet restoreResource;
     private BackupVerification backupVerification;
     private static Injector injector;
-    private RestoreStatus restoreStatus;
+    private InstanceState instanceState;
 
     @Before
     public void setUp()
     {
         injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
-        restoreStatus = injector.getInstance(RestoreStatus.class);
+        instanceState = injector.getInstance(InstanceState.class);
         this.tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
             tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr,backupVerification);
 
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
-        		, tokenManager, restoreStatus);
+        		, tokenManager, instanceState);
     }
 
     @Test

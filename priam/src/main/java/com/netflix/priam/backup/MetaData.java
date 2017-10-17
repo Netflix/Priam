@@ -48,7 +48,7 @@ public class MetaData {
     private final IBackupFileSystem fs;
 
     @Inject
-    public MetaData(Provider<AbstractBackupPath> pathFactory, @Named("backup") IFileSystemContext backupFileSystemCtx, IConfiguration config)
+    public MetaData(Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx, IConfiguration config)
 
     {
         this.pathFactory = pathFactory;
@@ -178,32 +178,4 @@ public class MetaData {
         logger.debug("Transformed file " + input.getAbsolutePath() + " to JSON.  Number of JSON elements: " + files.size());
         return files;
     }
-
-
-    /*
-     * A list of data files within a meta backup file.  The meta backup file can be
-     * daily snapshot (meta.json) or incrementals (meta_keyspace_cf_date.json)
-     *
-     * @param meta data file to derive the list of data files.  The meta data file can be meta.json or meta_keyspace_cf_date.json
-     * @return a list of data files (*.db)
-     */
-    public List<AbstractBackupPath> get(final AbstractBackupPath meta) {
-        List<AbstractBackupPath> files = Lists.newArrayList();
-        try {
-            new RetryableCallable<Void>() {
-                @Override
-                public Void retriableCall() throws Exception {
-                    fs.download(meta, new FileOutputStream(meta.newRestoreFile()));
-                    return null;
-                }
-            }.call();
-
-            File file = meta.newRestoreFile();
-            files = toJson(file);
-        } catch (Exception ex) {
-            logger.error("Error downloading the Meta data try with a diffrent date...", ex);
-        }
-        return files;
-    }
-
 }

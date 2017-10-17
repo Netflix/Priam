@@ -27,6 +27,7 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -35,7 +36,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @Singleton
-public class GoogleCryptographyRestoreStrategy extends RestoreBase implements IRestoreStrategy {
+public class GoogleCryptographyRestoreStrategy extends EncryptedRestoreBase {
     private static final Logger logger = LoggerFactory.getLogger(GoogleCryptographyRestoreStrategy.class);
     public static final String JOBNAME = "GOOGLECLOUDSTORAGE_RESTORE_JOB";
 
@@ -44,9 +45,9 @@ public class GoogleCryptographyRestoreStrategy extends RestoreBase implements IR
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
             , @Named("pgpcredential") ICredentialGeneric credential
             , ICompression compress, Provider<AbstractBackupPath> pathProvider,
-                                             InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData
+                                             InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState
     ) {
-        super(config, fs, JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData);
+        super(config, fs, JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData, instanceState);
     }
 
 

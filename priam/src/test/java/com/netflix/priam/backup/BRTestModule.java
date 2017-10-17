@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.merics.BackupMetricsMgr;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.merics.NoOpMetricPublisher;
@@ -79,18 +80,18 @@ public class BRTestModule extends AbstractModule
         bind(ICompression.class).to(SnappyCompression.class);
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(ITokenManager.class).to(TokenManager.class);
-        bind(ICassandraProcess.class).to(CassandraProcessManager.class);
+        //bind(ICassandraProcess.class).to(CassandraProcessManager.class);
 
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class); //for backward compatibility, unit test always create new tokens        
         bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);
 
-        bind(IFileSystemContext.class).annotatedWith(Names.named("backup")).to(BackupFileSystemContext.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(FakedS3EncryptedFileSystem.class);
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
+        bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
     }
 }

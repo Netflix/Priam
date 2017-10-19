@@ -133,9 +133,9 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
         AmazonS3 s3Client = getS3Client();
         String clusterPath = pathProvider.get().clusterPrefix("");
-        logger.debug("Bucket: " + config.getBackupPrefix());
+        logger.debug("Bucket: {}", config.getBackupPrefix());
         BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(config.getBackupPrefix());
-        logger.debug("Got bucket:" + config.getBackupPrefix() + " lifecycle." + lifeConfig);
+        logger.debug("Got bucket:{} lifecycle.{}", config.getBackupPrefix(), lifeConfig);
         if (lifeConfig == null) {
             lifeConfig = new BucketLifecycleConfiguration();
             List<Rule> rules = Lists.newArrayList();
@@ -204,10 +204,10 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
                 speedInKBps = (double) sizeInBytes;
             }
 
-            logger.info("Upload rate for file: " + path.getFileName()
-                    + ", elapsse time in sec(s): " + elapseTimeInSecs
-                    + ", KB per sec: " + speedInKBps
-            );
+            logger.info("Upload rate for file: {}"
+                    + ", elapsse time in sec(s): {}"
+                    + ", KB per sec: {}",
+                    path.getFileName(), elapseTimeInSecs, speedInKBps);
 
             /*
             This measurement is different than most others.  Other measurements are applicable to all occurrences (e.g
@@ -223,7 +223,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             this.metricPublisher.publish(awsSlowDownMeasurement); //signal of possible throttling by aws
 
         } catch (Exception e) {
-            logger.error("Post processing of file " + path.getFileName() + " failed, not fatal.", e);
+            logger.error("Post processing of file {} failed, not fatal.", path.getFileName(), e);
         }
     }
 
@@ -242,7 +242,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected void logDiagnosticInfo(AbstractBackupPath fileUploaded, CompleteMultipartUploadResult res) {
         File f = fileUploaded.getBackupFile();
         String fName = f.getAbsolutePath();
-        logger.info("Uploaded file: " + fName + ", object eTag: " + res.getETag());
+        logger.info("Uploaded file: {}, object eTag: {}", fName, res.getETag());
     }
 
     @Override
@@ -281,11 +281,11 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             if (amazoneErrorCode != null && !amazoneErrorCode.isEmpty()) {
                 if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
                     awsSlowDownExceptionCounter += 1;
-                    logger.warn("Received slow down from AWS when uploading file: " + path.getFileName());
+                    logger.warn("Received slow down from AWS when uploading file: {}", path.getFileName());
                 }
             }
         }
-        logger.error("Error uploading file " + path.getFileName() + ", a datapart was not uploaded.", e);
+        logger.error("Error uploading file {}, a datapart was not uploaded.", path.getFileName(), e);
         s3PartUploader.abortUpload();
         notifyEventFailure(new BackupEvent(path));
         return new BackupRestoreException("Error uploading file " + path.getFileName(), e);
@@ -313,7 +313,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
     @Override
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
-        logger.info("Downloading " + path.getRemotePath() + " from S3 bucket " + getPrefix(this.config));
+        logger.info("Downloading {} from S3 bucket {}", path.getRemotePath(), getPrefix(this.config));
         downloadCount.incrementAndGet();
         long contentLen = s3Client.getObjectMetadata(getPrefix(config), path.getRemotePath()).getContentLength();
         path.setSize(contentLen);

@@ -78,11 +78,11 @@ public class BackupVerification {
         }
 
         result.snapshotTime = DateUtil.formatyyyyMMddHHmm(latestDate);
-        logger.info("Latest/Requested snapshot date found: " + result.snapshotTime + ", for selected/provided date: " + result.selectedDate);
+        logger.info("Latest/Requested snapshot date found: {}, for selected/provided date: {}", result.snapshotTime, result.selectedDate);
 
         //Get Backup File Iterator
         String prefix = config.getBackupPrefix();
-        logger.info("Looking for meta file in the location:  " + prefix);
+        logger.info("Looking for meta file in the location:  {}", prefix);
 
         Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
         Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
@@ -106,7 +106,7 @@ public class BackupVerification {
         }
 
         if (metas.size() == 0) {
-            logger.error("No meta found for snapshotdate: " + DateUtil.formatyyyyMMddHHmm(latestDate));
+            logger.error("No meta found for snapshotdate: {}", DateUtil.formatyyyyMMddHHmm(latestDate));
             return result;
         }
 
@@ -115,7 +115,7 @@ public class BackupVerification {
         List<String> metaFileList = new ArrayList<>();
         try {
             bkpStatusFs.download(metas.get(0), new FileOutputStream("tmp_meta.json"));
-            logger.info("Meta file successfully downloaded to localhost: " + metas.get(0));
+            logger.info("Meta file successfully downloaded to localhost: {}", metas.get(0));
 
             JSONParser jsonParser = new JSONParser();
             org.json.simple.JSONArray fileList = (org.json.simple.JSONArray) jsonParser.parse(new FileReader("tmp_meta.json"));
@@ -123,7 +123,7 @@ public class BackupVerification {
                 metaFileList.add(fileList.get(i).toString());
 
         } catch (Exception e) {
-            logger.error("Error while fetching meta.json from path: " + metas.get(0), e);
+            logger.error("Error while fetching meta.json from path: {}", metas.get(0), e);
             return result;
         }
 

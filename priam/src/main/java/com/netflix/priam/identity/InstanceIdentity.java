@@ -115,14 +115,16 @@ public class InstanceIdentity {
                     if (ins.getInstanceId().equals(config.getInstanceName())) {
                         ins.setOutOfService(true);
                         logger.info("[Dead]  found that this node is dead."
-                                + " application: " + ins.getApp()
-                                + ", id: " + ins.getId()
-                                + ", intsance: " + ins.getInstanceId()
-                                + ", region: " + ins.getDC()
-                                + ", host ip: " + ins.getHostIP()
-                                + ", host name: " + ins.getHostName()
-                                + ", token: " + ins.getToken()
-                        );
+                                + " application: {}"
+                                + ", id: {}"
+                                + ", instance: {}"
+                                + ", region: {}"
+                                + ", host ip: {}"
+                                + ", host name: {}"
+                                + ", token: {}",
+                                ins.getApp(), ins.getId(), ins.getInstanceId(),
+                                ins.getDC(), ins.getHostIP(), ins.getHostName(),
+                                ins.getToken());
                         return ins;
                     }
                 }
@@ -131,14 +133,16 @@ public class InstanceIdentity {
                     logger.info(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(), ins.getId()));
                     if (ins.getInstanceId().equals(config.getInstanceName())) {
                         logger.info("[Alive]  found that this node is alive."
-                                + " application: " + ins.getApp()
-                                + ", id: " + ins.getId()
-                                + ", instance: " + ins.getInstanceId()
-                                + ", region: " + ins.getDC()
-                                + ", host ip: " + ins.getHostIP()
-                                + ", host name: " + ins.getHostName()
-                                + ", token: " + ins.getToken()
-                        );
+                                + " application: {}"
+                                + ", id: {}"
+                                + ", instance: {}"
+                                + ", region: {}"
+                                + ", host ip: {}"
+                                + ", host name: {}"
+                                + ", token: {}",
+                                ins.getApp(), ins.getId(), ins.getInstanceId(),
+                                ins.getDC(), ins.getHostIP(), ins.getHostName(),
+                                ins.getToken());
                         return ins;
                     }
 
@@ -232,7 +236,7 @@ public class InstanceIdentity {
 
         }
 
-        logger.info("My token: " + myInstance.getToken());
+        logger.info("My token: {}", myInstance.getToken());
     }
 
     private void populateRacMap() {

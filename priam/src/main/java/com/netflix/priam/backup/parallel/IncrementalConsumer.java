@@ -53,7 +53,7 @@ public class IncrementalConsumer implements Runnable {
 	 */
     public void run() {
 
-        logger.info("Consumer - about to upload file: " + this.bp.getFileName());
+        logger.info("Consumer - about to upload file: {}", this.bp.getFileName());
 
         try {
 

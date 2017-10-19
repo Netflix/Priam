@@ -153,15 +153,14 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                 continue;
 
             if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
-                logger.info("Skipping: " + keyspaceDir.getName() + " is part of keyspace filter");
+                logger.info("Skipping: {} is part of keyspace filter", keyspaceDir.getName());
                 continue;
             }
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
 
             for (File columnFamilyDir : keyspaceDir.listFiles()) {
                 if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
-                    logger.info("Skipping: keyspace: " + keyspaceDir.getName()
-                            + ", CF: " + columnFamilyDir.getName() + " is part of CF filter list.");
+                    logger.info("Skipping: keyspace: {}, CF: {} is part of CF filter list.", keyspaceDir.getName(), columnFamilyDir.getName());
                     continue;
                 }
 

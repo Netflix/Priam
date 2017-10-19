@@ -42,7 +42,7 @@ public class TestCustomizedTPE {
                 @Override
                 public Void call() throws Exception {
                     Thread.sleep(100);
-                    logger.info("Count:" + count.incrementAndGet());
+                    logger.info("Count:{}", count.incrementAndGet());
                     return null;
                 }
             });

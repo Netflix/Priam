@@ -353,7 +353,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
 
     @Override
-    public void addObserver(EventObserver<BackupEvent> observer) {
+    public final void addObserver(EventObserver<BackupEvent> observer) {
         if (observer == null)
             throw new NullPointerException("observer must not be null.");
 

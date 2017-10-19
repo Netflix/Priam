@@ -65,7 +65,9 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
                 }
             }
 
-            logger.info("Updating dse-yaml:\n" + yaml.dump(map));
+            if (logger.isInfoEnabled()) {
+                logger.info("Updating dse-yaml:\n" + yaml.dump(map));
+            }
             yaml.dump(map, new FileWriter(dseYaml));
         } catch (FileNotFoundException fileNotFound) {
             logger.error(String.format("FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml));

@@ -67,12 +67,14 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 
         List<String> crossAccountAsgInstances = membership.getCrossAccountRacMembership();
 
-        if (insEnvIdentity.isClassic()) {
-            logger.info("EC2 classic instances (local ASG): " + Arrays.toString(asgInstances.toArray()));
-            logger.info("VPC Account (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
-        } else {
-            logger.info("VPC Account (local ASG): " + Arrays.toString(asgInstances.toArray()));
-            logger.info("EC2 classic instances (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
+        if (logger.isInfoEnabled()) {
+            if (insEnvIdentity.isClassic()) {
+                logger.info("EC2 classic instances (local ASG): " + Arrays.toString(asgInstances.toArray()));
+                logger.info("VPC Account (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
+            } else {
+                logger.info("VPC Account (local ASG): " + Arrays.toString(asgInstances.toArray()));
+                logger.info("EC2 classic instances (cross-account ASG): " + Arrays.toString(crossAccountAsgInstances.toArray()));
+            }
         }
 
         // Remove duplicates (probably there are not)

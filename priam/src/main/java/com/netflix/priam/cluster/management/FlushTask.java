@@ -74,8 +74,10 @@ public class FlushTask extends Task {
         if (flushed.isEmpty()) {
             logger.warn("Flush task completed successfully but no keyspaces were flushed.");
         } else {
-            for (String ks : flushed) {
-                logger.info("Flushed keyspace: " + ks);
+            if (logger.isInfoEnabled()) {
+                for (String ks : flushed) {
+                    logger.info("Flushed keyspace: " + ks);
+                }
             }
         }
 

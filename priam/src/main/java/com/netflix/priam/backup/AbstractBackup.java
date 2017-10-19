@@ -207,7 +207,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     protected abstract void addToRemotePath(String remotePath);
 
     @Override
-    public void addObserver(EventObserver<BackupEvent> observer) {
+    public final void addObserver(EventObserver<BackupEvent> observer) {
         if (observer == null)
             throw new NullPointerException("observer must not be null.");
 

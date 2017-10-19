@@ -70,7 +70,7 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
                 {
             			delay *= 2;
                     logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
-                    if(++logCounter == 1)
+                    if(++logCounter == 1 && logger.isInfoEnabled())
                        logger.info("Exception --> "+ExceptionUtils.getFullStackTrace(e));
                     sleeper.sleep(delay);            			
                 }

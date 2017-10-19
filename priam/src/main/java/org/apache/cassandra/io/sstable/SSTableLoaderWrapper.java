@@ -137,7 +137,9 @@ public class SSTableLoaderWrapper
 
     public void deleteCompleted(Collection<PendingFile> sstables) throws IOException
     {
-        logger.info("Restored SST's Now Deleting: " + StringUtils.join(sstables, ","));
+        if (logger.isInfoEnabled()) {
+            logger.info("Restored SST's Now Deleting: " + StringUtils.join(sstables, ","));
+        }
         for (PendingFile file : sstables)
             for (Component component : allComponents)
                 FileUtils.delete(file.sstable.descriptor.filenameFor(component));

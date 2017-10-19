@@ -203,8 +203,10 @@ public class IncrementalRestore extends AbstractRestore
 			logger.info("Old Column Family = [{}] --> New Column Family = [{}]", splitToBeRenamed[1], config.getTargetCFName());
 			splitToBeRenamed[1] = config.getTargetCFName();
 		}
-		
-		logger.info("Orig Filename = ["+fileToBeRenamed+"] --> New Filename = ["+StringUtils.join(splitToBeRenamed,'-')+"]");
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Orig Filename = ["+fileToBeRenamed+"] --> New Filename = ["+StringUtils.join(splitToBeRenamed,'-')+"]");
+        }
 
 		return StringUtils.join(splitToBeRenamed,'-');
 

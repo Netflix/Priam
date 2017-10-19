@@ -193,7 +193,9 @@ public class StandardTuner implements CassandraTuner
         Map map = (Map) yaml.load(new FileInputStream(yamlFile));
         //Dont bootstrap in restore mode
         map.put("auto_bootstrap", autobootstrap);
-        logger.info("Updating yaml" + yaml.dump(map));
+        if (logger.isInfoEnabled()) {
+            logger.info("Updating yaml: " + yaml.dump(map));
+        }
         yaml.dump(map, new FileWriter(yamlFile));
     }
     

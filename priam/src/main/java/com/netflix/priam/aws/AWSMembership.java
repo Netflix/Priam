@@ -77,7 +77,9 @@ public class AWSMembership implements IMembership {
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+            }
             return instanceIds;
         } finally {
             if (client != null)
@@ -125,7 +127,9 @@ public class AWSMembership implements IMembership {
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            }
             return instanceIds;
         } finally {
             if (client != null)

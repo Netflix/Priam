@@ -70,7 +70,7 @@ public class AuditLogTunerLog4J implements IAuditLogTuner {
             try {
                 loggerPrefix += findAuditLoggerName(lines);
             } catch (IllegalStateException ise) {
-                logger.warn(String.format("cannot locate %s property, will ignore any audit log updating", PRIMARY_AUDIT_LOG_ENTRY));
+                logger.warn("cannot locate " + PRIMARY_AUDIT_LOG_ENTRY + " property, will ignore any audit log updating");
                 return;
             }
 

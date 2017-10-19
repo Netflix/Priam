@@ -64,7 +64,7 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
             tasksQueued.add(task.getRemotePath());
             try {
                 tasks.put(task); //block until space becomes available in queue
-                logger.debug(String.format("Queued file %s within CF %s", task.getFileName(), task.getColumnFamily()));
+                logger.debug("Queued file {} within CF {}", task.getFileName(), task.getColumnFamily());
 
             } catch (InterruptedException e) {
                 logger.warn("Interrupted waiting for the task queue to have free space, not fatal will just move on.   Error Msg: {}", e.getLocalizedMessage());

@@ -99,7 +99,7 @@ public class AWSMembership implements IMembership {
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 size += asg.getMaxSize();
             }
-            logger.info(String.format("Query on ASG returning %d instances", size));
+            logger.info("Query on ASG returning {} instances", size);
             return size;
         } finally {
             if (client != null)
@@ -182,10 +182,10 @@ public class AWSMembership implements IMembership {
             DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups()) {
-                logger.debug(String.format("got group-id:%s for group-name:%s,vpc-id:%s", group.getGroupId(), config.getACLGroupName(), config.getVpcId()));
+                logger.debug("got group-id:{} for group-name:{},vpc-id:{}", group.getGroupId(), config.getACLGroupName(), config.getVpcId());
                 return group.getGroupId();
             }
-            logger.error(String.format("unable to get group-id for group-name=%s vpc-id=%s", config.getACLGroupName(), config.getVpcId()));
+            logger.error("unable to get group-id for group-name={} vpc-id={}", config.getACLGroupName(), config.getVpcId());
             return "";
         } finally {
             if (client != null)

@@ -172,12 +172,12 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             rule.setStatus(BucketLifecycleConfiguration.ENABLED);
             rule.setId(prefix);
             rules.add(rule);
-            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), rule.getExpirationInDays()));
+            logger.info("Setting cleanup for {} to {} days", rule.getPrefix(), rule.getExpirationInDays());
         } else if (config.getBackupRetentionDays() > 0) {
-            logger.info(String.format("Setting cleanup for %s to %d days", rule.getPrefix(), config.getBackupRetentionDays()));
+            logger.info("Setting cleanup for {} to {} days", rule.getPrefix(), config.getBackupRetentionDays());
             rule.setExpirationInDays(config.getBackupRetentionDays());
         } else {
-            logger.info(String.format("Removing cleanup rule for %s", rule.getPrefix()));
+            logger.info("Removing cleanup rule for {}", rule.getPrefix());
             rules.remove(rule);
         }
         return true;
@@ -253,7 +253,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize; //compute the size of each block we will upload to endpoint
 
-        logger.info(String.format("Uploading to %s/%s with chunk size %d", config.getBackupPrefix(), path.getRemotePath(), chunkSize));
+        logger.info("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), path.getRemotePath(), chunkSize);
         long startTime = System.nanoTime(); //initialize for each file upload
         notifyEventStart(new BackupEvent(path));
 

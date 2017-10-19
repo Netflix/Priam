@@ -322,7 +322,7 @@ public class PriamConfiguration implements IConfiguration {
         ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
         if (StringUtils.isBlank(ASG_NAME))
             ASG_NAME = populateASGName(REGION, INSTANCE_ID);
-        logger.info(String.format("REGION set to %s, ASG Name set to %s", REGION, ASG_NAME));
+        logger.info("REGION set to {}, ASG Name set to {}", REGION, ASG_NAME);
     }
 
     /**

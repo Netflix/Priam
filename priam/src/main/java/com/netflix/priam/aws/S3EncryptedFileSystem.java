@@ -144,7 +144,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
 
         //== Read chunks from src, compress it, and write to temp file
         String compressedFileName = path.newRestoreFile() + ".compressed";
-        logger.debug(String.format("Compressing %s with chunk size %d", compressedFileName, chunkSize));
+        logger.debug("Compressing {} with chunk size {}", compressedFileName, chunkSize);
         File compressedDstFile = null;
         FileOutputStream compressedDstFileOs = null;
         BufferedOutputStream compressedBos = null;

@@ -86,7 +86,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
             bp.parseLocal(file, type);
 
             try {
-                logger.info(String.format("About to upload file %s for backup", file.getCanonicalFile()));
+                logger.info("About to upload file {} for backup", file.getCanonicalFile());
 
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME) {
                     public AbstractBackupPath retriableCall() throws Exception {
@@ -101,7 +101,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
 
                 addToRemotePath(abp.getRemotePath());
             } catch (Exception e) {
-                logger.error(String.format("Failed to upload local file %s within CF %s. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath()), e);
+                logger.error("Failed to upload local file {} within CF {}. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
             }
         }
         return bps;
@@ -128,8 +128,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                     bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                     return null;
                 } catch (Exception e) {
-                    logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."
-                            , bp.backupFile.getCanonicalFile()));
+                    logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
                     if (is != null) {
                         is.close();
                     }

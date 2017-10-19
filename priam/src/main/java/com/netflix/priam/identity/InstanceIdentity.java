@@ -111,7 +111,7 @@ public class InstanceIdentity {
                 // Check if this node is decomissioned
                 List<PriamInstance> deadInstances = factory.getAllIds(config.getAppName() + "-dead");
                 for (PriamInstance ins : deadInstances) {
-                    logger.info(String.format("[Dead] Iterating though the hosts: %s", ins.getInstanceId()));
+                    logger.info("[Dead] Iterating though the hosts: {}", ins.getInstanceId());
                     if (ins.getInstanceId().equals(config.getInstanceName())) {
                         ins.setOutOfService(true);
                         logger.info("[Dead]  found that this node is dead."
@@ -130,7 +130,7 @@ public class InstanceIdentity {
                 }
                 List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
                 for (PriamInstance ins : aliveInstances) {
-                    logger.info(String.format("[Alive] Iterating though the hosts: %s My id = [%s]", ins.getInstanceId(), ins.getId()));
+                    logger.info("[Alive] Iterating though the hosts: {} My id = [{}]", ins.getInstanceId(), ins.getId());
                     if (ins.getInstanceId().equals(config.getInstanceName())) {
                         logger.info("[Alive]  found that this node is alive."
                                 + " application: {}"

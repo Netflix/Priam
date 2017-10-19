@@ -58,7 +58,7 @@ public abstract class RetryableCallable<T> implements Callable<T> {
                 if (retry == retrys) {
                     throw e;
                 }
-                logger.error(String.format("Retry #%d for: %s", retry, e.getMessage()));
+                logger.error("Retry #{} for: {}", retry, e.getMessage());
 
                 if (++logCounter == 1 && logger.isErrorEnabled())
                     logger.error("Exception --> " + ExceptionUtils.getStackTrace(e));

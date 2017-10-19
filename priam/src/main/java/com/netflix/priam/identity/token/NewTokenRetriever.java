@@ -74,8 +74,8 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         } else
             my_slot = config.getRacs().size() + maxSlot;
 
-        logger.info(String.format("Trying to createToken with slot %d with rac count %d with rac membership size %d with dc %s",
-                my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC()));
+        logger.info("Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
+                my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
         String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
         return factory.create(config.getAppName(), my_slot + hash, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, payload);
 

@@ -70,9 +70,9 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
             }
             yaml.dump(map, new FileWriter(dseYaml));
         } catch (FileNotFoundException fileNotFound) {
-            logger.error(String.format("FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml));
+            logger.error("FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml);
         } catch (IOException e) {
-            logger.error(String.format("IOException while trying to write yaml file for audit log tuning: {}", dseYaml));
+            logger.error("IOException while trying to write yaml file for audit log tuning: {}", dseYaml);
         }
     }
 }

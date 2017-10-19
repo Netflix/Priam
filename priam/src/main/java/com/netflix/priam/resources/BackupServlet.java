@@ -229,9 +229,9 @@ public class BackupServlet
     public Response status() throws Exception
     {
         int restoreTCount = restoreObj.getActiveCount();
-        logger.debug("Thread counts for backup is: %d", restoreTCount);
+        logger.debug("Thread counts for backup is: {}", restoreTCount);
         int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for restore is: %d", backupTCount);
+        logger.debug("Thread counts for restore is: {}", backupTCount);
         JSONObject object = new JSONObject();
         object.put("Restore", new Integer(restoreTCount));
         object.put("Status", restoreObj.state().toString());

@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.notification.BackupEvent;
@@ -37,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Abstract Backup class for uploading files to backup location
@@ -50,7 +50,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
 
     private final Object MUTEX = new Object();
     protected IBackupFileSystem fs;
-    private List<EventObserver> observers = new ArrayList<>();
+    private final List<EventObserver<BackupEvent>> observers = new ArrayList<>();
 
     @Inject
     public AbstractBackup(IConfiguration config, IFileSystemContext backupFileSystemCtx,
@@ -207,9 +207,9 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     protected abstract void addToRemotePath(String remotePath);
 
     @Override
-    public void addObserver(EventObserver observer) {
-        if (observers == null)
-            observers = new ArrayList<>();
+    public void addObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
 
         synchronized (MUTEX) {
             if (!observers.contains(observer))
@@ -218,9 +218,10 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     }
 
     @Override
-    public void removeObserver(EventObserver observer) {
-        if (observers == null || observers.isEmpty())
-            return;
+    public void removeObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
+
         synchronized (MUTEX) {
             observers.remove(observer);
         }
@@ -228,29 +229,57 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
 
     @Override
     public void notifyEventStart(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventStart(event));
     }
 
     @Override
     public void notifyEventSuccess(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventSuccess(event));
     }
 
     @Override
     public void notifyEventFailure(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventFailure(event));
     }
 
     @Override
     public void notifyEventStop(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
-    }
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
 
-    private boolean shouldNotifyObservers() {
-        return (observers != null && !observers.isEmpty());
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventStop(event));
     }
 }

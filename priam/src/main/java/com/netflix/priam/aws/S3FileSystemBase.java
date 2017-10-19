@@ -53,6 +53,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Stream;
 
 public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenerator<BackupEvent> {
     protected static final int MAX_CHUNKS = 10000;
@@ -75,7 +76,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected IBackupMetrics backupMetricsMgr;
     protected BlockingSubmitThreadPoolExecutor executor;
     protected RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
-    private List<EventObserver> observers = new ArrayList<>();
+    private final List<EventObserver<BackupEvent>> observers = new ArrayList<>();
     private final Object MUTEX = new Object();
 
 
@@ -352,9 +353,9 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
 
     @Override
-    public void addObserver(EventObserver observer) {
-        if (observers == null)
-            observers = new ArrayList<>();
+    public void addObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
 
         synchronized (MUTEX) {
             if (!observers.contains(observer))
@@ -363,9 +364,10 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     }
 
     @Override
-    public void removeObserver(EventObserver observer) {
-        if (observers == null || observers.isEmpty())
-            return;
+    public void removeObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
+
         synchronized (MUTEX) {
             observers.remove(observer);
         }
@@ -373,30 +375,57 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
     @Override
     public void notifyEventStart(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventStart(event));
     }
 
     @Override
     public void notifyEventSuccess(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventSuccess(event));
     }
 
     @Override
     public void notifyEventFailure(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
+
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
+
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventFailure(event));
     }
 
     @Override
     public void notifyEventStop(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
-    }
+        final EventObserver<BackupEvent>[] observersCopy;
+        synchronized (MUTEX) {
+            if (observers.isEmpty())
+                return;
 
-    private boolean shouldNotifyObservers() {
-        return (observers != null && !observers.isEmpty());
-    }
+            // Make a copy of the current list of observers to prevent ConcurrentModificationException.
+            observersCopy = observers.toArray(new EventObserver[observers.size()]);
+        }
 
+        Stream.of(observersCopy).forEach(eventObserver -> eventObserver.updateEventStop(event));
+    }
 }

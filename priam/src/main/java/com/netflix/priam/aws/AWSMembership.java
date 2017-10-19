@@ -150,12 +150,16 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
                 client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
-                logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
+                }
             } else {
                 AuthorizeSecurityGroupIngressRequest sgIngressRequest = new AuthorizeSecurityGroupIngressRequest();
                 sgIngressRequest.withGroupId(getVpcGoupId()); //fetch SG group id for vpc account of the running instance.
                 client.authorizeSecurityGroupIngress(sgIngressRequest.withIpPermissions(ipPermissions)); //Adding peers' IPs as ingress to the running instance SG
-                logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
+                }
             }
 
 
@@ -201,12 +205,16 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
                 client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
-                logger.info("Done removing from ACL within classic env for running instance: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done removing from ACL within classic env for running instance: " + StringUtils.join(listIPs, ","));
+                }
             } else {
                 RevokeSecurityGroupIngressRequest req = new RevokeSecurityGroupIngressRequest();
                 req.withGroupId(getVpcGoupId());  //fetch SG group id for vpc account of the running instance.
                 client.revokeSecurityGroupIngress(req.withIpPermissions(ipPermissions));  //Adding peers' IPs as ingress to the running instance SG
-                logger.info("Done removing from ACL within vpc env for running instance: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done removing from ACL within vpc env for running instance: " + StringUtils.join(listIPs, ","));
+                }
             }
 
 

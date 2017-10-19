@@ -84,11 +84,11 @@ public class PriamScheduler
                 }
                 catch (SchedulerException e)
                 {
-                    logger.warn("problem occurred while scheduling a job with name " + name, e);
+                    logger.warn("problem occurred while scheduling a job with name {}", name, e);
                 }
                 catch (ParseException e)
                 {
-                    logger.warn("problem occurred while parsing a job with name " + name, e);
+                    logger.warn("problem occurred while parsing a job with name {}", name, e);
                 }
             }
         }).start();

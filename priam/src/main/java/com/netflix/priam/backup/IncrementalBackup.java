@@ -74,8 +74,8 @@ public class IncrementalBackup extends AbstractBackup
             {
                 File backupDir = new File(columnFamilyDir, "backups");
 				if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
-					logger.warn("Not a valid backup dir or keyspace/cf is part of the default filter.  SnapshotDir: " + backupDir.getAbsolutePath()
-            			+ ", keyspace dir: " + keyspaceDir.getName() + ", CF: " + columnFamilyDir.getName());
+					logger.warn("Not a valid backup dir or keyspace/cf is part of the default filter.  SnapshotDir: {}"
+            			+ ", keyspace dir: {}, CF: {}", backupDir.getAbsolutePath(), keyspaceDir.getName(), columnFamilyDir.getName());
 					continue;
 				}
 				List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
@@ -83,10 +83,10 @@ public class IncrementalBackup extends AbstractBackup
 				if ( ! uploadedFiles.isEmpty() ) {
 					String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
 					String metaFileName = "meta_" + columnFamilyDir.getName() + "_" + incrementalUploadTime;
-					logger.info("Uploading meta file for incremental backup: " + metaFileName); 
+					logger.info("Uploading meta file for incremental backup: {}", metaFileName);
 					this.metaData.setMetaFileName(metaFileName);
 					this.metaData.set(uploadedFiles, incrementalUploadTime);
-					logger.info("Uploaded meta file for incremental backup: " + metaFileName);                	
+					logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
 				}
 				
             }

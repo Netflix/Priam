@@ -324,7 +324,7 @@ public class JMXNodeTool extends NodeProbe
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
             if (keyspaces.contains(entry.getKey()))
             {
-                logger.info("Refreshing " + entry.getKey() + " " + entry.getValue().getColumnFamilyName());
+                logger.info("Refreshing {} {}", entry.getKey(), entry.getValue().getColumnFamilyName());
                 loadNewSSTables(entry.getKey(), entry.getValue().getColumnFamilyName());
             }
         }

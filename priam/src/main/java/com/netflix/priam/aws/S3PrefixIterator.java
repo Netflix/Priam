@@ -79,7 +79,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath>
         listReq.setBucketName(bucket);
         listReq.setPrefix(clusterPath);
         listReq.setDelimiter(String.valueOf(AbstractBackupPath.PATH_SEP));
-        logger.info("Using cluster prefix for searching tokens: " + clusterPath);
+        logger.info("Using cluster prefix for searching tokens: {}", clusterPath);
         objectListing = s3Client.listObjects(listReq);
 
     }

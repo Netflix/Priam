@@ -74,7 +74,7 @@ public class PgpCryptography implements IFileCryptography {
 			return new PGPSecretKeyRingCollection(PGPUtil.getDecoderStream(keyIn));
 			
 		} catch (Exception e) {
-			logger.error("Exception in reading PGP security collection ring.  Msg: " + e.getLocalizedMessage());
+			logger.error("Exception in reading PGP security collection ring.  Msg: {}", e.getLocalizedMessage());
 			throw new IllegalStateException("Exception in reading PGP security collection ring", e);
 		}		
 		
@@ -86,7 +86,7 @@ public class PgpCryptography implements IFileCryptography {
 			pubKeyIS = new BufferedInputStream(new FileInputStream(config.getPgpPublicKeyLoc()));
 			
 		} catch (FileNotFoundException e) {
-			logger.error("Exception in reading PGP security collection ring.  Msg: " + e.getLocalizedMessage());
+			logger.error("Exception in reading PGP security collection ring.  Msg: {}", e.getLocalizedMessage());
 			throw new RuntimeException("Exception in reading PGP public key", e);
 		}
 		
@@ -108,7 +108,7 @@ public class PgpCryptography implements IFileCryptography {
 	@Override
 	public InputStream decryptStream(InputStream in, char[] passwd, String objectName) throws Exception {
 		
-		logger.info("Start to decrypt object: " + objectName);
+		logger.info("Start to decrypt object: {}", objectName);
 		
 		in = PGPUtil.getDecoderStream(in);
 		

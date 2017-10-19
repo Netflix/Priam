@@ -114,7 +114,7 @@ public class IncrementalRestore extends AbstractRestore
             FileUtils.createDirectory(keyspaceDir);
             File columnFamilyDir = config.getTargetCFName() == null ? new File(keyspaceDir, temp.columnFamily) : new File(tokenDir, config.getTargetCFName());
             FileUtils.createDirectory(columnFamilyDir);
-            logger.debug("*** Keyspace = "+keyspaceDir.getAbsolutePath()+ " Column Family = "+columnFamilyDir.getAbsolutePath()+" File = "+temp.getRemotePath());
+            logger.debug("*** Keyspace = {} Column Family = {} File = {}", keyspaceDir.getAbsolutePath(), columnFamilyDir.getAbsolutePath(), temp.getRemotePath());
             if(config.getTargetKSName() != null || config.getTargetCFName() != null)
             	 	temp.fileName = renameIncrementalRestoreFile(temp.fileName);
             download(temp, new File(columnFamilyDir, temp.fileName));
@@ -193,14 +193,14 @@ public class IncrementalRestore extends AbstractRestore
 		// Rename KS
 		if (config.getTargetKSName() != null)
 		{
-			logger.info("Old Keyspace = ["+splitToBeRenamed[0]+"] --> New Keyspace = ["+config.getTargetKSName()+"]");
+			logger.info("Old Keyspace = [{}] --> New Keyspace = [{}]", splitToBeRenamed[0], config.getTargetKSName());
 			splitToBeRenamed[0] = config.getTargetKSName();
 		}
 		
 		// Rename CF
 		if(config.getTargetCFName() != null)
 		{
-			logger.info("Old Column Family = ["+splitToBeRenamed[1]+"] --> New Column Family = ["+config.getTargetCFName()+"]");
+			logger.info("Old Column Family = [{}] --> New Column Family = [{}]", splitToBeRenamed[1], config.getTargetCFName());
 			splitToBeRenamed[1] = config.getTargetCFName();
 		}
 		

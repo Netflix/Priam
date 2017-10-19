@@ -70,9 +70,9 @@ public class S3FileSystemBase {
     	
         AmazonS3 s3Client = getS3Client();
         String clusterPath = pathProvider.get().clusterPrefix("");
-        logger.debug("Bucket: " + config.getBackupPrefix());
+        logger.debug("Bucket: {}", config.getBackupPrefix());
         BucketLifecycleConfiguration lifeConfig = s3Client.getBucketLifecycleConfiguration(config.getBackupPrefix());
-        logger.debug("Got bucket:" + config.getBackupPrefix() + " lifecycle." + lifeConfig);
+        logger.debug("Got bucket:{} lifecycle.{}", config.getBackupPrefix(), lifeConfig);
         if (lifeConfig == null)
         {
             lifeConfig = new BucketLifecycleConfiguration();

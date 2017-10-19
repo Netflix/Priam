@@ -87,7 +87,7 @@ public abstract class AbstractRestore extends Task
             if (temp.getType() == filter)
             {   
             	File localFileHandler = temp.newRestoreFile();
-            	logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
+            	logger.debug("Created local file name: {}{}{}", localFileHandler.getAbsolutePath(), File.pathSeparator, localFileHandler.getName());
                 download(temp, localFileHandler);
             }   
         }
@@ -147,13 +147,13 @@ public abstract class AbstractRestore extends Task
             @Override
             public Integer retriableCall() throws Exception
             {
-                logger.info("Downloading file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
+                logger.info("Downloading file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());
                 fs.download(path, new FileOutputStream(restoreLocation),restoreLocation.getAbsolutePath());
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
                 
                 
-                logger.info("Completed download of file: " + path.getRemotePath() + " to: " + restoreLocation.getAbsolutePath());
+                logger.info("Completed download of file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());
                 return count.decrementAndGet();
             }
         });
@@ -192,10 +192,10 @@ public abstract class AbstractRestore extends Task
             	//== download object from source bucket
                 try {
                 	
-                    logger.info("Downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
+                    logger.info("Downloading file from: {} to: {}", path.getRemotePath(), tempFile.getAbsolutePath());
                     fs.download(path, new FileOutputStream(tempFile),tempFile.getAbsolutePath());                    
                     tracker.adjustAndAdd(path);
-                    logger.info("Completed downloading file from: " + path.getRemotePath() + " to: " + tempFile.getAbsolutePath());
+                    logger.info("Completed downloading file from: {} to: {}", path.getRemotePath(), tempFile.getAbsolutePath());
                     
                 	
                 } catch (Exception ex) {
@@ -216,7 +216,7 @@ public abstract class AbstractRestore extends Task
                     InputStream encryptedDataInputStream = fileCryptography.decryptStream(in, passPhrase, tempFile.getAbsolutePath());
                     fOut = new BufferedOutputStream(new FileOutputStream(decryptedFile));
                     Streams.pipeAll(encryptedDataInputStream, fOut);
-                    logger.info("completed decrypting file: " + tempFile.getAbsolutePath() + "to final file dest: " + decryptedFile.getAbsolutePath());                	
+                    logger.info("completed decrypting file: {} to final file dest: {}", tempFile.getAbsolutePath(), decryptedFile.getAbsolutePath());
                 	
                 } catch (Exception ex) {
                 	//This behavior is retryable; therefore, lets get to a clean state before each retry.
@@ -237,7 +237,7 @@ public abstract class AbstractRestore extends Task
                 }
                                 
                 //== object downloaded and decrypted successfully, now uncompress it
-                logger.info("Start uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
+                logger.info("Start uncompressing file: {} to the FINAL destination stream", decryptedFile.getAbsolutePath());
             	FileInputStream fileIs = null;
             	InputStream is = null;
             	
@@ -253,8 +253,8 @@ public abstract class AbstractRestore extends Task
             		throw new Exception("Exception uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream");
             	}
             	
-            	logger.info("Completed uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream " 
-            			+ " current worker: " + Thread.currentThread().getName());                
+            	logger.info("Completed uncompressing file: {} to the FINAL destination stream "
+            			+ " current worker: {}", decryptedFile.getAbsolutePath(), Thread.currentThread().getName());
             	//if here, everything was successful for this object, lets remove unneeded file(s)
             	if (tempFile.exists())
             		tempFile.delete();

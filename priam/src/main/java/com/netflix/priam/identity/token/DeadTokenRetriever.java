@@ -57,7 +57,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             // test same zone and is it is alive.
             if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || super.isInstanceDummy(dead))
                 continue;
-            logger.info("Found dead instances: " + dead.getInstanceId());
+            logger.info("Found dead instances: {}", dead.getInstanceId());
             PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
                     dead.getToken());
             // remove it as we marked it down...
@@ -86,7 +86,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     {
         String ip = null;
         for (PriamInstance ins : allIds) {
-            logger.info("Calling getIp on hostname[" + ins.getHostName() + "] and token[" + token + "]");
+            logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
             if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
                 continue;	
             }
@@ -98,7 +98,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             }
     		
     	    if (ip != null) {
-                logger.info("Found the IP: " + ip);
+                logger.info("Found the IP: {}", ip);
                 return ip;
             }
         }
@@ -110,7 +110,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     {
            ClientConfig config = new DefaultClientConfig();
            Client client = Client.create(config);
-           WebResource service = client.resource(getBaseURI(host));
+           String baseURI = getBaseURI(host);
+           WebResource service = client.resource(baseURI);
 	    
            ClientResponse clientResp;
            String textEntity = null;
@@ -123,12 +124,12 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 	    
               textEntity = clientResp.getEntity(String.class);
 		
-              logger.info("Respond from calling gossipinfo on host[" + host + "] and token[" + token + "] : " + textEntity);
+              logger.info("Respond from calling gossipinfo on host[{}] and token[{}] : {}", host, token, textEntity);
               
               if (StringUtils.isEmpty(textEntity))
                   return null;
            } catch (Exception e) {
-               logger.info("Error in reaching out to host: " + getBaseURI(host));
+               logger.info("Error in reaching out to host: {}", baseURI);
                return null;
            }
 		
@@ -148,7 +149,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 	            String tokenVal = (String) msg.get("Token");
 
                 if (token.equals(tokenVal)) {
-                   logger.info("Using gossipinfo from host[" + host + "] and token[" + token + "], the replaced address is : " + key);                   
+                   logger.info("Using gossipinfo from host[{}] and token[{}], the replaced address is : {}", host, token, key);
                    return (String) key;
                 }
             

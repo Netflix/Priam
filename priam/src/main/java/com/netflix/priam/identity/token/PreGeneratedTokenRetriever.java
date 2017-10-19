@@ -44,7 +44,7 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase implements IP
             // test same zone and is it is alive.
             if (!dead.getRac().equals(config.getRac()) || asgInstances.contains(dead.getInstanceId()) || !isInstanceDummy(dead))
                 continue;
-            logger.info("Found pre-generated token: " + dead.getToken());
+            logger.info("Found pre-generated token: {}", dead.getToken());
             PriamInstance markAsDead = factory.create(dead.getApp() + "-dead", dead.getId(), dead.getInstanceId(), dead.getHostName(), dead.getHostIP(), dead.getRac(), dead.getVolumes(),
                     dead.getToken());
             // remove it as we marked it down...

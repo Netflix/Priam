@@ -190,7 +190,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
 	@Override
 	public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
 
-		logger.info("Downloading " + path.getRemotePath() + " from GCS bucket " + this.srcBucketName);
+		logger.info("Downloading {} from GCS bucket {}", path.getRemotePath(), this.srcBucketName);
 		this.downloadCount.incrementAndGet();
 		
 		String objectName = parseObjectname(getPathPrefix());

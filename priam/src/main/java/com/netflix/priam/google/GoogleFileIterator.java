@@ -60,7 +60,7 @@ public class GoogleFileIterator  implements Iterator<AbstractBackupPath> {
         this.bucketName = paths[0];
     	this.pathWithinBucket = pathProvider.get().remotePrefix(start, till, path);
     	
-    	logger.info("Listing objects from GCS: " + this.bucketName + ", prefix: " + this.pathWithinBucket);
+    	logger.info("Listing objects from GCS: {}, prefix: {}", this.bucketName, this.pathWithinBucket);
     	
 		try {
 
@@ -91,14 +91,14 @@ public class GoogleFileIterator  implements Iterator<AbstractBackupPath> {
 
 		for (StorageObject object : this.objectsContainerHandle.getItems()) { //processing a page of results
 			String fileName = GoogleEncryptedFileSystem.parseObjectname(object.getName());
-			logger.debug("id: " + object.getId() + ", parse file name: " + fileName +  ", name: " + object.getName());
+			logger.debug("id: {}, parse file name: {}, name: {}", object.getId(), fileName, object.getName());
 			
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(object.getName()); //e.g. of objectname: prod_backup/us-east-1/cass_account/113427455640312821154458202479064646083/201408250801/META/meta.json
-            logger.debug("New key " + object.getName() + " path = " + path.getRemotePath() + " " + start + " end: " + till + " my " + path.getTime() );
+            logger.debug("New key {} path = {} start: {} end: {} my {}", object.getName(), path.getRemotePath(), start, till, path.getTime());
             if ((path.getTime().after(start) && path.getTime().before(till)) || path.getTime().equals(start)){
                 temp.add(path);
-                logger.debug("Added key " + object.getName() );
+                logger.debug("Added key {}", object.getName());
             }
 		}
 		

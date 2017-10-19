@@ -47,7 +47,7 @@ public class RestoreBase extends AbstractRestore {
 	 * Fetches all files of type META.
 	 */
 	protected void fetchMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) {
-        logger.info("Looking for meta file here:  " + restorePrefix);
+        logger.info("Looking for meta file here:  {}", restorePrefix);
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
         while (backupfiles.hasNext())
         {
@@ -76,7 +76,7 @@ public class RestoreBase extends AbstractRestore {
 	 * Fetches meta.json used to store snapshots metadata.
 	 */
 	protected void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime ) {
-		logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
+		logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
 		
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
         if (!backupfiles.hasNext()) {

@@ -37,7 +37,7 @@ public class CassandraProcessManager implements ICassandraProcess
 
     public void start(boolean join_ring) throws IOException
     {
-        logger.info("Starting cassandra server ....Join ring=" + join_ring);
+        logger.info("Starting cassandra server ....Join ring={}", join_ring);
 
         List<String> command = Lists.newArrayList();
         if (!"root".equals(System.getProperty("user.name")))

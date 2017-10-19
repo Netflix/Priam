@@ -118,7 +118,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements IBackupFi
 	public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
         try
         {
-            logger.info("Downloading " + path.getRemotePath() + " from S3 bucket " + getPrefix(this.config));
+            logger.info("Downloading {} from S3 bucket {}", path.getRemotePath(), getPrefix(this.config));
             downloadCount.incrementAndGet();
             final AmazonS3 client = super.getS3Client();
             long contentLen = client.getObjectMetadata(getPrefix(this.config), path.getRemotePath()).getContentLength();

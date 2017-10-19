@@ -80,7 +80,7 @@ public class SnapshotBackup extends AbstractBackup
         String snapshotName = pathFactory.get().formatDate(cal.getTime());
         try
         {
-            logger.info("Starting snapshot " + snapshotName);
+            logger.info("Starting snapshot {}", snapshotName);
             //Clearing remotePath List
             snapshotRemotePaths.clear();
             takeSnapshot(snapshotName);
@@ -108,7 +108,7 @@ public class SnapshotBackup extends AbstractBackup
             }
             // Upload meta file
             metaData.set(bps, snapshotName);
-            logger.info("Snapshot upload complete for " + snapshotName);
+            logger.info("Snapshot upload complete for {}", snapshotName);
             
             if(snapshotRemotePaths.size() > 0)
             {

@@ -78,7 +78,7 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
     public void execute() throws Exception {
         if (isRestoreEnabled(config))
         {
-            logger.info("Starting restore for " + config.getRestoreSnapshot()); //get the date range
+            logger.info("Starting restore for {}", config.getRestoreSnapshot()); //get the date range
             String[] restore = config.getRestoreSnapshot().split(",");
             AbstractBackupPath path = pathProvider.get();
             final Date startTime = path.parseDate(restore[0]);
@@ -134,7 +134,7 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
         
         Collections.sort(metas);
         AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-        logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
+        logger.info("Snapshot Meta file for restore {}", meta.getRemotePath());
 
         //download, decrypt, and uncompress the metadata file
         List<AbstractBackupPath> metaFile = new ArrayList<AbstractBackupPath>();
@@ -149,16 +149,16 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends RestoreBase impl
         logger.info("Downloading incrementals");
         // Download incrementals (SST).
         Iterator<AbstractBackupPath> incrementals = fs.list(getRestorePrefix(), meta.getTime(), endTime);
-        logger.info("Do we have incrementals to download? " + incrementals.hasNext());
+        logger.info("Do we have incrementals to download? {}", incrementals.hasNext());
         download(incrementals, BackupFileType.SST);
         
         //Downloading CommitLogs
         if (config.isBackingUpCommitLogs())
         {	
-        	logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
+        	logger.info("Delete all backuped commitlog files in {}", config.getBackupCommitLogLocation());
         	SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
         	     
-        	logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
+        	logger.info("Delete all commitlog files in {}", config.getCommitLogLocation());
         	SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
         	
         	Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(getRestorePrefix(), meta.getTime(), endTime); 

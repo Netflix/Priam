@@ -134,7 +134,7 @@ public class BackupRestoreUtil {
                 Pattern pattern = Pattern.compile(ksFilter);
                 Matcher matcher = pattern.matcher(keyspaceName);
                 if (matcher.find()) {
-                    logger.info("Keyspace: " + keyspaceName + " matched filter: " + ksFilter);
+                    logger.info("Keyspace: {} matched filter: {}", keyspaceName, ksFilter);
                     return true;
                 }
             }
@@ -152,7 +152,7 @@ public class BackupRestoreUtil {
                 Pattern pattern = Pattern.compile(cfsFilter.get(i));
                 Matcher matcher = pattern.matcher(cfName);
                 if (matcher.find()) {
-                    logger.info(keyspaceName + "." + cfName + " matched filter");
+                    logger.info("{}.{} matched filter", keyspaceName, cfName);
                     return true;
                 }
             }

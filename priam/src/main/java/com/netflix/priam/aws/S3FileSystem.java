@@ -112,7 +112,7 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
                 bytesUploaded.addAndGet(chunk.length);
             }
             executor.sleepTillEmpty();
-            logger.info("All chunks uploaded for file " + path.getFileName() + ", num of expected parts:" + partNum + ", num of actual uploaded parts: " + partsUploaded.get());
+            logger.info("All chunks uploaded for file {}, num of expected parts:{}, num of actual uploaded parts: {}", path.getFileName(), partNum, partsUploaded.get());
 
             if (partNum != partETags.size())
                 throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");

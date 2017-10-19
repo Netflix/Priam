@@ -238,7 +238,7 @@ public class StandardTuner implements ICassandraTuner {
             String priamKey = pair[0];
             String cassKey = pair[1];
             String cassVal = config.getCassYamlVal(priamKey);
-            logger.info("Updating yaml: Priamkey[" + priamKey + "], CassKey[" + cassKey + "], Val[" + cassVal + "]");
+            logger.info("Updating yaml: Priamkey[{}], CassKey[{}], Val[{}]", priamKey, cassKey, cassVal);
             map.put(cassKey, cassVal);
         }
     }

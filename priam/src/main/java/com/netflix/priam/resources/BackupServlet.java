@@ -165,9 +165,9 @@ public class BackupServlet {
     @Produces(MediaType.APPLICATION_JSON)
     public Response status() throws Exception {
         int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
-        logger.debug("Thread counts for restore is: %d", restoreTCount);
+        logger.debug("Thread counts for restore is: {}", restoreTCount);
         int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for snapshot backup is: %d", backupTCount);
+        logger.debug("Thread counts for snapshot backup is: {}", backupTCount);
         JSONObject object = new JSONObject();
         object.put("ThreadCount", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
         object.put("SnapshotStatus", snapshotBackup.state().toString());

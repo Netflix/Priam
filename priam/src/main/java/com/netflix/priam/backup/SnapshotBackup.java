@@ -185,7 +185,7 @@ public class SnapshotBackup extends AbstractBackup {
                                 ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
 
                     cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-                    logger.info(String.format("Starting snapshot backup with CRON expression %s", cronTimer.getCronExpression()));
+                    logger.info("Starting snapshot backup with CRON expression {}", cronTimer.getCronExpression());
                 }
                 break;
         }

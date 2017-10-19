@@ -49,7 +49,7 @@ public class DataFetcher
             while ((c = responseStream.read(b, 0, b.length)) != -1)
                 bos.write(b, 0, c);
             String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
-            logger.info(String.format("Calling URL API: %s returns: %s", url, return_));
+            logger.info("Calling URL API: {} returns: {}", url, return_);
             conn.disconnect();
             return return_;
         }

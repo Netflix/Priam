@@ -134,7 +134,7 @@ public class FlushTask extends Task {
                                 ". Please remove cron expression if you wish to disable flush else fix the CRON expression and try again!");
 
                     cronTimer = new CronTimer(JOBNAME, cronExpression);
-                    logger.info(String.format("Starting flush with CRON expression %s", cronTimer.getCronExpression()));
+                    logger.info("Starting flush with CRON expression {}", cronTimer.getCronExpression());
                 }
                 break;
         }

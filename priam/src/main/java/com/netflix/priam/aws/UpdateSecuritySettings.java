@@ -113,10 +113,10 @@ public class UpdateSecuritySettings extends Task {
     public static TaskTimer getTimer(InstanceIdentity id) {
         SimpleTimer return_;
         if (id.isSeed()) {
-            logger.info("Seed node.  Instance id: " + id.getInstance().getInstanceId()
-                    + ", host ip: " + id.getInstance().getHostIP()
-                    + ", host name: " + id.getInstance().getHostName()
-            );
+            logger.info("Seed node.  Instance id: {}"
+                    + ", host ip: {}"
+                    + ", host name: {}",
+                    id.getInstance().getInstanceId(), id.getInstance().getHostIP(), id.getInstance().getHostName());
             return_ = new SimpleTimer(JOBNAME, 120 * 1000 + ran.nextInt(120 * 1000));
         } else
             return_ = new SimpleTimer(JOBNAME);

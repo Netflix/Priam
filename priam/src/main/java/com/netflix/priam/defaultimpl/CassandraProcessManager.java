@@ -58,7 +58,7 @@ public class CassandraProcessManager implements ICassandraProcess {
     }
 
     public void start(boolean join_ring) throws IOException {
-        logger.info("Starting cassandra server ....Join ring=" + join_ring);
+        logger.info("Starting cassandra server ....Join ring={}", join_ring);
 
         List<String> command = Lists.newArrayList();
         if(config.useSudo()) {
@@ -80,8 +80,8 @@ public class CassandraProcessManager implements ICassandraProcess {
 
         startCass.directory(new File("/"));
         startCass.redirectErrorStream(true);
-        logger.info("Start cmd: " + startCass.command().toString());
-        logger.info("Start env: " + startCass.environment().toString());
+        logger.info("Start cmd: {}", startCass.command());
+        logger.info("Start env: {}", startCass.environment());
         Process starter = startCass.start();
 
         logger.info("Starting cassandra server ....");

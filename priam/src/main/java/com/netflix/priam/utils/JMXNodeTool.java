@@ -112,7 +112,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             }
         } catch (Throwable ex) {
             SystemUtils.closeQuietly(tool);
-            logger.error("Exception while checking JMX connection to C*, msg: " + ex.getLocalizedMessage());
+            logger.error("Exception while checking JMX connection to C*, msg: {}", ex.getLocalizedMessage());
             return false;
         }
         return true;
@@ -134,7 +134,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
                 try {
                     tool.close(); //Ensure we properly close any existing (even if it's corrupted) connection to the remote jmx agent
                 } catch (IOException e) {
-                    logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+                    logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: {}", e.getLocalizedMessage(), e);
                 }
             }
 
@@ -158,7 +158,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             try {
                 tool.close();
             } catch (IOException e) {
-                logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: " + e.getLocalizedMessage(), e);
+                logger.warn("Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: {}", e.getLocalizedMessage(), e);
             }
         }
 
@@ -355,7 +355,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         while (it.hasNext()) {
             Entry<String, ColumnFamilyStoreMBean> entry = it.next();
             if (keyspaces.contains(entry.getKey())) {
-                logger.info("Refreshing " + entry.getKey() + " " + entry.getValue().getColumnFamilyName());
+                logger.info("Refreshing {} {}", entry.getKey(), entry.getValue().getColumnFamilyName());
                 loadNewSSTables(entry.getKey(), entry.getValue().getColumnFamilyName());
             }
         }

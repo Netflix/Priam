@@ -150,7 +150,8 @@ public class BackupServlet {
             endTime = path.parseDate(restore[1]);
         }
 
-        logger.info("Parameters: {backupPrefix: [" + config.getBackupPrefix() + "], daterange: [" + daterange + "], filter: [" + filter + "]}");
+        logger.info("Parameters: {backupPrefix: [{}], daterange: [{}], filter: [{}]}",
+                config.getBackupPrefix(), daterange, filter);
 
         Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
@@ -164,9 +165,9 @@ public class BackupServlet {
     @Produces(MediaType.APPLICATION_JSON)
     public Response status() throws Exception {
         int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
-        logger.debug("Thread counts for restore is: %d", restoreTCount);
+        logger.debug("Thread counts for restore is: {}", restoreTCount);
         int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for snapshot backup is: %d", backupTCount);
+        logger.debug("Thread counts for snapshot backup is: {}", backupTCount);
         JSONObject object = new JSONObject();
         object.put("ThreadCount", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
         object.put("SnapshotStatus", snapshotBackup.state().toString());
@@ -247,14 +248,14 @@ public class BackupServlet {
         if (backupMetadata != null && !backupMetadata.isEmpty())
             return backupMetadata;
         if (DateUtil.formatyyyyMMdd(startTime).equals(DateUtil.formatyyyyMMdd(endTime))) {
-            logger.info("Start & end date are same. No SNAPSHOT found for date: " + DateUtil.formatyyyyMMdd(endTime));
+            logger.info("Start & end date are same. No SNAPSHOT found for date: {}", DateUtil.formatyyyyMMdd(endTime));
             return null;
         } else {
             Date previousDay = new Date(endTime.getTime());
             do {
                 //We need to find the latest backupmetadata in this date range.
                 previousDay = new DateTime(previousDay.getTime()).minusDays(1).toDate();
-                logger.info("Will try to find snapshot for previous day: " + DateUtil.formatyyyyMMdd(previousDay));
+                logger.info("Will try to find snapshot for previous day: {}", DateUtil.formatyyyyMMdd(previousDay));
                 backupMetadata = completedBkups.locate(previousDay);
                 if (backupMetadata != null && !backupMetadata.isEmpty())
                     return backupMetadata;
@@ -289,7 +290,7 @@ public class BackupServlet {
         JSONObject jsonReply = new JSONObject();
         jsonReply.put("inputStartDate", DateUtil.formatyyyyMMddHHmm(startTime));
         jsonReply.put("inputEndDate", DateUtil.formatyyyyMMddHHmm(endTime));
-        logger.info("Will try to validate latest backup during startTime: " + DateUtil.formatyyyyMMddHHmm(startTime) + ", and endTime: " + DateUtil.formatyyyyMMddHHmm(endTime));
+        logger.info("Will try to validate latest backup during startTime: {}, and endTime: {}", DateUtil.formatyyyyMMddHHmm(startTime), DateUtil.formatyyyyMMddHHmm(endTime));
 
         List<BackupMetadata> metadata = getLatestBackupMetadata(startTime, endTime);
         BackupVerificationResult result = backupVerification.verifyBackup(metadata, startTime);
@@ -417,9 +418,9 @@ public class BackupServlet {
 
         if (StringUtils.isNotBlank(region)) {
             config.setDC(region);
-            logger.info("Restoring from region " + region);
+            logger.info("Restoring from region {}", region);
             priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
+            logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
         setRestoreKeyspaces(keyspaces);
@@ -506,7 +507,7 @@ public class BackupServlet {
             object.put("files", jArray);
             object.put("num_files", fileCnt);
         } catch (JSONException jse) {
-            logger.info("Caught JSON Exception --> " + jse.getMessage());
+            logger.info("Caught JSON Exception --> {}", jse.getMessage());
         }
         return object;
     }
@@ -566,16 +567,16 @@ public class BackupServlet {
         sbuff.append(SSTABLE2JSON_DIR_LOCATION + File.separator + jsonFilePath);
         sbuff.append(" ; done");
 
-        logger.info("SSTable2JSON location <" + SSTABLE2JSON_DIR_LOCATION + File.separator + jsonFilePath + ">");
-        logger.info("Running Command = " + sbuff.toString());
+        logger.info("SSTable2JSON location <" + SSTABLE2JSON_DIR_LOCATION + "{}{}>", File.separator, jsonFilePath);
+        logger.info("Running Command = {}", sbuff);
         return sbuff.toString();
     }
 
     public void removeAllDataFiles(String ks) throws Exception {
         String cleanupDirPath = config.getDataFileLocation() + File.separator + ks;
-        logger.info("Starting to clean all the files inside <" + cleanupDirPath + ">");
+        logger.info("Starting to clean all the files inside <{}>", cleanupDirPath);
         SystemUtils.cleanupDir(cleanupDirPath, null);
-        logger.info("*** Done cleaning all the files inside <" + cleanupDirPath + ">");
+        logger.info("*** Done cleaning all the files inside <{}>", cleanupDirPath);
     }
 
 }

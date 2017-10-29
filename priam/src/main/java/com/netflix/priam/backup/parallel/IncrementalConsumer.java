@@ -53,7 +53,7 @@ public class IncrementalConsumer implements Runnable {
 	 */
     public void run() {
 
-        logger.info("Consumer - about to upload file: " + this.bp.getFileName());
+        logger.info("Consumer - about to upload file: {}", this.bp.getFileName());
 
         try {
 
@@ -81,8 +81,7 @@ public class IncrementalConsumer implements Runnable {
                         bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                         return null;
                     } catch (Exception e) {
-                        logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."
-                                , bp.getFileName()));
+                        logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.getFileName());
                         if (is != null) {
                             is.close();
                         }
@@ -95,11 +94,9 @@ public class IncrementalConsumer implements Runnable {
             this.callback.postProcessing(bp); //post processing
         } catch (Exception e) {
             if (e instanceof java.util.concurrent.CancellationException) {
-                logger.debug(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
-                        , this.bp.getFileName(), e.getLocalizedMessage()));
+                logger.debug("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
             } else {
-                logger.error(String.format("Failed to upload local file %s. Ignoring to continue with rest of backup.  Msg: %s"
-                        , this.bp.getFileName(), e.getLocalizedMessage()));
+                logger.error("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
             }
         }
     }

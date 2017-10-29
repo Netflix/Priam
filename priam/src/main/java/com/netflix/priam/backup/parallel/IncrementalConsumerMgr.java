@@ -85,7 +85,7 @@ public class IncrementalConsumerMgr implements Runnable {
 
 
                 } catch (InterruptedException e) {
-                    logger.warn("Was interrupted while wating to dequeued a task.  Msgl: " + e.getLocalizedMessage());
+                    logger.warn("Was interrupted while wating to dequeued a task.  Msgl: {}", e.getLocalizedMessage());
                 }
             }
 
@@ -93,7 +93,7 @@ public class IncrementalConsumerMgr implements Runnable {
             try {
                 Thread.currentThread().sleep(IIncrementalBackup.INCREMENTAL_INTERVAL_IN_MILLISECS);
             } catch (InterruptedException e) {
-                logger.warn("Was interrupted while sleeping until next interval run.  Msgl: " + e.getLocalizedMessage());
+                logger.warn("Was interrupted while sleeping until next interval run.  Msgl: {}", e.getLocalizedMessage());
             }
         }
 

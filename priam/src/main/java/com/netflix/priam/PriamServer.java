@@ -99,7 +99,7 @@ public class PriamServer {
                     logger.info("Added incremental synchronous bkup");
                 } else {
                     scheduler.addTask(IncrementalBackupProducer.JOBNAME, IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
-                    logger.info("Added incremental async-synchronous bkup, next fired time: " + IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
+                    logger.info("Added incremental async-synchronous bkup, next fired time: {}", IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
                 }
             }
 

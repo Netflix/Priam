@@ -48,7 +48,7 @@ public class TestCustomizedTPE
                 public Void call() throws Exception
                 {
                     Thread.sleep(100);
-                    logger.info("Count:" + count.incrementAndGet());
+                    logger.info("Count:{}", count.incrementAndGet());
                     return null;
                 }
             });

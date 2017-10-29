@@ -322,7 +322,7 @@ public class PriamConfiguration implements IConfiguration {
         ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
         if (StringUtils.isBlank(ASG_NAME))
             ASG_NAME = populateASGName(REGION, INSTANCE_ID);
-        logger.info(String.format("REGION set to %s, ASG Name set to %s", REGION, ASG_NAME));
+        logger.info("REGION set to {}, ASG Name set to {}", REGION, ASG_NAME);
     }
 
     /**
@@ -935,14 +935,14 @@ public class PriamConfiguration implements IConfiguration {
         }
         Map<String, String> extraEnvParamsMap = new HashMap<String, String>();
         String[] pairs = envParams.split(",");
-        logger.info("getExtraEnvParams: Extra cass params. From config :" + envParams);
+        logger.info("getExtraEnvParams: Extra cass params. From config :{}", envParams);
         for (int i = 0; i < pairs.length; i++) {
             String[] pair = pairs[i].split("=");
             if (pair.length > 1) {
                 String priamKey = pair[0];
                 String cassKey = pair[1];
                 String cassVal = config.get(priamKey);
-                logger.info("getExtraEnvParams: Start-up/ env params: Priamkey[" + priamKey + "], CassStartupKey[" + cassKey + "], Val[" + cassVal + "]");
+                logger.info("getExtraEnvParams: Start-up/ env params: Priamkey[{}], CassStartupKey[{}], Val[{}]", priamKey, cassKey, cassVal);
                 if (!StringUtils.isBlank(cassKey) && !StringUtils.isBlank(cassVal)) {
                     extraEnvParamsMap.put(cassKey, cassVal);
                 }

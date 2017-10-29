@@ -175,7 +175,7 @@ public class MetaData {
             throw new RuntimeException("Error transforming file " + input.getAbsolutePath() + " to JSON format.  Msg:" + ex.getLocalizedMessage(), ex);
         }
 
-        logger.debug("Transformed file " + input.getAbsolutePath() + " to JSON.  Number of JSON elements: " + files.size());
+        logger.debug("Transformed file {} to JSON.  Number of JSON elements: {}", input.getAbsolutePath(), files.size());
         return files;
     }
 }

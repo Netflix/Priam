@@ -54,11 +54,11 @@ public class PriamScheduler {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         JobDetail job = JobBuilder.newJob().withIdentity(name, Scheduler.DEFAULT_GROUP).ofType(taskclass).build();//new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
         if (timer.getCronExpression() != null && !timer.getCronExpression().isEmpty()) {
-            logger.info("Scheduled task metadata.  Task name: " + taskclass.getName()
-                    + ", cron expression: " + timer.getCronExpression());
+            logger.info("Scheduled task metadata.  Task name: {}"
+                    + ", cron expression: {}", taskclass.getName(), timer.getCronExpression());
 
         } else {
-            logger.info("Scheduled task metadata.  Task name: " + taskclass.getName());
+            logger.info("Scheduled task metadata.  Task name: {}", taskclass.getName());
         }
         scheduler.scheduleJob(job, timer.getTrigger());
     }
@@ -77,9 +77,9 @@ public class PriamScheduler {
                     sleeper.sleepQuietly(delayInSeconds * 1000L);
                     scheduler.scheduleJob(job, timer.getTrigger());
                 } catch (SchedulerException e) {
-                    logger.warn("problem occurred while scheduling a job with name " + name, e);
+                    logger.warn("problem occurred while scheduling a job with name {}", name, e);
                 } catch (ParseException e) {
-                    logger.warn("problem occurred while parsing a job with name " + name, e);
+                    logger.warn("problem occurred while parsing a job with name {}", name, e);
                 }
             }
         }).start();

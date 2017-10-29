@@ -77,7 +77,9 @@ public class AWSMembership implements IMembership {
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+            }
             return instanceIds;
         } finally {
             if (client != null)
@@ -99,7 +101,7 @@ public class AWSMembership implements IMembership {
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 size += asg.getMaxSize();
             }
-            logger.info(String.format("Query on ASG returning %d instances", size));
+            logger.info("Query on ASG returning {} instances", size);
             return size;
         } finally {
             if (client != null)
@@ -125,7 +127,9 @@ public class AWSMembership implements IMembership {
                             .equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
-            logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            if (logger.isInfoEnabled()) {
+                logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+            }
             return instanceIds;
         } finally {
             if (client != null)
@@ -150,12 +154,16 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
                 client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
-                logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
+                }
             } else {
                 AuthorizeSecurityGroupIngressRequest sgIngressRequest = new AuthorizeSecurityGroupIngressRequest();
                 sgIngressRequest.withGroupId(getVpcGoupId()); //fetch SG group id for vpc account of the running instance.
                 client.authorizeSecurityGroupIngress(sgIngressRequest.withIpPermissions(ipPermissions)); //Adding peers' IPs as ingress to the running instance SG
-                logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
+                }
             }
 
 
@@ -178,10 +186,10 @@ public class AWSMembership implements IMembership {
             DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups()) {
-                logger.debug(String.format("got group-id:%s for group-name:%s,vpc-id:%s", group.getGroupId(), config.getACLGroupName(), config.getVpcId()));
+                logger.debug("got group-id:{} for group-name:{},vpc-id:{}", group.getGroupId(), config.getACLGroupName(), config.getVpcId());
                 return group.getGroupId();
             }
-            logger.error(String.format("unable to get group-id for group-name=%s vpc-id=%s", config.getACLGroupName(), config.getVpcId()));
+            logger.error("unable to get group-id for group-name={} vpc-id={}", config.getACLGroupName(), config.getVpcId());
             return "";
         } finally {
             if (client != null)
@@ -201,12 +209,16 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
                 client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
-                logger.info("Done removing from ACL within classic env for running instance: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done removing from ACL within classic env for running instance: " + StringUtils.join(listIPs, ","));
+                }
             } else {
                 RevokeSecurityGroupIngressRequest req = new RevokeSecurityGroupIngressRequest();
                 req.withGroupId(getVpcGoupId());  //fetch SG group id for vpc account of the running instance.
                 client.revokeSecurityGroupIngress(req.withIpPermissions(ipPermissions));  //Adding peers' IPs as ingress to the running instance SG
-                logger.info("Done removing from ACL within vpc env for running instance: " + StringUtils.join(listIPs, ","));
+                if (logger.isInfoEnabled()) {
+                    logger.info("Done removing from ACL within vpc env for running instance: " + StringUtils.join(listIPs, ","));
+                }
             }
 
 

@@ -103,10 +103,10 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         if (!uploadedFiles.isEmpty()) {
             String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
             String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
-            logger.info("Uploading meta file for incremental backup: " + metaFileName);
+            logger.info("Uploading meta file for incremental backup: {}", metaFileName);
             this.metaData.setMetaFileName(metaFileName);
             this.metaData.set(uploadedFiles, incrementalUploadTime);
-            logger.info("Uploaded meta file for incremental backup: " + metaFileName);
+            logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
         }
 
     }

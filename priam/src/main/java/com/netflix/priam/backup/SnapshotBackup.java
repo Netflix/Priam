@@ -90,7 +90,7 @@ public class SnapshotBackup extends AbstractBackup {
         snapshotStatusMgr.start(backupMetadata);
 
         try {
-            logger.info("Starting snapshot " + snapshotName);
+            logger.info("Starting snapshot {}", snapshotName);
             //Clearing remotePath List
             snapshotRemotePaths.clear();
             takeSnapshot(snapshotName);
@@ -108,7 +108,7 @@ public class SnapshotBackup extends AbstractBackup {
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(abstractBackupPaths, snapshotName);
 
-            logger.info("Snapshot upload complete for " + snapshotName);
+            logger.info("Snapshot upload complete for {}", snapshotName);
             notifyEventSuccess(new BackupEvent(metaJsonAbp));
             backupMetadata.setSnapshotLocation(config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
@@ -170,9 +170,9 @@ public class SnapshotBackup extends AbstractBackup {
                 int hour = config.getBackupHour();
                 if (hour >= 0) {
                     cronTimer = new CronTimer(JOBNAME, hour, 1, 0);
-                    logger.info("Starting snapshot backup with backup hour: " + hour);
+                    logger.info("Starting snapshot backup with backup hour: {}", hour);
                 } else
-                    logger.info("Skipping snapshot backup as backup hour is less than 0: " + hour);
+                    logger.info("Skipping snapshot backup as backup hour is less than 0: {}", hour);
                 break;
             case CRON:
                 String cronExpression = config.getBackupCronExpression();
@@ -185,7 +185,7 @@ public class SnapshotBackup extends AbstractBackup {
                                 ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
 
                     cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-                    logger.info(String.format("Starting snapshot backup with CRON expression %s", cronTimer.getCronExpression()));
+                    logger.info("Starting snapshot backup with CRON expression {}", cronTimer.getCronExpression());
                 }
                 break;
         }

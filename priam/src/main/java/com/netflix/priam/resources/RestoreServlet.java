@@ -115,8 +115,8 @@ public class RestoreServlet {
             config.setRestorePrefix(restorePrefix);
         }
 
-        logger.info("Parameters: { token: [" + token + "], region: [" + region + "], startTime: [" + startTime + "], endTime: [" + endTime +
-                "], keyspaces: [" + keyspaces + "], restorePrefix: [" + restorePrefix + "]}");
+        logger.info("Parameters: { token: [{}], region: [{}], startTime: [{}], endTime: [{}], keyspaces: [{}], restorePrefix: [{}]}",
+                token, region, startTime, endTime, keyspaces, restorePrefix);
 
         restore(token, region, startTime, endTime, keyspaces);
 
@@ -149,9 +149,9 @@ public class RestoreServlet {
 
         if (StringUtils.isNotBlank(region)) {
             config.setDC(region);
-            logger.info("Restoring from region " + region);
+            logger.info("Restoring from region {}", region);
             priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token " + priamServer.getId().getInstance().getToken());
+            logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
         setRestoreKeyspaces(keyspaces);

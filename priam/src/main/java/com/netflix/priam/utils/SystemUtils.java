@@ -164,7 +164,7 @@ public class SystemUtils {
         try {
             if (!f.exists()) {
                 f.createNewFile();
-                logger.info("File created, absolute path: " + f.getAbsolutePath());
+                logger.info("File created, absolute path: {}", f.getAbsolutePath());
             }
 
             fw = new FileWriter(f, false);

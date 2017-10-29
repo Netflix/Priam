@@ -72,7 +72,7 @@ public class CassandraConfig {
         try {
             String token = priamServer.getId().getInstance().getToken();
             if (StringUtils.isNotBlank(token)) {
-                logger.info("Returning token value \"" + token + "\" for this instance to caller.");
+                logger.info("Returning token value \"{}\" for this instance to caller.", token);
                 return Response.ok(priamServer.getId().getInstance().getToken()).build();
             }
 

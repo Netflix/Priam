@@ -87,11 +87,11 @@ public abstract class Task implements Job, TaskMBean {
 
         } catch (Exception e) {
             status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of " + e.getMessage(), e);
+            logger.error("Couldnt execute the task because of {}", e.getMessage(), e);
             errors.incrementAndGet();
         } catch (Throwable e) {
             status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of " + e.getMessage(), e);
+            logger.error("Couldnt execute the task because of {}", e.getMessage(), e);
             errors.incrementAndGet();
         }
         if (status != STATE.ERROR)

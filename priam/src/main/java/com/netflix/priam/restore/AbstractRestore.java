@@ -91,18 +91,18 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
                 continue;
 
             if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())) { //keyspace filtered?
-                logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as its keyspace: \"" + temp.getKeyspace() + "\" is part of the filter list");
+                logger.info("Bypassing restoring file \"{}\" as its keyspace: \"{}\" is part of the filter list", temp.newRestoreFile(), temp.getKeyspace());
                 continue;
             }
 
             if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
-                logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: "
-                        + temp.getKeyspace() + ":" + temp.getColumnFamily());
+                logger.info("Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
+                        temp.newRestoreFile(), temp.getKeyspace(), temp.getColumnFamily());
                 continue;
             }
 
             if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(temp.getKeyspace()) || temp.getKeyspace().equals(SYSTEM_KEYSPACE))) {
-                logger.info("Bypassing restoring file \"" + temp.newRestoreFile() + "\" as it is system keyspace");
+                logger.info("Bypassing restoring file \"{}\" as it is system keyspace", temp.newRestoreFile());
                 continue;
             }
 
@@ -157,7 +157,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
      * Fetches meta.json used to store snapshots metadata.
      */
     private final void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException {
-        logger.debug("Looking for snapshot meta file within restore prefix: " + restorePrefix);
+        logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
 
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
         if (!backupfiles.hasNext()) {
@@ -179,7 +179,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         if (!isRestoreEnabled(config))
             return;
 
-        logger.info("Starting restore for " + config.getRestoreSnapshot());
+        logger.info("Starting restore for {}", config.getRestoreSnapshot());
         String[] restore = config.getRestoreSnapshot().split(",");
         AbstractBackupPath path = pathProvider.get();
         final Date startTime = path.parseDate(restore[0]);
@@ -233,7 +233,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
             Collections.sort(metas);
             AbstractBackupPath meta = Iterators.getLast(metas.iterator());
-            logger.info("Snapshot Meta file for restore " + meta.getRemotePath());
+            logger.info("Snapshot Meta file for restore {}", meta.getRemotePath());
             instanceState.getRestoreStatus().setSnapshotMetaFile(meta.getRemotePath());
 
             //Download the meta.json file.
@@ -255,10 +255,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
             //Downloading CommitLogs
             if (config.isBackingUpCommitLogs()) {
-                logger.info("Delete all backuped commitlog files in " + config.getBackupCommitLogLocation());
+                logger.info("Delete all backuped commitlog files in {}", config.getBackupCommitLogLocation());
                 SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
 
-                logger.info("Delete all commitlog files in " + config.getCommitLogLocation());
+                logger.info("Delete all commitlog files in {}", config.getCommitLogLocation());
                 SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
 
                 Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.getTime(), endTime);
@@ -275,7 +275,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            logger.error("Error while trying to restore: " + e.getMessage(), e);
+            logger.error("Error while trying to restore: {}", e.getMessage(), e);
             throw e;
         } finally {
             id.getInstance().setToken(origToken);

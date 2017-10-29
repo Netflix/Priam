@@ -86,7 +86,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
             bp.parseLocal(file, type);
 
             try {
-                logger.info(String.format("About to upload file %s for backup", file.getCanonicalFile()));
+                logger.info("About to upload file {} for backup", file.getCanonicalFile());
 
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME) {
                     public AbstractBackupPath retriableCall() throws Exception {
@@ -101,7 +101,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
 
                 addToRemotePath(abp.getRemotePath());
             } catch (Exception e) {
-                logger.error(String.format("Failed to upload local file %s within CF %s. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath()), e);
+                logger.error("Failed to upload local file {} within CF {}. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
             }
         }
         return bps;
@@ -128,8 +128,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                     bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                     return null;
                 } catch (Exception e) {
-                    logger.error(String.format("Exception uploading local file %S,  releasing handle, and will retry."
-                            , bp.backupFile.getCanonicalFile()));
+                    logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
                     if (is != null) {
                         is.close();
                     }
@@ -153,15 +152,14 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                 continue;
 
             if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
-                logger.info("Skipping: " + keyspaceDir.getName() + " is part of keyspace filter");
+                logger.info("Skipping: {} is part of keyspace filter", keyspaceDir.getName());
                 continue;
             }
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
 
             for (File columnFamilyDir : keyspaceDir.listFiles()) {
                 if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
-                    logger.info("Skipping: keyspace: " + keyspaceDir.getName()
-                            + ", CF: " + columnFamilyDir.getName() + " is part of CF filter list.");
+                    logger.info("Skipping: keyspace: {}, CF: {} is part of CF filter list.", keyspaceDir.getName(), columnFamilyDir.getName());
                     continue;
                 }
 

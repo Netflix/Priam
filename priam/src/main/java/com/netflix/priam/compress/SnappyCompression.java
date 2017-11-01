@@ -18,6 +18,7 @@ package com.netflix.priam.compress;
 
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
+import org.xerial.snappy.SnappyOutputStream;
 
 import java.io.*;
 import java.util.Iterator;
@@ -32,6 +33,22 @@ public class SnappyCompression implements ICompression {
     @Override
     public Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException {
         return new ChunkedStream(is, chunkSize);
+    }
+
+    @Override
+    public byte[] compress(InputStream inputStream) throws IOException {
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+             SnappyOutputStream compress = new SnappyOutputStream(byteArrayOutputStream)) {
+            byte data[] = new byte[BUFFER];
+            int count;
+            while ((count = inputStream.read(data, 0, data.length)) != -1) {
+                compress.write(data, 0, count);
+            }
+            compress.flush();
+            return byteArrayOutputStream.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override

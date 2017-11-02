@@ -18,7 +18,6 @@ package com.netflix.priam.compress;
 
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
-import org.xerial.snappy.SnappyOutputStream;
 
 import java.io.*;
 import java.util.Iterator;

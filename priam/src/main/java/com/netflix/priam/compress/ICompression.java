@@ -33,6 +33,10 @@ public interface ICompression {
 
     /**
      * Produces chunks of compressed data.
+     * @param is inputstream to be compressed.
+     * @param chunkSize compress the stream and return it in parts of chunk
+     * @return compressed byte array iterator
+     * @throws IOException
      */
     public Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException;
 }

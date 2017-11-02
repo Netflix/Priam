@@ -18,10 +18,7 @@ package com.netflix.priam.aws;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ResponseMetadata;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
-import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
-import com.amazonaws.services.s3.model.PartETag;
+import com.amazonaws.services.s3.model.*;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -35,15 +32,14 @@ import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -90,8 +86,7 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         }
     }
 
-    @Override
-    public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
+    private void uploadMultipart(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
@@ -132,6 +127,46 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         } finally {
             IOUtils.closeQuietly(in);
         }
+    }
+
+    @Override
+    public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
+
+        if (path.getSize() < chunkSize) {
+            //Upload file without using multipart upload as it will be more efficient.
+            if (logger.isDebugEnabled())
+                logger.debug("Uploading file using put: {}", path.getRemotePath());
+
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);
+                while (chunkedStream.hasNext()) {
+                    byteArrayOutputStream.write(chunkedStream.next());
+                }
+                byte[] chunk = byteArrayOutputStream.toByteArray();
+                rateLimiter.acquire(chunk.length);
+                ObjectMetadata objectMetadata = new ObjectMetadata();
+                objectMetadata.setContentLength(chunk.length);
+                PutObjectRequest putObjectRequest = new PutObjectRequest(config.getBackupPrefix(), path.getRemotePath(), new ByteArrayInputStream(chunk), objectMetadata);
+                //Retry if failed.
+                PutObjectResult upload = new BoundedExponentialRetryCallable<PutObjectResult>() {
+                    @Override
+                    public PutObjectResult retriableCall() throws Exception {
+                        return s3Client.putObject(putObjectRequest);
+                    }
+                }.retriableCall();
+
+                bytesUploaded.addAndGet(chunk.length);
+
+                if (logger.isDebugEnabled())
+                    logger.debug("Successfully uploaded file with putObject: {} and etag: {}", path.getRemotePath(), upload.getETag());
+            } catch (Exception e) {
+                throw encounterError(path, e);
+            } finally {
+                IOUtils.closeQuietly(in);
+            }
+        } else
+            uploadMultipart(path, in, chunkSize);
+
     }
 
     @Override

@@ -39,10 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
-import java.io.BufferedInputStream;
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.io.*;
 import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -132,17 +129,20 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         }
     }
 
-        @Override
+    @Override
     public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
 
-        if (path.getSize() < chunkSize)
-        {
+        if (path.getSize() < chunkSize) {
             //Upload file without using multipart upload as it will be more efficient.
             if (logger.isDebugEnabled())
                 logger.debug("Uploading file using put: {}", path.getRemotePath());
 
-            try {
-                byte[] chunk = compress.compress(in);
+            try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
+                Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);
+                while (chunkedStream.hasNext()) {
+                    byteArrayOutputStream.write(chunkedStream.next());
+                }
+                byte[] chunk = byteArrayOutputStream.toByteArray();
                 rateLimiter.acquire(chunk.length);
                 ObjectMetadata objectMetadata = new ObjectMetadata();
                 objectMetadata.setContentLength(chunk.length);
@@ -159,12 +159,12 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
 
                 if (logger.isDebugEnabled())
                     logger.debug("Successfully uploaded file with putObject: {} and etag: {}", path.getRemotePath(), upload.getETag());
-            }catch (Exception e) {
+            } catch (Exception e) {
                 throw encounterError(path, e);
             } finally {
                 IOUtils.closeQuietly(in);
             }
-        }else
+        } else
             uploadMultipart(path, in, chunkSize);
 
     }

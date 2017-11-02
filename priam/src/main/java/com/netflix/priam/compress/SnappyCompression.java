@@ -36,22 +36,6 @@ public class SnappyCompression implements ICompression {
     }
 
     @Override
-    public byte[] compress(InputStream inputStream) throws IOException {
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-             SnappyOutputStream compress = new SnappyOutputStream(byteArrayOutputStream)) {
-            byte data[] = new byte[BUFFER];
-            int count;
-            while ((count = inputStream.read(data, 0, data.length)) != -1) {
-                compress.write(data, 0, count);
-            }
-            compress.flush();
-            return byteArrayOutputStream.toByteArray();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
     public void decompressAndClose(InputStream input, OutputStream output) throws IOException {
         try {
             decompress(input, output);

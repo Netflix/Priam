@@ -272,7 +272,13 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         }
     }
 
+
     protected BackupRestoreException encounterError(AbstractBackupPath path, S3PartUploader s3PartUploader, Exception e) {
+        s3PartUploader.abortUpload();
+        return encounterError(path, e);
+    }
+
+    protected BackupRestoreException encounterError(AbstractBackupPath path, Exception e) {
         this.backupMetricsMgr.incrementInvalidUploads();
         if (e instanceof AmazonS3Exception) {
             AmazonS3Exception a = (AmazonS3Exception) e;
@@ -284,8 +290,8 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
                 }
             }
         }
+
         logger.error("Error uploading file {}, a datapart was not uploaded.", path.getFileName(), e);
-        s3PartUploader.abortUpload();
         notifyEventFailure(new BackupEvent(path));
         return new BackupRestoreException("Error uploading file " + path.getFileName(), e);
     }

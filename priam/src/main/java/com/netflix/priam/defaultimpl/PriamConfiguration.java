@@ -1125,4 +1125,9 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_CASS_USE_SUDO, true);
     }
 
+    @Override
+    public String getBackupNotificationTopicArn() {
+        return config.get(PRIAM_PRE + ".backup.notification.topic.arn", "");
+    }
+
 }

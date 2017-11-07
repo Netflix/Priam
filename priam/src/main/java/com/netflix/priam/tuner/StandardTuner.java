@@ -18,6 +18,7 @@ package com.netflix.priam.tuner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;
@@ -43,7 +44,7 @@ public class StandardTuner implements ICassandraTuner {
         this.config = config;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException {
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -69,8 +70,10 @@ public class StandardTuner implements ICassandraTuner {
         map.put("commitlog_directory", config.getCommitLogLocation());
         map.put("hints_directory", config.getHintsLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
-        boolean enableIncremental = (config.getBackupHour() >= 0 && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
+
+        boolean enableIncremental = (SnapshotBackup.isBackupEnabled(config) && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);
+
         map.put("endpoint_snitch", config.getSnitch());
         if (map.containsKey("in_memory_compaction_limit_in_mb")) {
             map.remove("in_memory_compaction_limit_in_mb");

@@ -22,7 +22,7 @@ import java.io.IOException;
 @ImplementedBy(StandardTuner.class)
 public interface ICassandraTuner
 {
-    void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException;
+    void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception;
 
     void updateAutoBootstrap(String yamlLocation, boolean autobootstrap) throws IOException;
 

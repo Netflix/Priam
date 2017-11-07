@@ -736,6 +736,11 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
+    public String getBackupNotificationTopicArn() {
+        return null;
+    }
+
+    @Override
     public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
         return SchedulerType.HOUR;
     }

@@ -66,7 +66,7 @@ public class PriamServer {
     }
 
     public void intialize() throws Exception {
-        if (id.getInstance().isOutOfService())
+        if (id.isOutOfService())
             return;
 
         // start to schedule jobs

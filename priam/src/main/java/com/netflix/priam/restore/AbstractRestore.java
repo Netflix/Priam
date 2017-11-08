@@ -206,12 +206,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
         instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
         instanceState.setRestoreStatus(Status.STARTED);
-        String origToken = id.getInstance().getToken();
+        String origBackupIdentifier = id.getBackupIdentifier();
 
         try {
             if (config.isRestoreClosestToken()) {
-                restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                id.getInstance().setToken(restoreToken.toString());
+                restoreToken = tokenSelector.getClosestToken(id.getToken(), startTime);
+                id.setBackupIdentifier(restoreToken.toString());
             }
 
             // Stop cassandra if its running and restoring all keyspaces
@@ -279,7 +279,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             logger.error("Error while trying to restore: {}", e.getMessage(), e);
             throw e;
         } finally {
-            id.getInstance().setToken(origToken);
+            id.setBackupIdentifier(origBackupIdentifier);
         }
     }
 

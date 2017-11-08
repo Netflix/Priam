@@ -15,19 +15,13 @@
  *
  */
 
-package com.netflix.priam.backup.identity;
-
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.TokenManager;
+package com.netflix.priam.identity;
 
 import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {
@@ -65,6 +59,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
 
         identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
+        assertTrue(identity.isExternallyDefinedToken());
     }
     
     @Test
@@ -73,6 +68,17 @@ public class InstanceIdentityTest extends InstanceTestUtils
         createInstances();
         identity = createInstanceIdentity("az1", "fakeinstance1");
         assertEquals(3, identity.getSeeds().size());
+    }
+
+    @Test
+    public void testVirtualNodesCreated() throws Exception
+    {
+        config.numTokens = 2;
+        createInstances();
+        identity = createInstanceIdentity("az1", "fakeinstance1");
+        assertEquals("virual" + Integer.toString(identity.getInstance().getId()), identity.getBackupIdentifier());
+        assertNull(identity.getToken());
+        assertFalse(identity.isExternallyDefinedToken());
     }
 
     @Test

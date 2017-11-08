@@ -343,6 +343,11 @@ public interface IConfiguration {
     public String getHostIP();
 
     /**
+     * @return Gets the number of tokens assigned to the node when using virtual nodes.
+     */
+    public int getNumTokens();
+
+    /**
      * @return Bytes per second to throttle for backups
      */
     public int getUploadThrottle();

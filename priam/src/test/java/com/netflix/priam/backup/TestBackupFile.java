@@ -62,8 +62,8 @@ public class TestBackupFile
             bos1.flush();
             bos1.close();
         }
-        InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        factory.getInstance().setToken("1234567");//Token
+        InstanceIdentity instanceIdentity = injector.getInstance(InstanceIdentity.class);
+        instanceIdentity.setBackupIdentifier("1234567");
     }
 
     @AfterClass
@@ -83,7 +83,7 @@ public class TestBackupFile
         Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
-        Assert.assertEquals("1234567", backupfile.token);
+        Assert.assertEquals("1234567", backupfile.nodeIdentifier);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
@@ -100,7 +100,7 @@ public class TestBackupFile
         Assert.assertEquals(BackupFileType.SST, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
-        Assert.assertEquals("1234567", backupfile.token);
+        Assert.assertEquals("1234567", backupfile.nodeIdentifier);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
@@ -118,7 +118,7 @@ public class TestBackupFile
         backupfile.time = backupfile.parseDate("201108082320");
         backupfile.parseLocal(bfile, BackupFileType.META);
         Assert.assertEquals(BackupFileType.META, backupfile.type);
-        Assert.assertEquals("1234567", backupfile.token);
+        Assert.assertEquals("1234567", backupfile.nodeIdentifier);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);

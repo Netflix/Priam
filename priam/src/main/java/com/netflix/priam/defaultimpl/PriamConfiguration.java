@@ -779,6 +779,7 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
     }
 
+    @Override
     public int getNumTokens() {
         return config.get(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
     }

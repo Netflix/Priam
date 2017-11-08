@@ -52,7 +52,7 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
 	@Override
 	public PriamInstance get() throws Exception {
     	
-		logger.info("Generating my own and new token");
+		logger.info("Generating my own and new identifier");
         // Sleep random interval - upto 15 sec
         sleeper.sleep(new Random().nextInt(15000));
         int hash = tokenManager.regionOffset(config.getDC());
@@ -74,10 +74,16 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         } else
             my_slot = config.getRacs().size() + maxSlot;
 
-        logger.info("Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
-                my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
-        String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
-        return factory.create(config.getAppName(), my_slot + hash, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, payload);
+        int identifier = my_slot + hash;
+        String token = null;
+        if (config.getNumTokens() == 1)
+        {
+            logger.info("Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
+                    my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
+            token = tokenManager.createToken(
+                    my_slot, membership.getRacCount(), membership.getRacMembershipSize(), config.getDC());
+        }
+        return factory.create(config.getAppName(), identifier, config.getInstanceName(), config.getHostname(), config.getHostIP(), config.getRac(), null, token);
 
     }
 

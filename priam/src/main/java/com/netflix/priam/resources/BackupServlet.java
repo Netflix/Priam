@@ -28,6 +28,7 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
+import com.netflix.priam.restore.RestoreTokenSelector;
 import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.*;
@@ -81,8 +82,7 @@ public class BackupServlet {
     private Provider<AbstractBackupPath> pathProvider;
     private ICassandraTuner tuner;
     private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory factory;
-    private final ITokenManager tokenManager;
+    private final RestoreTokenSelector tokenSelector;
     private final ICassandraProcess cassProcess;
     private BackupVerification backupVerification;
     @Inject
@@ -94,7 +94,7 @@ public class BackupServlet {
 
     @Inject
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup")IBackupFileSystem backupFs,@Named("backup_status")IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
-            SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
+            SnapshotBackup snapshotBackup, RestoreTokenSelector tokenSelector, ICassandraProcess cassProcess
     		,IBackupStatusMgr completedBkups, BackupVerification backupVerification)
     {
         this.priamServer = priamServer;
@@ -105,8 +105,7 @@ public class BackupServlet {
         this.pathProvider = pathProvider;
         this.tuner = tuner;
         this.snapshotBackup = snapshotBackup;
-        this.factory = factory;
-        this.tokenManager = tokenManager;
+        this.tokenSelector = tokenSelector;
         this.cassProcess = cassProcess;
         this.completedBkups = completedBkups;
         this.backupVerification = backupVerification;
@@ -409,18 +408,23 @@ public class BackupServlet {
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {
         String origRegion = config.getDC();
-        String origToken = priamServer.getId().getInstance().getToken();
+        String origBackupIdentifier = priamServer.getId().getBackupIdentifier();
         if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+        {
+            priamServer.getId().setBackupIdentifier(token);
+        }
+        else {
+            token = priamServer.getId().getToken();
+        }
 
         if (config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+            priamServer.getId().setBackupIdentifier(tokenSelector.getClosestToken(token, config.getAppName(), config.getDC()).toString());
 
         if (StringUtils.isNotBlank(region)) {
             config.setDC(region);
             logger.info("Restoring from region {}", region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
+            priamServer.getId().setBackupIdentifier(tokenSelector.getClosestToken(token, config.getAppName(), region).toString());
+            logger.info("Restore will use backup identifier {}", priamServer.getId().getBackupIdentifier());
         }
 
         setRestoreKeyspaces(keyspaces);
@@ -429,23 +433,10 @@ public class BackupServlet {
             restoreObj.restore(startTime, endTime);
         } finally {
             config.setDC(origRegion);
-            priamServer.getId().getInstance().setToken(origToken);
+            priamServer.getId().setBackupIdentifier(origBackupIdentifier);
         }
         tuner.updateAutoBootstrap(config.getYamlLocation(), false);
         cassProcess.start(true);
-    }
-
-    /**
-     * Find closest token in the specified region
-     */
-    private String closestToken(String token, String region) {
-        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
-        List<BigInteger> tokenList = Lists.newArrayList();
-        for (PriamInstance ins : plist) {
-            if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getToken()));
-        }
-        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }
 
     /*
@@ -484,10 +475,10 @@ public class BackupServlet {
                 backupJSON.put("filename", p.getRemotePath());
                 backupJSON.put("app", p.getClusterName());
                 backupJSON.put("region", p.getRegion());
-                backupJSON.put("token", p.getToken());
+                backupJSON.put("token", p.getNodeIdentifier());
+                backupJSON.put("nodeIdentifier", p.getNodeIdentifier());
                 backupJSON.put("ts", new DateTime(p.getTime()).toString(FMT));
-                backupJSON.put("instance_id", p.getInstanceIdentity()
-                        .getInstance().getInstanceId());
+                backupJSON.put("instance_id", p.getInstanceIdentity().getInstanceId());
                 backupJSON.put("uploaded_ts",
                         new DateTime(p.getUploadedTs()).toString(FMT));
                 if ("meta".equalsIgnoreCase(filter)) { //only check for existence of meta file

@@ -42,6 +42,7 @@ public class FakeConfiguration implements IConfiguration
     public String zone;
     public String instance_id;
     public String restorePrefix;
+    public int numTokens;
 
     public FakeConfiguration()
     {
@@ -55,6 +56,7 @@ public class FakeConfiguration implements IConfiguration
         this.zone = zone;
         this.instance_id = ins_id;
         this.restorePrefix  = "";
+        this.numTokens = 1;
     }
 
     @Override
@@ -482,7 +484,7 @@ public class FakeConfiguration implements IConfiguration
 
     public int getNumTokens()
     {
-        return 1;
+        return numTokens;
     }
 
     public String getYamlLocation()

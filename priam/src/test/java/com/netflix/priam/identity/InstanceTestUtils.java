@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.backup.identity;
+package com.netflix.priam.identity;
 
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;

@@ -53,21 +53,21 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String columnFamily;
     protected String fileName;
     protected String baseDir;
-    protected String token;
+    protected String nodeIdentifier;
     protected String region;
     protected Date time;
     protected long size; //uncompressed file size
     protected long compressedFileSize = 0;
     protected boolean isCassandra1_0;
 
-    protected final InstanceIdentity factory;
+    protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
     protected int awsSlowDownExceptionCounter = 0;
 
-    public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
-        this.factory = factory;
+    public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
+        this.instanceIdentity = instanceIdentity;
         this.config = config;
     }
 
@@ -93,7 +93,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.clusterName = config.getAppName();
         this.baseDir = config.getBackupLocation();
         this.region = config.getDC();
-        this.token = factory.getInstance().getToken();
+        this.nodeIdentifier = instanceIdentity.getBackupIdentifier();
         this.type = type;
         if (type != BackupFileType.META && type != BackupFileType.CL) {
             this.keyspace = elements[0];
@@ -214,8 +214,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return baseDir;
     }
 
-    public String getToken() {
-        return token;
+    public String getNodeIdentifier() {
+        return nodeIdentifier;
     }
 
     public String getRegion() {
@@ -262,7 +262,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public InstanceIdentity getInstanceIdentity() {
-        return this.factory;
+        return this.instanceIdentity;
     }
 
     public void setUploadedTs(Date uploadedTs) {

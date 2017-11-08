@@ -132,21 +132,23 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 
     private String findReplaceIp(List<PriamInstance> allIds, String token, String location) {
         String ip = null;
-        for (PriamInstance ins : allIds) {
-            logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
-            if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
-                continue;
-            }
+        if (token != null) {
+            for (PriamInstance ins : allIds) {
+                logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
+                if (token.equalsIgnoreCase(ins.getToken()) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
+                    continue;
+                }
 
-            try {
-                ip = getIp(ins.getHostName(), token);
-            } catch (ParseException e) {
-                ip = null;
-            }
+                try {
+                    ip = getIp(ins.getHostName(), token);
+                } catch (ParseException e) {
+                    ip = null;
+                }
 
-            if (ip != null) {
-                logger.info("Found the IP: {}", ip);
-                return ip;
+                if (ip != null) {
+                    logger.info("Found the IP: {}", ip);
+                    return ip;
+                }
             }
         }
 

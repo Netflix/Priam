@@ -114,7 +114,7 @@ public class StandardTuner implements ICassandraTuner {
         configfureSecurity(map);
         configureGlobalCaches(config, map);
         //force to 1 until vnodes are properly supported
-        map.put("num_tokens", 1);
+        map.put("num_tokens", config.getNumTokens());
 
 
         addExtraCassParams(map);

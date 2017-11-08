@@ -15,16 +15,13 @@
  *
  */
 
-package com.netflix.priam.backup.identity;
+package com.netflix.priam.identity;
 
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
 import org.junit.Test;
 
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class InstanceIdentityTest extends InstanceTestUtils {
 
@@ -60,6 +57,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
 
         identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
+        assertTrue(identity.isExternallyDefinedToken());
     }
 
     @Test
@@ -69,8 +67,19 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         assertEquals(3, identity.getSeeds().size());
     }
 
+    public void testVirtualNodesCreated() throws Exception
+    {
+        config.numTokens = 2;
+        createInstances();
+        identity = createInstanceIdentity("az1", "fakeinstance1");
+        assertEquals("virual" + Integer.toString(identity.getInstance().getId()), identity.getBackupIdentifier());
+        assertNull(identity.getToken());
+        assertFalse(identity.isExternallyDefinedToken());
+    }
+
     @Test
-    public void testDoubleSlots() throws Exception {
+    public void testDoubleSlots() throws Exception
+    {
         createInstances();
         int before = factory.getAllIds("fake-app").size();
         new DoubleRing(config, factory, tokenManager).doubleSlots();

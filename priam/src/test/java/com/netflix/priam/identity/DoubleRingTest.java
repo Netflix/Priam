@@ -15,12 +15,9 @@
  *
  */
 
-package com.netflix.priam.backup.identity;
+package com.netflix.priam.identity;
 
 import com.google.common.collect.Lists;
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
 import org.junit.Test;
 
 import java.util.List;

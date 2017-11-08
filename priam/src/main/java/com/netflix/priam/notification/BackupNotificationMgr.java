@@ -51,7 +51,8 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("cf", abp.getColumnFamily());
             jsonObject.put("region", abp.getRegion());
             jsonObject.put("rack", this.config.getRac());
-            jsonObject.put("token", abp.getToken());
+            jsonObject.put("token", abp.getNodeIdentifier());
+            jsonObject.put("nodeIdentifier", abp.getNodeIdentifier());
             jsonObject.put("filename", abp.getFileName());
             jsonObject.put("uncompressfilesize", abp.getSize());
             jsonObject.put("compressfilesize", abp.getCompressedFileSize());

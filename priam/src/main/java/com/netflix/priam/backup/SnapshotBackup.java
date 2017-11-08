@@ -83,10 +83,10 @@ public class SnapshotBackup extends AbstractBackup {
 
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
         snapshotName = pathFactory.get().formatDate(startTime);
-        String token = instanceIdentity.getInstance().getToken();
+        String backupIdentifier = instanceIdentity.getBackupIdentifier();
 
         // Save start snapshot status
-        BackupMetadata backupMetadata = new BackupMetadata(token, startTime);
+        BackupMetadata backupMetadata = new BackupMetadata(backupIdentifier, startTime);
         snapshotStatusMgr.start(backupMetadata);
 
         try {

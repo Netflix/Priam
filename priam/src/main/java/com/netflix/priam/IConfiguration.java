@@ -164,6 +164,16 @@ public interface IConfiguration {
     public int getJmxPort();
 
     /**
+     * @return Cassandra's JMX username
+     */
+    public String getJmxUsername();
+
+    /**
+     * @return Cassandra's JMX password
+     */
+    public String getJmxPassword();
+
+    /**
      * @return Enables Remote JMX connections n C*
      */
     public boolean enableRemoteJMX();

@@ -83,7 +83,7 @@ public class StandardTunerTest {
     }
 
     @Test
-    public void dump() throws IOException {
+    public void dump() throws Exception {
         String target = "/tmp/priam_test.yaml";
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File("/tmp/priam_test.yaml"));
         tuner.writeAllProperties(target, "your_host", "YourSeedProvider");

@@ -21,7 +21,7 @@ import com.google.inject.ImplementedBy;
  * Service to notify of a message.
  * Created by vinhn on 11/3/16.
  */
-@ImplementedBy(NoOpNotificationService.class)
+@ImplementedBy(AWSSnsNotificationService.class)
 public interface INotificationService {
     /**
      * Notify the message.

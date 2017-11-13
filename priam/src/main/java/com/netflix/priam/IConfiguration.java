@@ -675,5 +675,11 @@ public interface IConfiguration {
      */
     public boolean useSudo();
 
-
+    /**
+     * SNS Notification topic to be used for sending backup event notifications.
+     * One start event is sent before uploading any file and one complete/failure event is sent after the file is uploaded/failed. This applies to both incremental and snapshot.
+     * Default: no notifications i.e. this value is set to EMPTY VALUE
+     * @return SNS Topic ARN to be used to send notification.
+     */
+    public String getBackupNotificationTopicArn();
 }

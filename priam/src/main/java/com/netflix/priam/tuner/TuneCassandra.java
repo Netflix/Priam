@@ -42,7 +42,7 @@ public class TuneCassandra extends Task {
         this.instanceState = instanceState;
     }
 
-    public void execute() throws IOException {
+    public void execute() throws Exception {
         boolean isDone = false;
 
         while (!isDone) {

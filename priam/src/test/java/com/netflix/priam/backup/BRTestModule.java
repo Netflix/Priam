@@ -17,32 +17,10 @@
 
 package com.netflix.priam.backup;
 
-import java.util.Arrays;
-
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.defaultimpl.CassandraProcessManager;
-import com.netflix.priam.defaultimpl.FakeCassandraProcess;
-import com.netflix.priam.merics.BackupMetricsMgr;
-import com.netflix.priam.merics.IMetricPublisher;
-import com.netflix.priam.merics.NoOpMetricPublisher;
-import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.INotificationService;
-import com.netflix.priam.notification.NoOpNotificationService;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.TokenManager;
-
-import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.FakeMembership;
-import com.netflix.priam.FakePriamInstanceFactory;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.*;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
@@ -51,17 +29,21 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
+import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceEnvIdentity;
-import com.netflix.priam.identity.token.DeadTokenRetriever;
-import com.netflix.priam.identity.token.IDeadTokenRetriever;
-import com.netflix.priam.identity.token.INewTokenRetriever;
-import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
-import com.netflix.priam.identity.token.NewTokenRetriever;
-import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
+import com.netflix.priam.identity.token.*;
+import com.netflix.priam.merics.BackupMetricsMgr;
 import com.netflix.priam.utils.FakeSleeper;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.TokenManager;
+import org.junit.Ignore;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+
+import java.util.Arrays;
 @Ignore
 public class BRTestModule extends AbstractModule
 {

@@ -49,7 +49,7 @@ public class DseTuner extends StandardTuner {
         this.auditLogTuner = auditLogTuner;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws IOException {
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception {
         super.writeAllProperties(yamlLocation, hostname, seedProvider);
         writeCassandraSnitchProperties();
         auditLogTuner.tuneAuditLog();

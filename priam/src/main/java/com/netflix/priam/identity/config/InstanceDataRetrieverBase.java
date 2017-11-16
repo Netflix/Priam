@@ -19,54 +19,54 @@ import com.netflix.priam.utils.SystemUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 
-public class InstanceDataRetrieverBase {
+public abstract class InstanceDataRetrieverBase implements InstanceDataRetriever{
     protected JSONObject identityDocument = null;
 
-    /*
-     * @return the id (e.g. 12345) of the AWS account of running instance, could be null /empty.
-     */
+    public String getPrivateIP(){
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4");
+    }
+
+    public String getRac() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
+    }
+
+    public String getPublicHostname() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
+    }
+
+    public String getPublicIP() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
+    }
+
+    public String getInstanceId() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-id");
+    }
+
+    public String getInstanceType() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/instance-type");
+    }
+
+    public String getMac() {
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/network/interfaces/macs/").trim();
+    }
+
     public String getAWSAccountId() throws JSONException {
         if (this.identityDocument == null) {
             String jsonStr = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/dynamic/instance-identity/document");
-            synchronized (this) {
-                if (this.identityDocument == null) {
-                    this.identityDocument = new JSONObject(jsonStr);
-                }
-            }
+            this.identityDocument = new JSONObject(jsonStr);
         }
-
         return this.identityDocument.getString("accountId");
     }
 
-    /*
-     * @return the region (e.g. us-east-1) of the AWS account of running instance, could be null /empty.
-     */
     public String getRegion() throws JSONException {
         if (this.identityDocument == null) {
             String jsonStr = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/dynamic/instance-identity/document");
-            synchronized (this.identityDocument) {
-                if (this.identityDocument == null) {
-                    this.identityDocument = new JSONObject(jsonStr);
-                }
-            }
+            this.identityDocument = new JSONObject(jsonStr);
         }
-
         return this.identityDocument.getString("region");
     }
 
-    /*
-     * @return e.g.. us-east-1c
-     */
     public String getAvailabilityZone() throws JSONException {
-        if (this.identityDocument == null) {
-            String jsonStr = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/dynamic/instance-identity/document");
-            synchronized (this.identityDocument) {
-                if (this.identityDocument == null) {
-                    this.identityDocument = new JSONObject(jsonStr);
-                }
-            }
-        }
-
-        return this.identityDocument.getString("availabilityZone");
+        return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/placement/availability-zone");
     }
 }

@@ -20,6 +20,8 @@ package com.netflix.priam;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.identity.config.InstanceDataRetriever;
+import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
@@ -255,10 +257,16 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
+
     @Override
     public int getUploadThrottle() {
         // TODO Auto-generated method stub
         return 0;
+    }
+
+    @Override
+    public InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        return new LocalInstanceDataRetriever();
     }
 
     @Override

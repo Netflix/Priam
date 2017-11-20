@@ -171,7 +171,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_SIBLING_ASG_NAMES = PRIAM_PRE + ".az.sibling.asgnames";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
-    private final String LOCAL_HOSTNAME = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-hostname").trim();
     private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
@@ -184,11 +183,7 @@ public class PriamConfiguration implements IConfiguration {
 
     //Running instance meta data
     private String RAC;
-    private String PUBLIC_HOSTNAME;
     private String PUBLIC_IP;
-    private String INSTANCE_TYPE;
-    private String INSTANCE_ID;
-    private String NETWORK_MAC;  //Fetch metadata of the running instance's network interface
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
@@ -249,28 +244,21 @@ public class PriamConfiguration implements IConfiguration {
     private static final boolean DEFAULT_DUAL_ACCOUNT = false;
 
     private final IConfigSource config;
-    private final String BLANK = "";
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
     private final ICredential provider;
 
     private InstanceEnvIdentity insEnvIdentity;
+    private InstanceDataRetriever instanceDataRetriever;
 
     @Inject
     public PriamConfiguration(ICredential provider, IConfigSource config, InstanceEnvIdentity insEnvIdentity) {
         // public interface meta-data does not exist when Priam runs in AWS VPC (priam.vpc=true)
-        String p_hostname = "";
         String p_ip = "";
-        try {
-            p_hostname = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname").trim();
-        } catch (RuntimeException ex) {
-            // swallow
-        }
-        try {
+               try {
             p_ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
         } catch (RuntimeException ex) {
             // swallow
         }
-        this.PUBLIC_HOSTNAME = p_hostname;
         this.PUBLIC_IP = p_ip;
         this.provider = provider;
         this.config = config;
@@ -279,21 +267,22 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public void intialize() {
-        InstanceDataRetriever instanceDataRetriever;
         try {
-            instanceDataRetriever = getInstanceDataRetriever();
+            if (this.insEnvIdentity.isClassic()) {
+                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
+
+            } else if (this.insEnvIdentity.isNonDefaultVpc()) {
+                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
+            } else {
+                throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
+            }
         } catch (Exception e) {
             throw new IllegalStateException("Exception when instantiating the instance data retriever.  Msg: " + e.getLocalizedMessage());
         }
 
         RAC = instanceDataRetriever.getRac();
-        PUBLIC_HOSTNAME = instanceDataRetriever.getPublicHostname();
         PUBLIC_IP = instanceDataRetriever.getPublicIP();
 
-        INSTANCE_ID = instanceDataRetriever.getInstanceId();
-        INSTANCE_TYPE = instanceDataRetriever.getInstanceType();
-
-        NETWORK_MAC = instanceDataRetriever.getMac();
         NETWORK_VPC = instanceDataRetriever.getVpcId();
 
         setupEnvVars();
@@ -308,15 +297,8 @@ public class PriamConfiguration implements IConfiguration {
         SystemUtils.createDirs(getLogDirLocation());
     }
 
-    private InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        if (this.insEnvIdentity.isClassic()) {
-            return (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
-
-        } else if (this.insEnvIdentity.isNonDefaultVpc()) {
-            return (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
-        } else {
-            throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
-        }
+    public InstanceDataRetriever getInstanceDataRetriever()  {
+       return instanceDataRetriever;
     }
 
     private void setupEnvVars() {
@@ -327,7 +309,7 @@ public class PriamConfiguration implements IConfiguration {
             REGION = RAC.substring(0, RAC.length() - 1);
         ASG_NAME = StringUtils.isBlank(ASG_NAME) ? System.getProperty("ASG_NAME") : ASG_NAME;
         if (StringUtils.isBlank(ASG_NAME))
-            ASG_NAME = populateASGName(REGION, INSTANCE_ID);
+            ASG_NAME = populateASGName(REGION, getInstanceDataRetriever().getInstanceId());
         logger.info("REGION set to {}, ASG Name set to {}", REGION, ASG_NAME);
     }
 
@@ -400,6 +382,10 @@ public class PriamConfiguration implements IConfiguration {
     private void populateProps() {
         config.set(CONFIG_ASG_NAME, ASG_NAME);
         config.set(CONFIG_REGION_NAME, REGION);
+    }
+
+    public String getInstanceName(){
+        return instanceDataRetriever.getInstanceId();
     }
 
     @Override
@@ -539,27 +525,22 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getHostname() {
         if (this.isVpcRing()) return LOCAL_IP;
-        else return PUBLIC_HOSTNAME;
-    }
-
-    @Override
-    public String getInstanceName() {
-        return INSTANCE_ID;
+        else return getInstanceDataRetriever().getPublicHostname();
     }
 
     @Override
     public String getHeapSize() {
-        return config.get(CONFIG_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_HEAP);
+        return config.get(CONFIG_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_HEAP);
     }
 
     @Override
     public String getHeapNewSize() {
-        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_NEWGEN_HEAP);
+        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_NEWGEN_HEAP);
     }
 
     @Override
     public String getMaxDirectMemory() {
-        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + INSTANCE_TYPE, DEFAULT_MAX_DIRECT_MEM);
+        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_DIRECT_MEM);
     }
 
     @Override

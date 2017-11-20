@@ -25,6 +25,8 @@ import com.google.inject.Singleton;
 import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
 import com.netflix.priam.tuner.GCType;
+import com.netflix.priam.identity.config.InstanceDataRetriever;
+import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import org.apache.commons.lang3.StringUtils;
@@ -289,6 +291,7 @@ public class FakeConfiguration implements IConfiguration
         return null;
     }
 
+
     @Override
     public int getUploadThrottle()
     {
@@ -296,11 +299,16 @@ public class FakeConfiguration implements IConfiguration
         return 0;
     }
 
-	@Override
-	public boolean isLocalBootstrapEnabled() {
-		// TODO Auto-generated method stub
-		return false;
-	}
+    @Override
+    public InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+        return new LocalInstanceDataRetriever();
+    }
+
+    @Override
+    public boolean isLocalBootstrapEnabled() {
+        // TODO Auto-generated method stub
+        return false;
+    }
 
 	@Override
 	public int getInMemoryCompactionLimit() {

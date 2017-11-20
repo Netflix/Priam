@@ -18,6 +18,7 @@ package com.netflix.priam;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.defaultimpl.PriamConfiguration;
+import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
@@ -314,6 +315,11 @@ public interface IConfiguration {
      * @return Bytes per second to throttle for backups
      */
     public int getUploadThrottle();
+
+    /**
+     * @return InstanceDataRetriever which encapsulates meta-data about the running instance like region, RAC, name, ip address etc.
+     */
+    InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException;
 
     /**
      * @return true if Priam should local config file for tokens and seeds

@@ -100,6 +100,8 @@ public class StandardTuner implements ICassandraTuner {
         map.put("rpc_server_type", config.getRpcServerType());
         map.put("rpc_min_threads", config.getRpcMinThreads());
         map.put("rpc_max_threads", config.getRpcMaxThreads());
+        // Add private ip address as broadcast_rpc_address. This will ensure that COPY function works correctly. 
+        map.put("broadcast_rpc_address", config.getInstanceDataRetriever().getPrivateIP());
         //map.put("index_interval", config.getIndexInterval());
 
 

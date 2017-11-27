@@ -45,10 +45,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -75,9 +75,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected IBackupMetrics backupMetricsMgr;
     protected BlockingSubmitThreadPoolExecutor executor;
     protected RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
-    private List<EventObserver> observers = new ArrayList<>();
-    private final Object MUTEX = new Object();
-
+    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers = new CopyOnWriteArrayList<>();
 
     public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
                             ICompression compress,
@@ -357,51 +355,38 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
 
     @Override
-    public void addObserver(EventObserver observer) {
-        if (observers == null)
-            observers = new ArrayList<>();
+    public final void addObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
 
-        synchronized (MUTEX) {
-            if (!observers.contains(observer))
-                observers.add(observer);
-        }
+        observers.addIfAbsent(observer);
     }
 
     @Override
-    public void removeObserver(EventObserver observer) {
-        if (observers == null || observers.isEmpty())
-            return;
-        synchronized (MUTEX) {
-            observers.remove(observer);
-        }
+    public void removeObserver(EventObserver<BackupEvent> observer) {
+        if (observer == null)
+            throw new NullPointerException("observer must not be null.");
+
+        observers.remove(observer);
     }
 
     @Override
     public void notifyEventStart(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
+        observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
     }
 
     @Override
     public void notifyEventSuccess(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
+        observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
     }
 
     @Override
     public void notifyEventFailure(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
+        observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
     }
 
     @Override
     public void notifyEventStop(BackupEvent event) {
-        if (shouldNotifyObservers())
-            observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
+        observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
     }
-
-    private boolean shouldNotifyObservers() {
-        return (observers != null && !observers.isEmpty());
-    }
-
 }

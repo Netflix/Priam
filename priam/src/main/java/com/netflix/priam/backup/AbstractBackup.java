@@ -28,6 +28,7 @@ import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -149,20 +150,25 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
             if (keyspaceDir.isFile())
                 continue;
 
-            if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName())) { //keyspace filtered?
-                logger.info("Skipping: {} is part of keyspace filter", keyspaceDir.getName());
-                continue;
-            }
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
 
             for (File columnFamilyDir : keyspaceDir.listFiles()) {
-                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName())) { //CF filtered?
-                    logger.info("Skipping: keyspace: {}, CF: {} is part of CF filter list.", keyspaceDir.getName(), columnFamilyDir.getName());
+                File backupDir = new File(columnFamilyDir, monitoringFolder);
+
+                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
                     continue;
                 }
 
-                File backupDir = new File(columnFamilyDir, monitoringFolder);
-                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
+                String dirName = columnFamilyDir.getName();
+                String columnFamilyName = dirName.split("-")[0];
+
+                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) || //keyspace is filtered
+                        backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) //columnfamily is filtered
+                        || (FILTER_COLUMN_FAMILY.containsKey(keyspaceDir.getName()) && FILTER_COLUMN_FAMILY.get(keyspaceDir.getName()).contains(columnFamilyName)) //column family is in list of global CF filter
+                        ) { //CF filtered?
+                    logger.info("Skipping: keyspace: {}, CF: {} is part of filter list. Will clean up files from: {}", keyspaceDir.getName(), columnFamilyDir.getName(), backupDir.getName());
+                    //Clean the backup/snapshot directory else files will keep getting accumulated.
+                    SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
                     continue;
                 }
 
@@ -175,7 +181,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     protected abstract void backupUploadFlow(File backupDir) throws Exception;
 
     /**
-     * Filters unwanted keyspaces and column families
+     * Filters unwanted keyspaces
      */
     public boolean isValidBackupDir(File keyspaceDir, File columnFamilyDir, File backupDir) {
         if (!backupDir.isDirectory() && !backupDir.exists())
@@ -183,14 +189,6 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
         String keyspaceName = keyspaceDir.getName();
         if (FILTER_KEYSPACE.contains(keyspaceName)) {
             logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
-            return false;
-        }
-
-        String dirName = columnFamilyDir.getName();
-
-        String columnFamilyName = dirName.split("-")[0];
-        if (FILTER_COLUMN_FAMILY.containsKey(keyspaceName) && FILTER_COLUMN_FAMILY.get(keyspaceName).contains(columnFamilyName)) {
-            logger.debug("{} is not consider a valid CF backup directory, will be bypass.", dirName);
             return false;
         }
 

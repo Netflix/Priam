@@ -40,12 +40,12 @@ class TestBackupRestoreUtil extends Specification {
         "abc"                | "ab.ab"            | "ab"     | "ab.ab"      || true
         "abc"                | "ab.ab,de.fg"      | "ab"     | "ab.ab"      || true
         "abc"                | "ab.ab,de.fg"      | "de"     | "fg"         || true
-        null                 | "abc.de.*"         | "abc"    | "def"         | true
-        null                 | "abc.de.*"         | "abc"    | "abc.def"     | true
-        null                 | "abc.de.*,fg.hi.*" | "abc"    | "def"         | true
-        null                 | "abc.de.*,fg.hi.*" | "abc"    | "abc.def"     | true
-        null                 | "abc.de.*,fg.hi.*" | "fg"     | "hijk"        | true
-        null                 | "abc.de.*,fg.hi.*" | "fg"     | "fg.hijk"     | true
+        null                 | "abc.de.*"         | "abc"    | "def"        || true
+        null                 | "abc.de.*"         | "abc"    | "abc.def"    || true
+        null                 | "abc.de.*,fg.hi.*" | "abc"    | "def"        || true
+        null                 | "abc.de.*,fg.hi.*" | "abc"    | "abc.def"    || true
+        null                 | "abc.de.*,fg.hi.*" | "fg"     | "hijk"       || true
+        null                 | "abc.de.*,fg.hi.*" | "fg"     | "fg.hijk"    || true
 
     }
 }

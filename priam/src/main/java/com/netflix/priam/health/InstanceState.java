@@ -52,6 +52,7 @@ public class InstanceState {
 
     //Cassandra process status
     private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
+    private final AtomicBoolean shouldCassandraBeAlive = new AtomicBoolean(false);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
     private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
     private final AtomicBoolean isNativeTransportActive = new AtomicBoolean(false);
@@ -118,6 +119,14 @@ public class InstanceState {
     public void setCassandraProcessAlive(boolean isSideCarProcessAlive) {
         this.isCassandraProcessAlive.set(isSideCarProcessAlive);
         setHealthy();
+    }
+
+    public boolean shouldCassandraBeAlive() {
+        return shouldCassandraBeAlive.get();
+    }
+
+    public void setShouldCassandraBeAlive(boolean shouldCassandraBeAlive) {
+        this.shouldCassandraBeAlive.set(shouldCassandraBeAlive);
     }
 
     /* Boostrap */

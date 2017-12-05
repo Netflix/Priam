@@ -86,6 +86,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
     private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
     private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
+    private static final String CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S = PRIAM_PRE + ".remediate.dead.cassandra.rate";
     private static final String CONFIG_CREATE_NEW_TOKEN_ENABLE = PRIAM_PRE + ".create.new.token.enable";
 
     // Backup and Restore
@@ -227,6 +228,8 @@ public class PriamConfiguration implements IConfiguration {
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
     private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
     private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
+    // Default to restarting Cassandra automatically once per hour.
+    private final int DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S = 60 * 60;
 
     private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
     private static final int DEFAULT_RPC_MIN_THREADS = 16;
@@ -390,6 +393,11 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getCassStopScript() {
         return config.get(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
+    }
+
+    @Override
+    public int getRemediateDeadCassandraRate() {
+        return config.get(CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S, DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S);
     }
 
     @Override

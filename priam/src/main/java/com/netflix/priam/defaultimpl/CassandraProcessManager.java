@@ -82,6 +82,8 @@ public class CassandraProcessManager implements ICassandraProcess {
         startCass.redirectErrorStream(true);
         logger.info("Start cmd: {}", startCass.command());
         logger.info("Start env: {}", startCass.environment());
+
+        instanceState.setShouldCassandraBeAlive(true);
         Process starter = startCass.start();
 
         logger.info("Starting cassandra server ....");
@@ -149,6 +151,8 @@ public class CassandraProcessManager implements ICassandraProcess {
         ProcessBuilder stopCass = new ProcessBuilder(command);
         stopCass.directory(new File("/"));
         stopCass.redirectErrorStream(true);
+
+        instanceState.setShouldCassandraBeAlive(false);
         Process stopper = stopCass.start();
         try {
             int code = stopper.waitFor();

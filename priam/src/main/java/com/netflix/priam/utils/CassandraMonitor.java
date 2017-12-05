@@ -109,8 +109,8 @@ public class CassandraMonitor extends Task {
         try {
             int rate = config.getRemediateDeadCassandraRate();
             if (rate >= 0) {
-                if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
-                    if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
+                if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
+                    if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
                         cassProcess.start(true);
                     }
                 }

@@ -1,3 +1,24 @@
+# Changelog
+
+## 2017/12/06: 3.11.15
+
+### Bugs
+* None
+
+### New Features
+* Priam will now automatically restart Cassandra if it fails. If you use
+  Priam to stop Cassandra (via the API) it will not automatically restart
+  Cassandra until a subsequent start via the API. You can control this
+  via the ``priam.remediate.dead.cassandra.rate`` configuration option. If
+  negative it disables auto-remediation, if zero it immediately auto-remediates
+  on any failure, and if a positive integer the auto-remediation waits for
+  that number of seconds between restarts. The default is 360 seconds
+  (one hour).
+
+### Breaking Changes
+* None
+
+## Previous changelog
 1.1
 - Support for cassandra 1.1
 - Support to publish cassandra metrics (TODO)

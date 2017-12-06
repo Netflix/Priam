@@ -16,8 +16,10 @@
  */
 package com.netflix.priam.utils;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,11 +46,15 @@ public class CassandraMonitor extends Task {
     private static final Logger logger = LoggerFactory.getLogger(CassandraMonitor.class);
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
     private InstanceState instanceState;
+    private ICassandraProcess cassProcess;
+    private RateLimiter startRateLimiter;
 
     @Inject
-    protected CassandraMonitor(IConfiguration config, InstanceState instanceState) {
+    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess) {
         super(config);
         this.instanceState = instanceState;
+        this.cassProcess = cassProcess;
+        startRateLimiter = RateLimiter.create(1.0);
     }
 
     @Override
@@ -73,6 +80,7 @@ public class CassandraMonitor extends Task {
             if (line != null) {
                 //Setting cassandra flag to true
                 instanceState.setCassandraProcessAlive(true);
+                instanceState.setShouldCassandraBeAlive(true);
                 isCassandraStarted.set(true);
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
@@ -96,6 +104,19 @@ public class CassandraMonitor extends Task {
 
             if (input != null)
                 IOUtils.closeQuietly(input);
+        }
+
+        try {
+            int rate = config.getRemediateDeadCassandraRate();
+            if (rate >= 0) {
+                if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
+                    if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
+                        cassProcess.start(true);
+                    }
+                }
+            }
+        } catch (IOException e) {
+            logger.warn("Failed to remediate dead Cassandra", e);
         }
     }
 

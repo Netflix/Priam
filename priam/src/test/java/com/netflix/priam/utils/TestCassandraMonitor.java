@@ -19,27 +19,41 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.BRTestModule;
-import junit.framework.Assert;
-import org.junit.AfterClass;
+import com.netflix.priam.health.InstanceState;
+import org.junit.Assert;
+import mockit.*;
+import org.apache.cassandra.tools.NodeProbe;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
 
 /**
  * Created by aagrawal on 7/18/17.
  */
 public class TestCassandraMonitor {
+    private static CassandraMonitor monitor;
+    private IConfiguration config;
+    private InstanceState instanceState;
 
-    private Injector injector;
-    private CassandraMonitor monitor;
+    @Mocked
+    private Process mockProcess;
+    @Mocked
+    private NodeProbe nodeProbe;
+    @Mocked
+    private ICassandraProcess cassProcess;
 
     @Before
     public void setUp() {
-        if (injector == null)
-            injector = Guice.createInjector(new BRTestModule());
-
+        Injector injector = Guice.createInjector(new BRTestModule());
+        config = injector.getInstance(IConfiguration.class);
+        instanceState = injector.getInstance(InstanceState.class);
         if (monitor == null)
-            monitor = injector.getInstance(CassandraMonitor.class);
+            monitor = new CassandraMonitor(config, instanceState, cassProcess);
     }
 
     @Test
@@ -54,4 +68,69 @@ public class TestCassandraMonitor {
         Assert.assertFalse(monitor.isCassadraStarted());
     }
 
+    @Test
+    public void testNoAutoRemediation() throws Exception {
+        new MockUp<JMXNodeTool>()
+        {
+            @Mock
+            NodeProbe instance(IConfiguration config) {
+                return nodeProbe;
+            }
+        };
+        final InputStream mockOutput = new ByteArrayInputStream("a process".getBytes());
+        new Expectations() {{
+            mockProcess.getInputStream(); result= mockOutput;
+            nodeProbe.isGossipRunning(); result=true;
+            nodeProbe.isNativeTransportRunning(); result=true;
+            nodeProbe.isThriftServerRunning(); result=true;
+        }};
+        // Mock out the ps call
+        final Runtime r = Runtime.getRuntime();
+        String[] cmd = { "/bin/sh", "-c", "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()};
+        new Expectations(r) {
+            {
+                r.exec(cmd); result=mockProcess;
+            }
+        };
+        instanceState.setShouldCassandraBeAlive(false);
+        instanceState.setCassandraProcessAlive(false);
+
+        monitor.execute();
+
+        Assert.assertTrue(instanceState.shouldCassandraBeAlive());
+        Assert.assertTrue(instanceState.isCassandraProcessAlive());
+        new Verifications() {
+            { cassProcess.start(anyBoolean); times=0; }
+        };
+    }
+
+    @Test
+    public void testAutoRemediationRateLimit() throws Exception {
+        final InputStream mockOutput = new ByteArrayInputStream("".getBytes());
+        instanceState.setShouldCassandraBeAlive(true);
+        new Expectations() {{
+            // 6 calls to execute should = 12 calls to getInputStream();
+            mockProcess.getInputStream(); result=mockOutput; times=12;
+            cassProcess.start(true); minTimes=2; maxTimes=4;
+        }};
+        // Mock out the ps call
+        final Runtime r = Runtime.getRuntime();
+        String[] cmd = { "/bin/sh", "-c", "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()};
+        new Expectations(r) {
+            {
+                r.exec(cmd); result=mockProcess;
+            }
+        };
+        // Sleep ahead to ensure we have permits in the rate limiter
+        Thread.sleep(1500);
+        monitor.execute();
+        monitor.execute();
+        Thread.sleep(1500);
+        monitor.execute();
+        monitor.execute();
+        monitor.execute();
+        monitor.execute();
+
+        new Verifications() {};
+    }
 }

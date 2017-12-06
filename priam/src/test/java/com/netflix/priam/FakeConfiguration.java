@@ -338,6 +338,11 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
+    public int getRemediateDeadCassandraRate() {
+        return 1;
+    }
+
+    @Override
     public int getStoragePort() {
         return 7101;
     }

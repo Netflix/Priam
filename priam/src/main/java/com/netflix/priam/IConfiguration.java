@@ -51,6 +51,15 @@ public interface IConfiguration {
     public String getCassStopScript();
 
     /**
+     * @return int representing how often (in seconds) Priam should auto-remediate Cassandra process crash
+     * If zero, Priam will restart Cassandra whenever it notices it is crashed
+     * If a positive number, Priam will restart cassandra no more than once in that number of seconds. For example a
+     * value of 60 means that Priam will only restart Cassandra once per 60 seconds
+     * If a negative number, Priam will not restart Cassandra due to crash at all
+     */
+    public int getRemediateDeadCassandraRate();
+
+    /**
      * Eg: 'my_backup' will result in all files stored under this dir/prefix
      *
      * @return Prefix that will be added to remote backup location

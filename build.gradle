@@ -15,6 +15,11 @@ allprojects {
     repositories {
         jcenter()
     }
+    
+    configurations {
+      all*.exclude group: 'ch.qos.logback', module: 'logback-classic'
+      all*.exclude group: 'ch.qos.logback', module: 'logback-core'
+    }
 
     dependencies {
       compile 'org.apache.commons:commons-lang3:3.5'

@@ -37,8 +37,8 @@ import java.io.InputStream;
  */
 public class TestCassandraMonitor {
     private static CassandraMonitor monitor;
+    private static InstanceState instanceState;
     private IConfiguration config;
-    private InstanceState instanceState;
 
     @Mocked
     private Process mockProcess;
@@ -51,7 +51,8 @@ public class TestCassandraMonitor {
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
-        instanceState = injector.getInstance(InstanceState.class);
+        if (instanceState == null)
+            instanceState = injector.getInstance(InstanceState.class);
         if (monitor == null)
             monitor = new CassandraMonitor(config, instanceState, cassProcess);
     }
@@ -97,7 +98,7 @@ public class TestCassandraMonitor {
 
         monitor.execute();
 
-        Assert.assertTrue(instanceState.shouldCassandraBeAlive());
+        Assert.assertTrue(!instanceState.shouldCassandraBeAlive());
         Assert.assertTrue(instanceState.isCassandraProcessAlive());
         new Verifications() {
             { cassProcess.start(anyBoolean); times=0; }

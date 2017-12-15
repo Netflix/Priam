@@ -80,7 +80,6 @@ public class CassandraMonitor extends Task {
             if (line != null) {
                 //Setting cassandra flag to true
                 instanceState.setCassandraProcessAlive(true);
-                instanceState.setShouldCassandraBeAlive(true);
                 isCassandraStarted.set(true);
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
@@ -108,7 +107,7 @@ public class CassandraMonitor extends Task {
 
         try {
             int rate = config.getRemediateDeadCassandraRate();
-            if (rate >= 0) {
+            if (rate >= 0 && !config.doesCassandraStartManually()) {
                 if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
                     if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
                         cassProcess.start(true);

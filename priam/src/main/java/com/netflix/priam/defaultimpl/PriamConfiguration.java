@@ -115,6 +115,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
     private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
+    private static final String CONFIG_BACKUP_STATUS_FILE_LOCATION = PRIAM_PRE + ".backup.status.location";
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
     private static final String CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS = PRIAM_PRE + ".streaming.socket.timeout.ms";
@@ -1106,7 +1107,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return "backup.status";
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  "backup.status");
     }
 
     @Override

@@ -1,5 +1,13 @@
 # Changelog
 
+## 2017/12/14: 3.1.46
+
+### Bugs
+* Gradle 4.4 Support
+* Autostart functionality now only sets shouldCassandraBeAlive flag from
+  the start api to prevent a race against the stop API in the monitoring
+  thread.
+
 ## 2017/12/06: 3.1.45
 
 ### Bugs

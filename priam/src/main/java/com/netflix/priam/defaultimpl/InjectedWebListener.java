@@ -27,22 +27,28 @@ import com.netflix.priam.PriamServer;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+import org.quartz.Scheduler;
+import org.quartz.SchedulerException;
+import org.quartz.SchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class InjectedWebListener extends GuiceServletContextListener {
     protected static final Logger logger = LoggerFactory.getLogger(InjectedWebListener.class);
-
+    private Injector injector;
     @Override
     protected Injector getInjector() {
         List<Module> moduleList = Lists.newArrayList();
         moduleList.add(new JaxServletModule());
         moduleList.add(new PriamGuiceModule());
-        Injector injector = Guice.createInjector(moduleList);
+        injector = Guice.createInjector(moduleList);
         try {
             injector.getInstance(IConfiguration.class).intialize();
             injector.getInstance(PriamServer.class).intialize();
@@ -51,6 +57,21 @@ public class InjectedWebListener extends GuiceServletContextListener {
             throw new RuntimeException(e.getMessage(), e);
         }
         return injector;
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent servletContextEvent) {
+        try
+        {
+            for (Scheduler scheduler : injector.getInstance(SchedulerFactory.class).getAllSchedulers()){
+                scheduler.shutdown();
+            }
+        }
+        catch (SchedulerException e)
+        {
+            throw new RuntimeException(e);
+        }
+        super.contextDestroyed(servletContextEvent);
     }
 
     public static class JaxServletModule extends ServletModule {

@@ -40,8 +40,8 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -65,7 +65,7 @@ import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.CassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -323,7 +323,7 @@ public class BackupServlet
 		}
 		catch(Exception e)
 		{
-			logger.info(ExceptionUtils.getFullStackTrace(e));
+			logger.info(ExceptionUtils.getStackTrace(e));
 		}
 		finally{
 			removeAllDataFiles(ks);
@@ -484,7 +484,7 @@ public class BackupServlet
 				else
 					logger.error("Error occurred during SSTable2Json conversion and search.");
 			}catch(TimeoutException e){
-				logger.error(ExceptionUtils.getFullStackTrace(e));
+				logger.error(ExceptionUtils.getStackTrace(e));
 				throw e;
 			}
 			finally{
@@ -493,7 +493,7 @@ public class BackupServlet
 			}
 			
 		} catch (IOException e) {
-			logger.error(ExceptionUtils.getFullStackTrace(e));
+			logger.error(ExceptionUtils.getStackTrace(e));
 		}		
 	}
 	

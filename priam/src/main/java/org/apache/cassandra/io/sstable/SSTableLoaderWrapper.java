@@ -32,7 +32,7 @@ import org.apache.cassandra.streaming.PendingFile;
 import org.apache.cassandra.streaming.StreamHeader;
 import org.apache.cassandra.utils.OutputHandler;
 import org.apache.cassandra.utils.Pair;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

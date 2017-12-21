@@ -27,7 +27,7 @@ import java.util.regex.Pattern;
 import org.apache.cassandra.io.sstable.SSTableLoaderWrapper;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.streaming.PendingFile;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

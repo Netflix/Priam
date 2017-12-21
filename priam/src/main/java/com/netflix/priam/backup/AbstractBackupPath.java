@@ -27,7 +27,7 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.S3BackupPath;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;

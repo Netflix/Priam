@@ -17,7 +17,7 @@ package com.netflix.priam.utils;
 
 import java.util.concurrent.CancellationException;
 
-import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -71,12 +71,12 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
             			delay *= 2;
                     logger.error(String.format("Retry #%d for: %s",retry, e.getMessage()));
                     if(++logCounter == 1)
-                       logger.info("Exception --> "+ExceptionUtils.getFullStackTrace(e));
+                       logger.info("Exception --> "+ExceptionUtils.getStackTrace(e));
                     sleeper.sleep(delay);            			
                 }
             		else if(delay >= max && retry <= maxRetries)
             		{
-            			logger.error(String.format("Retry #%d for: %s",retry, ExceptionUtils.getFullStackTrace(e)));
+            			logger.error(String.format("Retry #%d for: %s",retry, ExceptionUtils.getStackTrace(e)));
             			sleeper.sleep(max); 
             		}
             		else

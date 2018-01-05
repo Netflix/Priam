@@ -265,6 +265,11 @@ public interface IConfiguration {
     public String getRestoreSnapshot();
 
     /**
+     * @return Get the region to connect to SDB for instance identity
+     */
+    public String getSDBInstanceIdentityRegion();
+
+    /**
      * @return Get the Data Center name (or region for AWS)
      */
     public String getDC();

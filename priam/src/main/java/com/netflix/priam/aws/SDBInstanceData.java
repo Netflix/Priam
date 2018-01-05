@@ -22,6 +22,7 @@ import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.PriamInstance;
 
@@ -49,10 +50,12 @@ public class SDBInstanceData {
     public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
 
     private final ICredential provider;
+    private final IConfiguration configuration;
 
     @Inject
-    public SDBInstanceData(ICredential provider) {
+    public SDBInstanceData(ICredential provider, IConfiguration configuration) {
         this.provider = provider;
+        this.configuration = configuration;
     }
 
     /**
@@ -203,6 +206,6 @@ public class SDBInstanceData {
 
     private AmazonSimpleDB getSimpleDBClient() {
         //Create per request
-        return AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).build();
+        return AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).withRegion(configuration.getSDBInstanceIdentityRegion()).build();
     }
 }

@@ -171,6 +171,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
     private static final String CONFIG_SIBLING_ASG_NAMES = PRIAM_PRE + ".az.sibling.asgnames";
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
+    private static final String SDB_INSTANCE_INDENTITY_REGION_NAME = PRIAM_PRE + ".sdb.instanceIdentity.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
     private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
@@ -632,6 +633,11 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public boolean isRestoreEncrypted(){
         return config.get(PRIAM_PRE + ".encrypted.restore.enabled", false);
+    }
+
+    @Override
+    public String getSDBInstanceIdentityRegion() {
+        return config.get(SDB_INSTANCE_INDENTITY_REGION_NAME, "us-east-1");
     }
 
     @Override

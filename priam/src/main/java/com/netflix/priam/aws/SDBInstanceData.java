@@ -17,10 +17,12 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.AmazonServiceException;
+import com.amazonaws.services.simpledb.AmazonSimpleDB;
 import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.identity.PriamInstance;
 
@@ -48,10 +50,12 @@ public class SDBInstanceData {
     public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
 
     private final ICredential provider;
+    private final IConfiguration configuration;
 
     @Inject
-    public SDBInstanceData(ICredential provider) {
+    public SDBInstanceData(ICredential provider, IConfiguration configuration) {
         this.provider = provider;
+        this.configuration = configuration;
     }
 
     /**
@@ -62,7 +66,7 @@ public class SDBInstanceData {
      * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
     public PriamInstance getInstance(String app, String dc, int id) {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0)
@@ -77,7 +81,7 @@ public class SDBInstanceData {
      * @return the set of all instances in the given {@code app}
      */
     public Set<PriamInstance> getAllIds(String app) {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         Set<PriamInstance> inslist = new HashSet<PriamInstance>();
         String nextToken = null;
         do {
@@ -101,7 +105,7 @@ public class SDBInstanceData {
      * @throws AmazonServiceException
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
@@ -113,7 +117,7 @@ public class SDBInstanceData {
      * @throws AmazonServiceException
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
@@ -129,7 +133,7 @@ public class SDBInstanceData {
      * @throws AmazonServiceException
      */
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDBClient simpleDBClient = getSimpleDBClient();
+        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         DeleteAttributesRequest delReq = new DeleteAttributesRequest(DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
@@ -200,8 +204,8 @@ public class SDBInstanceData {
         return instance.getApp() + "_" + instance.getDC() + "_" + instance.getId();
     }
 
-    private AmazonSimpleDBClient getSimpleDBClient() {
+    private AmazonSimpleDB getSimpleDBClient() {
         //Create per request
-        return new AmazonSimpleDBClient(provider.getAwsCredentialProvider());
+        return AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).withRegion(configuration.getSDBInstanceIdentityRegion()).build();
     }
 }

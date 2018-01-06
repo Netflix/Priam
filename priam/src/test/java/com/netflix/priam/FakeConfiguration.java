@@ -224,6 +224,13 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
+    public String getSDBInstanceIdentityRegion()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    @Override
     public String getDC()
     {
         // TODO Auto-generated method stub

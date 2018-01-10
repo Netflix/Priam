@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.org/Netflix/Priam.svg?branch=3.x)](https://travis-ci.org/Netflix/Priam)
 
+### Priam 3.11 branch supports Cassandra 3.11.x and 3.11+ 
+
 Priam is a process/tool that runs alongside Apache Cassandra to automate the following:
 - Backup and recovery (Complete and incremental)
 - Token management

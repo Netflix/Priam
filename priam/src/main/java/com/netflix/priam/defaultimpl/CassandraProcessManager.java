@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.ICassMonitorMetrics;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +39,13 @@ public class CassandraProcessManager implements ICassandraProcess {
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
     protected final IConfiguration config;
     private InstanceState instanceState;
+    private ICassMonitorMetrics iCassMonitorMetrics;
 
     @Inject
-    public CassandraProcessManager(IConfiguration config, InstanceState instanceState) {
+    public CassandraProcessManager(IConfiguration config, InstanceState instanceState, ICassMonitorMetrics cassMonitorMetrics) {
         this.config = config;
         this.instanceState = instanceState;
+        this.iCassMonitorMetrics = cassMonitorMetrics;
     }
 
     protected void setEnv(Map<String, String> env) {
@@ -94,6 +97,7 @@ public class CassandraProcessManager implements ICassandraProcess {
             if (code == 0) {
                 logger.info("Cassandra server has been started");
                 instanceState.setCassandraProcessAlive(true);
+                this.iCassMonitorMetrics.incCassStart();
             }
             else
                 logger.error("Unable to start cassandra server. Error code: {}", code);
@@ -160,6 +164,7 @@ public class CassandraProcessManager implements ICassandraProcess {
             int code = stopper.waitFor();
             if (code == 0) {
                 logger.info("Cassandra server has been stopped");
+                this.iCassMonitorMetrics.incCassStop();
                 instanceState.setCassandraProcessAlive(false);
             }
             else {

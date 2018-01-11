@@ -23,6 +23,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.ICassMonitorMetrics;
 import org.junit.Assert;
 import mockit.*;
 import org.apache.cassandra.tools.NodeProbe;
@@ -38,6 +39,8 @@ import java.io.InputStream;
 public class TestCassandraMonitor {
     private static CassandraMonitor monitor;
     private static InstanceState instanceState;
+    private static ICassMonitorMetrics cassMonitorMetrics;
+
     private IConfiguration config;
 
     @Mocked
@@ -53,8 +56,10 @@ public class TestCassandraMonitor {
         config = injector.getInstance(IConfiguration.class);
         if (instanceState == null)
             instanceState = injector.getInstance(InstanceState.class);
+        if (cassMonitorMetrics == null)
+            cassMonitorMetrics = injector.getInstance(ICassMonitorMetrics.class);
         if (monitor == null)
-            monitor = new CassandraMonitor(config, instanceState, cassProcess);
+            monitor = new CassandraMonitor(config, instanceState, cassProcess, cassMonitorMetrics);
     }
 
     @Test

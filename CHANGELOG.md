@@ -1,5 +1,17 @@
 # Changelog
 
+## 2018/01/11: 3.1.47
+
+# New Features
+* Cassandra Process Manager and Monitor now record metrics when C* is stopped, started or auto-started with recent autorestart functionality. 
+* Location of backup status file is now configurable via configuration `priam.backup.status.location`.
+* SDBInstance for token management with default binding to us-east-1 but configurable via `priam.sdb.instanceIdentity.region`.
+
+# Bugs 
+* Exclude duplicate sl4j module binding.
+* Shut down quartz at application stop
+
+
 ## 2017/12/14: 3.1.46
 
 ### Bugs

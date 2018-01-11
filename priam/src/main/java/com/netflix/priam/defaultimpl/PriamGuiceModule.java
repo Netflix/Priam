@@ -41,6 +41,8 @@ import com.netflix.priam.identity.AwsInstanceEnvIdentity;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.*;
 import com.netflix.priam.merics.BackupMetricsMgr;
+import com.netflix.priam.merics.CassMonitorMetrics;
+import com.netflix.priam.merics.ICassMonitorMetrics;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -71,5 +73,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
+        bind(ICassMonitorMetrics.class).to(CassMonitorMetrics.class);
     }
 }

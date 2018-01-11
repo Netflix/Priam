@@ -25,6 +25,7 @@ import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.ICassMonitorMetrics;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +39,9 @@ public class CassandraProcessManagerTest {
     public void setup() {
         IConfiguration config = new FakeConfiguration("us-east-1", "test_cluster", "us-east-1a", "i-2378afd3");
         InstanceState instanceState = Guice.createInjector(new BRTestModule()).getInstance(InstanceState.class);
-        cpm = new CassandraProcessManager(config, instanceState);
+        ICassMonitorMetrics cassMonitorMetrics = Guice.createInjector(new BRTestModule()).getInstance(ICassMonitorMetrics.class);
+
+        cpm = new CassandraProcessManager(config, instanceState, cassMonitorMetrics);
     }
 
     @Test

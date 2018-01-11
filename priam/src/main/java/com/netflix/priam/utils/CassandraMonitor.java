@@ -22,6 +22,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.ICassMonitorMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -48,13 +49,15 @@ public class CassandraMonitor extends Task {
     private InstanceState instanceState;
     private ICassandraProcess cassProcess;
     private RateLimiter startRateLimiter;
+    private ICassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess) {
+    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess, ICassMonitorMetrics cassMonitorMetrics) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
         startRateLimiter = RateLimiter.create(1.0);
+        this.cassMonitorMetrics = cassMonitorMetrics;
     }
 
     @Override
@@ -110,6 +113,7 @@ public class CassandraMonitor extends Task {
             if (rate >= 0 && !config.doesCassandraStartManually()) {
                 if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
                     if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
+                        cassMonitorMetrics.incCassAutoStart();
                         cassProcess.start(true);
                     }
                 }

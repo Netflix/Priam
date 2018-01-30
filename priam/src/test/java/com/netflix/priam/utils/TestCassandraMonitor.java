@@ -114,10 +114,11 @@ public class TestCassandraMonitor {
     public void testAutoRemediationRateLimit() throws Exception {
         final InputStream mockOutput = new ByteArrayInputStream("".getBytes());
         instanceState.setShouldCassandraBeAlive(true);
+        instanceState.markLastStartTime();
         new Expectations() {{
             // 6 calls to execute should = 12 calls to getInputStream();
             mockProcess.getInputStream(); result=mockOutput; times=12;
-            cassProcess.start(true); minTimes=2; maxTimes=4;
+            cassProcess.start(true); times=2;
         }};
         // Mock out the ps call
         final Runtime r = Runtime.getRuntime();
@@ -128,11 +129,11 @@ public class TestCassandraMonitor {
             }
         };
         // Sleep ahead to ensure we have permits in the rate limiter
-        Thread.sleep(1500);
-        monitor.execute();
         monitor.execute();
         Thread.sleep(1500);
         monitor.execute();
+        monitor.execute();
+        Thread.sleep(1500);
         monitor.execute();
         monitor.execute();
         monitor.execute();

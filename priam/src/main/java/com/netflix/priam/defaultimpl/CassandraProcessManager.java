@@ -83,6 +83,7 @@ public class CassandraProcessManager implements ICassandraProcess {
         logger.info("Start cmd: {}", startCass.command());
         logger.info("Start env: {}", startCass.environment());
 
+        instanceState.markLastStartTime();
         instanceState.setShouldCassandraBeAlive(true);
         Process starter = startCass.start();
 

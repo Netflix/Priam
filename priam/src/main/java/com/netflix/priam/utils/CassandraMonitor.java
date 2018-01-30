@@ -16,7 +16,6 @@
  */
 package com.netflix.priam.utils;
 
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.ICassandraProcess;
@@ -47,14 +46,12 @@ public class CassandraMonitor extends Task {
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
     private InstanceState instanceState;
     private ICassandraProcess cassProcess;
-    private RateLimiter startRateLimiter;
 
     @Inject
     protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
-        startRateLimiter = RateLimiter.create(1.0);
     }
 
     @Override
@@ -109,8 +106,10 @@ public class CassandraMonitor extends Task {
             int rate = config.getRemediateDeadCassandraRate();
             if (rate >= 0 && !config.doesCassandraStartManually()) {
                 if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
-                    if (rate == 0 || startRateLimiter.tryAcquire(rate)) {
+                    long msNow = System.currentTimeMillis();
+                    if (rate == 0 || ((instanceState.getLastStartTime() + rate * 1000) < msNow)) {
                         cassProcess.start(true);
+                        instanceState.markLastStartTime();
                     }
                 }
             }

@@ -1,5 +1,17 @@
 # Changelog
 
+## 2018/02/01: 3.11.17
+
+### New Features
+* (#639) bakup.status is now a variable
+* (#647) SDB clients standardized
+
+### Bugs
+* (#658) Autostart functionality now uses timers instead of ratelimiters so that
+  the first autostart does not start until an interval after the first start.
+* (#632) Duplicate slf4j bindings excluded
+* (#643) Gracefully shut down quartz
+
 ## 2017/12/14: 3.11.16
 
 ### Bugs

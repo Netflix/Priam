@@ -20,15 +20,13 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.Status;
-import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Contains the state of the health of processed managed by Priam, and
@@ -53,6 +51,7 @@ public class InstanceState {
     //Cassandra process status
     private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean shouldCassandraBeAlive = new AtomicBoolean(false);
+    private final AtomicLong lastStartTime = new AtomicLong(Long.MAX_VALUE);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
     private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
     private final AtomicBoolean isNativeTransportActive = new AtomicBoolean(false);
@@ -127,6 +126,14 @@ public class InstanceState {
 
     public void setShouldCassandraBeAlive(boolean shouldCassandraBeAlive) {
         this.shouldCassandraBeAlive.set(shouldCassandraBeAlive);
+    }
+
+    public void markLastStartTime() {
+        this.lastStartTime.set(System.currentTimeMillis());
+    }
+
+    public long getLastStartTime() {
+        return this.lastStartTime.get();
     }
 
     /* Boostrap */

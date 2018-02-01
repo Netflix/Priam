@@ -1,5 +1,11 @@
 # Changelog
 
+## 2018/02/01: 3.1.48
+
+### Bugs
+* Autostart functionality now uses timers instead of ratelimiters so that
+  the first autostart does not start until an interval after the first start.
+
 ## 2018/01/11: 3.1.47
 
 # New Features

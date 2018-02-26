@@ -104,6 +104,18 @@ public class FakeConfiguration implements IConfiguration {
         return 7199;
     }
 
+    @Override
+    public String getJmxUsername()
+    {
+        return null;
+    }
+
+    @Override
+    public String getJmxPassword()
+    {
+        return null;
+    }
+
     /**
      * @return Enables Remote JMX connections n C*
      */

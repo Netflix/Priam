@@ -174,7 +174,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String SDB_INSTANCE_INDENTITY_REGION_NAME = PRIAM_PRE + ".sdb.instanceIdentity.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
-    private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
@@ -186,7 +185,6 @@ public class PriamConfiguration implements IConfiguration {
 
     //Running instance meta data
     private String RAC;
-    private String PUBLIC_IP;
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
@@ -257,14 +255,6 @@ public class PriamConfiguration implements IConfiguration {
 
     @Inject
     public PriamConfiguration(ICredential provider, IConfigSource config, InstanceEnvIdentity insEnvIdentity) {
-        // public interface meta-data does not exist when Priam runs in AWS VPC (priam.vpc=true)
-        String p_ip = "";
-               try {
-            p_ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
-        } catch (RuntimeException ex) {
-            // swallow
-        }
-        this.PUBLIC_IP = p_ip;
         this.provider = provider;
         this.config = config;
         this.insEnvIdentity = insEnvIdentity;
@@ -286,7 +276,6 @@ public class PriamConfiguration implements IConfiguration {
         }
 
         RAC = instanceDataRetriever.getRac();
-        PUBLIC_IP = instanceDataRetriever.getPublicIP();
 
         NETWORK_VPC = instanceDataRetriever.getVpcId();
 
@@ -534,7 +523,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getHostname() {
-        if (this.isVpcRing()) return LOCAL_IP;
+        if (this.isVpcRing()) return getInstanceDataRetriever().getPrivateIP();
         else return getInstanceDataRetriever().getPublicHostname();
     }
 
@@ -697,8 +686,8 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getHostIP() {
-        if (this.isVpcRing()) return LOCAL_IP;
-        else return PUBLIC_IP;
+        if (this.isVpcRing()) return getInstanceDataRetriever().getPrivateIP();
+        else return getInstanceDataRetriever().getPublicIP();
     }
 
     @Override

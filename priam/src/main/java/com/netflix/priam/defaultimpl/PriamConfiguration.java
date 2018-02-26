@@ -59,6 +59,8 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_MR_ENABLE = PRIAM_PRE + ".multiregion.enable";
     private static final String CONFIG_CL_LOCATION = PRIAM_PRE + ".commitlog.location";
     private static final String CONFIG_JMX_LISTERN_PORT_NAME = PRIAM_PRE + ".jmx.port";
+    private static final String CONFIG_JMX_USERNAME = PRIAM_PRE + ".jmx.username";
+    private static final String CONFIG_JMX_PASSWORD = PRIAM_PRE + ".jmx.password";
     private static final String CONFIG_JMX_ENABLE_REMOTE = PRIAM_PRE + ".jmx.remote.enable";
     private static final String CONFIG_AVAILABILITY_ZONES = PRIAM_PRE + ".zones.available";
     private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
@@ -472,6 +474,16 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public int getJmxPort() {
         return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
+    }
+
+    @Override
+    public String getJmxUsername() {
+        return config.get(CONFIG_JMX_USERNAME, "");
+    }
+
+    @Override
+    public String getJmxPassword() {
+        return config.get(CONFIG_JMX_PASSWORD, "");
     }
 
     /**

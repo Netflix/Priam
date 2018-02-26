@@ -66,6 +66,11 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         super(host, port);
     }
 
+    public JMXNodeTool(String host, int port, String username, String password) throws IOException, InterruptedException {
+        super(host, port, username, password);
+    }
+
+
     @Inject
     public JMXNodeTool(IConfiguration config) throws IOException, InterruptedException {
         super("localhost", config.getJmxPort());
@@ -167,7 +172,15 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             tool = new BoundedExponentialRetryCallable<JMXNodeTool>() {
                 @Override
                 public JMXNodeTool retriableCall() throws Exception {
-                    JMXNodeTool nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+                    JMXNodeTool nodetool;
+                    if ((config.getJmxUsername() == null || config.getJmxUsername().isEmpty()) &&
+                            (config.getJmxPassword() == null || config.getJmxPassword().isEmpty())) {
+                        nodetool = new JMXNodeTool("localhost", config.getJmxPort());
+                    }
+                    else {
+                        nodetool = new JMXNodeTool("localhost", config.getJmxPort(), config.getJmxUsername(), config.getJmxPassword());
+                    }
+
                     Field fields[] = NodeProbe.class.getDeclaredFields();
                     for (int i = 0; i < fields.length; i++) {
                         if (!fields[i].getName().equals("mbeanServerConn"))

@@ -21,6 +21,7 @@ import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.ICassMonitorMetrics;
+import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,6 +33,7 @@ import java.io.InputStream;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.*;
 
 public class CassandraProcessManager implements ICassandraProcess {
     private static final Logger logger = LoggerFactory.getLogger(CassandraProcessManager.class);
@@ -64,6 +66,8 @@ public class CassandraProcessManager implements ICassandraProcess {
     public void start(boolean join_ring) throws IOException
     {
         logger.info("Starting cassandra server ....Join ring={}", join_ring);
+        instanceState.markLastAttemptedStartTime();
+        instanceState.setShouldCassandraBeAlive(true);
 
         List<String> command = Lists.newArrayList();
 
@@ -88,8 +92,6 @@ public class CassandraProcessManager implements ICassandraProcess {
         logger.info("Start cmd: {}", startCass.command());
         logger.info("Start env: {}", startCass.environment());
 
-        instanceState.markLastStartTime();
-        instanceState.setShouldCassandraBeAlive(true);
         Process starter = startCass.start();
 
         logger.info("Starting cassandra server ....");
@@ -160,6 +162,34 @@ public class CassandraProcessManager implements ICassandraProcess {
         stopCass.redirectErrorStream(true);
 
         instanceState.setShouldCassandraBeAlive(false);
+        if (config.getGracefulDrainHealthWaitSeconds() > 0) {
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            Future drainFuture = executor.submit(() -> {
+                // As the node has been marked as shutting down above in setShouldCassandraBeAlive, we wait this
+                // duration to allow external healthcheck systems time to pick up the state change.
+                try {
+                    Thread.sleep(config.getGracefulDrainHealthWaitSeconds() * 1000);
+                } catch (InterruptedException e) {
+                    return;
+                }
+
+                try {
+                    JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                    nodetool.drain();
+                } catch (InterruptedException | IOException | ExecutionException e) {
+                    logger.error("Exception draining Cassandra, could not drain. Proceeding with shutdown.", e);
+                }
+                // Once Cassandra is drained the thrift/native servers are shutdown and there is no need to wait to
+                // stop Cassandra. Just stop it now.
+            });
+
+            // In case drain hangs, timeout the future and continue stopping anyways.
+            try {
+                drainFuture.get(2 * config.getGracefulDrainHealthWaitSeconds(), TimeUnit.SECONDS);
+            } catch (ExecutionException | TimeoutException | InterruptedException e) {
+                logger.error("Exception draining Cassandra, could not drain. Proceeding with shutdown.", e);
+            }
+        }
         Process stopper = stopCass.start();
         try {
             int code = stopper.waitFor();

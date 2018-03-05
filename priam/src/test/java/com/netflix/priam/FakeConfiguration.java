@@ -356,6 +356,11 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
+    public int getGracefulDrainHealthWaitSeconds() {
+        return 0;
+    }
+
+    @Override
     public int getRemediateDeadCassandraRate() {
         return 1;
     }

@@ -397,8 +397,13 @@ public class FakeConfiguration implements IConfiguration
         return "true";
     }
 
-    public int getRemediateDeadCassandraRate()
-    {
+    @Override
+    public int getGracefulDrainHealthWaitSeconds() {
+        return 0;
+    }
+
+    @Override
+    public int getRemediateDeadCassandraRate() {
         return 1;
     }
 

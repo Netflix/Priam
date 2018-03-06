@@ -156,7 +156,7 @@ public class CassandraProcessManager implements ICassandraProcess {
         stopCass.redirectErrorStream(true);
 
         instanceState.setShouldCassandraBeAlive(false);
-        if (!force && config.getGracefulDrainHealthWaitSeconds() > 0) {
+        if (!force && config.getGracefulDrainHealthWaitSeconds() >= 0) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Future drainFuture = executor.submit(() -> {
                 // As the node has been marked as shutting down above in setShouldCassandraBeAlive, we wait this

@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.merics.ICassMonitorMetrics;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -136,7 +135,7 @@ public class CassandraProcessManager implements ICassandraProcess {
     }
 
 
-    public void stop() throws IOException {
+    public void stop(boolean force) throws IOException {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
         if(config.useSudo()) {
@@ -157,7 +156,7 @@ public class CassandraProcessManager implements ICassandraProcess {
         stopCass.redirectErrorStream(true);
 
         instanceState.setShouldCassandraBeAlive(false);
-        if (config.getGracefulDrainHealthWaitSeconds() > 0) {
+        if (!force && config.getGracefulDrainHealthWaitSeconds() > 0) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
             Future drainFuture = executor.submit(() -> {
                 // As the node has been marked as shutting down above in setShouldCassandraBeAlive, we wait this
@@ -178,11 +177,12 @@ public class CassandraProcessManager implements ICassandraProcess {
                 // stop Cassandra. Just stop it now.
             });
 
-            // In case drain hangs, timeout the future and continue stopping anyways.
+            // In case drain hangs, timeout the future and continue stopping anyways. Give drain 30s always
+            // In production we freqently see servers that do not want to drain
             try {
-                drainFuture.get(2 * config.getGracefulDrainHealthWaitSeconds(), TimeUnit.SECONDS);
+                drainFuture.get(config.getGracefulDrainHealthWaitSeconds() + 30, TimeUnit.SECONDS);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {
-                logger.error("Exception draining Cassandra, could not drain. Proceeding with shutdown.", e);
+                logger.error("Waited 30s for drain but it did not complete, continuing to shutdown", e);
             }
         }
         Process stopper = stopCass.start();

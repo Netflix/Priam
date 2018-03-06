@@ -29,5 +29,5 @@ import java.io.IOException;
 public interface ICassandraProcess {
     void start(boolean join_ring) throws IOException;
 
-    void stop() throws IOException;
+    void stop(boolean force) throws IOException;
 }

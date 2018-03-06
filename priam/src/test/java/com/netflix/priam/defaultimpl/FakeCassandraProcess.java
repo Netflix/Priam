@@ -15,7 +15,7 @@ public class FakeCassandraProcess implements ICassandraProcess {
     }
 
     @Override
-    public void stop() throws IOException {
+    public void stop(boolean force) throws IOException {
         //do nothing
     }
 }

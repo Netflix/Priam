@@ -1,7 +1,7 @@
 package com.netflix.priam.scheduler
 
 import com.netflix.priam.FakeConfiguration
-import com.netflix.priam.cluster.management.FlushTask
+import com.netflix.priam.cluster.management.Flush
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -13,7 +13,7 @@ class TestFlushTask extends Specification {
 
     def "Exception for value #flushSchedulerType, #flushCronExpression, #flushInterval"() {
         when:
-        FlushTask.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval))
+        Flush.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval))
 
         then:
         def error = thrown(expectedException)
@@ -30,7 +30,7 @@ class TestFlushTask extends Specification {
 
     def "SchedulerType for value #flushSchedulerType, #flushCronExpression, #flushInterval is null"() {
         expect:
-        FlushTask.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval)) == result
+        Flush.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval)) == result
 
         where:
         flushSchedulerType | flushCronExpression | flushInterval || result
@@ -42,7 +42,7 @@ class TestFlushTask extends Specification {
 
     def "SchedulerType for value #flushSchedulerType, #flushCronExpression, #flushInterval is #result"() {
         expect:
-        FlushTask.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval)).getCronExpression() == result
+        Flush.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval)).getCronExpression() == result
 
         where:
         flushSchedulerType | flushCronExpression | flushInterval || result

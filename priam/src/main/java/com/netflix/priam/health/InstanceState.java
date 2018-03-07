@@ -51,13 +51,14 @@ public class InstanceState {
     //Cassandra process status
     private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean shouldCassandraBeAlive = new AtomicBoolean(false);
-    private final AtomicLong lastStartTime = new AtomicLong(Long.MAX_VALUE);
+    private final AtomicLong lastAttemptedStartTime = new AtomicLong(Long.MAX_VALUE);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
     private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
     private final AtomicBoolean isNativeTransportActive = new AtomicBoolean(false);
     private final AtomicBoolean isRequiredDirectoriesExist = new AtomicBoolean(false);
     private final AtomicBoolean isYmlWritten = new AtomicBoolean(false);
     private final AtomicBoolean isHealthy = new AtomicBoolean(false);
+    private final AtomicBoolean isHealthyOverride = new AtomicBoolean(true);
 
     //Backup status
     private BackupMetadata backupStatus;
@@ -126,14 +127,23 @@ public class InstanceState {
 
     public void setShouldCassandraBeAlive(boolean shouldCassandraBeAlive) {
         this.shouldCassandraBeAlive.set(shouldCassandraBeAlive);
+        setIsHealthyOverride(shouldCassandraBeAlive);
     }
 
-    public void markLastStartTime() {
-        this.lastStartTime.set(System.currentTimeMillis());
+    public void setIsHealthyOverride(boolean isHealthyOverride) {
+        this.isHealthyOverride.set(isHealthyOverride);
     }
 
-    public long getLastStartTime() {
-        return this.lastStartTime.get();
+    public boolean isHealthyOverride() {
+        return this.isHealthyOverride.get();
+    }
+
+    public void markLastAttemptedStartTime() {
+        this.lastAttemptedStartTime.set(System.currentTimeMillis());
+    }
+
+    public long getLastAttemptedStartTime() {
+        return this.lastAttemptedStartTime.get();
     }
 
     /* Boostrap */
@@ -189,7 +199,16 @@ public class InstanceState {
         return restoreStatus != null && restoreStatus.getStatus() != null && restoreStatus.getStatus() == Status.STARTED;
     }
     private void setHealthy() {
-        this.isHealthy.set(isRestoring() || (isCassandraProcessAlive() && isRequiredDirectoriesExist() && isGossipActive() && isYmlWritten() && (isThriftActive() || isNativeTransportActive())));
+        this.isHealthy.set(
+            isRestoring() ||
+                (isCassandraProcessAlive() &&
+                    isRequiredDirectoriesExist() &&
+                    isGossipActive() &&
+                    isYmlWritten() &&
+                    isHealthyOverride() &&
+                    (isThriftActive() || isNativeTransportActive())
+                )
+        );
     }
 
     public boolean isYmlWritten() {

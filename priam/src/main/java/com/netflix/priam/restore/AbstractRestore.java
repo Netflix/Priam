@@ -139,7 +139,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
     private final void stopCassProcess() throws IOException {
         if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop();
+            cassProcess.stop(true);
     }
 
     private final String getRestorePrefix() {

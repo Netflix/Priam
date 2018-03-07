@@ -110,10 +110,10 @@ public class CassandraMonitor extends Task {
             if (rate >= 0 && !config.doesCassandraStartManually()) {
                 if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
                     long msNow = System.currentTimeMillis();
-                    if (rate == 0 || ((instanceState.getLastStartTime() + rate * 1000) < msNow)) {
+                    if (rate == 0 || ((instanceState.getLastAttemptedStartTime() + rate * 1000) < msNow)) {
                         cassMonitorMetrics.incCassAutoStart();
                         cassProcess.start(true);
-                        instanceState.markLastStartTime();
+                        instanceState.markLastAttemptedStartTime();
                     }
                 }
             }

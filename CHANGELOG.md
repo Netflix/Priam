@@ -1,5 +1,21 @@
 # Changelog
 
+## 2018/03/07: 3.1.50
+
+### New Features
+* (#664) Cassandra Process Manager can be configured to gracefully stop using the new 
+ `gracefulDrainHealthWaitSeconds` option. If this option set to a positive integer (>=0) then before calling 
+ the shutdown script, Priam will fail healthchecks (`InstanceState.isHealthy`) for the configured number of seconds and  then will issue a `nodetool drain` with 30s timeout (since drain can hang), and finally call the provided stop script. By default this is set to `-1` to disable this feature for backwards compatibility. This is useful if you want to gracefully drain cassandra clients off a node before running `drain` (which kills the Native/Thrift server and resets and tcp connections that were established; in flight requests can get   dropped), then running drain to safely stop Cassandra, and then call your stop script. If your service discovery system does not integrate with Priam's health system or your stop script already does all these things then leave this functionality disabled.
+* (#664) `/v1/cassadmin/stop` http API call now takes an optional `force` parameter (e.g. `/v1/cassadmin/stop?force=true` which will skip the graceful path for that particular stop; default value is `false`.
+* (#650) Enable auth on the jmx port via `jmxUsername` and `jmxPassword` options. By default these are null and not provided.
+
+### Bug Fixes
+* (#659) Fix to `Snapshotstatus` to actually contain `bkupMetadata`
+* (#661) Update `commons-io`, `aws-java-sdk`, `snakeyaml`
+
+### Breaking changes
+* (#664) If you previously implemented `ICassandraProcess` internally the `start` method has been refactored to take a `boolean force` parameter. If you implement this interface you can supply `false` to preserve previous behavior. 
+
 ## 2018/02/01: 3.1.48
 
 ### Bugs
@@ -8,12 +24,12 @@
 
 ## 2018/01/11: 3.1.47
 
-# New Features
+### New Features
 * Cassandra Process Manager and Monitor now record metrics when C* is stopped, started or auto-started with recent autorestart functionality. 
 * Location of backup status file is now configurable via configuration `priam.backup.status.location`.
 * SDBInstance for token management with default binding to us-east-1 but configurable via `priam.sdb.instanceIdentity.region`.
 
-# Bugs 
+### Bugs
 * Exclude duplicate sl4j module binding.
 * Shut down quartz at application stop
 
@@ -55,4 +71,4 @@
 - Multiple bug fixes
 
 0.0.5
-- Initial external release
+a Initial external release

@@ -477,7 +477,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     /**
-     * @return Enables Remote JMX connections n C*
+     * @return Enables Remote JMX connections in C*
      */
     @Override
     public boolean enableRemoteJMX() {
@@ -569,6 +569,16 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getFlushCronExpression() {
         return config.get(PRIAM_PRE + ".flush.cron");
+    }
+
+    @Override
+    public String getCompactionCronExpression() {
+        return config.get(PRIAM_PRE + ".compaction.cron");
+    }
+
+    @Override
+    public String getCompactionCFList() {
+        return config.get(PRIAM_PRE + ".compaction.cf.filter");
     }
 
     @Override

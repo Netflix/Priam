@@ -206,6 +206,23 @@ public interface IConfiguration {
     public String getHeapNewSize();
 
     /**
+     * Cron expression to be used to schedule regular compactions.
+     *
+     * @return Compaction cron expression.
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     */
+    public String getCompactionCronExpression();
+
+   /**
+    * Column Family(ies), comma delimited, to start compactions.
+    * Note:  the expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
+    *
+    * @return Column Family(ies), comma delimited, to start compactions.  If no filter is applied, returns null.
+    */
+    public String getCompactionCFList();
+
+    /**
      * @return Backup hour for snapshot backups (0 - 23)
      */
     public int getBackupHour();

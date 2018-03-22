@@ -883,4 +883,9 @@ public class FakeConfiguration implements IConfiguration
     public String getFlushCronExpression() {
         return null;
     }
+
+    @Override
+    public String getInstanceIdentityDomain() {
+        return "InstanceIdentity";
+    }
 }

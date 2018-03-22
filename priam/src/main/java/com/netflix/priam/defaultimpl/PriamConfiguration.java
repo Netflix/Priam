@@ -184,6 +184,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".vpc.roleassumption.arn";
     private static final String CONFIG_DUAL_ACCOUNT = PRIAM_PRE + ".roleassumption.dualaccount";
 
+    private static final String CONFIG_INSTANCE_IDENTITY_DOMAIN = PRIAM_PRE + ".sdb.instanceidentity.domain";
 
     //Running instance meta data
     private String RAC;
@@ -245,6 +246,8 @@ public class PriamConfiguration implements IConfiguration {
     private static final int DEFAULT_TOMBSTONE_WARNING_THRESHOLD = 1000; // C* defaults
     private static final int DEFAULT_TOMBSTONE_FAILURE_THRESHOLD = 100000;// C* defaults
 
+    private static final String DEFAULT_INSTANCE_IDENTITY_DOMAIN = "InstanceIdentity";
+    
     // AWS EC2 Dual Account
     private static final boolean DEFAULT_DUAL_ACCOUNT = false;
 
@@ -1127,4 +1130,8 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(PRIAM_PRE + ".backup.notification.topic.arn", "");
     }
 
+    @Override
+    public String getInstanceIdentityDomain() {
+        return config.get(CONFIG_INSTANCE_IDENTITY_DOMAIN, DEFAULT_INSTANCE_IDENTITY_DOMAIN);
+    }
 }

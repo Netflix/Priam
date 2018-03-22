@@ -26,7 +26,6 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Interface for Priam's configuration
@@ -739,4 +738,9 @@ public interface IConfiguration {
      * @return SNS Topic ARN to be used to send notification.
      */
     public String getBackupNotificationTopicArn();
+    
+    /**
+     * @return the SimpleDB domain name for storing instance identities
+     */
+    public String getInstanceIdentityDomain();
 }

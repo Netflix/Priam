@@ -50,7 +50,6 @@ public class SDBInstanceData {
         public final static String HOSTNAME = "hostname";
     }
 
-    public static final String DEFAULT_DOMAIN = "InstanceIdentity";
     public static final String ALL_QUERY = "select * from `%s` where " + Attributes.APP_ID + "='%s'";
     public static final String INSTANCE_QUERY = "select * from `%s` where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
 
@@ -62,12 +61,7 @@ public class SDBInstanceData {
     public SDBInstanceData(ICredential provider, IConfiguration configuration) {
         this.provider = provider;
         this.configuration = configuration;
-        String configuredDomain = System.getProperty("priam.sdb.instanceidentity.domain");
-        if (configuredDomain == null) {
-            domain = DEFAULT_DOMAIN;
-        } else {
-            domain = configuredDomain;
-        }
+        this.domain = configuration.getInstanceIdentityDomain();
     }
 
     /**

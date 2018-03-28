@@ -76,7 +76,7 @@ public interface IConfiguration {
     /**
      * @return int representing how many seconds Priam should fail healthchecks for before gracefully draining (nodetool drain)
      * cassandra prior to stop. If this number is negative then no draining occurs and Priam immediately stops Cassanddra
-     * using the provided stop script. If this number is >= 0 then Priam will fail healthchecks for this number of
+     * using the provided stop script. If this number is &gt;= 0 then Priam will fail healthchecks for this number of
      * seconds before gracefully draining cassandra (nodetool drain) and stopping cassandra with the stop script.
      */
     public int getGracefulDrainHealthWaitSeconds();

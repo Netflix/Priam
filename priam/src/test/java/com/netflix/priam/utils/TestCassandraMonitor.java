@@ -109,7 +109,7 @@ public class TestCassandraMonitor {
     public void testAutoRemediationRateLimit() throws Exception {
         final InputStream mockOutput = new ByteArrayInputStream("".getBytes());
         instanceState.setShouldCassandraBeAlive(true);
-        instanceState.markLastStartTime();
+        instanceState.markLastAttemptedStartTime();
         new Expectations() {{
             // 6 calls to execute should = 12 calls to getInputStream();
             mockProcess.getInputStream(); result=mockOutput; times=12;

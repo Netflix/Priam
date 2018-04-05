@@ -395,6 +395,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public int getGracefulDrainHealthWaitSeconds() {
+        return -1;
+    }
+
+    @Override
     public int getRemediateDeadCassandraRate() {
         return config.get(CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S, DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S);
     }

@@ -159,10 +159,17 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         Rule rule = null;
         PrefixVisitor visitor = new PrefixVisitor(prefix);
         for (BucketLifecycleConfiguration.Rule lcRule : rules) {
-            lcRule.getFilter().getPredicate().accept(visitor);
-            if (visitor.isMatchesPrefix()) {
-                rule = lcRule;
-                break;
+            if (lcRule.getFilter() != null) {
+                lcRule.getFilter().getPredicate().accept(visitor);
+                if (visitor.isMatchesPrefix()) {
+                    rule = lcRule;
+                    break;
+                }
+            } else if (lcRule.getPrefix() != null) {
+                if (lcRule.getPrefix().equals(prefix)) {
+                    rule = lcRule;
+                    break;
+                }
             }
         }
         if (rule == null && config.getBackupRetentionDays() <= 0)

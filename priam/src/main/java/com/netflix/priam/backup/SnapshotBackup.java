@@ -58,7 +58,7 @@ public class SnapshotBackup extends AbstractBackup {
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
     private String snapshotName = null;
-    private List<AbstractBackupPath> abstractBackupPaths = null;
+    private List<UploadResult> abstractBackupPaths = null;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,

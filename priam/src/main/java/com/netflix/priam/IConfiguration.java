@@ -51,6 +51,14 @@ public interface IConfiguration {
     public String getCassStopScript();
 
     /**
+     * @return int representing how many seconds Priam should fail healthchecks for before gracefully draining (nodetool drain)
+     * cassandra prior to stop. If this number is negative then no draining occurs and Priam immediately stops Cassanddra
+     * using the provided stop script. If this number is &gt;= 0 then Priam will fail healthchecks for this number of
+     * seconds before gracefully draining cassandra (nodetool drain) and stopping cassandra with the stop script.
+     */
+    public int getGracefulDrainHealthWaitSeconds();
+
+    /**
      * @return int representing how often (in seconds) Priam should auto-remediate Cassandra process crash
      * If zero, Priam will restart Cassandra whenever it notices it is crashed
      * If a positive number, Priam will restart cassandra no more than once in that number of seconds. For example a

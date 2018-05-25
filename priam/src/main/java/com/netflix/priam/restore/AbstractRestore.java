@@ -139,7 +139,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
     private final void stopCassProcess() throws IOException {
         if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop();
+            cassProcess.stop(true);
     }
 
     private final String getRestorePrefix() {
@@ -267,6 +267,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
             //Ensure all the files are downloaded before declaring restore as finished.
             waitToComplete();
+            //do scrambling.... post restore hookup.
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
 

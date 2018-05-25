@@ -84,8 +84,8 @@ public class CassandraAdmin {
 
     @GET
     @Path("/stop")
-    public Response cassStop() throws IOException, InterruptedException, JSONException {
-        cassProcess.stop();
+    public Response cassStop(@DefaultValue("false") @QueryParam("force") boolean force) throws IOException, InterruptedException, JSONException {
+        cassProcess.stop(force);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

@@ -56,13 +56,13 @@ public class MetaData {
     }
 
     @SuppressWarnings("unchecked")
-    public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName) throws Exception {
+    public AbstractBackupPath set(List<UploadResult> uploadResults, String snapshotName) throws Exception {
         File metafile = createTmpMetaFile();
         FileWriter fr = new FileWriter(metafile);
         try {
             JSONArray jsonObj = new JSONArray();
-            for (AbstractBackupPath filePath : bps)
-                jsonObj.add(filePath.getRemotePath());
+            for (UploadResult uploadResult : uploadResults)
+                jsonObj.add(uploadResult.getFile().getRemotePath());
             fr.write(jsonObj.toJSONString());
         } finally {
             IOUtils.closeQuietly(fr);

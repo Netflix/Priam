@@ -25,6 +25,7 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.util.*;
@@ -114,11 +115,11 @@ public class BackupVerification {
         //Download meta.json from backup location and uncompress it.
         List<String> metaFileList = new ArrayList<>();
         try {
-            bkpStatusFs.download(metas.get(0), new FileOutputStream("tmp_meta.json"));
+            bkpStatusFs.download(metas.get(0), new FileOutputStream(config.getDataFileLocation() + File.separator + "tmp_meta.json"));
             logger.info("Meta file successfully downloaded to localhost: {}", metas.get(0));
 
             JSONParser jsonParser = new JSONParser();
-            org.json.simple.JSONArray fileList = (org.json.simple.JSONArray) jsonParser.parse(new FileReader("tmp_meta.json"));
+            org.json.simple.JSONArray fileList = (org.json.simple.JSONArray) jsonParser.parse(new FileReader(config.getDataFileLocation() + File.separator + "tmp_meta.json"));
             for (int i = 0; i < fileList.size(); i++)
                 metaFileList.add(fileList.get(i).toString());
 

@@ -39,8 +39,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.io.File;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 
 @Singleton
 public class PriamConfiguration implements IConfiguration {
@@ -1119,7 +1122,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  "backup.status");
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  getDataFileLocation() + File.separator + "backup.status");
     }
 
     @Override

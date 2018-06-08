@@ -57,8 +57,10 @@ public class StandardTuner implements ICassandraTuner {
         map.put("rpc_port", config.getThriftPort());
         map.put("start_native_transport", config.isNativeTransportEnabled());
         map.put("native_transport_port", config.getNativeTransportPort());
-        map.put("listen_address", hostname);
-        map.put("rpc_address", hostname);
+        if (hostname != null) {
+            map.put("listen_address", hostname);
+            map.put("rpc_address", hostname);
+        }
         //Dont bootstrap in restore mode
         if (!Restore.isRestoreEnabled(config)) {
             map.put("auto_bootstrap", config.getAutoBoostrap());

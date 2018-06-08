@@ -47,15 +47,22 @@ import java.util.Map;
 public final class SimpleDBConfigSource extends AbstractConfigSource {
     private static final Logger logger = LoggerFactory.getLogger(SimpleDBConfigSource.class.getName());
 
-    private static final String DOMAIN = "PriamProperties";
-    private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
+    private static final String DEFAULT_DOMAIN = "PriamProperties";
+    private static String ALL_QUERY = "select * from `%s` where " + Attributes.APP_ID + "='%s'";
 
     private final Map<String, String> data = Maps.newConcurrentMap();
     private final ICredential provider;
-
+    private final String domain;
+    
     @Inject
     public SimpleDBConfigSource(final ICredential provider) {
         this.provider = provider;
+        String configuredDomain = System.getProperty("priam.sdb.properties.domain");
+        if (configuredDomain == null) {
+            domain = DEFAULT_DOMAIN;
+        } else {
+            domain = configuredDomain;
+        }
     }
 
     @Override
@@ -68,8 +75,9 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
         String nextToken = null;
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;
         logger.info("appid used to fetch properties is: {}", appid);
+        logger.info("domain used to fetch properties is: {}", domain);
         do {
-            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
+            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, domain, appid));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();

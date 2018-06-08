@@ -15,11 +15,32 @@
  */
 package com.netflix.priam.aws;
 
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
+import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
+import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
@@ -38,21 +59,6 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenerator<BackupEvent> {
     protected static final int MAX_CHUNKS = 10000;
@@ -151,10 +157,19 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
 
     private boolean updateLifecycleRule(IConfiguration config, List<Rule> rules, String prefix) {
         Rule rule = null;
+        PrefixVisitor visitor = new PrefixVisitor(prefix);
         for (BucketLifecycleConfiguration.Rule lcRule : rules) {
-            if (lcRule.getPrefix().equals(prefix)) {
-                rule = lcRule;
-                break;
+            if (lcRule.getFilter() != null) {
+                lcRule.getFilter().getPredicate().accept(visitor);
+                if (visitor.isMatchesPrefix()) {
+                    rule = lcRule;
+                    break;
+                }
+            } else if (lcRule.getPrefix() != null) {
+                if (lcRule.getPrefix().equals(prefix)) {
+                    rule = lcRule;
+                    break;
+                }
             }
         }
         if (rule == null && config.getBackupRetentionDays() <= 0)
@@ -165,21 +180,48 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         }
         if (rule == null) {
             // Create a new rule
-            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays()).withPrefix(prefix);
+            rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(config.getBackupRetentionDays())
+                    .withFilter(new LifecycleFilter(new LifecyclePrefixPredicate(prefix)));
             rule.setStatus(BucketLifecycleConfiguration.ENABLED);
             rule.setId(prefix);
             rules.add(rule);
-            logger.info("Setting cleanup for {} to {} days", rule.getPrefix(), rule.getExpirationInDays());
+            logger.info("Setting cleanup for {} to {} days", prefix, rule.getExpirationInDays());
         } else if (config.getBackupRetentionDays() > 0) {
-            logger.info("Setting cleanup for {} to {} days", rule.getPrefix(), config.getBackupRetentionDays());
+            logger.info("Setting cleanup for {} to {} days", prefix, config.getBackupRetentionDays());
             rule.setExpirationInDays(config.getBackupRetentionDays());
         } else {
-            logger.info("Removing cleanup rule for {}", rule.getPrefix());
+            logger.info("Removing cleanup rule for {}", prefix);
             rules.remove(rule);
         }
         return true;
     }
 
+    
+    private class PrefixVisitor implements LifecyclePredicateVisitor {
+        private String prefix;
+        private boolean matchesPrefix;
+        
+        public PrefixVisitor(String prefix) {
+            this.prefix = prefix;
+        }
+        
+        @Override
+        public void visit(LifecycleAndOperator lifecycleAndOperator) {
+        }
+        @Override
+        public void visit(LifecycleTagPredicate lifecycleTagPredicate) {
+        }
+        @Override
+        public void visit(LifecyclePrefixPredicate lifecyclePrefixPredicate) {
+            if (lifecyclePrefixPredicate.getPrefix().equals(prefix)) {
+                matchesPrefix = true;
+            }
+        }
+
+        public boolean isMatchesPrefix() {
+            return matchesPrefix;
+        }
+    }
     /*
     @param path - representation of the file uploaded
     @param start time of upload, in millisecs

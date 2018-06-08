@@ -34,7 +34,7 @@ public class PriamConfigSource extends CompositeConfigSource {
         // this order was based off PriamConfigurations loading.  W/e loaded last could override, but with Composite, first
         // has the highest priority.
         super(simpleDBConfigSource,
-                propertiesConfigSource,
-                systemPropertiesConfigSource);
+                systemPropertiesConfigSource,
+                propertiesConfigSource);
     }
 }

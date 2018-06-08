@@ -26,6 +26,7 @@ import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
+import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.backup.BackupFileSystemContext;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IBackupMetrics;
@@ -63,7 +64,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
-        bind(ICredential.class).to(ClearCredential.class);
+        bind(ICredential.class).to(IAMCredential.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class);

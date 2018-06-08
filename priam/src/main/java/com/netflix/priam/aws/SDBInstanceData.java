@@ -28,11 +28,16 @@ import com.netflix.priam.identity.PriamInstance;
 
 import java.util.*;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * DAO for handling Instance identity information such as token, zone, region
  */
 @Singleton
 public class SDBInstanceData {
+    private static final Logger logger = LoggerFactory.getLogger(SDBInstanceData.class.getName());
+    
     public static class Attributes {
         public final static String APP_ID = "appId";
         public final static String ID = "id";
@@ -45,17 +50,18 @@ public class SDBInstanceData {
         public final static String HOSTNAME = "hostname";
     }
 
-    public static final String DOMAIN = "InstanceIdentity";
-    public static final String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-    public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
+    public static final String ALL_QUERY = "select * from `%s` where " + Attributes.APP_ID + "='%s'";
+    public static final String INSTANCE_QUERY = "select * from `%s` where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
 
     private final ICredential provider;
     private final IConfiguration configuration;
-
+    private final String domain;
+    
     @Inject
     public SDBInstanceData(ICredential provider, IConfiguration configuration) {
         this.provider = provider;
         this.configuration = configuration;
+        this.domain = configuration.getInstanceIdentityDomain();
     }
 
     /**
@@ -67,7 +73,9 @@ public class SDBInstanceData {
      */
     public PriamInstance getInstance(String app, String dc, int id) {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
+        String query = String.format(INSTANCE_QUERY, domain, app, dc, id);
+        logger.info("Fetching instance data using query {}", query);
+        SelectRequest request = new SelectRequest(query);
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0)
             return null;
@@ -85,7 +93,9 @@ public class SDBInstanceData {
         Set<PriamInstance> inslist = new HashSet<PriamInstance>();
         String nextToken = null;
         do {
-            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, app));
+            String query = String.format(ALL_QUERY, domain, app);
+            logger.info("Fetching IDs using query {}", query);
+            SelectRequest request = new SelectRequest(query);
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
@@ -106,7 +116,7 @@ public class SDBInstanceData {
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq = new PutAttributesRequest(domain, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
 
@@ -118,7 +128,7 @@ public class SDBInstanceData {
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq = new PutAttributesRequest(domain, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
         expected.setExists(false);
@@ -134,7 +144,7 @@ public class SDBInstanceData {
      */
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        DeleteAttributesRequest delReq = new DeleteAttributesRequest(DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
+        DeleteAttributesRequest delReq = new DeleteAttributesRequest(domain, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 

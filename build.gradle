@@ -2,7 +2,7 @@ plugins {
     id 'nebula.netflixoss' version '5.0.0'
 }
 
-ext.githubProjectName = 'Priam'
+ext.githubProjectName = 'Priam-parent'
 
 allprojects {
     apply plugin: 'nebula.netflixoss'

@@ -1,4 +1,13 @@
 # Changelog
+## 2018/06/12: 3.11.21
+### Bug Fixes
+* (#679) Mark snapshot as a failure if there is an issue with uploading a file. This is to ensure we fail-fast. This is in contrast to previous behavior where snapshot would "ignore" any failures in the upload of a file and mark snapshot as "success". 
+         Since it was not truly a "success" marking that as "failure" is the right thing to do. Also, meta.json should really be uploaded in case of "success" and not in case of "failure" as the presence of "meta.json" marks the backup as successful.
+         The case for fail-fast: In a scenario where we had an issue say at the start of the backup, it makes more sense to fail-fast then to keep uploading other files (and waste bandwidth and use backup resources). The remediation step for backup failure is anyways to take a full snapshot again.
+
+## 2018/06/07: 3.11.20
+### Bug Fixes
+* (#678) Change the default location of backup status and downloaded meta.json as part of backup verification
 
 ## 2018/04/05: 3.11.19
 

@@ -909,4 +909,9 @@ public class FakeConfiguration implements IConfiguration
     public String getPostRestoreHookDoneFileName() {
         return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
     }
+
+    @Override
+    public int getPostRestoreHookTimeOutInDays() {
+        return 2;
+    }
 }

@@ -27,7 +27,6 @@ public class PostRestoreHook implements IPostRestoreHook {
     private final Sleeper sleeper;
     private final int ThreadWaitTimeInMs = 60000;
     private final int HeartBeatTimeOutInMs = 60000;
-    private final int SubProcessTimeOutInDays = 2;
     private static String PostRestoreHookCommandDelimiter = " ";
     private static String PriamPostRestoreHookFilePrefix = "PriamFileForPostRestoreHook";
     private static String PriamPostRestoreHookFileSuffix = ".tmp";
@@ -93,8 +92,8 @@ public class PostRestoreHook implements IPostRestoreHook {
                         monitorPostRestoreHookHeartBeat(process);
 
                         //block until sub-process completes or until the timeout
-                        if (!process.waitFor(SubProcessTimeOutInDays, TimeUnit.DAYS)) {
-                            logger.info("PostRestoreHook process did not complete within {} days. Forcefully terminating the process.", SubProcessTimeOutInDays);
+                        if (!process.waitFor(config.getPostRestoreHookTimeOutInDays(), TimeUnit.DAYS)) {
+                            logger.info("PostRestoreHook process did not complete within {} days. Forcefully terminating the process.", config.getPostRestoreHookTimeOutInDays());
                             process.destroyForcibly();
                         }
 

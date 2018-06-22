@@ -77,6 +77,6 @@ public class BRTestModule extends AbstractModule {
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
-        bind(IPostRestoreHook.class).to(FakeIPostRestoreHook.class);
+        bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);
     }
 }

@@ -746,4 +746,10 @@ public interface IConfiguration {
      * @return file that indicates completion of post restore hook
      */
     public String getPostRestoreHookDoneFileName();
+
+    /**
+     * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
+     * @return time out for post restore hook in days
+     */
+    public int getPostRestoreHookTimeOutInDays();
 }

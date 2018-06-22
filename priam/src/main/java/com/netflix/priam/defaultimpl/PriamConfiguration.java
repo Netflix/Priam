@@ -188,8 +188,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_POST_RESTORE_HOOK = PRIAM_PRE + ".postrestorehook";
     private static final String CONFIG_POST_RESTORE_HOOK_HEARTBEAT_FILENAME = PRIAM_PRE + ".postrestorehook.heartbeat.filename";
     private static final String CONFIG_POST_RESTORE_HOOK_DONE_FILENAME = PRIAM_PRE + ".postrestorehook.done.filename";
-
-
+    private static final String CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS = PRIAM_PRE + ".postrestorehook.timeout.in.days";
 
     //Running instance meta data
     private String RAC;
@@ -1127,5 +1126,10 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getPostRestoreHookDoneFileName() {
         return config.get(CONFIG_POST_RESTORE_HOOK_DONE_FILENAME, getDataFileLocation() + File.separator + "postrestorehook_done");
+    }
+
+    @Override
+    public int getPostRestoreHookTimeOutInDays() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS, 2);
     }
 }

@@ -17,9 +17,6 @@
 
 package com.netflix.priam;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.tuner.JVMOption;
@@ -29,7 +26,11 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import org.apache.commons.lang3.StringUtils;
+
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -887,5 +888,25 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getFlushCronExpression() {
         return null;
+    }
+
+    @Override
+    public boolean isPostRestoreHookEnabled() {
+        return true;
+    }
+
+    @Override
+    public String getPostRestoreHook() {
+        return "iostat -d 2 10";
+    }
+
+    @Override
+    public String getPostRestoreHookHeartbeatFileName() {
+        return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.heartbeat";
+    }
+
+    @Override
+    public String getPostRestoreHookDoneFileName() {
+        return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
     }
 }

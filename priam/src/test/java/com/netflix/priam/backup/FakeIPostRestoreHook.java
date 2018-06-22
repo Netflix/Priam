@@ -1,8 +1,5 @@
 package com.netflix.priam.backup;
 
-<<<<<<< Updated upstream
-public class FakeIPostRestoreHook {
-=======
 import com.netflix.priam.restore.IPostRestoreHook;
 
 public class FakeIPostRestoreHook implements IPostRestoreHook {
@@ -13,5 +10,4 @@ public class FakeIPostRestoreHook implements IPostRestoreHook {
     public void execute() {
         //no op
     }
->>>>>>> Stashed changes
 }

@@ -1,9 +1,5 @@
 package com.netflix.priam.restore;
 
-<<<<<<< Updated upstream
-public class PostRestoreHookException {
-}
-=======
 /**
  * Exception raised by PostRestoreHook
  */
@@ -18,4 +14,3 @@ public class PostRestoreHookException extends Exception {
     }
 
 }
->>>>>>> Stashed changes

@@ -1,8 +1,5 @@
 package com.netflix.priam.restore;
 
-<<<<<<< Updated upstream
-public class PostRestoreHook {
-=======
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
@@ -158,5 +155,4 @@ public class PostRestoreHook implements IPostRestoreHook {
         File doneFile = new File(config.getPostRestoreHookDoneFileName());
         return doneFile.exists();
     }
->>>>>>> Stashed changes
 }

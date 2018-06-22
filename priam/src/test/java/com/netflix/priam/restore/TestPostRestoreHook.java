@@ -1,8 +1,5 @@
 package com.netflix.priam.restore;
 
-<<<<<<< Updated upstream
-public class TestPostRestoreHook {
-=======
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.IConfiguration;
@@ -102,5 +99,4 @@ public class TestPostRestoreHook {
 
         heartBeatEmitThread.start();
     }
->>>>>>> Stashed changes
 }

@@ -24,7 +24,9 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
+import org.junit.rules.TemporaryFolder;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -784,5 +786,25 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getFlushCronExpression() {
         return null;
+    }
+
+    @Override
+    public boolean isPostRestoreHookEnabled() {
+        return true;
+    }
+
+    @Override
+    public String getPostRestoreHook() {
+        return "iostat -d 2 10";
+    }
+
+    @Override
+    public String getPostRestoreHookHeartbeatFileName() {
+        return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.heartbeat";
+    }
+
+    @Override
+    public String getPostRestoreHookDoneFileName() {
+        return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
     }
 }

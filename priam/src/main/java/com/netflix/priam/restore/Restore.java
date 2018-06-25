@@ -67,8 +67,8 @@ public class Restore extends AbstractRestore {
     @Inject
     public Restore(IConfiguration config, @Named("backup") IBackupFileSystem fs, Sleeper sleeper, ICassandraProcess cassProcess,
                    Provider<AbstractBackupPath> pathProvider,
-                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState) {
-        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState);
+                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
+        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState, postRestoreHook);
         executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), JOBNAME);
         executor.allowCoreThreadTimeOut(true);
     }

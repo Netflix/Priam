@@ -36,6 +36,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.token.*;
 import com.netflix.priam.merics.BackupMetricsMgr;
+import com.netflix.priam.restore.IPostRestoreHook;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
@@ -76,5 +77,6 @@ public class BRTestModule extends AbstractModule {
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
+        bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);
     }
 }

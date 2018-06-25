@@ -53,9 +53,9 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends EncryptedRestore
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
             , @Named("pgpcredential") ICredentialGeneric credential
             , ICompression compress, Provider<AbstractBackupPath> pathProvider,
-                                                      InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState) {
+                                                      InstanceIdentity id, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
 
-        super(config, crossAcctfs.getBackupFileSystem(), JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData, instanceState);
+        super(config, crossAcctfs.getBackupFileSystem(), JOBNAME, sleeper, cassProcess, pathProvider, id, tokenSelector, credential, fileCryptography, compress, metaData, instanceState, postRestoreHook);
     }
 
     /**

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2018/06/28: 3.1.54
+### Improvements
+* (#683) PostRestoreHook logging improvements.
+
+
+## 2018/06/27: 3.1.53
+### New Feature
+* (#681) PostRestoreHook changes. Adding ability to call a post restore hook once files get downloaded as part of the restore process.
+
+Following are relevant configurations around post restore hook
+- priam.postrestorehook.enabled: indicates if postrestorehook is enabled.
+- priam.postrestorehook: contains the command with arguments to be executed as part of postrestorehook. Priam would wait for completion of this hook before proceeding to starting C*.
+- priam.postrestorehook.heartbeat.filename: heartbeat file that postrestorehook emits. Priam keeps a tab on this file to make sure postrestorehook is making progress. Otherwise, a new process of postrestorehook would be spawned (upon killing existing process if still exists)
+- priam.postrestorehook.done.filename:'done' file that postrestorehook creates upon completion of execution.
+- priam.postrestorehook.timeout.in.days:maximum time that Priam should wait before killing the postrestorehook process (if not already complete)
+
 ## 2018/06/12: 3.1.52
 ### Bug Fixes
 * (#679) Mark snapshot as a failure if there is an issue with uploading a file. This is to ensure we fail-fast. This is in contrast to previous behavior where snapshot would "ignore" any failures in the upload of a file and mark snapshot as "success". 

@@ -51,6 +51,14 @@ public interface IConfiguration {
     public String getCassStopScript();
 
     /**
+     * @return int representing how many seconds Priam should fail healthchecks for before gracefully draining (nodetool drain)
+     * cassandra prior to stop. If this number is negative then no draining occurs and Priam immediately stops Cassanddra
+     * using the provided stop script. If this number is &gt;= 0 then Priam will fail healthchecks for this number of
+     * seconds before gracefully draining cassandra (nodetool drain) and stopping cassandra with the stop script.
+     */
+    public int getGracefulDrainHealthWaitSeconds();
+
+    /**
      * @return int representing how often (in seconds) Priam should auto-remediate Cassandra process crash
      * If zero, Priam will restart Cassandra whenever it notices it is crashed
      * If a positive number, Priam will restart cassandra no more than once in that number of seconds. For example a
@@ -131,6 +139,16 @@ public interface IConfiguration {
      * @return Cassandra's JMX port
      */
     public int getJmxPort();
+
+    /**
+     * @return Cassandra's JMX username
+     */
+    public String getJmxUsername();
+
+    /**
+     * @return Cassandra's JMX password
+     */
+    public String getJmxPassword();
 
     /**
      * @return Enables Remote JMX connections n C*
@@ -702,4 +720,36 @@ public interface IConfiguration {
      * @return SNS Topic ARN to be used to send notification.
      */
     public String getBackupNotificationTopicArn();
+
+    /**
+     * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called once download of files is complete, before starting Cassandra.
+     * @return if post restore hook is enabled
+     */
+    public boolean isPostRestoreHookEnabled();
+
+    /**
+     * Post restore hook to be executed
+     * @return post restore hook to be executed once restore is complete
+     */
+    public String getPostRestoreHook();
+
+
+    /**
+     * HeartBeat file of post restore hook
+     * @return file that indicates heartbeat of post restore hook
+     */
+    public String getPostRestoreHookHeartbeatFileName();
+
+
+    /**
+     * Done file for post restore hook
+     * @return file that indicates completion of post restore hook
+     */
+    public String getPostRestoreHookDoneFileName();
+
+    /**
+     * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
+     * @return time out for post restore hook in days
+     */
+    public int getPostRestoreHookTimeOutInDays();
 }

@@ -25,6 +25,7 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -35,8 +36,12 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
+import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * A means to perform a restore.  This class contains the following characteristics:
@@ -61,11 +66,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     private ICassandraProcess cassProcess;
     private InstanceState instanceState;
     private MetaData metaData;
+    private IPostRestoreHook postRestoreHook;
 
     public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
                            Provider<AbstractBackupPath> pathProvider,
                            InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector,
-                           ICassandraProcess cassProcess, MetaData metaData, InstanceState instanceState) {
+                           ICassandraProcess cassProcess, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
@@ -76,6 +82,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         this.metaData = metaData;
         this.instanceState = instanceState;
         backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(), config.getRestoreCFFilter());
+        this.postRestoreHook = postRestoreHook;
     }
 
     public static final boolean isRestoreEnabled(IConfiguration conf) {
@@ -139,7 +146,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
     private final void stopCassProcess() throws IOException {
         if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop();
+            cassProcess.stop(true);
     }
 
     private final String getRestorePrefix() {
@@ -199,6 +206,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     }
 
     public void restore(Date startTime, Date endTime) throws Exception {
+        //fail early if post restore hook has invalid parameters
+        if(!postRestoreHook.hasValidParameters()) {
+            throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
+        }
+
         //Set the restore status.
         instanceState.getRestoreStatus().resetStatus();
         instanceState.getRestoreStatus().setStartDateRange(DateUtil.convert(startTime));
@@ -269,6 +281,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             waitToComplete();
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
+
+            //Given that files are restored now, kick off post restore hook
+            logger.info("Starting post restore hook");
+            postRestoreHook.execute();
+            logger.info("Completed executing post restore hook");
 
             //Start cassandra if restore is successful.
             cassProcess.start(true);

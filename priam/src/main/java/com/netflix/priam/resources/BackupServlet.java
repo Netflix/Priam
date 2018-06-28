@@ -187,9 +187,11 @@ public class BackupServlet {
         List<BackupMetadata> metadataLinkedList = this.completedBkups.locate(date);
 
         if (metadataLinkedList != null && !metadataLinkedList.isEmpty()) {
+
             // backup exist base on requested date, lets fetch more of its metadata
             BackupMetadata bkupMetadata = metadataLinkedList.get(0);
-            object.put("Snapshotstatus", true);
+            object.put("Snapshotstatus", bkupMetadata.getStatus().equals(Status.FINISHED));
+
             String token = bkupMetadata.getToken();
             if (token != null && !token.isEmpty()) {
                 object.put("token", bkupMetadata.getToken());

@@ -36,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -57,6 +58,8 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_MR_ENABLE = PRIAM_PRE + ".multiregion.enable";
     private static final String CONFIG_CL_LOCATION = PRIAM_PRE + ".commitlog.location";
     private static final String CONFIG_JMX_LISTERN_PORT_NAME = PRIAM_PRE + ".jmx.port";
+    private static final String CONFIG_JMX_USERNAME = PRIAM_PRE + ".jmx.username";
+    private static final String CONFIG_JMX_PASSWORD = PRIAM_PRE + ".jmx.password";
     private static final String CONFIG_JMX_ENABLE_REMOTE = PRIAM_PRE + ".jmx.remote.enable";
     private static final String CONFIG_AVAILABILITY_ZONES = PRIAM_PRE + ".zones.available";
     private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
@@ -172,7 +175,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_REGION_NAME = PRIAM_PRE + ".az.region";
     private static final String SDB_INSTANCE_INDENTITY_REGION_NAME = PRIAM_PRE + ".sdb.instanceIdentity.region";
     private static final String CONFIG_ACL_GROUP_NAME = PRIAM_PRE + ".acl.groupname";
-    private final String LOCAL_IP = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4").trim();
     private static String ASG_NAME = System.getenv("ASG_NAME");
     private static String REGION = System.getenv("EC2_REGION");
     private static final String CONFIG_VPC_RING = PRIAM_PRE + ".vpc";
@@ -181,10 +183,15 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".vpc.roleassumption.arn";
     private static final String CONFIG_DUAL_ACCOUNT = PRIAM_PRE + ".roleassumption.dualaccount";
 
+    //Post Restore Hook
+    private static final String CONFIG_POST_RESTORE_HOOK_ENABLED = PRIAM_PRE + ".postrestorehook.enabled";
+    private static final String CONFIG_POST_RESTORE_HOOK = PRIAM_PRE + ".postrestorehook";
+    private static final String CONFIG_POST_RESTORE_HOOK_HEARTBEAT_FILENAME = PRIAM_PRE + ".postrestorehook.heartbeat.filename";
+    private static final String CONFIG_POST_RESTORE_HOOK_DONE_FILENAME = PRIAM_PRE + ".postrestorehook.done.filename";
+    private static final String CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS = PRIAM_PRE + ".postrestorehook.timeout.in.days";
 
     //Running instance meta data
     private String RAC;
-    private String PUBLIC_IP;
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
@@ -253,14 +260,6 @@ public class PriamConfiguration implements IConfiguration {
 
     @Inject
     public PriamConfiguration(ICredential provider, IConfigSource config, InstanceEnvIdentity insEnvIdentity) {
-        // public interface meta-data does not exist when Priam runs in AWS VPC (priam.vpc=true)
-        String p_ip = "";
-               try {
-            p_ip = SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4").trim();
-        } catch (RuntimeException ex) {
-            // swallow
-        }
-        this.PUBLIC_IP = p_ip;
         this.provider = provider;
         this.config = config;
         this.insEnvIdentity = insEnvIdentity;
@@ -282,7 +281,6 @@ public class PriamConfiguration implements IConfiguration {
         }
 
         RAC = instanceDataRetriever.getRac();
-        PUBLIC_IP = instanceDataRetriever.getPublicIP();
 
         NETWORK_VPC = instanceDataRetriever.getVpcId();
 
@@ -398,6 +396,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public int getGracefulDrainHealthWaitSeconds() {
+        return -1;
+    }
+
+    @Override
     public int getRemediateDeadCassandraRate() {
         return config.get(CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S, DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S);
     }
@@ -475,6 +478,16 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
     }
 
+    @Override
+    public String getJmxUsername() {
+        return config.get(CONFIG_JMX_USERNAME, "");
+    }
+
+    @Override
+    public String getJmxPassword() {
+        return config.get(CONFIG_JMX_PASSWORD, "");
+    }
+
     /**
      * @return Enables Remote JMX connections n C*
      */
@@ -524,7 +537,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getHostname() {
-        if (this.isVpcRing()) return LOCAL_IP;
+        if (this.isVpcRing()) return getInstanceDataRetriever().getPrivateIP();
         else return getInstanceDataRetriever().getPublicHostname();
     }
 
@@ -671,8 +684,8 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getHostIP() {
-        if (this.isVpcRing()) return LOCAL_IP;
-        else return PUBLIC_IP;
+        if (this.isVpcRing()) return getInstanceDataRetriever().getPrivateIP();
+        else return getInstanceDataRetriever().getPublicIP();
     }
 
     @Override
@@ -1081,7 +1094,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  "backup.status");
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  getDataFileLocation() + File.separator + "backup.status");
     }
 
 
@@ -1095,4 +1108,28 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(PRIAM_PRE + ".backup.notification.topic.arn", "");
     }
 
+    @Override
+    public boolean isPostRestoreHookEnabled() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_ENABLED, false);
+    }
+
+    @Override
+    public String getPostRestoreHook() {
+        return config.get(CONFIG_POST_RESTORE_HOOK);
+    }
+
+    @Override
+    public String getPostRestoreHookHeartbeatFileName() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_FILENAME, getDataFileLocation() + File.separator + "postrestorehook_heartbeat");
+    }
+
+    @Override
+    public String getPostRestoreHookDoneFileName() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_DONE_FILENAME, getDataFileLocation() + File.separator + "postrestorehook_done");
+    }
+
+    @Override
+    public int getPostRestoreHookTimeOutInDays() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS, 2);
+    }
 }

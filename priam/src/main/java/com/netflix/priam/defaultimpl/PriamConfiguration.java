@@ -1094,7 +1094,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  "backup.status");
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  getDataFileLocation() + File.separator + "backup.status");
     }
 
 

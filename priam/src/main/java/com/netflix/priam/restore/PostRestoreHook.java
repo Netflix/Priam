@@ -60,7 +60,7 @@ public class PostRestoreHook implements IPostRestoreHook {
      */
     public void execute() throws Exception {
         if(config.isPostRestoreHookEnabled()) {
-            logger.info("Started PostRestoreHook execution");
+            logger.debug("Started PostRestoreHook execution");
 
             //create a temp file to be used to indicate state of the current process, to the sub-process
             File tempLockFile = File.createTempFile(PriamPostRestoreHookFilePrefix, PriamPostRestoreHookFileSuffix);
@@ -86,7 +86,7 @@ public class PostRestoreHook implements IPostRestoreHook {
 
                         //start sub-process
                         Process process = processBuilder.inheritIO().start();
-                        logger.info("Started PostRestoreHook - Attempt#{}", ++countOfProcessStarts);
+                        logger.info("Started PostRestoreHook: {} - Attempt#{}", postRestoreHook, ++countOfProcessStarts);
 
                         //monitor progress of sub-process
                         monitorPostRestoreHookHeartBeat(process);
@@ -101,9 +101,9 @@ public class PostRestoreHook implements IPostRestoreHook {
                             logger.info("PostRestoreHook process completed successfully");
                             break;
                         }
-                        logger.info("PostRestoreHook process exited unsuccessfully");
+                        logger.warn("PostRestoreHook process exited unsuccessfully");
                     }
-                    logger.info("Completed PostRestoreHook execution");
+                    logger.debug("Completed PostRestoreHook execution");
                 } else {
                     throw new PostRestoreHookException(String.format("Could not acquire lock on a temp file necessary for PostRestoreHook to execute. Path to temp file: %s", tempLockFile.getAbsolutePath()));
                 }

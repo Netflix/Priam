@@ -96,6 +96,16 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     }
 
     /**
+     * Returns plain MBeanServer Connection
+     * @param config Configuration to initialize JMX Connection
+     * @return MBeanServerConnection
+     * @throws JMXConnectionException
+     */
+    public static MBeanServerConnection getMbeanServerConn(IConfiguration config) throws JMXConnectionException {
+        return JMXNodeTool.instance(config).mbeanServerConn;
+    }
+
+    /**
      * This method will test if you can connect and query something before handing over the connection,
      * This is required for our retry logic.
      *

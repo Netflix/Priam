@@ -43,9 +43,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public abstract class AbstractBackup extends Task implements EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
-
-    protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
-    protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo"));
     protected final Provider<AbstractBackupPath> pathFactory;
 
     protected IBackupFileSystem fs;
@@ -161,14 +158,9 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                     continue;
                 }
 
-                String dirName = columnFamilyDir.getName();
-                String columnFamilyName = dirName.split("-")[0];
 
-                if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspaceDir.getName()) || //keyspace is filtered
-                        backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspaceDir.getName(), columnFamilyDir.getName()) //columnfamily is filtered
-                        || (FILTER_COLUMN_FAMILY.containsKey(keyspaceDir.getName()) && FILTER_COLUMN_FAMILY.get(keyspaceDir.getName()).contains(columnFamilyName)) //column family is in list of global CF filter
-                        ) {
-                    logger.info("Skipping: keyspace: {}, CF: {} is part of filter list. Will clean up files from: {}", keyspaceDir.getName(), columnFamilyDir.getName(), backupDir.getName());
+
+                if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
                     //Clean the backup/snapshot directory else files will keep getting accumulated.
                     SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
                     continue;
@@ -189,7 +181,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
         if (!backupDir.isDirectory() && !backupDir.exists())
             return false;
         String keyspaceName = keyspaceDir.getName();
-        if (FILTER_KEYSPACE.contains(keyspaceName)) {
+        if (BackupRestoreUtil.FILTER_KEYSPACE.contains(keyspaceName)) {
             logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
             return false;
         }

@@ -44,7 +44,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public static final char PATH_SEP = File.separatorChar;
 
     public enum BackupFileType {
-        SNAP, SST, CL, META
+        SNAP, SST, CL, META, META_V2
     }
 
     protected BackupFileType type;
@@ -95,7 +95,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.region = config.getDC();
         this.token = factory.getInstance().getToken();
         this.type = type;
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (type != BackupFileType.META && type != BackupFileType.META_V2 && type != BackupFileType.CL) {
             this.keyspace = elements[0];
             if (!isCassandra1_0)
                 this.columnFamily = elements[1];
@@ -131,7 +131,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         } else {
 
             buff.append(config.getDataFileLocation()).append(PATH_SEP);
-            if (type != BackupFileType.META) {
+            if (type != BackupFileType.META && type != BackupFileType.META_V2) {
                 if (isCassandra1_0)
                     buff.append(keyspace).append(PATH_SEP);
                 else

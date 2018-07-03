@@ -24,6 +24,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -59,17 +60,19 @@ public class SnapshotBackup extends AbstractBackup {
     private BackupRestoreUtil backupRestoreUtil;
     private String snapshotName = null;
     private List<AbstractBackupPath> abstractBackupPaths = null;
+    private CassandraOperations cassandraOperations;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
+            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
+        this.cassandraOperations = cassandraOperations;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
     }
 
@@ -93,7 +96,7 @@ public class SnapshotBackup extends AbstractBackup {
             logger.info("Starting snapshot {}", snapshotName);
             //Clearing remotePath List
             snapshotRemotePaths.clear();
-            takeSnapshot(snapshotName);
+            cassandraOperations.takeSnapshot(snapshotName);
 
             // Collect all snapshot dir's under keyspace dir's
             abstractBackupPaths = Lists.newArrayList();
@@ -125,7 +128,7 @@ public class SnapshotBackup extends AbstractBackup {
             throw e;
         } finally {
             try {
-                clearSnapshot(snapshotName);
+                cassandraOperations.clearSnapshot(snapshotName);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
@@ -139,26 +142,6 @@ public class SnapshotBackup extends AbstractBackup {
         return null;
     }
 
-    private void takeSnapshot(final String snapshotName) throws Exception {
-        new RetryableCallable<Void>() {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.takeSnapshot(snapshotName, null);
-                //nodetool.takeSnapshot(snapshotName, null, new String[0]);
-                return null;
-            }
-        }.call();
-    }
-
-    private void clearSnapshot(final String snapshotTag) throws Exception {
-        new RetryableCallable<Void>() {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.clearSnapshot(snapshotTag);
-                return null;
-            }
-        }.call();
-    }
 
     @Override
     public String getName() {

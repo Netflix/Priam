@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,23 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.netflix.priam.notification;
-
-import com.amazonaws.services.sns.model.MessageAttributeValue;
-import com.google.inject.ImplementedBy;
-
-import java.util.Map;
+package com.netflix.priam.config;
 
 /**
- * Service to notify of a message.
- * Created by vinhn on 11/3/16.
+ * Created by aagrawal on 6/26/18.
  */
-@ImplementedBy(AWSSnsNotificationService.class)
-public interface INotificationService {
-    /**
-     * Notify the message.
-     *
-     * @param msg Message that needs to be notified
-     */
-    public void notify(String msg, Map<String, MessageAttributeValue> messageAttributes);
+public class FakeBackupRestoreConfig implements IBackupRestoreConfig{
+    @Override
+    public String getSnapshotMetaServiceCronExpression() {
+        return "0 0/2 * 1/1 * ? *"; //Every 2 minutes for testing purposes
+    }
 }

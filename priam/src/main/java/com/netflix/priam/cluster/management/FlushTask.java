@@ -97,6 +97,7 @@ public class FlushTask extends Task {
      * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#HOUR} then it expects {@link IConfiguration#getFlushInterval()} in the format of hour=x or daily=x
      * <p>
      * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression from {@link IConfiguration#getFlushCronExpression()}
+     * @throws Exception if the configuration is not set correctly or are not valid. This is to ensure we fail-fast.
      */
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
 

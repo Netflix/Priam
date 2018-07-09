@@ -89,7 +89,7 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testMetaFileName() throws Exception {
-        String fileName = metaFileWriter.getMetaFileName();
+        String fileName = MetaFileInfo.getMetaFileName();
         Path path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName);
         Assert.assertTrue(metaFileReader.isValidMetaFile(path));
         path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName + ".tmp");

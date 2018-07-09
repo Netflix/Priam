@@ -107,8 +107,14 @@ public class SnapshotMetaService extends Task {
     public void execute() throws Exception {
         try {
             logger.info("Initializaing SnapshotMetaService");
+
+            File dataDir = new File(config.getDataFileLocation());
+
+            //Perform a cleanup of old snapshot meta_v2 files if any.
+            metaFileWriter.cleanupOldMetaFiles();
+
             //Walk through all the files in this snapshot.
-            Path metaFilePath = processDataDir(new File(config.getDataFileLocation()));
+            Path metaFilePath = processDataDir(dataDir);
 
             //Upload the meta_v2.json.
             metaFileWriter.uploadMetaFile(metaFilePath, true);
@@ -152,7 +158,7 @@ public class SnapshotMetaService extends Task {
                 String dirName = columnFamilyDir.getName();
                 String columnFamilyName = dirName.split("-")[0];
 
-                if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
+                if (columnFamilyDir.isFile() || backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
                     continue;
                 }
 

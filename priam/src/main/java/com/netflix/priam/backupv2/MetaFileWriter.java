@@ -23,18 +23,21 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 /**
@@ -43,23 +46,22 @@ import java.util.List;
  */
 public class MetaFileWriter {
     private static final Logger logger = LoggerFactory.getLogger(MetaFileWriter.class);
-    private final IConfiguration configuration;
     private final Provider<AbstractBackupPath> pathFactory;
     private final IBackupFileSystem backupFileSystem;
 
     private MetaFileInfo metaFileInfo;
     private JsonWriter jsonWriter;
     private Path metaFilePath;
-
+    private final Path metaFileDirectory;
 
     @Inject
     MetaFileWriter(IConfiguration configuration, InstanceIdentity instanceIdentity, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx) {
-        this.configuration = configuration;
         this.pathFactory = pathFactory;
         this.backupFileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         List<String> backupIdentifier = new ArrayList<>();
         backupIdentifier.add(instanceIdentity.getInstance().getToken());
         metaFileInfo = new MetaFileInfo(configuration.getAppName(), configuration.getDC(), configuration.getRac(), backupIdentifier);
+        metaFileDirectory = Paths.get(configuration.getDataFileLocation());
     }
 
     /**
@@ -69,9 +71,9 @@ public class MetaFileWriter {
      */
     public void startMetaFileGeneration() throws IOException {
         //Compute meta file name.
-        String fileName = getMetaFileName();
-        metaFilePath = Paths.get(configuration.getDataFileLocation(), fileName);
-        Path tempMetaFilePath = Paths.get(configuration.getDataFileLocation(), fileName + ".tmp");
+        String fileName = MetaFileInfo.getMetaFileName();
+        metaFilePath = Paths.get(metaFileDirectory.toString(), fileName);
+        Path tempMetaFilePath = Paths.get(metaFileDirectory.toString(), fileName + ".tmp");
 
         logger.info("Starting to write a new meta file: {}", metaFilePath);
 
@@ -108,7 +110,7 @@ public class MetaFileWriter {
         jsonWriter.endObject();
         jsonWriter.close();
 
-        Path tempMetaFilePath = Paths.get(configuration.getDataFileLocation(), metaFilePath.toFile().getName() + ".tmp");
+        Path tempMetaFilePath = Paths.get(metaFileDirectory.toString(), metaFilePath.toFile().getName() + ".tmp");
 
         //Rename the tmp file.
         tempMetaFilePath.toFile().renameTo(metaFilePath.toFile());
@@ -121,7 +123,7 @@ public class MetaFileWriter {
      * Upload the meta file generated to backup file system.
      *
      * @param metafile        {@link Path} to the local meta file that needs to be backed up.
-     * @param deleteOnSuccess delete the meta file from local file system if backup is successful.
+     * @param deleteOnSuccess delete the meta file from local file system if backup is successful. Useful for testing purposes
      * @throws Exception when unable to upload the meta file.
      */
     public void uploadMetaFile(Path metafile, boolean deleteOnSuccess) throws Exception {
@@ -140,7 +142,14 @@ public class MetaFileWriter {
             FileUtils.deleteQuietly(metafile.toFile());
     }
 
-    public String getMetaFileName() {
-        return MetaFileInfo.META_FILE_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant()) + MetaFileInfo.META_FILE_SUFFIX;
+    /**
+     * Delete the old meta files, if any present in the metaFileDirectory
+     */
+    public void cleanupOldMetaFiles(){
+        IOFileFilter fileNameFilter = FileFilterUtils.and(FileFilterUtils.prefixFileFilter(MetaFileInfo.META_FILE_PREFIX),
+                FileFilterUtils.or(FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX),
+                        FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX + ".tmp")));
+        Collection<File> files = FileUtils.listFiles(metaFileDirectory.toFile(), fileNameFilter, null);
+        files.stream().filter(file -> file.isFile()).forEach(file -> file.delete());
     }
 }

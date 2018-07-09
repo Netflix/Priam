@@ -33,6 +33,6 @@ public class BackupRestoreConfig implements IBackupRestoreConfig{
     }
 
     public String getSnapshotMetaServiceCronExpression(){
-        return config.get("Priam.snapshot.meta.cron", "-1");
+        return config.get("priam.snapshot.meta.cron", "-1");
     }
 }

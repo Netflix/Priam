@@ -42,7 +42,7 @@ public class BackupRestoreUtil {
     private String configColumnfamilyFilter;
 
     public static final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
-    private static final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo"));
+    private static final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "compactions_in_progress", "LocationInfo"));
 
     @Inject
     public BackupRestoreUtil(String configKeyspaceFilter, String configColumnfamilyFilter) {

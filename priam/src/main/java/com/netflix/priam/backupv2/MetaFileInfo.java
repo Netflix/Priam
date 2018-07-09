@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
 
 import java.util.List;
@@ -90,5 +91,9 @@ public class MetaFileInfo {
     @Override
     public String toString() {
         return GsonJsonSerializer.getGson().toJson(this);
+    }
+
+    public static String getMetaFileName() {
+        return MetaFileInfo.META_FILE_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant()) + MetaFileInfo.META_FILE_SUFFIX;
     }
 }

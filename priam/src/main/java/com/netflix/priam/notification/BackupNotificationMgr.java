@@ -15,6 +15,7 @@
  */
 package com.netflix.priam.notification;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.Inject;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -22,6 +23,9 @@ import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A means to nofity interested party(ies) of an uploaded file, success or failed.
@@ -57,7 +61,13 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("compressfilesize", abp.getCompressedFileSize());
             jsonObject.put("backuptype", abp.getType().name());
             jsonObject.put("uploadstatus", uploadStatus);
-            this.notificationService.notify(jsonObject.toString(), null);
+
+            //SNS Attributes for filtering messages. Cluster name and backup file type.
+            Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+            messageAttributes.putIfAbsent("s3clustername", new MessageAttributeValue().withDataType("String").withStringValue(abp.getClusterName()));
+            messageAttributes.putIfAbsent("backuptype", new MessageAttributeValue().withDataType("String").withStringValue(abp.getType().name()));
+
+            this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {
             logger.error("JSON exception during generation of notification for upload {}.  Local file {}. Ignoring to continue with rest of backup.  Msg: {}", uploadStatus, abp.getFileName(), exception.getLocalizedMessage());
         }

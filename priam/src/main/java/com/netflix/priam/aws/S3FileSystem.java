@@ -162,12 +162,12 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
                 objectMetadata.setContentLength(chunk.length);
                 PutObjectRequest putObjectRequest = new PutObjectRequest(config.getBackupPrefix(), path.getRemotePath(), new ByteArrayInputStream(chunk), objectMetadata);
                 //Retry if failed.
-                PutObjectResult upload = new BoundedExponentialRetryCallable<PutObjectResult>() {
+                PutObjectResult upload = new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                     @Override
                     public PutObjectResult retriableCall() throws Exception {
                         return s3Client.putObject(putObjectRequest);
                     }
-                }.retriableCall();
+                }.call();
 
                 bytesUploaded.addAndGet(chunk.length);
 

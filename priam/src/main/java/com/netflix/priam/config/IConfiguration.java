@@ -444,7 +444,6 @@ public interface IConfiguration {
      */
     int getHintedHandoffThrottleKb();
 
-
     /**
      * @return Size of Cassandra max direct memory
      */
@@ -469,7 +468,6 @@ public interface IConfiguration {
      * @return stream_throughput_outbound_megabits_per_sec in yaml
      */
     int getStreamingThroughputMB();
-
 
     /**
      * Get the paritioner for this cassandra cluster/node.
@@ -646,7 +644,7 @@ public interface IConfiguration {
     String getPgpPasswordPhrase();
 
     /*
-     * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
+     * @return key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     String getPgpPublicKeyLoc();
@@ -688,7 +686,7 @@ public interface IConfiguration {
     /*
      * The max number of files queued to be uploaded.
      */
-    int getUncrementalBkupQueueSize();
+    int getIncrementalBkupQueueSize();
 
     /**
      * @return tombstone_warn_threshold in C* yaml
@@ -760,33 +758,43 @@ public interface IConfiguration {
      * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called once download of files is complete, before starting Cassandra.
      * @return if post restore hook is enabled
      */
-    boolean isPostRestoreHookEnabled();
+
+    default boolean isPostRestoreHookEnabled() {
+        return false;
+    }
 
     /**
      * Post restore hook to be executed
      * @return post restore hook to be executed once restore is complete
      */
-    String getPostRestoreHook();
-
+    default String getPostRestoreHook() {
+        return "";
+    }
 
     /**
      * HeartBeat file of post restore hook
      * @return file that indicates heartbeat of post restore hook
      */
-    String getPostRestoreHookHeartbeatFileName();
+    default String getPostRestoreHookHeartbeatFileName() {
+        return "postrestorehook_heartbeat";
+    }
 
 
     /**
      * Done file for post restore hook
      * @return file that indicates completion of post restore hook
      */
-    String getPostRestoreHookDoneFileName();
+    default String getPostRestoreHookDoneFileName() {
+        return "postrestorehook_done";
+    }
 
     /**
      * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
      * @return time out for post restore hook in days
      */
-    int getPostRestoreHookTimeOutInDays();
+    default int getPostRestoreHookTimeOutInDays() {
+        return 2;
+    }
 
     /**
      * Heartbeat timeout (in ms) for post restore hook

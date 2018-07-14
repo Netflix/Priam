@@ -1,5 +1,8 @@
 # Changelog
 
+## 2018/07/11: 3.1.56
+* (#689) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.
+
 ## 2018/06/28: 3.1.54
 ### Improvements
 * (#683) PostRestoreHook logging improvements.

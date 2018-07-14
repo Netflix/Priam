@@ -66,8 +66,8 @@ public class SnapshotBackup extends AbstractBackup {
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+            , InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
+        super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
         this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
@@ -101,20 +101,17 @@ public class SnapshotBackup extends AbstractBackup {
             // Collect all snapshot dir's under keyspace dir's
             abstractBackupPaths = Lists.newArrayList();
             // Try to upload all the files as part of snapshot. If there is any error, there will be an exception and snapshot will be considered as failure.
-            initiateBackup("snapshots", backupRestoreUtil);
+            initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
 
             // All the files are uploaded successfully as part of snapshot.
             //pre condition notifiy of meta.json upload
             File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
-            metaJsonAbp.setCompressedFileSize(0);
-            notifyEventStart(new BackupEvent(metaJsonAbp));
 
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(abstractBackupPaths, snapshotName);
 
             logger.info("Snapshot upload complete for {}", snapshotName);
-            notifyEventSuccess(new BackupEvent(metaJsonAbp));
             backupMetadata.setSnapshotLocation(config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
 
@@ -207,7 +204,7 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
 
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
         // Add files to this dir

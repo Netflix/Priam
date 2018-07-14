@@ -15,17 +15,22 @@
  */
 package com.netflix.priam.services;
 
+import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup;
+import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreUtil;
+import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.backupv2.ColumnfamilyResult;
 import com.netflix.priam.backupv2.FileUploadResult;
 import com.netflix.priam.backupv2.MetaFileWriter;
 import com.netflix.priam.backupv2.PrefixGenerator;
 import com.netflix.priam.config.IBackupRestoreConfig;
-import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.utils.DateUtil;
 import org.apache.cassandra.io.sstable.Component;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -53,17 +58,22 @@ import java.util.*;
  * Created by aagrawal on 6/18/18.
  */
 @Singleton
-public class SnapshotMetaService extends Task {
+public class SnapshotMetaService extends AbstractBackup {
     public static final String JOBNAME = "SnapshotMetaService";
 
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
+    private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private BackupRestoreUtil backupRestoreUtil;
     private IOFileFilter fileNameFilter;
     private MetaFileWriter metaFileWriter;
+    private CassandraOperations cassandraOperations;
+    private String snapshotName = null;
 
     @Inject
-    SnapshotMetaService(IConfiguration config, BackupNotificationMgr backupNotificationMgr, MetaFileWriter metaFileWriter) {
-        super(config);
+    SnapshotMetaService(IConfiguration config, IFileSystemContext backupFileSystemCtx, Provider<AbstractBackupPath> pathFactory,
+                        MetaFileWriter metaFileWriter, CassandraOperations cassandraOperations) {
+        super(config, backupFileSystemCtx, pathFactory);
+        this.cassandraOperations = cassandraOperations;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
         initializeFileFilters();
         this.metaFileWriter = metaFileWriter;
@@ -77,18 +87,18 @@ public class SnapshotMetaService extends Task {
      * <p>
      * It uses to generate the CRON. Use "-1" to disable
      * the service.
-     * @throws Exception  if the configuration is not set correctly or are not valid. This is to ensure we fail-fast.
+     * @throws Exception if the configuration is not set correctly or are not valid. This is to ensure we fail-fast.
      **/
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
         CronTimer cronTimer = null;
         String cronExpression = backupRestoreConfig.getSnapshotMetaServiceCronExpression();
 
-        if (StringUtils.isEmpty(cronExpression) || cronExpression.equalsIgnoreCase("-1")) {
-            logger.info("Skipping SnapshotMetaService as SnapshotMetaService cron is not set or is disabled via -1.");
+        if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")) {
+            logger.info("Skipping SnapshotMetaService as SnapshotMetaService cron is disabled via -1.");
         } else {
-            if (!CronExpression.isValidExpression(cronExpression))
+            if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
                 throw new Exception("Invalid CRON expression: " + cronExpression +
-                        ". Please remove cron expression or set to -1, if you wish to disable SnapshotMetaService else fix the CRON expression and try again!");
+                        ". Please use -1, if you wish to disable SnapshotMetaService else fix the CRON expression and try again!");
 
             cronTimer = new CronTimer(JOBNAME, cronExpression);
             logger.info("Starting SnapshotMetaService with CRON expression {}", cronTimer.getCronExpression());
@@ -103,18 +113,35 @@ public class SnapshotMetaService extends Task {
         }
     }
 
+    public String generateSnapshotName(){
+        return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant());
+    }
+
     @Override
     public void execute() throws Exception {
+        if (!CassandraMonitor.isCassadraStarted()) {
+            logger.debug("Cassandra is not started, hence SnapshotMetaService will not run");
+            return;
+        }
+
         try {
             logger.info("Initializaing SnapshotMetaService");
+            snapshotName = generateSnapshotName();
 
-            File dataDir = new File(config.getDataFileLocation());
-
-            //Perform a cleanup of old snapshot meta_v2 files if any.
+            //Perform a cleanup of old snapshot meta_v2.json files, if any, as we don't want our disk to be filled by them.
+            //These files may be leftover
+            // 1) when Priam shutdown in middle of this service and may not be full JSON
+            // 2) No permission to upload to backup file system.
             metaFileWriter.cleanupOldMetaFiles();
 
-            //Walk through all the files in this snapshot.
-            Path metaFilePath = processDataDir(dataDir);
+            //TODO: enque all the old backup folder for upload/delete, if any, as we don't our disk to be filled by them.
+            //processOldSnapshotV2Folders();
+
+            //Take a new snapshot
+            cassandraOperations.takeSnapshot(snapshotName);
+
+            //Process the snapshot
+            Path metaFilePath = processSnapshot();
 
             //Upload the meta_v2.json.
             metaFileWriter.uploadMetaFile(metaFilePath, true);
@@ -125,88 +152,83 @@ public class SnapshotMetaService extends Task {
 
     }
 
+    public Path processSnapshot() throws Exception {
+        metaFileWriter.startMetaFileGeneration();
+        initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
+        return metaFileWriter.endMetaFileGeneration();
+    }
+
+    private File getValidSnapshot(File snapshotDir, String snapshotName) {
+        for (File fileName : snapshotDir.listFiles())
+            if (fileName.exists() && fileName.isDirectory() && fileName.getName().matches(snapshotName))
+                return fileName;
+        return null;
+    }
+
     @Override
     public String getName() {
         return JOBNAME;
     }
 
-    /**
-     * This will process the data directory given and find all columnfamilies data files, and generate meta.json file. Note that this will apply filters to the data directory as mentioned by {@link IConfiguration#getSnapshotCFFilter()} and {@link IConfiguration#getSnapshotKeyspaceFilters()}
-     *
-     * @param dataDir Location of the data directory.
-     * @return local file location of the meta file produced. Returns null, if there is any issue.
-     * @throws Exception
-     */
-    public Path processDataDir(File dataDir) throws Exception {
-        if (!dataDir.exists()) {
-            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
-                    + dataDir);
-        }
 
-        logger.debug("Scanning for all SSTables in: {}", dataDir.getAbsolutePath());
-
-        metaFileWriter.startMetaFileGeneration();
-
-        for (File keyspaceDir : dataDir.listFiles()) {
-            if (keyspaceDir.isFile())
-                continue;
-
-            logger.debug("Entering {} keyspace..", keyspaceDir.getName());
-
-            for (File columnFamilyDir : keyspaceDir.listFiles()) {
-
-                String dirName = columnFamilyDir.getName();
-                String columnFamilyName = dirName.split("-")[0];
-
-                if (columnFamilyDir.isFile() || backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
-                    continue;
-                }
-
-                Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
-                Collection<File> files = FileUtils.listFiles(columnFamilyDir, fileNameFilter, null);
-                ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspaceDir.getName(), columnFamilyName);
-
-                files.stream().filter(file -> file.exists()).filter(file -> file.isFile()).forEach(file -> {
-                    try {
-                        String prefix = PrefixGenerator.getSSTFileBase(file.getName());
-                        FileUploadResult fileUploadResult = FileUploadResult.getFileUploadResult(keyspaceDir.getName(), columnFamilyName, file);
-                        filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
-                        filePrefixToFileMap.get(prefix).add(fileUploadResult);
-                    } catch (Exception e) {
-                        logger.error("Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: " + file.getAbsolutePath(), e);
-                    }
-                });
-
-                filePrefixToFileMap.entrySet().forEach(sstableEntry -> {
-                    ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
-                    ssTableResult.setPrefix(sstableEntry.getKey());
-                    ssTableResult.setSstableComponents(sstableEntry.getValue());
-                    columnfamilyResult.addSstable(ssTableResult);
-                });
-                filePrefixToFileMap.clear(); //Release the resources.
-                processColumnFamily(columnfamilyResult);
-
-            } //End of columnfamily
-        } //End of keyspaces
-
-        return metaFileWriter.endMetaFileGeneration();
-
+    private ColumnfamilyResult convertToColumnFamilyResult(String keyspace, String columnFamilyName, Map<String, List<FileUploadResult>> filePrefixToFileMap) {
+        ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
+        filePrefixToFileMap.entrySet().forEach(sstableEntry -> {
+            ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
+            ssTableResult.setPrefix(sstableEntry.getKey());
+            ssTableResult.setSstableComponents(sstableEntry.getValue());
+            columnfamilyResult.addSstable(ssTableResult);
+        });
+        return columnfamilyResult;
     }
 
-    //Process individual column family
-    private void processColumnFamily(ColumnfamilyResult columnfamilyResult) throws IOException {
-        if (columnfamilyResult == null)
+    @Override
+    protected void processColumnFamily(final String keyspace, final String columnFamily, final File backupDir) throws Exception {
+        File snapshotDir = getValidSnapshot(backupDir, snapshotName);
+        // Process this snapshot folder for the given columnFamily
+        if (snapshotDir == null) {
+            logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
             return;
+        }
+
+        logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
+
+        Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
+        Collection<File> files = FileUtils.listFiles(snapshotDir, fileNameFilter, null);
+
+        files.stream().filter(file -> file.exists()).filter(file -> file.isFile()).forEach(file -> {
+            try {
+                final String prefix = PrefixGenerator.getSSTFileBase(file.getName());
+                FileUploadResult fileUploadResult = FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
+                filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
+                filePrefixToFileMap.get(prefix).add(fileUploadResult);
+            } catch (Exception e) {
+                logger.error("Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: " + file.getAbsolutePath(), e);
+            }
+        });
+
+        ColumnfamilyResult columnfamilyResult = convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap);
+        filePrefixToFileMap.clear(); //Release the resources.
 
         logger.debug("Starting the processing of KS: {}, CF: {}, No.of SSTables: {}", columnfamilyResult.getKeyspaceName(), columnfamilyResult.getColumnfamilyName(), columnfamilyResult.getSstables().size());
 
         //TODO: Future - Ensure that all the files are en-queued for Upload. Use BackupCacheService (BCS) to find the
         //location where files are uploaded and BackupUploadDownloadService(BUDS) to enque if they are not.
-
+        //Note that BUDS will be responsible for actually deleting the files after they are processed as they really should not be deleted unless they are successfully uploaded.
+        FileUtils.cleanDirectory(snapshotDir);
+        
         metaFileWriter.addColumnfamilyResult(columnfamilyResult);
         logger.debug("Finished processing KS: {}, CF: {}", columnfamilyResult.getKeyspaceName(), columnfamilyResult.getColumnfamilyName());
 
     }
 
+    @Override
+    protected void addToRemotePath(String remotePath) {
+        //Do nothing
+    }
 
+    //For testing purposes only.
+    public void setSnapshotName(String snapshotName) {
+        this.snapshotName = snapshotName;
+    }
 }

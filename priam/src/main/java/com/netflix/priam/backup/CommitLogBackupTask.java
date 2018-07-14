@@ -46,10 +46,8 @@ public class CommitLogBackupTask extends AbstractBackup {
 
     @Inject
     public CommitLogBackupTask(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
-                               CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
-            , BackupNotificationMgr backupNotificationMgr
-    ) {
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+                               CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx) {
+        super(config, backupFileSystemCtx, pathFactory);
         this.clBackup = clBackup;
     }
 
@@ -96,7 +94,7 @@ public class CommitLogBackupTask extends AbstractBackup {
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
         //Do nothing.
     }
 

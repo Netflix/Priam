@@ -41,21 +41,21 @@ import java.util.concurrent.CopyOnWriteArrayList;
 /**
  * Abstract Backup class for uploading files to backup location
  */
-public abstract class AbstractBackup extends Task implements EventGenerator<BackupEvent> {
+public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
+    public static final String INCREMENTAL_BACKUP_FOLDER = "backups";
+    public static final String SNAPSHOT_FOLDER = "snapshots";
+
     protected final Provider<AbstractBackupPath> pathFactory;
 
     protected IBackupFileSystem fs;
-    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers = new CopyOnWriteArrayList<>();
 
     @Inject
     public AbstractBackup(IConfiguration config, IFileSystemContext backupFileSystemCtx,
-                          Provider<AbstractBackupPath> pathFactory,
-                          BackupNotificationMgr backupNotificationMgr) {
+                          Provider<AbstractBackupPath> pathFactory) {
         super(config);
         this.pathFactory = pathFactory;
         this.fs = backupFileSystemCtx.getFileStrategy(config);
-        this.addObserver(backupNotificationMgr);
     }
 
     /**
@@ -154,11 +154,11 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
             for (File columnFamilyDir : keyspaceDir.listFiles()) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
 
-                if (!isValidBackupDir(keyspaceDir, columnFamilyDir, backupDir)) {
+                if (!isValidBackupDir(keyspaceDir, backupDir)) {
                     continue;
                 }
 
-
+                String columnFamilyName = columnFamilyDir.getName().split("-")[0];
 
                 if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
                     //Clean the backup/snapshot directory else files will keep getting accumulated.
@@ -166,18 +166,25 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                     continue;
                 }
 
-                backupUploadFlow(backupDir);
+                processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
             } //end processing all CFs for keyspace
         } //end processing keyspaces under the C* data dir
 
     }
 
-    protected abstract void backupUploadFlow(File backupDir) throws Exception;
+    /**
+     * Process the columnfamily in a given snapshot/backup directory.
+     * @param keyspace Name of the keyspace
+     * @param columnFamily Name of the columnfamily
+     * @param backupDir Location of the backup/snapshot directory in that columnfamily.
+     * @throws Exception throws exception if there is any error in process the directory.
+     */
+    protected abstract void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception;
 
     /**
      * Filters unwanted keyspaces
      */
-    public boolean isValidBackupDir(File keyspaceDir, File columnFamilyDir, File backupDir) {
+    public boolean isValidBackupDir(File keyspaceDir, File backupDir) {
         if (!backupDir.isDirectory() && !backupDir.exists())
             return false;
         String keyspaceName = keyspaceDir.getName();
@@ -193,40 +200,4 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
      * Adds Remote path to the list of Remote Paths
      */
     protected abstract void addToRemotePath(String remotePath);
-
-    @Override
-    public final void addObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null)
-            throw new NullPointerException("observer must not be null.");
-
-        observers.addIfAbsent(observer);
-    }
-
-    @Override
-    public void removeObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null)
-            throw new NullPointerException("observer must not be null.");
-
-        observers.remove(observer);
-    }
-
-    @Override
-    public void notifyEventStart(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
-    }
-
-    @Override
-    public void notifyEventSuccess(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
-    }
-
-    @Override
-    public void notifyEventFailure(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
-    }
-
-    @Override
-    public void notifyEventStop(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
-    }
 }

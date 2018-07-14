@@ -19,6 +19,7 @@ package com.netflix.priam.service;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
@@ -44,7 +45,7 @@ import java.util.Random;
  */
 public class TestSnapshotMetaService {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotMetaService.class.getName());
-    private static final Path dummyDataDirectoryLocation = Paths.get("target/dummydata");
+    private static Path dummyDataDirectoryLocation;
     private static IConfiguration configuration;
     private static IBackupRestoreConfig backupRestoreConfig;
     private static SnapshotMetaService snapshotMetaService;
@@ -73,6 +74,8 @@ public class TestSnapshotMetaService {
 
         if (prefixGenerator == null)
             prefixGenerator = injector.getInstance(PrefixGenerator.class);
+
+        dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
     }
 
     @Test
@@ -99,9 +102,10 @@ public class TestSnapshotMetaService {
     @Test
     public void testMetaFile() throws Exception {
         int noOfSstables = 5;
-        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, noOfSstables);
-        Path metaFileLocation = snapshotMetaService.processDataDir(dummyDataDirectoryLocation.toFile());
-        cleanupDir(dummyDataDirectoryLocation);
+        String snapshotName = snapshotMetaService.generateSnapshotName();
+        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+        snapshotMetaService.setSnapshotName(snapshotName);
+        Path metaFileLocation = snapshotMetaService.processSnapshot();
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
@@ -116,8 +120,9 @@ public class TestSnapshotMetaService {
         Assert.assertEquals(configuration.getRac(), metaFileInfo.getRack());
         Assert.assertEquals(configuration.getDC(), metaFileInfo.getRegion());
 
-
+        //Cleanup
         metaFileLocation.toFile().delete();
+        cleanupDir(dummyDataDirectoryLocation);
     }
 
     private void cleanupDir(Path dir) throws IOException {
@@ -127,20 +132,21 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testSize() throws Exception {
-        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, 5000);
-        Path metaFileLocation = snapshotMetaService.processDataDir(dummyDataDirectoryLocation.toFile());
-        //Cleanup the dummyDataDirectory
-        if (dummyDataDirectoryLocation.toFile().exists())
-            FileUtils.cleanDirectory(dummyDataDirectoryLocation.toFile());
+        String snapshotName = snapshotMetaService.generateSnapshotName();
+        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, 5000, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+        snapshotMetaService.setSnapshotName(snapshotName);
+        Path metaFileLocation = snapshotMetaService.processSnapshot();
 
         //Validate meta file exists.
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
+        //Cleanup
         metaFileLocation.toFile().delete();
+        cleanupDir(dummyDataDirectoryLocation);
     }
 
-    private void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables) throws Exception {
+    private void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables, String backupDir, String snapshotName) throws Exception {
         if (dummyDir == null)
             dummyDir = dummyDataDirectoryLocation;
 
@@ -160,7 +166,7 @@ public class TestSnapshotMetaService {
                     String prefixName = "mc-" + k + "-big";
 
                     for (Component.Type type : EnumSet.allOf(Component.Type.class)) {
-                        Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, prefixName + "-" + type.name() + ".db");
+                        Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, prefixName + "-" + type.name() + ".db");
                         componentPath.getParent().toFile().mkdirs();
                         try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
                             fileWriter.write("");

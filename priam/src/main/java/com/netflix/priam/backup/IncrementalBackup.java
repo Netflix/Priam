@@ -47,10 +47,8 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
-            , IncrementalMetaData metaData
-            , BackupNotificationMgr backupNotificationMgr
-    ) {
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+            , IncrementalMetaData metaData) {
+        super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
         backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
     }
@@ -59,7 +57,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     public void execute() throws Exception {
         //Clearing remotePath List
         incrementalRemotePaths.clear();
-        initiateBackup("backups", backupRestoreUtil);
+        initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
         if (incrementalRemotePaths.size() > 0) {
             notifyObservers();
         }
@@ -97,7 +95,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
         List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
 
         if (!uploadedFiles.isEmpty()) {

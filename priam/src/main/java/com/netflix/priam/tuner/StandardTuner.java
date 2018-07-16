@@ -121,8 +121,11 @@ public class StandardTuner implements ICassandraTuner {
         //force to 1 until vnodes are properly supported
         map.put("num_tokens", 1);
 
-
+        //Additional C* Yaml properties, which can be set via Priam.extra.params
         addExtraCassParams(map);
+
+        //Custom specific C* yaml properties which might not be available in Apache C* OSS
+        addCustomCassParams(map);
 
         //remove troublesome properties
         map.remove("flush_largest_memtables_at");
@@ -132,6 +135,15 @@ public class StandardTuner implements ICassandraTuner {
         yaml.dump(map, new FileWriter(yamlFile));
 
         configureCommitLogBackups();
+    }
+
+    /**
+     * This method can be overwritten in child classes for any additional tunings to C* Yaml.
+     * Default implementation is left empty intentionally for child classes to override.
+     * This is useful when custom YAML properties are supported in deployed C*.
+     * @param map
+     */
+    protected void addCustomCassParams(Map map) {
     }
 
     /**

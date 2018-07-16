@@ -1,5 +1,34 @@
 # Changelog
 
+## 2018/07/11: 3.1.56
+* (#689) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.
+
+## 2018/06/28: 3.1.54
+### Improvements
+* (#683) PostRestoreHook logging improvements.
+
+
+## 2018/06/27: 3.1.53
+### New Feature
+* (#681) PostRestoreHook changes. Adding ability to call a post restore hook once files get downloaded as part of the restore process.
+
+Following are relevant configurations around post restore hook
+- priam.postrestorehook.enabled: indicates if postrestorehook is enabled.
+- priam.postrestorehook: contains the command with arguments to be executed as part of postrestorehook. Priam would wait for completion of this hook before proceeding to starting C*.
+- priam.postrestorehook.heartbeat.filename: heartbeat file that postrestorehook emits. Priam keeps a tab on this file to make sure postrestorehook is making progress. Otherwise, a new process of postrestorehook would be spawned (upon killing existing process if still exists)
+- priam.postrestorehook.done.filename:'done' file that postrestorehook creates upon completion of execution.
+- priam.postrestorehook.timeout.in.days:maximum time that Priam should wait before killing the postrestorehook process (if not already complete)
+
+## 2018/06/12: 3.1.52
+### Bug Fixes
+* (#679) Mark snapshot as a failure if there is an issue with uploading a file. This is to ensure we fail-fast. This is in contrast to previous behavior where snapshot would "ignore" any failures in the upload of a file and mark snapshot as "success". 
+         Since it was not truly a "success" marking that as "failure" is the right thing to do. Also, meta.json should really be uploaded in case of "success" and not in case of "failure" as the presence of "meta.json" marks the backup as successful.
+         The case for fail-fast: In a scenario where we had an issue say at the start of the backup, it makes more sense to fail-fast then to keep uploading other files (and waste bandwidth and use backup resources). The remediation step for backup failure is anyways to take a full snapshot again.
+
+## 2018/06/07: 3.1.51
+### Bug Fixes
+* (#678) Change the default location of backup status and downloaded meta.json as part of backup verification
+
 ## 2018/03/07: 3.1.50
 
 ### New Features

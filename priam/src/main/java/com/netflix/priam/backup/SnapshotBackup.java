@@ -97,8 +97,10 @@ public class SnapshotBackup extends AbstractBackup {
 
             // Collect all snapshot dir's under keyspace dir's
             abstractBackupPaths = Lists.newArrayList();
+            // Try to upload all the files as part of snapshot. If there is any error, there will be an exception and snapshot will be considered as failure.
             initiateBackup("snapshots", backupRestoreUtil);
 
+            // All the files are uploaded successfully as part of snapshot.
             //pre condition notifiy of meta.json upload
             File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);

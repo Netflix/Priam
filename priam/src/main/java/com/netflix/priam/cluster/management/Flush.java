@@ -57,7 +57,7 @@ public class Flush extends IClusterManagement<String> {
     /*
      * @return the keyspace(s) flushed.  List can be empty but never null.
      */
-    protected List<String> manageTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
+    protected List<String> runTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
         List<String> flushed = new ArrayList<String>();
 
         //Get keyspaces to flush

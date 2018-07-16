@@ -737,4 +737,36 @@ public interface IConfiguration {
      * @return SNS Topic ARN to be used to send notification.
      */
     public String getBackupNotificationTopicArn();
+
+    /**
+     * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called once download of files is complete, before starting Cassandra.
+     * @return if post restore hook is enabled
+     */
+    public boolean isPostRestoreHookEnabled();
+
+    /**
+     * Post restore hook to be executed
+     * @return post restore hook to be executed once restore is complete
+     */
+    public String getPostRestoreHook();
+
+
+    /**
+     * HeartBeat file of post restore hook
+     * @return file that indicates heartbeat of post restore hook
+     */
+    public String getPostRestoreHookHeartbeatFileName();
+
+
+    /**
+     * Done file for post restore hook
+     * @return file that indicates completion of post restore hook
+     */
+    public String getPostRestoreHookDoneFileName();
+
+    /**
+     * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
+     * @return time out for post restore hook in days
+     */
+    public int getPostRestoreHookTimeOutInDays();
 }

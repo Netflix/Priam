@@ -32,6 +32,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.cassandra.io.sstable.Component;
+import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -43,7 +44,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
 
@@ -63,8 +63,8 @@ public class SnapshotMetaService extends AbstractBackup {
 
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
+    private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private BackupRestoreUtil backupRestoreUtil;
-    private IOFileFilter fileNameFilter;
     private MetaFileWriter metaFileWriter;
     private CassandraOperations cassandraOperations;
     private String snapshotName = null;
@@ -75,7 +75,6 @@ public class SnapshotMetaService extends AbstractBackup {
         super(config, backupFileSystemCtx, pathFactory);
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
-        initializeFileFilters();
         this.metaFileWriter = metaFileWriter;
     }
 
@@ -106,14 +105,7 @@ public class SnapshotMetaService extends AbstractBackup {
         return cronTimer;
     }
 
-    private void initializeFileFilters() {
-        fileNameFilter = FileFilterUtils.fileFileFilter();
-        for (Component.Type type : EnumSet.allOf(Component.Type.class)) {
-            fileNameFilter = FileFilterUtils.or(fileNameFilter, FileFilterUtils.suffixFileFilter(type.name()));
-        }
-    }
-
-    public String generateSnapshotName(){
+    public String generateSnapshotName() {
         return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant());
     }
 
@@ -194,11 +186,18 @@ public class SnapshotMetaService extends AbstractBackup {
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
 
         Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
-        Collection<File> files = FileUtils.listFiles(snapshotDir, fileNameFilter, null);
+        Collection<File> files = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
 
         files.stream().filter(file -> file.exists()).filter(file -> file.isFile()).forEach(file -> {
             try {
-                final String prefix = PrefixGenerator.getSSTFileBase(file.getName());
+                String prefix = PrefixGenerator.getSSTFileBase(file.getName());
+
+                if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_MANIFEST_FILE))
+                    prefix = "manifest";
+
+                if (prefix == null)
+                    logger.error("Unknown file type with no SSTFileBase found: ", file.getAbsolutePath());
+
                 FileUploadResult fileUploadResult = FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
                 filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
                 filePrefixToFileMap.get(prefix).add(fileUploadResult);

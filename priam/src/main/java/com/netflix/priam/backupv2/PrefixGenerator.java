@@ -66,7 +66,22 @@ public class PrefixGenerator {
     }
 
     //e.g. mc-3-big-Data.db or sample_cf-ka-7213-Index.db
+
+    /**
+     * Gives the prefix (common name) of the sstable components. Returns null if it is not sstable component
+     * e.g. mc-3-big-Data.db or ks-cf-ka-7213-Index.db will return mc-3-big or ks-cf-ka-7213
+     * @param fileName name of the file for common prefix
+     * @return common prefix of the file, or null, if not identified as sstable component.
+     */
     public static final String getSSTFileBase(String fileName) {
-        return fileName.substring(0, fileName.lastIndexOf("-"));
+        String prefix = null;
+        try{
+            prefix = fileName.substring(0, fileName.lastIndexOf("-"));
+        }catch (IndexOutOfBoundsException e)
+        {
+            //Do nothing
+        }
+
+        return prefix;
     }
 }

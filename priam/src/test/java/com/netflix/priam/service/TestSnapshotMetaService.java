@@ -26,19 +26,25 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.services.SnapshotMetaService;
 import org.apache.cassandra.io.sstable.Component;
+import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.EnumSet;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toCollection;
 
 /**
  * Created by aagrawal on 6/20/18.
@@ -76,6 +82,8 @@ public class TestSnapshotMetaService {
             prefixGenerator = injector.getInstance(PrefixGenerator.class);
 
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
+        cleanupDir(dummyDataDirectoryLocation);
+
     }
 
     @Test
@@ -111,7 +119,7 @@ public class TestSnapshotMetaService {
         Assert.assertTrue(metaFileLocation.toFile().isFile());
 
         //Try reading meta file.
-        metaFileReader.setNoOfSstables(noOfSstables);
+        metaFileReader.setNoOfSstables(noOfSstables + 1);
         metaFileReader.readMeta(metaFileLocation);
 
         MetaFileInfo metaFileInfo = metaFileReader.getMetaFileInfo();
@@ -125,9 +133,13 @@ public class TestSnapshotMetaService {
         cleanupDir(dummyDataDirectoryLocation);
     }
 
-    private void cleanupDir(Path dir) throws IOException {
+    private void cleanupDir(Path dir){
         if (dir.toFile().exists())
-            FileUtils.cleanDirectory(dir.toFile());
+            try {
+                FileUtils.cleanDirectory(dir.toFile());
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
     }
 
     @Test
@@ -173,6 +185,11 @@ public class TestSnapshotMetaService {
                         }
 
                     }
+                }
+
+                Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, "manifest.json");
+                try(FileWriter fileWriter = new FileWriter(componentPath.toFile())){
+                    fileWriter.write("");
                 }
             }
         }

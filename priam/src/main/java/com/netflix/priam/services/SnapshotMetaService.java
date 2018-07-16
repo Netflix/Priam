@@ -216,7 +216,8 @@ public class SnapshotMetaService extends AbstractBackup {
         //location where files are uploaded and BackupUploadDownloadService(BUDS) to enque if they are not.
         //Note that BUDS will be responsible for actually deleting the files after they are processed as they really should not be deleted unless they are successfully uploaded.
         FileUtils.cleanDirectory(snapshotDir);
-        
+        FileUtils.deleteDirectory(snapshotDir);
+
         metaFileWriter.addColumnfamilyResult(columnfamilyResult);
         logger.debug("Finished processing KS: {}, CF: {}", columnfamilyResult.getKeyspaceName(), columnfamilyResult.getColumnfamilyName());
 

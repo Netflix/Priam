@@ -19,7 +19,6 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXConnectorMgr;
 import org.slf4j.Logger;
@@ -47,31 +46,24 @@ public abstract class IClusterManagement<T> extends Task {
 
     @Override
     public void execute() throws JMXConnectionException, Exception {
-        JMXConnectorMgr connMgr = null;
         List<T> result = null;
 
-        try {
-            connMgr = new JMXConnectorMgr(config);
-        }catch (IOException | InterruptedException e){
-            measurement.incrementFailureCnt(1);
-            this.metricPublisher.publish(measurement); //signal that there was a failure
-            throw new JMXConnectionException("Exception during creating JMX connection for operation: " + taskType.name(), e);
-        }
-
-        try {
-            result = manageTask(connMgr);
+        try(JMXConnectorMgr connMgr = new JMXConnectorMgr(config)) {
+            result = runTask(connMgr);
             measurement.incrementSuccessCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a success
             logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
-        } catch (Exception e) {
+        } catch (IOException | InterruptedException e){
+            measurement.incrementFailureCnt(1);
+            this.metricPublisher.publish(measurement); //signal that there was a failure
+            throw new JMXConnectionException("Exception during creating JMX connection for operation: " + taskType.name(), e);
+        }catch (Exception e) {
             measurement.incrementFailureCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a failure
             throw new RuntimeException(String.format("Exception during %s.",taskType), e);
 
-        } finally {
-            if (connMgr != null)
-                connMgr.close();  //resource cleanup
         }
+
         if (result.isEmpty()) {
             logger.warn("{} task completed successfully but no action was done.", taskType.name());
         }
@@ -82,5 +74,5 @@ public abstract class IClusterManagement<T> extends Task {
         return taskType.name();
     }
 
-    protected abstract List<T> manageTask(JMXConnectorMgr jmxConnectorMgr) throws TaskException;
+    protected abstract List<T> runTask(JMXConnectorMgr jmxConnectorMgr) throws TaskException;
 }

@@ -101,7 +101,7 @@ public class Compaction extends IClusterManagement<String> {
     /*
      * @return the keyspace(s) compacted.  List can be empty but never null.
      */
-    protected List<String> manageTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
+    protected List<String> runTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
         List<String> compactionKeyspaces = new ArrayList<String>();
         final Map<String, List<String>> columnFamilyFilter = Compaction.updateCompactionCFList(this.config, jmxConnectorMgr);
 

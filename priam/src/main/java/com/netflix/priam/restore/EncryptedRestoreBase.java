@@ -52,8 +52,8 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
     protected EncryptedRestoreBase(IConfiguration config, IBackupFileSystem fs, String jobName, Sleeper sleeper,
                                    ICassandraProcess cassProcess, Provider<AbstractBackupPath> pathProvider,
                                    InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, ICredentialGeneric pgpCredential,
-                                   IFileCryptography fileCryptography, ICompression compress, MetaData metaData, InstanceState instanceState) {
-        super(config, fs, jobName, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState);
+                                   IFileCryptography fileCryptography, ICompression compress, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
+        super(config, fs, jobName, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState, postRestoreHook);
 
         this.jobName = jobName;
         this.pgpCredential = pgpCredential;

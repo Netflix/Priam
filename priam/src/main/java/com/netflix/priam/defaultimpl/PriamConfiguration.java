@@ -36,6 +36,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -182,6 +183,12 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN = PRIAM_PRE + ".vpc.roleassumption.arn";
     private static final String CONFIG_DUAL_ACCOUNT = PRIAM_PRE + ".roleassumption.dualaccount";
 
+    //Post Restore Hook
+    private static final String CONFIG_POST_RESTORE_HOOK_ENABLED = PRIAM_PRE + ".postrestorehook.enabled";
+    private static final String CONFIG_POST_RESTORE_HOOK = PRIAM_PRE + ".postrestorehook";
+    private static final String CONFIG_POST_RESTORE_HOOK_HEARTBEAT_FILENAME = PRIAM_PRE + ".postrestorehook.heartbeat.filename";
+    private static final String CONFIG_POST_RESTORE_HOOK_DONE_FILENAME = PRIAM_PRE + ".postrestorehook.done.filename";
+    private static final String CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS = PRIAM_PRE + ".postrestorehook.timeout.in.days";
 
     //Running instance meta data
     private String RAC;
@@ -1097,7 +1104,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  "backup.status");
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  getDataFileLocation() + File.separator + "backup.status");
     }
 
 
@@ -1111,4 +1118,28 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(PRIAM_PRE + ".backup.notification.topic.arn", "");
     }
 
+    @Override
+    public boolean isPostRestoreHookEnabled() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_ENABLED, false);
+    }
+
+    @Override
+    public String getPostRestoreHook() {
+        return config.get(CONFIG_POST_RESTORE_HOOK);
+    }
+
+    @Override
+    public String getPostRestoreHookHeartbeatFileName() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_FILENAME, getDataFileLocation() + File.separator + "postrestorehook_heartbeat");
+    }
+
+    @Override
+    public String getPostRestoreHookDoneFileName() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_DONE_FILENAME, getDataFileLocation() + File.separator + "postrestorehook_done");
+    }
+
+    @Override
+    public int getPostRestoreHookTimeOutInDays() {
+        return config.get(CONFIG_POST_RESTORE_HOOK_TIMEOUT_IN_DAYS, 2);
+    }
 }

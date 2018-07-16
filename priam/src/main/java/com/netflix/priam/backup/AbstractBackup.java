@@ -110,7 +110,8 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                 addToRemotePath(abp.getRemotePath());
             } catch (Exception e) {
                 uploadResult.setUploadStatus(UploadStatus.FAILED);
-                logger.error("Failed to upload local file {} within CF {}. Ignoring to continue with rest of backup.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
+                logger.error("Failed to upload local file {} within CF {}.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
+                throw e;
             }
         }
         return uploadResults;

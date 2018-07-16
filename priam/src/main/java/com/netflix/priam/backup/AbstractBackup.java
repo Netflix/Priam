@@ -16,7 +16,6 @@
  */
 package com.netflix.priam.backup;
 
-import com.amazonaws.services.devicefarm.model.UploadStatus;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;

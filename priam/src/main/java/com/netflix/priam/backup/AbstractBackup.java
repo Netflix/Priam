@@ -75,21 +75,19 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
      *
      * @param parent Parent dir
      * @param type   Type of file (META, SST, SNAP etc)
-     * @return List of #{UploadResult} that were tried to be uploaded with their status as part of backup
-     * @throws Exception when there is failure in parsing files.
+     * @return List of files that are successfully uploaded as part of backup
+     * @throws Exception when there is failure in uploading files.
      */
-    protected List<UploadResult> upload(File parent, final BackupFileType type) throws Exception {
-        final List<UploadResult> uploadResults = Lists.newArrayList();
+    protected List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
+        final List<AbstractBackupPath> bps = Lists.newArrayList();
         for (final File file : parent.listFiles()) {
             //== decorate file with metadata
             final AbstractBackupPath bp = pathFactory.get();
             bp.parseLocal(file, type);
-            UploadResult uploadResult = new UploadResult(bp);
-            uploadResults.add(uploadResult);
 
             try {
                 logger.info("About to upload file {} for backup", file.getCanonicalFile());
-                uploadResult.setUploadStatus(UploadStatus.PROCESSING);
+
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME) {
                     public AbstractBackupPath retriableCall() throws Exception {
                         upload(bp);
@@ -99,22 +97,16 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
                 }.call();
 
                 if (abp != null)
-                    uploadResult.setUploadStatus(UploadStatus.SUCCEEDED);
-                else
-                    uploadResult.setUploadStatus(UploadStatus.FAILED);
-
-                //Earlier if file was not uploaded for any reason, we were not returning that file in the list of upload.
-//                if (abp != null)
-//                    uploadResults.add(abp);
+                    bps.add(abp);
 
                 addToRemotePath(abp.getRemotePath());
             } catch (Exception e) {
-                uploadResult.setUploadStatus(UploadStatus.FAILED);
+                //Throw exception to the caller. This will allow them to take appropriate decision.
                 logger.error("Failed to upload local file {} within CF {}.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
                 throw e;
             }
         }
-        return uploadResults;
+        return bps;
     }
 
 

@@ -220,7 +220,9 @@ public interface IConfiguration {
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    public String getCompactionCronExpression();
+    default String getCompactionCronExpression(){
+        return "-1";
+    }
 
    /**
     * Column Family(ies), comma delimited, to start compactions.
@@ -228,7 +230,9 @@ public interface IConfiguration {
     *
     * @return Column Family(ies), comma delimited, to start compactions.  If no filter is applied, returns null.
     */
-    public String getCompactionCFList();
+    default String getCompactionCFList(){
+        return null;
+    };
 
     /**
      * @return Backup hour for snapshot backups (0 - 23)

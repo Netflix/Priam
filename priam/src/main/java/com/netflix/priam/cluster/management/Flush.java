@@ -16,13 +16,13 @@
 package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.JMXConnectorMgr;
-import org.apache.cassandra.db.Keyspace;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 import javax.inject.Singleton;
-import javax.management.OperationsException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -45,53 +44,55 @@ public class Flush extends IClusterManagement<String> {
     private static final Logger logger = LoggerFactory.getLogger(Flush.class);
 
     private final IConfiguration config;
+    private final CassandraOperations cassandraOperations;
     private List<String> keyspaces = new ArrayList<String>();
 
     @Inject
-    public Flush(IConfiguration config, IMetricPublisher metricPublisher) {
+    public Flush(IConfiguration config, IMetricPublisher metricPublisher, CassandraOperations cassandraOperations) {
         super(config, Task.FLUSH, metricPublisher, new NodeToolFlushMeasurement());
         this.config = config;
+        this.cassandraOperations = cassandraOperations;
     }
 
     @Override
     /*
      * @return the keyspace(s) flushed.  List can be empty but never null.
      */
-    protected List<String> runTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
+    protected String runTask() throws Exception {
         List<String> flushed = new ArrayList<String>();
 
         //Get keyspaces to flush
-        deriveKeyspaces(jmxConnectorMgr);
+        deriveKeyspaces();
 
         if (this.keyspaces == null || this.keyspaces.isEmpty()) {
             logger.warn("NO op on requested \"flush\" as there are no keyspaces.");
-            return flushed;
+            return flushed.toString();
         }
 
         //If flush is for certain keyspaces, validate keyspace exist
         for (String keyspace : keyspaces) {
-            if (!jmxConnectorMgr.getKeyspaces().contains(keyspace)) {
+            if (!cassandraOperations.getKeyspaces().contains(keyspace)) {
                 throw new IllegalArgumentException("Keyspace [" + keyspace + "] does not exist.");
             }
 
-            if (SchemaConstant.shouldAvoidKeyspaceForClusterMgmt(keyspace))  //no need to flush system keyspaces.
+            if (SchemaConstant.isSystemKeyspace(keyspace))  //no need to flush system keyspaces.
                 continue;
 
             try {
-                jmxConnectorMgr.forceKeyspaceFlush(keyspace, new String[0]);
+                cassandraOperations.forceKeyspaceFlush(keyspace);
                 flushed.add(keyspace);
-            } catch (IOException| ExecutionException| InterruptedException e) {
-                throw new TaskException("Exception during flushing keyspace: " + keyspace, e);
+            } catch (IOException | ExecutionException | InterruptedException e) {
+                throw new Exception("Exception during flushing keyspace: " + keyspace, e);
             }
         }
 
-        return flushed;
+        return flushed.toString();
     }
 
     /*
     Derive keyspace(s) to flush in the following order:  explicit list provided by caller, property, or all keyspaces.
      */
-    private void deriveKeyspaces(JMXConnectorMgr jmxConnectorMgr) {
+    private void deriveKeyspaces() throws Exception{
         //== get value from property
         String raw = this.config.getFlushKeyspaces();
         if (raw != null && !raw.isEmpty()) {
@@ -104,12 +105,13 @@ public class Flush extends IClusterManagement<String> {
         }
 
         //== no override via FP, default to all keyspaces
-        this.keyspaces = jmxConnectorMgr.getKeyspaces();
+        this.keyspaces = cassandraOperations.getKeyspaces();
         return;
     }
 
     /**
      * Timer to be used for flush interval.
+     *
      * @param config {@link IConfiguration} to get configuration details from priam.
      * @return the timer to be used for flush interval.
      * <p>

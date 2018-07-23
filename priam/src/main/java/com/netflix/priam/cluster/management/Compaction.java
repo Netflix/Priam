@@ -16,14 +16,12 @@
 package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.merics.CompactionMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
-import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.JMXConnectorMgr;
-import org.apache.cassandra.db.Keyspace;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -37,7 +35,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
-import java.util.function.BiConsumer;
 import java.util.regex.Pattern;
 
 /**
@@ -49,22 +46,23 @@ public class Compaction extends IClusterManagement<String> {
     private static final Logger logger = LoggerFactory.getLogger(Compaction.class);
     private final IConfiguration config;
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
+    private final CassandraOperations cassandraOperations;
 
     @Inject
-    public Compaction(IConfiguration config, IMetricPublisher metricPublisher) {
+    public Compaction(IConfiguration config, IMetricPublisher metricPublisher, CassandraOperations cassandraOperations) {
         super(config, Task.COMPACTION, metricPublisher, new CompactionMeasurement());
         this.config = config;
+        this.cassandraOperations = cassandraOperations;
     }
 
-    public static final Map<String, List<String>> updateCompactionCFList(IConfiguration config, JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException {
+    public final Map<String, List<String>> updateCompactionCFList(IConfiguration config) throws Exception {
         final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
 
-        if (config.getCompactionCFList() == null || config.getCompactionCFList().isEmpty())
-        {
+        if (config.getCompactionCFList() == null || config.getCompactionCFList().isEmpty()) {
             logger.info("Compaction: No override provided by user. All keyspaces qualify for compaction.");
 
-            if (jmxConnectorMgr != null)
-            jmxConnectorMgr.getKeyspaces().forEach(keyspaceName -> {
+            if (cassandraOperations != null)
+                cassandraOperations.getKeyspaces().forEach(keyspaceName -> {
                 List<String> existingCfs = columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
                 columnFamilyFilter.put(keyspaceName, existingCfs);
             });
@@ -101,56 +99,50 @@ public class Compaction extends IClusterManagement<String> {
     /*
      * @return the keyspace(s) compacted.  List can be empty but never null.
      */
-    protected List<String> runTask(JMXConnectorMgr jmxConnectorMgr) throws IllegalArgumentException, TaskException {
+    protected String runTask() throws Exception {
         List<String> compactionKeyspaces = new ArrayList<String>();
-        final Map<String, List<String>> columnFamilyFilter = Compaction.updateCompactionCFList(this.config, jmxConnectorMgr);
+        final Map<String, List<String>> columnFamilyFilter = updateCompactionCFList(config);
 
         if (columnFamilyFilter == null || columnFamilyFilter.isEmpty()) {
             logger.warn("No op on requested \"compaction\" as there are no keyspaces.");
-            return compactionKeyspaces;
+            return compactionKeyspaces.toString();
         }
 
-        for(Map.Entry<String, List<String>> entry: columnFamilyFilter.entrySet())
-        {
+        for (Map.Entry<String, List<String>> entry : columnFamilyFilter.entrySet()) {
             String keyspace = entry.getKey();
             List<String> columnfamilies = entry.getValue();
 
-            if (!jmxConnectorMgr.getKeyspaces().contains(keyspace))
-            {
+            if (!cassandraOperations.getKeyspaces().contains(keyspace)) {
                 logger.error("Keyspace: {} configured for compaction does not exist!", keyspace);
                 continue;
             }
 
-            if (SchemaConstant.shouldAvoidKeyspaceForClusterMgmt(keyspace)) //no need to compact system keyspaces.
+            if (SchemaConstant.isSystemKeyspace(keyspace)) //no need to compact system keyspaces.
                 continue;
 
-            try{
+            try {
                 if (columnfamilies == null || columnfamilies.isEmpty())
-                    jmxConnectorMgr.forceKeyspaceCompaction(keyspace);
+                    cassandraOperations.forceKeyspaceCompaction(keyspace,  null);
                 else
-                    for(String columnfamily: columnfamilies)
-                    {
+                    for (String columnfamily : columnfamilies) {
                         try {
-                            jmxConnectorMgr.forceKeyspaceCompaction(keyspace, columnfamily);
+                            cassandraOperations.forceKeyspaceCompaction(keyspace, columnfamily);
                         } catch (IOException | InterruptedException | ExecutionException e) {
-                            throw new TaskException("Exception while compacting keyspace: " + keyspace + ", columnfamily: " + columnfamily, e);
+                            throw new Exception("Exception while compacting keyspace: " + keyspace + ", columnfamily: " + columnfamily, e);
                         }
-                    };
+                    }
                 compactionKeyspaces.add(keyspace);
-            }catch (IOException | InterruptedException | ExecutionException | TaskException e){
-                throw new TaskException("Exception while compacting keyspace: " + keyspace, e);
+            } catch (Exception e) {
+                throw new Exception("Exception while compacting keyspace: " + keyspace, e);
             }
-        };
+        }
 
-        return compactionKeyspaces;
-    }
-
-    private void compact(String keyspace, List<String> columnfamilies, JMXConnectorMgr jmxConnectorMgr) throws TaskException {
-
+        return compactionKeyspaces.toString();
     }
 
     /**
      * Timer to be used for compaction interval.
+     *
      * @param config {@link IConfiguration} to get configuration details from priam.
      * @return the timer to be used for compaction interval  from {@link IConfiguration#getCompactionCronExpression()}
      */
@@ -158,18 +150,18 @@ public class Compaction extends IClusterManagement<String> {
 
         CronTimer cronTimer = null;
 
-                String cronExpression = config.getCompactionCronExpression();
+        String cronExpression = config.getCompactionCronExpression();
 
-                if (StringUtils.isEmpty(cronExpression)) {
-                    logger.info("Skipping compaction as compaction cron is not set.");
-                } else {
-                    if (!CronExpression.isValidExpression(cronExpression))
-                        throw new Exception("Invalid CRON expression: " + cronExpression +
-                                ". Please remove cron expression if you wish to disable compaction else fix the CRON expression and try again!");
+        if (StringUtils.isEmpty(cronExpression)) {
+            logger.info("Skipping compaction as compaction cron is not set.");
+        } else {
+            if (!CronExpression.isValidExpression(cronExpression))
+                throw new Exception("Invalid CRON expression: " + cronExpression +
+                        ". Please remove cron expression if you wish to disable compaction else fix the CRON expression and try again!");
 
-                    cronTimer = new CronTimer(Task.COMPACTION.name(), cronExpression);
-                    logger.info("Starting compaction with CRON expression {}", cronTimer.getCronExpression());
-                }
+            cronTimer = new CronTimer(Task.COMPACTION.name(), cronExpression);
+            logger.info("Starting compaction with CRON expression {}", cronTimer.getCronExpression());
+        }
 
         return cronTimer;
     }

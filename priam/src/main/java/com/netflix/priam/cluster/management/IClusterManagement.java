@@ -26,6 +26,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by vinhn on 10/12/16.
@@ -36,6 +38,7 @@ public abstract class IClusterManagement<T> extends Task {
     private IMetricPublisher metricPublisher;
     private Task taskType;
     private IMeasurement measurement;
+    private static Lock lock = new ReentrantLock();
 
     protected IClusterManagement(IConfiguration config, Task taskType, IMetricPublisher metricPublisher, IMeasurement measurement) {
         super(config);
@@ -45,27 +48,26 @@ public abstract class IClusterManagement<T> extends Task {
     }
 
     @Override
-    public void execute() throws JMXConnectionException, Exception {
-        List<T> result = null;
+    public void execute() throws Exception {
+        if (!lock.tryLock()) {
+            logger.error("Operation is already running! Try again later.");
+            throw new Exception("Operation already running");
+        }
 
-        try(JMXConnectorMgr connMgr = new JMXConnectorMgr(config)) {
-            result = runTask(connMgr);
+        try {
+            String result = runTask();
             measurement.incrementSuccessCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a success
             logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
-        } catch (IOException | InterruptedException e){
+            if (result.isEmpty()) {
+                logger.warn("{} task completed successfully but no action was done.", taskType.name());
+            }
+        } catch (Exception e){
             measurement.incrementFailureCnt(1);
             this.metricPublisher.publish(measurement); //signal that there was a failure
-            throw new JMXConnectionException("Exception during creating JMX connection for operation: " + taskType.name(), e);
-        }catch (Exception e) {
-            measurement.incrementFailureCnt(1);
-            this.metricPublisher.publish(measurement); //signal that there was a failure
-            throw new RuntimeException(String.format("Exception during %s.",taskType), e);
-
-        }
-
-        if (result.isEmpty()) {
-            logger.warn("{} task completed successfully but no action was done.", taskType.name());
+            throw new Exception("Exception during execution of operation: " + taskType.name(), e);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -74,5 +76,5 @@ public abstract class IClusterManagement<T> extends Task {
         return taskType.name();
     }
 
-    protected abstract List<T> runTask(JMXConnectorMgr jmxConnectorMgr) throws TaskException;
+    protected abstract String runTask() throws Exception;
 }

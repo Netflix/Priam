@@ -169,16 +169,6 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-    @Override
-
-    public String getCompactionCronExpression() {
-        return null;
-    }
-
-    @Override
-    public String getCompactionCFList() {
-        return null;
-    }
 
     @Override
     public int getBackupHour()

@@ -44,6 +44,7 @@ public class PriamStartupAgent
         String token = null;
         String seeds = null;
         boolean isReplace = false;
+        boolean isExternallyDefinedToken = false;
         String replacedIp = "";
         String extraEnvParams = null;
         
@@ -51,7 +52,10 @@ public class PriamStartupAgent
         {
             try
             {
-                token = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_token");
+                isExternallyDefinedToken = Boolean.parseBoolean(DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/is_externally_defined_token"));
+                if (isExternallyDefinedToken) {
+                    token = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_token");
+                }
                 seeds = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
                 isReplace = Boolean.parseBoolean(DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/is_replace_token"));
                 replacedIp = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_replaced_ip");
@@ -64,7 +68,7 @@ public class PriamStartupAgent
                 e.printStackTrace();
             }
   
-            if (token != null && seeds != null)
+            if ((token != null || !isExternallyDefinedToken) && seeds != null)
                 break;
             try
             {
@@ -75,8 +79,10 @@ public class PriamStartupAgent
                 // do nothing.
             }
         }
-        
-        System.setProperty("cassandra.initial_token", token);
+
+        if (isExternallyDefinedToken) {
+            System.setProperty("cassandra.initial_token", token);
+        }
 
         setExtraEnvParams(extraEnvParams);
 

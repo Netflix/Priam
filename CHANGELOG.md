@@ -1,5 +1,10 @@
 # Changelog
-## 2018/07/11: 3.11.24
+
+## 2018/07/28: 3.11.26
+### Improvements
+* (#694) Moving restore-finished status update, to after PostRestoreHook execution.
+
+## 2018/07/11: 3.11.25
 ### Improvements
 * (#690) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.
 

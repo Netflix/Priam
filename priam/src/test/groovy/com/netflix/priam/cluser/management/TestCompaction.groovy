@@ -38,57 +38,89 @@ public class TestCompaction extends Specification {
             compaction = Guice.createInjector(new BRTestModule()).getInstance(Compaction.class);
     }
 
-    def "Map contains KS #keyspace with configuration #compactionCFList is #result"() {
+    def "Map contains KS #keyspace with configuration #compactionCFIncludeList is #result"() {
         expect:
-        compaction.updateCompactionCFList(new CompactionConfiguration(compactionCFList)).containsKey(keyspace) == result
+        compaction.getCompactionIncludeFilter(new CompactionConfiguration(compactionCFIncludeList, null)).containsKey(keyspace) == result
 
         where:
-        compactionCFList | keyspace || result
-        "abc.*"          | "abc"    || true
-        "abc.*,def.*"    | "abc"    || true
-        "abc.*,def.*"    | "def"    || true
-        "abc.def"        | "abc"    || true
-        "abc.*,def.*"    | "abc1"   || false
-        "abc.*,def.*"    | "def1"   || false
+        compactionCFIncludeList | keyspace || result
+        "abc.*"                 | "abc"    || true
+        "abc.*,def.*"           | "abc"    || true
+        "abc.*,def.*"           | "def"    || true
+        "abc.def"               | "abc"    || true
+        "abc.*,def.*"           | "abc1"   || false
+        "abc.*,def.*"           | "def1"   || false
     }
 
-    def "Map contains KS #keyspace, CF #columnfamily with configuration #compactionCFList is #result"() {
+    def "Map contains KS #keyspace, CF #columnfamily with configuration #compactionCFIncludeList is #result"() {
         expect:
-        compaction.updateCompactionCFList(new CompactionConfiguration(compactionCFList)).get(keyspace).contains(columnfamily) == result
+        compaction.getCompactionIncludeFilter(new CompactionConfiguration(compactionCFIncludeList, null)).get(keyspace).contains(columnfamily) == result
 
         where:
-        compactionCFList | keyspace | columnfamily || result
-        "abc.*,def.*"    | "abc"    | "column1"    || false
-        "abc.*,def.*"    | "def"    | "dude"       || false
-        "abc.def"        | "abc"    | "def"        || true
-        "abc.*,def.ghi"    | "def"    | "ghi"       || true
-        "abc.def"        | "abc"    | "ghi"        || false
+        compactionCFIncludeList | keyspace | columnfamily || result
+        "abc.*,def.*"           | "abc"    | "column1"    || false
+        "abc.*,def.*"           | "def"    | "dude"       || false
+        "abc.def"               | "abc"    | "def"        || true
+        "abc.*,def.ghi"         | "def"    | "ghi"       || true
+        "abc.def"               | "abc"    | "ghi"        || false
     }
 
-    def "Map contains KS #keyspace, with configuration #compactionCFList is empty"() {
+    def "Map contains KS #keyspace, with configuration #compactionCFIncludeList is empty"() {
         expect:
-        compaction.updateCompactionCFList(new CompactionConfiguration(compactionCFList)).get(keyspace).isEmpty() == result
+        compaction.getCompactionIncludeFilter(new CompactionConfiguration(compactionCFIncludeList, null)).get(keyspace).isEmpty() == result
 
         where:
-        compactionCFList | keyspace || result
-        "abc.*"          | "abc"    || true
-        "abc.*,def.*"    | "abc"    || true
-        "abc.*,def.*"    | "def"    || true
+        compactionCFIncludeList | keyspace || result
+        "abc.*"                 | "abc"    || true
+        "abc.*,def.*"           | "abc"    || true
+        "abc.*,def.*"           | "def"    || true
     }
 
-    def "Exception with configuration #compactionCFList"() {
+    def "Map contains KS #keyspace, CF #columnfamily with include config #compactionCFIncludeList and exclude config #compactionCFExcludeList is #result"() {
+        expect:
+        compaction.getCompactionFilterCfs(new CompactionConfiguration(compactionCFIncludeList, compactionCFExcludeList)).get(keyspace).contains(columnfamily) == result
+
+        where:
+        compactionCFIncludeList | compactionCFExcludeList | keyspace | columnfamily || result
+        "abc.*,def.*"           | "def.*"                 | "abc"    | "column1"    || true
+        "abc.*,def.*"           | "def.*"                 | "abc"    | "column2"    || false
+        "def.*"                 | "def.ghi"               | "def"    | "dude"       || true
+        "def.*"                 | "def.ghi"               | "def"    | "ghi"        || false
+        null                    | null                    | "def"    | "dude"       || true
+        null                    | "def.ghi"               | "def"    | "ghi"        || false
+        null                    | "def.ghi"               | "def"    | "dude"       || true
+        null                    | "def.ghi"               | "def"    | "random"     || false
+        null                    | "def.ghi"               | "def"    | "dude"        || true
+        "abc.*,def.*"           | null                    | "abc"    | "column1"    || true
+        "abc.column1"           | null                    | "abc"    | "column1"    || true
+    }
+
+    def "Map contains KS #keyspace with include config #compactionCFIncludeList and exclude config #compactionCFExcludeList is #result"() {
+        expect:
+        compaction.getCompactionFilterCfs(new CompactionConfiguration(compactionCFIncludeList, compactionCFExcludeList)).containsKey(keyspace) == result
+
+        where:
+        compactionCFIncludeList | compactionCFExcludeList | keyspace || result
+        "abc.column2"           | null                    | "abc"    || false
+        "abc.column2"           | null                    | "def"    || false
+        "abc.*,def.*"           | "def.*"                 | "def"    || false
+        null                    | null                    | "system"    || false
+
+    }
+
+        def "Exception with configuration #compactionCFIncludeList"() {
         when:
-        compaction.updateCompactionCFList(new CompactionConfiguration(compactionCFList))
+        compaction.getCompactionIncludeFilter(new CompactionConfiguration(compactionCFIncludeList, null))
 
         then:
         thrown(expectedException)
 
         where:
-        compactionCFList || expectedException
-        "abc"            || IllegalArgumentException
-        "abc,def"        || IllegalArgumentException
-        "abc.*,def"      || IllegalArgumentException
-        "abc,def.*"      || IllegalArgumentException
+        compactionCFIncludeList || expectedException
+        "abc"                   || IllegalArgumentException
+        "abc,def"               || IllegalArgumentException
+        "abc.*,def"             || IllegalArgumentException
+        "abc,def.*"             || IllegalArgumentException
     }
 
     def testConcurrentCompaction() throws Exception{
@@ -107,7 +139,7 @@ public class TestCompaction extends Specification {
         List<Callable<Boolean>> torun = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             torun.add(new Callable<Boolean>() {
-                public Boolean call() throws Exception {
+                Boolean call() throws Exception {
                     compaction.execute();
                     return Boolean.TRUE;
                 }
@@ -136,15 +168,22 @@ public class TestCompaction extends Specification {
 
 
     private class CompactionConfiguration extends FakeConfiguration {
-        private String compactionCFList;
+        private String compactionCFIncludeList;
+        private String compactionCFExcludeList;
 
-        CompactionConfiguration(String compactionCFList) {
-            this.compactionCFList = compactionCFList;
+        CompactionConfiguration(String compactionCFIncludeList, String compactionCFExcludeList) {
+            this.compactionCFIncludeList = compactionCFIncludeList;
+            this.compactionCFExcludeList = compactionCFExcludeList;
         }
 
         @Override
-        public String getCompactionCFList() {
-            return compactionCFList;
+        String getCompactionIncludeCFList() {
+            return compactionCFIncludeList;
+        }
+
+        @Override
+        String getCompactionExcludeCFList(){
+            return compactionCFExcludeList;
         }
 
     }
@@ -152,13 +191,18 @@ public class TestCompaction extends Specification {
 
     private static class MockCassandraOperations extends MockUp<CassandraOperations> {
         @Mock
-        public void forceKeyspaceCompaction(String keyspaceName, String columnfamily) throws Exception{
+        void forceKeyspaceCompaction(String keyspaceName, String... columnfamily) throws Exception{
             Thread.sleep(2000);
         }
 
         @Mock
-        public List<String> getKeyspaces() throws Exception{
-            return ImmutableList.of("system", "hello");
+        Map<String,List<String>> getColumnfamilies() throws Exception{
+            Map<String, List<String>> result = new HashMap<>();
+            result.put("abc", Arrays.asList("column1"));
+            result.put("def", Arrays.asList("dude", "ghi"));
+            result.put("ghi", Arrays.asList("k1", "ghi", "k2"));
+            result.put("system", Arrays.asList("compaction_history", "hints"));
+            return result;
         }
     }
 }

@@ -589,8 +589,13 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getCompactionCFList() {
-        return config.get(PRIAM_PRE + ".compaction.cf.filter");
+    public String getCompactionIncludeCFList() {
+        return config.get(PRIAM_PRE + ".compaction.cf.include");
+    }
+
+    @Override
+    public String getCompactionExcludeCFList() {
+        return config.get(PRIAM_PRE + ".compaction.cf.exclude");
     }
 
     @Override

@@ -20,9 +20,10 @@ package com.netflix.priam.defaultimpl;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
+import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 
 import javax.inject.Inject;
-import java.util.List;
+import java.util.*;
 
 /**
  * Created by aagrawal on 7/23/18.
@@ -46,16 +47,28 @@ public class CassandraOperations
         }.call();
     }
 
-    public void forceKeyspaceCompaction(String keyspaceName, String columnfamily) throws Exception{
+    public Map<String, List<String>> getColumnfamilies() throws Exception{
+        return new RetryableCallable<Map<String, List<String>>>(){
+            public Map<String, List<String>> retriableCall() throws Exception{
+                try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                    final Map<String, List<String>> columnfamilies = new HashMap<>();
+                    Iterator<Map.Entry<String, ColumnFamilyStoreMBean>> columnfamilyStoreMBean = nodeTool.getColumnFamilyStoreMBeanProxies();
+                    columnfamilyStoreMBean.forEachRemaining(entry -> {
+                     columnfamilies.putIfAbsent(entry.getKey(), new ArrayList<>());
+                     columnfamilies.get(entry.getKey()).add(entry.getValue().getColumnFamilyName());
+                    });
+                    return columnfamilies;
+                }
+            }
+        }.call();
+    }
+
+    public void forceKeyspaceCompaction(String keyspaceName, String... columnfamilies) throws Exception{
         new RetryableCallable<Void>(){
             public Void retriableCall() throws Exception{
                 try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
-                    if (columnfamily == null)
-                        nodeTool.forceKeyspaceCompaction(keyspaceName);
-                    else
-                        nodeTool.forceKeyspaceCompaction(keyspaceName, columnfamily);
-
-                    return null;
+                        nodeTool.forceKeyspaceCompaction(keyspaceName, columnfamilies);
+                        return null;
                 }
             }
         }.call();

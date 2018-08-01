@@ -277,16 +277,17 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
                 downloadCommitLogs(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());
             }
 
-            //Ensure all the files are downloaded before declaring restore as finished.
+            // Ensure all the files are downloaded.
             waitToComplete();
-            //do scrambling.... post restore hookup.
-            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            instanceState.setRestoreStatus(Status.FINISHED);
 
-            //Given that files are restored now, kick off post restore hook
+            // Given that files are restored now, kick off post restore hook
             logger.info("Starting post restore hook");
             postRestoreHook.execute();
             logger.info("Completed executing post restore hook");
+
+            // Declare restore as finished.
+            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
+            instanceState.setRestoreStatus(Status.FINISHED);
 
             //Start cassandra if restore is successful.
             if (!config.doesCassandraStartManually())

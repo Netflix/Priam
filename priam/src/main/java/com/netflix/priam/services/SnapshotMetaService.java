@@ -81,11 +81,8 @@ public class SnapshotMetaService extends AbstractBackup {
     /**
      * Interval between generating snapshot meta file using {@link com.netflix.priam.services.SnapshotMetaService}.
      *
-     * @param backupRestoreConfig {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details from priam.
+     * @param backupRestoreConfig {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for snapshot meta service.
-     * <p>
-     * It uses to generate the CRON. Use "-1" to disable
-     * the service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to ensure we fail-fast.
      **/
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
@@ -105,14 +102,14 @@ public class SnapshotMetaService extends AbstractBackup {
         return cronTimer;
     }
 
-    public String generateSnapshotName() {
+    String generateSnapshotName() {
         return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant());
     }
 
     @Override
     public void execute() throws Exception {
         if (!CassandraMonitor.isCassadraStarted()) {
-            logger.debug("Cassandra is not started, hence SnapshotMetaService will not run");
+            logger.debug("Cassandra has not started, hence SnapshotMetaService will not run");
             return;
         }
 
@@ -126,7 +123,7 @@ public class SnapshotMetaService extends AbstractBackup {
             // 2) No permission to upload to backup file system.
             metaFileWriter.cleanupOldMetaFiles();
 
-            //TODO: enque all the old backup folder for upload/delete, if any, as we don't our disk to be filled by them.
+            //TODO: enqueue all the old backup folder for upload/delete, if any, as we don't want our disk to be filled by them.
             //processOldSnapshotV2Folders();
 
             //Take a new snapshot
@@ -144,7 +141,7 @@ public class SnapshotMetaService extends AbstractBackup {
 
     }
 
-    public Path processSnapshot() throws Exception {
+    Path processSnapshot() throws Exception {
         metaFileWriter.startMetaFileGeneration();
         initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
         return metaFileWriter.endMetaFileGeneration();
@@ -228,7 +225,7 @@ public class SnapshotMetaService extends AbstractBackup {
     }
 
     //For testing purposes only.
-    public void setSnapshotName(String snapshotName) {
+    void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
     }
 }

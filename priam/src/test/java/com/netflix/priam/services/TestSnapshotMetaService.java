@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.service;
+package com.netflix.priam.services;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -24,27 +24,19 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.services.SnapshotMetaService;
 import org.apache.cassandra.io.sstable.Component;
-import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toCollection;
 
 /**
  * Created by aagrawal on 6/20/18.

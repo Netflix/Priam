@@ -41,7 +41,11 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * This class will help in generation of meta.json files. This will encapsulate all the SSTables that were there on the file system.
+ * This class will help in generation of meta.json files. This will encapsulate all the SSTables that were there
+ * on the file system. This will write the meta.json file as a JSON blob.
+ * NOTE:  We want to ensure that it is done via streaming JSON write to ensure we do not consume memory to load all
+ * these objects in memory. With multi-tenant clusters or LCS enabled on large number of CF's it is easy to have 1000's
+ * of SSTables (thus 1000's of SSTable components) across CF's.
  * Created by aagrawal on 6/12/18.
  */
 public class MetaFileWriter {
@@ -146,10 +150,14 @@ public class MetaFileWriter {
      * Delete the old meta files, if any present in the metaFileDirectory
      */
     public void cleanupOldMetaFiles(){
+        logger.info("Deleting any old META_V2 files if any");
         IOFileFilter fileNameFilter = FileFilterUtils.and(FileFilterUtils.prefixFileFilter(MetaFileInfo.META_FILE_PREFIX),
                 FileFilterUtils.or(FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX),
                         FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX + ".tmp")));
         Collection<File> files = FileUtils.listFiles(metaFileDirectory.toFile(), fileNameFilter, null);
-        files.stream().filter(file -> file.isFile()).forEach(file -> file.delete());
+        files.stream().filter(file -> file.isFile()).forEach(file -> {
+            logger.debug("Deleting old META_V2 file found: {}", file.getAbsolutePath());
+            file.delete();
+        });
     }
 }

@@ -166,7 +166,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
         // If Cassandra is started then only start the monitoring
         if (!CassandraMonitor.isCassadraStarted()) {
-            String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
+            String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra has not yet started, check back again later";
             logger.debug(exceptionMsg);
             throw new JMXConnectionException(exceptionMsg);
         }

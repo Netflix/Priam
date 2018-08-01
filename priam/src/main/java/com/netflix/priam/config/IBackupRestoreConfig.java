@@ -25,11 +25,13 @@ import com.google.inject.ImplementedBy;
 public interface IBackupRestoreConfig {
 
     /**
-     * Cron expression to be used for snapshot meta service.
+     * Cron expression to be used for snapshot meta service. Use "-1" to disable the service.
      *
      * @return Snapshot Meta Service cron expression for generating manifest.json
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    public String getSnapshotMetaServiceCronExpression();
+     default String getSnapshotMetaServiceCronExpression(){
+         return "-1";
+     }
 }

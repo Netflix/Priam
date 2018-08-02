@@ -245,6 +245,40 @@ public interface IConfiguration {
     public String getHeapNewSize();
 
     /**
+     * Cron expression to be used to schedule regular compactions.
+     *
+     * @return Compaction cron expression.
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     */
+    default String getCompactionCronExpression(){
+        return null;
+    }
+
+   /**
+    * Column Family(ies), comma delimited, to start compactions (user-initiated or on CRON).
+    * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
+    * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+    * Note 3: {@link #getCompactionExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getCompactionIncludeCFList()} is applied to include the CF's/keyspaces.
+    * @return Column Family(ies), comma delimited, to start compactions.  If no filter is applied, returns null.
+    */
+    default String getCompactionIncludeCFList(){
+        return null;
+    };
+
+
+    /**
+     * Column family(ies), comma delimited, to exclude while starting compaction (user-initiated or on CRON).
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getCompactionExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getCompactionIncludeCFList()} is applied to include the CF's/keyspaces.
+     * @return Column Family(ies), comma delimited, to exclude from compactions.  If no filter is applied, returns null.
+     */
+    default String getCompactionExcludeCFList(){
+        return null;
+    }
+
+    /**
      * @return Backup hour for snapshot backups (0 - 23)
      */
     public int getBackupHour();

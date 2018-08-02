@@ -20,11 +20,11 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
+import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
-import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.compress.SnappyCompression;
+import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.utils.JMXConnectionException;
-import com.netflix.priam.utils.JMXConnectorMgr;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
@@ -46,7 +46,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
@@ -65,11 +64,15 @@ public class CassandraAdmin {
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
     private IConfiguration config;
     private final ICassandraProcess cassProcess;
+    private final Flush flush;
+    private final Compaction compaction;
 
     @Inject
-    public CassandraAdmin(IConfiguration config, ICassandraProcess cassProcess) {
+    public CassandraAdmin(IConfiguration config, ICassandraProcess cassProcess, Flush flush, Compaction compaction) {
         this.config = config;
         this.cassProcess = cassProcess;
+        this.flush = flush;
+        this.compaction = compaction;
     }
 
     @GET
@@ -153,75 +156,45 @@ public class CassandraAdmin {
     @GET
     @Path("/flush")
     public Response cassFlush() throws IOException, InterruptedException, ExecutionException {
-        JMXConnectorMgr connMgr = null;
-        try {
-            connMgr = new JMXConnectorMgr(config);
-        } catch (IOException | InterruptedException e) {
-            JSONObject rootObj = new JSONObject();
-            try {
-                rootObj.put("status", "ERRROR");
-                rootObj.put("component", "jmxconnector");
-                rootObj.put("desc", e.getLocalizedMessage());
-            } catch (Exception e1) {
-                return Response.status(503).entity("JMXConnector error")
-                        .build();
-            }
-            return Response.status(503).entity(rootObj)
-                    .build();
-        }
-
-        List<String> flushed = null;
-        try {
-            IClusterManagement task = new Flush(this.config, connMgr);
-            flushed = task.execute();
-        } catch (Exception e) {
-            JSONObject rootObj = new JSONObject();
-            try {
-                rootObj.put("status", "ERRROR");
-                rootObj.put("component", "flush");
-                rootObj.put("desc", e.getLocalizedMessage());
-            } catch (Exception e1) {
-                return Response.status(503).entity("Flush error")
-                        .build();
-            }
-            return Response.status(503).entity(rootObj)
-                    .build();
-        } finally {
-            connMgr.close();
-        }
-
         JSONObject rootObj = new JSONObject();
-        if (flushed != null && !flushed.isEmpty()) {
-            try {
-                rootObj.put("keyspace_flushed", flushed);
-            } catch (JSONException e) {
-                //no op
-            }
-        } else {
-            try {
-                rootObj.put("keyspace_flushed", "none");
-            } catch (JSONException e) {
-                //no op
-            }
-        }
 
-        return Response.ok().entity(rootObj).build();
+        try {
+            flush.execute();
+            rootObj.put("Flushed", true);
+            return Response.ok().entity(rootObj).build();
+        } catch (Exception e) {
+            try {
+                rootObj.put("status", "ERRROR");
+                rootObj.put("desc", e.getLocalizedMessage());
+            } catch (Exception e1) {
+                return Response.status(503).entity("FlushError")
+                        .build();
+            }
+            return Response.status(503).entity(rootObj)
+                    .build();
+        }
     }
 
     @GET
     @Path("/compact")
     public Response cassCompact() throws IOException, ExecutionException, InterruptedException {
-        JMXNodeTool nodeTool;
+        JSONObject rootObj = new JSONObject();
+
         try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            logger.error("Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
-            return Response.status(503).entity("JMXConnectionException")
+            compaction.execute();
+            rootObj.put("Compcated", true);
+            return Response.ok().entity(rootObj).build();
+        } catch (Exception e) {
+            try {
+                rootObj.put("status", "ERRROR");
+                rootObj.put("desc", e.getLocalizedMessage());
+            } catch (Exception e1) {
+                return Response.status(503).entity("CompactionError")
+                        .build();
+            }
+            return Response.status(503).entity(rootObj)
                     .build();
         }
-        logger.debug("node tool compact being called");
-        nodeTool.compact();
-        return Response.ok().build();
     }
 
     @GET

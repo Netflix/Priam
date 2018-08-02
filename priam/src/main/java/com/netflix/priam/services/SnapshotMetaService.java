@@ -21,21 +21,15 @@ import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backupv2.ColumnfamilyResult;
-import com.netflix.priam.backupv2.FileUploadResult;
-import com.netflix.priam.backupv2.MetaFileWriter;
-import com.netflix.priam.backupv2.PrefixGenerator;
+import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.DateUtil;
-import org.apache.cassandra.io.sstable.Component;
-import org.apache.cassandra.io.sstable.Descriptor;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
 import org.slf4j.Logger;
@@ -44,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
-import java.nio.file.Path;
 import java.util.*;
 
 /**
@@ -65,17 +58,20 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private BackupRestoreUtil backupRestoreUtil;
-    private MetaFileWriter metaFileWriter;
+    private MetaFileWriterBuilder metaFileWriter;
+    private MetaFileWriterBuilder.DataStep dataStep;
+    private MetaFileManager metaFileManager;
     private CassandraOperations cassandraOperations;
     private String snapshotName = null;
 
     @Inject
     SnapshotMetaService(IConfiguration config, IFileSystemContext backupFileSystemCtx, Provider<AbstractBackupPath> pathFactory,
-                        MetaFileWriter metaFileWriter, CassandraOperations cassandraOperations) {
+                        MetaFileWriterBuilder metaFileWriter, MetaFileManager metaFileManager, CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
         this.metaFileWriter = metaFileWriter;
+        this.metaFileManager = metaFileManager;
     }
 
     /**
@@ -121,7 +117,7 @@ public class SnapshotMetaService extends AbstractBackup {
             //These files may be leftover
             // 1) when Priam shutdown in middle of this service and may not be full JSON
             // 2) No permission to upload to backup file system.
-            metaFileWriter.cleanupOldMetaFiles();
+            metaFileManager.cleanupOldMetaFiles();
 
             //TODO: enqueue all the old backup folder for upload/delete, if any, as we don't want our disk to be filled by them.
             //processOldSnapshotV2Folders();
@@ -129,11 +125,9 @@ public class SnapshotMetaService extends AbstractBackup {
             //Take a new snapshot
             cassandraOperations.takeSnapshot(snapshotName);
 
-            //Process the snapshot
-            Path metaFilePath = processSnapshot();
+            //Process the snapshot and upload the meta file.
+            processSnapshot().uploadMetaFile(true);
 
-            //Upload the meta_v2.json.
-            metaFileWriter.uploadMetaFile(metaFilePath, true);
             logger.info("Finished processing snapshot meta service");
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
@@ -141,10 +135,10 @@ public class SnapshotMetaService extends AbstractBackup {
 
     }
 
-    Path processSnapshot() throws Exception {
-        metaFileWriter.startMetaFileGeneration();
+    MetaFileWriterBuilder.UploadStep processSnapshot() throws Exception {
+        dataStep = metaFileWriter.newBuilder().startMetaFileGeneration();
         initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
-        return metaFileWriter.endMetaFileGeneration();
+        return dataStep.endMetaFileGeneration();
     }
 
     private File getValidSnapshot(File snapshotDir, String snapshotName) {
@@ -214,7 +208,7 @@ public class SnapshotMetaService extends AbstractBackup {
         FileUtils.cleanDirectory(snapshotDir);
         FileUtils.deleteDirectory(snapshotDir);
 
-        metaFileWriter.addColumnfamilyResult(columnfamilyResult);
+        dataStep.addColumnfamilyResult(columnfamilyResult);
         logger.debug("Finished processing KS: {}, CF: {}", columnfamilyResult.getKeyspaceName(), columnfamilyResult.getColumnfamilyName());
 
     }

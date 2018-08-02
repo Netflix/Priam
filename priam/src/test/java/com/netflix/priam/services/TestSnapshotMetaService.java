@@ -47,7 +47,6 @@ public class TestSnapshotMetaService {
     private static IConfiguration configuration;
     private static IBackupRestoreConfig backupRestoreConfig;
     private static SnapshotMetaService snapshotMetaService;
-    private static MetaFileWriter metaFileWriter;
     private static TestMetaFileReader metaFileReader;
     private static PrefixGenerator prefixGenerator;
 
@@ -63,9 +62,6 @@ public class TestSnapshotMetaService {
 
         if (snapshotMetaService == null)
             snapshotMetaService = injector.getInstance(SnapshotMetaService.class);
-
-        if (metaFileWriter == null)
-            metaFileWriter = injector.getInstance(MetaFileWriter.class);
 
         if (metaFileReader == null)
             metaFileReader = new TestMetaFileReader();
@@ -105,7 +101,7 @@ public class TestSnapshotMetaService {
         String snapshotName = snapshotMetaService.generateSnapshotName();
         generateDummyFiles(dummyDataDirectoryLocation, 1, 1, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
         snapshotMetaService.setSnapshotName(snapshotName);
-        Path metaFileLocation = snapshotMetaService.processSnapshot();
+        Path metaFileLocation = snapshotMetaService.processSnapshot().getMetaFilePath();
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
@@ -136,15 +132,21 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testSize() throws Exception {
+        int noOfSstables = 1000;
         String snapshotName = snapshotMetaService.generateSnapshotName();
-        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, 5000, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+        generateDummyFiles(dummyDataDirectoryLocation, 2, 2, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
         snapshotMetaService.setSnapshotName(snapshotName);
-        Path metaFileLocation = snapshotMetaService.processSnapshot();
+        Path metaFileLocation = snapshotMetaService.processSnapshot().getMetaFilePath();
 
         //Validate meta file exists.
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
+
+        //Try reading meta file.
+        metaFileReader.setNoOfSstables(noOfSstables + 1);
+        metaFileReader.readMeta(metaFileLocation);
+
         //Cleanup
         metaFileLocation.toFile().delete();
         cleanupDir(dummyDataDirectoryLocation);

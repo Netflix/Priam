@@ -1,5 +1,9 @@
 # Changelog
 
+## 2018/08/?? 
+### New Feature
+* (#696) Compactions on CRON: Added ability to schedule compactions of columnfamilies on CRON. 
+
 ## 2018/07/28: 3.11.26
 ### Improvements
 * (#694) Moving restore-finished status update, to after PostRestoreHook execution.

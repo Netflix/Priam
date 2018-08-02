@@ -35,7 +35,14 @@ public class CassandraOperations {
         this.configuration = configuration;
     }
 
-    public void takeSnapshot(final String snapshotName) throws Exception {
+    /**
+     * This method neds to be synchronized. Context: During the transition phase to backup version 2.0, we might be executing
+     * multiple snapshots at the same time. To avoid, unknown behavior by Cassanddra, it is wise to keep this method sync.
+     * Also, with backups being on CRON, we don't know how often operator is taking snapshot.
+     * @param snapshotName Name of the snapshot on disk.
+     * @throws Exception in case of error while taking a snapshot by Cassandra.
+     */
+    public synchronized void takeSnapshot(final String snapshotName) throws Exception {
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
                 JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
@@ -45,6 +52,11 @@ public class CassandraOperations {
         }.call();
     }
 
+    /**
+     * Clear the snapshot tag from disk.
+     * @param snapshotTag Name of the snapshot to be removed.
+     * @throws Exception in case of error while clearing a snapshot.
+     */
     public void clearSnapshot(final String snapshotTag) throws Exception {
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {

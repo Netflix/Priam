@@ -24,6 +24,7 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.DateUtil;
 import org.apache.cassandra.io.sstable.Component;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
@@ -36,6 +37,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -88,20 +90,19 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testMetaFileName() throws Exception {
-        String fileName = MetaFileInfo.getMetaFileName();
+        String fileName = MetaFileInfo.getMetaFileName(DateUtil.getInstant());
         Path path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName);
         Assert.assertTrue(metaFileReader.isValidMetaFile(path));
         path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName + ".tmp");
         Assert.assertFalse(metaFileReader.isValidMetaFile(path));
     }
 
-    @Test
-    public void testMetaFile() throws Exception {
-        int noOfSstables = 5;
-        String snapshotName = snapshotMetaService.generateSnapshotName();
-        generateDummyFiles(dummyDataDirectoryLocation, 1, 1, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+    private void test(int noOfSstables, int noOfKeyspaces, int noOfCf) throws Exception{
+        Instant snapshotInstant = DateUtil.getInstant();
+        String snapshotName = snapshotMetaService.generateSnapshotName(snapshotInstant);
+        generateDummyFiles(dummyDataDirectoryLocation, noOfKeyspaces, noOfCf, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
         snapshotMetaService.setSnapshotName(snapshotName);
-        Path metaFileLocation = snapshotMetaService.processSnapshot().getMetaFilePath();
+        Path metaFileLocation = snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
@@ -121,6 +122,11 @@ public class TestSnapshotMetaService {
         cleanupDir(dummyDataDirectoryLocation);
     }
 
+    @Test
+    public void testMetaFile() throws Exception {
+        test(5, 1,1);
+    }
+
     private void cleanupDir(Path dir){
         if (dir.toFile().exists())
             try {
@@ -132,24 +138,7 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testSize() throws Exception {
-        int noOfSstables = 1000;
-        String snapshotName = snapshotMetaService.generateSnapshotName();
-        generateDummyFiles(dummyDataDirectoryLocation, 2, 2, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
-        snapshotMetaService.setSnapshotName(snapshotName);
-        Path metaFileLocation = snapshotMetaService.processSnapshot().getMetaFilePath();
-
-        //Validate meta file exists.
-        Assert.assertNotNull(metaFileLocation);
-        Assert.assertTrue(metaFileLocation.toFile().exists());
-        Assert.assertTrue(metaFileLocation.toFile().isFile());
-
-        //Try reading meta file.
-        metaFileReader.setNoOfSstables(noOfSstables + 1);
-        metaFileReader.readMeta(metaFileLocation);
-
-        //Cleanup
-        metaFileLocation.toFile().delete();
-        cleanupDir(dummyDataDirectoryLocation);
+        test (1000, 2,2);
     }
 
     private void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables, String backupDir, String snapshotName) throws Exception {

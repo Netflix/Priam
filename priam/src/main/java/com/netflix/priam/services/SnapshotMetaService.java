@@ -38,6 +38,7 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import java.io.File;
+import java.time.Instant;
 import java.util.*;
 
 /**
@@ -98,8 +99,8 @@ public class SnapshotMetaService extends AbstractBackup {
         return cronTimer;
     }
 
-    String generateSnapshotName() {
-        return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, DateUtil.getInstant());
+    String generateSnapshotName(Instant snapshotInstant) {
+        return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, snapshotInstant);
     }
 
     @Override
@@ -110,8 +111,9 @@ public class SnapshotMetaService extends AbstractBackup {
         }
 
         try {
-            logger.info("Initializaing SnapshotMetaService");
-            snapshotName = generateSnapshotName();
+            Instant snapshotInstant = DateUtil.getInstant();
+            snapshotName = generateSnapshotName(snapshotInstant);
+            logger.info("Initializaing SnapshotMetaService for taking a snapshot {}" + snapshotName);
 
             //Perform a cleanup of old snapshot meta_v2.json files, if any, as we don't want our disk to be filled by them.
             //These files may be leftover
@@ -126,7 +128,7 @@ public class SnapshotMetaService extends AbstractBackup {
             cassandraOperations.takeSnapshot(snapshotName);
 
             //Process the snapshot and upload the meta file.
-            processSnapshot().uploadMetaFile(true);
+            processSnapshot(snapshotInstant).uploadMetaFile(true);
 
             logger.info("Finished processing snapshot meta service");
         } catch (Exception e) {
@@ -135,8 +137,8 @@ public class SnapshotMetaService extends AbstractBackup {
 
     }
 
-    MetaFileWriterBuilder.UploadStep processSnapshot() throws Exception {
-        dataStep = metaFileWriter.newBuilder().startMetaFileGeneration();
+    MetaFileWriterBuilder.UploadStep processSnapshot(Instant snapshotInstant) throws Exception {
+        dataStep = metaFileWriter.newBuilder().startMetaFileGeneration(snapshotInstant);
         initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
         return dataStep.endMetaFileGeneration();
     }

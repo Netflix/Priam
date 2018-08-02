@@ -36,6 +36,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -62,7 +63,7 @@ public class MetaFileWriterBuilder {
     }
 
     public interface StartStep {
-        DataStep startMetaFileGeneration() throws IOException;
+        DataStep startMetaFileGeneration(Instant snapshotInstant) throws IOException;
     }
 
     public interface DataStep {
@@ -99,9 +100,9 @@ public class MetaFileWriterBuilder {
          *
          * @throws IOException
          */
-        public DataStep startMetaFileGeneration() throws IOException {
+        public DataStep startMetaFileGeneration(Instant snapshotInstant) throws IOException {
             //Compute meta file name.
-            String fileName = MetaFileInfo.getMetaFileName();
+            String fileName = MetaFileInfo.getMetaFileName(snapshotInstant);
             metaFilePath = Paths.get(metaFileManager.getMetaFileDirectory().toString(), fileName);
             Path tempMetaFilePath = Paths.get(metaFileManager.getMetaFileDirectory().toString(), fileName + ".tmp");
 

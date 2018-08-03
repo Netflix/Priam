@@ -145,13 +145,17 @@ public class JVMOptionsTuner {
             setHeapSetting(configuredValue, option);
         }
 
-        //Is parameter for GC.
+        // We don't want Xmn with G1GC, allow the GC to determine optimal young gen
+        if (option.getJvmOption().equals("-Xmn") && configuredGC == GCType.G1GC)
+            option.setCommented(true);
+
+        // Is parameter for GC.
         GCType gcType = GCTuner.getGCType(option);
         if (gcType != null) {
             option.setCommented(gcType != configuredGC);
         }
 
-        //See if option is in upsert list.
+        // See if option is in upsert list.
         if (upsertSet != null && upsertSet.containsKey(option.getJvmOption())) {
             JVMOption configuration = upsertSet.get(option.getJvmOption());
             option.setCommented(false);
@@ -160,7 +164,7 @@ public class JVMOptionsTuner {
         }
         ;
 
-        //See if option is in exclude list.
+        // See if option is in exclude list.
         if (excludeSet != null && excludeSet.containsKey(option.getJvmOption()))
             option.setCommented(true);
 

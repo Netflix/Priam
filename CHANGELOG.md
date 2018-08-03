@@ -3,11 +3,11 @@
 ### Improvements
 * (#701) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
 
-## 2018/07/30: 3.11.26
+## 2018/07/28: 3.11.26
 ### Improvements
-* (#692) Moving restore-finished status to after PostRestoreHook execution
+* (#694) Moving restore-finished status update, to after PostRestoreHook execution.
 
-## 2018/07/11: 3.11.24
+## 2018/07/11: 3.11.25
 ### Improvements
 * (#690) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.
 

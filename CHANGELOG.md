@@ -1,7 +1,11 @@
 # Changelog
-## 2018/07/30: 3.11.26
+## 2018/08/03: 3.11.27
 ### Improvements
 * (#701) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
+
+## 2018/07/30: 3.11.26
+### Improvements
+* (#692) Moving restore-finished status to after PostRestoreHook execution
 
 ## 2018/07/11: 3.11.24
 ### Improvements

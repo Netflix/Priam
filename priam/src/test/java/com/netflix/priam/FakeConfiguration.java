@@ -786,12 +786,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getFlushCronExpression() {
-        return null;
-    }
-
-
-    @Override
     public boolean isPostRestoreHookEnabled() {
         return true;
     }

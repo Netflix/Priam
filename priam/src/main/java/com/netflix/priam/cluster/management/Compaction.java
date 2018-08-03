@@ -162,23 +162,7 @@ public class Compaction extends IClusterManagement<String> {
      * @return the timer to be used for compaction interval  from {@link IConfiguration#getCompactionCronExpression()}
      */
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-
-        CronTimer cronTimer = null;
-
-        String cronExpression = config.getCompactionCronExpression();
-
-        if (StringUtils.isEmpty(cronExpression)) {
-            logger.info("Skipping compaction as compaction cron is not set.");
-        } else {
-            if (!CronExpression.isValidExpression(cronExpression))
-                throw new Exception("Invalid CRON expression: " + cronExpression +
-                        ". Please remove cron expression if you wish to disable compaction else fix the CRON expression and try again!");
-
-            cronTimer = new CronTimer(Task.COMPACTION.name(), cronExpression);
-            logger.info("Starting compaction with CRON expression {}", cronTimer.getCronExpression());
-        }
-
-        return cronTimer;
+        return CronTimer.getCronTimer(Task.COMPACTION.name(), config.getCompactionCronExpression());
     }
 
 }

@@ -146,18 +146,7 @@ public class Flush extends IClusterManagement<String> {
 
                 break;
             case CRON:
-                String cronExpression = config.getFlushCronExpression();
-
-                if (StringUtils.isEmpty(cronExpression)) {
-                    logger.info("Skipping flush as flush cron is not set.");
-                } else {
-                    if (!CronExpression.isValidExpression(cronExpression))
-                        throw new Exception("Invalid CRON expression: " + cronExpression +
-                                ". Please remove cron expression if you wish to disable flush else fix the CRON expression and try again!");
-
-                    cronTimer = new CronTimer(Task.FLUSH.name(), cronExpression);
-                    logger.info("Starting flush with CRON expression {}", cronTimer.getCronExpression());
-                }
+                cronTimer = CronTimer.getCronTimer(Task.FLUSH.name(), config.getFlushCronExpression());
                 break;
         }
         return cronTimer;

@@ -166,40 +166,22 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static boolean isBackupEnabled(IConfiguration config) throws Exception {
-        switch (config.getBackupSchedulerType()) {
-            case HOUR:
-                if (config.getBackupHour() < 0)
-                    return false;
-                break;
-            case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1"))
-                    return false;
-                if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
-                    throw new Exception("Invalid CRON expression: " + cronExpression +
-                            ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
-                break;
-        }
-        return true;
+        return (getTimer(config) != null);
     }
 
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-        if (!isBackupEnabled(config))
-        {
-            logger.info("Skipping snapshot backup as it is disabled.");
-            return null;
-        }
-
         CronTimer cronTimer = null;
         switch (config.getBackupSchedulerType()) {
             case HOUR:
-                cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
-                logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                if (config.getBackupHour() < 0)
+                    logger.info("Skipping {} as it is disabled via backup hour: {}", JOBNAME, config.getBackupHour());
+                else {
+                    cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
+                    logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                }
                 break;
             case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-                logger.info("Starting snapshot backup with CRON expression {}", cronTimer.getCronExpression());
+                cronTimer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
                 break;
         }
         return cronTimer;

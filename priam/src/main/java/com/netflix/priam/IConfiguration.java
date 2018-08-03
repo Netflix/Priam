@@ -214,14 +214,14 @@ public interface IConfiguration {
     public String getHeapNewSize();
 
     /**
-     * Cron expression to be used to schedule regular compactions.
+     * Cron expression to be used to schedule regular compactions. Use "-1" to disable the CRON. Default: -1
      *
      * @return Compaction cron expression.
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
     default String getCompactionCronExpression(){
-        return null;
+        return "-1";
     }
 
    /**
@@ -249,7 +249,9 @@ public interface IConfiguration {
 
     /**
      * @return Backup hour for snapshot backups (0 - 23)
+     * @deprecated Use the {{@link #getBackupCronExpression()}} instead.
      */
+    @Deprecated
     public int getBackupHour();
 
     /**
@@ -716,7 +718,9 @@ public interface IConfiguration {
      *
      * @return the interval to run the flush task.  Format is name=value where
      * “name” is an enum of hour, daily, value is ...
+     * @deprecated Use the {{@link #getFlushCronExpression()} instead.
      */
+    @Deprecated
     public String getFlushInterval();
 
     /**
@@ -728,13 +732,15 @@ public interface IConfiguration {
     public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
 
     /**
-     * Cron expression to be used for flush.
+     * Cron expression to be used for flush. Use "-1" to disable the CRON. Default: -1
      *
      * @return Cron expression for flush
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    public String getFlushCronExpression();
+    default String getFlushCronExpression(){
+        return "-1";
+    }
 
     /**
      * @return the absolute path to store the backup status on disk

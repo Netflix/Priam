@@ -3,6 +3,7 @@
 ## 2018/08/?? 
 ### New Feature
 * (#671) Compactions on CRON: Added ability to schedule compactions for columnfamilies on CRON. 
+* (#703) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
 
 ## 2018/07/28: 3.1.58
 * (#695) Moving restore-finished status update, to after PostRestoreHook execution.

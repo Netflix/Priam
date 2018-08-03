@@ -914,4 +914,12 @@ public class FakeConfiguration implements IConfiguration
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
     }
+
+    @Override
+    public int getPostRestoreHookHeartBeatTimeoutInMs() {
+        return 120000;
+    }
+
+    @Override
+    public int getPostRestoreHookHeartbeatCheckFrequencyInMs() { return 120000; }
 }

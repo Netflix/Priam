@@ -779,4 +779,16 @@ public interface IConfiguration {
      * @return time out for post restore hook in days
      */
     public int getPostRestoreHookTimeOutInDays();
+
+    /**
+     * Heartbeat timeout (in ms) for post restore hook
+     * @return heartbeat timeout for post restore hook
+     */
+    public int getPostRestoreHookHeartBeatTimeoutInMs();
+
+    /**
+     * Heartbeat check frequency (in ms) for post restore hook
+     * @return heart beat check frequency for post restore hook
+     */
+    public int getPostRestoreHookHeartbeatCheckFrequencyInMs();
 }

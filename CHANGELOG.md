@@ -1,4 +1,8 @@
 # Changelog
+## 2018/07/30: 3.11.26
+### Improvements
+* (#701) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
+
 ## 2018/07/11: 3.11.24
 ### Improvements
 * (#690) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.

@@ -31,6 +31,7 @@ import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +79,8 @@ public class InstanceIdentity {
     };
 
     private PriamInstance myInstance;
+    private String backupIdentifier;
+    private boolean outOfService = false;
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
@@ -104,7 +107,7 @@ public class InstanceIdentity {
         init();
     }
 
-    public PriamInstance getInstance() {
+    PriamInstance getInstance() {
         return myInstance;
     }
 
@@ -118,7 +121,7 @@ public class InstanceIdentity {
                 for (PriamInstance ins : deadInstances) {
                     logger.info("[Dead] Iterating though the hosts: {}", ins.getInstanceId());
                     if (ins.getInstanceId().equals(config.getInstanceName())) {
-                        ins.setOutOfService(true);
+                        outOfService = true;
                         logger.info("[Dead]  found that this node is dead."
                                 + " application: {}"
                                 + ", id: {}"
@@ -242,6 +245,13 @@ public class InstanceIdentity {
         }
 
         logger.info("My token: {}", myInstance.getToken());
+
+        if (myInstance.getToken() == null || myInstance.getToken().isEmpty()) {
+            backupIdentifier = "virual" + Integer.toString(myInstance.getId());
+        } else
+        {
+            backupIdentifier = myInstance.getToken();
+        }
     }
 
     private void populateRacMap() {
@@ -303,5 +313,45 @@ public class InstanceIdentity {
 
     private static boolean isInstanceDummy(PriamInstance instance) {
         return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
+    }
+
+    public boolean isOutOfService()
+    {
+        return outOfService;
+    }
+
+    public String getBackupIdentifier()
+    {
+        return backupIdentifier;
+    }
+
+    public void setBackupIdentifier(String backupIdentifier)
+    {
+        this.backupIdentifier = backupIdentifier;
+    }
+
+    public String getToken()
+    {
+        return myInstance.getToken();
+    }
+
+    public String getInstanceId()
+    {
+        return myInstance.getInstanceId();
+    }
+
+    public String getHostIP()
+    {
+        return myInstance.getHostIP();
+    }
+
+    public String getHostName()
+    {
+        return myInstance.getHostName();
+    }
+
+    public boolean isExternallyDefinedToken()
+    {
+        return StringUtils.isNotBlank(getToken());
     }
 }

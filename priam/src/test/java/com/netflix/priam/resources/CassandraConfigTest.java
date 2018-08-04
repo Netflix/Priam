@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.integration.junit4.JMockit;
@@ -96,14 +95,13 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
+    public void getToken(@Mocked final InstanceIdentity identity)
     {
         final String token = "myToken";
         new Expectations() {
             {
                 priamServer.getId(); result = identity; times = 2;
-                identity.getInstance(); result = instance; times = 2;
-                instance.getToken(); result = token; times = 2;
+                identity.getToken(); result = token; times = 2;
             }
         };
 
@@ -113,14 +111,13 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken_notFound(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
+    public void getToken_notFound(@Mocked final InstanceIdentity identity)
     {
         final String token = "";
         new Expectations() {
             {
                 priamServer.getId(); result = identity;
-                identity.getInstance(); result = instance;
-                instance.getToken(); result = token;
+                identity.getToken(); result = token;
             }
         };
 
@@ -129,13 +126,12 @@ public class CassandraConfigTest
     }
 
     @Test
-    public void getToken_handlesException(@Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance)
+    public void getToken_handlesException(@Mocked final InstanceIdentity identity)
     {
         new Expectations() {
             {
                 priamServer.getId(); result = identity;
-                identity.getInstance(); result = instance;
-                instance.getToken(); result = new RuntimeException();
+                identity.getToken(); result = new RuntimeException();
             }
         };
 
@@ -154,6 +150,21 @@ public class CassandraConfigTest
         };
 
         Response response = resource.isReplaceToken();
+        assertEquals(200, response.getStatus());
+        assertEquals("true", response.getEntity());
+    }
+
+    @Test
+    public void isExternallyDefinedToken(@Mocked final InstanceIdentity identity)
+    {
+        new Expectations() {
+            {
+                priamServer.getId(); result = identity;
+                identity.isExternallyDefinedToken(); result = true;
+            }
+        };
+
+        Response response = resource.isExternallyDefinedToken();
         assertEquals(200, response.getStatus());
         assertEquals("true", response.getEntity());
     }

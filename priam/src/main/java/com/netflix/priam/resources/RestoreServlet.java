@@ -26,6 +26,7 @@ import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
+import com.netflix.priam.restore.RestoreTokenSelector;
 import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
 import org.apache.commons.lang3.StringUtils;
@@ -59,23 +60,21 @@ public class RestoreServlet {
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
     private PriamServer priamServer;
-    private IPriamInstanceFactory factory;
     private ICassandraTuner tuner;
     private ICassandraProcess cassProcess;
-    private ITokenManager tokenManager;
+    private RestoreTokenSelector tokenSelector;
     private InstanceState instanceState;
 
     @Inject
     public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-            , IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, InstanceState instanceState) {
+            , RestoreTokenSelector tokenSelector, ICassandraTuner tuner, ICassandraProcess cassProcess, InstanceState instanceState) {
         this.config = config;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
         this.priamServer = priamServer;
-        this.factory = factory;
         this.tuner = tuner;
         this.cassProcess = cassProcess;
-        this.tokenManager = tokenManager;
+        this.tokenSelector = tokenSelector;
         this.instanceState = instanceState;
     }
 
@@ -140,18 +139,23 @@ public class RestoreServlet {
      */
     private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {
         String origRegion = config.getDC();
-        String origToken = priamServer.getId().getInstance().getToken();
+        String origBackupIdentifier = priamServer.getId().getBackupIdentifier();
         if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+        {
+            priamServer.getId().setBackupIdentifier(token);
+        }
+        else {
+            token = priamServer.getId().getToken();
+        }
 
         if (config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+            priamServer.getId().setBackupIdentifier(tokenSelector.getClosestToken(token, config.getAppName(), config.getDC()).toString());
 
         if (StringUtils.isNotBlank(region)) {
             config.setDC(region);
             logger.info("Restoring from region {}", region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
-            logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
+            priamServer.getId().setBackupIdentifier(tokenSelector.getClosestToken(token, config.getAppName(), region).toString());
+            logger.info("Restore will use backup identifier {}", priamServer.getId().getBackupIdentifier());
         }
 
         setRestoreKeyspaces(keyspaces);
@@ -160,23 +164,10 @@ public class RestoreServlet {
             restoreObj.restore(startTime, endTime);
         } finally {
             config.setDC(origRegion);
-            priamServer.getId().getInstance().setToken(origToken);
+            priamServer.getId().setBackupIdentifier(origBackupIdentifier);
         }
         tuner.updateAutoBootstrap(config.getYamlLocation(), false);
         cassProcess.start(true);
-    }
-
-    /**
-     * Find closest token in the specified region
-     */
-    private String closestToken(String token, String region) {
-        List<PriamInstance> plist = factory.getAllIds(config.getAppName());
-        List<BigInteger> tokenList = Lists.newArrayList();
-        for (PriamInstance ins : plist) {
-            if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getToken()));
-        }
-        return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }
 
     /*

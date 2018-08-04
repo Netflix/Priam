@@ -54,7 +54,7 @@ public class S3BackupPath extends AbstractBackupPath {
         buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
         buff.append(region).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);// Cluster name
-        buff.append(token).append(S3BackupPath.PATH_SEP);
+        buff.append(nodeIdentifier).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
         if (type != BackupFileType.META && type != BackupFileType.CL) {
@@ -83,7 +83,7 @@ public class S3BackupPath extends AbstractBackupPath {
         baseDir = pieces.get(0);
         region = pieces.get(1);
         clusterName = pieces.get(2);
-        token = pieces.get(3);
+        nodeIdentifier = pieces.get(3);
         time = parseDate(pieces.get(4));
         type = BackupFileType.valueOf(pieces.get(5));
         if (type != BackupFileType.META && type != BackupFileType.CL) {
@@ -109,14 +109,14 @@ public class S3BackupPath extends AbstractBackupPath {
         baseDir = pieces.get(0);
         region = pieces.get(1);
         clusterName = pieces.get(2);
-        token = pieces.get(3);
+        nodeIdentifier = pieces.get(3);
     }
 
     @Override
     public String remotePrefix(Date start, Date end, String location) {
         StringBuffer buff = new StringBuffer(clusterPrefix(location));
-        token = factory.getInstance().getToken();
-        buff.append(token).append(S3BackupPath.PATH_SEP);
+        nodeIdentifier = instanceIdentity.getBackupIdentifier();
+        buff.append(nodeIdentifier).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.
         buff.append(match(start, end));
         return buff.toString();

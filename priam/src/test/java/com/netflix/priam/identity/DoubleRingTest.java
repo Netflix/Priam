@@ -15,19 +15,13 @@
  *
  */
 
-package com.netflix.priam.backup.identity;
+package com.netflix.priam.identity;
 
 import java.util.List;
-
-import com.netflix.priam.utils.ITokenManager;
 
 import org.junit.Test;
 
 import com.google.common.collect.Lists;
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.TokenManager;
 
 import static org.junit.Assert.assertEquals;
 

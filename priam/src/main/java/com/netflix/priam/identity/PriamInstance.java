@@ -130,13 +130,5 @@ public class PriamInstance implements Serializable {
         this.updatetime = updatetime;
     }
 
-    public boolean isOutOfService() {
-        return outOfService;
-    }
-
-    public void setOutOfService(boolean outOfService) {
-        this.outOfService = outOfService;
-    }
-
 
 }

@@ -24,7 +24,7 @@ import com.netflix.priam.*;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
-import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;
+import com.netflix.priam.identity.FakeInstanceEnvIdentity;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.cryptography.IFileCryptography;

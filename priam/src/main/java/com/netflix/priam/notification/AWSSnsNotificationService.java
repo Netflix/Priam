@@ -69,8 +69,7 @@ public class AWSSnsNotificationService implements INotificationService {
 				@Override
 				public PublishResult retriableCall() throws Exception {
 					PublishRequest publishRequest = new PublishRequest(topic_arn, msg);
-					PublishResult result = snsClient.publish(publishRequest);
-					return result;
+					return snsClient.publish(publishRequest);
 				}
 			}.call();
 			

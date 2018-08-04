@@ -57,14 +57,12 @@ public class MetaData {
     @SuppressWarnings("unchecked")
     public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName) throws Exception {
         File metafile = createTmpMetaFile();
-        FileWriter fr = new FileWriter(metafile);
-        try {
+
+        try(FileWriter fr = new FileWriter(metafile)) {
             JSONArray jsonObj = new JSONArray();
             for (AbstractBackupPath filePath : bps)
                 jsonObj.add(filePath.getRemotePath());
             fr.write(jsonObj.toJSONString());
-        } finally {
-            IOUtils.closeQuietly(fr);
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
         try {

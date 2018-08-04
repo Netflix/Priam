@@ -258,8 +258,7 @@ public class TestFileIterator {
     }
 
     public static List<S3ObjectSummary> getObjectSummaryEmpty() {
-        List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
-        return list;
+        return new ArrayList<S3ObjectSummary>();
     }
 
     public static List<S3ObjectSummary> getNextObjectSummary() {

@@ -69,7 +69,7 @@ public abstract class Task implements Job, TaskMBean {
      * This method has to be implemented and cannot thow any exception.
      */
     public void initialize() throws ExecutionException {
-        // nothing to intialize
+        // nothing to initialize
     }
 
     public abstract void execute() throws Exception;

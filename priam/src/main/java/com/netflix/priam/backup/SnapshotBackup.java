@@ -117,7 +117,7 @@ public class SnapshotBackup extends AbstractBackup {
             }
 
         } catch (Exception e) {
-            logger.error("Exception occured while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
+            logger.error("Exception occurred while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
             snapshotStatusMgr.failed(backupMetadata);
             throw e;
         } finally {

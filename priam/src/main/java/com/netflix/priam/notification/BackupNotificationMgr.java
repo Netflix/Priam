@@ -24,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A means to nofity interested party(ies) of an uploaded file, success or failed.
+ * A means to notify interested party(ies) of an uploaded file, success or failed.
  * <p>
  * Created by vinhn on 10/30/16.
  */

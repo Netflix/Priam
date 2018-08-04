@@ -110,7 +110,7 @@ public class MetaData {
             }.call();
 
         } catch (Exception e) {
-            logger.error("Error downloading the Meta data try with a diffrent date...", e);
+            logger.error("Error downloading the Meta data try with a different date...", e);
         }
 
         return meta.newRestoreFile().exists();

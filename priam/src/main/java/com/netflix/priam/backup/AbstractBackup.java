@@ -112,7 +112,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     /**
      * Upload specified file (RandomAccessFile) with retries
      *
-     * @param bp backup path to be uplaoded.
+     * @param bp backup path to be uploaded.
      */
     protected void upload(final AbstractBackupPath bp) throws Exception {
         new RetryableCallable<Void>() {

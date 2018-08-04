@@ -35,13 +35,11 @@ public class StandardTunerTest {
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
-    private IConfiguration config;
     private StandardTuner tuner;
 
     @Before
     public void setup() {
-
-        config = new FakeConfiguration();
+        IConfiguration config = new FakeConfiguration();
         tuner = new StandardTuner(config);
     }
 

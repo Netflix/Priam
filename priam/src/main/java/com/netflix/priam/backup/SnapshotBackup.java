@@ -50,7 +50,6 @@ public class SnapshotBackup extends AbstractBackup {
     static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
-    private final CommitLogBackup clBackup;
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
@@ -59,12 +58,11 @@ public class SnapshotBackup extends AbstractBackup {
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
-                          MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
+                          MetaData metaData, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
             , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
         super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
         this.metaData = metaData;
-        this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());

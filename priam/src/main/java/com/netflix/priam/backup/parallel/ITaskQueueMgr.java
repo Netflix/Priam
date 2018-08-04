@@ -26,17 +26,17 @@ package com.netflix.priam.backup.parallel;
  */
 public interface ITaskQueueMgr<E> {
 
-    public void add(E task);
+    void add(E task);
 
     /*
      * @return task, null if none is available.
      */
-    public E take() throws InterruptedException;
+    E take() throws InterruptedException;
 
     /*
      * @return true if there are tasks within queue to be processed; false otherwise.
      */
-    public Boolean hasTasks();
+    Boolean hasTasks();
 
     /*
      * A means to perform any post processing once the task has been completed.  If post processing is needed,
@@ -44,13 +44,13 @@ public interface ITaskQueueMgr<E> {
      *
      * *Note: "completed" here can mean success or failure.
      */
-    public void taskPostProcessing(E completedTask);
+    void taskPostProcessing(E completedTask);
 
 
-    public Integer getNumOfTasksToBeProessed();
+    Integer getNumOfTasksToBeProessed();
 
     /*
      * @return true if all tasks completed (includes failures) for a date; false, if at least 1 task is still in queue.
      */
-    public Boolean tasksCompleted(java.util.Date date);
+    Boolean tasksCompleted(java.util.Date date);
 }

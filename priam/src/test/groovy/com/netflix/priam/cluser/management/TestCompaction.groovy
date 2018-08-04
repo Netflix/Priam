@@ -25,17 +25,17 @@ import java.util.concurrent.Future
  * Created by aagrawal on 2/26/18.
  */
 @Unroll
-public class TestCompaction extends Specification {
+class TestCompaction extends Specification {
     @Shared
-    private static Compaction compaction;
+    private static Compaction compaction
 
     def setup(){
-        new MockCassandraOperations();
+        new MockCassandraOperations()
 
     }
     def setupSpec(){
         if (compaction == null)
-            compaction = Guice.createInjector(new BRTestModule()).getInstance(Compaction.class);
+            compaction = Guice.createInjector(new BRTestModule()).getInstance(Compaction.class)
     }
 
     def "Map contains KS #keyspace with configuration #compactionCFIncludeList is #result"() {
@@ -135,55 +135,55 @@ public class TestCompaction extends Specification {
     }
 
     private int concurrentRuns(int size) {
-        ExecutorService threads = Executors.newFixedThreadPool(size);
-        List<Callable<Boolean>> torun = new ArrayList<>(size);
+        ExecutorService threads = Executors.newFixedThreadPool(size)
+        List<Callable<Boolean>> torun = new ArrayList<>(size)
         for (int i = 0; i < size; i++) {
             torun.add(new Callable<Boolean>() {
                 Boolean call() throws Exception {
-                    compaction.execute();
-                    return Boolean.TRUE;
+                    compaction.execute()
+                    return Boolean.TRUE
                 }
-            });
+            })
         }
 
         // all tasks executed in different threads, at 'once'.
-        List<Future<Boolean>> futures = threads.invokeAll(torun);
+        List<Future<Boolean>> futures = threads.invokeAll(torun)
 
         // no more need for the threadpool
-        threads.shutdown();
+        threads.shutdown()
         // check the results of the tasks.
-        int noOfBadRun = 0;
+        int noOfBadRun = 0
         for (Future<Boolean> fut : futures) {
             //We expect exception here.
             try{
-                fut.get();
+                fut.get()
             }catch(Exception e){
                 noOfBadRun++
             }
         }
 
-        return noOfBadRun;
+        return noOfBadRun
     }
 
 
 
     private class CompactionConfiguration extends FakeConfiguration {
-        private String compactionCFIncludeList;
-        private String compactionCFExcludeList;
+        private String compactionCFIncludeList
+        private String compactionCFExcludeList
 
         CompactionConfiguration(String compactionCFIncludeList, String compactionCFExcludeList) {
-            this.compactionCFIncludeList = compactionCFIncludeList;
-            this.compactionCFExcludeList = compactionCFExcludeList;
+            this.compactionCFIncludeList = compactionCFIncludeList
+            this.compactionCFExcludeList = compactionCFExcludeList
         }
 
         @Override
         String getCompactionIncludeCFList() {
-            return compactionCFIncludeList;
+            return compactionCFIncludeList
         }
 
         @Override
         String getCompactionExcludeCFList(){
-            return compactionCFExcludeList;
+            return compactionCFExcludeList
         }
 
     }
@@ -192,17 +192,17 @@ public class TestCompaction extends Specification {
     private static class MockCassandraOperations extends MockUp<CassandraOperations> {
         @Mock
         void forceKeyspaceCompaction(String keyspaceName, String... columnfamily) throws Exception{
-            Thread.sleep(2000);
+            Thread.sleep(2000)
         }
 
         @Mock
         Map<String,List<String>> getColumnfamilies() throws Exception{
-            Map<String, List<String>> result = new HashMap<>();
-            result.put("abc", Arrays.asList("column1"));
-            result.put("def", Arrays.asList("dude", "ghi"));
-            result.put("ghi", Arrays.asList("k1", "ghi", "k2"));
-            result.put("system", Arrays.asList("compaction_history", "hints"));
-            return result;
+            Map<String, List<String>> result = new HashMap<>()
+            result.put("abc", Arrays.asList("column1"))
+            result.put("def", Arrays.asList("dude", "ghi"))
+            result.put("ghi", Arrays.asList("k1", "ghi", "k2"))
+            result.put("system", Arrays.asList("compaction_history", "hints"))
+            return result
         }
     }
 }

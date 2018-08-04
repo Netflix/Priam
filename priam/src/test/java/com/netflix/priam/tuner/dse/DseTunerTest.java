@@ -56,8 +56,8 @@ public class DseTunerTest {
         if (!targetDir.exists())
             targetDir.mkdirs();
 
-        targetFile = new File(config.getCassHome() + auditLogTunerLog4j.AUDIT_LOG_FILE);
-        Files.copy(new File("src/test/resources/" + auditLogTunerLog4j.AUDIT_LOG_FILE), targetFile);
+        targetFile = new File(config.getCassHome() + AuditLogTunerLog4J.AUDIT_LOG_FILE);
+        Files.copy(new File("src/test/resources/" + AuditLogTunerLog4J.AUDIT_LOG_FILE), targetFile);
     }
 
     @Test
@@ -67,7 +67,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertTrue(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertTrue(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     @Test
@@ -77,7 +77,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertFalse(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertFalse(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     /**

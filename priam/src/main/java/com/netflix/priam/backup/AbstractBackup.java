@@ -140,7 +140,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
         }.call();
     }
 
-    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws IllegalArgumentException, Exception {
+    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists()) {

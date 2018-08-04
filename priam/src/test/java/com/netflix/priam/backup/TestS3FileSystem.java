@@ -156,7 +156,7 @@ public class TestS3FileSystem {
 
         @Mock
         public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
-            this.partETags = partETags;
+            MockS3PartUploader.partETags = partETags;
         }
 
         @Mock
@@ -164,7 +164,7 @@ public class TestS3FileSystem {
             ++partAttempts;
             if (partFailure)
                 throw new BackupRestoreException("Test exception");
-            this.partETags.add(new PartETag(0, null));
+            partETags.add(new PartETag(0, null));
             return null;
         }
 
@@ -205,7 +205,7 @@ public class TestS3FileSystem {
         }
 
         @Mock
-        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException, AmazonServiceException {
+        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException {
             return new InitiateMultipartUploadResult();
         }
 

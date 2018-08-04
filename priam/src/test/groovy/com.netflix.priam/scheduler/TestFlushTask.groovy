@@ -55,27 +55,27 @@ class TestFlushTask extends Specification {
 
 
     private class FlushConfiguration extends FakeConfiguration {
-        private String flushSchedulerType, flushCronExpression, flushInterval;
+        private String flushSchedulerType, flushCronExpression, flushInterval
 
         FlushConfiguration(String flushSchedulerType, String flushCronExpression, String flushInterval) {
-            this.flushCronExpression = flushCronExpression;
-            this.flushSchedulerType = flushSchedulerType;
-            this.flushInterval = flushInterval;
+            this.flushCronExpression = flushCronExpression
+            this.flushSchedulerType = flushSchedulerType
+            this.flushInterval = flushInterval
         }
 
         @Override
-        public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-            return SchedulerType.lookup(flushSchedulerType);
+        SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
+            return SchedulerType.lookup(flushSchedulerType)
         }
 
         @Override
-        public String getFlushCronExpression() {
-            return flushCronExpression;
+        String getFlushCronExpression() {
+            return flushCronExpression
         }
 
         @Override
-        public String getFlushInterval() {
-            return flushInterval;
+        String getFlushInterval() {
+            return flushInterval
         }
     }
 

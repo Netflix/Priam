@@ -42,7 +42,7 @@ public class TestGuiceSingleton {
     }
 
     interface EmptryInterface {
-        public String print();
+        String print();
     }
 
     @Singleton

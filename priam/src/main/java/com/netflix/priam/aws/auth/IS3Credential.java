@@ -23,5 +23,5 @@ import com.netflix.priam.ICredential;
  */
 public interface IS3Credential extends ICredential {
 
-    public AWSCredentials getCredentials() throws Exception;
+    AWSCredentials getCredentials() throws Exception;
 }

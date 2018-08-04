@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class Task implements Job, TaskMBean {
     public STATE status = STATE.DONE;
 
-    public static enum STATE {
+    public enum STATE {
         ERROR, RUNNING, DONE, NOT_APPLICABLE
     }
 

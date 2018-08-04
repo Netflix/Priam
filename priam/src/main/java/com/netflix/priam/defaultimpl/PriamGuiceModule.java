@@ -71,6 +71,5 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
-        bind(ICassMonitorMetrics.class).to(CassMonitorMetrics.class);
     }
 }

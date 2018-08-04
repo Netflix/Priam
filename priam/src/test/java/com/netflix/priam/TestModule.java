@@ -50,13 +50,10 @@ public class TestModule extends AbstractModule {
                 ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
-        bind(AbstractBackupPath.class).to(S3BackupPath.class);
         bind(Sleeper.class).to(FakeSleeper.class);
-        bind(ITokenManager.class).to(TokenManager.class);
         bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
         bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
         bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
         bind(INewTokenRetriever.class).to(NewTokenRetriever.class); //for backward compatibility, unit test always create new tokens
-        // bind(IBackupStatusMgr.class).to(BackupStatusMgr.class);
     }
 }

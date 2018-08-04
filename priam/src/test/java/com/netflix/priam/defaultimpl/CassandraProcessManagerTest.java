@@ -31,7 +31,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 public class CassandraProcessManagerTest {
-    CassandraProcessManager cpm;
+    private CassandraProcessManager cpm;
 
     @Before
     public void setup() {

@@ -36,12 +36,12 @@ public class TestGuiceSingleton {
         printInjected();
     }
 
-    public void printInjected() {
+    private void printInjected() {
         Injector injector = Guice.createInjector(new GModules());
         injector.getInstance(EmptryInterface.class).print();
     }
 
-    public interface EmptryInterface {
+    interface EmptryInterface {
         public String print();
     }
 
@@ -54,7 +54,7 @@ public class TestGuiceSingleton {
         }
     }
 
-    public static class GModules extends AbstractModule {
+    static class GModules extends AbstractModule {
         @Override
         protected void configure() {
             bind(EmptryInterface.class).to(GuiceSingleton.class).asEagerSingleton();

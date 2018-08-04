@@ -59,7 +59,7 @@ public class TestCompression {
             f.delete();
     }
 
-    void validateCompression(String uncompress, String compress) {
+    private void validateCompression(String uncompress, String compress) {
         File uncompressed = new File(uncompress);
         File compressed = new File(compress);
         assertTrue(uncompressed.length() > compressed.length());

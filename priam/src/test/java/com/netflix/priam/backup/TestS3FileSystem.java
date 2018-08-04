@@ -147,11 +147,11 @@ public class TestS3FileSystem {
 
     // Mock Nodeprobe class
     @Ignore
-    public static class MockS3PartUploader extends MockUp<S3PartUploader> {
-        public static int compattempts = 0;
-        public static int partAttempts = 0;
-        public static boolean partFailure = false;
-        public static boolean completionFailure = false;
+    static class MockS3PartUploader extends MockUp<S3PartUploader> {
+        static int compattempts = 0;
+        static int partAttempts = 0;
+        static boolean partFailure = false;
+        static boolean completionFailure = false;
         private static List<PartETag> partETags;
 
         @Mock
@@ -187,7 +187,7 @@ public class TestS3FileSystem {
             return uploadPart();
         }
 
-        public static void setup() {
+        static void setup() {
             compattempts = 0;
             partAttempts = 0;
             partFailure = false;
@@ -196,9 +196,9 @@ public class TestS3FileSystem {
     }
 
     @Ignore
-    public static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        public static boolean ruleAvailable = false;
-        public static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
+    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
+        static boolean ruleAvailable = false;
+        static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
 
         @Mock
         public void $init() {

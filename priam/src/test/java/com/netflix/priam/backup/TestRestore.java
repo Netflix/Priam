@@ -60,7 +60,7 @@ public class TestRestore {
         FileUtils.deleteQuietly(file);
     }
 
-    public static void populateBackupFileSystem(String baseDir) {
+    private static void populateBackupFileSystem(String baseDir) {
         fileList.clear();
         fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json");
         fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");

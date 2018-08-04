@@ -47,7 +47,7 @@ public class SnapshotBackup extends AbstractBackup {
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
     private InstanceIdentity instanceIdentity;
@@ -190,7 +190,7 @@ public class SnapshotBackup extends AbstractBackup {
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating snapshot observers now ...");

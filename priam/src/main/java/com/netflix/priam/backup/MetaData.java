@@ -42,7 +42,7 @@ import java.util.List;
 public class MetaData {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final List<String> metaRemotePaths = new ArrayList<String>();
     private final IBackupFileSystem fs;
 
@@ -144,7 +144,7 @@ public class MetaData {
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating snapshot observers now ...");
@@ -154,7 +154,7 @@ public class MetaData {
         }
     }
 
-    protected void addToRemotePath(String remotePath) {
+    private void addToRemotePath(String remotePath) {
         metaRemotePaths.add(remotePath);
     }
 

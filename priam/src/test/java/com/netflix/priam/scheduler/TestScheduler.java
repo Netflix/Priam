@@ -89,7 +89,7 @@ public class TestScheduler {
             super(config, MBeanServerFactory.newMBeanServer());
         }
 
-        public static int count = 0;
+        static int count = 0;
 
         @Override
         public void execute() {
@@ -109,7 +109,7 @@ public class TestScheduler {
             return "test2";
         }
 
-        public static TaskTimer getTimer() {
+        static TaskTimer getTimer() {
             return new SimpleTimer("test2", 11L);
         }
     }

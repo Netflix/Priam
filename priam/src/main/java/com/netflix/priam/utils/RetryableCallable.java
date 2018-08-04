@@ -25,7 +25,7 @@ import java.util.concurrent.CancellationException;
 
 public abstract class RetryableCallable<T> implements Callable<T> {
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
-    public static final int DEFAULT_NUMBER_OF_RETRIES = 15;
+    private static final int DEFAULT_NUMBER_OF_RETRIES = 15;
     public static final long DEFAULT_WAIT_TIME = 100;
     private int retrys;
     private long waitTime;
@@ -43,7 +43,7 @@ public abstract class RetryableCallable<T> implements Callable<T> {
         this.waitTime = waitTime;
     }
 
-    public abstract T retriableCall() throws Exception;
+    protected abstract T retriableCall() throws Exception;
 
     public T call() throws Exception {
         int retry = 0;
@@ -69,7 +69,7 @@ public abstract class RetryableCallable<T> implements Callable<T> {
         }
     }
 
-    public void forEachExecution() {
+    protected void forEachExecution() {
         // do nothing by default.
     }
 }

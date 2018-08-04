@@ -35,11 +35,11 @@ public class FakeConfiguration implements IConfiguration {
 
     public static final String FAKE_REGION = "us-east-1";
 
-    public String region;
-    public String appName;
+    private String region;
+    private String appName;
     public String zone;
     public String instance_id;
-    public String restorePrefix;
+    private String restorePrefix;
 
     public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");

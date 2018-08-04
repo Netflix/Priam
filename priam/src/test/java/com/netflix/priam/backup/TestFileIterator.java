@@ -73,9 +73,9 @@ public class TestFileIterator {
 
     // MockAmazonS3Client class
     @Ignore
-    public static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        public static String bucketName = "";
-        public static String prefix = "";
+    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
+        static String bucketName = "";
+        static String prefix = "";
 
         @Mock
         public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException {
@@ -96,10 +96,10 @@ public class TestFileIterator {
 
     // MockObjectListing class
     @Ignore
-    public static class MockObjectListing extends MockUp<ObjectListing> {
-        public static boolean truncated = true;
-        public static boolean firstcall = true;
-        public static boolean simfilter = false;//Simulate filtering
+    static class MockObjectListing extends MockUp<ObjectListing> {
+        static boolean truncated = true;
+        static boolean firstcall = true;
+        static boolean simfilter = false;//Simulate filtering
 
         @Mock
         public List<S3ObjectSummary> getObjectSummaries() {
@@ -240,7 +240,7 @@ public class TestFileIterator {
 
     }
 
-    public static List<S3ObjectSummary> getObjectSummary() {
+    private static List<S3ObjectSummary> getObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
@@ -257,11 +257,11 @@ public class TestFileIterator {
         return list;
     }
 
-    public static List<S3ObjectSummary> getObjectSummaryEmpty() {
+    private static List<S3ObjectSummary> getObjectSummaryEmpty() {
         return new ArrayList<S3ObjectSummary>();
     }
 
-    public static List<S3ObjectSummary> getNextObjectSummary() {
+    private static List<S3ObjectSummary> getNextObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");

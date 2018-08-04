@@ -42,7 +42,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
     private IncrementalMetaData metaData;
     private BackupRestoreUtil backupRestoreUtil;
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
@@ -85,7 +85,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating incremental observers now ...");

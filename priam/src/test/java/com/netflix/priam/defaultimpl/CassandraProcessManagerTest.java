@@ -18,8 +18,6 @@
 package com.netflix.priam.defaultimpl;
 
 
-import java.io.IOException;
-
 import com.google.inject.Guice;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;

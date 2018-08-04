@@ -24,7 +24,6 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.Arrays;

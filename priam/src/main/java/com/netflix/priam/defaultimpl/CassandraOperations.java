@@ -18,6 +18,8 @@ package com.netflix.priam.defaultimpl;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
 
@@ -26,7 +28,7 @@ import javax.inject.Inject;
  * Created by aagrawal on 6/19/18.
  */
 public class CassandraOperations {
-
+    private static final Logger logger = LoggerFactory.getLogger(CassandraOperations.class);
     private IConfiguration configuration;
 
     @Inject
@@ -43,13 +45,24 @@ public class CassandraOperations {
      * @throws Exception in case of error while taking a snapshot by Cassandra.
      */
     public synchronized void takeSnapshot(final String snapshotName) throws Exception {
-        new RetryableCallable<Void>() {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
-                nodetool.takeSnapshot(snapshotName, null);
-                return null;
-            }
-        }.call();
+        //Retry max of 6 times with 10 second in between (for one minute). This is to ensure that we overcome any temporary glitch.
+        //Note that operation MAY fail if cassandra successfully took the snapshot of certain columnfamily(ies) and we try to create snapshot with
+        //same name. It is a good practice to call clearSnapshot after this operation fails, to ensure we don't leave
+        //any left overs.
+        //Example scenario: Change of file permissions by manual intervention and C* unable to take snapshot of one CF.
+        try {
+            new RetryableCallable<Void>(6, 10000) {
+                public Void retriableCall() throws Exception {
+                    JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
+                    nodetool.takeSnapshot(snapshotName, null);
+                    return null;
+                }
+            }.call();
+        }catch (Exception e){
+            logger.error("Error while taking snapshot {}. Asking Cassandra to clear snapshot to avoid accumulation of snapshots.", snapshotName);
+            clearSnapshot(snapshotName);
+            throw e;
+        }
     }
 
     /**

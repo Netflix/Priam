@@ -41,7 +41,11 @@ public class CassandraOperations {
      * This method neds to be synchronized. Context: During the transition phase to backup version 2.0, we might be executing
      * multiple snapshots at the same time. To avoid, unknown behavior by Cassanddra, it is wise to keep this method sync.
      * Also, with backups being on CRON, we don't know how often operator is taking snapshot.
-     * @param snapshotName Name of the snapshot on disk.
+     * @param snapshotName Name of the snapshot on disk. This snapshotName should be UNIQUE among all the snapshots.
+     *                     Try to append UUID to snapshotName to ensure uniqueness.
+     *                     This is to ensure a) Snapshot fails if name are not unique.
+     *                     b) You might take snapshots which are not "part" of same snapshot. e.g. Any leftovers from previous operation.
+     *                     c) Once snapshot fails, this will clean the failed snapshot.
      * @throws Exception in case of error while taking a snapshot by Cassandra.
      */
     public synchronized void takeSnapshot(final String snapshotName) throws Exception {

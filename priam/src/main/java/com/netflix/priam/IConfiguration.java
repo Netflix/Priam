@@ -779,8 +779,7 @@ public interface IConfiguration {
      * @return file that indicates heartbeat of post restore hook
      */
     String getPostRestoreHookHeartbeatFileName();
-
-
+    
     /**
      * Done file for post restore hook
      * @return file that indicates completion of post restore hook

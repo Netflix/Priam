@@ -15,9 +15,12 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.inject.ImplementedBy;
+
 /*
  * A means to determine the environment for the running instance
  */
+@ImplementedBy(AwsInstanceEnvIdentity.class)
 public interface InstanceEnvIdentity {
     /*
      * @return true if running instance is in "classic", false otherwise.

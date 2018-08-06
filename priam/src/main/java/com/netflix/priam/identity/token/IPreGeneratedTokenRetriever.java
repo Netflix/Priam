@@ -16,8 +16,10 @@
 package com.netflix.priam.identity.token;
 
 import com.google.common.collect.ListMultimap;
+import com.google.inject.ImplementedBy;
 import com.netflix.priam.identity.PriamInstance;
 
+@ImplementedBy(PreGeneratedTokenRetriever.class)
 public interface IPreGeneratedTokenRetriever {
 
     PriamInstance get() throws Exception;

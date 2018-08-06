@@ -27,7 +27,6 @@ import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
 import com.netflix.priam.backup.parallel.ITaskQueueMgr;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -35,12 +34,6 @@ import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
-import com.netflix.priam.identity.AwsInstanceEnvIdentity;
-import com.netflix.priam.identity.InstanceEnvIdentity;
-import com.netflix.priam.identity.token.*;
-import com.netflix.priam.merics.BackupMetricsMgr;
-import com.netflix.priam.merics.CassMonitorMetrics;
-import com.netflix.priam.merics.ICassMonitorMetrics;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -63,13 +56,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
-//        bind(IRestoreStrategy.class).annotatedWith(Names.named("encryptedrestore")).to(EncryptedRestoreStrategy.class);
-        bind(ICredential.class).to(ClearCredential.class);
-        bind(IDeadTokenRetriever.class).to(DeadTokenRetriever.class);
-        bind(IPreGeneratedTokenRetriever.class).to(PreGeneratedTokenRetriever.class);
-        bind(INewTokenRetriever.class).to(NewTokenRetriever.class);
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
-        bind(InstanceEnvIdentity.class).to(AwsInstanceEnvIdentity.class);
-        bind(IBackupMetrics.class).to(BackupMetricsMgr.class);
     }
 }

@@ -1,20 +1,16 @@
 package com.netflix.priam.cluser.management
 
-import com.google.common.collect.ImmutableList
 import com.google.inject.Guice
 import com.netflix.priam.FakeConfiguration
-import com.netflix.priam.TestModule
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
 import com.netflix.priam.defaultimpl.CassandraOperations
 import mockit.Mock
 import mockit.MockUp
-import org.junit.Assert
 import spock.lang.Shared
 import spock.lang.Specification
 import spock.lang.Unroll
 
-import javax.inject.Inject
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors

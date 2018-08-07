@@ -1,6 +1,5 @@
 package com.netflix.priam.tuner
 
-import org.junit.Test
 import spock.lang.Specification
 import spock.lang.Unroll
 

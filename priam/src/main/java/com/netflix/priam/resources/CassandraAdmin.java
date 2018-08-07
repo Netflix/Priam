@@ -23,7 +23,6 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.compress.SnappyCompression;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;

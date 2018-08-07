@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class Task implements Job, TaskMBean {
     public STATE status = STATE.DONE;
 
-    public static enum STATE {
+    public enum STATE {
         ERROR, RUNNING, DONE, NOT_APPLICABLE
     }
 
@@ -69,7 +69,7 @@ public abstract class Task implements Job, TaskMBean {
      * This method has to be implemented and cannot thow any exception.
      */
     public void initialize() throws ExecutionException {
-        // nothing to intialize
+        // nothing to initialize
     }
 
     public abstract void execute() throws Exception;

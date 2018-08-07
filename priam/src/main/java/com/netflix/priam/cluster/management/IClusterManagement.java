@@ -19,13 +19,9 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.JMXConnectionException;
-import com.netflix.priam.utils.JMXConnectorMgr;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -33,7 +29,8 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by vinhn on 10/12/16.
  */
 public abstract class IClusterManagement<T> extends Task {
-    public enum Task {FLUSH, COMPACTION};
+    public enum Task {FLUSH, COMPACTION}
+
     private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
     private IMetricPublisher metricPublisher;
     private Task taskType;

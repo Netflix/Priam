@@ -20,9 +20,9 @@ package com.netflix.priam.scheduler;
  * MBean to monitor Task executions.
  */
 public interface TaskMBean {
-    public int getErrorCount();
+    int getErrorCount();
 
-    public int getExecutionCount();
+    int getExecutionCount();
 
-    public String getName();
+    String getName();
 }

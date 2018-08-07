@@ -82,19 +82,16 @@ public class BackupServletTest {
     private
     @Mocked
     BackupStatusMgr bkupStatusMgr;
-    private ITokenManager tokenManager;
     private BackupServlet resource;
     private RestoreServlet restoreResource;
     private BackupVerification backupVerification;
-    private static Injector injector;
-    private InstanceState instanceState;
 
     @Before
     public void setUp() {
-        injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
-        instanceState = injector.getInstance(InstanceState.class);
-        this.tokenManager = new TokenManager(config);
+        InstanceState instanceState = injector.getInstance(InstanceState.class);
+        ITokenManager tokenManager = new TokenManager(config);
         resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
                 tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr, backupVerification);
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess

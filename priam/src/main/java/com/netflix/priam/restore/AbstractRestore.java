@@ -25,7 +25,6 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,12 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * A means to perform a restore.  This class contains the following characteristics:

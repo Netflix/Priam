@@ -28,5 +28,5 @@ public interface INotificationService {
      *
      * @param msg Message that needs to be notified
      */
-    public void notify(String msg);
+    void notify(String msg);
 }

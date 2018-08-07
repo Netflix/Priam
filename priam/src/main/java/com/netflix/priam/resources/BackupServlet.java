@@ -379,7 +379,7 @@ public class BackupServlet {
             // multi-thread safe to be edited
             config.setRestorePrefix(origRestorePrefix);
 
-            while (!CassandraMonitor.isCassadraStarted())
+            while (!CassandraMonitor.hasCassadraStarted())
                 Thread.sleep(1000L);
 
             // initialize json file name

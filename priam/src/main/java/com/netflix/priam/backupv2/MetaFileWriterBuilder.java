@@ -124,8 +124,11 @@ public class MetaFileWriterBuilder {
          * @throws IOException
          */
         public MetaFileWriterBuilder.DataStep addColumnfamilyResult(ColumnfamilyResult columnfamilyResult) throws IOException {
-            if (jsonWriter != null && columnfamilyResult != null)
-                jsonWriter.jsonValue(columnfamilyResult.toString());
+            if (jsonWriter == null)
+                throw new NullPointerException("addColumnfamilyResult: Json Writer in MetaFileWriter is null. This should not happen!");
+            if (columnfamilyResult == null)
+                throw new NullPointerException("Column family result is null in MetaFileWriter. This should not happen!");
+            jsonWriter.jsonValue(columnfamilyResult.toString());
             return this;
         }
 
@@ -137,7 +140,7 @@ public class MetaFileWriterBuilder {
          */
         public MetaFileWriterBuilder.UploadStep endMetaFileGeneration() throws IOException {
             if (jsonWriter == null)
-                return null;
+                throw new NullPointerException("endMetaFileGeneration: Json Writer in MetaFileWriter is null. This should not happen!");
 
             jsonWriter.endArray();
             jsonWriter.endObject();

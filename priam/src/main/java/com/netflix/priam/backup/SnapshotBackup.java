@@ -20,19 +20,14 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.notification.BackupEvent;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
-import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.ThreadSleeper;
 import org.apache.commons.lang3.StringUtils;
 import org.quartz.CronExpression;
@@ -79,7 +74,7 @@ public class SnapshotBackup extends AbstractBackup {
     @Override
     public void execute() throws Exception {
         //If Cassandra is started then only start Snapshot Backup
-        while (!CassandraMonitor.isCassadraStarted()) {
+        while (!CassandraMonitor.hasCassadraStarted()) {
             logger.debug("Cassandra has not yet started, hence Snapshot Backup will start after [" + WAIT_TIME_MS / 1000 + "] secs ...");
             sleeper.sleep(WAIT_TIME_MS);
         }

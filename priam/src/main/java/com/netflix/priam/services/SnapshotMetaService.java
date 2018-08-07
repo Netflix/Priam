@@ -44,11 +44,15 @@ import java.util.*;
 /**
  * This service will run on CRON as specified by {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()}
  * The intent of this service is to run a full snapshot on Cassandra, get the list of the SSTables on disk
- * and then create a manifest.json file which will encapsulate the list of the files.
+ * and then create a manifest.json file which will encapsulate the list of the files i.e. capture filesystem at a moment
+ * in time.
  * This manifest.json file will ensure the true filesystem status is exposed (for external entities) and will be
  * used in future for Priam Backup Version 2 where a file is not uploaded to backup file system unless SSTable has
  * been modified. This will lead to huge reduction in storage costs and provide bandwidth back to Cassandra instead
  * of creating/uploading snapshots.
+ * Note that this component will "try" to enqueue the files to upload, but no guarantee is provided. If the enqueue fails
+ * for any reason, it is considered "OK" as there will be another service pushing all the files in the queue for upload
+ * (think of this like a cleanup thread and will help us in "resuming" any failed backup for any reason).
  * Created by aagrawal on 6/18/18.
  */
 @Singleton
@@ -105,7 +109,7 @@ public class SnapshotMetaService extends AbstractBackup {
 
     @Override
     public void execute() throws Exception {
-        if (!CassandraMonitor.isCassadraStarted()) {
+        if (!CassandraMonitor.hasCassadraStarted()) {
             logger.debug("Cassandra has not started, hence SnapshotMetaService will not run");
             return;
         }
@@ -113,7 +117,7 @@ public class SnapshotMetaService extends AbstractBackup {
         try {
             Instant snapshotInstant = DateUtil.getInstant();
             snapshotName = generateSnapshotName(snapshotInstant);
-            logger.info("Initializaing SnapshotMetaService for taking a snapshot {}" + snapshotName);
+            logger.info("Initializing SnapshotMetaService for taking a snapshot {}" + snapshotName);
 
             //Perform a cleanup of old snapshot meta_v2.json files, if any, as we don't want our disk to be filled by them.
             //These files may be leftover
@@ -181,23 +185,41 @@ public class SnapshotMetaService extends AbstractBackup {
         Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
         Collection<File> files = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
 
-        files.stream().filter(file -> file.exists()).filter(file -> file.isFile()).forEach(file -> {
+        for (File file: files){
+            if (!file.exists())
+                continue;
+
             try {
                 String prefix = PrefixGenerator.getSSTFileBase(file.getName());
 
                 if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_MANIFEST_FILE))
                     prefix = "manifest";
 
-                if (prefix == null)
+                if (prefix == null) {
                     logger.error("Unknown file type with no SSTFileBase found: ", file.getAbsolutePath());
+                    return;
+                }
 
                 FileUploadResult fileUploadResult = FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
                 filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
                 filePrefixToFileMap.get(prefix).add(fileUploadResult);
             } catch (Exception e) {
+                       /* If you are here it means either of the issues. In that case, do not upload the meta file.
+                        * @throws  UnsupportedOperationException
+                        *          if an attributes of the given type are not supported
+                        * @throws  IOException
+                        *          if an I/O error occurs
+                        * @throws  SecurityException
+                        *          In the case of the default provider, a security manager is
+                        *          installed, its {@link SecurityManager#checkRead(String) checkRead}
+                        *          method is invoked to check read access to the file. If this
+                        *          method is invoked to read security sensitive attributes then the
+                        *          security manager may be invoke to check for additional permissions.
+                        */
                 logger.error("Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: " + file.getAbsolutePath(), e);
+                throw e;
             }
-        });
+        }
 
         ColumnfamilyResult columnfamilyResult = convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap);
         filePrefixToFileMap.clear(); //Release the resources.

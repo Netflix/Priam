@@ -29,7 +29,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by vinhn on 10/12/16.
  */
 public abstract class IClusterManagement<T> extends Task {
-        public enum Task {FLUSH, COMPACTION};
+        public enum Task {FLUSH, COMPACTION}
         private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
         private IMetricPublisher metricPublisher;
         private Task taskType;

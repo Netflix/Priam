@@ -22,10 +22,10 @@ import com.google.inject.ImplementedBy;
  * Created by vinhn on 11/3/16.
  */
 @ImplementedBy(AWSSnsNotificationService.class)
-public interface INotificationService {
+interface INotificationService {
     /**
      * Notify the message.
      * @param msg Message that needs to be notified
      */
-    public void notify(String msg);
+    void notify(String msg);
 }

@@ -23,7 +23,6 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.compress.SnappyCompression;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
 import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
@@ -62,7 +61,7 @@ public class CassandraAdmin {
     private static final String REST_HEADER_TOKEN = "token";
     private static final String REST_SUCCESS = "[\"ok\"]";
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
-    private IConfiguration config;
+    private final IConfiguration config;
     private final ICassandraProcess cassProcess;
     private final Flush flush;
     private final Compaction compaction;
@@ -403,7 +402,7 @@ public class CassandraAdmin {
 
 
     // helper method for parsing, to be tested easily
-    protected static JSONObject parseGossipInfo(String gossipinfo) throws JSONException {
+    private static JSONObject parseGossipInfo(String gossipinfo) throws JSONException {
         String[] ginfo = gossipinfo.split("\n");
         JSONObject rootObj = new JSONObject();
         JSONObject obj = new JSONObject();

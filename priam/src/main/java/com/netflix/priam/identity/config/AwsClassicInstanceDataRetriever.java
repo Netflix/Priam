@@ -15,8 +15,6 @@
  */
 package com.netflix.priam.identity.config;
 
-import com.netflix.priam.utils.SystemUtils;
-
 /**
  * Calls AWS metadata to get info on the location of the running instance within classic environment.
  *

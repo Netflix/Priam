@@ -48,7 +48,6 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
     private static final Logger logger = LoggerFactory.getLogger(SimpleDBConfigSource.class.getName());
 
     private static final String DOMAIN = "PriamProperties";
-    private static String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
 
     private final Map<String, String> data = Maps.newConcurrentMap();
     private final ICredential provider;
@@ -69,6 +68,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
         String appid = asgName.lastIndexOf('-') > 0 ? asgName.substring(0, asgName.indexOf('-')) : asgName;
         logger.info("appid used to fetch properties is: {}", appid);
         do {
+            String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, appid));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);

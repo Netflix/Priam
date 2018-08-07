@@ -609,12 +609,12 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getFlushCronExpression() {
-        return config.get(PRIAM_PRE + ".flush.cron");
+        return config.get(PRIAM_PRE + ".flush.cron", "-1");
     }
 
     @Override
     public String getCompactionCronExpression() {
-        return config.get(PRIAM_PRE + ".compaction.cron");
+        return config.get(PRIAM_PRE + ".compaction.cron", "-1");
     }
 
     @Override

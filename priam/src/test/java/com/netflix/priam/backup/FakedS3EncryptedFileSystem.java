@@ -19,12 +19,8 @@ package com.netflix.priam.backup;
 
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
 import java.util.Date;
 import java.util.Iterator;
-
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;

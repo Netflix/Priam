@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
@@ -43,7 +42,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
     private IncrementalMetaData metaData;
     private BackupRestoreUtil backupRestoreUtil;
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
@@ -86,7 +85,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating incremental observers now ...");

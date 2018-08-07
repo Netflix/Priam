@@ -60,13 +60,13 @@ public class TestCassandraMonitor {
     @Test
     public void testCassandraMonitor() throws Exception {
         monitor.execute();
-        Assert.assertFalse(monitor.isCassadraStarted());
+        Assert.assertFalse(CassandraMonitor.isCassadraStarted());
 
-        monitor.setIsCassadraStarted();
-        Assert.assertTrue(monitor.isCassadraStarted());
+        CassandraMonitor.setIsCassadraStarted();
+        Assert.assertTrue(CassandraMonitor.isCassadraStarted());
 
         monitor.execute();
-        Assert.assertFalse(monitor.isCassadraStarted());
+        Assert.assertFalse(CassandraMonitor.isCassadraStarted());
     }
 
     @Test

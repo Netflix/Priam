@@ -20,5 +20,5 @@ import com.netflix.priam.IConfiguration;
 
 @ImplementedBy(BackupFileSystemContext.class)
 public interface IFileSystemContext {
-    public IBackupFileSystem getFileStrategy(IConfiguration config);
+    IBackupFileSystem getFileStrategy(IConfiguration config);
 }

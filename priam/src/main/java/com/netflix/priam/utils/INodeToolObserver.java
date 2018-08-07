@@ -22,5 +22,5 @@ import org.apache.cassandra.tools.NodeProbe;
  */
 public interface INodeToolObserver {
 
-    public void nodeToolHasChanged(NodeProbe nodeTool);
+    void nodeToolHasChanged(NodeProbe nodeTool);
 }

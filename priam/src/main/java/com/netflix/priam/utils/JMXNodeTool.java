@@ -86,7 +86,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return tool;
     }
 
-    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws JMXConnectionException, IOException, MalformedObjectNameException {
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws IOException, MalformedObjectNameException {
         if (mxbean)
             return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
         else
@@ -317,14 +317,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return object;
     }
 
-    public void compact() throws IOException, ExecutionException, InterruptedException {
-        for (String keyspace : getKeyspaces()) {
-            forceKeyspaceCompaction(keyspace);
-            //forceKeyspaceCompaction(keyspace, new String[0]);
-        }
-
-    }
-
     public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException {
         repair(isSequential, localDataCenterOnly, false);
     }
@@ -357,12 +349,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             forceKeyspaceCleanup(0, keyspace);
         //forceKeyspaceCleanup(keyspace, new String[0]);
     }
-
-    public void flush() throws IOException, ExecutionException, InterruptedException {
-        for (String keyspace : getKeyspaces())
-            forceKeyspaceFlush(keyspace, new String[0]);
-    }
-
+    
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
         while (it.hasNext()) {

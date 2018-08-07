@@ -96,7 +96,6 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
         //Clearing remotePath List
         incrementalRemotePaths.clear();
         initiateBackup("backups", backupRestoreUtil);
-        return;
     }
 
     public void postProcessing() {

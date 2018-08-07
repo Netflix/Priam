@@ -64,9 +64,8 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         super(pathProvider, compress, config, metricPublisher, backupMetricsMgr, backupNotificationMgr);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        String mbeanName = MBEAN_NAME;
         try {
-            mbs.registerMBean(this, new ObjectName(mbeanName));
+            mbs.registerMBean(this, new ObjectName(MBEAN_NAME));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

@@ -21,9 +21,9 @@ package com.netflix.priam.scheduler;
  *
  */
 public interface TaskMBean {
-    public int getErrorCount();
+    int getErrorCount();
 
-    public int getExecutionCount();
+    int getExecutionCount();
 
-    public String getName();
+    String getName();
 }

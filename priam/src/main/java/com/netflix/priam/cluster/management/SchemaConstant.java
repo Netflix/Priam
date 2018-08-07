@@ -23,15 +23,15 @@ import java.util.Set;
 /**
  * Created by aagrawal on 3/6/18.
  */
-public class SchemaConstant {
-    public static final String SYSTEM_KEYSPACE_NAME = "system";
-    public static final String SCHEMA_KEYSPACE_NAME = "system_schema";
-    public static final String TRACE_KEYSPACE_NAME = "system_traces";
-    public static final String AUTH_KEYSPACE_NAME = "system_auth";
-    public static final String DISTRIBUTED_KEYSPACE_NAME = "system_distributed";
-    public static final String DSE_SYSTEM = "dse_system";
+class SchemaConstant {
+    private static final String SYSTEM_KEYSPACE_NAME = "system";
+    private static final String SCHEMA_KEYSPACE_NAME = "system_schema";
+    private static final String TRACE_KEYSPACE_NAME = "system_traces";
+    private static final String AUTH_KEYSPACE_NAME = "system_auth";
+    private static final String DISTRIBUTED_KEYSPACE_NAME = "system_distributed";
+    private static final String DSE_SYSTEM = "dse_system";
 
-    public static final Set<String> SYSTEM_KEYSPACE_NAMES =
+    private static final Set<String> SYSTEM_KEYSPACE_NAMES =
             ImmutableSet.of(SYSTEM_KEYSPACE_NAME, SCHEMA_KEYSPACE_NAME, TRACE_KEYSPACE_NAME, AUTH_KEYSPACE_NAME, DISTRIBUTED_KEYSPACE_NAME, DSE_SYSTEM);
 
     public static final boolean isSystemKeyspace(String keyspace){

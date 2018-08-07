@@ -23,8 +23,9 @@ class TestFlushTask extends Specification {
         "sdf"              | null                | null             || UnsupportedTypeException
         "hour"             | null                | "2"              || IllegalArgumentException
         "hour"             | "0 0 2 * * ?"       | "2"              || IllegalArgumentException
-        "cron"             | "abc"               | null             || Exception
-        "cron"             | "abc"               | "daily=2"        || Exception
+        "cron"             | "abc"               | null             || IllegalArgumentException
+        "cron"             | "abc"               | "daily=2"        || IllegalArgumentException
+        "cron"             | null                | "daily=2"        || IllegalArgumentException
         "hour"             | null                | "hour=2,daily=2" || IllegalArgumentException
     }
 
@@ -35,9 +36,9 @@ class TestFlushTask extends Specification {
         where:
         flushSchedulerType | flushCronExpression | flushInterval || result
         "hour"             | null                | null          || null
-        "cron"             | null                | null          || null
+        "cron"             | "-1"                | null          || null
         "hour"             | "abc"               | null          || null
-        "cron"             | null                | "abc"         || null
+        "cron"             | "-1"                | "abc"         || null
     }
 
     def "SchedulerType for value #flushSchedulerType, #flushCronExpression, #flushInterval is #result"() {
@@ -54,27 +55,27 @@ class TestFlushTask extends Specification {
 
 
     private class FlushConfiguration extends FakeConfiguration {
-        private String flushSchedulerType, flushCronExpression, flushInterval;
+        private String flushSchedulerType, flushCronExpression, flushInterval
 
         FlushConfiguration(String flushSchedulerType, String flushCronExpression, String flushInterval) {
-            this.flushCronExpression = flushCronExpression;
-            this.flushSchedulerType = flushSchedulerType;
-            this.flushInterval = flushInterval;
+            this.flushCronExpression = flushCronExpression
+            this.flushSchedulerType = flushSchedulerType
+            this.flushInterval = flushInterval
         }
 
         @Override
-        public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-            return SchedulerType.lookup(flushSchedulerType);
+        SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
+            return SchedulerType.lookup(flushSchedulerType)
         }
 
         @Override
-        public String getFlushCronExpression() {
-            return flushCronExpression;
+        String getFlushCronExpression() {
+            return flushCronExpression
         }
 
         @Override
-        public String getFlushInterval() {
-            return flushInterval;
+        String getFlushInterval() {
+            return flushInterval
         }
     }
 

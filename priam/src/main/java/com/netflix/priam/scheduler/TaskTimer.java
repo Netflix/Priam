@@ -24,10 +24,10 @@ import java.text.ParseException;
  * Interface to represent time/interval 
  */
 public interface TaskTimer {
-    public Trigger getTrigger() throws ParseException;
+    Trigger getTrigger() throws ParseException;
 
     /*
     @return the cron like expression use to schedule the task.  Can return null or empty string.
      */
-    public String getCronExpression();
+    String getCronExpression();
 }

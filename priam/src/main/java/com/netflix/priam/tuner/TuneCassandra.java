@@ -31,7 +31,7 @@ import java.io.IOException;
 @Singleton
 public class TuneCassandra extends Task {
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
-    public static final String JOBNAME = "Tune-Cassandra";
+    private static final String JOBNAME = "Tune-Cassandra";
     private final ICassandraTuner tuner;
     private InstanceState instanceState;
 

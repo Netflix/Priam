@@ -22,7 +22,6 @@ import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.io.FileUtils;
@@ -61,7 +60,7 @@ public class TestRestore {
         FileUtils.deleteQuietly(file);
     }
 
-    public static void populateBackupFileSystem(String baseDir) {
+    private static void populateBackupFileSystem(String baseDir) {
         fileList.clear();
         fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json");
         fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");

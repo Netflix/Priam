@@ -49,28 +49,28 @@ class TestBackupScheduler extends Specification {
     }
 
     private class BackupConfiguration extends FakeConfiguration {
-        private String backupSchedulerType, backupCronExpression;
-        private int backupHour;
+        private String backupSchedulerType, backupCronExpression
+        private int backupHour
 
         BackupConfiguration(String backupSchedulerType, String backupCronExpression, int backupHour) {
-            this.backupCronExpression = backupCronExpression;
-            this.backupSchedulerType = backupSchedulerType;
-            this.backupHour = backupHour;
+            this.backupCronExpression = backupCronExpression
+            this.backupSchedulerType = backupSchedulerType
+            this.backupHour = backupHour
         }
 
         @Override
-        public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
-            return SchedulerType.lookup(backupSchedulerType);
+        SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
+            return SchedulerType.lookup(backupSchedulerType)
         }
 
         @Override
-        public String getBackupCronExpression() {
-            return backupCronExpression;
+        String getBackupCronExpression() {
+            return backupCronExpression
         }
 
         @Override
-        public int getBackupHour() {
-            return backupHour;
+        int getBackupHour() {
+            return backupHour
         }
     }
 

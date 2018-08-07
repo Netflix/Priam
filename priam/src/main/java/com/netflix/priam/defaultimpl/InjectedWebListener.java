@@ -33,9 +33,7 @@ import org.quartz.SchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +49,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
         injector = Guice.createInjector(moduleList);
         try {
             injector.getInstance(IConfiguration.class).intialize();
-            injector.getInstance(PriamServer.class).intialize();
+            injector.getInstance(PriamServer.class).initialize();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);

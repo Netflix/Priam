@@ -63,7 +63,7 @@ public class PriamServer {
         this.restoreContext = restoreContext;
     }
 
-    public void intialize() throws Exception {
+    public void initialize() throws Exception {
         if (id.getInstance().isOutOfService())
             return;
 

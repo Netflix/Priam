@@ -34,7 +34,7 @@ public class S3BackupPath extends AbstractBackupPath {
      * In Cassandra 1.0, Number of path elements = 8
      * In Cassandra 1.1, Number of path elements = 9
      */
-    public static final int NUM_PATH_ELEMENTS_CASS_1_0 = 8;
+    private static final int NUM_PATH_ELEMENTS_CASS_1_0 = 8;
 
     @Inject
     public S3BackupPath(IConfiguration config, InstanceIdentity factory) {

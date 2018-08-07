@@ -31,24 +31,24 @@ import java.util.Map;
 @ImplementedBy(PriamConfiguration.class)
 public interface IConfiguration {
 
-    public void intialize();
+    void intialize();
 
     /**
      * @return Path to the home dir of Cassandra
      */
-    public String getCassHome();
+    String getCassHome();
 
-    public String getYamlLocation();
+    String getYamlLocation();
 
     /**
      * @return Path to Cassandra startup script
      */
-    public String getCassStartupScript();
+    String getCassStartupScript();
 
     /**
      * @return Path to Cassandra stop sript
      */
-    public String getCassStopScript();
+    String getCassStopScript();
 
     /**
      * @return int representing how many seconds Priam should fail healthchecks for before gracefully draining (nodetool drain)
@@ -56,7 +56,7 @@ public interface IConfiguration {
      * using the provided stop script. If this number is &gt;= 0 then Priam will fail healthchecks for this number of
      * seconds before gracefully draining cassandra (nodetool drain) and stopping cassandra with the stop script.
      */
-    public int getGracefulDrainHealthWaitSeconds();
+    int getGracefulDrainHealthWaitSeconds();
 
     /**
      * @return int representing how often (in seconds) Priam should auto-remediate Cassandra process crash
@@ -65,163 +65,163 @@ public interface IConfiguration {
      * value of 60 means that Priam will only restart Cassandra once per 60 seconds
      * If a negative number, Priam will not restart Cassandra due to crash at all
      */
-    public int getRemediateDeadCassandraRate();
+    int getRemediateDeadCassandraRate();
 
     /**
      * Eg: 'my_backup' will result in all files stored under this dir/prefix
      *
      * @return Prefix that will be added to remote backup location
      */
-    public String getBackupLocation();
+    String getBackupLocation();
 
     /**
      * @return Get Backup retention in days
      */
-    public int getBackupRetentionDays();
+    int getBackupRetentionDays();
 
     /**
      * @return Get list of racs to backup. Backup all racs if empty
      */
-    public List<String> getBackupRacs();
+    List<String> getBackupRacs();
 
     /**
      * Bucket name in case of AWS
      *
      * @return Bucket name used for backups
      */
-    public String getBackupPrefix();
+    String getBackupPrefix();
 
     /**
      * Location containing backup files. Typically bucket name followed by path
      * to the clusters backup
      */
-    public String getRestorePrefix();
+    String getRestorePrefix();
 
     /**
      * @param prefix Set the current restore prefix
      */
-    public void setRestorePrefix(String prefix);
+    void setRestorePrefix(String prefix);
 
     /**
      * @return List of keyspaces to restore. If none, all keyspaces are
      * restored.
      */
-    public List<String> getRestoreKeySpaces();
+    List<String> getRestoreKeySpaces();
 
     /**
      * @return Location of the local data dir
      */
-    public String getDataFileLocation();
+    String getDataFileLocation();
 
     String getLogDirLocation();
 
     /**
      * @return Location of local cache
      */
-    public String getCacheLocation();
+    String getCacheLocation();
 
     /**
      * @return Location of local commit log dir
      */
-    public String getCommitLogLocation();
+    String getCommitLogLocation();
 
     /**
      * @return Remote commit log location for backups
      */
-    public String getBackupCommitLogLocation();
+    String getBackupCommitLogLocation();
 
     /**
      * @return Preferred data part size for multi part uploads
      */
-    public long getBackupChunkSize();
+    long getBackupChunkSize();
 
     /**
      * @return Cassandra's JMX port
      */
-    public int getJmxPort();
+    int getJmxPort();
 
     /**
      * @return Cassandra's JMX username
      */
-    public String getJmxUsername();
+    String getJmxUsername();
 
     /**
      * @return Cassandra's JMX password
      */
-    public String getJmxPassword();
+    String getJmxPassword();
 
     /**
      * @return Enables Remote JMX connections n C*
      */
-    public boolean enableRemoteJMX();
+    boolean enableRemoteJMX();
 
 
     /**
      * Cassandra storage/cluster communication port
      */
-    public int getStoragePort();
+    int getStoragePort();
 
-    public int getSSLStoragePort();
+    int getSSLStoragePort();
 
     /**
      * @return Cassandra's thrift port
      */
-    public int getThriftPort();
+    int getThriftPort();
 
     /**
      * @return Port for CQL binary transport.
      */
-    public int getNativeTransportPort();
+    int getNativeTransportPort();
 
     /**
      * @return Snitch to be used in cassandra.yaml
      */
-    public String getSnitch();
+    String getSnitch();
 
     /**
      * @return Cluster name
      */
-    public String getAppName();
+    String getAppName();
 
     /**
      * @return RAC (or zone for AWS)
      */
-    public String getRac();
+    String getRac();
 
     /**
      * @return List of all RAC used for the cluster
      */
-    public List<String> getRacs();
+    List<String> getRacs();
 
     /**
      * @return Local hostmame
      */
-    public String getHostname();
+    String getHostname();
 
     /**
      * @return Get instance name (for AWS)
      */
-    public String getInstanceName();
+    String getInstanceName();
 
     /**
      * @return Max heap size be used for Cassandra
      */
-    public String getHeapSize();
+    String getHeapSize();
 
     /**
      * @return New heap size for Cassandra
      */
-    public String getHeapNewSize();
+    String getHeapNewSize();
 
     /**
-     * Cron expression to be used to schedule regular compactions.
+     * Cron expression to be used to schedule regular compactions. Use "-1" to disable the CRON. Default: -1
      *
      * @return Compaction cron expression.
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
     default String getCompactionCronExpression(){
-        return null;
+        return "-1";
     }
 
    /**
@@ -233,7 +233,7 @@ public interface IConfiguration {
     */
     default String getCompactionIncludeCFList(){
         return null;
-    };
+    }
 
 
     /**
@@ -249,8 +249,10 @@ public interface IConfiguration {
 
     /**
      * @return Backup hour for snapshot backups (0 - 23)
+     * @deprecated Use the {{@link #getBackupCronExpression()}} instead.
      */
-    public int getBackupHour();
+    @Deprecated
+    int getBackupHour();
 
     /**
      * Cron expression to be used for snapshot backups.
@@ -259,7 +261,7 @@ public interface IConfiguration {
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    public String getBackupCronExpression();
+    String getBackupCronExpression();
 
     /**
      * Backup scheduler type to use for backup.
@@ -267,12 +269,12 @@ public interface IConfiguration {
      * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use {@link #getBackupHour()}.
      * If value of "CRON" is provided it starts using {@link #getBackupCronExpression()}.
      */
-    public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
+    SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
 
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
-    public String getSnapshotKeyspaceFilters();
+    String getSnapshotKeyspaceFilters();
 
     /*
      * Column Family(ies), comma delimited, to filter from backup.
@@ -280,12 +282,12 @@ public interface IConfiguration {
      * 
      * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
      */
-    public String getSnapshotCFFilter();
+    String getSnapshotCFFilter();
 
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
-    public String getIncrementalKeyspaceFilters();
+    String getIncrementalKeyspaceFilters();
 
     /*
      * Column Family(ies), comma delimited, to filter from backup.
@@ -293,12 +295,12 @@ public interface IConfiguration {
      * 
      * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
      */
-    public String getIncrementalCFFilter();
+    String getIncrementalCFFilter();
 
     /*
      * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
-    public String getRestoreKeyspaceFilter();
+    String getRestoreKeyspaceFilter();
 
     /*
      * Column Family(ies), comma delimited, to filter from backup.
@@ -306,7 +308,7 @@ public interface IConfiguration {
      * 
      * @return Column Family(ies), comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
      */
-    public String getRestoreCFFilter();
+    String getRestoreCFFilter();
 
     /**
      * Specifies the start and end time used for restoring data (yyyyMMddHHmm
@@ -314,58 +316,58 @@ public interface IConfiguration {
      *
      * @return Snapshot to be searched and restored
      */
-    public String getRestoreSnapshot();
+    String getRestoreSnapshot();
 
     /**
      * @return Get the region to connect to SDB for instance identity
      */
-    public String getSDBInstanceIdentityRegion();
+    String getSDBInstanceIdentityRegion();
 
     /**
      * @return Get the Data Center name (or region for AWS)
      */
-    public String getDC();
+    String getDC();
 
     /**
      * @param region Set the current data center
      */
-    public void setDC(String region);
+    void setDC(String region);
 
     /**
      * @return true if it is a multi regional cluster
      */
-    public boolean isMultiDC();
+    boolean isMultiDC();
 
     /**
      * @return Number of backup threads for uploading
      */
-    public int getMaxBackupUploadThreads();
+    int getMaxBackupUploadThreads();
 
     /**
      * @return Number of download threads
      */
-    public int getMaxBackupDownloadThreads();
+    int getMaxBackupDownloadThreads();
 
     /**
      * @return true if restore should search for nearest token if current token
      * is not found
      */
-    public boolean isRestoreClosestToken();
+    boolean isRestoreClosestToken();
 
     /**
      * Amazon specific setting to query ASG Membership
      */
-    public String getASGName();
+    String getASGName();
 
     /**
      * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
      */
-    public String getSiblingASGNames();
+    String getSiblingASGNames();
 
     /**
      * Get the security group associated with nodes in this cluster
      */
-    public String getACLGroupName();
+    String getACLGroupName();
 
     /**
      * @return true if incremental backups are enabled
@@ -375,12 +377,12 @@ public interface IConfiguration {
     /**
      * @return Get host IP
      */
-    public String getHostIP();
+    String getHostIP();
 
     /**
      * @return Bytes per second to throttle for backups
      */
-    public int getUploadThrottle();
+    int getUploadThrottle();
 
     /**
      * @return InstanceDataRetriever which encapsulates meta-data about the running instance like region, RAC, name, ip address etc.
@@ -395,47 +397,47 @@ public interface IConfiguration {
     /**
      * @return In memory compaction limit
      */
-    public int getInMemoryCompactionLimit();
+    int getInMemoryCompactionLimit();
 
     /**
      * @return Compaction throughput
      */
-    public int getCompactionThroughput();
+    int getCompactionThroughput();
 
     /**
      * @return compaction_throughput_mb_per_sec
      */
-    public int getMaxHintWindowInMS();
+    int getMaxHintWindowInMS();
 
     /**
      * @return hinted_handoff_throttle_in_kb
      */
-    public int getHintedHandoffThrottleKb();
+    int getHintedHandoffThrottleKb();
 
     /**
      * @return max_hints_delivery_threads
      */
-    public int getMaxHintThreads();
+    int getMaxHintThreads();
 
     /**
      * @return Size of Cassandra max direct memory
      */
-    public String getMaxDirectMemory();
+    String getMaxDirectMemory();
 
     /**
      * @return Bootstrap cluster name (depends on another cass cluster)
      */
-    public String getBootClusterName();
+    String getBootClusterName();
 
     /**
      * @return Get the name of seed provider
      */
-    public String getSeedProviderName();
+    String getSeedProviderName();
 
     /**
      * @return Get Memtable throughput settings
      */
-    public int getMemtableTotalSpaceMB();
+    int getMemtableTotalSpaceMB();
 
     /**
      * @return memtable_cleanup_threshold in C* yaml
@@ -445,54 +447,54 @@ public interface IConfiguration {
     /**
      * @return stream_throughput_outbound_megabits_per_sec in yaml
      */
-    public int getStreamingThroughputMB();
+    int getStreamingThroughputMB();
 
     /**
      * @return multithreaded_compaction in yaml
      */
-    public boolean getMultithreadedCompaction();
+    boolean getMultithreadedCompaction();
 
     /**
      * Get the paritioner for this cassandra cluster/node.
      *
      * @return the fully-qualified name of the partitioner class
      */
-    public String getPartitioner();
+    String getPartitioner();
 
     /**
      * Support for c* 1.1 global key cache size
      */
-    public String getKeyCacheSizeInMB();
+    String getKeyCacheSizeInMB();
 
     /**
      * Support for limiting the total number of keys in c* 1.1 global key cache.
      */
-    public String getKeyCacheKeysToSave();
+    String getKeyCacheKeysToSave();
 
     /**
      * Support for c* 1.1 global row cache size
      */
-    public String getRowCacheSizeInMB();
+    String getRowCacheSizeInMB();
 
     /**
      * Support for limiting the total number of rows in c* 1.1 global row cache.
      */
-    public String getRowCacheKeysToSave();
+    String getRowCacheKeysToSave();
 
     /**
      * @return C* Process Name
      */
-    public String getCassProcessName();
+    String getCassProcessName();
 
     /**
      * Defaults to 'allow all'.
      */
-    public String getAuthenticator();
+    String getAuthenticator();
 
     /**
      * Defaults to 'allow all'.
      */
-    public String getAuthorizer();
+    String getAuthorizer();
 
     /**
      * This can be used during cluster migration.
@@ -501,7 +503,7 @@ public interface IConfiguration {
      *
      * @return New Keyspace Name on Target Cluster
      */
-    public String getTargetKSName();
+    String getTargetKSName();
 
     /**
      * This can be used during cluster migration.
@@ -510,88 +512,88 @@ public interface IConfiguration {
      *
      * @return New Column Family Name on Target Cluster
      */
-    public String getTargetCFName();
+    String getTargetCFName();
 
     /**
      * @return true/false, if Cassandra needs to be started manually
      */
-    public boolean doesCassandraStartManually();
+    boolean doesCassandraStartManually();
 
     /**
      * @return possible values: all, dc, none
      */
-    public String getInternodeCompression();
+    String getInternodeCompression();
 
     /**
      * Enable/disable backup/restore of commit logs.
      * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default: false.
      */
-    public boolean isBackingUpCommitLogs();
+    boolean isBackingUpCommitLogs();
 
-    public String getCommitLogBackupPropsFile();
+    String getCommitLogBackupPropsFile();
 
-    public String getCommitLogBackupArchiveCmd();
+    String getCommitLogBackupArchiveCmd();
 
-    public String getCommitLogBackupRestoreCmd();
+    String getCommitLogBackupRestoreCmd();
 
-    public String getCommitLogBackupRestoreFromDirs();
+    String getCommitLogBackupRestoreFromDirs();
 
-    public String getCommitLogBackupRestorePointInTime();
+    String getCommitLogBackupRestorePointInTime();
 
-    public int maxCommitLogsRestore();
+    int maxCommitLogsRestore();
 
     /**
      * @return true/false, if Cassandra is running in a VPC environment
      */
-    public boolean isVpcRing();
+    boolean isVpcRing();
 
-    public void setRestoreKeySpaces(List<String> keyspaces);
+    void setRestoreKeySpaces(List<String> keyspaces);
 
-    public boolean isClientSslEnabled();
+    boolean isClientSslEnabled();
 
-    public String getInternodeEncryption();
+    String getInternodeEncryption();
 
-    public boolean isDynamicSnitchEnabled();
+    boolean isDynamicSnitchEnabled();
 
-    public boolean isThriftEnabled();
+    boolean isThriftEnabled();
 
-    public boolean isNativeTransportEnabled();
+    boolean isNativeTransportEnabled();
 
-    public int getConcurrentReadsCnt();
+    int getConcurrentReadsCnt();
 
-    public int getConcurrentWritesCnt();
+    int getConcurrentWritesCnt();
 
-    public int getConcurrentCompactorsCnt();
+    int getConcurrentCompactorsCnt();
 
-    public String getRpcServerType();
+    String getRpcServerType();
 
-    public int getRpcMinThreads();
+    int getRpcMinThreads();
 
-    public int getRpcMaxThreads();
+    int getRpcMaxThreads();
 
-    public int getIndexInterval();
+    int getIndexInterval();
 
     /*
      * @return the warning threshold in MB's for large partitions encountered during compaction.
      * Default value of 100 is used (default from cassandra.yaml)
      */
-    public int getCompactionLargePartitionWarnThresholdInMB();
+    int getCompactionLargePartitionWarnThresholdInMB();
 
-    public String getExtraConfigParams();
+    String getExtraConfigParams();
 
-    public String getCassYamlVal(String priamKey);
+    String getCassYamlVal(String priamKey);
 
-    public boolean getAutoBoostrap();
+    boolean getAutoBoostrap();
 
     //if using with Datastax Enterprise
-    public String getDseClusterType();
+    String getDseClusterType();
 
-    public boolean isCreateNewTokenEnable();
+    boolean isCreateNewTokenEnable();
 
     /*
      * @return the location on disk of the private key used by the cryptography algorithm
      */
-    public String getPrivateKeyLocation();
+    String getPrivateKeyLocation();
 
     /*
      * @return the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
@@ -605,50 +607,50 @@ public interface IConfiguration {
      * - You are restoring from Google Cloud Storage
      * 
      */
-    public String getRestoreSourceType();
+    String getRestoreSourceType();
 
     /*
      * @return true to enable encryption of backup (snapshots, incrementals, commit logs).
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
-    public boolean isEncryptBackupEnabled();
+    boolean isEncryptBackupEnabled();
 
     /**
      * Data that needs to be restored is encrypted?
      * @return true if data that needs to be restored is encrypted. Note that setting this value does not play any role until {@link #getRestoreSnapshot()} is set to a non-null value.
      */
-    public boolean isRestoreEncrypted();
+    boolean isRestoreEncrypted();
 
     /*
      * @return the Amazon Resource Name (ARN).  This is applicable when restoring from an AWS account which requires cross account assumption. 
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
-    public String getAWSRoleAssumptionArn();
+    String getAWSRoleAssumptionArn();
 
     /*
      * @return Google Cloud Storage service account id to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
-    public String getGcsServiceAccountId();
+    String getGcsServiceAccountId();
 
     /*
      * @return the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).  
      * This information is to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
-    public String getGcsServiceAccountPrivateKeyLoc();
+    String getGcsServiceAccountPrivateKeyLoc();
 
     /*
      * @return the pass phrase use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
-    public String getPgpPasswordPhrase();
+    String getPgpPasswordPhrase();
 
     /*
      * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
-    public String getPgpPublicKeyLoc();
+    String getPgpPublicKeyLoc();
 
     /**
      * Use this method for adding extra/ dynamic cassandra startup options or env properties
@@ -660,34 +662,34 @@ public interface IConfiguration {
     /*
      * @return the vpc id of the running instance.
      */
-    public String getVpcId();
+    String getVpcId();
 
     /*
      * @return the Amazon Resource Name (ARN) for EC2 classic. 
      */
-    public String getClassicEC2RoleAssumptionArn();
+    String getClassicEC2RoleAssumptionArn();
 
     /*
      * @return the Amazon Resource Name (ARN) for VPC. 
      */
-    public String getVpcEC2RoleAssumptionArn();
+    String getVpcEC2RoleAssumptionArn();
 
     /*
      * @return if the dual account support
      */
-    public boolean isDualAccount();
+    boolean isDualAccount();
 
-    public Boolean isIncrBackupParallelEnabled();
+    Boolean isIncrBackupParallelEnabled();
 
     /*
      * The number of workers for parallel uploads.
      */
-    public int getIncrementalBkupMaxConsumers();
+    int getIncrementalBkupMaxConsumers();
 
     /*
      * The max number of files queued to be uploaded.
      */
-    public int getUncrementalBkupQueueSize();
+    int getUncrementalBkupQueueSize();
 
     /**
      * @return tombstone_warn_threshold in C* yaml
@@ -709,15 +711,17 @@ public interface IConfiguration {
      *
      * @return a comma delimited list of keyspaces to flush
      */
-    public String getFlushKeyspaces();
+    String getFlushKeyspaces();
 
     /**
      * Interval to be used for flush.
      *
      * @return the interval to run the flush task.  Format is name=value where
      * “name” is an enum of hour, daily, value is ...
+     * @deprecated Use the {{@link #getFlushCronExpression()} instead.
      */
-    public String getFlushInterval();
+    @Deprecated
+    String getFlushInterval();
 
     /**
      * Scheduler type to use for flush.
@@ -725,27 +729,29 @@ public interface IConfiguration {
      * @return Type of scheduler to use for flush.  Note the default is TIMER based i.e. to use {@link #getFlushInterval()}.
      * If value of "CRON" is provided it starts using {@link #getFlushCronExpression()}.
      */
-    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
+    SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
 
     /**
-     * Cron expression to be used for flush.
+     * Cron expression to be used for flush. Use "-1" to disable the CRON. Default: -1
      *
      * @return Cron expression for flush
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    public String getFlushCronExpression();
+    default String getFlushCronExpression(){
+        return "-1";
+    }
 
     /**
      * @return the absolute path to store the backup status on disk
      */
-    public String getBackupStatusFileLoc();
+    String getBackupStatusFileLoc();
 
 
     /**
      * @return Decides whether to use sudo to start C* or not
      */
-    public boolean useSudo();
+    boolean useSudo();
 
     /**
      * SNS Notification topic to be used for sending backup event notifications.
@@ -753,39 +759,38 @@ public interface IConfiguration {
      * Default: no notifications i.e. this value is set to EMPTY VALUE
      * @return SNS Topic ARN to be used to send notification.
      */
-    public String getBackupNotificationTopicArn();
+    String getBackupNotificationTopicArn();
 
     /**
      * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called once download of files is complete, before starting Cassandra.
      * @return if post restore hook is enabled
      */
-    public boolean isPostRestoreHookEnabled();
+    boolean isPostRestoreHookEnabled();
 
     /**
      * Post restore hook to be executed
      * @return post restore hook to be executed once restore is complete
      */
-    public String getPostRestoreHook();
+    String getPostRestoreHook();
 
 
     /**
      * HeartBeat file of post restore hook
      * @return file that indicates heartbeat of post restore hook
      */
-    public String getPostRestoreHookHeartbeatFileName();
-
-
+    String getPostRestoreHookHeartbeatFileName();
+    
     /**
      * Done file for post restore hook
      * @return file that indicates completion of post restore hook
      */
-    public String getPostRestoreHookDoneFileName();
+    String getPostRestoreHookDoneFileName();
 
     /**
      * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
      * @return time out for post restore hook in days
      */
-    public int getPostRestoreHookTimeOutInDays();
+    int getPostRestoreHookTimeOutInDays();
 
     /**
      * Heartbeat timeout (in ms) for post restore hook

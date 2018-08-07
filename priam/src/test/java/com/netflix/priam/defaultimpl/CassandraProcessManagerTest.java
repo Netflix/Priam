@@ -18,8 +18,6 @@
 package com.netflix.priam.defaultimpl;
 
 
-import java.io.IOException;
-
 import com.google.inject.Guice;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
@@ -33,7 +31,7 @@ import org.junit.Test;
 import java.io.IOException;
 
 public class CassandraProcessManagerTest {
-    CassandraProcessManager cpm;
+    private CassandraProcessManager cpm;
 
     @Before
     public void setup() {

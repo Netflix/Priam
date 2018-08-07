@@ -54,7 +54,7 @@ public class S3PartUploader extends RetryableCallable<Void> {
     }
 
 
-    private Void uploadPart() throws AmazonS3Exception, AmazonClientException, BackupRestoreException {
+    private Void uploadPart() throws AmazonClientException, BackupRestoreException {
         UploadPartRequest req = new UploadPartRequest();
         req.setBucketName(dataPart.getBucketName());
         req.setKey(dataPart.getS3key());
@@ -85,7 +85,7 @@ public class S3PartUploader extends RetryableCallable<Void> {
     }
 
     @Override
-    public Void retriableCall() throws AmazonS3Exception, AmazonClientException, BackupRestoreException {
+    public Void retriableCall() throws AmazonClientException, BackupRestoreException {
         logger.debug("Picked up part {} size {}", dataPart.getPartNo(), dataPart.getPartData().length);
         return uploadPart();
     }

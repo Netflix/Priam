@@ -34,7 +34,7 @@ public interface IPriamInstanceFactory<T> {
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
-    public List<T> getAllIds(String appName);
+    List<T> getAllIds(String appName);
 
     /**
      * Return the Cassandra server node with the given {@code id}.
@@ -43,7 +43,7 @@ public interface IPriamInstanceFactory<T> {
      * @param id      the node id
      * @return the node with the given {@code id}, or {@code null} if none found
      */
-    public PriamInstance getInstance(String appName, String dc, int id);
+    PriamInstance getInstance(String appName, String dc, int id);
 
     /**
      * Create/Register an instance of the server with its info.
@@ -58,28 +58,28 @@ public interface IPriamInstanceFactory<T> {
      * @param token
      * @return the new node
      */
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
+    PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
 
     /**
      * Delete the server node from the registry
      *
      * @param inst the node to delete
      */
-    public void delete(PriamInstance inst);
+    void delete(PriamInstance inst);
 
     /**
      * Update the details of the server node in registry
      *
      * @param inst the node to update
      */
-    public void update(PriamInstance inst);
+    void update(PriamInstance inst);
 
     /**
      * Sort the list by instance ID
      *
      * @param return_ the list of nodes to sort
      */
-    public void sort(List<T> return_);
+    void sort(List<T> return_);
 
     /**
      * Attach volumes if required
@@ -88,5 +88,5 @@ public interface IPriamInstanceFactory<T> {
      * @param mountPath
      * @param device
      */
-    public void attachVolumes(PriamInstance instance, String mountPath, String device);
+    void attachVolumes(PriamInstance instance, String mountPath, String device);
 }

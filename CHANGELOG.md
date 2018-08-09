@@ -1,11 +1,14 @@
 # Changelog
+## 2018/08/09 3.11.28
+### New Feature
+* (#699) Compactions on CRON: Added ability to schedule compactions of columnfamilies on CRON. 
+* (#699) Move to cassandra-all:3.0.17
+### Deprecation 
+* (#699) Deprecate flush hour and backup hour. 
+
 ## 2018/08/03: 3.11.27
 ### Improvements
 * (#702) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
-
-## 2018/08/?? 
-### New Feature
-* (#696) Compactions on CRON: Added ability to schedule compactions of columnfamilies on CRON. 
 
 ## 2018/07/28: 3.11.26
 ### Improvements

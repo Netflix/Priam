@@ -20,8 +20,7 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.identity.InstanceIdentity;
-import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.io.util.RandomAccessReader;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -32,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -80,7 +80,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public InputStream localReader() throws IOException {
         assert backupFile != null;
-        return new RafInputStream(RandomAccessReader.open(backupFile));
+        return new RafInputStream(new RandomAccessFile(backupFile, "r"));
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException {
@@ -273,9 +273,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public static class RafInputStream extends InputStream {
-        private RandomAccessReader raf;
+        private RandomAccessFile raf;
 
-        public RafInputStream(RandomAccessReader raf) {
+        public RafInputStream(RandomAccessFile raf) {
             this.raf = raf;
         }
 
@@ -286,7 +286,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
         @Override
         public void close() {
-            FileUtils.closeQuietly(raf);
+            IOUtils.closeQuietly(raf);
         }
 
         @Override

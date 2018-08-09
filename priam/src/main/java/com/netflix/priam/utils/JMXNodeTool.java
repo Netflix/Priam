@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
+import org.apache.cassandra.repair.messages.RepairOption;
 import org.apache.cassandra.tools.NodeProbe;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -322,32 +323,21 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     }
 
     public void repair(boolean isSequential, boolean localDataCenterOnly, boolean primaryRange) throws IOException, ExecutionException, InterruptedException {
-        /**** Replace with this in 3.10 cassandra-all.
          Map<String, String> repairOptions = new HashMap<>();
-         String isParallel = !isSequential?"true":"false";
-         repairOptions.put(RepairOption.PARALLELISM_KEY, isParallel);
-         repairOptions.put(RepairOption.PRIMARY_RANGE_KEY, primaryRange+"");
+         repairOptions.put(RepairOption.PARALLELISM_KEY, Boolean.toString(!isSequential));
+         repairOptions.put(RepairOption.PRIMARY_RANGE_KEY, Boolean.toString(primaryRange));
          if (localDataCenterOnly)
-         repairOptions.put(RepairOption.DATACENTERS_KEY, getDataCenter()); */
+            repairOptions.put(RepairOption.DATACENTERS_KEY, getDataCenter());
 
         PrintStream printStream = new PrintStream("repair.log");
-        Set<String> datacenters = null;
-        if (localDataCenterOnly)
-            datacenters.add(getDataCenter());
 
         for (String keyspace : getKeyspaces())
-            forceRepairAsync(printStream, keyspace, isSequential, datacenters, null, primaryRange, true);
-            /*if (primaryRange)
-                forceKeyspaceRepairPrimaryRange(keyspace, isSequential, localDataCenterOnly, new String[0]);
-            else
-            	forceKeyspaceRepair(keyspace, isSequential, localDataCenterOnly, new String[0]);*/
-
+            repairAsync(printStream, keyspace, repairOptions);
     }
 
     public void cleanup() throws IOException, ExecutionException, InterruptedException {
         for (String keyspace : getKeyspaces())
             forceKeyspaceCleanup(0, keyspace);
-        //forceKeyspaceCleanup(keyspace, new String[0]);
     }
     
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException {

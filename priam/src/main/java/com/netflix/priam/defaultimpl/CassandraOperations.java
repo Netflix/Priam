@@ -67,7 +67,7 @@ public class CassandraOperations
         new RetryableCallable<Void>(){
             public Void retriableCall() throws Exception{
                 try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
-                        nodeTool.forceKeyspaceCompaction(keyspaceName, columnfamilies);
+                        nodeTool.forceKeyspaceCompaction(false, keyspaceName, columnfamilies);
                         return null;
                 }
             }

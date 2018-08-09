@@ -48,13 +48,12 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.utils.RetryableCallable;
 
 public class TestS3FileSystem
 {
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestS3FileSystem.class);
-    private static String FILE_PATH = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+    private static final String FILE_PATH = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException
@@ -180,7 +179,7 @@ public class TestS3FileSystem
         @Mock
         public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags)
         {
-            this.partETags = partETags;
+            MockS3PartUploader.partETags = partETags;
         }
 
         @Mock
@@ -189,7 +188,7 @@ public class TestS3FileSystem
             ++partAttempts;
             if (partFailure)
                 throw new BackupRestoreException("Test exception");
-            this.partETags.add(new PartETag(0, null));
+            partETags.add(new PartETag(0, null));
             return null;
         }
 
@@ -235,8 +234,7 @@ public class TestS3FileSystem
         }
 
         @Mock
-        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException, AmazonServiceException
-        {
+        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException {
             return new InitiateMultipartUploadResult();
         }
         

@@ -136,7 +136,6 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
             if (backupMetadata1.equals(backupMetadata)) {
                 backupMetadata1.setCompleted(backupMetadata.getCompleted());
                 backupMetadata1.setStatus(backupMetadata.getStatus());
-                return;
             }
         });
     }
@@ -165,7 +164,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      *
      * @param backupMetadata BackupMetadata to be saved
      */
-    public abstract void save(BackupMetadata backupMetadata);
+    protected abstract void save(BackupMetadata backupMetadata);
 
     /**
      * Implementation on how to retrieve the backup metadata(s) for a given date from store.
@@ -173,7 +172,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      * @param snapshotDate Snapshot date to be retrieved from datastore in format of yyyyMMdd
      * @return The list of snapshots started on the snapshot day in descending order of snapshot start time.
      */
-    public abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
+    protected abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
 
     @Override
     public String toString() {

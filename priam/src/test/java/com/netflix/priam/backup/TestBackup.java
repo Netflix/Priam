@@ -37,7 +37,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.netflix.priam.utils.CassandraMonitor;
 
 /**
  * Unit test case to test a snapshot backup and incremental backup
@@ -150,7 +149,7 @@ public class TestBackup
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
 
-    public static void generateIncrementalFiles()
+    private static void generateIncrementalFiles()
     {
         File tmp = new File("target/data/");
         if (tmp.exists())
@@ -171,7 +170,7 @@ public class TestBackup
         }
     }
 
-    public static void genTestFile(File file)
+    private static void genTestFile(File file)
     {
         try
         {
@@ -190,14 +189,14 @@ public class TestBackup
         }
     }
 
-    public static void cleanup(File dir)
+    private static void cleanup(File dir)
     {
         FileUtils.deleteQuietly(dir);
     }
 
     // Mock Nodeprobe class
     @Ignore
-    public static class MockNodeProbe extends MockUp<NodeProbe>
+    static class MockNodeProbe extends MockUp<NodeProbe>
     {
         @Mock
         public void $init(String host, int port) throws IOException, InterruptedException

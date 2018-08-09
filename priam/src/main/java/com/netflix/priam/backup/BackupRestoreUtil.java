@@ -30,12 +30,12 @@ import java.util.regex.Pattern;
  */
 public class BackupRestoreUtil {
     private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
-    public static String JOBNAME = "BackupRestoreUtil";
+    private static final String JOBNAME = "BackupRestoreUtil";
 
-    protected final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
-    protected final Map<String, Object> keyspaceFilter = new HashMap<>(); //key: keyspace, value: null
+    private final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
+    private final Map<String, Object> keyspaceFilter = new HashMap<>(); //key: keyspace, value: null
 
-    private Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
+    private final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private String configKeyspaceFilter;
     private String configColumnfamilyFilter;
 
@@ -44,7 +44,7 @@ public class BackupRestoreUtil {
         setFilters(configKeyspaceFilter, configColumnfamilyFilter);
     }
 
-    public BackupRestoreUtil setFilters(String configKeyspaceFilter, String configColumnfamilyFilter) {
+    private BackupRestoreUtil setFilters(String configKeyspaceFilter, String configColumnfamilyFilter) {
         this.configColumnfamilyFilter = configColumnfamilyFilter;
         this.configKeyspaceFilter = configKeyspaceFilter;
         populateFilters();

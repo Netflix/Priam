@@ -36,7 +36,7 @@ import java.util.Map;
 public class AuditLogTunerYaml implements IAuditLogTuner {
 
     private IDseConfiguration dseConfig;
-    protected static final String AUDIT_LOG_DSE_ENTRY = "audit_logging_options";
+    private static final String AUDIT_LOG_DSE_ENTRY = "audit_logging_options";
     private static final Logger logger = LoggerFactory.getLogger(AuditLogTunerYaml.class);
 
     @Inject

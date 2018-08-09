@@ -17,24 +17,7 @@
 
 package com.netflix.priam.backup;
 
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import mockit.Mock;
-import mockit.MockUp;
-
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
-
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
@@ -45,6 +28,15 @@ import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3FileIterator;
 import com.netflix.priam.identity.InstanceIdentity;
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Ignore;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
 
 /**
  * Unit test for backup file iterator
@@ -88,8 +80,7 @@ public class TestFileIterator
         public static String prefix = "";
         
         @Mock
-        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException
-        {
+        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(listObjectsRequest.getBucketName());
             listing.setPrefix(listObjectsRequest.getPrefix());
@@ -97,8 +88,7 @@ public class TestFileIterator
         }
 
 	@Mock
-        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException, AmazonServiceException
-        {
+        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(previousObjectListing.getBucketName());
             listing.setPrefix(previousObjectListing.getPrefix());
@@ -284,8 +274,7 @@ public class TestFileIterator
 
     public static List<S3ObjectSummary> getObjectSummaryEmpty()
     {
-        List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
-        return list;
+        return new ArrayList<S3ObjectSummary>();
     }
 
     public static List<S3ObjectSummary> getNextObjectSummary()

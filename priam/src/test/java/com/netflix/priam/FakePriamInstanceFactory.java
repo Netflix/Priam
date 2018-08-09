@@ -17,17 +17,12 @@
 
 package com.netflix.priam;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+
+import java.util.*;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance>
 {

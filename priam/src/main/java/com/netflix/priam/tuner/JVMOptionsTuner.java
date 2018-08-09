@@ -162,7 +162,6 @@ public class JVMOptionsTuner {
             option.setValue(configuration.getValue());
             upsertSet.remove(option.getJvmOption());
         }
-        ;
 
         // See if option is in exclude list.
         if (excludeSet != null && excludeSet.containsKey(option.getJvmOption()))

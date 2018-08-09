@@ -20,8 +20,6 @@ package com.netflix.priam.backup.identity;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import com.netflix.priam.utils.ITokenManager;
-import com.netflix.priam.utils.TokenManager;
 
 import org.junit.Test;
 

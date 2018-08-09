@@ -44,8 +44,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 public abstract class AbstractBackup extends Task implements EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
 
-    protected final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
-    protected final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo"));
+    private final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
+    private final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "LocationInfo"));
     protected final Provider<AbstractBackupPath> pathFactory;
 
     protected IBackupFileSystem fs;
@@ -77,7 +77,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
+    List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         for (final File file : parent.listFiles()) {
             //== decorate file with metadata
@@ -112,7 +112,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     /**
      * Upload specified file (RandomAccessFile) with retries
      *
-     * @param bp backup path to be uplaoded.
+     * @param bp backup path to be uploaded.
      */
     protected void upload(final AbstractBackupPath bp) throws Exception {
         new RetryableCallable<Void>() {
@@ -140,7 +140,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
         }.call();
     }
 
-    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws IllegalArgumentException, Exception {
+    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists()) {
@@ -185,7 +185,7 @@ public abstract class AbstractBackup extends Task implements EventGenerator<Back
     /**
      * Filters unwanted keyspaces
      */
-    public boolean isValidBackupDir(File keyspaceDir, File columnFamilyDir, File backupDir) {
+    private boolean isValidBackupDir(File keyspaceDir, File columnFamilyDir, File backupDir) {
         if (!backupDir.isDirectory() && !backupDir.exists())
             return false;
         String keyspaceName = keyspaceDir.getName();

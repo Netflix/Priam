@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.amazonaws.services.opsworkscm.model.Backup;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.IConfiguration;
@@ -30,8 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
@@ -41,15 +38,13 @@ import java.util.List;
 public class TestSnapshotStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
 
-    private static Injector injector;
     private static IBackupStatusMgr backupStatusMgr;
-    private static IConfiguration configuration;
 
     @BeforeClass
     public static void setup()  {
-        injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new BRTestModule());
         //cleanup old saved file, if any
-        configuration = injector.getInstance(IConfiguration.class);
+        IConfiguration configuration = injector.getInstance(IConfiguration.class);
         File f = new File(configuration.getBackupStatusFileLoc());
         if (f.exists())
             f.delete();

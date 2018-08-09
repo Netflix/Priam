@@ -26,5 +26,5 @@ import com.google.inject.ImplementedBy;
  */
 @ImplementedBy(NoOpMetricPublisher.class)
 public interface IMetricPublisher {
-    public void publish(IMeasurement metric);
+    void publish(IMeasurement metric);
 }

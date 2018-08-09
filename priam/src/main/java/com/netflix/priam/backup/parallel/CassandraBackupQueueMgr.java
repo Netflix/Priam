@@ -43,8 +43,8 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
 
     private static final Logger logger = LoggerFactory.getLogger(CassandraBackupQueueMgr.class);
 
-    BlockingQueue<AbstractBackupPath> tasks; //A queue of files to be uploaded
-    AbstractSet<String> tasksQueued; //A queue to determine what files have been queued, used for deduplication
+    private BlockingQueue<AbstractBackupPath> tasks; //A queue of files to be uploaded
+    private AbstractSet<String> tasksQueued; //A queue to determine what files have been queued, used for deduplication
 
     @Inject
     public CassandraBackupQueueMgr(IConfiguration config) {
@@ -73,7 +73,6 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
             logger.debug("Already in queue, no-op.  File: {}", task.getRemotePath());
         }
 
-        return;
     }
 
     @Override

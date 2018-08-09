@@ -530,8 +530,7 @@ public class BackupServlet {
             Callable<Integer> callable = new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    int returnCode = p.waitFor();
-                    return returnCode;
+                    return p.waitFor();
                 }
             };
 

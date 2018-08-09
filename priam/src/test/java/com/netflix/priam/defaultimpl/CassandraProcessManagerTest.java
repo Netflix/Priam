@@ -22,7 +22,6 @@ import java.io.IOException;
 import com.google.inject.Guice;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.utils.FakeSleeper;
 import org.junit.Before;
 import org.junit.Test;
 

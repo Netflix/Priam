@@ -22,14 +22,12 @@ import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.restore.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
-import com.netflix.priam.cluster.management.FlushTask;
+import com.netflix.priam.cluster.management.Compaction;
+import com.netflix.priam.cluster.management.Flush;
+import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
-import com.netflix.priam.restore.EncryptedRestoreStrategy;
-import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -65,7 +63,7 @@ public class PriamServer {
         this.restoreContext = restoreContext;
     }
 
-    public void intialize() throws Exception {
+    public void initialize() throws Exception {
         if (id.getInstance().isOutOfService())
             return;
 
@@ -111,7 +109,7 @@ public class PriamServer {
 
 
         // Determine if we need to restore from backup else start cassandra.
-        if (restoreContext.isRestoreEnabled()){
+        if (restoreContext.isRestoreEnabled()) {
             restoreContext.restore();
         } else { //no restores needed
             logger.info("No restore needed, task not scheduled");
@@ -134,10 +132,17 @@ public class PriamServer {
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
 
         //Set up nodetool flush task
-        TaskTimer flushTaskTimer = FlushTask.getTimer(config);
+        TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
-            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, flushTaskTimer);
+            scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
+        }
+
+        //Set up compaction task
+        TaskTimer compactionTimer = Compaction.getTimer(config);
+        if (compactionTimer != null) {
+            scheduler.addTask(IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
+            logger.info("Added compaction task.");
         }
     }
 

@@ -37,7 +37,6 @@ import java.util.Map;
 public class FileSnapshotStatusMgr extends BackupStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(FileSnapshotStatusMgr.class);
     private static final int IN_MEMORY_SNAPSHOT_CAPACITY = 60;
-    private IConfiguration config;
     private String filename;
 
     /**
@@ -49,8 +48,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
     @Inject
     public FileSnapshotStatusMgr(IConfiguration config, InstanceState instanceState) {
         super(IN_MEMORY_SNAPSHOT_CAPACITY, instanceState); //Fetch capacity from properties, if required.
-        this.config = config;
-        this.filename = this.config.getBackupStatusFileLoc();
+        this.filename = config.getBackupStatusFileLoc();
         init();
     }
 

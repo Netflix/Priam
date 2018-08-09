@@ -104,7 +104,7 @@ public class TestBackupFile
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        String datestr = backupfile.formatDate(new Date(bfile.lastModified()));
+        String datestr = AbstractBackupPath.formatDate(new Date(bfile.lastModified()));
         Assert.assertEquals("casstestbackup/"+FakeConfiguration.FAKE_REGION+"/fake-app/1234567/" + datestr + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 

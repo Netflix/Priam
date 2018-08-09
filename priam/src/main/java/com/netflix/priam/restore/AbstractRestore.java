@@ -25,7 +25,6 @@ import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
@@ -36,12 +35,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.channels.FileChannel;
-import java.nio.channels.FileLock;
-import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * A means to perform a restore.  This class contains the following characteristics:
@@ -52,13 +47,13 @@ import java.util.concurrent.ThreadPoolExecutor;
 public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     // keeps track of the last few download which was executed.
     // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
-    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
+    static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String JOBNAME = "AbstractRestore";
     private static final String SYSTEM_KEYSPACE = "system";
-    public static BigInteger restoreToken;
-    protected final IBackupFileSystem fs;
-    protected final Sleeper sleeper;
+    private static BigInteger restoreToken;
+    final IBackupFileSystem fs;
+    final Sleeper sleeper;
     private BackupRestoreUtil backupRestoreUtil;
     private Provider<AbstractBackupPath> pathProvider;
     private InstanceIdentity id;
@@ -68,10 +63,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     private MetaData metaData;
     private IPostRestoreHook postRestoreHook;
 
-    public AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
-                           Provider<AbstractBackupPath> pathProvider,
-                           InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector,
-                           ICassandraProcess cassProcess, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
+    AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
+                    Provider<AbstractBackupPath> pathProvider,
+                    InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector,
+                    ICassandraProcess cassProcess, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
@@ -145,12 +140,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
     }
 
 
-    protected final void stopCassProcess() throws IOException {
+    private void stopCassProcess() throws IOException {
         if (config.getRestoreKeySpaces().size() == 0)
             cassProcess.stop(true);
     }
 
-    protected final String getRestorePrefix() {
+    private String getRestorePrefix() {
         String prefix = "";
 
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
@@ -291,7 +286,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             instanceState.setRestoreStatus(Status.FINISHED);
 
             //Start cassandra if restore is successful.
-            cassProcess.start(true);
+            if (!config.doesCassandraStartManually())
+                cassProcess.start(true);
+            else
+                logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
@@ -315,11 +313,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
      */
     protected abstract void waitToComplete();
 
-    public final class BoundedList<E> extends LinkedList<E> {
+    final class BoundedList<E> extends LinkedList<E> {
 
         private final int limit;
 
-        public BoundedList(int limit) {
+        BoundedList(int limit) {
             this.limit = limit;
         }
 

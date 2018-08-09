@@ -32,7 +32,7 @@ import java.io.IOException;
  */
 @Singleton
 public class TuneCassandra extends Task {
-    public static final String JOBNAME = "Tune-Cassandra";
+    private static final String JOBNAME = "Tune-Cassandra";
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
     private final ICassandraTuner tuner;
     private InstanceState instanceState;
@@ -44,7 +44,7 @@ public class TuneCassandra extends Task {
         this.instanceState = instanceState;
     }
 
-    public void execute() throws IOException, Exception {
+    public void execute() throws Exception {
 
         boolean isDone = false;
 

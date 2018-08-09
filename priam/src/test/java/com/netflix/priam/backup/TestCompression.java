@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
-import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -43,7 +42,7 @@ public class TestCompression
 {
 
     @Before
-    public void setup() throws UnsupportedEncodingException, IOException
+    public void setup() throws IOException
     {
         File f = new File("/tmp/compress-test.txt");
         FileOutputStream stream = new FileOutputStream(f);
@@ -159,12 +158,12 @@ public class TestCompression
     }
 
     @Test
-    public void compress() throws FileNotFoundException, IOException
+    public void compress() throws IOException
     {
         SnappyCompression compress = new SnappyCompression();
         File file = new File(new File("/tmp/compress-test.txt"), "r");
         long chunkSize = 5L*1024*1024;
-        Iterator<byte[]> it = compress.compress(new AbstractBackupPath.RafInputStream(RandomAccessReader.open(file)), chunkSize);
+        Iterator<byte[]> it = compress.compress(new AbstractBackupPath.RafInputStream(new RandomAccessFile(file, "r")), chunkSize);
         FileOutputStream ostream = new FileOutputStream("/tmp/test1.snp");
         while (it.hasNext())
         {
@@ -176,7 +175,7 @@ public class TestCompression
     }
 
     @Test
-    public void decompress() throws FileNotFoundException, IOException
+    public void decompress() throws IOException
     {
         SnappyCompression compress = new SnappyCompression();
         compress.decompressAndClose(new FileInputStream("/tmp/test1.snp"), new FileOutputStream("/tmp/compress-test-out-2.txt"));

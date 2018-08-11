@@ -57,7 +57,7 @@ public class S3BackupPath extends AbstractBackupPath {
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (BackupFileType.isDataFile(type)) {
             if (isCassandra1_0)
                 buff.append(keyspace).append(S3BackupPath.PATH_SEP);
             else
@@ -86,7 +86,7 @@ public class S3BackupPath extends AbstractBackupPath {
         token = pieces.get(3);
         time = parseDate(pieces.get(4));
         type = BackupFileType.valueOf(pieces.get(5));
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (BackupFileType.isDataFile(type)) {
             keyspace = pieces.get(6);
             if (!isCassandra1_0)
                 columnFamily = pieces.get(7);

@@ -280,7 +280,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             instanceState.setRestoreStatus(Status.FINISHED);
 
             //Start cassandra if restore is successful.
-            cassProcess.start(true);
+            if (!config.doesCassandraStartManually())
+                cassProcess.start(true);
+            else
+                logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());

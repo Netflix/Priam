@@ -24,7 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class DseConfigStub implements IDseConfiguration {
-    boolean auditLogEnabled;
+    private boolean auditLogEnabled;
 
     public String getDseYamlLocation() {
         return new FakeConfiguration().getCassHome() + "/resources/dse/conf/dse.yaml";

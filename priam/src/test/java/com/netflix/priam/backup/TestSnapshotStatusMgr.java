@@ -38,15 +38,13 @@ import java.util.List;
 public class TestSnapshotStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
 
-    private static Injector injector;
     private static IBackupStatusMgr backupStatusMgr;
-    private static IConfiguration configuration;
 
     @BeforeClass
     public static void setup() {
-        injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new BRTestModule());
         //cleanup old saved file, if any
-        configuration = injector.getInstance(IConfiguration.class);
+        IConfiguration configuration = injector.getInstance(IConfiguration.class);
         File f = new File(configuration.getBackupStatusFileLoc());
         if (f.exists())
             f.delete();

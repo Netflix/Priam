@@ -15,14 +15,11 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.health.InstanceState;
@@ -30,14 +27,11 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
-import org.apache.commons.io.IOUtils;
 import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.util.*;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -125,7 +119,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
                     logger.info("Start uncompressing file: {} to the FINAL destination stream", decryptedFile.getAbsolutePath());
 
                     try(InputStream is = new BufferedInputStream(new FileInputStream(decryptedFile));
-                    BufferedOutputStream finalDestination = new BufferedOutputStream(new FileOutputStream(restoreLocation))) {
+                        BufferedOutputStream finalDestination = new BufferedOutputStream(new FileOutputStream(restoreLocation))) {
                         compress.decompressAndClose(is, finalDestination);
                     } catch (Exception ex) {
                         throw new Exception("Exception uncompressing file: " + decryptedFile.getAbsolutePath() + " to the FINAL destination stream", ex);

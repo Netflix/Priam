@@ -16,8 +16,6 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -25,32 +23,20 @@ import com.google.inject.name.Named;
 import com.netflix.priam.ICassandraProcess;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
-import com.netflix.priam.backup.Status;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.Collections;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 

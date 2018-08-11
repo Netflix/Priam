@@ -24,7 +24,9 @@ import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
-import com.netflix.priam.cluster.management.FlushTask;
+import com.netflix.priam.cluster.management.Compaction;
+import com.netflix.priam.cluster.management.Flush;
+import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
@@ -65,7 +67,7 @@ public class PriamServer {
         this.restoreContext = restoreContext;
     }
 
-    public void intialize() throws Exception {
+    public void initialize() throws Exception {
         if (id.getInstance().isOutOfService())
             return;
 
@@ -133,10 +135,17 @@ public class PriamServer {
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
 
         //Set up nodetool flush task
-        TaskTimer flushTaskTimer = FlushTask.getTimer(config);
+        TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
-            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, flushTaskTimer);
+            scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
+        }
+
+        //Set up compaction task
+        TaskTimer compactionTimer = Compaction.getTimer(config);
+        if (compactionTimer != null) {
+            scheduler.addTask(IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
+            logger.info("Added compaction task.");
         }
 
         //Set up the SnapshotService

@@ -24,7 +24,6 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.util.Arrays;
@@ -36,11 +35,11 @@ public class FakeConfiguration implements IConfiguration {
 
     public static final String FAKE_REGION = "us-east-1";
 
-    public String region;
-    public String appName;
+    private String region;
+    private String appName;
     public String zone;
     public String instance_id;
-    public String restorePrefix;
+    private String restorePrefix;
 
     public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
@@ -781,11 +780,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
         return SchedulerType.HOUR;
-    }
-
-    @Override
-    public String getFlushCronExpression() {
-        return null;
     }
 
     @Override

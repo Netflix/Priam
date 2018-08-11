@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 @ImplementedBy(S3BackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {

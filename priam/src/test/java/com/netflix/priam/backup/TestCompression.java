@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
 public class TestCompression {
 
     @Before
-    public void setup() throws UnsupportedEncodingException, IOException {
+    public void setup() throws IOException {
         File f = new File("/tmp/compress-test.txt");
         FileOutputStream stream = new FileOutputStream(f);
         for (int i = 0; i < (1000 * 1000); i++) {
@@ -59,7 +59,7 @@ public class TestCompression {
             f.delete();
     }
 
-    void validateCompression(String uncompress, String compress) {
+    private void validateCompression(String uncompress, String compress) {
         File uncompressed = new File(uncompress);
         File compressed = new File(compress);
         assertTrue(uncompressed.length() > compressed.length());
@@ -145,7 +145,7 @@ public class TestCompression {
     }
 
     @Test
-    public void compress() throws FileNotFoundException, IOException {
+    public void compress() throws IOException {
         SnappyCompression compress = new SnappyCompression();
         File file = new File(new File("/tmp/compress-test.txt"), "r");
         long chunkSize = 5L * 1024 * 1024;
@@ -160,7 +160,7 @@ public class TestCompression {
     }
 
     @Test
-    public void decompress() throws FileNotFoundException, IOException {
+    public void decompress() throws IOException {
         SnappyCompression compress = new SnappyCompression();
         compress.decompressAndClose(new FileInputStream("/tmp/test1.snp"), new FileOutputStream("/tmp/compress-test-out-2.txt"));
         String md1 = SystemUtils.md5(new File("/tmp/compress-test.txt"));

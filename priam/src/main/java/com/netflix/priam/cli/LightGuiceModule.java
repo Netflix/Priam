@@ -39,14 +39,8 @@ class LightGuiceModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(IConfiguration.class).to(PriamConfiguration.class).asEagerSingleton();
-        bind(ICredential.class).to(ClearCredential.class);
-        bind(IPriamInstanceFactory.class).to(SDBInstanceFactory.class);
         bind(IMembership.class).to(StaticMembership.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
-        bind(AbstractBackupPath.class).to(S3BackupPath.class);
-        bind(ICompression.class).to(SnappyCompression.class);
-        bind(Sleeper.class).to(ThreadSleeper.class);
-        bind(ITokenManager.class).to(TokenManager.class);
     }
 }
 

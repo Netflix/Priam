@@ -26,7 +26,7 @@ public interface IDseConfiguration {
     /**
      * Using Datastax's terms here for the different types of nodes.
      */
-    public enum NodeType {
+    enum NodeType {
         /**
          * vanilla Cassandra node
          */
@@ -54,7 +54,7 @@ public interface IDseConfiguration {
 
         private final String altName;
 
-        private NodeType(String altName) {
+        NodeType(String altName) {
             this.altName = altName;
         }
 
@@ -66,8 +66,6 @@ public interface IDseConfiguration {
             throw new IllegalArgumentException("Unknown node type: " + altName);
         }
     }
-
-    ;
 
     String getDseYamlLocation();
 
@@ -88,11 +86,9 @@ public interface IDseConfiguration {
      * DSE-defined audit logging categories
      * http://www.datastax.com/docs/datastax_enterprise3.1/security/data_auditing#data-auditing
      */
-    public enum AuditLogCategory {
+    enum AuditLogCategory {
         ADMIN, ALL, AUTH, DML, DDL, DCL, QUERY
     }
-
-    ;
 
     Set<AuditLogCategory> getAuditLogCategories();
 }

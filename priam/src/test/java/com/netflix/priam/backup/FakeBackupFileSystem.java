@@ -39,6 +39,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem {
     public String baseDir, region, clusterName;
 
     @Inject
+    private
     Provider<S3BackupPath> pathProvider;
 
     public void setupTest(List<String> files) {
@@ -60,7 +61,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem {
         uploadedFiles = new HashSet<String>();
     }
 
-    public void clearTest() {
+    private void clearTest() {
         if (flist != null)
             flist.clear();
         if (downloadedFiles != null)

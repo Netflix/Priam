@@ -25,9 +25,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Singleton
 public class CassMonitorMetrics implements  ICassMonitorMetrics {
 
-    AtomicInteger cassStop = new AtomicInteger(),
-            cassAutoStart = new AtomicInteger(),
-            cassStart = new AtomicInteger();
+    private AtomicInteger cassStop = new AtomicInteger();
+    private AtomicInteger cassAutoStart = new AtomicInteger();
+    private AtomicInteger cassStart = new AtomicInteger();
 
 
     @Override

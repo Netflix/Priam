@@ -19,13 +19,13 @@ public interface GoogleEncryptedFileSystemMBean {
 
     String MBEAN_NAME = "com.priam.google.GoogleEncryptedFileSystemMBean:name=GoogleEncryptedFileSystemMBean";
 
-    public int downloadCount();
+    int downloadCount();
 
-    public int uploadCount();
+    int uploadCount();
 
-    public int getActivecount();
+    int getActivecount();
 
-    public long bytesUploaded();
+    long bytesUploaded();
 
-    public long bytesDownloaded();
+    long bytesDownloaded();
 }

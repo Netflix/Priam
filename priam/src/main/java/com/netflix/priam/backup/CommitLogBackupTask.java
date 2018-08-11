@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -40,7 +39,7 @@ public class CommitLogBackupTask extends AbstractBackup {
 
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackupTask.class);
     private final List<String> clRemotePaths = new ArrayList<String>();
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final CommitLogBackup clBackup;
 
 

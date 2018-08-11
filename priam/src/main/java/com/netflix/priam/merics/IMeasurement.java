@@ -22,29 +22,28 @@ package com.netflix.priam.merics;
  */
 public interface IMeasurement<T> {
 
-    public MMEASUREMENT_TYPE getType();
+    MMEASUREMENT_TYPE getType();
 
-    public void incrementFailureCnt(int i);
+    void incrementFailureCnt(int i);
 
-    public int getFailureCnt();
+    int getFailureCnt();
 
-    public void incrementSuccessCnt(int i);
+    void incrementSuccessCnt(int i);
 
-    public int getSuccessCnt();
+    int getSuccessCnt();
 
     /*
     @return a user defined representation of a valuue.
      */
-    public T getVal();
+    T getVal();
 
     /*
     @param a user defined representation of what you think is a value.
      */
-    public void setVal(T val);
+    void setVal(T val);
 
-    public enum MMEASUREMENT_TYPE {
-        NOOP, NODETOOLFLUSH, SNAPSHOTBACKUP, BACKUPUPLOADRATE, SNAPSHOTBACKUPUPNOTIFICATION, AWSSLOWDOWNEXCEPTION;
+    enum MMEASUREMENT_TYPE {
+        NOOP, NODETOOLFLUSH, COMPACTION, SNAPSHOTBACKUP, BACKUPUPLOADRATE, SNAPSHOTBACKUPUPNOTIFICATION, AWSSLOWDOWNEXCEPTION
     }
 
-    ;
 }

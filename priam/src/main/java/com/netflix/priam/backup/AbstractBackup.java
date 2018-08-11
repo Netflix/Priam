@@ -109,7 +109,7 @@ public abstract class AbstractBackup extends Task {
     /**
      * Upload specified file (RandomAccessFile) with retries
      *
-     * @param bp backup path to be uplaoded.
+     * @param bp backup path to be uploaded.
      */
     protected void upload(final AbstractBackupPath bp) throws Exception {
         new RetryableCallable<Void>() {
@@ -137,7 +137,7 @@ public abstract class AbstractBackup extends Task {
         }.call();
     }
 
-    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws IllegalArgumentException, Exception {
+    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists()) {

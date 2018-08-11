@@ -31,5 +31,6 @@ public interface INotificationService {
      *
      * @param msg Message that needs to be notified
      */
-    public void notify(String msg, Map<String, MessageAttributeValue> messageAttributes);
+    void notify(String msg, Map<String, MessageAttributeValue> messageAttributes);
+
 }

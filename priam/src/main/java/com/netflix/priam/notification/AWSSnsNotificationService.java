@@ -52,7 +52,7 @@ public class AWSSnsNotificationService implements INotificationService {
 			, IMetricPublisher metricPublisher) {
 		this.configuration = config;
 		this.metricPublisher = metricPublisher;
-		this.notificationMeasurement = new NoticationMeasurement();
+		this.notificationMeasurement = new NotificationMeasurement();
 		String ec2_region = this.configuration.getDC();
 		snsClient = AmazonSNSClient.builder()
 				.withCredentials(iamCredential.getAwsCredentialProvider())
@@ -99,11 +99,11 @@ public class AWSSnsNotificationService implements INotificationService {
 		}
 	}
 	
-	public class NoticationMeasurement implements IMeasurement<Object> {
-		private int falureCnt = 0, successCnt = 0;
+	public class NotificationMeasurement implements IMeasurement<Object> {
+		private int failureCnt = 0, successCnt = 0;
 		@Override
 		public int getFailureCnt() {
-			return this.falureCnt;
+			return this.failureCnt;
 		}
 		@Override
 		public int getSuccessCnt() {
@@ -122,7 +122,7 @@ public class AWSSnsNotificationService implements INotificationService {
 
 		@Override
 		public void incrementFailureCnt(int val) {
-			this.falureCnt += val;
+			this.failureCnt += val;
 		}
 
 		@Override

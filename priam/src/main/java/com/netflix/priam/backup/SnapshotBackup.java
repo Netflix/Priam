@@ -29,8 +29,6 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.ThreadSleeper;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +44,9 @@ public class SnapshotBackup extends AbstractBackup {
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
-    private final CommitLogBackup clBackup;
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
@@ -59,12 +56,11 @@ public class SnapshotBackup extends AbstractBackup {
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
-                          MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
+                          MetaData metaData, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
             , InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
-        this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
         this.cassandraOperations = cassandraOperations;
@@ -115,7 +111,7 @@ public class SnapshotBackup extends AbstractBackup {
             }
 
         } catch (Exception e) {
-            logger.error("Exception occured while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
+            logger.error("Exception occurred while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
             snapshotStatusMgr.failed(backupMetadata);
             throw e;
         } finally {
@@ -141,40 +137,22 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static boolean isBackupEnabled(IConfiguration config) throws Exception {
-        switch (config.getBackupSchedulerType()) {
-            case HOUR:
-                if (config.getBackupHour() < 0)
-                    return false;
-                break;
-            case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1"))
-                    return false;
-                if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
-                    throw new Exception("Invalid CRON expression: " + cronExpression +
-                            ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
-                break;
-        }
-        return true;
+        return (getTimer(config) != null);
     }
 
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-        if (!isBackupEnabled(config))
-        {
-            logger.info("Skipping snapshot backup as it is disabled.");
-            return null;
-        }
-
         CronTimer cronTimer = null;
         switch (config.getBackupSchedulerType()) {
             case HOUR:
-                cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
-                logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                if (config.getBackupHour() < 0)
+                    logger.info("Skipping {} as it is disabled via backup hour: {}", JOBNAME, config.getBackupHour());
+                else {
+                    cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
+                    logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                }
                 break;
             case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-                logger.info("Starting snapshot backup with CRON expression {}", cronTimer.getCronExpression());
+                cronTimer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
                 break;
         }
         return cronTimer;
@@ -188,7 +166,7 @@ public class SnapshotBackup extends AbstractBackup {
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating snapshot observers now ...");

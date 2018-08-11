@@ -18,10 +18,12 @@ package com.netflix.priam.defaultimpl;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
+import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
+import java.util.*;
 
 /**
  * This class encapsulates interactions with Cassandra.
@@ -80,6 +82,55 @@ public class CassandraOperations {
                 JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
                 nodetool.clearSnapshot(snapshotTag);
                 return null;
+            }
+        }.call();
+    }
+
+
+    public List<String> getKeyspaces() throws Exception{
+        return new RetryableCallable<List<String>>(){
+            public List<String> retriableCall() throws Exception{
+                try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                    return nodeTool.getKeyspaces();
+                }
+            }
+        }.call();
+    }
+
+    public Map<String, List<String>> getColumnfamilies() throws Exception{
+        return new RetryableCallable<Map<String, List<String>>>(){
+            public Map<String, List<String>> retriableCall() throws Exception{
+                try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                    final Map<String, List<String>> columnfamilies = new HashMap<>();
+                    Iterator<Map.Entry<String, ColumnFamilyStoreMBean>> columnfamilyStoreMBean = nodeTool.getColumnFamilyStoreMBeanProxies();
+                    columnfamilyStoreMBean.forEachRemaining(entry -> {
+                     columnfamilies.putIfAbsent(entry.getKey(), new ArrayList<>());
+                     columnfamilies.get(entry.getKey()).add(entry.getValue().getColumnFamilyName());
+                    });
+                    return columnfamilies;
+                }
+            }
+        }.call();
+    }
+
+    public void forceKeyspaceCompaction(String keyspaceName, String... columnfamilies) throws Exception{
+        new RetryableCallable<Void>(){
+            public Void retriableCall() throws Exception{
+                try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                        nodeTool.forceKeyspaceCompaction(keyspaceName, columnfamilies);
+                        return null;
+                }
+            }
+        }.call();
+    }
+
+    public void forceKeyspaceFlush(String keyspaceName) throws Exception{
+        new RetryableCallable<Void>(){
+            public Void retriableCall() throws Exception{
+                try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                   nodeTool.forceKeyspaceFlush(keyspaceName, new String[0]);
+                    return null;
+                }
             }
         }.call();
     }

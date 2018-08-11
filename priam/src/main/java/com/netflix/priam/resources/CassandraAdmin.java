@@ -439,7 +439,6 @@ public class CassandraAdmin {
         throw new UnsupportedOperationException("Need to use C* 2.x apis.");
 
     	/* * * * * Will refactor later to use 2.x C* apis, comment out for now for success compilation...
-
         JMXNodeTool nodetool = null;
 		try {
 			nodetool = JMXNodeTool.instance(config);
@@ -459,7 +458,6 @@ public class CassandraAdmin {
         };
         if (hosts.size() == 0)
             rootObj.put("sending", "Not sending any streams.");
-
         JSONObject hostSendStats = new JSONObject();
         for (InetAddress host : hosts)
         {
@@ -479,7 +477,6 @@ public class CassandraAdmin {
                 hostSendStats.put(host.getHostAddress(), "Error retrieving file data");
             }
         }
-
         rootObj.put("hosts sending", hostSendStats);
         hosts = addr == null ? nodetool.getStreamSources() : new HashSet<InetAddress>()
         {
@@ -489,7 +486,6 @@ public class CassandraAdmin {
         };
         if (hosts.size() == 0)
             rootObj.put("receiving", "Not receiving any streams.");
-
         JSONObject hostRecvStats = new JSONObject();
         for (InetAddress host : hosts)
         {
@@ -510,7 +506,6 @@ public class CassandraAdmin {
             }
         }
         rootObj.put("hosts receiving", hostRecvStats);
-
         MessagingServiceMBean ms = nodetool.msProxy;
         int pending;
         long completed;
@@ -525,7 +520,6 @@ public class CassandraAdmin {
         cObj.put("pending", pending);
         cObj.put("completed", completed);
         rootObj.put("commands", cObj);
-
         pending = 0;
         for (int n : ms.getResponsePendingTasks().values())
             pending += n;
@@ -538,7 +532,7 @@ public class CassandraAdmin {
         rObj.put("completed", completed);
         rootObj.put("responses", rObj);
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
-        
+
         * * */
     }
 

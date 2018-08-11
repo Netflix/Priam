@@ -1,8 +1,9 @@
 # Changelog
 
-## 2018/08/?? 
+## 2018/08/13 3.1.59 
 ### New Feature
 * (#671) Compactions on CRON: Added ability to schedule compactions for columnfamilies on CRON. 
+* (#691) Snapshot Meta Service: This will form the basis of backup version 2. This service will run on CRON and will ensure we upload a meta file containing the list of SSTables on disk. 
 * (#703) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
 
 ## 2018/07/28: 3.1.58

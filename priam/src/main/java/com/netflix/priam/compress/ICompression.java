@@ -25,6 +25,11 @@ import java.util.Iterator;
 
 @ImplementedBy(SnappyCompression.class)
 public interface ICompression {
+
+    enum CompressionAlgorithm {
+        SNAPPY, LZ4, NONE
+    }
+
     /**
      * Uncompress the input stream and write to the output stream.
      * Closes both input and output streams

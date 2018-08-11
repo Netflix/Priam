@@ -150,7 +150,7 @@ public class CassandraMonitor extends Task {
         return JOBNAME;
     }
 
-    public static Boolean isCassadraStarted() {
+    public static Boolean hasCassadraStarted() {
         return isCassandraStarted.get();
     }
 

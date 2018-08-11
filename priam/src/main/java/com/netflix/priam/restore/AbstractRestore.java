@@ -92,12 +92,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
                 continue;
 
-            if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, temp.getKeyspace())) { //keyspace filtered?
-                logger.info("Bypassing restoring file \"{}\" as its keyspace: \"{}\" is part of the filter list", temp.newRestoreFile(), temp.getKeyspace());
-                continue;
-            }
-
-            if (backupRestoreUtil.isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, temp.getKeyspace(), temp.getColumnFamily())) {
+            if (backupRestoreUtil.isFiltered(temp.getKeyspace(), temp.getColumnFamily())) { //is filtered?
                 logger.info("Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
                         temp.newRestoreFile(), temp.getKeyspace(), temp.getColumnFamily());
                 continue;

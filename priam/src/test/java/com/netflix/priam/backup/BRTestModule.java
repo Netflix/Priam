@@ -25,6 +25,10 @@ import com.netflix.priam.*;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;
+
+import com.netflix.priam.config.FakeBackupRestoreConfig;
+import com.netflix.priam.config.IBackupRestoreConfig;
+
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.defaultimpl.FakeCassandraProcess;
@@ -46,6 +50,8 @@ public class BRTestModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(IConfiguration.class).toInstance(new FakeConfiguration(FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
+        bind(IBackupRestoreConfig.class).to(FakeBackupRestoreConfig.class);
+
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));

@@ -491,7 +491,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     /**
-     * @return Enables Remote JMX connections in C*
+     * @return Enables Remote JMX connections n C*
      */
     @Override
     public boolean enableRemoteJMX() {

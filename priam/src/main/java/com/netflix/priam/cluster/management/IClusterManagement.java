@@ -28,6 +28,7 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by vinhn on 10/12/16.
  */
+
 public abstract class IClusterManagement<T> extends Task {
     public enum Task {FLUSH, COMPACTION}
 

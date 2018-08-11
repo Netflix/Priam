@@ -168,10 +168,8 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-
     @Override
-    public int getBackupHour()
-    {
+    public int getBackupHour() {
         // TODO Auto-generated method stub
         return 12;
     }

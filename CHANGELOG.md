@@ -1,4 +1,8 @@
 # Changelog
+## 2018/08/13 3.11.29
+### New Feature
+* (#705) Snapshot Meta Service: This will form the basis of backup version 2. This service will run on CRON and will ensure we upload a meta file containing the list of SSTables on disk. 
+
 ## 2018/08/09 3.11.28
 ### New Feature
 * (#699) Compactions on CRON: Added ability to schedule compactions of columnfamilies on CRON. 

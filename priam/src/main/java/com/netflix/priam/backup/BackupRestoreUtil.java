@@ -17,7 +17,9 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +40,9 @@ public class BackupRestoreUtil {
     private final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private String configKeyspaceFilter;
     private String configColumnfamilyFilter;
+
+    public static final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
+    private static final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "compactions_in_progress", "LocationInfo"));
 
     @Inject
     public BackupRestoreUtil(String configKeyspaceFilter, String configColumnfamilyFilter) {
@@ -118,10 +123,32 @@ public class BackupRestoreUtil {
     }
 
     /**
+     * Returns if provided keyspace and/or columnfamily is filtered for backup or restore.
+     * @param keyspace name of the keyspace in consideration
+     * @param columnFamilyDir name of the columnfamily directory in consideration
+     * @return true if directory should be filter from processing; otherwise, false.
+     */
+    public final boolean isFiltered(String keyspace, String columnFamilyDir){
+        if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir))
+            return false;
+
+        String columnFamilyName = columnFamilyDir.split("-")[0];
+        if (isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspace) || //keyspace is filtered
+                isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspace, columnFamilyDir) //columnfamily is filtered
+                || (FILTER_COLUMN_FAMILY.containsKey(keyspace) && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName)) //column family is in list of global CF filter
+                ) {
+            logger.debug("Skipping: keyspace: {}, CF: {} is part of filter list.", keyspace, columnFamilyName);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
      * @param directoryType keyspace or columnfamily directory type.
      * @return true if directory should be filter from processing; otherwise, false.
      */
-    public final boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
+    private final boolean isFiltered(DIRECTORYTYPE directoryType, String... args) {
 
         if (directoryType.equals(DIRECTORYTYPE.KEYSPACE)) { //start with filtering the parent (keyspace)
             //Apply each keyspace filter to input string

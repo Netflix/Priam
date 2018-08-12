@@ -17,6 +17,7 @@
 package com.netflix.priam.notification;
 
 import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.netflix.priam.IConfiguration;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -31,6 +32,8 @@ import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+
+import java.util.Map;
 
 /*
  * A single, persisted, connection to Amazon SNS.
@@ -57,7 +60,7 @@ public class AWSSnsNotificationService implements INotificationService {
 	}
 	
 	@Override
-	public void notify(final String msg) {
+	public void notify(final String msg, final Map<String, MessageAttributeValue> messageAttributes) {
 		final String topic_arn = this.configuration.getBackupNotificationTopicArn(); //e.g. arn:aws:sns:eu-west-1:1234:eu-west-1-cass-sample-backup
 		if (StringUtils.isEmpty(topic_arn)) {
 			return;
@@ -68,8 +71,9 @@ public class AWSSnsNotificationService implements INotificationService {
 			publishResult = new BoundedExponentialRetryCallable<PublishResult>() {
 				@Override
 				public PublishResult retriableCall() throws Exception {
-					PublishRequest publishRequest = new PublishRequest(topic_arn, msg);
-					return snsClient.publish(publishRequest);
+					PublishRequest publishRequest = new PublishRequest(topic_arn, msg).withMessageAttributes(messageAttributes);
+					PublishResult result = snsClient.publish(publishRequest);
+					return result;
 				}
 			}.call();
 			

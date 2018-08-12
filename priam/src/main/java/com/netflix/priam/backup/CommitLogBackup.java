@@ -72,7 +72,7 @@ public class CommitLogBackup {
                         if (snapshotName != null)
                             bp.time = bp.parseDate(snapshotName);
                         upload(bp);
-                        file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operaion fails
+                        file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operation fails
                         return bp;
                     }
                 }

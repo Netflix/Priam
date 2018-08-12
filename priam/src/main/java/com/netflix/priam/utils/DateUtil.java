@@ -22,9 +22,11 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.http.client.utils.DateUtils;
 
 import javax.inject.Singleton;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 
 /**
@@ -34,10 +36,13 @@ import java.util.Date;
 @Singleton
 public class DateUtil {
 
-    private final static String yyyyMMdd = "yyyyMMdd";
-    private final static String yyyyMMddHHmm = "yyyyMMddHHmm";
-    private final static String[] patterns = {yyyyMMddHHmm, yyyyMMdd};
+    public final static String yyyyMMdd = "yyyyMMdd";
+    public final static String yyyyMMddHHmm = "yyyyMMddHHmm";
+    public final static String ddMMyyyyHHmm = "ddMMyyyyHHmm";
+    private final static String[] patterns = {yyyyMMddHHmm, yyyyMMdd, ddMMyyyyHHmm};
     private final static ZoneId defaultZoneId = ZoneId.systemDefault();
+    private final static ZoneId utcZoneId = ZoneId.of("UTC");
+
     /**
      * Format the given date in format yyyyMMdd
      *
@@ -131,6 +136,50 @@ public class DateUtil {
             LocalDateTime localDateTime = LocalDateTime.parse(date, DateTimeFormatter.ofPattern(pattern));
             if (localDateTime != null)
                 return localDateTime;
+        }
+        return null;
+    }
+
+    /**
+     * Return the current instant
+     * @return the instant
+     */
+    public static Instant getInstant(){
+        return Instant.now();
+    }
+
+    /**
+     * Format the instant based on the pattern passed. If instant or pattern is null, null is returned.
+     * @param pattern Pattern that should
+     * @param instant Instant in time
+     * @return The formatted instant based on the pattern. Null, if pattern or instant is null.
+     */
+    public static String formatInstant(String pattern, Instant instant){
+        if (instant == null || StringUtils.isEmpty(pattern))
+            return null;
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(pattern).withZone(utcZoneId);
+        return formatter.format(instant);
+    }
+
+    /**
+     * Parse the dateTime string to Instant based on the predefined set of patterns.
+     * @param dateTime DateTime string that needs to be parsed.
+     * @return Instant object depicting the date/time.
+     */
+    public static final Instant parseInstant(String dateTime){
+        if (StringUtils.isEmpty(dateTime))
+            return null;
+
+        for (String pattern : patterns){
+            try {
+                Instant instant = DateTimeFormatter.ofPattern(pattern).withZone(utcZoneId).parse(dateTime, Instant::from);
+                if (instant != null)
+                    return instant;
+            }catch (DateTimeParseException e)
+            {
+                //Do nothing.
+            }
         }
         return null;
     }

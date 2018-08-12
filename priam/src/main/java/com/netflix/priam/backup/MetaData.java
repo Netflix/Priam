@@ -53,10 +53,8 @@ public class MetaData {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    @SuppressWarnings("unchecked")
     public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName) throws Exception {
         File metafile = createTmpMetaFile();
-
         try(FileWriter fr = new FileWriter(metafile)) {
             JSONArray jsonObj = new JSONArray();
             for (AbstractBackupPath filePath : bps)

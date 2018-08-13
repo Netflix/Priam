@@ -82,7 +82,7 @@ public class CassandraMonitor extends Task {
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
                 instanceState.setIsThriftActive(bean.isThriftServerRunning());
-            } else if (line == null) {
+            } else {
                 //Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);
                 isCassandraStarted.set(false);

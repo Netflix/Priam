@@ -444,10 +444,6 @@ public interface IConfiguration {
      */
     int getHintedHandoffThrottleKb();
 
-    /**
-     * @return max_hints_delivery_threads
-     */
-    int getMaxHintThreads();
 
     /**
      * @return Size of Cassandra max direct memory
@@ -465,11 +461,6 @@ public interface IConfiguration {
     String getSeedProviderName();
 
     /**
-     * @return Get Memtable throughput settings
-     */
-    int getMemtableTotalSpaceMB();
-
-    /**
      * @return memtable_cleanup_threshold in C* yaml
      */
     double getMemtableCleanupThreshold();
@@ -479,10 +470,6 @@ public interface IConfiguration {
      */
     int getStreamingThroughputMB();
 
-    /**
-     * @return multithreaded_compaction in yaml
-     */
-    boolean getMultithreadedCompaction();
 
     /**
      * Get the paritioner for this cassandra cluster/node.
@@ -525,24 +512,6 @@ public interface IConfiguration {
      * Defaults to 'allow all'.
      */
     String getAuthorizer();
-
-    /**
-     * This can be used during cluster migration.
-     * When on Target Cluster, keyspace name is different
-     * than the original one.
-     *
-     * @return New Keyspace Name on Target Cluster
-     */
-    String getTargetKSName();
-
-    /**
-     * This can be used during cluster migration.
-     * When on Target Cluster, Column Family name is different
-     * than the original one.
-     *
-     * @return New Column Family Name on Target Cluster
-     */
-    String getTargetCFName();
 
     /**
      * @return true/false, if Cassandra needs to be started manually

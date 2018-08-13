@@ -398,10 +398,6 @@ public class FakeConfiguration implements IConfiguration {
         return 1;
     }
 
-    @Override
-    public int getMemtableTotalSpaceMB() {
-        return 0;
-    }
 
     /**
      * @return memtable_cleanup_threshold in C* yaml
@@ -414,11 +410,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public int getStreamingThroughputMB() {
         return 400;
-    }
-
-    @Override
-    public boolean getMultithreadedCompaction() {
-        return false;
     }
 
     public String getPartitioner() {
@@ -466,16 +457,6 @@ public class FakeConfiguration implements IConfiguration {
 
     public String getAuthorizer() {
         return PriamConfiguration.DEFAULT_AUTHORIZER;
-    }
-
-    @Override
-    public String getTargetKSName() {
-        return null;
-    }
-
-    @Override
-    public String getTargetCFName() {
-        return null;
     }
 
     @Override

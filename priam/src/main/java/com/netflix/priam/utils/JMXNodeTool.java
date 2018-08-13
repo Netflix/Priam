@@ -344,8 +344,10 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
         PrintStream printStream = new PrintStream("repair.log");
         Set<String> datacenters = null;
-        if (localDataCenterOnly)
+        if (localDataCenterOnly) {
+            datacenters = new HashSet<>();
             datacenters.add(getDataCenter());
+        }
 
         for (String keyspace : getKeyspaces())
             forceRepairAsync(printStream, keyspace, isSequential, datacenters, null, primaryRange, true);

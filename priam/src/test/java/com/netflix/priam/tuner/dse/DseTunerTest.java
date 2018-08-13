@@ -24,6 +24,7 @@ import java.util.Properties;
 import com.google.common.io.Files;
 import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.IConfiguration;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;

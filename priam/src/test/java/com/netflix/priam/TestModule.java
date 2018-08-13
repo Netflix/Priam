@@ -24,7 +24,6 @@ import com.netflix.priam.backup.FakeCredentials;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.FakeBackupRestoreConfig;
 import com.netflix.priam.config.IBackupRestoreConfig;
-
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.FakeSleeper;

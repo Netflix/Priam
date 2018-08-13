@@ -16,16 +16,11 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.notification.BackupEvent;
-import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventGenerator;
-import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
@@ -33,10 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Abstract Backup class for uploading files to backup location

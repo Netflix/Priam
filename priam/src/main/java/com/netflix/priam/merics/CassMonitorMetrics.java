@@ -15,7 +15,11 @@
  */
 package com.netflix.priam.merics;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
+
+import com.netflix.spectator.api.Gauge;
+import com.netflix.spectator.api.Registry;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -25,38 +29,45 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Singleton
 public class CassMonitorMetrics implements  ICassMonitorMetrics {
 
-    private AtomicInteger cassStop = new AtomicInteger();
-    private AtomicInteger cassAutoStart = new AtomicInteger();
-    private AtomicInteger cassStart = new AtomicInteger();
+    private final Gauge cassStop, cassAutoStart, cassStart;
+    private final AtomicInteger i_cassStop = new AtomicInteger(0);
+    private final AtomicInteger i_cassAutoStart = new AtomicInteger(0);
+    private final AtomicInteger i_cassStart = new AtomicInteger(0);
 
+    @Inject
+    public CassMonitorMetrics(Registry registry){
+        cassStop = registry.gauge("priam.cass.stop");
+        cassStart = registry.gauge("priam.cass.start");
+        cassAutoStart = registry.gauge("priam.auto.start");
+    }
 
     @Override
     public void incCassStop() {
-        cassStop.getAndIncrement();
+        cassStop.set(i_cassStop.incrementAndGet());
     }
 
     @Override
     public void incCassAutoStart() {
-        cassAutoStart.getAndIncrement();
+        cassAutoStart.set(i_cassAutoStart.incrementAndGet());
     }
 
     @Override
     public void incCassStart() {
-        cassStart.getAndIncrement();
+        cassStart.set(i_cassStart.incrementAndGet());
     }
 
     @Override
-    public int getCassStop() {
-        return cassStop.get();
+    public double getCassStop() {
+        return cassStop.value();
     }
 
     @Override
-    public int getCassAutoStart() {
-        return cassAutoStart.get();
+    public double getCassAutoStart() {
+        return cassAutoStart.value();
     }
 
     @Override
-    public int getCassStart() {
-        return cassStart.get();
+    public double getCassStart() {
+        return cassStart.value();
     }
 }

@@ -15,43 +15,41 @@
  */
 package com.netflix.priam.merics;
 
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 /**
  * Represents the value to be publish to a telemetry endpoint
  * <p>
  * Created by vinhn on 10/14/16.
  */
-public class NodeToolFlushMeasurement implements IMeasurement<Object> {
-    private int failure = 0, success = 0;
+@Singleton
+public class NodeToolFlushMeasurement implements IMeasurement {
+    private final Counter failure, success;
 
-    @Override
-    public MMEASUREMENT_TYPE getType() {
-        return MMEASUREMENT_TYPE.NODETOOLFLUSH;
+    @Inject
+    public NodeToolFlushMeasurement(Registry registry) {
+        failure = registry.counter("priam.flush.failure");
+        success = registry.counter("priam.flush.success");
     }
 
-    public void incrementFailureCnt(int val) {
-        this.failure += val;
+    public void incrementFailureCnt(long val) {
+        this.failure.increment();
     }
 
-    public int getFailureCnt() {
-        return this.failure;
+    public long getFailureCnt() {
+        return this.failure.count();
     }
 
-    public void incrementSuccessCnt(int val) {
-        this.success += val;
+    public void incrementSuccessCnt(long val) {
+        this.success.increment();
     }
 
-    public int getSuccessCnt() {
-        return this.success;
+    public long getSuccessCnt() {
+        return this.success.count();
     }
-
-    @Override
-    public Object getVal() {
-        return null;
-    }
-
-    @Override
-    public void setVal(Object val) {
-        //NO op;
-    }
-
 }
+

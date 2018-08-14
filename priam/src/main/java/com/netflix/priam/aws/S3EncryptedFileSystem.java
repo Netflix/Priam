@@ -33,7 +33,6 @@ import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -60,12 +59,11 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
     @Inject
     public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
-            , IMetricPublisher metricPublisher
             , IBackupMetrics backupMetricsMgr,
                                  BackupNotificationMgr backupNotificationMgr
     ) {
 
-        super(pathProvider, compress, config, metricPublisher, backupMetricsMgr, backupNotificationMgr);
+        super(pathProvider, compress, config, backupMetricsMgr, backupNotificationMgr);
         this.encryptor = fileCryptography;
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -81,7 +79,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
 
     @Override
     public int downloadCount() {
-        this.backupMetricsMgr.incrementValidDownloads();
+        this.backupMetrics.incrementValidDownloads();
         return downloadCount.get();
     }
 

@@ -17,7 +17,6 @@ package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.scheduler.Task;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,15 +32,13 @@ public abstract class IClusterManagement<T> extends Task {
     public enum Task {FLUSH, COMPACTION}
 
     private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
-    private IMetricPublisher metricPublisher;
     private Task taskType;
     private IMeasurement measurement;
     private static Lock lock = new ReentrantLock();
 
-    protected IClusterManagement(IConfiguration config, Task taskType, IMetricPublisher metricPublisher, IMeasurement measurement) {
+    protected IClusterManagement(IConfiguration config, Task taskType, IMeasurement measurement) {
         super(config);
         this.taskType = taskType;
-        this.metricPublisher = metricPublisher;
         this.measurement = measurement;
     }
 
@@ -55,14 +52,12 @@ public abstract class IClusterManagement<T> extends Task {
         try {
             String result = runTask();
             measurement.incrementSuccessCnt(1);
-            this.metricPublisher.publish(measurement); //signal that there was a success
             logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
             if (result.isEmpty()) {
                 logger.warn("{} task completed successfully but no action was done.", taskType.name());
             }
         } catch (Exception e){
             measurement.incrementFailureCnt(1);
-            this.metricPublisher.publish(measurement); //signal that there was a failure
             throw new Exception("Exception during execution of operation: " + taskType.name(), e);
         } finally {
             lock.unlock();

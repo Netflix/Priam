@@ -14,26 +14,25 @@
  * limitations under the License.
  *
  */
+
 package com.netflix.priam.merics;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 
-import javax.inject.Inject;
-import javax.inject.Singleton;
-
 /**
- * Measurement class for scheduled compactions
- * Created by aagrawal on 2/28/18.
+ * Created by aagrawal on 8/13/18.
  */
 @Singleton
-public class CompactionMeasurement implements IMeasurement {
+public class NotificationMeasurement implements IMeasurement {
     private final Counter failure, success;
 
     @Inject
-    public CompactionMeasurement(Registry registry) {
-        failure = registry.counter("priam.compaction.failure");
-        success = registry.counter("priam.compaction.success");
+    public NotificationMeasurement(Registry registry) {
+        failure = registry.counter("priam.aws.sns.failure");
+        success = registry.counter("priam.aws.sns.success");
     }
 
     public void incrementFailureCnt(long val) {

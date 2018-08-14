@@ -16,27 +16,35 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.merics.BackupMetricsMgr;
+import com.netflix.priam.merics.BackupMetrics;
 
 /**
  * A means to keep track of various metata about backups
  * Created by vinhn on 2/13/17.
  */
-@ImplementedBy(BackupMetricsMgr.class)
+@ImplementedBy(BackupMetrics.class)
 public interface IBackupMetrics {
-    int getValidUploads();
+    long getValidUploads();
 
     void incrementValidUploads();
 
-    int getInvalidUploads();  //defers the semantic of "invalid upload" to implementation
+    long getInvalidUploads();  //defers the semantic of "invalid upload" to implementation
 
     void incrementInvalidUploads();
 
-    int getValidDownloads();
+    long getValidDownloads();
 
     void incrementValidDownloads();
 
-    int getInvalidDownloads();
+    long getInvalidDownloads();
 
     void incrementInvalidDownloads();
+
+    long getAwsSlowDownException();
+
+    void incrementAwsSlowDownException(int awsSlowDown);
+
+    long getBackupUploadRate();
+
+    void incrementBackupUploadRate(long uploadRate);
 }

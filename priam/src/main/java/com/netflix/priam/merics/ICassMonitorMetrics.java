@@ -27,7 +27,7 @@ public interface ICassMonitorMetrics {
     void incCassAutoStart();
     void incCassStart();
 
-    int getCassStop();
-    int getCassAutoStart();
-    int getCassStart();
+    double getCassStop();
+    double getCassAutoStart();
+    double getCassStart();
 }

@@ -17,21 +17,20 @@
 package com.netflix.priam.notification;
 
 import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.MessageAttributeValue;
-import com.netflix.priam.IConfiguration;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.sns.AmazonSNSClient;
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
+import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.NotificationMeasurement;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
@@ -44,15 +43,13 @@ public class AWSSnsNotificationService implements INotificationService {
 
 	private IConfiguration configuration;
 	private AmazonSNS snsClient;
-	private IMetricPublisher metricPublisher;
-	private IMeasurement<Object> notificationMeasurement;
+	private IMeasurement notificationMeasurement;
 	
 	@Inject
 	public AWSSnsNotificationService(IConfiguration config, IAMCredential iamCredential
-			, IMetricPublisher metricPublisher) {
+			, NotificationMeasurement notificationMeasurement) {
 		this.configuration = config;
-		this.metricPublisher = metricPublisher;
-		this.notificationMeasurement = new NotificationMeasurement();
+		this.notificationMeasurement = notificationMeasurement;
 		String ec2_region = this.configuration.getDC();
 		snsClient = AmazonSNSClient.builder()
 				.withCredentials(iamCredential.getAwsCredentialProvider())
@@ -80,7 +77,6 @@ public class AWSSnsNotificationService implements INotificationService {
 		} catch (Exception e) {
 			logger.error(String.format("Exhausted retries.  Publishing notification metric for failure and moving on.  Failed msg to publish: {}", msg), e);
 			this.notificationMeasurement.incrementFailureCnt(1);
-			this.metricPublisher.publish(this.notificationMeasurement);
 			return;
 		}
 
@@ -88,53 +84,14 @@ public class AWSSnsNotificationService implements INotificationService {
 		String publishedMsgId = publishResult.getMessageId();
 		if (publishedMsgId == null || publishedMsgId.isEmpty() ) {
 			this.notificationMeasurement.incrementFailureCnt(1);
-			this.metricPublisher.publish(this.notificationMeasurement);
 			return;
 		}
 
 		this.notificationMeasurement.incrementSuccessCnt(1);
-		this.metricPublisher.publish(this.notificationMeasurement);
 		if (logger.isDebugEnabled()) {
 			logger.debug("Published msg:  {} aws sns messageId - {}", msg, publishedMsgId);
 		}
 	}
-	
-	public class NotificationMeasurement implements IMeasurement<Object> {
-		private int failureCnt = 0, successCnt = 0;
-		@Override
-		public int getFailureCnt() {
-			return this.failureCnt;
-		}
-		@Override
-		public int getSuccessCnt() {
-			return this.successCnt;
-		}
 
-		@Override
-		public com.netflix.priam.merics.IMeasurement.MMEASUREMENT_TYPE getType() {
-			return IMeasurement.MMEASUREMENT_TYPE.SNAPSHOTBACKUPUPNOTIFICATION;
-		}
-
-		@Override
-		public Object getVal() {
-			return null;
-		}
-
-		@Override
-		public void incrementFailureCnt(int val) {
-			this.failureCnt += val;
-		}
-
-		@Override
-		public void incrementSuccessCnt(int val) {
-			this.successCnt += val;
-		}
-
-		@Override
-		public void setVal(Object arg0) {
-			//TODO  Auto-generated method stub
-			
-		}
-	}
 	
 }

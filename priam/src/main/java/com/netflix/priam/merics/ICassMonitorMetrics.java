@@ -1,5 +1,5 @@
 /**
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  * <p>
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,20 +15,19 @@
  */
 package com.netflix.priam.merics;
 
+import com.google.inject.ImplementedBy;
+
 /**
- *
- * Represents a specific measurement for publishing to a metric system
- *
- * Created by vinhn on 10/14/16.
+ * A means to keep track of events with Cassandra Monitor (Start, restart, stop etc.,)
+ * Created by vchella on 01/10/18.
  */
-public interface IMeasurement {
+@ImplementedBy(CassMonitorMetrics.class)
+public interface ICassMonitorMetrics {
+    void incCassStop();
+    void incCassAutoStart();
+    void incCassStart();
 
-    void incrementFailureCnt(long i);
-
-    long getFailureCnt();
-
-    void incrementSuccessCnt(long i);
-
-    long getSuccessCnt();
-
+    double getCassStop();
+    double getCassAutoStart();
+    double getCassStart();
 }

@@ -28,9 +28,12 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.spectator.api.DefaultRegistry;
+import com.netflix.spectator.api.Registry;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
+
 
 @Ignore
 public class TestModule extends AbstractModule
@@ -49,6 +52,6 @@ public class TestModule extends AbstractModule
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(Sleeper.class).to(FakeSleeper.class);
-
+        bind(Registry.class).toInstance(new DefaultRegistry());
     }
 }

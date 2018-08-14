@@ -59,6 +59,7 @@ allprojects {
       }
       compile 'com.google.apis:google-api-services-storage:v1-rev100-1.22.0'
       compile 'com.google.http-client:google-http-client-jackson2:1.22.0'
+      compile 'com.netflix.spectator:spectator-api:0.74.2'
       compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
       testCompile 'org.jmockit:jmockit:1.31'
       testCompile "org.spockframework:spock-core:1.1-groovy-2.4"

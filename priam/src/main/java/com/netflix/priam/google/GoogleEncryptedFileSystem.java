@@ -315,7 +315,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
     }
 
     @Override
-    public int getAWSSlowDownExceptionCounter() {
+    public long getAWSSlowDownExceptionCounter() {
         return 0;
     }
 

@@ -17,7 +17,6 @@ package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -45,8 +44,8 @@ public class Flush extends IClusterManagement<String> {
     private List<String> keyspaces = new ArrayList<String>();
 
     @Inject
-    public Flush(IConfiguration config, IMetricPublisher metricPublisher, CassandraOperations cassandraOperations) {
-        super(config, Task.FLUSH, metricPublisher, new NodeToolFlushMeasurement());
+    public Flush(IConfiguration config, CassandraOperations cassandraOperations, NodeToolFlushMeasurement nodeToolFlushMeasurement) {
+        super(config, Task.FLUSH, nodeToolFlushMeasurement);
         this.config = config;
         this.cassandraOperations = cassandraOperations;
     }

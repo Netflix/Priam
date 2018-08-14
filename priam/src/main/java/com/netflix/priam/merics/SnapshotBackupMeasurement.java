@@ -15,40 +15,37 @@
  */
 package com.netflix.priam.merics;
 
+import com.google.inject.Inject;
+import com.google.inject.Singleton;
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
 /**
  * Created by vinhn on 10/14/16.
  */
-public class SnapshotBackupMeasurement implements IMeasurement<Object> {
-    private int failure = 0, success = 0;
+@Singleton
+public class SnapshotBackupMeasurement implements IMeasurement {
+    private final Counter failure, success;
 
-    @Override
-    public MMEASUREMENT_TYPE getType() {
-        return MMEASUREMENT_TYPE.SNAPSHOTBACKUP;
+    @Inject
+    public SnapshotBackupMeasurement(Registry registry) {
+        failure = registry.counter("priam.snapshot.backup.failure");
+        success = registry.counter("priam.snapshot.backup.success");
     }
 
-    public void incrementFailureCnt(int val) {
-        this.failure += val;
+    public void incrementFailureCnt(long val) {
+        this.failure.increment();
     }
 
-    public int getFailureCnt() {
-        return this.failure;
+    public long getFailureCnt() {
+        return this.failure.count();
     }
 
-    public void incrementSuccessCnt(int val) {
-        this.success += val;
+    public void incrementSuccessCnt(long val) {
+        this.success.increment();
     }
 
-    public int getSuccessCnt() {
-        return this.success;
-    }
-
-    @Override
-    public Object getVal() {
-        return null;
-    }
-
-    @Override
-    public void setVal(Object val) {
-
+    public long getSuccessCnt() {
+        return this.success.count();
     }
 }
+

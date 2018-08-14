@@ -18,7 +18,6 @@ package com.netflix.priam.cluster.management;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.merics.CompactionMeasurement;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import org.apache.commons.collections4.CollectionUtils;
@@ -44,8 +43,8 @@ public class Compaction extends IClusterManagement<String> {
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private final CassandraOperations cassandraOperations;
     @Inject
-    public Compaction(IConfiguration config, IMetricPublisher metricPublisher, CassandraOperations cassandraOperations) {
-        super(config, Task.COMPACTION, metricPublisher, new CompactionMeasurement());
+    public Compaction(IConfiguration config, CassandraOperations cassandraOperations, CompactionMeasurement compactionMeasurement) {
+        super(config, Task.COMPACTION, compactionMeasurement);
         this.config = config;
         this.cassandraOperations = cassandraOperations;
     }

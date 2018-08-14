@@ -173,17 +173,6 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
 
 
     @Override
-    public int downloadCount() {
-        this.backupMetrics.incrementValidDownloads();
-        return downloadCount.get();
-    }
-
-    @Override
-    public int uploadCount() {
-        return super.uploadCount.get();
-    }
-
-    @Override
     /*
     Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
      */

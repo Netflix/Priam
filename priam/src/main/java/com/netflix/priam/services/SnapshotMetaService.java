@@ -117,7 +117,7 @@ public class SnapshotMetaService extends AbstractBackup {
         try {
             Instant snapshotInstant = DateUtil.getInstant();
             snapshotName = generateSnapshotName(snapshotInstant);
-            logger.info("Initializing SnapshotMetaService for taking a snapshot {}" + snapshotName);
+            logger.info("Initializing SnapshotMetaService for taking a snapshot {}", snapshotName);
 
             //Perform a cleanup of old snapshot meta_v2.json files, if any, as we don't want our disk to be filled by them.
             //These files may be leftover

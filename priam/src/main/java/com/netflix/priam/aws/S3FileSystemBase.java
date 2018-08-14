@@ -47,7 +47,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenerator<BackupEvent> {
@@ -55,9 +54,9 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
     protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
-    protected AtomicInteger uploadCount = new AtomicInteger();
+    //protected AtomicInteger uploadCount = new AtomicInteger();
     protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
-    protected AtomicInteger downloadCount = new AtomicInteger();
+    //protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
     protected IBackupMetrics backupMetrics;
     protected AmazonS3 s3Client;
@@ -194,7 +193,6 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
                     path.getFileName(), elapseTimeInSecs, speedInKBps);
 
             backupMetrics.incrementBackupUploadRate(speedInKBps.longValue());
-            backupMetrics.incrementAwsSlowDownException(path.getAWSSlowDownExceptionCounter());
         } catch (Exception e) {
             logger.error("Post processing of file {} failed, not fatal.", path.getFileName(), e);
         }
@@ -314,6 +312,14 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     @Override
     public long getAWSSlowDownExceptionCounter() {
         return backupMetrics.getAwsSlowDownException();
+    }
+
+    public long downloadCount() {
+        return backupMetrics.getValidDownloads();
+    }
+
+    public long uploadCount() {
+        return backupMetrics.getValidUploads();
     }
 
     @Override

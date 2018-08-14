@@ -78,17 +78,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
     }
 
     @Override
-    public int downloadCount() {
-        this.backupMetrics.incrementValidDownloads();
-        return downloadCount.get();
-    }
-
-    @Override
-    public int uploadCount() {
-        return uploadCount.get();
-    }
-
-    @Override
     /*
     Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
      */

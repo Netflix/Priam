@@ -38,7 +38,7 @@ public class CassMonitorMetrics implements  ICassMonitorMetrics {
     public CassMonitorMetrics(Registry registry){
         cassStop = registry.gauge("priam.cass.stop");
         cassStart = registry.gauge("priam.cass.start");
-        cassAutoStart = registry.gauge("priam.auto.start");
+        cassAutoStart = registry.gauge("priam.cass.auto.start");
     }
 
     @Override

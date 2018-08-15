@@ -17,8 +17,8 @@ package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.IOUtils;

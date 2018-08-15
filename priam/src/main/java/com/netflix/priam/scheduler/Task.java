@@ -17,7 +17,7 @@
 package com.netflix.priam.scheduler;
 
 import com.google.common.base.Throwables;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;

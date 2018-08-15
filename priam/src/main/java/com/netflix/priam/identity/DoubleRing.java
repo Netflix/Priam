@@ -18,7 +18,7 @@ package com.netflix.priam.identity;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.ITokenManager;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;

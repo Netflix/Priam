@@ -19,6 +19,7 @@ package com.netflix.priam;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 

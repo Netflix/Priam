@@ -1,6 +1,6 @@
 package com.netflix.priam.backup
 
-import com.netflix.priam.FakeConfiguration
+import com.netflix.priam.config.FakeConfiguration
 import com.netflix.priam.scheduler.SchedulerType
 import com.netflix.priam.scheduler.UnsupportedTypeException
 import spock.lang.Specification

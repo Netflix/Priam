@@ -18,7 +18,7 @@
 package com.netflix.priam.utils;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 

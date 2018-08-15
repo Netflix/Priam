@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,27 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam;
+package com.netflix.priam.configSource;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.google.inject.ImplementedBy;
-import com.netflix.priam.defaultimpl.ClearCredential;
+import com.google.common.collect.Maps;
 
-/**
- * Credential file interface for services supporting
- * Access ID and key authentication
- */
-@ImplementedBy(ClearCredential.class)
-public interface ICredential {
-    /**
-     * @return AWS Credential Provider object
-     */
-    AWSCredentialsProvider getAwsCredentialProvider();
+import java.util.Map;
+
+public final class MemoryConfigSource extends AbstractConfigSource {
+    private final Map<String, String> data = Maps.newConcurrentMap();
+
+    @Override
+    public int size() {
+        return data.size();
+    }
+
+    @Override
+    public String get(final String key) {
+        return data.get(key);
+    }
+
+    @Override
+    public void set(final String key, final String value) {
+        data.put(key, value);
+    }
 }

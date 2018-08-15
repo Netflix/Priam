@@ -19,7 +19,7 @@ package com.netflix.priam.aws;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.InstanceProfileCredentialsProvider;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.cred.ICredential;
 
 public class IAMCredential implements ICredential {
     private final InstanceProfileCredentialsProvider iamCredProvider;

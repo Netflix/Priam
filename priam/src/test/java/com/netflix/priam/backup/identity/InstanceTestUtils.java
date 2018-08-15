@@ -17,9 +17,9 @@
 
 package com.netflix.priam.backup.identity;
 
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
+import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceEnvIdentity;

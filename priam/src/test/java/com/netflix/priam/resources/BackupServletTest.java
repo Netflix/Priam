@@ -22,7 +22,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
-import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;

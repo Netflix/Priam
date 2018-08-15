@@ -23,7 +23,7 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.netflix.priam.FakeMembership;
 import com.netflix.priam.FakePriamInstanceFactory;
-import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;

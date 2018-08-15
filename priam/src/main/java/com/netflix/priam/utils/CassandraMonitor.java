@@ -18,7 +18,7 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;

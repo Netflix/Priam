@@ -16,7 +16,7 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Provider;
-import com.netflix.priam.ICassandraProcess;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;

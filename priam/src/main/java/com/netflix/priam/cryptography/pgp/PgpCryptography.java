@@ -132,8 +132,8 @@ public class PgpCryptography implements IFileCryptography {
         PGPObjectFactory decryptedDataReader = new PGPObjectFactory(decryptInputStream);
 
         //the decrypted data object is compressed, lets decompress it.
-        PGPCompressedData comporessedDataReader = (PGPCompressedData) decryptedDataReader.nextObject(); //get a handle to the decrypted, compress data stream
-        InputStream compressedStream = new BufferedInputStream(comporessedDataReader.getDataStream());
+        PGPCompressedData compressedDataReader = (PGPCompressedData) decryptedDataReader.nextObject(); //get a handle to the decrypted, compress data stream
+        InputStream compressedStream = new BufferedInputStream(compressedDataReader.getDataStream());
         PGPObjectFactory compressedStreamReader = new PGPObjectFactory(compressedStream);
         Object data = compressedStreamReader.nextObject();
         if (data instanceof PGPLiteralData) {
@@ -269,7 +269,7 @@ public class PgpCryptography implements IFileCryptography {
             this.srcHandle = is;
             this.bos = new ByteArrayOutputStream();
 
-            //creates a cipher stream which will have an integrity packet assocaited with it
+            //creates a cipher stream which will have an integrity packet associated with it
             PGPEncryptedDataGenerator encryptedDataGenerator = new PGPEncryptedDataGenerator(PGPEncryptedData.CAST5, true, new SecureRandom(), "BC");
             try {
                 encryptedDataGenerator.addMethod(pubKey); //Add a key encryption method to be used to encrypt the session data associated with this encrypted data
@@ -282,7 +282,7 @@ public class PgpCryptography implements IFileCryptography {
             this.compressedDataGenerator = new PGPCompressedDataGenerator(PGPCompressedData.UNCOMPRESSED);
 
 			/*
-             * Open a literal data packet, returning a stream to store the data inside the packet as an indefinitite stream.
+             * Open a literal data packet, returning a stream to store the data inside the packet as an indefinite stream.
 			 * A "literal data packet" in PGP world is the body of a message; data that is not to be further interpreted.
 			 * 
 			 * The stream is written out as a series of partial packets with a chunk size determine by the size of the passed in buffer.

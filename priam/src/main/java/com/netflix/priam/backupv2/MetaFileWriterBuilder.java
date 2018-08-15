@@ -25,20 +25,16 @@ import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.RetryableCallable;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.io.filefilter.IOFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -168,10 +164,10 @@ public class MetaFileWriterBuilder {
                 @Override
                 public Void retriableCall() throws Exception {
                     backupFileSystem.upload(abstractBackupPath, abstractBackupPath.localReader());
+                    abstractBackupPath.setCompressedFileSize(backupFileSystem.getBytesUploaded());
                     return null;
                 }
             }.call();
-            abstractBackupPath.setCompressedFileSize(backupFileSystem.getBytesUploaded());
 
             if (deleteOnSuccess)
                 FileUtils.deleteQuietly(metaFilePath.toFile());

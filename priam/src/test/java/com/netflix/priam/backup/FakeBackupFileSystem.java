@@ -161,7 +161,7 @@ public class FakeBackupFileSystem implements IBackupFileSystem
     }
 
     @Override
-    public int getAWSSlowDownExceptionCounter() {
+    public long getAWSSlowDownExceptionCounter() {
         return 0;
     }
 

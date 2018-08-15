@@ -17,8 +17,8 @@ package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.IMetricPublisher;
 import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.CassandraMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,44 +29,51 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by vinhn on 10/12/16.
  */
 public abstract class IClusterManagement<T> extends Task {
-        public enum Task {FLUSH, COMPACTION}
-        private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
-        private IMetricPublisher metricPublisher;
-        private Task taskType;
-        private IMeasurement measurement;
-        private static Lock lock = new ReentrantLock();
-        protected IClusterManagement(IConfiguration config, Task taskType, IMetricPublisher metricPublisher, IMeasurement measurement) {
-            super(config);
-            this.taskType = taskType;
-            this.metricPublisher = metricPublisher;
-            this.measurement = measurement;
-        }
-        @Override
-        public void execute() throws Exception {
-            if (!lock.tryLock()) {
-                logger.error("Operation is already running! Try again later.");
-                throw new Exception("Operation already running");
-            }
-            try {
-                String result = runTask();
-                measurement.incrementSuccessCnt(1);
-                this.metricPublisher.publish(measurement); //signal that there was a success
-                logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
-                if (result.isEmpty()) {
-                    logger.warn("{} task completed successfully but no action was done.", taskType.name());
-                }
-            } catch (Exception e){
-                measurement.incrementFailureCnt(1);
-                this.metricPublisher.publish(measurement); //signal that there was a failure
-                throw new Exception("Exception during execution of operation: " + taskType.name(), e);
-            } finally {
-                lock.unlock();
-            }
-        }
-        @Override
-        public String getName() {
-            return taskType.name();
+
+    public enum Task {FLUSH, COMPACTION}
+
+    private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
+    private Task taskType;
+    private IMeasurement measurement;
+    private static Lock lock = new ReentrantLock();
+
+    protected IClusterManagement(IConfiguration config, Task taskType, IMeasurement measurement) {
+        super(config);
+        this.taskType = taskType;
+        this.measurement = measurement;
+    }
+
+    @Override
+    public void execute() throws Exception {
+        if (!CassandraMonitor.hasCassadraStarted()) {
+            logger.debug("Cassandra has not started, hence {} will not run", taskType);
+            return;
         }
 
-        protected abstract String runTask() throws Exception;
+        if (!lock.tryLock()) {
+            logger.error("Operation is already running! Try again later.");
+            throw new Exception("Operation already running");
+        }
+
+        try {
+            String result = runTask();
+            measurement.incrementSuccess();
+            logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
+            if (result.isEmpty()) {
+                logger.warn("{} task completed successfully but no action was done.", taskType.name());
+            }
+        } catch (Exception e){
+            measurement.incrementFailure();
+            throw new Exception("Exception during execution of operation: " + taskType.name(), e);
+        } finally {
+            lock.unlock();
+        }
     }
+
+    @Override
+    public String getName() {
+        return taskType.name();
+    }
+
+    protected abstract String runTask() throws Exception;
+}

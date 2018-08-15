@@ -447,11 +447,7 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
-    @Override
-    public int getMemtableTotalSpaceMB()
-    {
-        return 0;
-    }
+
 
     /**
      * @return memtable_cleanup_threshold in C* yaml
@@ -467,14 +463,8 @@ public class FakeConfiguration implements IConfiguration
         return 400;
     }
 
-    @Override
-    public boolean getMultithreadedCompaction()
-    {
-        return false;
-    }
 
-    public String getPartitioner()
-    {
+    public String getPartitioner() {
         return "org.apache.cassandra.dht.RandomPartitioner";
     }
 
@@ -545,25 +535,12 @@ public class FakeConfiguration implements IConfiguration
         return PriamConfiguration.DEFAULT_AUTHENTICATOR;
     }
 
-    public String getAuthorizer()
-    {
+    public String getAuthorizer() {
         return PriamConfiguration.DEFAULT_AUTHORIZER;
     }
-
-    @Override
-	public String getTargetKSName() {
-		return null;
-	}
-
-	@Override
-	public String getTargetCFName() {
-		return null;
-	}
-
-	@Override
-	public boolean doesCassandraStartManually() {
-		return false;
-	}
+    public boolean doesCassandraStartManually() {
+        return false;
+    }
 
     @Override
     public boolean isVpcRing() {

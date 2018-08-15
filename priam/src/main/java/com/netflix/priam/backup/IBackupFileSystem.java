@@ -70,5 +70,5 @@ public interface IBackupFileSystem {
 
     long getBytesUploaded();
 
-    int getAWSSlowDownExceptionCounter();
+    long getAWSSlowDownExceptionCounter();
 }

@@ -21,8 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.notification.BackupEvent;
-import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
@@ -117,7 +115,6 @@ public abstract class AbstractBackup extends Task{
                     }
                     fs.upload(bp, is);
                     bp.setCompressedFileSize(fs.getBytesUploaded());
-                    bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                     return null;
                 } catch (Exception e) {
                     logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());

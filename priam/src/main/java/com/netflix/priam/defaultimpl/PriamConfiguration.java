@@ -775,14 +775,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
-    @Override
-    /**
-     * Defaults to 0, means dont set it in yaml
-     */
-    public int getMemtableTotalSpaceMB() {
-        return config.get(CONFIG_MEMTABLE_TOTAL_SPACE, 1024);
-    }
-
     /**
      *   memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) = 0.11
      */
@@ -793,11 +785,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public int getStreamingThroughputMB() {
         return config.get(CONFIG_STREAMING_THROUGHPUT_MB, 400);
-    }
-
-    @Override
-    public boolean getMultithreadedCompaction() {
-        return config.get(CONFIG_MULTITHREADED_COMPACTION, false);
     }
 
     public String getPartitioner() {
@@ -845,15 +832,6 @@ public class PriamConfiguration implements IConfiguration {
 
     public String getAuthorizer() {
         return config.get(CONFIG_AUTHORIZER, DEFAULT_AUTHORIZER);
-    }
-
-    public String getTargetKSName() {
-        return config.get(CONFIG_TARGET_KEYSPACE_NAME);
-    }
-
-    @Override
-    public String getTargetCFName() {
-        return config.get(CONFIG_TARGET_COLUMN_FAMILY_NAME);
     }
 
     @Override

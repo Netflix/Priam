@@ -1,4 +1,8 @@
 # Changelog
+## 2018/08/15 3.12.0
+### New Feature
+* (# 707) Move to spectator to collect Metrics. This is a breaking change if you were depending on MetricPublisher to collect metrics. 
+
 ## 2018/08/13 3.11.29
 ### New Feature
 * (#705) Snapshot Meta Service: This will form the basis of backup version 2. This service will run on CRON and will ensure we upload a meta file containing the list of SSTables on disk. 

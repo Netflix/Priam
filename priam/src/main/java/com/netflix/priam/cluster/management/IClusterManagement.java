@@ -18,6 +18,7 @@ package com.netflix.priam.cluster.management;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.CassandraMonitor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,11 @@ public abstract class IClusterManagement<T> extends Task {
 
     @Override
     public void execute() throws Exception {
+        if (!CassandraMonitor.hasCassadraStarted()) {
+            logger.debug("Cassandra has not started, hence {} will not run", taskType);
+            return;
+        }
+
         if (!lock.tryLock()) {
             logger.error("Operation is already running! Try again later.");
             throw new Exception("Operation already running");
@@ -51,13 +57,13 @@ public abstract class IClusterManagement<T> extends Task {
 
         try {
             String result = runTask();
-            measurement.incrementSuccessCnt(1);
+            measurement.incrementSuccess();
             logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
             if (result.isEmpty()) {
                 logger.warn("{} task completed successfully but no action was done.", taskType.name());
             }
-        } catch (Exception e) {
-            measurement.incrementFailureCnt(1);
+        } catch (Exception e){
+            measurement.incrementFailure();
             throw new Exception("Exception during execution of operation: " + taskType.name(), e);
         } finally {
             lock.unlock();

@@ -27,8 +27,8 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.EventGenerator;
@@ -58,7 +58,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
     //protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
-    protected IBackupMetrics backupMetrics;
+    protected BackupMetrics backupMetrics;
     protected AmazonS3 s3Client;
     protected IConfiguration config;
     protected Provider<AbstractBackupPath> pathProvider;
@@ -70,12 +70,12 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
                             ICompression compress,
                             final IConfiguration config,
-                            IBackupMetrics backupMetricsMgr,
+                            BackupMetrics backupMetrics,
                             BackupNotificationMgr backupNotificationMgr) {
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
-        this.backupMetrics = backupMetricsMgr;
+        this.backupMetrics = backupMetrics;
 
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
@@ -191,8 +191,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
                             + ", elapsse time in sec(s): {}"
                             + ", KB per sec: {}",
                     path.getFileName(), elapseTimeInSecs, speedInKBps);
-
-            backupMetrics.incrementBackupUploadRate(speedInKBps.longValue());
+            backupMetrics.recordUploadRate(sizeInBytes);
         } catch (Exception e) {
             logger.error("Post processing of file {} failed, not fatal.", path.getFileName(), e);
         }

@@ -25,8 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.IAMCredential;
-import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.NotificationMeasurement;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -43,13 +42,13 @@ public class AWSSnsNotificationService implements INotificationService {
 
 	private IConfiguration configuration;
 	private AmazonSNS snsClient;
-	private IMeasurement notificationMeasurement;
+	private BackupMetrics backupMetrics;
 	
 	@Inject
 	public AWSSnsNotificationService(IConfiguration config, IAMCredential iamCredential
-			, NotificationMeasurement notificationMeasurement) {
+			, BackupMetrics backupMetrics) {
 		this.configuration = config;
-		this.notificationMeasurement = notificationMeasurement;
+		this.backupMetrics = backupMetrics;
 		String ec2_region = this.configuration.getDC();
 		snsClient = AmazonSNSClient.builder()
 				.withCredentials(iamCredential.getAwsCredentialProvider())
@@ -76,20 +75,20 @@ public class AWSSnsNotificationService implements INotificationService {
 			
 		} catch (Exception e) {
 			logger.error(String.format("Exhausted retries.  Publishing notification metric for failure and moving on.  Failed msg to publish: {}", msg), e);
-			this.notificationMeasurement.incrementFailureCnt(1);
+			backupMetrics.incrementSnsNotificationFailure();
 			return;
 		}
 
 		//If here, message was published.  As a extra validation, ensure we have a msg id
 		String publishedMsgId = publishResult.getMessageId();
 		if (publishedMsgId == null || publishedMsgId.isEmpty() ) {
-			this.notificationMeasurement.incrementFailureCnt(1);
+			backupMetrics.incrementSnsNotificationFailure();
 			return;
 		}
 
-		this.notificationMeasurement.incrementSuccessCnt(1);
-		if (logger.isDebugEnabled()) {
-			logger.debug("Published msg:  {} aws sns messageId - {}", msg, publishedMsgId);
+		backupMetrics.incrementSnsNotificationSuccess();
+		if (logger.isTraceEnabled()) {
+			logger.trace("Published msg:  {} aws sns messageId - {}", msg, publishedMsgId);
 		}
 	}
 

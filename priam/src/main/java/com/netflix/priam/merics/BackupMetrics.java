@@ -17,85 +17,77 @@ package com.netflix.priam.merics;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.backup.IBackupMetrics;
-
 import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.DistributionSummary;
+import com.netflix.spectator.api.Gauge;
 import com.netflix.spectator.api.Registry;
+
 /**
  * Created by vinhn on 2/13/17.
  */
 @Singleton
-public class BackupMetrics implements IBackupMetrics {
-    private final Counter validUploads, invalidUploads, validDownloads, invalidDownloads, backupUploadRateKbps, awsSlowDownException;
+public class BackupMetrics {
+    /**
+     * Distribution summary will provide the metric like count (how many uploads were made), max no. of bytes uploaded and total amount of bytes uploaded.
+     */
+    private final DistributionSummary uploadRate;
+    private final Counter validUploads, invalidUploads, validDownloads, invalidDownloads, awsSlowDownException, snsNotificationSuccess, snsNotificationFailure;
 
     @Inject
-    public BackupMetrics(Registry registry){
-        validDownloads = registry.counter("priam.download.valid");
-        invalidDownloads = registry.counter("priam.download.invalid");
-        validUploads = registry.counter("priam.upload.valid");
-        invalidUploads = registry.counter("priam.upload.invalid");
-        backupUploadRateKbps = registry.counter("priam.backup.upload.rate.kbps");
-        awsSlowDownException = registry.counter("priam.aws.slowDown");
+    public BackupMetrics(Registry registry) {
+        validDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.valid");
+        invalidDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.invalid");
+        validUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.valid");
+        invalidUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.invalid");
+        uploadRate = registry.distributionSummary(Metrics.METRIC_PREFIX + "upload.rate");
+        awsSlowDownException = registry.counter(Metrics.METRIC_PREFIX + "aws.slowDown");
+        snsNotificationSuccess = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.success");
+        snsNotificationFailure = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.failure");
     }
 
-    @Override
     public void incrementValidUploads() {
         this.validUploads.increment();
     }
 
-    @Override
-    public long getInvalidUploads() {
-        return this.invalidUploads.count();
-    }
-
-    @Override
     public void incrementInvalidUploads() {
         this.invalidUploads.increment();
     }
 
-    @Override
     public long getValidUploads() {
         return this.validUploads.count();
     }
 
-    @Override
     public long getValidDownloads() {
         return this.validDownloads.count();
     }
 
-    @Override
     public void incrementValidDownloads() {
         this.invalidDownloads.increment();
     }
 
-    @Override
-    public long getInvalidDownloads() {
-        return this.invalidDownloads.count();
-    }
 
-    @Override
     public void incrementInvalidDownloads() {
         this.invalidDownloads.increment();
     }
 
-    @Override
     public long getAwsSlowDownException() {
         return awsSlowDownException.count();
     }
 
-    @Override
     public void incrementAwsSlowDownException(int awsSlowDown) {
         awsSlowDownException.increment(awsSlowDown);
     }
 
-    @Override
-    public long getBackupUploadRate() {
-        return backupUploadRateKbps.count();
+    public void incrementSnsNotificationSuccess() {
+        snsNotificationSuccess.increment();
     }
 
-    @Override
-    public void incrementBackupUploadRate(long uploadRate) {
-        backupUploadRateKbps.increment(uploadRate);
+    public void incrementSnsNotificationFailure() {
+        snsNotificationFailure.increment();
+    }
+
+    public void recordUploadRate(long sizeInBytes) {
+        uploadRate.record(sizeInBytes);
     }
 
 }

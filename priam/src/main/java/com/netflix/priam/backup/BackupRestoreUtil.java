@@ -133,9 +133,12 @@ public class BackupRestoreUtil {
             return false;
 
         String columnFamilyName = columnFamilyDir.split("-")[0];
+        //column family is in list of global CF filter
+        if (FILTER_COLUMN_FAMILY.containsKey(keyspace) && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName))
+            return true;
+
         if (isFiltered(BackupRestoreUtil.DIRECTORYTYPE.KEYSPACE, keyspace) || //keyspace is filtered
                 isFiltered(BackupRestoreUtil.DIRECTORYTYPE.CF, keyspace, columnFamilyDir) //columnfamily is filtered
-                || (FILTER_COLUMN_FAMILY.containsKey(keyspace) && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName)) //column family is in list of global CF filter
                 ) {
             logger.debug("Skipping: keyspace: {}, CF: {} is part of filter list.", keyspace, columnFamilyName);
             return true;

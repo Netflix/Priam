@@ -34,6 +34,8 @@ import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.google.GcsCredential;
 import com.netflix.priam.google.GoogleEncryptedFileSystem;
+import com.netflix.spectator.api.NoopRegistry;
+import com.netflix.spectator.api.Registry;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
@@ -57,5 +59,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
         bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
+        bind(Registry.class).toInstance(new NoopRegistry());
     }
 }

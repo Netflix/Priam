@@ -33,7 +33,6 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IBackupMetrics;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -72,9 +71,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
 
     @Inject
     public GoogleEncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, final IConfiguration config
-            , @Named("gcscredential") ICredentialGeneric credential
-            , IBackupMetrics backupMetricsMgr
-    ) {
+            , @Named("gcscredential") ICredentialGeneric credential) {
 
         this.pathProvider = pathProvider;
         this.config = config;
@@ -316,7 +313,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
     }
 
     @Override
-    public int getAWSSlowDownExceptionCounter() {
+    public long getAWSSlowDownExceptionCounter() {
         return 0;
     }
 

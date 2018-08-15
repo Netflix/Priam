@@ -21,13 +21,7 @@ package com.netflix.priam.merics;
  * Created by vinhn on 10/14/16.
  */
 public interface IMeasurement {
+    void incrementFailure();
 
-    void incrementFailureCnt(long i);
-
-    long getFailureCnt();
-
-    void incrementSuccessCnt(long i);
-
-    long getSuccessCnt();
-
+    void incrementSuccess();
 }

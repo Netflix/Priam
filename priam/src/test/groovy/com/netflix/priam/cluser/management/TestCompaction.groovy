@@ -5,6 +5,7 @@ import com.netflix.priam.FakeConfiguration
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
 import com.netflix.priam.defaultimpl.CassandraOperations
+import com.netflix.priam.utils.CassandraMonitor
 import mockit.Mock
 import mockit.MockUp
 import spock.lang.Shared
@@ -24,6 +25,7 @@ import java.util.concurrent.Future
 class TestCompaction extends Specification {
     @Shared
     private static Compaction compaction
+
 
     def setup(){
         new MockCassandraOperations()
@@ -131,6 +133,7 @@ class TestCompaction extends Specification {
     }
 
     private int concurrentRuns(int size) {
+        CassandraMonitor.setIsCassadraStarted();
         ExecutorService threads = Executors.newFixedThreadPool(size)
         List<Callable<Boolean>> torun = new ArrayList<>(size)
         for (int i = 0; i < size; i++) {

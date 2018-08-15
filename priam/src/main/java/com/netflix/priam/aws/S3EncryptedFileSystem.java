@@ -29,10 +29,10 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.ICredential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -59,11 +59,11 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
     @Inject
     public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
-            , IBackupMetrics backupMetricsMgr,
+            , BackupMetrics backupMetrics,
                                  BackupNotificationMgr backupNotificationMgr
     ) {
 
-        super(pathProvider, compress, config, backupMetricsMgr, backupNotificationMgr);
+        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();

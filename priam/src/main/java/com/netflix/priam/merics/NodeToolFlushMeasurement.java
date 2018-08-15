@@ -32,24 +32,16 @@ public class NodeToolFlushMeasurement implements IMeasurement {
 
     @Inject
     public NodeToolFlushMeasurement(Registry registry) {
-        failure = registry.counter("priam.flush.failure");
-        success = registry.counter("priam.flush.success");
+        failure = registry.counter(Metrics.METRIC_PREFIX + "flush.failure");
+        success = registry.counter(Metrics.METRIC_PREFIX + "flush.success");
     }
 
-    public void incrementFailureCnt(long val) {
+    public void incrementFailure() {
         this.failure.increment();
     }
 
-    public long getFailureCnt() {
-        return this.failure.count();
-    }
-
-    public void incrementSuccessCnt(long val) {
-        this.success.increment();
-    }
-
-    public long getSuccessCnt() {
-        return this.success.count();
+    public void incrementSuccess() {
+        success.increment();
     }
 }
 

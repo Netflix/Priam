@@ -32,23 +32,16 @@ public class CompactionMeasurement implements IMeasurement {
 
     @Inject
     public CompactionMeasurement(Registry registry) {
-        failure = registry.counter("priam.compaction.failure");
-        success = registry.counter("priam.compaction.success");
+        failure = registry.counter(Metrics.METRIC_PREFIX + "compaction.failure");
+        success = registry.counter(Metrics.METRIC_PREFIX + "compaction.success");
     }
 
-    public void incrementFailureCnt(long val) {
+
+    public void incrementFailure() {
         this.failure.increment();
     }
 
-    public long getFailureCnt() {
-        return this.failure.count();
-    }
-
-    public void incrementSuccessCnt(long val) {
-        this.success.increment();
-    }
-
-    public long getSuccessCnt() {
-        return this.success.count();
+    public void incrementSuccess() {
+        success.increment();
     }
 }

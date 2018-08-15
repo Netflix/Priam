@@ -19,9 +19,9 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;
 import mockit.*;

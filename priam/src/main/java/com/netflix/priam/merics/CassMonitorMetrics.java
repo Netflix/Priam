@@ -15,48 +15,35 @@
  */
 package com.netflix.priam.merics;
 
+import com.google.inject.Inject;
 import com.google.inject.Singleton;
-
-import java.util.concurrent.atomic.AtomicInteger;
+import com.netflix.spectator.api.Gauge;
+import com.netflix.spectator.api.Registry;
 
 /**
  * @author vchella
  */
 @Singleton
-public class CassMonitorMetrics implements  ICassMonitorMetrics {
+public class CassMonitorMetrics {
+    private final Gauge cassStop, cassAutoStart, cassStart;
 
-    private AtomicInteger cassStop = new AtomicInteger();
-    private AtomicInteger cassAutoStart = new AtomicInteger();
-    private AtomicInteger cassStart = new AtomicInteger();
+    @Inject
+    public CassMonitorMetrics(Registry registry) {
+        cassStop = registry.gauge(Metrics.METRIC_PREFIX + "stop");
+        cassStart = registry.gauge(Metrics.METRIC_PREFIX + "start");
+        cassAutoStart = registry.gauge(Metrics.METRIC_PREFIX + "auto.start");
+    }
 
-
-    @Override
     public void incCassStop() {
-        cassStop.getAndIncrement();
+        cassStop.set(cassStop.value() + 1);
     }
 
-    @Override
     public void incCassAutoStart() {
-        cassAutoStart.getAndIncrement();
+        cassAutoStart.set(cassAutoStart.value() + 1);
     }
 
-    @Override
     public void incCassStart() {
-        cassStart.getAndIncrement();
+        cassStart.set(cassStart.value() + 1);
     }
 
-    @Override
-    public int getCassStop() {
-        return cassStop.get();
-    }
-
-    @Override
-    public int getCassAutoStart() {
-        return cassAutoStart.get();
-    }
-
-    @Override
-    public int getCassStart() {
-        return cassStart.get();
-    }
 }

@@ -25,10 +25,8 @@ import com.netflix.priam.*;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;
-
 import com.netflix.priam.config.FakeBackupRestoreConfig;
 import com.netflix.priam.config.IBackupRestoreConfig;
-
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.defaultimpl.FakeCassandraProcess;
@@ -38,6 +36,8 @@ import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.restore.IPostRestoreHook;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.spectator.api.DefaultRegistry;
+import com.netflix.spectator.api.Registry;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -68,5 +68,6 @@ public class BRTestModule extends AbstractModule {
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
         bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);
+        bind(Registry.class).toInstance(new DefaultRegistry());
     }
 }

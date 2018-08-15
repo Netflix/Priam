@@ -27,10 +27,9 @@ import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import org.apache.commons.io.IOUtils;
@@ -58,10 +57,9 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
     public S3FileSystem(@Named("awss3roleassumption") IS3Credential cred, Provider<AbstractBackupPath> pathProvider,
                         ICompression compress,
                         final IConfiguration config,
-                        IMetricPublisher metricPublisher,
-                        IBackupMetrics backupMetricsMgr,
+                        BackupMetrics backupMetrics,
                         BackupNotificationMgr backupNotificationMgr) {
-        super(pathProvider, compress, config, metricPublisher, backupMetricsMgr, backupNotificationMgr);
+        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
         try {
@@ -173,17 +171,6 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         return executor.getActiveCount();
     }
 
-
-    @Override
-    public int downloadCount() {
-        this.backupMetricsMgr.incrementValidDownloads();
-        return downloadCount.get();
-    }
-
-    @Override
-    public int uploadCount() {
-        return super.uploadCount.get();
-    }
 
     @Override
     /*

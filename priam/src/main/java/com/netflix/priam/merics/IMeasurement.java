@@ -20,30 +20,8 @@ package com.netflix.priam.merics;
  * <p>
  * Created by vinhn on 10/14/16.
  */
-public interface IMeasurement<T> {
+public interface IMeasurement {
+    void incrementFailure();
 
-    MMEASUREMENT_TYPE getType();
-
-    void incrementFailureCnt(int i);
-
-    int getFailureCnt();
-
-    void incrementSuccessCnt(int i);
-
-    int getSuccessCnt();
-
-    /*
-    @return a user defined representation of a valuue.
-     */
-    T getVal();
-
-    /*
-    @param a user defined representation of what you think is a value.
-     */
-    void setVal(T val);
-
-    enum MMEASUREMENT_TYPE {
-        NOOP, NODETOOLFLUSH, COMPACTION, SNAPSHOTBACKUP, BACKUPUPLOADRATE, SNAPSHOTBACKUPUPNOTIFICATION, AWSSLOWDOWNEXCEPTION
-    }
-
+    void incrementSuccess();
 }

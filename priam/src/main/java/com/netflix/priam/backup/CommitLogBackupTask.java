@@ -21,7 +21,6 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import org.slf4j.Logger;

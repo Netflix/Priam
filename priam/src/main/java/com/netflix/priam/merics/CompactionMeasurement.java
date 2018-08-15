@@ -16,43 +16,32 @@
  */
 package com.netflix.priam.merics;
 
+import com.netflix.spectator.api.Counter;
+import com.netflix.spectator.api.Registry;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+
 /**
  * Measurement class for scheduled compactions
  * Created by aagrawal on 2/28/18.
  */
+@Singleton
+public class CompactionMeasurement implements IMeasurement {
+    private final Counter failure, success;
 
-public class CompactionMeasurement implements IMeasurement<Object> {
-    private int failure = 0, success = 0;
-
-    @Override
-    public MMEASUREMENT_TYPE getType() {
-        return MMEASUREMENT_TYPE.COMPACTION;
+    @Inject
+    public CompactionMeasurement(Registry registry) {
+        failure = registry.counter(Metrics.METRIC_PREFIX + "compaction.failure");
+        success = registry.counter(Metrics.METRIC_PREFIX + "compaction.success");
     }
 
-    public void incrementFailureCnt(int val) {
-        this.failure += val;
+
+    public void incrementFailure() {
+        this.failure.increment();
     }
 
-    public int getFailureCnt() {
-        return this.failure;
+    public void incrementSuccess() {
+        success.increment();
     }
-
-    public void incrementSuccessCnt(int val) {
-        this.success += val;
-    }
-
-    public int getSuccessCnt() {
-        return this.success;
-    }
-
-    @Override
-    public Object getVal() {
-        return null;
-    }
-
-    @Override
-    public void setVal(Object val) {
-        //NO op;
-    }
-
 }

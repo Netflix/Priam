@@ -18,7 +18,7 @@ package com.netflix.priam.backupv2;
 
 import com.google.gson.stream.JsonWriter;
 import com.google.inject.Provider;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;

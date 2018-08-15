@@ -18,7 +18,7 @@ package com.netflix.priam.services;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backupv2.*;

@@ -1,6 +1,6 @@
 package com.netflix.priam.scheduler
 
-import com.netflix.priam.FakeConfiguration
+import com.netflix.priam.config.FakeConfiguration
 import com.netflix.priam.cluster.management.Flush
 import spock.lang.Specification
 import spock.lang.Unroll

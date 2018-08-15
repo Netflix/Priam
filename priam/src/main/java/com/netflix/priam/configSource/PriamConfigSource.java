@@ -1,29 +1,31 @@
-/**
- * Copyright 2017 Netflix, Inc.
- * <p>
+/*
+ * Copyright 2018 Netflix, Inc.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.configSource;
 
-import com.netflix.priam.CompositeConfigSource;
-import com.netflix.priam.PropertiesConfigSource;
-import com.netflix.priam.SimpleDBConfigSource;
-import com.netflix.priam.SystemPropertiesConfigSource;
+import com.netflix.priam.configSource.CompositeConfigSource;
+import com.netflix.priam.configSource.PropertiesConfigSource;
+import com.netflix.priam.configSource.SimpleDBConfigSource;
+import com.netflix.priam.configSource.SystemPropertiesConfigSource;
+import com.netflix.priam.configSource.IConfigSource;
 
 import javax.inject.Inject;
 
 /**
- * Default {@link com.netflix.priam.IConfigSource} pulling in configs from SimpleDB, local Properties, and System Properties.
+ * Default {@link IConfigSource} pulling in configs from SimpleDB, local Properties, and System Properties.
  */
 public class PriamConfigSource extends CompositeConfigSource {
 

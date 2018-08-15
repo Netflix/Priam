@@ -20,8 +20,8 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

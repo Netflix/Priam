@@ -16,7 +16,7 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import org.apache.commons.lang3.StringUtils;

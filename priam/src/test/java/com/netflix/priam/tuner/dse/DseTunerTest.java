@@ -22,8 +22,8 @@ import java.io.IOException;
 import java.util.Properties;
 
 import com.google.common.io.Files;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 
 import org.junit.Assert;
 import org.junit.Before;

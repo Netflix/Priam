@@ -17,8 +17,8 @@
 
 package com.netflix.priam.tuner;
 
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import org.junit.Test;
 

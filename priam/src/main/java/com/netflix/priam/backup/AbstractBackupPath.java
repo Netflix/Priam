@@ -17,7 +17,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.identity.InstanceIdentity;
 import org.apache.commons.io.IOUtils;

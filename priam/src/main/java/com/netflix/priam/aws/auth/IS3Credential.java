@@ -16,7 +16,7 @@
 package com.netflix.priam.aws.auth;
 
 import com.amazonaws.auth.AWSCredentials;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.cred.ICredential;
 
 /*
  * Credentials specific to Amazon S3

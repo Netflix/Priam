@@ -18,7 +18,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.MaxSizeHashMap;
 import org.slf4j.Logger;

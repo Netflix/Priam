@@ -22,8 +22,8 @@ import com.amazonaws.services.simpledb.AmazonSimpleDBClient;
 import com.amazonaws.services.simpledb.model.*;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.PriamInstance;
 
 import java.util.*;

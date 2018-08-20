@@ -1,7 +1,5 @@
 package com.netflix.priam.defaultimpl;
 
-import com.netflix.priam.ICassandraProcess;
-
 import java.io.IOException;
 
 /**

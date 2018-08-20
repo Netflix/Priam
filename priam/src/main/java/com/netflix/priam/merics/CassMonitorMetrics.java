@@ -29,9 +29,9 @@ public class CassMonitorMetrics {
 
     @Inject
     public CassMonitorMetrics(Registry registry) {
-        cassStop = registry.gauge(Metrics.METRIC_PREFIX + "stop");
-        cassStart = registry.gauge(Metrics.METRIC_PREFIX + "start");
-        cassAutoStart = registry.gauge(Metrics.METRIC_PREFIX + "auto.start");
+        cassStop = registry.gauge(Metrics.METRIC_PREFIX + "cass.stop");
+        cassStart = registry.gauge(Metrics.METRIC_PREFIX + "cass.start");
+        cassAutoStart = registry.gauge(Metrics.METRIC_PREFIX + "cass.auto.start");
     }
 
     public void incCassStop() {

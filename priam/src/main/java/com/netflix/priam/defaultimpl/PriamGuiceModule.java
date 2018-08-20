@@ -18,8 +18,6 @@ package com.netflix.priam.defaultimpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.netflix.priam.ICredential;
-import com.netflix.priam.ICredentialGeneric;
 import com.netflix.priam.aws.S3CrossAccountFileSystem;
 import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
@@ -29,6 +27,8 @@ import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
 import com.netflix.priam.backup.parallel.ITaskQueueMgr;
+import com.netflix.priam.cred.ICredential;
+import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCredential;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;

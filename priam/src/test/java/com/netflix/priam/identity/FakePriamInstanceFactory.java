@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,11 @@
  *
  */
 
-package com.netflix.priam;
+package com.netflix.priam.identity;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.config.IConfiguration;
 
 import java.util.*;
 

@@ -15,7 +15,7 @@
  */
 package com.netflix.priam.defaultimpl;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;

@@ -1,7 +1,8 @@
 # Changelog
-## 2018/08/15 3.2.0 
+## 2018/08/20 3.1.60
+***WARNING*** THIS IS A BREAKING RELEASE 
 ### New Feature
-* (# 706) Move to spectator to collect Metrics. This is a breaking change if you were depending on MetricPublisher to collect metrics. 
+* (#706) Move to spectator to collect Metrics. This is a breaking change, if you were depending on MetricPublisher to collect metrics. 
 
 ## 2018/08/13 3.1.59 
 ### New Feature

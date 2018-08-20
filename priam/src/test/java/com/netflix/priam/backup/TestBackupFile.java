@@ -19,9 +19,9 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;

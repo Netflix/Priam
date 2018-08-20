@@ -20,7 +20,7 @@ package com.netflix.priam.tuner.dse;
 import com.google.common.base.Joiner;
 import com.google.common.io.Files;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

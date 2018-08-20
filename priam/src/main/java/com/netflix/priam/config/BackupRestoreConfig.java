@@ -15,7 +15,7 @@
  */
 package com.netflix.priam.config;
 
-import com.netflix.priam.IConfigSource;
+import com.netflix.priam.configSource.IConfigSource;
 
 import javax.inject.Inject;
 

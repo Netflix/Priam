@@ -16,13 +16,13 @@
 package com.netflix.priam.services;
 
 import com.google.inject.Provider;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;

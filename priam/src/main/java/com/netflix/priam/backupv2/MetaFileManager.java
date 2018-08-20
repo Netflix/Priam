@@ -17,7 +17,7 @@
 
 package com.netflix.priam.backupv2;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;

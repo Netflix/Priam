@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,11 +15,10 @@
  *
  */
 
-package com.netflix.priam;
+package com.netflix.priam.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.defaultimpl.PriamConfiguration;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;

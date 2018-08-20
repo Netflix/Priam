@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,19 @@
  * limitations under the License.
  *
  */
-
-package com.netflix.priam.backup;
+package com.netflix.priam.cred;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.netflix.priam.cred.ICredential;
+import com.google.inject.ImplementedBy;
 
-public class FakeNullCredential implements ICredential {
-    public AWSCredentialsProvider getAwsCredentialProvider() {
-        // TODO Auto-generated method stub
-        return null;
-    }
+/**
+ * Credential file interface for services supporting
+ * Access ID and key authentication
+ */
+@ImplementedBy(ClearCredential.class)
+public interface ICredential {
+    /**
+     * @return AWS Credential Provider object
+     */
+    AWSCredentialsProvider getAwsCredentialProvider();
 }

@@ -18,7 +18,7 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.json.simple.parser.JSONParser;

@@ -16,11 +16,11 @@
 package com.netflix.priam.tuner.dse;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraProcessManager;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
-import com.netflix.priam.health.InstanceState;
 
 import java.util.Map;
 

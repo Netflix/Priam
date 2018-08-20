@@ -18,8 +18,8 @@
 package com.netflix.priam.tuner.dse;
 
 import com.google.common.io.Files;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.dse.DseConfigStub;
 import org.junit.Assert;
 import org.junit.Before;

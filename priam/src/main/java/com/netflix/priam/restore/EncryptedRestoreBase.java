@@ -16,12 +16,14 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Provider;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredentialGeneric;
-import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;

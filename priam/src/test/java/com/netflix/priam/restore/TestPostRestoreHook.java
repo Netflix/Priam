@@ -18,8 +18,8 @@ package com.netflix.priam.restore;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.TestModule;
+import com.netflix.priam.config.IConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;

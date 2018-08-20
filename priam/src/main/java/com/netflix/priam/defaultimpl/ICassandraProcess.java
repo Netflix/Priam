@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2018 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,21 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam;
+package com.netflix.priam.defaultimpl;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.defaultimpl.ClearCredential;
+import com.netflix.priam.defaultimpl.CassandraProcessManager;
+
+import java.io.IOException;
 
 /**
- * Credential file interface for services supporting 
- * Access ID and key authentication
+ * Interface to aid in starting and stopping cassandra.
+ *
+ * @author jason brown
  */
-@ImplementedBy(ClearCredential.class)
-public interface ICredential {
-    /**
-     * @return AWS Credential Provider object
-     */
-    AWSCredentialsProvider getAwsCredentialProvider();
+@ImplementedBy(CassandraProcessManager.class)
+public interface ICassandraProcess {
+    void start(boolean join_ring) throws IOException;
+
+    void stop(boolean force) throws IOException;
 }

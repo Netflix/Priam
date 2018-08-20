@@ -19,7 +19,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import junit.framework.Assert;
 import org.joda.time.DateTime;

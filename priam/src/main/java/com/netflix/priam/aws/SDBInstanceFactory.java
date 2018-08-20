@@ -19,7 +19,7 @@ package com.netflix.priam.aws;
 import com.amazonaws.AmazonServiceException;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import org.slf4j.Logger;

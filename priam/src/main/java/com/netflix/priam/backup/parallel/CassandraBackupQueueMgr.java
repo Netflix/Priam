@@ -17,7 +17,7 @@ package com.netflix.priam.backup.parallel;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

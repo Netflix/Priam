@@ -18,18 +18,14 @@ package com.netflix.priam.resources;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
-import org.apache.cassandra.concurrent.JMXEnabledThreadPoolExecutorMBean;
-import org.apache.cassandra.db.ColumnFamilyStoreMBean;
-import org.apache.cassandra.db.compaction.CompactionManagerMBean;
 import org.apache.cassandra.exceptions.ConfigurationException;
-import org.apache.cassandra.utils.EstimatedHistogram;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -43,10 +39,6 @@ import javax.ws.rs.core.Response;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.text.DecimalFormat;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 
 /**

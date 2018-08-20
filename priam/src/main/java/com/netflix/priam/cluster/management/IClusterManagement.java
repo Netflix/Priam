@@ -15,7 +15,7 @@
  */
 package com.netflix.priam.cluster.management;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.CassandraMonitor;

@@ -16,9 +16,9 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Provider;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredentialGeneric;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.cryptography.IFileCryptography;

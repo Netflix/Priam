@@ -27,7 +27,7 @@ import org.junit.Before;
 import com.google.common.collect.ImmutableList;
 import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN_RANDOM;
 import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN_RANDOM;
-import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 

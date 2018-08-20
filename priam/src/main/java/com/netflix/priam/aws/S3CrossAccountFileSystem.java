@@ -20,7 +20,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.IBackupFileSystem;
 import org.slf4j.Logger;

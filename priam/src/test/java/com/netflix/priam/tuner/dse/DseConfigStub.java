@@ -16,7 +16,7 @@ package com.netflix.priam.tuner.dse;
  *
  */
 
-import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
 
 import java.util.HashSet;
 import java.util.Set;

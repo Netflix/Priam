@@ -19,8 +19,8 @@ package com.netflix.priam.tuner;
 import java.io.File;
 
 import com.google.common.io.Files;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;

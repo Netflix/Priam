@@ -23,7 +23,7 @@ import com.amazonaws.services.sns.model.PublishRequest;
 import com.amazonaws.services.sns.model.PublishResult;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;

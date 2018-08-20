@@ -1,7 +1,7 @@
 package com.netflix.priam.cluser.management
 
 import com.google.inject.Guice
-import com.netflix.priam.FakeConfiguration
+import com.netflix.priam.config.FakeConfiguration
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
 import com.netflix.priam.defaultimpl.CassandraOperations

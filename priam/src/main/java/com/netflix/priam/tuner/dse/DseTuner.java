@@ -16,7 +16,7 @@
 package com.netflix.priam.tuner.dse;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.tuner.StandardTuner;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;

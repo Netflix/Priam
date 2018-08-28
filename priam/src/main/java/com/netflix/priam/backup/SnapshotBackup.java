@@ -25,15 +25,21 @@ import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.ThreadSleeper;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Task for running daily snapshots
@@ -51,16 +57,19 @@ public class SnapshotBackup extends AbstractBackup {
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
     private String snapshotName = null;
+    private Instant snapshotInstant = DateUtil.getInstant();
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private CassandraOperations cassandraOperations;
+    private BackupMetrics backupMetrics;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
                           MetaData metaData, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
+            , InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations, BackupMetrics backupMetrics) {
         super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
+        this.backupMetrics = backupMetrics;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
         this.cassandraOperations = cassandraOperations;
@@ -77,6 +86,7 @@ public class SnapshotBackup extends AbstractBackup {
 
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
         snapshotName = pathFactory.get().formatDate(startTime);
+        snapshotInstant = DateUtil.getInstant();
         String token = instanceIdentity.getInstance().getToken();
 
         // Save start snapshot status
@@ -180,11 +190,50 @@ public class SnapshotBackup extends AbstractBackup {
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
 
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
-        // Add files to this dir
-        if (null != snapshotDir)
-            abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP));
-        else
+
+        if (snapshotDir == null) {
             logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
+            return;
+        }
+
+        findForgottenFiles(snapshotDir);
+        // Add files to this dir
+        abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP));
+    }
+
+    private void findForgottenFiles(File snapshotDir) {
+        try {
+            Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
+            File columnfamilyDir = snapshotDir.getParentFile().getParentFile();
+            Collection<File> columnfamilyFiles = FileUtils.listFiles(columnfamilyDir, FileFilterUtils.fileFileFilter(), null);
+
+            for (File file : snapshotFiles) {
+                //Get its parent directory file based on this file.
+                File originalFile = new File(columnfamilyDir, file.getName());
+                columnfamilyFiles.remove(originalFile);
+            }
+
+            if (columnfamilyFiles.size() == 0)
+                return;
+
+            //There might be new SSTables since we took snapshot. Remove them from this list.
+            Collection<File> forgottenFiles = columnfamilyFiles.stream().filter(file -> file.isFile()).filter(file -> {
+                Instant fileModification = Instant.ofEpochMilli(file.lastModified());
+                return fileModification.isBefore(snapshotInstant);
+            }).collect(Collectors.toList());
+
+            forgottenFiles.parallelStream().forEach(file -> logger.info("Forgotten file: {} for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName()));
+
+            if (forgottenFiles == null || forgottenFiles.size() == 0)
+                return;
+
+            backupMetrics.incrementForgottenFiles(forgottenFiles.size());
+            logger.warn("Forgotten files: {} found for CF: {}", forgottenFiles.size(), columnfamilyDir.getName());
+        }catch (Exception e)
+        {
+            //Eat the exception, if there, for any reason. This should not stop the snapshot for any reason.
+            logger.error("Exception occurred while trying to find forgottenFile. Ignoring the error and continue with backup.", e);
+        }
     }
 
     @Override

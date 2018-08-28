@@ -74,7 +74,7 @@ public abstract class AbstractBackup extends Task {
             bp.parseLocal(file, type);
 
             try {
-                logger.info("About to upload file {} for backup", file.getCanonicalFile());
+                logger.debug("About to upload file {} for backup", file.getCanonicalFile());
 
                 AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME) {
                     public AbstractBackupPath retriableCall() throws Exception {

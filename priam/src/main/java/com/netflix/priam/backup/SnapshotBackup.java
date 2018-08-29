@@ -33,13 +33,15 @@ import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.ThreadSleeper;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
+import org.apache.commons.io.filefilter.IOFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
 /**
  * Task for running daily snapshots
@@ -61,6 +63,8 @@ public class SnapshotBackup extends AbstractBackup {
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private CassandraOperations cassandraOperations;
     private BackupMetrics backupMetrics;
+    private final String TMP_EXT = ".tmp";
+    private final Pattern tmpFilePattern = Pattern.compile("^((.*)\\-(.*)\\-)?tmp(link)?\\-((?:l|k).)\\-(\\d)*\\-(.*)$");
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
@@ -205,34 +209,42 @@ public class SnapshotBackup extends AbstractBackup {
         try {
             Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
             File columnfamilyDir = snapshotDir.getParentFile().getParentFile();
-            Collection<File> columnfamilyFiles = FileUtils.listFiles(columnfamilyDir, FileFilterUtils.fileFileFilter(), null);
 
+            //Find all the files in columnfamily folder which is :
+            // 1. Not a temp file.
+            // 2. Is a file. (we don't care about directories)
+            // 3. Is older than snapshot time, as new files keep getting created after taking a snapshot.
+            IOFileFilter tmpFileFilter1 = FileFilterUtils.suffixFileFilter(TMP_EXT);
+            IOFileFilter tmpFileFilter2 = FileFilterUtils.asFileFilter(pathname -> tmpFilePattern.matcher(pathname.getName()).matches());
+            IOFileFilter tmpFileFilter = FileFilterUtils.or(tmpFileFilter1, tmpFileFilter2);
+            // Here we are allowing files which were more than @link{IConfiguration#getForgottenFileGracePeriodDays}. We do this to allow cassandra to
+            // clean up any files which were generated as part of repair/compaction and cleanup thread has not already deleted.
+            // Refer to https://issues.apache.org/jira/browse/CASSANDRA-6756 and https://issues.apache.org/jira/browse/CASSANDRA-7066
+            // for more information.
+            IOFileFilter ageFilter = FileFilterUtils.ageFileFilter(snapshotInstant.minus(config.getForgottenFileGracePeriodDays(), ChronoUnit.DAYS).toEpochMilli());
+            IOFileFilter fileFilter = FileFilterUtils.and(FileFilterUtils.notFileFilter(tmpFileFilter), FileFilterUtils.fileFileFilter(), ageFilter);
+
+            Collection<File> columnfamilyFiles = FileUtils.listFiles(columnfamilyDir, fileFilter, null);
+
+            //Remove the SSTable(s) which are part of snapshot from the CF file list.
+            //This cannot be a simple removeAll as snapshot files have "different" file folder prefix.
             for (File file : snapshotFiles) {
                 //Get its parent directory file based on this file.
                 File originalFile = new File(columnfamilyDir, file.getName());
                 columnfamilyFiles.remove(originalFile);
             }
 
+            //If there are no "extra" SSTables in CF data folder, we are done.
             if (columnfamilyFiles.size() == 0)
                 return;
 
-            //There might be new SSTables since we took snapshot. Remove them from this list.
-            Collection<File> forgottenFiles = columnfamilyFiles.stream().filter(file -> file.isFile()).filter(file -> {
-                Instant fileModification = Instant.ofEpochMilli(file.lastModified());
-                return fileModification.isBefore(snapshotInstant);
-            }).collect(Collectors.toList());
+            columnfamilyFiles.parallelStream().forEach(file -> logger.info("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName()));
 
-            forgottenFiles.parallelStream().forEach(file -> logger.info("Forgotten file: {} for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName()));
-
-            if (forgottenFiles == null || forgottenFiles.size() == 0)
-                return;
-
-            backupMetrics.incrementForgottenFiles(forgottenFiles.size());
-            logger.warn("Forgotten files: {} found for CF: {}", forgottenFiles.size(), columnfamilyDir.getName());
-        }catch (Exception e)
-        {
+            backupMetrics.incrementForgottenFiles(columnfamilyFiles.size());
+            logger.warn("# of forgotten files: {} found for CF: {}", columnfamilyFiles.size(), columnfamilyDir.getName());
+        } catch (Exception e) {
             //Eat the exception, if there, for any reason. This should not stop the snapshot for any reason.
-            logger.error("Exception occurred while trying to find forgottenFile. Ignoring the error and continue with backup.", e);
+            logger.error("Exception occurred while trying to find forgottenFile. Ignoring the error and continuing with remaining backup", e);
         }
     }
 

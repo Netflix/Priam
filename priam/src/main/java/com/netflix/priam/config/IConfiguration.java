@@ -219,18 +219,19 @@ public interface IConfiguration {
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    default String getCompactionCronExpression(){
+    default String getCompactionCronExpression() {
         return "-1";
     }
 
-   /**
-    * Column Family(ies), comma delimited, to start compactions (user-initiated or on CRON).
-    * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
-    * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
-    * Note 3: {@link #getCompactionExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getCompactionIncludeCFList()} is applied to include the CF's/keyspaces.
-    * @return Column Family(ies), comma delimited, to start compactions.  If no filter is applied, returns null.
-    */
-    default String getCompactionIncludeCFList(){
+    /**
+     * Column Family(ies), comma delimited, to start compactions (user-initiated or on CRON).
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getCompactionExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getCompactionIncludeCFList()} is applied to include the CF's/keyspaces.
+     *
+     * @return Column Family(ies), comma delimited, to start compactions.  If no filter is applied, returns null.
+     */
+    default String getCompactionIncludeCFList() {
         return null;
     }
 
@@ -240,9 +241,10 @@ public interface IConfiguration {
      * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
      * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
      * Note 3: {@link #getCompactionExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getCompactionIncludeCFList()} is applied to include the CF's/keyspaces.
+     *
      * @return Column Family(ies), comma delimited, to exclude from compactions.  If no filter is applied, returns null.
      */
-    default String getCompactionExcludeCFList(){
+    default String getCompactionExcludeCFList() {
         return null;
     }
 
@@ -494,6 +496,7 @@ public interface IConfiguration {
 
     /**
      * Enable/disable backup/restore of commit logs.
+     *
      * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default: false.
      */
     boolean isBackingUpCommitLogs();
@@ -585,6 +588,7 @@ public interface IConfiguration {
 
     /**
      * Data that needs to be restored is encrypted?
+     *
      * @return true if data that needs to be restored is encrypted. Note that setting this value does not play any role until {@link #getRestoreSnapshot()} is set to a non-null value.
      */
     boolean isRestoreEncrypted();
@@ -706,7 +710,7 @@ public interface IConfiguration {
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    default String getFlushCronExpression(){
+    default String getFlushCronExpression() {
         return "-1";
     }
 
@@ -725,18 +729,21 @@ public interface IConfiguration {
      * SNS Notification topic to be used for sending backup event notifications.
      * One start event is sent before uploading any file and one complete/failure event is sent after the file is uploaded/failed. This applies to both incremental and snapshot.
      * Default: no notifications i.e. this value is set to EMPTY VALUE
+     *
      * @return SNS Topic ARN to be used to send notification.
      */
     String getBackupNotificationTopicArn();
 
     /**
      * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called once download of files is complete, before starting Cassandra.
+     *
      * @return if post restore hook is enabled
      */
     boolean isPostRestoreHookEnabled();
 
     /**
      * Post restore hook to be executed
+     *
      * @return post restore hook to be executed once restore is complete
      */
     String getPostRestoreHook();
@@ -744,34 +751,48 @@ public interface IConfiguration {
 
     /**
      * HeartBeat file of post restore hook
+     *
      * @return file that indicates heartbeat of post restore hook
      */
     String getPostRestoreHookHeartbeatFileName();
-    
+
     /**
      * Done file for post restore hook
+     *
      * @return file that indicates completion of post restore hook
      */
     String getPostRestoreHookDoneFileName();
 
     /**
      * Maximum time Priam has to wait for post restore hook sub-process to complete successfully
+     *
      * @return time out for post restore hook in days
      */
     int getPostRestoreHookTimeOutInDays();
 
     /**
      * Heartbeat timeout (in ms) for post restore hook
+     *
      * @return heartbeat timeout for post restore hook
      */
     default int getPostRestoreHookHeartBeatTimeoutInMs() {
         return 120000;
     }
+
     /**
      * Heartbeat check frequency (in ms) for post restore hook
+     *
      * @return heart beat check frequency for post restore hook
      */
     default int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return 120000;
+    }
+
+    /**
+     * Grace period for the file(that should have been deleted by cassandra) that are considered to be forgotten. Only required for cassandra 2.x.
+     * @return grace period for the forgotten files.
+     */
+    default int getForgottenFileGracePeriodDays() {
+        return 1;
     }
 }

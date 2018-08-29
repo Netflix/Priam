@@ -240,6 +240,7 @@ public class SnapshotBackup extends AbstractBackup {
 
             columnfamilyFiles.parallelStream().forEach(file -> logger.info("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName()));
 
+            //TODO: The eventual plan is to move the forgotten files to a lost+found directory and clean the directory after 'x' amount of time. This behavior should be configurable. 
             backupMetrics.incrementForgottenFiles(columnfamilyFiles.size());
             logger.warn("# of forgotten files: {} found for CF: {}", columnfamilyFiles.size(), columnfamilyDir.getName());
         } catch (Exception e) {

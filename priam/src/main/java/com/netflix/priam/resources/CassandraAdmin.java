@@ -269,52 +269,6 @@ public class CassandraAdmin {
     }
 
     @GET
-    @Path("/disablethrift")
-    public Response disablethrift() {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            return Response.status(503).entity("JMXConnectionException").build();
-        }
-        nodeTool.stopThriftServer();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/enablethrift")
-    public Response enablethrift() {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            return Response.status(503).entity("JMXConnectionException").build();
-        }
-        nodeTool.startThriftServer();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/statusthrift")
-    public Response statusthrift() throws JSONException {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            return Response.status(503).entity("JMXConnectionException").build();
-        }
-        return Response.ok(
-                        new JSONObject()
-                                .put(
-                                        "status",
-                                        (nodeTool.isThriftServerRunning()
-                                                ? "running"
-                                                : "not running")),
-                        MediaType.APPLICATION_JSON)
-                .build();
-    }
-
-    @GET
     @Path("/gossipinfo")
     public Response gossipinfo() throws Exception {
         List<Map<String, String>> parsedInfo = cassandraOperations.gossipInfo();

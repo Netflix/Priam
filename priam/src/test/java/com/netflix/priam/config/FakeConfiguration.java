@@ -144,12 +144,6 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getThriftPort()
-    {
-        return 9160;
-    }
-
-    @Override
     public int getNativeTransportPort()
     {
         return 9042;
@@ -613,11 +607,6 @@ public class FakeConfiguration implements IConfiguration
         return true;
     }
 
-    public boolean isThriftEnabled()
-    {
-        return true;
-    }
-
     public boolean isNativeTransportEnabled()
     {
         return false;
@@ -636,21 +625,6 @@ public class FakeConfiguration implements IConfiguration
     public int getConcurrentCompactorsCnt()
     {
         return 1;
-    }
-
-	@Override
-	public String getRpcServerType() {
-		return "hsha";
-	}
-
-    @Override
-    public int getRpcMinThreads() {
-        return 16;
-    }
-
-    @Override
-    public int getRpcMaxThreads() {
-        return 2048;
     }
 
 	@Override

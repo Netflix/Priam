@@ -194,11 +194,6 @@ public interface IConfiguration {
     int getSSLStoragePort();
 
     /**
-     * @return Cassandra's thrift port
-     */
-    int getThriftPort();
-
-    /**
      * @return Port for CQL binary transport.
      */
     int getNativeTransportPort();
@@ -554,8 +549,6 @@ public interface IConfiguration {
 
     boolean isDynamicSnitchEnabled();
 
-    boolean isThriftEnabled();
-
     boolean isNativeTransportEnabled();
 
     int getConcurrentReadsCnt();
@@ -563,12 +556,6 @@ public interface IConfiguration {
     int getConcurrentWritesCnt();
 
     int getConcurrentCompactorsCnt();
-
-    String getRpcServerType();
-
-    int getRpcMinThreads();
-
-    int getRpcMaxThreads();
 
     int getIndexInterval();
 

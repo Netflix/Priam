@@ -30,6 +30,7 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public class FakeConfiguration implements IConfiguration
     public String zone;
     public String instance_id;
     public String restorePrefix;
+    public Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration()
     {
@@ -500,9 +502,10 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
+    @Override
     public String getYamlLocation()
     {
-        return "conf/cassandra.yaml";
+        return getCassHome() + "/conf/cassandra.yaml";
     }
 
     @Override
@@ -865,5 +868,16 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getTunablePropertyFiles() {
+        return "cassandra-rackdc.properties";
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return fakeProperties.getOrDefault(key, defaultValue);
     }
 }

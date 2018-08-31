@@ -24,6 +24,11 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -39,6 +44,16 @@ public interface IConfiguration {
      * @return Path to the home dir of Cassandra
      */
     String getCassHome();
+
+    /**
+     * Returns the path to the Cassandra configuration directory, this varies by distribution but the default
+     * of finding the yaml file and going up one directory is a reasonable default. If you have a custom Yaml
+     * Location that doesn't have all the other configuration files you may want to tune this.
+     * @return
+     */
+    default String getCassConfigurationDirectory() {
+        return new File(getYamlLocation()).getParentFile().getPath();
+    }
 
     String getYamlLocation();
 
@@ -790,4 +805,21 @@ public interface IConfiguration {
     default int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return 120000;
     }
+
+    /**
+     * Return a comma delimited list of property files that should be tuned in the configuration
+     * directory by Priam. These files live relative to the configuration directory.
+     * @return A comma delimited list of relative file paths to the configuration directory
+     */
+    default String getTunablePropertyFiles() { return ""; }
+
+    /**
+     * Escape hatch for getting any arbitrary property by key
+     * This is useful so we don't have to keep adding methods to this interface for every single configuration
+     * option ever.
+     * @param key The arbitrary configuration property to look up
+     * @param defaultValue The default value to return if the key is not found.
+     * @return The result for the property
+     */
+    String getProperty(String key, String defaultValue);
 }

@@ -1136,8 +1136,14 @@ public class PriamConfiguration implements IConfiguration {
     public int getPostRestoreHookHeartBeatTimeoutInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_TIMEOUT_MS, 120000);
     }
+
     @Override
     public int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_CHECK_FREQUENCY_MS, 120000);
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue) {
+        return config.get(PRIAM_PRE + "." + key, defaultValue);
     }
 }

@@ -28,6 +28,8 @@ import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
+import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -44,7 +46,9 @@ public class StandardTuner implements ICassandraTuner {
         this.config = config;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception {
+    @SuppressWarnings("unchecked")
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception
+    {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -120,7 +124,6 @@ public class StandardTuner implements ICassandraTuner {
         //force to 1 until vnodes are properly supported
         map.put("num_tokens", 1);
 
-
         addExtraCassParams(map);
 
         //remove troublesome properties
@@ -130,7 +133,22 @@ public class StandardTuner implements ICassandraTuner {
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 
+        // TODO: port commit log backups to the PropertiesFileTuner implementation
         configureCommitLogBackups();
+
+        File configurationDirectory = new File(config.getCassConfigurationDirectory());
+        if (configurationDirectory.exists() && configurationDirectory.isDirectory()) {
+            Arrays.asList(config.getTunablePropertyFiles().split(",")).forEach(f -> {
+                // e.g. cassandra-rackdc.properties
+                String[] propertiesFile = f.split("\\.");
+                if (propertiesFile.length > 1 && !propertiesFile[0].isEmpty())
+                {
+                    String prefix = propertiesFile[0];
+                    PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config, prefix);
+                    propertyTuner.updateAndSaveProperties(Paths.get(configurationDirectory.getPath(), f).toString());
+                }
+            });
+        }
     }
 
     /**
@@ -187,7 +205,7 @@ public class StandardTuner implements ICassandraTuner {
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
-    protected void configureCommitLogBackups() throws IOException {
+    protected void configureCommitLogBackups() {
         if (!config.isBackingUpCommitLogs())
             return;
         Properties props = new Properties();
@@ -196,12 +214,10 @@ public class StandardTuner implements ICassandraTuner {
         props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
         props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
 
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()));
+        try (FileOutputStream fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
             props.store(fos, "cassandra commit log archive props, as written by priam");
-        } finally {
-            IOUtils.closeQuietly(fos);
+        } catch (IOException e) {
+            logger.error("Could not store commitlog_archiving.properties", e);
         }
     }
 

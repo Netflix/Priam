@@ -18,6 +18,7 @@ package com.netflix.priam.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
@@ -1078,6 +1079,16 @@ public interface IConfiguration {
      */
     default String getMergedConfigurationDirectory() {
         return "/tmp/priam_configuration";
+    }
+
+    /**
+     * Return a list of property file paths from the configuration directory by Priam that should be
+     * tuned.
+     *
+     * @return the files paths
+     */
+    default ImmutableSet<String> getTunablePropertyFiles() {
+        return ImmutableSet.of();
     }
 
     /**

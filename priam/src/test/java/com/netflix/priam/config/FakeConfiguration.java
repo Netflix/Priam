@@ -17,6 +17,7 @@
 
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;
 import java.io.File;
 import java.util.Arrays;
@@ -31,7 +32,7 @@ public class FakeConfiguration implements IConfiguration {
     private String restorePrefix = "";
     public Map<String, Object> fakeConfig;
 
-    public final Map<String, String> fakeProperties = new HashMap<>();
+    public Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration() {
         this("my_fake_cluster");
@@ -129,8 +130,9 @@ public class FakeConfiguration implements IConfiguration {
         return 5;
     }
 
+    @Override
     public String getYamlLocation() {
-        return "conf/cassandra.yaml";
+        return getCassHome() + "/conf/cassandra.yaml";
     }
 
     @Override
@@ -174,5 +176,19 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getMergedConfigurationDirectory() {
         return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
+    }
+
+    @Override
+    public ImmutableSet<String> getTunablePropertyFiles() {
+        String path = new File(getYamlLocation()).getParentFile().getPath();
+        return ImmutableSet.of(path + "/cassandra-rackdc.properties");
+    }
+
+    public String getRAC() {
+        return "my_zone";
+    }
+
+    public String getDC() {
+        return "us-east-1";
     }
 }

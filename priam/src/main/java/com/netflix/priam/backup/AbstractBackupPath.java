@@ -307,6 +307,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public static class RafInputStream extends InputStream {
+    public static class RafInputStream extends InputStream implements AutoCloseable {
         private RandomAccessReader raf;
 
         public RafInputStream(RandomAccessReader raf) {

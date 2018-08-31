@@ -45,17 +45,13 @@ public class SnappyCompression implements ICompression {
     }
 
     private void decompress(InputStream input, OutputStream output) throws IOException {
-        SnappyInputStream is = new SnappyInputStream(new BufferedInputStream(input));
         byte data[] = new byte[BUFFER];
-        BufferedOutputStream dest1 = new BufferedOutputStream(output, BUFFER);
-        try {
+        try(BufferedOutputStream dest1 = new BufferedOutputStream(output, BUFFER);
+            SnappyInputStream is = new SnappyInputStream(new BufferedInputStream(input))) {
             int c;
             while ((c = is.read(data, 0, BUFFER)) != -1) {
                 dest1.write(data, 0, c);
             }
-        } finally {
-            IOUtils.closeQuietly(dest1);
-            IOUtils.closeQuietly(is);
         }
     }
 }

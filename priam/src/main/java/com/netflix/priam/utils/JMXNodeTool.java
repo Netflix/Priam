@@ -230,7 +230,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     public JSONObject info() throws JSONException {
         JSONObject object = new JSONObject();
         object.put("gossip_active", isInitialized());
-        object.put("thrift_active", isThriftServerRunning());
         object.put("token", getTokens().toString());
         object.put("load", getLoadString());
         object.put("generation_no", getCurrentGenerationNumber());
@@ -247,15 +246,15 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     @SuppressWarnings("unchecked")
     public JSONArray ring(String keyspace) throws JSONException {
         JSONArray ring = new JSONArray();
-        Map<String, String> tokenToEndpoint = getTokenToEndpointMap();
+        Map<String, String> tokenToEndpoint = getTokenToEndpointMap(false);
         List<String> sortedTokens = new ArrayList<String>(tokenToEndpoint.keySet());
 
-        Collection<String> liveNodes = getLiveNodes();
-        Collection<String> deadNodes = getUnreachableNodes();
-        Collection<String> joiningNodes = getJoiningNodes();
-        Collection<String> leavingNodes = getLeavingNodes();
-        Collection<String> movingNodes = getMovingNodes();
-        Map<String, String> loadMap = getLoadMap();
+        Collection<String> liveNodes = getLiveNodes(false);
+        Collection<String> deadNodes = getUnreachableNodes(false);
+        Collection<String> joiningNodes = getJoiningNodes(false);
+        Collection<String> leavingNodes = getLeavingNodes(false);
+        Collection<String> movingNodes = getMovingNodes(false);
+        Map<String, String> loadMap = getLoadMap(false);
 
         String format = "%-16s%-12s%-12s%-7s%-8s%-16s%-20s%-44s%n";
 

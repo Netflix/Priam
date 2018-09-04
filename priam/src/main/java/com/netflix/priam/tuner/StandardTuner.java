@@ -138,16 +138,17 @@ public class StandardTuner implements ICassandraTuner {
 
         File configurationDirectory = new File(config.getCassConfigurationDirectory());
         if (configurationDirectory.exists() && configurationDirectory.isDirectory()) {
-            Arrays.asList(config.getTunablePropertyFiles().split(",")).forEach(f -> {
+            String[] tunablePropertyFiles = config.getTunablePropertyFiles().split(",");
+            for (String file: tunablePropertyFiles) {
                 // e.g. cassandra-rackdc.properties
-                String[] propertiesFile = f.split("\\.");
+                String[] propertiesFile = file.split("\\.");
                 if (propertiesFile.length > 1 && !propertiesFile[0].isEmpty())
                 {
                     String prefix = propertiesFile[0];
                     PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config, prefix);
-                    propertyTuner.updateAndSaveProperties(Paths.get(configurationDirectory.getPath(), f).toString());
+                    propertyTuner.updateAndSaveProperties(Paths.get(configurationDirectory.getPath(), file).toString());
                 }
-            });
+            }
         }
     }
 
@@ -205,7 +206,8 @@ public class StandardTuner implements ICassandraTuner {
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
-    protected void configureCommitLogBackups() {
+    protected void configureCommitLogBackups() throws IOException
+    {
         if (!config.isBackingUpCommitLogs())
             return;
         Properties props = new Properties();
@@ -218,6 +220,7 @@ public class StandardTuner implements ICassandraTuner {
             props.store(fos, "cassandra commit log archive props, as written by priam");
         } catch (IOException e) {
             logger.error("Could not store commitlog_archiving.properties", e);
+            throw e;
         }
     }
 

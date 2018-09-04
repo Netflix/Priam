@@ -47,6 +47,9 @@ public class StandardTunerTest
 
         config = new FakeConfiguration();
         tuner = new StandardTuner(config);
+        File targetDir = new File(config.getCassConfigurationDirectory());
+        if(!targetDir.exists())
+            targetDir.mkdirs();
     }
 
     @Test
@@ -102,19 +105,17 @@ public class StandardTunerTest
     public void testPropertiesFiles() throws Exception
     {
         FakeConfiguration fake = (FakeConfiguration) config;
+        String target = "/tmp/priam_test.yaml";
+        Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File(target));
+
         File testRackDcFile = new File("src/test/resources/conf/cassandra-rackdc.properties");
-        File testYamlFile = new File("src/main/resources/incr-restore-cassandra.yaml");
         File rackDcFile = new File(Paths.get(config.getCassConfigurationDirectory(), "cassandra-rackdc.properties").normalize().toString());
-        File configFile = new File(Paths.get(config.getCassConfigurationDirectory(), "properties_test.yaml").normalize().toString());
-        System.out.println(testRackDcFile);
-        System.out.println(rackDcFile);
         Files.copy(testRackDcFile, rackDcFile);
-        Files.copy(testYamlFile, configFile);
 
         try {
             fake.fakeProperties.put("propertyOverrides.cassandra-rackdc", "dc=${dc},rack=${rac},ec2_naming_scheme=legacy,dc_suffix=testsuffix");
 
-            tuner.writeAllProperties(configFile.getPath(), "your_host", "YourSeedProvider");
+            tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
             Properties prop = new Properties();
             prop.load(new FileReader(rackDcFile));
             assertEquals("us-east-1", prop.getProperty("dc"));
@@ -131,7 +132,6 @@ public class StandardTunerTest
             }
 
             Files.copy(testRackDcFile, rackDcFile);
-            Files.copy(testYamlFile, configFile);
         }
     }
 }

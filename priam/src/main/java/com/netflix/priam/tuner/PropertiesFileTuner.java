@@ -4,15 +4,10 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 
 import org.apache.commons.configuration2.PropertiesConfiguration;
@@ -22,10 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.JsonElement;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.utils.GsonJsonSerializer;
 
 /**
  * Support tuning standard .properties files
@@ -44,7 +37,8 @@ public class PropertiesFileTuner
     }
 
     @SuppressWarnings("unchecked")
-    public void updateAndSaveProperties(String configPath) {
+    public void updateAndSaveProperties(String configPath) throws IOException, ConfigurationException
+    {
         File propertiesFile = new File(configPath);
         try {
             if (propertiesFile.exists() && !propertiesFile.canWrite()) {
@@ -86,6 +80,7 @@ public class PropertiesFileTuner
         }
         catch (IOException | ConfigurationException e) {
             logger.error("Could not tune " + configPath, e);
+            throw e;
         }
     }
 

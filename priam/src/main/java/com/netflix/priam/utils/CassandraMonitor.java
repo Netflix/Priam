@@ -84,7 +84,6 @@ public class CassandraMonitor extends Task {
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
-                instanceState.setIsThriftActive(bean.isThriftServerRunning());
             } else {
                 //Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);

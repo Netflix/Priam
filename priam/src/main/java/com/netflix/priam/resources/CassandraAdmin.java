@@ -265,50 +265,6 @@ public class CassandraAdmin {
     }
 
     @GET
-    @Path("/disablethrift")
-    public Response disablethrift() throws IOException, ExecutionException, InterruptedException {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            logger.error("Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
-            return Response.status(503).entity("JMXConnectionException")
-                    .build();
-        }
-        nodeTool.stopThriftServer();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/enablethrift")
-    public Response enablethrift() throws IOException, ExecutionException, InterruptedException {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            logger.error("Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
-            return Response.status(503).entity("JMXConnectionException")
-                    .build();
-        }
-        nodeTool.startThriftServer();
-        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
-    @Path("/statusthrift")
-    public Response statusthrift() throws IOException, ExecutionException, InterruptedException, JSONException {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            logger.error("Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
-            return Response.status(503).entity("JMXConnectionException")
-                    .build();
-        }
-        return Response.ok(new JSONObject().put("status", (nodeTool.isThriftServerRunning() ? "running" : "not running")), MediaType.APPLICATION_JSON).build();
-    }
-
-    @GET
     @Path("/gossipinfo")
     public Response gossipinfo() throws IOException, ExecutionException, InterruptedException, JSONException {
         JMXNodeTool nodeTool;
@@ -319,7 +275,7 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException")
                     .build();
         }
-        JSONObject rootObj = parseGossipInfo(nodeTool.getGossipInfo());
+        JSONObject rootObj = parseGossipInfo(nodeTool.getGossipInfo(false));
         return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
     }
 

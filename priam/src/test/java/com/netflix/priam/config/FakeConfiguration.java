@@ -30,6 +30,7 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +45,7 @@ public class FakeConfiguration implements IConfiguration
     public String zone;
     public String instance_id;
     public String restorePrefix;
+    public Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration()
     {
@@ -141,12 +143,6 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public boolean enableRemoteJMX() {
         return false;
-    }
-
-    @Override
-    public int getThriftPort()
-    {
-        return 9160;
     }
 
     @Override
@@ -506,14 +502,15 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
+    @Override
     public String getYamlLocation()
     {
-        return "conf/cassandra.yaml";
+        return getCassHome() + "/conf/cassandra.yaml";
     }
 
     @Override
     public String getJVMOptionsFileLocation() {
-        return "src/test/resources/conf/jvm.options";
+        return "src/test/resources/conf/jvm-server.options";
     }
 
     @Override
@@ -613,11 +610,6 @@ public class FakeConfiguration implements IConfiguration
         return true;
     }
 
-    public boolean isThriftEnabled()
-    {
-        return true;
-    }
-
     public boolean isNativeTransportEnabled()
     {
         return false;
@@ -636,21 +628,6 @@ public class FakeConfiguration implements IConfiguration
     public int getConcurrentCompactorsCnt()
     {
         return 1;
-    }
-
-	@Override
-	public String getRpcServerType() {
-		return "hsha";
-	}
-
-    @Override
-    public int getRpcMinThreads() {
-        return 16;
-    }
-
-    @Override
-    public int getRpcMaxThreads() {
-        return 2048;
     }
 
 	@Override
@@ -891,5 +868,16 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getTunablePropertyFiles() {
+        return "cassandra-rackdc.properties";
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return fakeProperties.getOrDefault(key, defaultValue);
     }
 }

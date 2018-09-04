@@ -17,12 +17,17 @@
 package com.netflix.priam.tuner;
 
 import java.io.File;
+import java.io.FileReader;
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
+import java.util.Properties;
 
 import com.google.common.io.Files;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
+
 import static org.junit.Assert.assertEquals;
 
 public class StandardTunerTest
@@ -34,13 +39,17 @@ public class StandardTunerTest
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
     private StandardTuner tuner;
+    private IConfiguration config;
 
     @Before
     public void setup()
     {
 
-        IConfiguration config = new FakeConfiguration();
+        config = new FakeConfiguration();
         tuner = new StandardTuner(config);
+        File targetDir = new File(config.getCassConfigurationDirectory());
+        if(!targetDir.exists())
+            targetDir.mkdirs();
     }
 
     @Test
@@ -90,5 +99,39 @@ public class StandardTunerTest
         String target = "/tmp/priam_test.yaml";
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File("/tmp/priam_test.yaml"));
         tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
+    }
+
+    @Test
+    public void testPropertiesFiles() throws Exception
+    {
+        FakeConfiguration fake = (FakeConfiguration) config;
+        String target = "/tmp/priam_test.yaml";
+        Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File(target));
+
+        File testRackDcFile = new File("src/test/resources/conf/cassandra-rackdc.properties");
+        File rackDcFile = new File(Paths.get(config.getCassConfigurationDirectory(), "cassandra-rackdc.properties").normalize().toString());
+        Files.copy(testRackDcFile, rackDcFile);
+
+        try {
+            fake.fakeProperties.put("propertyOverrides.cassandra-rackdc", "dc=${dc},rack=${rac},ec2_naming_scheme=legacy,dc_suffix=testsuffix");
+
+            tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
+            Properties prop = new Properties();
+            prop.load(new FileReader(rackDcFile));
+            assertEquals("us-east-1", prop.getProperty("dc"));
+            assertEquals("my_zone", prop.getProperty("rack"));
+            assertEquals("legacy", prop.getProperty("ec2_naming_scheme"));
+            assertEquals("testsuffix", prop.getProperty("dc_suffix"));
+
+            assertEquals(4, prop.stringPropertyNames().size());
+        } finally {
+            fake.fakeProperties.clear();
+            for (String line : Files.readLines(rackDcFile, Charset.defaultCharset()))
+            {
+                System.out.println(line);
+            }
+
+            Files.copy(testRackDcFile, rackDcFile);
+        }
     }
 }

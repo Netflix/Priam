@@ -53,7 +53,6 @@ public class InstanceState {
     private final AtomicBoolean shouldCassandraBeAlive = new AtomicBoolean(false);
     private final AtomicLong lastAttemptedStartTime = new AtomicLong(Long.MAX_VALUE);
     private final AtomicBoolean isGossipActive = new AtomicBoolean(false);
-    private final AtomicBoolean isThriftActive = new AtomicBoolean(false);
     private final AtomicBoolean isNativeTransportActive = new AtomicBoolean(false);
     private final AtomicBoolean isRequiredDirectoriesExist = new AtomicBoolean(false);
     private final AtomicBoolean isYmlWritten = new AtomicBoolean(false);
@@ -82,15 +81,6 @@ public class InstanceState {
 
     public void setIsGossipActive(boolean isGossipActive) {
         this.isGossipActive.set(isGossipActive);
-        setHealthy();
-    }
-
-    public boolean isThriftActive() {
-        return isThriftActive.get();
-    }
-
-    public void setIsThriftActive(boolean isThriftActive) {
-        this.isThriftActive.set(isThriftActive);
         setHealthy();
     }
 
@@ -206,7 +196,7 @@ public class InstanceState {
                     isGossipActive() &&
                     isYmlWritten() &&
                     isHealthyOverride() &&
-                    (isThriftActive() || isNativeTransportActive())
+                    isNativeTransportActive()
                 )
         );
     }

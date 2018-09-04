@@ -25,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import java.util.*;
 
+import static com.google.common.collect.Iterables.toArray;
+
 /**
  * This class encapsulates interactions with Cassandra.
  * Created by aagrawal on 6/19/18.
@@ -60,7 +62,7 @@ public class CassandraOperations {
             new RetryableCallable<Void>(6, 10000) {
                 public Void retriableCall() throws Exception {
                     JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
-                    nodetool.takeSnapshot(snapshotName, null);
+                    nodetool.takeSnapshot(snapshotName, null, Collections.emptyMap());
                     return null;
                 }
             }.call();

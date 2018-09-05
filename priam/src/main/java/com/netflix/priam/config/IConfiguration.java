@@ -572,8 +572,6 @@ public interface IConfiguration {
 
     int getConcurrentCompactorsCnt();
 
-    int getIndexInterval();
-
     /*
      * @return the warning threshold in MB's for large partitions encountered during compaction.
      * Default value of 100 is used (default from cassandra.yaml)
@@ -703,9 +701,9 @@ public interface IConfiguration {
     int getTombstoneFailureThreshold();
 
     /**
-     * @return streaming_socket_timeout_in_ms in C* yaml
+     * @return streaming_keep_alive_period_in_secs in C* yaml
      */
-    int getStreamingSocketTimeoutInMS();
+    int getStreamingKeepAlivePeriodInS();
 
     /**
      * List of keyspaces to flush. Default: all keyspaces.

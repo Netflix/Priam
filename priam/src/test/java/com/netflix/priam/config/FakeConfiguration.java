@@ -630,11 +630,6 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
-	@Override
-	public int getIndexInterval() {
-		return 0;
-	}
-
     @Override
     public int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
@@ -803,11 +798,11 @@ public class FakeConfiguration implements IConfiguration
     }
 
     /**
-     * @return streaming_socket_timeout_in_ms in yaml
+     * @return streaming_keep_alive_period_in_secs in yaml
      */
     @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return 86400000;
+    public int getStreamingKeepAlivePeriodInS() {
+        return 300;
     }
 
     @Override

@@ -21,7 +21,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -29,7 +28,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
 import java.nio.file.Paths;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -105,12 +103,10 @@ public class StandardTuner implements ICassandraTuner {
 
         // Add private ip address as broadcast_rpc_address. This will ensure that COPY function works correctly. 
         map.put("broadcast_rpc_address", config.getInstanceDataRetriever().getPrivateIP());
-        //map.put("index_interval", config.getIndexInterval());
-
 
         map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
-        map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
+        map.put("streaming_keep_alive_period_in_secs", config.getStreamingKeepAlivePeriodInS());
 
         map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
         map.put("compaction_large_partition_warning_threshold_mb", config.getCompactionLargePartitionWarnThresholdInMB());

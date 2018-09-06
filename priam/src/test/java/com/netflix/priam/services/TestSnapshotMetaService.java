@@ -149,8 +149,6 @@ public class TestSnapshotMetaService {
         if (dummyDir.toFile().exists())
             FileUtils.cleanDirectory(dummyDir.toFile());
 
-        Random random = new Random();
-
         for (int i = 1; i <= noOfKeyspaces; i++) {
             String keyspaceName = "sample" + i;
 

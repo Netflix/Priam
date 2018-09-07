@@ -69,6 +69,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
+    protected long lastModified = 0;
     protected Date uploadedTs;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
@@ -86,6 +87,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public InputStream localReader() throws IOException {
         assert backupFile != null;
+        lastModified = backupFile.lastModified();
         return new RafInputStream(RandomAccessReader.open(backupFile));
     }
 
@@ -278,6 +280,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public Date getUploadedTs() {
         return this.uploadedTs;
+    }
+
+    public long getLastModified() {
+        return lastModified;
     }
 
     public static class RafInputStream extends InputStream {

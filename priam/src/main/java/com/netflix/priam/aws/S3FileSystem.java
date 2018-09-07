@@ -83,8 +83,19 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         }
     }
 
+    private ObjectMetadata getObjectMetadata(AbstractBackupPath path) {
+        ObjectMetadata ret = new ObjectMetadata();
+        long lastModified = path.getLastModified();
+        if(lastModified != 0) {
+            ret.addUserMetadata("Local-Modification-Time", Long.toString(lastModified));
+        }
+        return ret;
+    }
+
     private void uploadMultipart(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
+
+        initRequest.withObjectMetadata(getObjectMetadata(path));
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
@@ -141,7 +152,7 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
                 }
                 byte[] chunk = byteArrayOutputStream.toByteArray();
                 rateLimiter.acquire(chunk.length);
-                ObjectMetadata objectMetadata = new ObjectMetadata();
+                ObjectMetadata objectMetadata = getObjectMetadata(path);
                 objectMetadata.setContentLength(chunk.length);
                 PutObjectRequest putObjectRequest = new PutObjectRequest(config.getBackupPrefix(), path.getRemotePath(), new ByteArrayInputStream(chunk), objectMetadata);
                 //Retry if failed.

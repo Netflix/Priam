@@ -92,10 +92,10 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
     }
 
     @Override
-    public void downloadFile(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
+    void downloadFileImpl(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
         try {
 
-            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), path);
+            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), path.getSize(), path.getRemotePath());
 
         	/*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.
@@ -121,7 +121,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
 
 
     @Override
-    public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
+    void uploadFileImpl(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
 
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath()); //initialize chunking request to aws
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest); //Fetch the aws generated upload id for this chunking request

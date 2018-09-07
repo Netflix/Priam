@@ -23,11 +23,11 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -54,9 +54,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
     protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
-    //protected AtomicInteger uploadCount = new AtomicInteger();
     protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
-    //protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
     protected BackupMetrics backupMetrics;
     protected AmazonS3 s3Client;
@@ -85,6 +83,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         this.rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
         this.addObserver(backupNotificationMgr);
     }
+
 
     public AmazonS3 getS3Client() {
         return s3Client;
@@ -221,11 +220,9 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize; //compute the size of each block we will upload to endpoint
 
-        logger.info("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), path.getRemotePath(), chunkSize);
-
         long startTime = System.nanoTime(); //initialize for each file upload
         notifyEventStart(new BackupEvent(path));
-        uploadFile(path, in, chunkSize);
+        uploadFileImpl(path, in, chunkSize);
         long completedTime = System.nanoTime();
         postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
         notifyEventSuccess(new BackupEvent(path));
@@ -237,11 +234,9 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             String eTagObjectId = resultS3MultiPartUploadComplete.getETag(); //unique id of the whole object
             logDiagnosticInfo(path, resultS3MultiPartUploadComplete);
         } else {
-            this.backupMetrics.incrementInvalidUploads();
             throw new BackupRestoreException("Error uploading file as ETag or CompleteMultipartUploadResult is NULL -" + path.getFileName());
         }
     }
-
 
     protected BackupRestoreException encounterError(AbstractBackupPath path, S3PartUploader s3PartUploader, Exception e) {
         s3PartUploader.abortUpload();
@@ -266,7 +261,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         return new BackupRestoreException("Error uploading file " + path.getFileName(), e);
     }
 
-    abstract void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException;
+    abstract void uploadFileImpl(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException;
 
     /**
      * This method does exactly as other download method.(Supposed to be overridden)
@@ -277,13 +272,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     @Override
     public void download(AbstractBackupPath path, OutputStream os,
                          String filePath) throws BackupRestoreException {
-        try {
-            // Calling original Download method
             download(path, os);
-        } catch (Exception e) {
-            throw new BackupRestoreException(e.getMessage(), e);
-        }
-
     }
 
     @Override
@@ -292,7 +281,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         long contentLen = s3Client.getObjectMetadata(getPrefix(config), path.getRemotePath()).getContentLength();
         path.setSize(contentLen);
         try {
-            downloadFile(path, os);
+            downloadFileImpl(path, os);
             bytesDownloaded.addAndGet(contentLen);
             backupMetrics.incrementValidDownloads();
         } catch (BackupRestoreException e) {
@@ -301,7 +290,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
         }
     }
 
-    protected abstract void downloadFile(AbstractBackupPath path, OutputStream os) throws BackupRestoreException;
+    abstract void downloadFileImpl(AbstractBackupPath path, OutputStream os) throws BackupRestoreException;
 
     @Override
     public long getBytesUploaded() {

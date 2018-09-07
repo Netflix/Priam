@@ -72,9 +72,9 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
     }
 
     @Override
-    public void downloadFile(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
+    void downloadFileImpl(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
         try {
-            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(this.config), path);
+            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(this.config), path.getSize(), path.getRemotePath());
             final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > path.getSize() ? path.getSize() : MAX_BUFFERED_IN_STREAM_SIZE;
             compress.decompressAndClose(new BufferedInputStream(rris, (int) bufSize), os);
         } catch (Exception e) {
@@ -99,6 +99,7 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
     }
 
     private void uploadMultipart(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
+        logger.info("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), path.getRemotePath(), chunkSize);
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath());
 
         initRequest.withObjectMetadata(getObjectMetadata(path));
@@ -144,12 +145,11 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
     }
 
     @Override
-    public void uploadFile(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
+    void uploadFileImpl(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
 
         if (path.getSize() < chunkSize) {
             //Upload file without using multipart upload as it will be more efficient.
-            if (logger.isDebugEnabled())
-                logger.debug("Uploading file using put: {}", path.getRemotePath());
+            logger.info("Uploading to {}/{} using PUT operation", config.getBackupPrefix(), path.getRemotePath());
 
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
                 Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);

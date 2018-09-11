@@ -19,9 +19,7 @@ package com.netflix.priam.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.tuner.JVMOption;
-import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
@@ -30,6 +28,7 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -44,6 +43,7 @@ public class FakeConfiguration implements IConfiguration
     public String zone;
     public String instance_id;
     public String restorePrefix;
+    public Map<String, Object> fakeConfig;
 
     public FakeConfiguration()
     {
@@ -57,6 +57,16 @@ public class FakeConfiguration implements IConfiguration
         this.zone = zone;
         this.instance_id = ins_id;
         this.restorePrefix  = "";
+        fakeConfig = new HashMap<>();
+        fakeConfig.put("auto_bootstrap", false);
+    }
+
+    public Object getFakeConfig(String key) {
+        return fakeConfig.get(key);
+    }
+
+    public void setFakeConfig(String key, Object value) {
+        fakeConfig.put(key, value);
     }
 
     @Override
@@ -673,8 +683,7 @@ public class FakeConfiguration implements IConfiguration
 
     @Override
     public boolean getAutoBoostrap() {
-        // TODO Auto-generated method stub
-        return false;
+        return (Boolean) fakeConfig.getOrDefault("auto_bootstrap", false);
     }
 
     @Override

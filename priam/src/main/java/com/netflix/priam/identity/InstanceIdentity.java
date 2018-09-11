@@ -67,7 +67,7 @@ public class InstanceIdentity {
             if (config.getAutoBoostrap()) {
                 // auto_bootstrap = true indicates that the cluster is up and running normally, in such a case
                 // we cannot provide the local instance as a seed otherwise we can bootstrap nodes with no data
-                return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostIP().equals(myInstance.getHostIP()));
+                return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostName().equals(myInstance.getHostName()));
             } else {
                 // auto_bootstrap = false indicates a freshly provisioned cluster. Some nodes in such a cluster must
                 // provide itself as a seed due to the changes in CASSANDRA-10134 which made it so the cluster would

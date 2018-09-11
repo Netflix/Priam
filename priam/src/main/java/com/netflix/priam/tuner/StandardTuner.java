@@ -21,13 +21,13 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -44,17 +44,17 @@ public class StandardTuner implements ICassandraTuner {
         this.config = config;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception {
+    @SuppressWarnings("unchecked")
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception
+    {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
         File yamlFile = new File(yamlLocation);
-        Map map = (Map) yaml.load(new FileInputStream(yamlFile));
+        Map map = yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
-        map.put("start_rpc", config.isThriftEnabled());
-        map.put("rpc_port", config.getThriftPort());
         map.put("start_native_transport", config.isNativeTransportEnabled());
         map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
@@ -101,17 +101,12 @@ public class StandardTuner implements ICassandraTuner {
         map.put("concurrent_writes", config.getConcurrentWritesCnt());
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
 
-        map.put("rpc_server_type", config.getRpcServerType());
-        map.put("rpc_min_threads", config.getRpcMinThreads());
-        map.put("rpc_max_threads", config.getRpcMaxThreads());
         // Add private ip address as broadcast_rpc_address. This will ensure that COPY function works correctly. 
         map.put("broadcast_rpc_address", config.getInstanceDataRetriever().getPrivateIP());
-        //map.put("index_interval", config.getIndexInterval());
-
 
         map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
-        map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
+        map.put("streaming_keep_alive_period_in_secs", config.getStreamingKeepAlivePeriodInS());
 
         map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
         map.put("compaction_large_partition_warning_threshold_mb", config.getCompactionLargePartitionWarnThresholdInMB());
@@ -125,7 +120,6 @@ public class StandardTuner implements ICassandraTuner {
         //force to 1 until vnodes are properly supported
         map.put("num_tokens", 1);
 
-
         addExtraCassParams(map);
 
         //remove troublesome properties
@@ -135,7 +129,23 @@ public class StandardTuner implements ICassandraTuner {
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 
+        // TODO: port commit log backups to the PropertiesFileTuner implementation
         configureCommitLogBackups();
+
+        File configurationDirectory = new File(config.getCassConfigurationDirectory());
+        if (configurationDirectory.exists() && configurationDirectory.isDirectory()) {
+            String[] tunablePropertyFiles = config.getTunablePropertyFiles().split(",");
+            for (String file: tunablePropertyFiles) {
+                // e.g. cassandra-rackdc.properties
+                String[] propertiesFile = file.split("\\.");
+                if (propertiesFile.length > 1 && !propertiesFile[0].isEmpty())
+                {
+                    String prefix = propertiesFile[0];
+                    PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config, prefix);
+                    propertyTuner.updateAndSaveProperties(Paths.get(configurationDirectory.getPath(), file).toString());
+                }
+            }
+        }
     }
 
     /**
@@ -192,7 +202,8 @@ public class StandardTuner implements ICassandraTuner {
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
-    protected void configureCommitLogBackups() throws IOException {
+    protected void configureCommitLogBackups() throws IOException
+    {
         if (!config.isBackingUpCommitLogs())
             return;
         Properties props = new Properties();
@@ -201,12 +212,11 @@ public class StandardTuner implements ICassandraTuner {
         props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
         props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
 
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()));
+        try (FileOutputStream fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
             props.store(fos, "cassandra commit log archive props, as written by priam");
-        } finally {
-            IOUtils.closeQuietly(fos);
+        } catch (IOException e) {
+            logger.error("Could not store commitlog_archiving.properties", e);
+            throw e;
         }
     }
 

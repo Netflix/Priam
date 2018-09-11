@@ -25,22 +25,21 @@ public class TestInstanceStatus {
     @Test
     public void testHealth(){
         //Verify good health.
-        Assert.assertTrue(testInstanceState.setParams(false, true, true, true, true, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(false,true, true, true, true, false, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(false,true, true, true, false, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true,false, true, true, false, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true,true, false, true, true, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true,true, true, false, true, true, true, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true,true, true, true, true, true, false, true).isHealthy());
-        Assert.assertTrue(testInstanceState.setParams(true,true, true, true, false, false, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true, false, true, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true, true, false, true, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true, true, true, false, true, true, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true, true, true, true, true, false, true).isHealthy());
+        Assert.assertTrue(testInstanceState.setParams(true, true, true, true, false, true, true).isHealthy());
 
         //Negative health case scenarios.
-        Assert.assertFalse(testInstanceState.setParams(false,false, true, true, false, true, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(false,true, false, true, true, true, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(false,true, true, false, true, true, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(false,true, true, true, true, true, false, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(false,true, true, true, false, false, true, true).isHealthy());
-        Assert.assertFalse(testInstanceState.setParams(false,true, true, true, false, false, true, false).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, false, true, true, true, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, true, false, true, true, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, true, true, false, true, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, true, true, true, true, false, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, true, true, true, false, true, true).isHealthy());
+        Assert.assertFalse(testInstanceState.setParams(false, true, true, true, false, true, false).isHealthy());
 
     }
 
@@ -51,11 +50,10 @@ public class TestInstanceStatus {
             this.instanceState = instanceState1;
         }
 
-        InstanceState setParams(boolean isRestoring, boolean isYmlWritten, boolean isCassandraProcessAlive, boolean isGossipEnabled, boolean isThriftEnabled, boolean isNativeEnabled, boolean isRequiredDirectoriesExist, boolean shouldCassandraBeAlive){
+        InstanceState setParams(boolean isRestoring, boolean isYmlWritten, boolean isCassandraProcessAlive, boolean isGossipEnabled, boolean isNativeEnabled, boolean isRequiredDirectoriesExist, boolean shouldCassandraBeAlive){
             instanceState.setYmlWritten(isYmlWritten);
             instanceState.setCassandraProcessAlive(isCassandraProcessAlive);
             instanceState.setIsNativeTransportActive(isNativeEnabled);
-            instanceState.setIsThriftActive(isThriftEnabled);
             instanceState.setIsGossipActive(isGossipEnabled);
             instanceState.setIsRequiredDirectoriesExist(isRequiredDirectoriesExist);
             instanceState.setShouldCassandraBeAlive(shouldCassandraBeAlive);

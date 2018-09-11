@@ -44,6 +44,7 @@ public class FakeConfiguration implements IConfiguration
     public String instance_id;
     public String restorePrefix;
     public Map<String, Object> fakeConfig;
+    public Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration()
     {
@@ -151,12 +152,6 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public boolean enableRemoteJMX() {
         return false;
-    }
-
-    @Override
-    public int getThriftPort()
-    {
-        return 9160;
     }
 
     @Override
@@ -516,14 +511,15 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
+    @Override
     public String getYamlLocation()
     {
-        return "conf/cassandra.yaml";
+        return getCassHome() + "/conf/cassandra.yaml";
     }
 
     @Override
     public String getJVMOptionsFileLocation() {
-        return "src/test/resources/conf/jvm.options";
+        return "src/test/resources/conf/jvm-server.options";
     }
 
     @Override
@@ -623,11 +619,6 @@ public class FakeConfiguration implements IConfiguration
         return true;
     }
 
-    public boolean isThriftEnabled()
-    {
-        return true;
-    }
-
     public boolean isNativeTransportEnabled()
     {
         return false;
@@ -647,26 +638,6 @@ public class FakeConfiguration implements IConfiguration
     {
         return 1;
     }
-
-	@Override
-	public String getRpcServerType() {
-		return "hsha";
-	}
-
-    @Override
-    public int getRpcMinThreads() {
-        return 16;
-    }
-
-    @Override
-    public int getRpcMaxThreads() {
-        return 2048;
-    }
-
-	@Override
-	public int getIndexInterval() {
-		return 0;
-	}
 
     @Override
     public int getCompactionLargePartitionWarnThresholdInMB() {
@@ -835,11 +806,11 @@ public class FakeConfiguration implements IConfiguration
     }
 
     /**
-     * @return streaming_socket_timeout_in_ms in yaml
+     * @return streaming_keep_alive_period_in_secs in yaml
      */
     @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return 86400000;
+    public int getStreamingKeepAlivePeriodInS() {
+        return 300;
     }
 
     @Override
@@ -900,5 +871,16 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getTunablePropertyFiles() {
+        return "cassandra-rackdc.properties";
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return fakeProperties.getOrDefault(key, defaultValue);
     }
 }

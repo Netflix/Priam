@@ -67,8 +67,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_SAVE_CACHE_LOCATION = PRIAM_PRE + ".cache.location";
     private static final String CONFIG_NEW_MAX_HEAP_SIZE = PRIAM_PRE + ".heap.newgen.size.";
     private static final String CONFIG_DIRECT_MAX_HEAP_SIZE = PRIAM_PRE + ".direct.memory.size.";
-    private static final String CONFIG_THRIFT_LISTEN_PORT_NAME = PRIAM_PRE + ".thrift.port";
-    private static final String CONFIG_THRIFT_ENABLED = PRIAM_PRE + ".thrift.enabled";
     private static final String CONFIG_NATIVE_PROTOCOL_PORT = PRIAM_PRE + ".nativeTransport.port";
     private static final String CONFIG_NATIVE_PROTOCOL_ENABLED = PRIAM_PRE + ".nativeTransport.enabled";
     private static final String CONFIG_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".storage.port";
@@ -121,7 +119,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_BACKUP_STATUS_FILE_LOCATION = PRIAM_PRE + ".backup.status.location";
     private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
-    private static final String CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS = PRIAM_PRE + ".streaming.socket.timeout.ms";
+    private static final String CONFIG_STREAMING_KEEP_ALIVE_PERIOD = PRIAM_PRE + ".streaming.socket.keepalive.s";
     private static final String CONFIG_TOMBSTONE_FAILURE_THRESHOLD = PRIAM_PRE + ".tombstone.failure.threshold";
     private static final String CONFIG_TOMBSTONE_WARNING_THRESHOLD = PRIAM_PRE + ".tombstone.warning.threshold";
 
@@ -150,10 +148,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_CONCURRENT_WRITES = PRIAM_PRE + ".concurrentWrites";
     private static final String CONFIG_CONCURRENT_COMPACTORS = PRIAM_PRE + ".concurrentCompactors";
 
-    private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
-    private static final String CONFIG_RPC_MIN_THREADS = PRIAM_PRE + ".rpc.min.threads";
-    private static final String CONFIG_RPC_MAX_THREADS = PRIAM_PRE + ".rpc.max.threads";
-    private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
     private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
     private static final String CONFIG_AUTO_BOOTSTRAP = PRIAM_PRE + ".auto.bootstrap";
     private static final String CONFIG_DSE_CLUSTER_TYPE = PRIAM_PRE + ".dse.cluster.type";
@@ -229,7 +223,6 @@ public class PriamConfiguration implements IConfiguration {
     private final String DEFAULT_MAX_HEAP = "8G";
     private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
     private final int DEFAULT_JMX_PORT = 7199;
-    private final int DEFAULT_THRIFT_PORT = 9160;
     private final int DEFAULT_NATIVE_PROTOCOL_PORT = 9042;
     private final int DEFAULT_STORAGE_PORT = 7000;
     private final int DEFAULT_SSL_STORAGE_PORT = 7001;
@@ -246,11 +239,7 @@ public class PriamConfiguration implements IConfiguration {
     // Default to restarting Cassandra automatically once per hour.
     private final int DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S = 60 * 60;
 
-    private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
-    private static final int DEFAULT_RPC_MIN_THREADS = 16;
-    private static final int DEFAULT_RPC_MAX_THREADS = 2048;
-    private static final int DEFAULT_INDEX_INTERVAL = 256;
-    private static final int DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS = 86400000; // 24 Hours
+    private static final int DEFAULT_STREAMING_KEEP_ALIVE_PERIOD_S = 300; // 5 minutes
     private static final int DEFAULT_TOMBSTONE_WARNING_THRESHOLD = 1000; // C* defaults
     private static final int DEFAULT_TOMBSTONE_FAILURE_THRESHOLD = 100000;// C* defaults
 
@@ -510,11 +499,6 @@ public class PriamConfiguration implements IConfiguration {
 
     public int getNativeTransportPort() {
         return config.get(CONFIG_NATIVE_PROTOCOL_PORT, DEFAULT_NATIVE_PROTOCOL_PORT);
-    }
-
-    @Override
-    public int getThriftPort() {
-        return config.get(CONFIG_THRIFT_LISTEN_PORT_NAME, DEFAULT_THRIFT_PORT);
     }
 
     @Override
@@ -822,7 +806,7 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getJVMOptionsFileLocation()
     {
-        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm.options");
+        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm-server.options");
     }
 
     public String getAuthenticator() {
@@ -916,10 +900,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_DSNITCH_ENABLED, true);
     }
 
-    public boolean isThriftEnabled() {
-        return config.get(CONFIG_THRIFT_ENABLED, true);
-    }
-
     public boolean isNativeTransportEnabled() {
         return config.get(CONFIG_NATIVE_PROTOCOL_ENABLED, false);
     }
@@ -935,22 +915,6 @@ public class PriamConfiguration implements IConfiguration {
     public int getConcurrentCompactorsCnt() {
         int cpus = Runtime.getRuntime().availableProcessors();
         return config.get(CONFIG_CONCURRENT_COMPACTORS, cpus);
-    }
-
-    public String getRpcServerType() {
-        return config.get(CONFIG_RPC_SERVER_TYPE, DEFAULT_RPC_SERVER_TYPE);
-    }
-
-    public int getRpcMinThreads() {
-        return config.get(CONFIG_RPC_MIN_THREADS, DEFAULT_RPC_MIN_THREADS);
-    }
-
-    public int getRpcMaxThreads() {
-        return config.get(CONFIG_RPC_MAX_THREADS, DEFAULT_RPC_MAX_THREADS);
-    }
-
-    public int getIndexInterval() {
-        return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
     }
 
     @Override
@@ -1102,11 +1066,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     /**
-     * @return streaming_socket_timeout_in_ms in yaml
+     * @return streaming_keep_alive_period_in_secs in yaml
      */
     @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return config.get(CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS, DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS);
+    public int getStreamingKeepAlivePeriodInS() {
+        return config.get(CONFIG_STREAMING_KEEP_ALIVE_PERIOD, DEFAULT_STREAMING_KEEP_ALIVE_PERIOD_S);
     }
 
     @Override
@@ -1163,8 +1127,14 @@ public class PriamConfiguration implements IConfiguration {
     public int getPostRestoreHookHeartBeatTimeoutInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_TIMEOUT_MS, 120000);
     }
+
     @Override
     public int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_CHECK_FREQUENCY_MS, 120000);
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue) {
+        return config.get(PRIAM_PRE + "." + key, defaultValue);
     }
 }

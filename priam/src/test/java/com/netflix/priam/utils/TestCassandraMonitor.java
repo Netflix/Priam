@@ -90,7 +90,6 @@ public class TestCassandraMonitor {
             mockProcess.getInputStream(); result= mockOutput;
             nodeProbe.isGossipRunning(); result=true;
             nodeProbe.isNativeTransportRunning(); result=true;
-            nodeProbe.isThriftServerRunning(); result=true;
         }};
         // Mock out the ps call
         final Runtime r = Runtime.getRuntime();

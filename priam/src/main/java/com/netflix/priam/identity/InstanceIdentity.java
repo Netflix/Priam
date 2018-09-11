@@ -63,12 +63,18 @@ public class InstanceIdentity {
 
     private final Predicate<PriamInstance> differentHostPredicate = new Predicate<PriamInstance>() {
         @Override
-        /**
-         * This is used to provide the list of seed providers.
-         * Since 3.x backported the @see <a href="https://issues.apache.org/jira/browse/CASSANDRA-10134">CASSANDRA-10134</a> we need to ensure that seed list contains all the seed(including itself) or cluster would never come up.
-         */
         public boolean apply(PriamInstance instance) {
-            return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID));
+            if (config.getAutoBoostrap()) {
+                // auto_bootstrap = true indicates that the cluster is up and running normally, in such a case
+                // we cannot provide the local instance as a seed otherwise we can bootstrap nodes with no data
+                return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID) && !instance.getHostIP().equals(myInstance.getHostIP()));
+            } else {
+                // auto_bootstrap = false indicates a freshly provisioned cluster. Some nodes in such a cluster must
+                // provide itself as a seed due to the changes in CASSANDRA-10134 which made it so the cluster would
+                // not start up when auto_bootstrap was false. This is because in 3.11 failing the shadow round
+                // (which will happen on bootup by definition) is acceptable for seeds, but not for non seeds
+                return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID));
+            }
         }
 
         @Override

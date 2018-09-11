@@ -25,8 +25,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.io.IOException;
@@ -109,6 +111,17 @@ public class CassandraConfig {
         }
     }
 
+    @POST
+    @Path("/set_replaced_ip")
+    public Response setReplacedIp(@QueryParam("ip") String ip) {
+        try {
+            priamServer.getId().setReplacedIp(ip);
+            return Response.ok().build();
+        } catch (Exception e) {
+            logger.error("Error while overriding replacement ip", e);
+            return Response.serverError().build();
+        }
+    }
 
     @GET
     @Path("/get_extra_env_params")

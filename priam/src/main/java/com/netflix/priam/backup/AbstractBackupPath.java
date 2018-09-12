@@ -100,6 +100,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             // Verify that the file hasn't changed since we opened it.
             // We could avoid this flow by using the fstat() system call,
             // but I see no way to do that (easily) from the JVM.
+            // The JVM returns the last modified time in milliseconds,
+            // but on Linux systems tested, it appears to be using the
+            // stat.st_mtime result, which is accurate only to seconds.
             if(backupFile.lastModified() == lastModified) {
                 break;
             }

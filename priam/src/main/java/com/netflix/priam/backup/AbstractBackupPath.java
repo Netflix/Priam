@@ -87,8 +87,25 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public InputStream localReader() throws IOException {
         assert backupFile != null;
-        lastModified = backupFile.lastModified();
-        return new RafInputStream(RandomAccessReader.open(backupFile));
+        InputStream ret = null;
+
+        while(true) {
+            if(ret != null) {
+                ret.close();
+            }
+
+            lastModified = backupFile.lastModified();
+            ret = new RafInputStream(RandomAccessReader.open(backupFile));
+
+            // Verify that the file hasn't changed since we opened it.
+            // We could avoid this flow by using the fstat() system call,
+            // but I see no way to do that (easily) from the JVM.
+            if(backupFile.lastModified() == lastModified) {
+                break;
+            }
+        }
+
+        return ret;
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException {

@@ -26,6 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,7 +95,7 @@ public class CommitLogBackup {
         new RetryableCallable() {
             public Void retriableCall()
                     throws Exception {
-                fs.upload(bp, bp.localReader());
+                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
                 return null;
             }
         }

@@ -163,8 +163,7 @@ public class MetaFileWriterBuilder {
             new RetryableCallable<Void>(6, 5000) {
                 @Override
                 public Void retriableCall() throws Exception {
-                    backupFileSystem.upload(abstractBackupPath, abstractBackupPath.localReader());
-                    abstractBackupPath.setCompressedFileSize(backupFileSystem.getBytesUploaded());
+                    backupFileSystem.uploadFile(metaFilePath, Paths.get(abstractBackupPath.getRemotePath()), abstractBackupPath);
                     return null;
                 }
             }.call();

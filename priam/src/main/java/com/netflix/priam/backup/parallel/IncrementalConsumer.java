@@ -21,6 +21,8 @@ import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Paths;
+
 /*
  * Performs an upload of a file, with retries.
  */
@@ -64,32 +66,15 @@ public class IncrementalConsumer implements Runnable {
                 @Override
                 public Void retriableCall() throws Exception {
 
-                    java.io.InputStream is = null;
-                    try {
-                        is = bp.localReader();
-                    } catch (java.io.FileNotFoundException | RuntimeException e) {
-                        if (is != null) {
-                            is.close();
-                        }
+                    if (!bp.getBackupFile().exists())
                         throw new java.util.concurrent.CancellationException("Someone beat me to uploading this file"
                                 + ", no need to retry.  Most likely not needed but to be safe, checked and released handle to file if appropriate.");
-                    }
 
                     try {
-                        if (is == null) {
-                            throw new NullPointerException("Unable to get handle on file: " + bp.getFileName());
-                        }
-                        // Important context: this upload call typically has internal retries but those are only
-                        // to cover over very temporary (<10s) network partitions. For larger partitions re rely on
-                        // higher up retries and re-enqueues.
-                        fs.upload(bp, is);
-                        bp.setCompressedFileSize(fs.getBytesUploaded());
+                        fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
                         return null;
                     } catch (Exception e) {
                         logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.getFileName());
-                        if (is != null) {
-                            is.close();
-                        }
                         throw e;
                     }
                 }

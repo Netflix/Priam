@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Paths;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -66,7 +67,7 @@ public class Restore extends AbstractRestore {
             @Override
             public Integer retriableCall() throws Exception {
                 logger.info("Downloading file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());
-                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
+                fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()));
                 tracker.adjustAndAdd(path);
                 // TODO: fix me -> if there is exception the why hang?
                 logger.info("Completed download of file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());

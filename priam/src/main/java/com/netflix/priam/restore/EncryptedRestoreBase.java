@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -80,7 +81,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
                     try {
 
                         logger.info("Downloading file from: {} to: {}", path.getRemotePath(), tempFile.getAbsolutePath());
-                        fs.download(path, new FileOutputStream(tempFile), tempFile.getAbsolutePath());
+                        fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(tempFile.getAbsolutePath()));
                         tracker.adjustAndAdd(path);
                         logger.info("Completed downloading file from: {} to: {}", path.getRemotePath(), tempFile.getAbsolutePath());
 

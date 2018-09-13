@@ -17,21 +17,25 @@
 
 package com.netflix.priam.backup;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import com.google.inject.Inject;
+import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupNotificationMgr;
+
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
 
-public class NullBackupFileSystem implements IBackupFileSystem {
+public class NullBackupFileSystem extends AbstractFileSystem {
+
+    @Inject
+    public NullBackupFileSystem(BackupMetrics backupMetrics,
+                                BackupNotificationMgr backupNotificationMgr){
+        super(backupMetrics, backupNotificationMgr);
+    }
 
     @Override
     public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till) {
         return null;
-    }
-
-    @Override
-    public int getActivecount() {
-        return 0;
     }
 
     public void shutdown() {
@@ -39,21 +43,8 @@ public class NullBackupFileSystem implements IBackupFileSystem {
     }
 
     @Override
-    public long getBytesUploaded() {
+    public long getFileSize(Path remotePath) throws BackupRestoreException {
         return 0;
-    }
-
-    @Override
-    public long getAWSSlowDownExceptionCounter() {
-        return 0;
-    }
-
-    @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
-    }
-
-    @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException {
     }
 
     @Override
@@ -64,13 +55,15 @@ public class NullBackupFileSystem implements IBackupFileSystem {
     @Override
     public void cleanup() {
         // TODO Auto-generated method stub
+    }
+
+    @Override
+    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
 
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os,
-                         String filePath) throws BackupRestoreException {
-        // TODO Auto-generated method stub
-
+    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+        return 0;
     }
 }

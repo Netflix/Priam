@@ -28,6 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 
 /**
@@ -108,20 +109,11 @@ public abstract class AbstractBackup extends Task {
      *
      * @param bp backup path to be uploaded.
      */
-    protected void upload(final AbstractBackupPath bp) throws Exception {
-        java.io.InputStream is = null;
+    private void upload(final AbstractBackupPath bp) throws Exception {
         try {
-            is = bp.localReader();
-            if (is == null) {
-                throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
-            }
-            fs.upload(bp, is);
-            bp.setCompressedFileSize(fs.getBytesUploaded());
+            fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
         } catch (Exception e) {
             logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
-            if (is != null) {
-                is.close();
-            }
             throw e;
         }
     }

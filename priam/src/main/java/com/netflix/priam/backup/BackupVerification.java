@@ -29,6 +29,7 @@ import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -117,7 +118,7 @@ public class BackupVerification {
         List<String> metaFileList = new ArrayList<>();
         try {
             Path metaFileLocation = FileSystems.getDefault().getPath(config.getDataFileLocation(), "tmp_meta.json");
-            bkpStatusFs.download(metas.get(0), new FileOutputStream(metaFileLocation.toFile()));
+            bkpStatusFs.downloadFile(Paths.get(metas.get(0).getRemotePath()), metaFileLocation);
             logger.info("Meta file successfully downloaded to localhost: {}", metaFileLocation.toString());
 
             JSONParser jsonParser = new JSONParser();

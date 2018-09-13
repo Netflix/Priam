@@ -38,10 +38,8 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import java.io.*;
-import java.lang.management.ManagementFactory;
+import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -50,7 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Implementation of IBackupFileSystem for S3.  The upload/download will work with ciphertext.
  */
 @Singleton
-public class S3EncryptedFileSystem extends S3FileSystemBase implements S3EncryptedFileSystemMBean {
+public class S3EncryptedFileSystem extends S3FileSystemBase {
 
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
     private AtomicInteger uploadCount = new AtomicInteger();
@@ -65,122 +63,67 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
 
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
-
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        String mbeanName = ENCRYPTED_FILE_SYSTEM_MBEAN_NAME;
-        try {
-            mbs.registerMBean(this, new ObjectName(mbeanName));
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
-        }
-
         super.s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
     }
 
-    @Override
-    /*
-    Note:  provides same information as getBytesUploaded() but it's meant for S3FileSystemMBean object types.
-     */
-    public long bytesUploaded() {
-        return bytesUploaded.get();
-    }
-
 
     @Override
-    public long bytesDownloaded() {
-        return bytesDownloaded.get();
-    }
-
-    @Override
-    void downloadFileImpl(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
-        try {
-
-            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), path.getSize(), path.getRemotePath());
-
-        	/*
+    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+        try (OutputStream os = new FileOutputStream(localPath.toFile());
+             RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), super.getFileSize(remotePath), remotePath.toString());
+        ) {
+            /*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.
         	 * Hence, decompressing it here would compromise the decryption.
         	 */
-            try {
-                IOUtils.copyLarge(rris, os);
-
-            } catch (Exception ex) {
-
-                throw new BackupRestoreException("Exception encountered when copying bytes from input to output during download", ex);
-
-            } finally {
-                IOUtils.closeQuietly(rris);
-                IOUtils.closeQuietly(os);
-            }
-
+            IOUtils.copyLarge(rris, os);
         } catch (Exception e) {
-            throw new BackupRestoreException("Exception encountered downloading " + path.getRemotePath() + " from S3 bucket " + getPrefix(config)
+            throw new BackupRestoreException("Exception encountered downloading " + remotePath + " from S3 bucket " + getPrefix(config)
                     + ", Msg: " + e.getMessage(), e);
         }
     }
 
 
     @Override
-    void uploadFileImpl(AbstractBackupPath path, InputStream in, long chunkSize) throws BackupRestoreException {
-
-        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), path.getRemotePath()); //initialize chunking request to aws
+    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+        long chunkSize = getChunkSize(localPath);
+        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString()); //initialize chunking request to aws
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest); //Fetch the aws generated upload id for this chunking request
-        DataPart part = new DataPart(config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
+        DataPart part = new DataPart(config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
         List<PartETag> partETags = Lists.newArrayList(); //Metadata on number of parts to be uploaded
 
-
         //== Read chunks from src, compress it, and write to temp file
-        String compressedFileName = path.newRestoreFile() + ".compressed";
-        logger.debug("Compressing {} with chunk size {}", compressedFileName, chunkSize);
-        File compressedDstFile = null;
-        FileOutputStream compressedDstFileOs = null;
-        BufferedOutputStream compressedBos = null;
-        try {
+        File compressedDstFile = new File(localPath.toString() + ".compressed");
+        logger.debug("Compressing {} with chunk size {}", compressedDstFile.getAbsolutePath(), chunkSize);
 
-            compressedDstFile = new File(compressedFileName);
-            compressedDstFileOs = new FileOutputStream(compressedDstFile);
-            compressedBos = new BufferedOutputStream(compressedDstFileOs);
-
-        } catch (FileNotFoundException e) {
-            throw new BackupRestoreException("Not able to find temporary compressed file: " + compressedFileName);
-        }
-
-        try {
-
+        try (InputStream in = new FileInputStream(localPath.toFile());
+             BufferedOutputStream compressedBos = new BufferedOutputStream(new FileOutputStream(compressedDstFile))) {
             Iterator<byte[]> compressedChunks = this.compress.compress(in, chunkSize);
             while (compressedChunks.hasNext()) {
                 byte[] compressedChunk = compressedChunks.next();
                 compressedBos.write(compressedChunk);
             }
-
-        } catch (IOException e) {
+        } catch (Exception e) {
             String message = String.format("Exception in compressing the input data during upload to EncryptedStore  Msg: " + e.getMessage());
             logger.error(message, e);
             throw new BackupRestoreException(message);
-        } finally {
-            IOUtils.closeQuietly(in);
-            IOUtils.closeQuietly(compressedBos);
         }
 
         //== Read compressed data, encrypt each chunk, upload it to aws
-        FileInputStream compressedFileIs = null;
-        BufferedInputStream compressedBis = null;
-        try {
-
-            compressedFileIs = new FileInputStream(new File(compressedFileName));
-            compressedBis = new BufferedInputStream(compressedFileIs);
-            Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, path.getRemotePath());
+        try (BufferedInputStream compressedBis = new BufferedInputStream(new FileInputStream(compressedDstFile))) {
+            Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, remotePath.toString());
 
             int partNum = 0; //identifies this part position in the object we are uploading
+            long encryptedFileSize = 0;
+
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length); //throttle upload to endpoint
 
-                DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), path.getRemotePath(), initResponse.getUploadId());
+                DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
+                encryptedFileSize += chunk.length;
                 executor.submit(partUploader);
-
-                bytesUploaded.addAndGet(chunk.length);
             }
 
             executor.sleepTillEmpty();
@@ -189,23 +132,15 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
             }
 
             CompleteMultipartUploadResult resultS3MultiPartUploadComplete = new S3PartUploader(s3Client, part, partETags).completeUpload(); //complete the aws chunking upload by providing to aws the ETag that uniquely identifies the combined object data
-            checkSuccessfulUpload(resultS3MultiPartUploadComplete, path);
-
+            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
+            return encryptedFileSize;
         } catch (Exception e) {
-            throw encounterError(path, new S3PartUploader(s3Client, part, partETags), e);
+            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            throw new BackupRestoreException("Error uploading file: " + localPath, e);
         } finally {
-            IOUtils.closeQuietly(compressedBis);
             if (compressedDstFile.exists())
                 compressedDstFile.delete();
         }
 
     }
-
-
-    @Override
-    public int getActivecount() {
-        return executor.getActiveCount();
-    }
-
-
 }

@@ -29,12 +29,6 @@ import java.util.List;
  * Represents an S3 object key
  */
 public class S3BackupPath extends AbstractBackupPath {
-    /*
-     * Checking if request came from Cassandra 1.0 or 1.1 
-     * In Cassandra 1.0, Number of path elements = 8
-     * In Cassandra 1.1, Number of path elements = 9
-     */
-    private static final int NUM_PATH_ELEMENTS_CASS_1_0 = 8;
 
     @Inject
     public S3BackupPath(IConfiguration config, InstanceIdentity factory) {
@@ -43,9 +37,7 @@ public class S3BackupPath extends AbstractBackupPath {
 
     /**
      * Format of backup path:
-     * Cassandra 1.0
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/FILE
-     * Cassandra 1.1
+     * Cassandra > 1.1
      * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
      */
     @Override
@@ -57,12 +49,8 @@ public class S3BackupPath extends AbstractBackupPath {
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
-        if (BackupFileType.isDataFile(type)) {
-            if (isCassandra1_0)
-                buff.append(keyspace).append(S3BackupPath.PATH_SEP);
-            else
-                buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
-        }
+        if (BackupFileType.isDataFile(type))
+            buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
         buff.append(fileName);
         return buff.toString();
     }
@@ -78,8 +66,6 @@ public class S3BackupPath extends AbstractBackupPath {
             pieces.add(ele);
         }
         assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
-        if (pieces.size() == NUM_PATH_ELEMENTS_CASS_1_0)
-            setCassandra1_0(true);
         baseDir = pieces.get(0);
         region = pieces.get(1);
         clusterName = pieces.get(2);
@@ -88,8 +74,7 @@ public class S3BackupPath extends AbstractBackupPath {
         type = BackupFileType.valueOf(pieces.get(5));
         if (BackupFileType.isDataFile(type)) {
             keyspace = pieces.get(6);
-            if (!isCassandra1_0)
-                columnFamily = pieces.get(7);
+            columnFamily = pieces.get(7);
         }
         // append the rest
         fileName = pieces.get(pieces.size() - 1);

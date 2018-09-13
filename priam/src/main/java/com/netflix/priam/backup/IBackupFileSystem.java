@@ -16,8 +16,7 @@
  */
 package com.netflix.priam.backup;
 
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
 
@@ -26,22 +25,23 @@ import java.util.Iterator;
  */
 public interface IBackupFileSystem {
     /**
-     * Write the contents of the specified remote path to the output stream and
-     * close
+     * Download the file denoted by remotePath to the local file system denoted by local path.
+     *
+     * @param remotePath fully qualified location of the file on remote file system.
+     * @param localPath  location on the local file sytem where remote file should be downloaded.
+     * @throws BackupRestoreException if file is not available, downloadable or any other error from remote file system.
      */
-    void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException;
+    void downloadFile(Path remotePath, Path localPath) throws BackupRestoreException;
 
     /**
-     * Write the contents of the specified remote path to the output stream and close.
-     * filePath denotes the diskPath of the downloaded file
+     * Upload the local file denoted by localPath to the remote file system at location denoted by remotePath.
+     *
+     * @param localPath  Path of the local file that needs to be uploaded.
+     * @param remotePath Fully qualified path on the remote file system where file should be uploaded.
+     * @param path       AbstractBackupPath to be used to send backup notifications only.
+     * @throws BackupRestoreException in case of failure to upload for any reason including file not available, readable or remote file system errors.
      */
-    void download(AbstractBackupPath path, OutputStream os, String filePath) throws BackupRestoreException;
-
-    /**
-     * Upload/Backup to the specified location with contents from the input
-     * stream. Closes the InputStream after its done.
-     */
-    void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException;
+    void uploadFile(Path localPath, Path remotePath, AbstractBackupPath path) throws BackupRestoreException;
 
     /**
      * List all files in the backup location for the specified time range.
@@ -59,16 +59,17 @@ public interface IBackupFileSystem {
     void cleanup();
 
     /**
-     * Get number of active upload or downloads
-     */
-    int getActivecount();
-
-    /**
      * Give the file system a chance to terminate any thread pools, etc.
      */
     void shutdown();
 
-    long getBytesUploaded();
+    /**
+     * Get the size of the remote object
+     *
+     * @param remotePath Location of the object on the remote file system.
+     * @return size of the object on the remote filesystem.
+     * @throws BackupRestoreException in case of failure to read object denoted by remotePath or any other error.
+     */
+    long getFileSize(Path remotePath) throws BackupRestoreException;
 
-    long getAWSSlowDownExceptionCounter();
 }

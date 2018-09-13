@@ -30,6 +30,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -99,7 +100,7 @@ public class MetaData {
             new RetryableCallable<Void>() {
                 @Override
                 public Void retriableCall() throws Exception {
-                    fs.download(meta, new FileOutputStream(meta.newRestoreFile())); //download actual file to disk
+                    fs.downloadFile(Paths.get(meta.getRemotePath()),Paths.get(meta.newRestoreFile().getAbsolutePath())); //download actual file to disk
                     return null;
                 }
             }.call();
@@ -116,12 +117,10 @@ public class MetaData {
         new RetryableCallable<Void>() {
             @Override
             public Void retriableCall() throws Exception {
-                fs.upload(bp, bp.localReader());
+                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
                 return null;
             }
         }.call();
-
-        bp.setCompressedFileSize(fs.getBytesUploaded());
     }
 
     public File createTmpMetaFile() throws IOException {

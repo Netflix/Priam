@@ -54,11 +54,17 @@ public class BackupServletTest
 {
     private @Mocked PriamServer priamServer;
     private IConfiguration config;
-    private @Mocked IBackupFileSystem bkpFs;
-    private @Mocked IBackupFileSystem bkpStatusFs;
-    private @Mocked Restore restoreObj;
-    private @Mocked Provider<AbstractBackupPath> pathProvider;
-    private @Mocked
+    private
+    @Mocked
+    IBackupFileSystem bkpFs;
+    private
+    @Mocked
+    Restore restoreObj;
+    private
+    @Mocked
+    Provider<AbstractBackupPath> pathProvider;
+    private
+    @Mocked
     ICassandraTuner tuner;
     private @Mocked SnapshotBackup snapshotBackup;
     private @Mocked IPriamInstanceFactory factory;
@@ -75,9 +81,8 @@ public class BackupServletTest
         config = injector.getInstance(IConfiguration.class);
         InstanceState instanceState = injector.getInstance(InstanceState.class);
         ITokenManager tokenManager = new TokenManager(config);
-        resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
-            tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr,backupVerification);
-
+        resource = new BackupServlet(priamServer, config, bkpFs, restoreObj, pathProvider,
+                tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr, backupVerification);
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager, instanceState);
     }

@@ -48,7 +48,7 @@ public class BackupVerification {
     private IConfiguration config;
 
     @Inject
-    BackupVerification(@Named("backup_status") IBackupFileSystem bkpStatusFs, IConfiguration config) {
+    BackupVerification(@Named("backup") IBackupFileSystem bkpStatusFs, IConfiguration config) {
         this.bkpStatusFs = bkpStatusFs;
         this.config = config;
     }

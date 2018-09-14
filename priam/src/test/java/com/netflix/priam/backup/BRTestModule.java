@@ -58,7 +58,6 @@ public class BRTestModule extends AbstractModule {
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(Sleeper.class).to(FakeSleeper.class);
 
         bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);

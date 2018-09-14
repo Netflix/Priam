@@ -79,7 +79,6 @@ public class BackupServlet {
     private PriamServer priamServer;
     private IConfiguration config;
     private IBackupFileSystem backupFs;
-    private IBackupFileSystem bkpStatusFs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
     private ICassandraTuner tuner;
@@ -96,13 +95,12 @@ public class BackupServlet {
     private IBackupStatusMgr completedBkups;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
                          SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
             , IBackupStatusMgr completedBkups, BackupVerification backupVerification) {
         this.priamServer = priamServer;
         this.config = config;
         this.backupFs = backupFs;
-        this.bkpStatusFs = bkpStatusFs;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
         this.tuner = tuner;
@@ -135,7 +133,7 @@ public class BackupServlet {
      * Fetch the list of files for the requested date range.
      * 
      * @param date range
-     * @param filter.  The type of data files fetched.  E.g. META will only fetch the dailsy snapshot meta data file (meta.json).
+     * @param filter.  The type of data files fetched.  E.g. META will only fetch the daily snapshot meta data file (meta.json).
      * @return the list of files in json format as part of the Http response body.
      */
     public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception {
@@ -155,7 +153,7 @@ public class BackupServlet {
         logger.info("Parameters: {backupPrefix: [{}], daterange: [{}], filter: [{}]}",
                 config.getBackupPrefix(), daterange, filter);
 
-        Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
+        Iterator<AbstractBackupPath> it = backupFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
         object = constructJsonResponse(object, it, filter);
         return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();

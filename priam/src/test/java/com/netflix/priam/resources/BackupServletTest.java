@@ -60,9 +60,6 @@ public class BackupServletTest {
     IBackupFileSystem bkpFs;
     private
     @Mocked
-    IBackupFileSystem bkpStatusFs;
-    private
-    @Mocked
     Restore restoreObj;
     private
     @Mocked
@@ -92,7 +89,7 @@ public class BackupServletTest {
         config = injector.getInstance(IConfiguration.class);
         InstanceState instanceState = injector.getInstance(InstanceState.class);
         ITokenManager tokenManager = new TokenManager(config);
-        resource = new BackupServlet(priamServer, config, bkpFs, bkpStatusFs, restoreObj, pathProvider,
+        resource = new BackupServlet(priamServer, config, bkpFs, restoreObj, pathProvider,
                 tuner, snapshotBackup, factory, tokenManager, cassProcess, bkupStatusMgr, backupVerification);
         restoreResource = new RestoreServlet(config, restoreObj, pathProvider,priamServer, factory, tuner, cassProcess
         		, tokenManager, instanceState);

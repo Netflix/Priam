@@ -175,7 +175,6 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
 
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException{
-        logger.info("Downloading {} from GCS bucket {}", remotePath, this.srcBucketName);
         String objectName = parseObjectname(getPathPrefix());
         com.google.api.services.storage.Storage.Objects.Get get = null;
 

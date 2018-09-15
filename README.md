@@ -30,5 +30,16 @@ Features:
 - APIs to list and restore backup data.
 - REST APIs for backup/restore and other operations
 
-Compatibility:
-Please see https://github.com/Netflix/Priam/wiki/Compatibility for details.
+Compatibility Matrix
+------------------------
+
+Priam versions and their compatibility with Cassandra versions in explained in matrix below
+
+|Priam Branch (Release) |Cassandra Version |Description |
+| :------- | :---- | :--- |
+|3.11| C* 3.11 | Currently it supports Apache Cassandra 3.x |
+|3.x| C* 2.1.x | Any minor version of C* 2.1.x|
+|2.x| C* 2.0.x| Any minor version of C* 2.0.x is supported. No longer under active development|
+|1.2.x | C* 1.2 only | Any minor version of C* 1.2.x is supported. No longer under active development |
+|1.1| C* 1.1 only| No longer under active devleopment|
+|master |C* 1.2 - 2.0| Currently it supports C* v1.2 and 2.0. No longer under active development|

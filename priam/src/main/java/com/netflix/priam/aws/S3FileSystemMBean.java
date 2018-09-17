@@ -19,13 +19,13 @@ package com.netflix.priam.aws;
 public interface S3FileSystemMBean {
     String MBEAN_NAME = "com.priam.aws.S3FileSystemMBean:name=S3FileSystemMBean";
 
-    public int downloadCount();
+    long downloadCount();
 
-    public int uploadCount();
+    long uploadCount();
 
-    public int getActivecount();
+    int getActivecount();
 
-    public long bytesUploaded();
+    long bytesUploaded();
 
-    public long bytesDownloaded();
+    long bytesDownloaded();
 }

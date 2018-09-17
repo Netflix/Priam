@@ -22,8 +22,8 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.config.IConfiguration;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
@@ -33,9 +33,7 @@ import org.quartz.SchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +49,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
         injector = Guice.createInjector(moduleList);
         try {
             injector.getInstance(IConfiguration.class).intialize();
-            injector.getInstance(PriamServer.class).intialize();
+            injector.getInstance(PriamServer.class).initialize();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);

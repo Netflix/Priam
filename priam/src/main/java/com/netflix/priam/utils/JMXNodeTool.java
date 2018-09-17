@@ -18,7 +18,7 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.codehaus.jettison.json.JSONArray;
@@ -87,7 +87,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return tool;
     }
 
-    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws JMXConnectionException, IOException, MalformedObjectNameException {
+    public static <T> T getRemoteBean(Class<T> clazz, String mbeanName, IConfiguration config, boolean mxbean) throws IOException, MalformedObjectNameException {
         if (mxbean)
             return ManagementFactory.newPlatformMXBeanProxy(JMXNodeTool.instance(config).mbeanServerConn, mbeanName, clazz);
         else
@@ -165,8 +165,8 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
     private static JMXNodeTool createConnection(final IConfiguration config) throws JMXConnectionException {
         // If Cassandra is started then only start the monitoring
-        if (!CassandraMonitor.isCassadraStarted()) {
-            String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra is not yet started, check back again later";
+        if (!CassandraMonitor.hasCassadraStarted()) {
+            String exceptionMsg = "Cannot perform connection to remove jmx agent as Cassandra has not yet started, check back again later";
             logger.debug(exceptionMsg);
             throw new JMXConnectionException(exceptionMsg);
         }
@@ -329,14 +329,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return object;
     }
 
-    public void compact() throws IOException, ExecutionException, InterruptedException {
-        for (String keyspace : getKeyspaces()) {
-            forceKeyspaceCompaction(keyspace);
-            //forceKeyspaceCompaction(keyspace, new String[0]);
-        }
-
-    }
-
     public void repair(boolean isSequential, boolean localDataCenterOnly) throws IOException, ExecutionException, InterruptedException {
         repair(isSequential, localDataCenterOnly, false);
     }
@@ -352,8 +344,10 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
         PrintStream printStream = new PrintStream("repair.log");
         Set<String> datacenters = null;
-        if (localDataCenterOnly)
+        if (localDataCenterOnly) {
+            datacenters = new HashSet<>();
             datacenters.add(getDataCenter());
+        }
 
         for (String keyspace : getKeyspaces())
             forceRepairAsync(printStream, keyspace, isSequential, datacenters, null, primaryRange, true);
@@ -369,12 +363,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             forceKeyspaceCleanup(0, keyspace);
         //forceKeyspaceCleanup(keyspace, new String[0]);
     }
-
-    public void flush() throws IOException, ExecutionException, InterruptedException {
-        for (String keyspace : getKeyspaces())
-            forceKeyspaceFlush(keyspace, new String[0]);
-    }
-
+    
     public void refresh(List<String> keyspaces) throws IOException, ExecutionException, InterruptedException {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it = super.getColumnFamilyStoreMBeanProxies();
         while (it.hasNext()) {

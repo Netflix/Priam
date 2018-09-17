@@ -20,17 +20,20 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.tuner.ICassandraTuner;
-import com.netflix.priam.utils.*;
+import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.ITokenManager;
+import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -379,7 +382,7 @@ public class BackupServlet {
             // multi-thread safe to be edited
             config.setRestorePrefix(origRestorePrefix);
 
-            while (!CassandraMonitor.isCassadraStarted())
+            while (!CassandraMonitor.hasCassadraStarted())
                 Thread.sleep(1000L);
 
             // initialize json file name
@@ -531,8 +534,7 @@ public class BackupServlet {
             Callable<Integer> callable = new Callable<Integer>() {
                 @Override
                 public Integer call() throws Exception {
-                    int returnCode = p.waitFor();
-                    return returnCode;
+                    return p.waitFor();
                 }
             };
 

@@ -19,11 +19,11 @@ package com.netflix.priam.stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FifoQueue;
 import org.junit.Assert;

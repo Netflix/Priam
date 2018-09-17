@@ -78,7 +78,6 @@ public class IncrementalConsumer implements Runnable {
                         }
                         fs.upload(bp, is);
                         bp.setCompressedFileSize(fs.getBytesUploaded());
-                        bp.setAWSSlowDownExceptionCounter(fs.getAWSSlowDownExceptionCounter());
                         return null;
                     } catch (Exception e) {
                         logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.getFileName());

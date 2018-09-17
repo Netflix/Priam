@@ -18,7 +18,7 @@
 package com.netflix.priam.utils;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -32,7 +32,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class RandomTokenManagerTest {
-    FakeConfiguration config;
+    private FakeConfiguration config;
     private TokenManager tokenManager;
 
     @Before

@@ -18,14 +18,12 @@
 package com.netflix.priam.tuner;
 
 import com.google.common.io.Files;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.tuner.StandardTuner;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.IOException;
 
 import static org.junit.Assert.assertEquals;
 
@@ -36,13 +34,11 @@ public class StandardTunerTest {
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
-    private IConfiguration config;
     private StandardTuner tuner;
 
     @Before
     public void setup() {
-
-        config = new FakeConfiguration();
+        IConfiguration config = new FakeConfiguration();
         tuner = new StandardTuner(config);
     }
 

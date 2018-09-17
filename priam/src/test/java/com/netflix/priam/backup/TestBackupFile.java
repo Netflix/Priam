@@ -19,9 +19,9 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
@@ -96,7 +96,7 @@ public class TestBackupFile {
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        String datestr = backupfile.formatDate(new Date(bfile.lastModified()));
+        String datestr = AbstractBackupPath.formatDate(new Date(bfile.lastModified()));
         Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/1234567/" + datestr + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
     }
 

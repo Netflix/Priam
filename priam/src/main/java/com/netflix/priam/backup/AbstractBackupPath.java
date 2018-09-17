@@ -17,8 +17,8 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import org.apache.cassandra.io.util.FileUtils;
 import org.apache.cassandra.io.util.RandomAccessReader;
@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.regex.Pattern;
 
 @ImplementedBy(S3BackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
@@ -44,7 +43,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     public static final char PATH_SEP = File.separatorChar;
 
     public enum BackupFileType {
-        SNAP, SST, CL, META
+        SNAP, SST, CL, META, META_V2;
+
+        public static boolean isDataFile(BackupFileType type){
+            if (type != BackupFileType.META && type != BackupFileType.META_V2 && type != BackupFileType.CL)
+                return true;
+
+            return false;
+        }
     }
 
     protected BackupFileType type;
@@ -64,7 +70,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final IConfiguration config;
     protected File backupFile;
     protected Date uploadedTs;
-    protected int awsSlowDownExceptionCounter = 0;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
         this.factory = factory;
@@ -95,7 +100,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.region = config.getDC();
         this.token = factory.getInstance().getToken();
         this.type = type;
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (BackupFileType.isDataFile(type)) {
             this.keyspace = elements[0];
             if (!isCassandra1_0)
                 this.columnFamily = elements[1];
@@ -131,7 +136,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         } else {
 
             buff.append(config.getDataFileLocation()).append(PATH_SEP);
-            if (type != BackupFileType.META) {
+            if (type != BackupFileType.META && type != BackupFileType.META_V2) {
                 if (isCassandra1_0)
                     buff.append(keyspace).append(PATH_SEP);
                 else
@@ -147,6 +152,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             parent.mkdirs();
         return return_;
     }
+
+
 
     @Override
     public int compareTo(AbstractBackupPath o) {
@@ -299,13 +306,5 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     @Override
     public String toString() {
         return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();
-    }
-
-    public int getAWSSlowDownExceptionCounter() {
-        return this.awsSlowDownExceptionCounter;
-    }
-
-    public void setAWSSlowDownExceptionCounter(int val) {
-        this.awsSlowDownExceptionCounter = val;
     }
 }

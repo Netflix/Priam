@@ -17,14 +17,14 @@
 
 package com.netflix.priam.dse;
 
-import com.netflix.priam.FakeConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.tuner.dse.IDseConfiguration;
 
 import java.util.HashSet;
 import java.util.Set;
 
 public class DseConfigStub implements IDseConfiguration {
-    boolean auditLogEnabled;
+    private boolean auditLogEnabled;
 
     public String getDseYamlLocation() {
         return new FakeConfiguration().getCassHome() + "/resources/dse/conf/dse.yaml";

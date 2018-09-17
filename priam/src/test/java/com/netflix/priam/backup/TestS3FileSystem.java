@@ -18,19 +18,18 @@
 package com.netflix.priam.backup;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
 import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.FakeConfiguration;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.*;
@@ -147,16 +146,16 @@ public class TestS3FileSystem {
 
     // Mock Nodeprobe class
     @Ignore
-    public static class MockS3PartUploader extends MockUp<S3PartUploader> {
-        public static int compattempts = 0;
-        public static int partAttempts = 0;
-        public static boolean partFailure = false;
-        public static boolean completionFailure = false;
+    static class MockS3PartUploader extends MockUp<S3PartUploader> {
+        static int compattempts = 0;
+        static int partAttempts = 0;
+        static boolean partFailure = false;
+        static boolean completionFailure = false;
         private static List<PartETag> partETags;
 
         @Mock
         public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
-            this.partETags = partETags;
+            MockS3PartUploader.partETags = partETags;
         }
 
         @Mock
@@ -164,7 +163,7 @@ public class TestS3FileSystem {
             ++partAttempts;
             if (partFailure)
                 throw new BackupRestoreException("Test exception");
-            this.partETags.add(new PartETag(0, null));
+            partETags.add(new PartETag(0, null));
             return null;
         }
 
@@ -187,7 +186,7 @@ public class TestS3FileSystem {
             return uploadPart();
         }
 
-        public static void setup() {
+        static void setup() {
             compattempts = 0;
             partAttempts = 0;
             partFailure = false;
@@ -196,16 +195,16 @@ public class TestS3FileSystem {
     }
 
     @Ignore
-    public static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        public static boolean ruleAvailable = false;
-        public static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
+    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
+        static boolean ruleAvailable = false;
+        static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
 
         @Mock
         public void $init() {
         }
 
         @Mock
-        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException, AmazonServiceException {
+        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException {
             return new InitiateMultipartUploadResult();
         }
 

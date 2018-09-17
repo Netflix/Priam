@@ -19,10 +19,9 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import org.slf4j.Logger;
@@ -47,11 +46,9 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     @Inject
     public IncrementalBackupProducer(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
             , IncrementalMetaData metaData
-            , @Named("backup") ITaskQueueMgr taskQueueMgr
-            , BackupNotificationMgr backupNotificationMgr
-    ) {
+            , @Named("backup") ITaskQueueMgr taskQueueMgr ) {
 
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+        super(config, backupFileSystemCtx, pathFactory);
         this.taskQueueMgr = taskQueueMgr;
         this.metaData = metaData;
 
@@ -68,7 +65,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
         for (final File file : backupDir.listFiles()) {
             try {
                 final AbstractBackupPath bp = pathFactory.get();
@@ -95,7 +92,7 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
     public void execute() throws Exception {
         //Clearing remotePath List
         incrementalRemotePaths.clear();
-        initiateBackup("backups", backupRestoreUtil);
+        initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
         return;
     }
 

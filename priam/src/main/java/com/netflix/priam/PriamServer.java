@@ -22,20 +22,22 @@ import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.restore.Restore;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
-import com.netflix.priam.cluster.management.FlushTask;
+import com.netflix.priam.cluster.management.Compaction;
+import com.netflix.priam.cluster.management.Flush;
+import com.netflix.priam.cluster.management.IClusterManagement;
+import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.restore.AwsCrossAccountCryptographyRestoreStrategy;
-import com.netflix.priam.restore.EncryptedRestoreStrategy;
-import com.netflix.priam.restore.GoogleCryptographyRestoreStrategy;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.services.SnapshotMetaService;
+import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.tuner.TuneCassandra;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,6 +50,7 @@ import org.slf4j.LoggerFactory;
 public class PriamServer {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final InstanceIdentity id;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
@@ -56,8 +59,9 @@ public class PriamServer {
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
-    public PriamServer(IConfiguration config, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess, RestoreContext restoreContext) {
+    public PriamServer(IConfiguration config, IBackupRestoreConfig backupRestoreConfig, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess, RestoreContext restoreContext) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.id = id;
         this.sleeper = sleeper;
@@ -65,7 +69,7 @@ public class PriamServer {
         this.restoreContext = restoreContext;
     }
 
-    public void intialize() throws Exception {
+    public void initialize() throws Exception {
         if (id.getInstance().isOutOfService())
             return;
 
@@ -133,10 +137,28 @@ public class PriamServer {
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
 
         //Set up nodetool flush task
-        TaskTimer flushTaskTimer = FlushTask.getTimer(config);
+        TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
-            scheduler.addTask(FlushTask.JOBNAME, FlushTask.class, flushTaskTimer);
+            scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
+        }
+
+        //Set up compaction task
+        TaskTimer compactionTimer = Compaction.getTimer(config);
+        if (compactionTimer != null) {
+            scheduler.addTask(IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
+            logger.info("Added compaction task.");
+        }
+
+        //Set up the SnapshotService
+        setUpSnapshotService();
+    }
+
+    private void setUpSnapshotService() throws Exception{
+        TaskTimer snapshotMetaServiceTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
+        if (snapshotMetaServiceTimer != null) {
+            scheduler.addTask(SnapshotMetaService.JOBNAME, SnapshotMetaService.class, snapshotMetaServiceTimer);
+            logger.info("Added SnapshotMetaService Task.");
         }
     }
 

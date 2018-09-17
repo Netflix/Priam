@@ -21,9 +21,9 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.cryptography.IFileCryptography;
 
 import java.io.InputStream;
@@ -98,7 +98,7 @@ public class FakedS3EncryptedFileSystem implements IBackupFileSystem {
     }
 
     @Override
-    public int getAWSSlowDownExceptionCounter() {
+    public long getAWSSlowDownExceptionCounter() {
         return 0;
     }
 

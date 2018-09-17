@@ -15,76 +15,80 @@
  */
 package com.netflix.priam.cluster.management;
 
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.utils.JMXConnectorMgr;
-import org.apache.cassandra.db.Keyspace;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.CassandraOperations;
+import com.netflix.priam.merics.NodeToolFlushMeasurement;
+import com.netflix.priam.scheduler.CronTimer;
+import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 
 /**
- * Utility to flush 1:8 Keyspaces from memtable to disk
- * <p>
+ * Utility to flush Keyspaces from memtable to disk
  * Created by vinhn on 10/12/16.
  */
-public class Flush implements IClusterManagement<String> {
+@Singleton
+public class Flush extends IClusterManagement<String> {
     private static final Logger logger = LoggerFactory.getLogger(Flush.class);
 
     private final IConfiguration config;
-    private final JMXConnectorMgr jmxConnectorMgr;
+    private final CassandraOperations cassandraOperations;
     private List<String> keyspaces = new ArrayList<String>();
 
-    public Flush(IConfiguration config, JMXConnectorMgr jmxConnectorMgr) {
+    @Inject
+    public Flush(IConfiguration config, CassandraOperations cassandraOperations, NodeToolFlushMeasurement nodeToolFlushMeasurement) {
+        super(config, Task.FLUSH, nodeToolFlushMeasurement);
         this.config = config;
-        this.jmxConnectorMgr = jmxConnectorMgr;
+        this.cassandraOperations = cassandraOperations;
     }
 
     @Override
     /*
      * @return the keyspace(s) flushed.  List can be empty but never null.
      */
-    public List<String> execute() throws Exception {
+    protected String runTask() throws Exception {
         List<String> flushed = new ArrayList<String>();
 
-        //== fetch keyspaces
+        //Get keyspaces to flush
         deriveKeyspaces();
+
         if (this.keyspaces == null || this.keyspaces.isEmpty()) {
             logger.warn("NO op on requested \"flush\" as there are no keyspaces.");
-            return flushed;
+            return flushed.toString();
         }
 
         //If flush is for certain keyspaces, validate keyspace exist
         for (String keyspace : keyspaces) {
-            if (!this.jmxConnectorMgr.getKeyspaces().contains(keyspace)) {
+            if (!cassandraOperations.getKeyspaces().contains(keyspace)) {
                 throw new IllegalArgumentException("Keyspace [" + keyspace + "] does not exist.");
             }
-       /* }
 
-        for (String keyspace : keyspaces) { //flush each keyspace with the CFs.*/
-            if (Keyspace.SYSTEM_KS.equals(keyspace)) //no need to flush system keyspaces.
+            if (SchemaConstant.isSystemKeyspace(keyspace))  //no need to flush system keyspaces.
                 continue;
 
-        /* *****Replace with this in 3.10 Cassandra.
-            if (SchemaConstants.isSystemKeyspace(keyspace)) //no need to flush system keyspaces.
-                continue;*/
-
             try {
-                this.jmxConnectorMgr.forceKeyspaceFlush(keyspace, new String[0]);
+                cassandraOperations.forceKeyspaceFlush(keyspace);
                 flushed.add(keyspace);
-            } catch (Exception e) {
-                throw new RuntimeException("Exception flush keyspace: " + keyspace, e);
+            } catch (IOException | ExecutionException | InterruptedException e) {
+                throw new Exception("Exception during flushing keyspace: " + keyspace, e);
             }
         }
 
-        return flushed;
+        return flushed.toString();
     }
 
     /*
     Derive keyspace(s) to flush in the following order:  explicit list provided by caller, property, or all keyspaces.
      */
-    private void deriveKeyspaces() {
+    private void deriveKeyspaces() throws Exception{
         //== get value from property
         String raw = this.config.getFlushKeyspaces();
         if (raw != null && !raw.isEmpty()) {
@@ -97,7 +101,50 @@ public class Flush implements IClusterManagement<String> {
         }
 
         //== no override via FP, default to all keyspaces
-        this.keyspaces = this.jmxConnectorMgr.getKeyspaces();
+        this.keyspaces = cassandraOperations.getKeyspaces();
         return;
+    }
+
+    /**
+     * Timer to be used for flush interval.
+     *
+     * @param config {@link IConfiguration} to get configuration details from priam.
+     * @return the timer to be used for flush interval.
+     * <p>
+     * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#HOUR} then it expects {@link IConfiguration#getFlushInterval()} in the format of hour=x or daily=x
+     * <p>
+     * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression from {@link IConfiguration#getFlushCronExpression()}
+     */
+    public static TaskTimer getTimer(IConfiguration config) throws Exception {
+
+        CronTimer cronTimer = null;
+        switch (config.getFlushSchedulerType()) {
+            case HOUR:
+                String timerVal = config.getFlushInterval();  //e.g. hour=0 or daily=10
+                if (timerVal == null)
+                    return null;
+                String s[] = timerVal.split("=");
+                if (s.length != 2) {
+                    throw new IllegalArgumentException("Flush interval format is invalid.  Expecting name=value, received: " + timerVal);
+                }
+                String name = s[0].toUpperCase();
+                Integer time = new Integer(s[1]);
+                switch (name) {
+                    case "HOUR":
+                        cronTimer = new CronTimer(Task.FLUSH.name(), time, 0); //minute, sec after each hour
+                        break;
+                    case "DAILY":
+                        cronTimer = new CronTimer(Task.FLUSH.name(), time, 0, 0); //hour, minute, sec to run on a daily basis
+                        break;
+                    default:
+                        throw new UnsupportedTypeException("Flush interval type is invalid.  Expecting \"hour, daily\", received: " + name);
+                }
+
+                break;
+            case CRON:
+                cronTimer = CronTimer.getCronTimer(Task.FLUSH.name(), config.getFlushCronExpression());
+                break;
+        }
+        return cronTimer;
     }
 }

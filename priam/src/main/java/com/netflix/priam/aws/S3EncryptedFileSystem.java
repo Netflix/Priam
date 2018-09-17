@@ -25,15 +25,14 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
-import com.netflix.priam.ICredential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -60,12 +59,11 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
     @Inject
     public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
             , @Named("filecryptoalgorithm") IFileCryptography fileCryptography
-            , IMetricPublisher metricPublisher
-            , IBackupMetrics backupMetricsMgr,
+            , BackupMetrics backupMetrics,
                                  BackupNotificationMgr backupNotificationMgr
     ) {
 
-        super(pathProvider, compress, config, metricPublisher, backupMetricsMgr, backupNotificationMgr);
+        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
 
         MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
@@ -77,17 +75,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase implements S3Encrypt
         }
 
         super.s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
-    }
-
-    @Override
-    public int downloadCount() {
-        this.backupMetricsMgr.incrementValidDownloads();
-        return downloadCount.get();
-    }
-
-    @Override
-    public int uploadCount() {
-        return uploadCount.get();
     }
 
     @Override

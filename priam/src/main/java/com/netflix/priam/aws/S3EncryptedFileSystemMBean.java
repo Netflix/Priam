@@ -19,13 +19,13 @@ public interface S3EncryptedFileSystemMBean {
 
     String ENCRYPTED_FILE_SYSTEM_MBEAN_NAME = "com.priam.aws.S3EncryptedFileSystemMBean:name=S3EncryptedFileSystemMBean";
 
-    public int downloadCount();
+    long downloadCount();
 
-    public int uploadCount();
+    long uploadCount();
 
-    public int getActivecount();
+    int getActivecount();
 
-    public long bytesUploaded();
+    long bytesUploaded();
 
-    public long bytesDownloaded();
+    long bytesDownloaded();
 }

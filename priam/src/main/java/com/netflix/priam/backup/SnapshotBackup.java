@@ -20,21 +20,15 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.notification.BackupEvent;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
-import com.netflix.priam.utils.JMXNodeTool;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.ThreadSleeper;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,34 +44,34 @@ public class SnapshotBackup extends AbstractBackup {
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<String>();
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
-    private final CommitLogBackup clBackup;
     private InstanceIdentity instanceIdentity;
     private IBackupStatusMgr snapshotStatusMgr;
     private BackupRestoreUtil backupRestoreUtil;
     private String snapshotName = null;
     private List<AbstractBackupPath> abstractBackupPaths = null;
+    private CassandraOperations cassandraOperations;
 
     @Inject
     public SnapshotBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory,
-                          MetaData metaData, CommitLogBackup clBackup, IFileSystemContext backupFileSystemCtx
+                          MetaData metaData, IFileSystemContext backupFileSystemCtx
             , IBackupStatusMgr snapshotStatusMgr
-            , BackupNotificationMgr backupNotificationMgr, InstanceIdentity instanceIdentity) {
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+            , InstanceIdentity instanceIdentity, CassandraOperations cassandraOperations) {
+        super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData;
-        this.clBackup = clBackup;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
+        this.cassandraOperations = cassandraOperations;
         backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
     }
 
     @Override
     public void execute() throws Exception {
         //If Cassandra is started then only start Snapshot Backup
-        while (!CassandraMonitor.isCassadraStarted()) {
-            logger.debug("Cassandra is not yet started, hence Snapshot Backup will start after [" + WAIT_TIME_MS / 1000 + "] secs ...");
+        while (!CassandraMonitor.hasCassadraStarted()) {
+            logger.debug("Cassandra has not yet started, hence Snapshot Backup will start after [" + WAIT_TIME_MS / 1000 + "] secs ...");
             sleeper.sleep(WAIT_TIME_MS);
         }
 
@@ -93,25 +87,22 @@ public class SnapshotBackup extends AbstractBackup {
             logger.info("Starting snapshot {}", snapshotName);
             //Clearing remotePath List
             snapshotRemotePaths.clear();
-            takeSnapshot(snapshotName);
+            cassandraOperations.takeSnapshot(snapshotName);
 
             // Collect all snapshot dir's under keyspace dir's
             abstractBackupPaths = Lists.newArrayList();
             // Try to upload all the files as part of snapshot. If there is any error, there will be an exception and snapshot will be considered as failure.
-            initiateBackup("snapshots", backupRestoreUtil);
+            initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
 
             // All the files are uploaded successfully as part of snapshot.
             //pre condition notifiy of meta.json upload
             File tmpMetaFile = metaData.createTmpMetaFile(); //Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
-            metaJsonAbp.setCompressedFileSize(0);
-            notifyEventStart(new BackupEvent(metaJsonAbp));
 
             // Upload meta file
             AbstractBackupPath metaJson = metaData.set(abstractBackupPaths, snapshotName);
 
             logger.info("Snapshot upload complete for {}", snapshotName);
-            notifyEventSuccess(new BackupEvent(metaJsonAbp));
             backupMetadata.setSnapshotLocation(config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
 
@@ -120,12 +111,12 @@ public class SnapshotBackup extends AbstractBackup {
             }
 
         } catch (Exception e) {
-            logger.error("Exception occured while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
+            logger.error("Exception occurred while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
             snapshotStatusMgr.failed(backupMetadata);
             throw e;
         } finally {
             try {
-                clearSnapshot(snapshotName);
+                cassandraOperations.clearSnapshot(snapshotName);
             } catch (Exception e) {
                 logger.error(e.getMessage(), e);
             }
@@ -139,26 +130,6 @@ public class SnapshotBackup extends AbstractBackup {
         return null;
     }
 
-    private void takeSnapshot(final String snapshotName) throws Exception {
-        new RetryableCallable<Void>() {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.takeSnapshot(snapshotName, null);
-                //nodetool.takeSnapshot(snapshotName, null, new String[0]);
-                return null;
-            }
-        }.call();
-    }
-
-    private void clearSnapshot(final String snapshotTag) throws Exception {
-        new RetryableCallable<Void>() {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.clearSnapshot(snapshotTag);
-                return null;
-            }
-        }.call();
-    }
 
     @Override
     public String getName() {
@@ -166,40 +137,22 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static boolean isBackupEnabled(IConfiguration config) throws Exception {
-        switch (config.getBackupSchedulerType()) {
-            case HOUR:
-                if (config.getBackupHour() < 0)
-                    return false;
-                break;
-            case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1"))
-                    return false;
-                if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
-                    throw new Exception("Invalid CRON expression: " + cronExpression +
-                            ". Please use -1 if you wish to disable backup else fix the CRON expression and try again!");
-                break;
-        }
-        return true;
+        return (getTimer(config) != null);
     }
 
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-        if (!isBackupEnabled(config))
-        {
-            logger.info("Skipping snapshot backup as it is disabled.");
-            return null;
-        }
-
         CronTimer cronTimer = null;
         switch (config.getBackupSchedulerType()) {
             case HOUR:
-                cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
-                logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                if (config.getBackupHour() < 0)
+                    logger.info("Skipping {} as it is disabled via backup hour: {}", JOBNAME, config.getBackupHour());
+                else {
+                    cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
+                    logger.info("Starting snapshot backup with backup hour: {}", config.getBackupHour());
+                }
                 break;
             case CRON:
-                String cronExpression = config.getBackupCronExpression();
-                cronTimer = new CronTimer(JOBNAME, config.getBackupCronExpression());
-                logger.info("Starting snapshot backup with CRON expression {}", cronTimer.getCronExpression());
+                cronTimer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
                 break;
         }
         return cronTimer;
@@ -213,7 +166,7 @@ public class SnapshotBackup extends AbstractBackup {
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating snapshot observers now ...");
@@ -224,7 +177,7 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
 
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
         // Add files to this dir

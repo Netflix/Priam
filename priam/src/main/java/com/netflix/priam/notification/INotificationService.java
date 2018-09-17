@@ -15,7 +15,10 @@
  */
 package com.netflix.priam.notification;
 
+import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.ImplementedBy;
+
+import java.util.Map;
 
 /**
  * Service to notify of a message.
@@ -28,5 +31,6 @@ public interface INotificationService {
      *
      * @param msg Message that needs to be notified
      */
-    public void notify(String msg);
+    void notify(String msg, Map<String, MessageAttributeValue> messageAttributes);
+
 }

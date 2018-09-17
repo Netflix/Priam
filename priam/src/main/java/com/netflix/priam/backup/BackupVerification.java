@@ -18,14 +18,13 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.commons.collections4.CollectionUtils;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.nio.file.FileSystems;

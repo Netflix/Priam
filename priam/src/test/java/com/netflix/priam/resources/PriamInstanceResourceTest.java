@@ -18,7 +18,7 @@
 package com.netflix.priam.resources;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import mockit.Expectations;

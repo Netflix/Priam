@@ -17,8 +17,8 @@ package com.netflix.priam.backup.parallel;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.config.IConfiguration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +43,8 @@ public class CassandraBackupQueueMgr implements ITaskQueueMgr<AbstractBackupPath
 
     private static final Logger logger = LoggerFactory.getLogger(CassandraBackupQueueMgr.class);
 
-    BlockingQueue<AbstractBackupPath> tasks; //A queue of files to be uploaded
-    AbstractSet<String> tasksQueued; //A queue to determine what files have been queued, used for deduplication
+    private BlockingQueue<AbstractBackupPath> tasks; //A queue of files to be uploaded
+    private AbstractSet<String> tasksQueued; //A queue to determine what files have been queued, used for deduplication
 
     @Inject
     public CassandraBackupQueueMgr(IConfiguration config) {

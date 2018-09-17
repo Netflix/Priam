@@ -1,4 +1,20 @@
 # Changelog
+## 2018/08/20 3.1.60
+***WARNING*** THIS IS A BREAKING RELEASE 
+### New Feature
+* (#706) Move to spectator to collect Metrics. This is a breaking change, if you were depending on MetricPublisher to collect metrics. 
+
+## 2018/08/13 3.1.59 
+### New Feature
+* (#671) Compactions on CRON: Added ability to schedule compactions for columnfamilies on CRON. 
+* (#691) Snapshot Meta Service: This will form the basis of backup version 2. This service will run on CRON and will ensure we upload a meta file containing the list of SSTables on disk. 
+* (#703) Making post restore hook heartbeat timeout and heartbeat check frequency configurable
+
+## 2018/07/28: 3.1.58
+* (#695) Moving restore-finished status update, to after PostRestoreHook execution.
+
+## 2018/07/11: 3.1.57
+* (#689) Adding partitioner endpoint to cassadmin resource to get C* partitioner name.
 
 ## 2018/06/28: 3.1.54
 ### Improvements

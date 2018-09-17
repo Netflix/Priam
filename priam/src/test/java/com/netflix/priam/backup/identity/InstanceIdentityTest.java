@@ -97,7 +97,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         printInstance(identity.getInstance(), hash);
     }
 
-    public void printInstance(PriamInstance ins, int hash) {
+    private void printInstance(PriamInstance ins, int hash) {
         System.out.println("ID: " + (ins.getId() - hash));
         System.out.println("PayLoad: " + ins.getToken());
 

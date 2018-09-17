@@ -20,5 +20,5 @@ package com.netflix.priam.backup.parallel;
  */
 public interface BackupPostProcessingCallback<E> {
 
-    public void postProcessing(E completedTask);
+    void postProcessing(E completedTask);
 }

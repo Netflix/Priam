@@ -137,7 +137,7 @@ public class TestBackup {
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
 
-    public static void generateIncrementalFiles() {
+    private static void generateIncrementalFiles() {
         File tmp = new File("target/data/");
         if (tmp.exists())
             cleanup(tmp);
@@ -156,7 +156,7 @@ public class TestBackup {
         }
     }
 
-    public static void genTestFile(File file) {
+    private static void genTestFile(File file) {
         try {
             File parent = file.getParentFile();
             if (!parent.exists())
@@ -171,13 +171,13 @@ public class TestBackup {
         }
     }
 
-    public static void cleanup(File dir) {
+    private static void cleanup(File dir) {
         FileUtils.deleteQuietly(dir);
     }
 
     // Mock Nodeprobe class
     @Ignore
-    public static class MockNodeProbe extends MockUp<NodeProbe> {
+    static class MockNodeProbe extends MockUp<NodeProbe> {
         @Mock
         public void $init(String host, int port) throws IOException, InterruptedException {
         }

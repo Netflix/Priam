@@ -18,8 +18,8 @@ package com.netflix.priam.aws;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 
 import java.util.Date;
@@ -34,7 +34,7 @@ public class S3BackupPath extends AbstractBackupPath {
      * In Cassandra 1.0, Number of path elements = 8
      * In Cassandra 1.1, Number of path elements = 9
      */
-    public static final int NUM_PATH_ELEMENTS_CASS_1_0 = 8;
+    private static final int NUM_PATH_ELEMENTS_CASS_1_0 = 8;
 
     @Inject
     public S3BackupPath(IConfiguration config, InstanceIdentity factory) {
@@ -57,7 +57,7 @@ public class S3BackupPath extends AbstractBackupPath {
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (BackupFileType.isDataFile(type)) {
             if (isCassandra1_0)
                 buff.append(keyspace).append(S3BackupPath.PATH_SEP);
             else
@@ -86,7 +86,7 @@ public class S3BackupPath extends AbstractBackupPath {
         token = pieces.get(3);
         time = parseDate(pieces.get(4));
         type = BackupFileType.valueOf(pieces.get(5));
-        if (type != BackupFileType.META && type != BackupFileType.CL) {
+        if (BackupFileType.isDataFile(type)) {
             keyspace = pieces.get(6);
             if (!isCassandra1_0)
                 columnFamily = pieces.get(7);

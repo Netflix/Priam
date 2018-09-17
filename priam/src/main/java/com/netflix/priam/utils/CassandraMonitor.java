@@ -18,10 +18,10 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.ICassandraProcess;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.merics.ICassMonitorMetrics;
+import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -47,10 +47,10 @@ public class CassandraMonitor extends Task {
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
     private InstanceState instanceState;
     private ICassandraProcess cassProcess;
-    private ICassMonitorMetrics cassMonitorMetrics;
+    private CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess, ICassMonitorMetrics cassMonitorMetrics) {
+    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess, CassMonitorMetrics cassMonitorMetrics) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
@@ -85,7 +85,7 @@ public class CassandraMonitor extends Task {
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
                 instanceState.setIsThriftActive(bean.isThriftServerRunning());
-            } else if (line == null) {
+            } else {
                 //Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);
                 isCassandraStarted.set(false);
@@ -150,7 +150,7 @@ public class CassandraMonitor extends Task {
         return JOBNAME;
     }
 
-    public static Boolean isCassadraStarted() {
+    public static Boolean hasCassadraStarted() {
         return isCassandraStarted.get();
     }
 

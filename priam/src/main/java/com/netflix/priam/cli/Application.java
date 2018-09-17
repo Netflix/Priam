@@ -18,8 +18,8 @@ package com.netflix.priam.cli;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.config.IConfiguration;
 
 public class Application {
     static private Injector injector;

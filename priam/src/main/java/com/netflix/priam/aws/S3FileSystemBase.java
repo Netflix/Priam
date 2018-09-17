@@ -23,16 +23,12 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IBackupMetrics;
 import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.merics.AWSSlowDownExceptionMeasurement;
-import com.netflix.priam.merics.BackupUploadRateMeasurement;
-import com.netflix.priam.merics.IMeasurement;
-import com.netflix.priam.merics.IMetricPublisher;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.EventGenerator;
@@ -51,7 +47,6 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenerator<BackupEvent> {
@@ -59,20 +54,15 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     protected static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
     protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
-    protected AtomicInteger uploadCount = new AtomicInteger();
+    //protected AtomicInteger uploadCount = new AtomicInteger();
     protected AtomicLong bytesUploaded = new AtomicLong(); //bytes uploaded per file
-    protected AtomicInteger downloadCount = new AtomicInteger();
+    //protected AtomicInteger downloadCount = new AtomicInteger();
     protected AtomicLong bytesDownloaded = new AtomicLong();
-
-    protected IMetricPublisher metricPublisher;
-    protected IMeasurement awsSlowDownMeasurement;
-    protected int awsSlowDownExceptionCounter = 0;
-
+    protected BackupMetrics backupMetrics;
     protected AmazonS3 s3Client;
     protected IConfiguration config;
     protected Provider<AbstractBackupPath> pathProvider;
     protected ICompression compress;
-    protected IBackupMetrics backupMetricsMgr;
     protected BlockingSubmitThreadPoolExecutor executor;
     protected RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
     private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers = new CopyOnWriteArrayList<>();
@@ -80,16 +70,12 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
                             ICompression compress,
                             final IConfiguration config,
-                            IMetricPublisher metricPublisher,
-                            IBackupMetrics backupMetricsMgr,
+                            BackupMetrics backupMetrics,
                             BackupNotificationMgr backupNotificationMgr) {
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
-        this.metricPublisher = metricPublisher;
-        this.backupMetricsMgr = backupMetricsMgr;
-        awsSlowDownMeasurement = new AWSSlowDownExceptionMeasurement(); //a counter of AWS warning for all uploads
-
+        this.backupMetrics = backupMetrics;
 
         int threads = config.getMaxBackupUploadThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
@@ -186,7 +172,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     @param start time of upload, in millisecs
     @param completion time of upload, in millsecs
      */
-    protected void postProcessingPerFile(AbstractBackupPath path, long startTimeInMilliSecs, long completedTimeInMilliSecs) {
+    private void postProcessingPerFile(AbstractBackupPath path, long startTimeInMilliSecs, long completedTimeInMilliSecs) {
         //Publish upload rate for each uploaded file
         try {
             long sizeInBytes = path.getSize();
@@ -203,23 +189,10 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             }
 
             logger.info("Upload rate for file: {}"
-                    + ", elapsse time in sec(s): {}"
-                    + ", KB per sec: {}",
+                            + ", elapsse time in sec(s): {}"
+                            + ", KB per sec: {}",
                     path.getFileName(), elapseTimeInSecs, speedInKBps);
-
-            /*
-            This measurement is different than most others.  Other measurements are applicable to all occurrences (e.g
-            node tool flush errors, AWS TPS warning errors).  Upload rate for all occurrences (uploads) is not useful; rather,
-            we are interested in the upload rate per file.  Hence "metadata" is the upload rate for the just uploaded file.
-             */
-            IMeasurement backupUploadRateMeasurement = new BackupUploadRateMeasurement();
-            BackupUploadRateMeasurement.Metadata metadata = new BackupUploadRateMeasurement.Metadata(path.getFileName(), speedInKBps, elapseTimeInMillisecs);
-            backupUploadRateMeasurement.setVal(metadata);
-            this.metricPublisher.publish(backupUploadRateMeasurement); //signal of upload rate for file
-
-            awsSlowDownMeasurement.incrementFailureCnt(path.getAWSSlowDownExceptionCounter());
-            this.metricPublisher.publish(awsSlowDownMeasurement); //signal of possible throttling by aws
-
+            backupMetrics.recordUploadRate(sizeInBytes);
         } catch (Exception e) {
             logger.error("Post processing of file {} failed, not fatal.", path.getFileName(), e);
         }
@@ -230,7 +203,6 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
      */
     protected void reinitialize() {
         bytesUploaded = new AtomicLong(0); //initialize
-        this.awsSlowDownExceptionCounter = 0;
     }
 
     /*
@@ -246,19 +218,19 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     @Override
     public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException {
         reinitialize();  //perform before file upload
-        uploadCount.incrementAndGet();
         long chunkSize = config.getBackupChunkSize();
         if (path.getSize() > 0)
             chunkSize = (path.getSize() / chunkSize >= MAX_CHUNKS) ? (path.getSize() / (MAX_CHUNKS - 1)) : chunkSize; //compute the size of each block we will upload to endpoint
 
         logger.info("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), path.getRemotePath(), chunkSize);
+
         long startTime = System.nanoTime(); //initialize for each file upload
         notifyEventStart(new BackupEvent(path));
-
         uploadFile(path, in, chunkSize);
         long completedTime = System.nanoTime();
         postProcessingPerFile(path, TimeUnit.NANOSECONDS.toMillis(startTime), TimeUnit.NANOSECONDS.toMillis(completedTime));
         notifyEventSuccess(new BackupEvent(path));
+        backupMetrics.incrementValidUploads();
     }
 
     protected void checkSuccessfulUpload(CompleteMultipartUploadResult resultS3MultiPartUploadComplete, AbstractBackupPath path) throws BackupRestoreException {
@@ -266,7 +238,7 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
             String eTagObjectId = resultS3MultiPartUploadComplete.getETag(); //unique id of the whole object
             logDiagnosticInfo(path, resultS3MultiPartUploadComplete);
         } else {
-            this.backupMetricsMgr.incrementInvalidUploads();
+            this.backupMetrics.incrementInvalidUploads();
             throw new BackupRestoreException("Error uploading file as ETag or CompleteMultipartUploadResult is NULL -" + path.getFileName());
         }
     }
@@ -277,13 +249,13 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     }
 
     protected BackupRestoreException encounterError(AbstractBackupPath path, Exception e) {
-        this.backupMetricsMgr.incrementInvalidUploads();
+        this.backupMetrics.incrementInvalidUploads();
         if (e instanceof AmazonS3Exception) {
             AmazonS3Exception a = (AmazonS3Exception) e;
             String amazoneErrorCode = a.getErrorCode();
             if (amazoneErrorCode != null && !amazoneErrorCode.isEmpty()) {
                 if (amazoneErrorCode.equalsIgnoreCase("slowdown")) {
-                    awsSlowDownExceptionCounter += 1;
+                    backupMetrics.incrementAwsSlowDownException(1);
                     logger.warn("Received slow down from AWS when uploading file: {}", path.getFileName());
                 }
             }
@@ -317,11 +289,16 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     @Override
     public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
         logger.info("Downloading {} from S3 bucket {}", path.getRemotePath(), getPrefix(this.config));
-        downloadCount.incrementAndGet();
         long contentLen = s3Client.getObjectMetadata(getPrefix(config), path.getRemotePath()).getContentLength();
         path.setSize(contentLen);
-        downloadFile(path, os);
-        bytesDownloaded.addAndGet(contentLen);
+        try {
+            downloadFile(path, os);
+            bytesDownloaded.addAndGet(contentLen);
+            backupMetrics.incrementValidDownloads();
+        } catch (BackupRestoreException e) {
+            backupMetrics.incrementInvalidDownloads();
+            throw e;
+        }
     }
 
     protected abstract void downloadFile(AbstractBackupPath path, OutputStream os) throws BackupRestoreException;
@@ -332,8 +309,16 @@ public abstract class S3FileSystemBase implements IBackupFileSystem, EventGenera
     }
 
     @Override
-    public int getAWSSlowDownExceptionCounter() {
-        return awsSlowDownExceptionCounter;
+    public long getAWSSlowDownExceptionCounter() {
+        return backupMetrics.getAwsSlowDownException();
+    }
+
+    public long downloadCount() {
+        return backupMetrics.getValidDownloads();
+    }
+
+    public long uploadCount() {
+        return backupMetrics.getValidUploads();
     }
 
     @Override

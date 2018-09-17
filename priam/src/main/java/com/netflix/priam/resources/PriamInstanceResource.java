@@ -17,7 +17,7 @@
 package com.netflix.priam.resources;
 
 import com.google.inject.Inject;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import org.slf4j.Logger;

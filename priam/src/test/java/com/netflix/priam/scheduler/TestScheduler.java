@@ -21,8 +21,8 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.TestModule;
+import com.netflix.priam.config.IConfiguration;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -89,7 +89,7 @@ public class TestScheduler {
             super(config, MBeanServerFactory.newMBeanServer());
         }
 
-        public static int count = 0;
+        static int count = 0;
 
         @Override
         public void execute() {
@@ -109,7 +109,7 @@ public class TestScheduler {
             return "test2";
         }
 
-        public static TaskTimer getTimer() {
+        static TaskTimer getTimer() {
             return new SimpleTimer("test2", 11L);
         }
     }

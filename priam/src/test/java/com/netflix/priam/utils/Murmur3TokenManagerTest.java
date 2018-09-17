@@ -18,8 +18,8 @@
 package com.netflix.priam.utils;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -33,7 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class Murmur3TokenManagerTest {
-    IConfiguration config;
+    private IConfiguration config;
     private TokenManager tokenManager;
 
     @Before

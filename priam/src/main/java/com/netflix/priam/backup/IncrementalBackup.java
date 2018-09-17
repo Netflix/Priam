@@ -19,11 +19,9 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.google.inject.name.Named;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
-import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import org.slf4j.Logger;
@@ -43,14 +41,12 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     private final List<String> incrementalRemotePaths = new ArrayList<String>();
     private IncrementalMetaData metaData;
     private BackupRestoreUtil backupRestoreUtil;
-    static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
-            , IncrementalMetaData metaData
-            , BackupNotificationMgr backupNotificationMgr
-    ) {
-        super(config, backupFileSystemCtx, pathFactory, backupNotificationMgr);
+            , IncrementalMetaData metaData) {
+        super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
         backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
     }
@@ -59,7 +55,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     public void execute() throws Exception {
         //Clearing remotePath List
         incrementalRemotePaths.clear();
-        initiateBackup("backups", backupRestoreUtil);
+        initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
         if (incrementalRemotePaths.size() > 0) {
             notifyObservers();
         }
@@ -86,7 +82,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         observers.remove(observer);
     }
 
-    public void notifyObservers() {
+    private void notifyObservers() {
         for (IMessageObserver observer : observers) {
             if (observer != null) {
                 logger.debug("Updating incremental observers now ...");
@@ -97,7 +93,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     }
 
     @Override
-    protected void backupUploadFlow(File backupDir) throws Exception {
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
         List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
 
         if (!uploadedFiles.isEmpty()) {

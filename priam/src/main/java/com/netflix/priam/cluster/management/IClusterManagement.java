@@ -15,12 +15,65 @@
  */
 package com.netflix.priam.cluster.management;
 
-import java.util.List;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.merics.IMeasurement;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.utils.CassandraMonitor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * Created by vinhn on 10/12/16.
  */
-public interface IClusterManagement<T> {
 
-    public List<T> execute() throws Exception;
+public abstract class IClusterManagement<T> extends Task {
+    public enum Task {FLUSH, COMPACTION}
+
+    private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
+    private Task taskType;
+    private IMeasurement measurement;
+    private static Lock lock = new ReentrantLock();
+
+    protected IClusterManagement(IConfiguration config, Task taskType, IMeasurement measurement) {
+        super(config);
+        this.taskType = taskType;
+        this.measurement = measurement;
+    }
+
+    @Override
+    public void execute() throws Exception {
+        if (!CassandraMonitor.hasCassadraStarted()) {
+            logger.debug("Cassandra has not started, hence {} will not run", taskType);
+            return;
+        }
+
+        if (!lock.tryLock()) {
+            logger.error("Operation is already running! Try again later.");
+            throw new Exception("Operation already running");
+        }
+
+        try {
+            String result = runTask();
+            measurement.incrementSuccess();
+            logger.info("Successfully finished executing the cluster management task: {} with result: {}", taskType, result);
+            if (result.isEmpty()) {
+                logger.warn("{} task completed successfully but no action was done.", taskType.name());
+            }
+        } catch (Exception e){
+            measurement.incrementFailure();
+            throw new Exception("Exception during execution of operation: " + taskType.name(), e);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public String getName() {
+        return taskType.name();
+    }
+
+    protected abstract String runTask() throws Exception;
 }

@@ -18,16 +18,15 @@
 package com.netflix.priam.backup;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
 import com.netflix.priam.aws.S3FileIterator;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import mockit.Mock;
 import mockit.MockUp;
@@ -73,12 +72,12 @@ public class TestFileIterator {
 
     // MockAmazonS3Client class
     @Ignore
-    public static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        public static String bucketName = "";
-        public static String prefix = "";
+    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
+        static String bucketName = "";
+        static String prefix = "";
 
         @Mock
-        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException, AmazonServiceException {
+        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest) throws AmazonClientException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(listObjectsRequest.getBucketName());
             listing.setPrefix(listObjectsRequest.getPrefix());
@@ -86,7 +85,7 @@ public class TestFileIterator {
         }
 
         @Mock
-        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException, AmazonServiceException {
+        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing) throws AmazonClientException {
             ObjectListing listing = new ObjectListing();
             listing.setBucketName(previousObjectListing.getBucketName());
             listing.setPrefix(previousObjectListing.getPrefix());
@@ -96,10 +95,10 @@ public class TestFileIterator {
 
     // MockObjectListing class
     @Ignore
-    public static class MockObjectListing extends MockUp<ObjectListing> {
-        public static boolean truncated = true;
-        public static boolean firstcall = true;
-        public static boolean simfilter = false;//Simulate filtering
+    static class MockObjectListing extends MockUp<ObjectListing> {
+        static boolean truncated = true;
+        static boolean firstcall = true;
+        static boolean simfilter = false;//Simulate filtering
 
         @Mock
         public List<S3ObjectSummary> getObjectSummaries() {
@@ -240,7 +239,7 @@ public class TestFileIterator {
 
     }
 
-    public static List<S3ObjectSummary> getObjectSummary() {
+    private static List<S3ObjectSummary> getObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
@@ -257,12 +256,11 @@ public class TestFileIterator {
         return list;
     }
 
-    public static List<S3ObjectSummary> getObjectSummaryEmpty() {
-        List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
-        return list;
+    private static List<S3ObjectSummary> getObjectSummaryEmpty() {
+        return new ArrayList<S3ObjectSummary>();
     }
 
-    public static List<S3ObjectSummary> getNextObjectSummary() {
+    private static List<S3ObjectSummary> getNextObjectSummary() {
         List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey("test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");

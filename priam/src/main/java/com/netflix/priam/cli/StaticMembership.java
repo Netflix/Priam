@@ -37,7 +37,6 @@ public class StaticMembership implements IMembership {
 
     private static final Logger logger = LoggerFactory.getLogger(StaticMembership.class);
 
-    private String racName;
     private List<String> racMembership;
     private int racCount;
 
@@ -53,7 +52,7 @@ public class StaticMembership implements IMembership {
         } finally {
             FileUtils.closeQuietly(fis);
         }
-        racName = config.getProperty(RAC_NAME);
+        String racName = config.getProperty(RAC_NAME);
         racCount = 0;
         for (String name : config.stringPropertyNames()) {
             if (name.startsWith(INSTANCES_PRE)) {

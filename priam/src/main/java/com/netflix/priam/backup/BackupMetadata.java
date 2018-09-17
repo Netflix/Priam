@@ -16,12 +16,9 @@
 package com.netflix.priam.backup;
 
 
-import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

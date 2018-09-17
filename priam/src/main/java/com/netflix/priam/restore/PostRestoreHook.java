@@ -1,6 +1,22 @@
+/*
+ * Copyright 2018 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.netflix.priam.restore;
 
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -25,8 +41,6 @@ public class PostRestoreHook implements IPostRestoreHook {
     private static final Logger logger = LoggerFactory.getLogger(PostRestoreHook.class);
     private final IConfiguration config;
     private final Sleeper sleeper;
-    private final int ThreadWaitTimeInMs = 60000;
-    private final int HeartBeatTimeOutInMs = 60000;
     private static String PostRestoreHookCommandDelimiter = " ";
     private static String PriamPostRestoreHookFilePrefix = "PriamFileForPostRestoreHook";
     private static String PriamPostRestoreHookFileSuffix = ".tmp";
@@ -132,10 +146,10 @@ public class PostRestoreHook implements IPostRestoreHook {
             @Override
             public Integer retriableCall() throws Exception {
                 while (true) {
-                    sleeper.sleep(ThreadWaitTimeInMs);
-                    if(System.currentTimeMillis() - heartBeatFile.lastModified() > HeartBeatTimeOutInMs) {
+                    sleeper.sleep(config.getPostRestoreHookHeartbeatCheckFrequencyInMs());
+                    if(System.currentTimeMillis() - heartBeatFile.lastModified() > config.getPostRestoreHookHeartBeatTimeoutInMs()) {
                         //kick off post restore hook process, since there is no heartbeat
-                        logger.info("No heartbeat for the last {} ms, killing the existing process.", HeartBeatTimeOutInMs);
+                        logger.info("No heartbeat for the last {} ms, killing the existing process.", config.getPostRestoreHookHeartBeatTimeoutInMs());
                         if(process.isAlive()) {
                             process.destroyForcibly();
                         }

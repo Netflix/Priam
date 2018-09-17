@@ -18,12 +18,9 @@
 package com.netflix.priam.tuner.dse;
 
 import com.google.common.io.Files;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.dse.DseConfigStub;
-import com.netflix.priam.tuner.dse.AuditLogTunerLog4J;
-import com.netflix.priam.tuner.dse.AuditLogTunerYaml;
-import com.netflix.priam.tuner.dse.DseTuner;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -34,14 +31,14 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class DseTunerTest {
-    IConfiguration config;
-    DseConfigStub dseConfig;
-    DseTuner dseTunerYaml;
-    DseTuner dseTunerLog4j;
-    AuditLogTunerYaml auditLogTunerYaml;
-    AuditLogTunerLog4J auditLogTunerLog4j;
-    File targetFile;
-    File targetDseYamlFile;
+    private IConfiguration config;
+    private DseConfigStub dseConfig;
+    private DseTuner dseTunerYaml;
+    private DseTuner dseTunerLog4j;
+    private AuditLogTunerYaml auditLogTunerYaml;
+    private AuditLogTunerLog4J auditLogTunerLog4j;
+    private File targetFile;
+    private File targetDseYamlFile;
 
     @Before
     public void setup() throws IOException {
@@ -56,8 +53,8 @@ public class DseTunerTest {
         if (!targetDir.exists())
             targetDir.mkdirs();
 
-        targetFile = new File(config.getCassHome() + auditLogTunerLog4j.AUDIT_LOG_FILE);
-        Files.copy(new File("src/test/resources/" + auditLogTunerLog4j.AUDIT_LOG_FILE), targetFile);
+        targetFile = new File(config.getCassHome() + AuditLogTunerLog4J.AUDIT_LOG_FILE);
+        Files.copy(new File("src/test/resources/" + AuditLogTunerLog4J.AUDIT_LOG_FILE), targetFile);
     }
 
     @Test
@@ -67,7 +64,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertTrue(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertTrue(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     @Test
@@ -77,7 +74,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertFalse(p.containsKey(auditLogTunerLog4j.PRIMARY_AUDIT_LOG_ENTRY));
+        Assert.assertFalse(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     /**

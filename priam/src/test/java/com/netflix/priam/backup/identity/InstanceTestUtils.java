@@ -17,13 +17,8 @@
 
 package com.netflix.priam.backup.identity;
 
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.FakeMembership;
-import com.netflix.priam.FakePriamInstanceFactory;
-import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.InstanceEnvIdentity;
-import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.identity.*;
 import com.netflix.priam.identity.token.DeadTokenRetriever;
 import com.netflix.priam.identity.token.NewTokenRetriever;
 import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
@@ -38,19 +33,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Ignore
-public abstract class InstanceTestUtils {
+abstract class InstanceTestUtils {
 
-    List<String> instances = new ArrayList<String>();
-    IMembership membership;
+    private List<String> instances = new ArrayList<String>();
+    private IMembership membership;
     FakeConfiguration config;
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
-    Sleeper sleeper;
-    DeadTokenRetriever deadTokenRetriever;
-    PreGeneratedTokenRetriever preGeneratedTokenRetriever;
-    NewTokenRetriever newTokenRetriever;
+    private Sleeper sleeper;
+    private DeadTokenRetriever deadTokenRetriever;
+    private PreGeneratedTokenRetriever preGeneratedTokenRetriever;
+    private NewTokenRetriever newTokenRetriever;
     ITokenManager tokenManager;
-    InstanceEnvIdentity insEnvIdentity;
+    private InstanceEnvIdentity insEnvIdentity;
 
     @Before
     public void setup() {
@@ -74,7 +69,7 @@ public abstract class InstanceTestUtils {
         this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }
 
-    public void createInstances() throws Exception {
+    void createInstances() throws Exception {
         createInstanceIdentity("az1", "fakeinstance1");
         createInstanceIdentity("az1", "fakeinstance2");
         createInstanceIdentity("az1", "fakeinstance3");
@@ -88,7 +83,7 @@ public abstract class InstanceTestUtils {
         createInstanceIdentity("az3", "fakeinstance9");
     }
 
-    protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
+    InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
         config.zone = zone;
         config.instance_id = instanceId;
         return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager(config)

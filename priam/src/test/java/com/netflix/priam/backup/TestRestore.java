@@ -1,4 +1,34 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.netflix.priam.backup;
+
+import com.google.inject.Guice;
+import com.google.inject.Injector;
+import com.google.inject.Key;
+import com.google.inject.name.Names;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.restore.Restore;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -6,33 +36,17 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 
-import junit.framework.Assert;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
-import com.netflix.priam.FakeConfiguration;
-import com.netflix.priam.IConfiguration;
-
-public class TestRestore
-{
+public class TestRestore {
     private static Injector injector;
     private static FakeBackupFileSystem filesystem;
     private static ArrayList<String> fileList;
-    private static Calendar cal;    
+    private static Calendar cal;
     private static IConfiguration conf;
 
     @BeforeClass
-    public static void setup() throws InterruptedException, IOException
-    {
+    public static void setup() throws InterruptedException, IOException {
         injector = Guice.createInjector(new BRTestModule());
-        filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class,Names.named("incr_restore")));
+        filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class, Names.named("incr_restore")));
         conf = injector.getInstance(IConfiguration.class);
         fileList = new ArrayList<String>();
         File cassdir = new File(conf.getDataFileLocation());
@@ -41,20 +55,19 @@ public class TestRestore
     }
 
     @AfterClass
-    public static void cleanup() throws IOException
-    {
+    public static void cleanup() throws IOException {
         File file = new File("cass");
         FileUtils.deleteQuietly(file);
     }
 
-    public static void populateBackupFileSystem(String baseDir){
+    private static void populateBackupFileSystem(String baseDir) {
         fileList.clear();
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/META/meta.json");
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks1/cf1/f2.db");
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110030/SNAP/ks2/cf1/f2.db");
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
-        fileList.add(baseDir + "/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/META/meta.json");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f2.db");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f2.db");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
+        fileList.add(baseDir + "/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
         filesystem.baseDir = baseDir;
         filesystem.region = FakeConfiguration.FAKE_REGION;
         filesystem.clusterName = "fakecluster";
@@ -62,8 +75,7 @@ public class TestRestore
     }
 
     @Test
-    public void testRestore() throws Exception
-    {
+    public void testRestore() throws Exception {
         populateBackupFileSystem("test_backup");
         File tmpdir = new File(conf.getDataFileLocation() + "/test");
         tmpdir.mkdir();
@@ -86,10 +98,9 @@ public class TestRestore
 
     //Pick latest file
     @Test
-    public void testRestoreLatest() throws Exception
-    {
+    public void testRestoreLatest() throws Exception {
         populateBackupFileSystem("test_backup");
-        String metafile = "test_backup/"+FakeConfiguration.FAKE_REGION+"/fakecluster/123456/201108110130/META/meta.json";
+        String metafile = "test_backup/" + FakeConfiguration.FAKE_REGION + "/fakecluster/123456/201108110130/META/meta.json";
         filesystem.addFile(metafile);
         Restore restore = injector.getInstance(Restore.class);
         cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
@@ -107,8 +118,7 @@ public class TestRestore
     }
 
     @Test
-    public void testNoSnapshots() throws Exception
-    {
+    public void testNoSnapshots() throws Exception {
         try {
             filesystem.setupTest(new ArrayList<String>());
             Restore restore = injector.getInstance(Restore.class);
@@ -117,24 +127,20 @@ public class TestRestore
             cal.add(Calendar.HOUR, 5);
             restore.restore(startTime, cal.getTime());
             Assert.assertFalse(true);//No exception thrown
-        }
-        catch(java.lang.ArrayIndexOutOfBoundsException e){
-            //We are ok
-        }catch(java.util.NoSuchElementException e){
-            //We are ok
-        }
-        catch (AssertionError e) {
-            Assert.assertEquals("[cass_backup] No snapshots found, Restore Failed.", e.getMessage());
+        } catch (IllegalStateException e) {
+            //We are ok. No snapshot found.
+        }catch (Exception e)
+        {
+            throw e;
         }
     }
-    
-    
+
+
     @Test
-    public void testRestoreFromDiffCluster() throws Exception
-    {
+    public void testRestoreFromDiffCluster() throws Exception {
         populateBackupFileSystem("test_backup_new");
-        FakeConfiguration conf = (FakeConfiguration)injector.getInstance(IConfiguration.class);
-        conf.setRestorePrefix("RESTOREBUCKET/test_backup_new/"+FakeConfiguration.FAKE_REGION+"/fakecluster");
+        FakeConfiguration conf = (FakeConfiguration) injector.getInstance(IConfiguration.class);
+        conf.setRestorePrefix("RESTOREBUCKET/test_backup_new/" + FakeConfiguration.FAKE_REGION + "/fakecluster");
         Restore restore = injector.getInstance(Restore.class);
         cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);

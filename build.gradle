@@ -1,13 +1,13 @@
 plugins {
-    id 'nebula.netflixoss' version '5.0.0'
+    id 'nebula.netflixoss' version '5.1.1'
 }
 
-// Establish version and status
 ext.githubProjectName = 'Priam'
 
 subprojects {
     apply plugin: 'nebula.netflixoss'
     apply plugin: 'java'
+
 
     group = 'com.netflix.priam'
 
@@ -24,7 +24,7 @@ subprojects {
         compile 'org.apache.commons:commons-lang3:3.5'
         compile 'commons-logging:commons-logging:1.2'
         compile 'org.apache.commons:commons-collections4:4.1'
-        compile 'commons-io:commons-io:2.5'
+        compile 'commons-io:commons-io:2.6'
         compile 'commons-cli:commons-cli:1.4'
         compile 'commons-httpclient:commons-httpclient:3.1'
         compile 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
@@ -33,14 +33,14 @@ subprojects {
         compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
         compile 'com.google.guava:guava:21.0'
         compile 'com.google.code.findbugs:jsr305:3.0.2'
-        compile 'com.amazonaws:aws-java-sdk:1.11.211'
+        compile 'com.amazonaws:aws-java-sdk:1.11.386'
         compile 'com.google.inject:guice:4.1.0'
         compile 'com.google.inject.extensions:guice-servlet:4.1.0'
-        compile 'org.quartz-scheduler:quartz:2.2.3'
+        compile 'org.quartz-scheduler:quartz:2.3.0'
         compile 'com.googlecode.json-simple:json-simple:1.1.1'
         compile 'org.xerial.snappy:snappy-java:1.1.2.6'
-        compile 'org.yaml:snakeyaml:1.18'
-        compile 'org.apache.cassandra:cassandra-all:[1.2.0,1.2.8['
+        compile 'org.yaml:snakeyaml:1.19'
+        compile 'org.apache.cassandra:cassandra-all:2.1.17'
         compile 'javax.ws.rs:jsr311-api:1.1.1'
         compile 'joda-time:joda-time:2.9.9'
         compile 'org.apache.commons:commons-configuration2:2.1.1'
@@ -59,6 +59,7 @@ subprojects {
         }
         compile 'com.google.apis:google-api-services-storage:v1-rev100-1.22.0'
         compile 'com.google.http-client:google-http-client-jackson2:1.22.0'
+        compile 'com.netflix.spectator:spectator-api:0.74.2'
         compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
         testCompile 'org.jmockit:jmockit:1.31'
         testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
@@ -69,4 +70,3 @@ subprojects {
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 }
-

@@ -1,4 +1,4 @@
 dependencies {
     compile project(':priam')
-    testCompile project(path: ':priam', configuration: 'test')
+    testCompile project(path: ':priam')
 }

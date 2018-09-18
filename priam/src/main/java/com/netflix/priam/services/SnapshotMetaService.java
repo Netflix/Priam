@@ -87,20 +87,8 @@ public class SnapshotMetaService extends AbstractBackup {
      * @throws Exception if the configuration is not set correctly or are not valid. This is to ensure we fail-fast.
      **/
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        CronTimer cronTimer = null;
         String cronExpression = backupRestoreConfig.getSnapshotMetaServiceCronExpression();
-
-        if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")) {
-            logger.info("Skipping SnapshotMetaService as SnapshotMetaService cron is disabled via -1.");
-        } else {
-            if (StringUtils.isEmpty(cronExpression) || !CronExpression.isValidExpression(cronExpression))
-                throw new Exception("Invalid CRON expression: " + cronExpression +
-                        ". Please use -1, if you wish to disable SnapshotMetaService else fix the CRON expression and try again!");
-
-            cronTimer = new CronTimer(JOBNAME, cronExpression);
-            logger.info("Starting SnapshotMetaService with CRON expression {}", cronTimer.getCronExpression());
-        }
-        return cronTimer;
+        return CronTimer.getCronTimer(JOBNAME, cronExpression);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {

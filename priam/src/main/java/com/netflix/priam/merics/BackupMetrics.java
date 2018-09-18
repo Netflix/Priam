@@ -30,7 +30,7 @@ public class BackupMetrics {
      * Distribution summary will provide the metric like count (how many uploads were made), max no. of bytes uploaded and total amount of bytes uploaded.
      */
     private final DistributionSummary uploadRate;
-    private final Counter validUploads, invalidUploads, validDownloads, invalidDownloads, awsSlowDownException, snsNotificationSuccess, snsNotificationFailure;
+    private final Counter validUploads, invalidUploads, validDownloads, invalidDownloads, awsSlowDownException, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
 
     @Inject
     public BackupMetrics(Registry registry) {
@@ -42,6 +42,7 @@ public class BackupMetrics {
         awsSlowDownException = registry.counter(Metrics.METRIC_PREFIX + "aws.slowDown");
         snsNotificationSuccess = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.success");
         snsNotificationFailure = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.failure");
+        forgottenFiles = registry.counter(Metrics.METRIC_PREFIX + "forgotten.files");
     }
 
     public void incrementValidUploads() {
@@ -88,5 +89,7 @@ public class BackupMetrics {
     public void recordUploadRate(long sizeInBytes) {
         uploadRate.record(sizeInBytes);
     }
+
+    public void incrementForgottenFiles(long forgottenFilesVal) {forgottenFiles.increment(forgottenFilesVal);}
 
 }

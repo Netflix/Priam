@@ -27,6 +27,7 @@ import com.netflix.priam.backupv2.PrefixGenerator;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.cassandra.io.sstable.Component;
 import org.apache.commons.io.FileUtils;
@@ -76,7 +77,7 @@ public class TestSnapshotMetaService {
             prefixGenerator = injector.getInstance(PrefixGenerator.class);
 
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
-        cleanupDir(dummyDataDirectoryLocation);
+        BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
 
     }
 
@@ -104,7 +105,7 @@ public class TestSnapshotMetaService {
     private void test(int noOfSstables, int noOfKeyspaces, int noOfCf) throws Exception{
         Instant snapshotInstant = DateUtil.getInstant();
         String snapshotName = snapshotMetaService.generateSnapshotName(snapshotInstant);
-        generateDummyFiles(dummyDataDirectoryLocation, noOfKeyspaces, noOfCf, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+        BackupFileUtils.generateDummyFiles(dummyDataDirectoryLocation, noOfKeyspaces, noOfCf, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
         snapshotMetaService.setSnapshotName(snapshotName);
         Path metaFileLocation = snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();
         Assert.assertNotNull(metaFileLocation);
@@ -123,7 +124,7 @@ public class TestSnapshotMetaService {
 
         //Cleanup
         metaFileLocation.toFile().delete();
-        cleanupDir(dummyDataDirectoryLocation);
+        BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
     }
 
     @Test
@@ -131,54 +132,11 @@ public class TestSnapshotMetaService {
         test(5, 1,1);
     }
 
-    private void cleanupDir(Path dir){
-        if (dir.toFile().exists())
-            try {
-                FileUtils.cleanDirectory(dir.toFile());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-    }
-
     @Test
     public void testSize() throws Exception {
         test (1000, 2,2);
     }
 
-    private void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables, String backupDir, String snapshotName) throws Exception {
-        if (dummyDir == null)
-            dummyDir = dummyDataDirectoryLocation;
-
-        //Clean the dummy directory
-        if (dummyDir.toFile().exists())
-            FileUtils.cleanDirectory(dummyDir.toFile());
-
-        for (int i = 1; i <= noOfKeyspaces; i++) {
-            String keyspaceName = "sample" + i;
-
-            for (int j = 1; j <= noOfCf; j++) {
-                String columnfamilyname = "cf" + j;
-
-                for (int k = 1; k <= noOfSstables; k++) {
-                    String prefixName = "mc-" + k + "-big";
-
-                    for (Component.Type type : EnumSet.allOf(Component.Type.class)) {
-                        Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, prefixName + "-" + type.name() + ".db");
-                        componentPath.getParent().toFile().mkdirs();
-                        try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
-                            fileWriter.write("");
-                        }
-
-                    }
-                }
-
-                Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, "manifest.json");
-                try(FileWriter fileWriter = new FileWriter(componentPath.toFile())){
-                    fileWriter.write("");
-                }
-            }
-        }
-    }
 
     public static class TestMetaFileReader extends MetaFileReader {
 

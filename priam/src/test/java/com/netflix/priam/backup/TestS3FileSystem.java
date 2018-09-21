@@ -90,7 +90,7 @@ public class TestS3FileSystem {
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile);
+        fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -104,7 +104,7 @@ public class TestS3FileSystem {
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
-            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile);
+            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -122,7 +122,7 @@ public class TestS3FileSystem {
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
-            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile);
+            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
         } catch (BackupRestoreException e) {
             // ignore
         }

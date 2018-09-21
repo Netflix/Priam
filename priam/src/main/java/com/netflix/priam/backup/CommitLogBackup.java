@@ -65,41 +65,20 @@ public class CommitLogBackup {
         for (final File file : archivedCommitLogDir.listFiles()) {
             logger.debug("Uploading commit log {} for backup", file.getCanonicalFile());
             try {
-                AbstractBackupPath abp = (AbstractBackupPath) new RetryableCallable(3, 100L) {
-                    public AbstractBackupPath retriableCall() throws Exception {
+                AbstractBackupPath bp = pathFactory.get();
+                bp.parseLocal(file, BackupFileType.CL);
 
-                        AbstractBackupPath bp = pathFactory.get();
-                        bp.parseLocal(file, BackupFileType.CL);
-                        if (snapshotName != null)
-                            bp.time = bp.parseDate(snapshotName);
-                        upload(bp);
-                        file.delete(); //TODO: should we put delete call here? We don't want to delete if the upload operation fails
-                        return bp;
-                    }
-                }
-                        .call();
+                if (snapshotName != null)
+                    bp.time = bp.parseDate(snapshotName);
 
-                if (abp != null) {
-                    bps.add(abp);
-                }
-                addToRemotePath(abp.getRemotePath());
+                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+                bps.add(bp);
+                addToRemotePath(bp.getRemotePath());
             } catch (Exception e) {
                 logger.error("Failed to upload local file {}. Ignoring to continue with rest of backup.", file, e);
             }
         }
         return bps;
-    }
-
-    private void upload(final AbstractBackupPath bp)
-            throws Exception {
-        new RetryableCallable() {
-            public Void retriableCall()
-                    throws Exception {
-                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
-                return null;
-            }
-        }
-                .call();
     }
 
     public static void addObserver(IMessageObserver observer) {

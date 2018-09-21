@@ -81,7 +81,8 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
 
                     //== download object from source bucket
                     try {
-                        fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(tempFile.getAbsolutePath()));
+                        //Not retrying to download file here as it is already in RetryCallable.
+                        fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(tempFile.getAbsolutePath()), 0);
                         tracker.adjustAndAdd(path);
                     } catch (Exception ex) {
                         //This behavior is retryable; therefore, lets get to a clean state before each retry.

@@ -160,16 +160,7 @@ public class MetaFileWriterBuilder {
         public void uploadMetaFile(boolean deleteOnSuccess) throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
             abstractBackupPath.parseLocal(metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            new RetryableCallable<Void>(6, 5000) {
-                @Override
-                public Void retriableCall() throws Exception {
-                    backupFileSystem.uploadFile(metaFilePath, Paths.get(abstractBackupPath.getRemotePath()), abstractBackupPath);
-                    return null;
-                }
-            }.call();
-
-            if (deleteOnSuccess)
-                FileUtils.deleteQuietly(metaFilePath.toFile());
+            backupFileSystem.uploadFile(metaFilePath, Paths.get(abstractBackupPath.getRemotePath()), abstractBackupPath, 10, deleteOnSuccess);
         }
 
         public Path getMetaFilePath(){

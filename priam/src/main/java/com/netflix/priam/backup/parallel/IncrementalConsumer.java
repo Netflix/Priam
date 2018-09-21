@@ -58,33 +58,13 @@ public class IncrementalConsumer implements Runnable {
         logger.info("Consumer - about to upload file: {}", this.bp.getFileName());
 
         try {
-            // Allow up to 30s of arbitrary failures at the top level. The upload call itself typically has retries
-            // as well so this top level retry is on top of those retries. Assuming that each call to upload has
-            // ~30s maximum of retries this yields about 3.5 minutes of retries at the top level since
-            // (6 * (5 + 30) = 210 seconds). Even if this fails, however, the upload will be re-enqueued
-            new RetryableCallable<Void>(6, 5000) {
-                @Override
-                public Void retriableCall() throws Exception {
-
                     if (!bp.getBackupFile().exists())
                         throw new java.util.concurrent.CancellationException("Someone beat me to uploading this file"
                                 + ", no need to retry.  Most likely not needed but to be safe, checked and released handle to file if appropriate.");
 
-                    try {
-                        fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
-                        return null;
-                    } catch (Exception e) {
-                        logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.getFileName());
-                        throw e;
-                    }
-                }
-            }.call();
-            // Clean up the underlying file.
-            bp.getBackupFile().delete();
+            fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+            this.callback.postProcessing(bp); //post processing
         } catch (Exception e) {
-            if (e instanceof java.util.concurrent.CancellationException) {
-                logger.debug("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
-            } else {
                 logger.error("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
             }
         } finally {

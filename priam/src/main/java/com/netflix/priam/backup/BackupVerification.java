@@ -118,7 +118,7 @@ public class BackupVerification {
         List<String> metaFileList = new ArrayList<>();
         try {
             Path metaFileLocation = FileSystems.getDefault().getPath(config.getDataFileLocation(), "tmp_meta.json");
-            bkpStatusFs.downloadFile(Paths.get(metas.get(0).getRemotePath()), metaFileLocation);
+            bkpStatusFs.downloadFile(Paths.get(metas.get(0).getRemotePath()), metaFileLocation, 5);
             logger.info("Meta file successfully downloaded to localhost: {}", metaFileLocation.toString());
 
             JSONParser jsonParser = new JSONParser();

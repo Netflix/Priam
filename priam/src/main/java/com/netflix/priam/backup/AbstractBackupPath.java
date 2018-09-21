@@ -69,6 +69,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
+    protected long lastModified = 0;
     protected Date uploadedTs;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
@@ -86,7 +87,28 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public InputStream localReader() throws IOException {
         assert backupFile != null;
-        return new RafInputStream(RandomAccessReader.open(backupFile));
+        InputStream ret = null;
+
+        while (true) {
+            if (ret != null) {
+                ret.close();
+            }
+
+            lastModified = backupFile.lastModified();
+            ret = new RafInputStream(RandomAccessReader.open(backupFile));
+
+            // Verify that the file hasn't changed since we opened it.
+            // We could avoid this flow by using the fstat() system call,
+            // but I see no way to do that (easily) from the JVM.
+            // The JVM returns the last modified time in milliseconds,
+            // but on Linux systems tested, it appears to be using the
+            // stat.st_mtime result, which is accurate only to seconds.
+            if (backupFile.lastModified() == lastModified) {
+                break;
+            }
+        }
+
+        return ret;
     }
 
     public void parseLocal(File file, BackupFileType type) throws ParseException {
@@ -278,6 +300,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public Date getUploadedTs() {
         return this.uploadedTs;
+    }
+
+    public long getLastModified() {
+        return lastModified;
     }
 
     public static class RafInputStream extends InputStream {

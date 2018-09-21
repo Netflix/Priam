@@ -45,6 +45,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -94,7 +95,8 @@ public class S3FileSystem extends S3FileSystemBase{
 
     private long uploadMultipart(Path localPath, Path remotePath) throws BackupRestoreException {
         long chunkSize = getChunkSize(localPath);
-        logger.info("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), remotePath, chunkSize);
+        if (logger.isDebugEnabled())
+            logger.debug("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), remotePath, chunkSize);
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
         initRequest.withObjectMetadata(getObjectMetadata(localPath));
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
@@ -114,8 +116,11 @@ public class S3FileSystem extends S3FileSystemBase{
                 DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsUploaded);
                 compressedFileSize += chunk.length;
-                executor.submit(partUploader);
+                //TODO: Get the future over here and create a new arraylist.
+                Future<Void> future = executor.submit(partUploader);
             }
+
+            //TODO: Instead of waiting for executor thread to be empty we should wait for all the futures to finish.
             executor.sleepTillEmpty();
             logger.info("All chunks uploaded for file {}, num of expected parts:{}, num of actual uploaded parts: {}", localPath.toFile().getName(), partNum, partsUploaded.get());
 
@@ -145,7 +150,9 @@ public class S3FileSystem extends S3FileSystemBase{
 
         if (fileSize < chunkSize) {
             //Upload file without using multipart upload as it will be more efficient.
-            logger.info("Uploading to {}/{} using PUT operation", config.getBackupPrefix(), remotePath);
+
+            if (logger.isDebugEnabled())
+                logger.debug("Uploading to {}/{} using PUT operation", config.getBackupPrefix(), remotePath);
 
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                  InputStream in = new BufferedInputStream(new FileInputStream(localPath.toFile()))) {

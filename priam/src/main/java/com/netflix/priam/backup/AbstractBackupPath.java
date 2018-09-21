@@ -290,7 +290,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return lastModified;
     }
 
-
     public static class RafInputStream extends InputStream implements AutoCloseable {
         private RandomAccessFile raf;
 

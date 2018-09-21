@@ -29,7 +29,10 @@ import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.ArrayList;
@@ -56,22 +59,17 @@ public class MetaData {
 
     public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName) throws Exception {
         File metafile = createTmpMetaFile();
-        try(FileWriter fr = new FileWriter(metafile)) {
+        try (FileWriter fr = new FileWriter(metafile)) {
             JSONArray jsonObj = new JSONArray();
             for (AbstractBackupPath filePath : bps)
                 jsonObj.add(filePath.getRemotePath());
             fr.write(jsonObj.toJSONString());
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
-        try {
-            upload(backupfile);
-
-            addToRemotePath(backupfile.getRemotePath());
-            if (metaRemotePaths.size() > 0) {
-                notifyObservers();
-            }
-        } finally {
-            FileUtils.deleteQuietly(metafile);
+        fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 10, true);
+        addToRemotePath(backupfile.getRemotePath());
+        if (metaRemotePaths.size() > 0) {
+            notifyObservers();
         }
 
         return backupfile;
@@ -97,30 +95,13 @@ public class MetaData {
      */
     public Boolean doesExist(final AbstractBackupPath meta) {
         try {
-            new RetryableCallable<Void>() {
-                @Override
-                public Void retriableCall() throws Exception {
-                    fs.downloadFile(Paths.get(meta.getRemotePath()),Paths.get(meta.newRestoreFile().getAbsolutePath())); //download actual file to disk
-                    return null;
-                }
-            }.call();
-
+            fs.downloadFile(Paths.get(meta.getRemotePath()), Paths.get(meta.newRestoreFile().getAbsolutePath()), 5); //download actual file to disk
         } catch (Exception e) {
             logger.error("Error downloading the Meta data try with a different date...", e);
         }
 
         return meta.newRestoreFile().exists();
 
-    }
-
-    private void upload(final AbstractBackupPath bp) throws Exception {
-        new RetryableCallable<Void>() {
-            @Override
-            public Void retriableCall() throws Exception {
-                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
-                return null;
-            }
-        }.call();
     }
 
     public File createTmpMetaFile() throws IOException {

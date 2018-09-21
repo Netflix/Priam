@@ -22,6 +22,7 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import org.json.simple.JSONArray;
@@ -44,9 +45,9 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     Provider<S3BackupPath> pathProvider;
 
     @Inject
-    public FakeBackupFileSystem(BackupMetrics backupMetrics,
+    public FakeBackupFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
                                 BackupNotificationMgr backupNotificationMgr){
-        super(backupMetrics, backupNotificationMgr);
+        super(configuration, backupMetrics, backupNotificationMgr);
     }
 
     public void setupTest(List<String> files) {

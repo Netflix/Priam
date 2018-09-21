@@ -16,7 +16,6 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
@@ -26,30 +25,20 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventGenerator;
-import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
     protected static final int MAX_CHUNKS = 10000;
@@ -68,7 +57,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
                             final IConfiguration config,
                             BackupMetrics backupMetrics,
                             BackupNotificationMgr backupNotificationMgr) {
-        super(backupMetrics, backupNotificationMgr);
+        super(config, backupMetrics, backupNotificationMgr);
         this.pathProvider = pathProvider;
         this.compress = compress;
         this.config = config;
@@ -171,7 +160,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public long getFileSize(Path remotePath) throws BackupRestoreException{
+    public long getFileSize(Path remotePath) throws BackupRestoreException {
         return s3Client.getObjectMetadata(getPrefix(config), remotePath.toString()).getContentLength();
     }
 
@@ -192,7 +181,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         return new S3FileIterator(pathProvider, s3Client, path, start, till);
     }
 
-    final long getChunkSize(Path localPath) throws BackupRestoreException{
+    final long getChunkSize(Path localPath) throws BackupRestoreException {
         long chunkSize = config.getBackupChunkSize();
         long fileSize = localPath.toFile().length();
 

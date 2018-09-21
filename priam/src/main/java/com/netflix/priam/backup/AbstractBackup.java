@@ -73,49 +73,11 @@ public abstract class AbstractBackup extends Task{
             //== decorate file with metadata
             final AbstractBackupPath bp = pathFactory.get();
             bp.parseLocal(file, type);
-
-            try {
-                logger.info("About to upload file {} for backup", file.getCanonicalFile());
-
-                // Allow up to 30s of arbitrary failures at the top level. The upload call itself typically has retries
-                // as well so this top level retry is on top of those retries. Assuming that each call to upload has
-                // ~30s maximum of retries this yields about 3.5 minutes of retries at the top level since
-                // (6 * (5 + 30) = 210 seconds). Even if this fails, however, higher level schedulers (e.g. in
-                // incremental) will hopefully re-enqueue.
-                AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(6, 5000) {
-                    public AbstractBackupPath retriableCall() throws Exception {
-                        upload(bp);
-                        file.delete();
-                        return bp;
-                    }
-                }.call();
-
-                if (abp != null)
-                    bps.add(abp);
-
-                addToRemotePath(abp.getRemotePath());
-            } catch (Exception e) {
-                //Throw exception to the caller. This will allow them to take appropriate decision.
-                logger.error("Failed to upload local file {} within CF {}.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
-                throw e;
-            }
+            fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+            bps.add(bp);
+            addToRemotePath(bp.getRemotePath());
         }
         return bps;
-    }
-
-
-    /**
-     * Upload specified file (RandomAccessFile)
-     *
-     * @param bp backup path to be uploaded.
-     */
-    private void upload(final AbstractBackupPath bp) throws Exception {
-        try {
-            fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp);
-        } catch (Exception e) {
-            logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
-            throw e;
-        }
     }
 
     protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {

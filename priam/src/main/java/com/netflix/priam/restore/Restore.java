@@ -63,15 +63,9 @@ public class Restore extends AbstractRestore {
     @Override
     protected final void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception {
         count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>() {
-            @Override
-            public Integer retriableCall() throws Exception {
-                fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()));
-                tracker.adjustAndAdd(path);
-                // TODO: fix me -> if there is exception the why hang?
-                return count.decrementAndGet();
-            }
-        });
+        fs.downloadFile(Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
+        tracker.adjustAndAdd(path);
+        count.decrementAndGet();
     }
 
     @Override

@@ -94,7 +94,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
 
         //== Read chunks from src, compress it, and write to temp file
         File compressedDstFile = new File(localPath.toString() + ".compressed");
-        logger.debug("Compressing {} with chunk size {}", compressedDstFile.getAbsolutePath(), chunkSize);
+        if (logger.isDebugEnabled())
+            logger.debug("Compressing {} with chunk size {}", compressedDstFile.getAbsolutePath(), chunkSize);
 
         try (InputStream in = new FileInputStream(localPath.toFile());
              BufferedOutputStream compressedBos = new BufferedOutputStream(new FileOutputStream(compressedDstFile))) {

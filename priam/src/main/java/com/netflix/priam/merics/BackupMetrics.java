@@ -27,15 +27,20 @@ import com.netflix.spectator.api.Registry;
  */
 @Singleton
 public class BackupMetrics {
+    private Registry registry;
     /**
      * Distribution summary will provide the metric like count (how many uploads were made), max no. of bytes uploaded and total amount of bytes uploaded.
      */
     private final DistributionSummary uploadRate, downloadRate;
-    private final Counter invalidUploads, invalidDownloads, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
+    private final Counter validUploads, validDownloads, invalidUploads, invalidDownloads, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
+    public static final String uploadDownloadQueueSize = Metrics.METRIC_PREFIX + "upload.download.queue.size";
 
     @Inject
     public BackupMetrics(Registry registry) {
+        this.registry = registry;
+        validDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.valid");
         invalidDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.invalid");
+        validUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.valid");
         invalidUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.invalid");
         uploadRate = registry.distributionSummary(Metrics.METRIC_PREFIX + "upload.rate");
         downloadRate = registry.distributionSummary(Metrics.METRIC_PREFIX + "download.rate");
@@ -84,7 +89,9 @@ public class BackupMetrics {
         uploadRate.record(sizeInBytes);
     }
 
-    public void incrementForgottenFiles(long forgottenFilesVal) {forgottenFiles.increment(forgottenFilesVal);}
+    public void incrementForgottenFiles(long forgottenFilesVal) {
+        forgottenFiles.increment(forgottenFilesVal);
+    }
 
     public void recordDownloadRate(long sizeInBytes) {
         downloadRate.record(sizeInBytes);
@@ -92,5 +99,25 @@ public class BackupMetrics {
 
     public DistributionSummary getDownloadRate() {
         return downloadRate;
+    }
+
+    public Counter getValidUploads() {
+        return validUploads;
+    }
+
+    public Counter getValidDownloads() {
+        return validDownloads;
+    }
+
+    public void incrementValidUploads() {
+        this.validUploads.increment();
+    }
+
+    public void incrementValidDownloads() {
+        this.validDownloads.increment();
+    }
+
+    public Registry getRegistry() {
+        return registry;
     }
 }

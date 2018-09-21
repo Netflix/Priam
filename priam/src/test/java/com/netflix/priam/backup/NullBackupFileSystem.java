@@ -18,6 +18,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 
@@ -29,9 +30,9 @@ import java.util.Iterator;
 public class NullBackupFileSystem extends AbstractFileSystem {
 
     @Inject
-    public NullBackupFileSystem(BackupMetrics backupMetrics,
+    public NullBackupFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
                                 BackupNotificationMgr backupNotificationMgr){
-        super(backupMetrics, backupNotificationMgr);
+        super(configuration, backupMetrics, backupNotificationMgr);
     }
 
     @Override

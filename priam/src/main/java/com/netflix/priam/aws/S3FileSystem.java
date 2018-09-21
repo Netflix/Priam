@@ -87,12 +87,12 @@ public class S3FileSystem extends S3FileSystemBase implements S3FileSystemMBean 
         ObjectMetadata ret = new ObjectMetadata();
         long lastModified = path.getLastModified();
 
-        if(lastModified != 0) {
+        if (lastModified != 0) {
             ret.addUserMetadata("local-modification-time", Long.toString(lastModified));
         }
 
         long fileSize = path.getSize();
-        if(fileSize != 0) {
+        if (fileSize != 0) {
             ret.addUserMetadata("local-size", Long.toString(fileSize));
         }
         return ret;

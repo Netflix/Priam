@@ -26,8 +26,10 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration {
@@ -39,6 +41,9 @@ public class FakeConfiguration implements IConfiguration {
     public String zone;
     public String instance_id;
     private String restorePrefix;
+
+    public Map<String, String> fakeProperties = new HashMap<>();
+
 
     public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
@@ -785,5 +790,17 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return fakeProperties.getOrDefault(key, defaultValue);
+    }
+
+    @Override
+    public String getMergedConfigurationDirectory()
+    {
+        return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 }

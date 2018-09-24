@@ -21,6 +21,8 @@ import com.amazonaws.services.ec2.AmazonEC2Client;
 import com.amazonaws.services.ec2.model.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.configSource.IConfigSource;
@@ -193,6 +195,7 @@ public class PriamConfiguration implements IConfiguration {
 
     //Running instance meta data
     private String RAC;
+    private String INSTANCE_ID;
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
@@ -256,7 +259,9 @@ public class PriamConfiguration implements IConfiguration {
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
     private final ICredential provider;
 
+    @JsonIgnore
     private InstanceEnvIdentity insEnvIdentity;
+    @JsonIgnore
     private InstanceDataRetriever instanceDataRetriever;
 
     @Inject
@@ -282,6 +287,7 @@ public class PriamConfiguration implements IConfiguration {
         }
 
         RAC = instanceDataRetriever.getRac();
+        INSTANCE_ID = instanceDataRetriever.getInstanceId();
 
         NETWORK_VPC = instanceDataRetriever.getVpcId();
 
@@ -383,7 +389,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     public String getInstanceName(){
-        return instanceDataRetriever.getInstanceId();
+        return INSTANCE_ID;
     }
 
     @Override
@@ -536,6 +542,7 @@ public class PriamConfiguration implements IConfiguration {
         return config.getList(CONFIG_AVAILABILITY_ZONES, DEFAULT_AVAILABILITY_ZONES);
     }
 
+    @JsonIgnore
     @Override
     public String getHostname() {
         if (this.isVpcRing()) return getInstanceDataRetriever().getPrivateIP();
@@ -1134,5 +1141,17 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_CHECK_FREQUENCY_MS, 120000);
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return config.get(key, defaultValue);
+    }
+
+    @Override
+    public String getMergedConfigurationCronExpression() {
+        // Every minute on the top of the minute.
+        return config.get(PRIAM_PRE + ".configMerge.cron", "0 * * * * ? *");
     }
 }

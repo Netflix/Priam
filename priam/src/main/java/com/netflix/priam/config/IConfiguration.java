@@ -16,11 +16,18 @@
  */
 package com.netflix.priam.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -795,4 +802,56 @@ public interface IConfiguration {
     default int getForgottenFileGracePeriodDays() {
         return 1;
     }
+
+    /**
+     * A method for allowing access to outside programs to Priam configuration when paired with the Priam configuration
+     * HTTP endpoint at /v1/config/structured/all/property
+     * @param group The group of configuration options to return, currently just returns everything no matter what
+     * @return A Map representation of this configuration, or null if the method doesn't exist
+     */
+    @SuppressWarnings("unchecked")
+    @JsonIgnore
+    default Map<String, Object> getStructuredConfiguration(String group) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.convertValue(this, Map.class);
+    }
+
+    /**
+     * Cron expression to be used for persisting Priam merged configuration to disk. Use "-1" to disable the CRON.
+     * This will persist the fully merged value of Priam's configuration to the {@link #getMergedConfigurationDirectory()}
+     * as two JSON files: structured.json and unstructured.json which persist structured config and
+     * unstructured config respectively. We recommend you only rely on unstructured for the time being until the
+     * structured interface is finalized.
+     *
+     * Default: every minute
+     *
+     * @return Cron expression for flush
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     */
+    default String getMergedConfigurationCronExpression() {
+        // Every minute on the top of the minute.
+        return "0 * * * * ? *";
+    }
+
+    /**
+     * Returns the path to the directory that Priam should write merged configuration to. Note that if you disable
+     * the merged configuration cron above {@link #getMergedConfigurationCronExpression()} then this directory is
+     * not created or used
+     * @return A string representation of the path to the merged priam configuration directory.
+     */
+    default String getMergedConfigurationDirectory() {
+        return "/tmp/priam_configuration";
+    }
+
+    /**
+     * Escape hatch for getting any arbitrary property by key
+     * This is useful so we don't have to keep adding methods to this interface for every single configuration
+     * option ever. Also exposed via HTTP at v1/config/unstructured/X
+     *
+     * @param key The arbitrary configuration property to look up
+     * @param defaultValue The default value to return if the key is not found.
+     * @return The result for the property, or the defaultValue if provided (null otherwise)
+     */
+    String getProperty(String key, String defaultValue);
 }

@@ -28,6 +28,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,8 +36,10 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.Future;
 
 /**
  * A means to perform a restore.  This class contains the following characteristics:
@@ -44,10 +47,10 @@ import java.util.*;
  * - This class can be scheduled, i.e. it is a "Task".
  * - When this class is executed, it uses its own thread pool to execute the restores.
  */
-public abstract class AbstractRestore extends Task implements IRestoreStrategy{
+public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     // keeps track of the last few download which was executed.
     // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
-    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<AbstractBackupPath>(800);
+    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<>(800);
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String JOBNAME = "AbstractRestore";
     private static final String SYSTEM_KEYSPACE = "system";
@@ -76,7 +79,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         this.cassProcess = cassProcess;
         this.metaData = metaData;
         this.instanceState = instanceState;
-        backupRestoreUtil = new BackupRestoreUtil(config.getRestoreKeyspaceFilter(), config.getRestoreCFFilter());
+        backupRestoreUtil = new BackupRestoreUtil(config.getRestoreIncludeCFList(), config.getRestoreExcludeCFList());
         this.postRestoreHook = postRestoreHook;
     }
 
@@ -86,7 +89,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
         return (isRestoreMode && isBackedupRac);
     }
 
-    private final void download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType) throws Exception {
+    public void setRestoreConfiguration(String restoreIncludeCFList, String restoreExcludeCFList) {
+        backupRestoreUtil.setFilters(restoreIncludeCFList, restoreExcludeCFList);
+    }
+
+    private final List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType, boolean waitForCompletion) throws Exception {
+        List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (temp.getType() == BackupFileType.SST && tracker.contains(temp))
@@ -98,27 +106,29 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
                 continue;
             }
 
-            if (config.getRestoreKeySpaces().size() != 0 && (!config.getRestoreKeySpaces().contains(temp.getKeyspace()) || temp.getKeyspace().equals(SYSTEM_KEYSPACE))) {
-                logger.info("Bypassing restoring file \"{}\" as it is system keyspace", temp.newRestoreFile());
-                continue;
-            }
-
-            if (temp.getType() == bkupFileType)
-            {
+            if (temp.getType() == bkupFileType) {
                 File localFileHandler = temp.newRestoreFile();
                 if (logger.isDebugEnabled())
                     logger.debug("Created local file name: " + localFileHandler.getAbsolutePath() + File.pathSeparator + localFileHandler.getName());
-                downloadFile(temp, localFileHandler);
+                futureList.add(downloadFile(temp, localFileHandler));
             }
         }
 
         //Wait for all download to finish that were started from this method.
-        waitToComplete();
+        if (waitForCompletion)
+            waitForCompletion(futureList);
+
+        return futureList;
     }
 
-    private final void downloadCommitLogs(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN) throws Exception {
+    private void waitForCompletion(List<Future<Path>> futureList) throws Exception {
+        for (Future<Path> future : futureList)
+            future.get();
+    }
+
+    private final List<Future<Path>> downloadCommitLogs(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN, boolean waitForCompletion) throws Exception {
         if (fsIterator == null)
-            return;
+            return null;
 
         BoundedList bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
@@ -131,12 +141,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             }
         }
 
-        download(bl.iterator(), filter);
+        return download(bl.iterator(), filter, waitForCompletion);
     }
 
     private final void stopCassProcess() throws IOException {
-        if (config.getRestoreKeySpaces().size() == 0)
-            cassProcess.stop(true);
+        cassProcess.stop(true);
     }
 
     private final String getRestorePrefix() {
@@ -197,7 +206,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
     public void restore(Date startTime, Date endTime) throws Exception {
         //fail early if post restore hook has invalid parameters
-        if(!postRestoreHook.hasValidParameters()) {
+        if (!postRestoreHook.hasValidParameters()) {
             throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
         }
 
@@ -215,11 +224,13 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
                 id.getInstance().setToken(restoreToken.toString());
             }
 
-            // Stop cassandra if its running and restoring all keyspaces
+            // Stop cassandra if its running
             stopCassProcess();
 
             // Cleanup local data
-            SystemUtils.cleanupDir(config.getDataFileLocation(), config.getRestoreKeySpaces());
+            File dataDir = new File(config.getDataFileLocation());
+            if (dataDir.exists() && dataDir.isDirectory())
+                FileUtils.cleanDirectory(dataDir);
 
             // Try and read the Meta file.
             List<AbstractBackupPath> metas = Lists.newArrayList();
@@ -241,19 +252,19 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             //Download the meta.json file.
             ArrayList<AbstractBackupPath> metaFile = new ArrayList<>();
             metaFile.add(meta);
-            download(metaFile.iterator(), BackupFileType.META);
-            waitToComplete();
+            download(metaFile.iterator(), BackupFileType.META, true);
 
+            List<Future<Path>> futureList = new ArrayList<>();
             //Parse meta.json file to find the files required to download from this snapshot.
             List<AbstractBackupPath> snapshots = metaData.toJson(meta.newRestoreFile());
 
             // Download snapshot which is listed in the meta file.
-            download(snapshots.iterator(), BackupFileType.SNAP);
+            futureList.addAll(download(snapshots.iterator(), BackupFileType.SNAP, false));
 
             logger.info("Downloading incrementals");
             // Download incrementals (SST) after the snapshot meta file.
             Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.getTime(), endTime);
-            download(incrementals, BackupFileType.SST);
+            futureList.addAll(download(incrementals, BackupFileType.SST, false));
 
             //Downloading CommitLogs
             if (config.isBackingUpCommitLogs()) {
@@ -264,11 +275,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
                 SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
 
                 Iterator<AbstractBackupPath> commitLogPathIterator = fs.list(prefix, meta.getTime(), endTime);
-                downloadCommitLogs(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore());
+                futureList.addAll(downloadCommitLogs(commitLogPathIterator, BackupFileType.CL, config.maxCommitLogsRestore(), false));
             }
 
-            // Ensure all the files are downloaded.
-            waitToComplete();
+            //Wait for all the futures to finish.
+            waitForCompletion(futureList);
 
             // Given that files are restored now, kick off post restore hook
             logger.info("Starting post restore hook");
@@ -296,16 +307,13 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
 
     /**
      * Download file to the location specified. After downloading the file will be decrypted(optionally) and decompressed before saving to final location.
+     *
      * @param path            - path of object to download from source S3/GCS.
      * @param restoreLocation - path to the final location of the decompressed and/or decrypted file.
+     * @return Future of the job to track the progress of the job.
+     * @throws Exception If there is any error in downloading file from the remote file system.
      */
-    protected abstract void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception;
-
-    /**
-     * A means to wait until until all threads have completed.  It blocks calling thread
-     * until all tasks are completed.
-     */
-    protected abstract void waitToComplete();
+    protected abstract Future<Path> downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception;
 
     public final class BoundedList<E> extends LinkedList<E> {
 
@@ -323,5 +331,9 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy{
             }
             return true;
         }
+    }
+
+    public final int getDownloadTasksQueued() {
+        return fs.getDownloadTasksQueued();
     }
 }

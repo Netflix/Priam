@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.core.MediaType;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
 
@@ -184,10 +183,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 
         JSONObject jsonObject = (JSONObject) obj;
 
-        Iterator iter = jsonObject.keySet().iterator();
-
-        while (iter.hasNext()) {
-            Object key = iter.next();
+        for (Object key : jsonObject.keySet()) {
             JSONObject msg = (JSONObject) jsonObject.get(key);
             if (msg.get("Token") == null) {
                 continue;

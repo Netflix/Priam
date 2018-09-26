@@ -29,7 +29,7 @@ public interface IBackupRestoreConfig {
      *
      * @return Snapshot Meta Service cron expression for generating manifest.json
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
-     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
      */
      default String getSnapshotMetaServiceCronExpression(){
          return "-1";

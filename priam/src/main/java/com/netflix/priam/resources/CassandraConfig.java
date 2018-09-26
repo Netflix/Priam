@@ -117,7 +117,7 @@ public class CassandraConfig {
             Map<String, String> returnMap;
             returnMap = priamServer.getConfiguration().getExtraEnvParams();
             if (returnMap == null) {
-                returnMap = new HashMap<String, String>();
+                returnMap = new HashMap<>();
             }
             String extraEnvParamsJson = JSONValue.toJSONString(returnMap);
             return Response.ok(extraEnvParamsJson).build();

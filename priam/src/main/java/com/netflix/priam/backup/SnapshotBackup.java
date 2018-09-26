@@ -51,8 +51,8 @@ public class SnapshotBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotBackup.class);
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
-    private final List<String> snapshotRemotePaths = new ArrayList<String>();
-    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private final List<String> snapshotRemotePaths = new ArrayList<>();
+    private static List<IMessageObserver> observers = new ArrayList<>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
     private InstanceIdentity instanceIdentity;
@@ -77,7 +77,7 @@ public class SnapshotBackup extends AbstractBackup {
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
         this.cassandraOperations = cassandraOperations;
-        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
+        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
     }
 
     @Override
@@ -202,7 +202,7 @@ public class SnapshotBackup extends AbstractBackup {
 
         findForgottenFiles(snapshotDir);
         // Add files to this dir
-        abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP));
+        abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot()));
     }
 
     private void findForgottenFiles(File snapshotDir) {

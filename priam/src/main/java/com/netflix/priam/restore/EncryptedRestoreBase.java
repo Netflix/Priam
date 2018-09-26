@@ -34,7 +34,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,7 +51,6 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
     private IFileCryptography fileCryptography;
     private ICompression compress;
     private final ThreadPoolExecutor executor;
-    private AtomicInteger count = new AtomicInteger();
 
     protected EncryptedRestoreBase(IConfiguration config, IBackupFileSystem fs, String jobName, Sleeper sleeper,
                                    ICassandraProcess cassProcess, Provider<AbstractBackupPath> pathProvider,
@@ -61,23 +62,21 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
         this.pgpCredential = pgpCredential;
         this.fileCryptography = fileCryptography;
         this.compress = compress;
-        executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), jobName);
+        executor = new NamedThreadPoolExecutor(config.getRestoreThreads(), jobName);
         executor.allowCoreThreadTimeOut(true);
         logger.info("Trying to restore cassandra cluster with filesystem: {}, RestoreStrategy: {}, Encryption: ON, Compression: {}",
                 fs.getClass(), jobName, compress.getClass());
     }
 
     @Override
-    protected final void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws  Exception{
+    protected final Future<Path> downloadFile(final AbstractBackupPath path, final File restoreLocation) throws  Exception{
         final char[] passPhrase = new String(this.pgpCredential.getValue(ICredentialGeneric.KEY.PGP_PASSWORD)).toCharArray();
         File tempFile = new File(restoreLocation.getAbsolutePath() + ".tmp");
-        count.incrementAndGet();
 
-        try {
-            executor.submit(new RetryableCallable<Integer>() {
+            return executor.submit(new RetryableCallable<Path>() {
 
                 @Override
-                public Integer retriableCall() throws Exception {
+                public Path retriableCall() throws Exception {
 
                     //== download object from source bucket
                     try {
@@ -134,27 +133,10 @@ public abstract class EncryptedRestoreBase extends AbstractRestore{
                         decryptedFile.delete();
                     }
 
-                    return count.decrementAndGet();
+                    return Paths.get(path.getRemotePath());
                 }
 
-            });
-        }catch (Exception e){
-            throw new Exception("Exception in download of:  " + path.getFileName() + ", msg: " + e.getLocalizedMessage(), e);
-        }
-
-    }
-
-    @Override
-    protected final void waitToComplete() {
-        while (count.get() != 0) {
-            try {
-                sleeper.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted: ", e);
-                Thread.currentThread().interrupt();
-            }
-        }
-    }
+            }); }
 
     @Override
     public String getName() {

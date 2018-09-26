@@ -78,15 +78,15 @@ public class S3FileSystem extends S3FileSystemBase{
         }
     }
 
-    private ObjectMetadata getObjectMetadata(AbstractBackupPath path) {
+    private ObjectMetadata getObjectMetadata(Path path) {
         ObjectMetadata ret = new ObjectMetadata();
-        long lastModified = path.getLastModified();
+        long lastModified = path.toFile().lastModified();
 
         if (lastModified != 0) {
             ret.addUserMetadata("local-modification-time", Long.toString(lastModified));
         }
 
-        long fileSize = path.getSize();
+        long fileSize = path.toFile().length();
         if (fileSize != 0) {
             ret.addUserMetadata("local-size", Long.toString(fileSize));
         }
@@ -98,7 +98,7 @@ public class S3FileSystem extends S3FileSystemBase{
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), remotePath, chunkSize);
         InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
-        initRequest.withObjectMetadata(getObjectMetadata(path));
+        initRequest.withObjectMetadata(getObjectMetadata(localPath));
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part = new DataPart(config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
@@ -162,7 +162,7 @@ public class S3FileSystem extends S3FileSystemBase{
                 byte[] chunk = byteArrayOutputStream.toByteArray();
                 long compressedFileSize = chunk.length;
                 rateLimiter.acquire(chunk.length);
-                ObjectMetadata objectMetadata = getObjectMetadata(path);
+                ObjectMetadata objectMetadata = getObjectMetadata(localPath);
                 objectMetadata.setContentLength(chunk.length);
                 PutObjectRequest putObjectRequest = new PutObjectRequest(config.getBackupPrefix(), remotePath.toString(), new ByteArrayInputStream(chunk), objectMetadata);
                 //Retry if failed.

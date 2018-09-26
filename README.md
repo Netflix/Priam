@@ -1,6 +1,6 @@
 # Priam
 
-[![Build Status](https://travis-ci.org/Netflix/Priam.svg?branch=3.x)](https://travis-ci.org/Netflix/Priam)
+[![Build Status](https://travis-ci.org/Netflix/priam.svg?branch=3.x)](https://travis-ci.org/Netflix/priam)
 
 ### Priam 3.x branch supports Cassandra 2.x (2.0.x and 2.1.x)
 

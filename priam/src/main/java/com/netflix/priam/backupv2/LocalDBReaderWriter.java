@@ -20,12 +20,13 @@ package com.netflix.priam.backupv2;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.GsonJsonSerializer;
-import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -63,10 +64,9 @@ public class LocalDBReaderWriter {
 
         final Path localDBFile = getLocalDBPath(localDBEntry.getFileUploadResult());
 
-        if (!localDBFile.getParent().toFile().exists())
-            localDBFile.getParent().toFile().mkdirs();
+        localDBFile.getParent().toFile().mkdirs();
 
-        LocalDB localDB = getLocalDB(localDBEntry.getFileUploadResult());
+        LocalDB localDB = readAndGetLocalDB(localDBEntry.getFileUploadResult());
 
         if (localDB == null)
             localDB = new LocalDB(new ArrayList<>());
@@ -77,9 +77,9 @@ public class LocalDBReaderWriter {
         //1. new component entry
         //2. new version of file (change in compression type or file is modified e.g. stats file)
         if (entry == null) {
-            localDB.getLocalDb().add(localDBEntry);
+            localDB.getLocalDBEntries().add(localDBEntry);
             writeLocalDB(localDBFile, localDB);
-        }else{
+        } else {
             //An entry already exists. Maybe last referenced time or backup time changed. We want to write the last time referenced.
             entry.setBackupTime(localDBEntry.getBackupTime());
             entry.setTimeLastReferenced(localDBEntry.getTimeLastReferenced());
@@ -89,38 +89,35 @@ public class LocalDBReaderWriter {
         return localDB;
     }
 
-    private LocalDB getLocalDB(final FileUploadResult fileUploadResult) throws Exception {
+    private LocalDB readAndGetLocalDB(final FileUploadResult fileUploadResult) throws Exception {
         final Path localDbPath = getLocalDBPath(fileUploadResult);
-        //Retry for reading.
-        return new RetryableCallable<LocalDB>(5, 1000) {
-            @Override
-            public LocalDB retriableCall() throws Exception {
-                return readLocalDB(localDbPath);
-            }
-        }.call();
+        return readLocalDB(localDbPath);
     }
 
+    /**
+     * Get the local database entry for a given file upload result.
+     *
+     * @param fileUploadResult File upload result for which local db is required.
+     * @return LocalDBEntry if one exists.
+     * @throws Exception if there is any error in getting local db file.
+     */
     public LocalDBEntry getLocalDBEntry(final FileUploadResult fileUploadResult) throws Exception {
-        LocalDB localDB = getLocalDB(fileUploadResult);
-
-        if (localDB == null || localDB.getLocalDb() == null || localDB.getLocalDb().isEmpty())
-            return null;
-
+        LocalDB localDB = readAndGetLocalDB(fileUploadResult);
         return getLocalDBEntry(fileUploadResult, localDB);
     }
 
     private LocalDBEntry getLocalDBEntry(final FileUploadResult fileUploadResult, final LocalDB localDB) throws Exception {
-        if (localDB == null || localDB.getLocalDb().isEmpty())
+        if (localDB == null || localDB.getLocalDBEntries() == null || localDB.getLocalDBEntries().isEmpty())
             return null;
 
         //Get local db entry for same file and version.
-        List<LocalDBEntry> localDBEntries = localDB.getLocalDb().stream().filter(localDBEntry ->
+        List<LocalDBEntry> localDBEntries = localDB.getLocalDBEntries().stream().filter(localDBEntry ->
                 (localDBEntry.getFileUploadResult().getFileName().toFile().getName().toLowerCase().equals(fileUploadResult.getFileName().toFile().getName().toLowerCase())))
                 .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getLastModifiedTime().equals(fileUploadResult.getLastModifiedTime())))
                 .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getCompression().equals(fileUploadResult.getCompression())))
                 .collect(Collectors.toList());
 
-        if (localDBEntries == null || localDBEntries.isEmpty())
+        if (localDBEntries.isEmpty())
             return null;
 
         if (localDBEntries.size() == 1) {
@@ -133,10 +130,26 @@ public class LocalDBReaderWriter {
         throw new Exception("Unexpected behavior: More than one entry found in local database for the same file. FileUploadResult: " + fileUploadResult);
     }
 
+    /**
+     * Gets the local db path on the local file system.
+     *
+     * @param fileUploadResult This contains the SSTable component for which local db path is required.
+     * @return the local db path on local file system.
+     */
     public Path getLocalDBPath(final FileUploadResult fileUploadResult) {
-        return Paths.get(configuration.getDataFileLocation(), LOCAL_DB, fileUploadResult.getKeyspaceName(), fileUploadResult.getColumnFamilyName(), PrefixGenerator.getSSTFileBase(fileUploadResult.getFileName().toFile().getName()) + ".localdb");
+        return Paths.get(configuration.getDataFileLocation(), LOCAL_DB,
+                fileUploadResult.getKeyspaceName(),
+                fileUploadResult.getColumnFamilyName(),
+                PrefixGenerator.getSSTFileBase(fileUploadResult.getFileName().toFile().getName()) + ".localdb");
     }
 
+    /**
+     * Writes the local database to the local db file. This will do a complete replace of existing local database if any.
+     *
+     * @param localDBFile path to the local database file.
+     * @param localDB     local database containing all the entries to the local database.
+     * @throws Exception If the path denoted is directory, write permission issues or any other exceptions.
+     */
     public void writeLocalDB(final Path localDBFile, final LocalDB localDB) throws Exception {
         if (localDB == null || localDBFile == null || localDBFile.toFile().isDirectory())
             throw new Exception("Invalid Arguments: localDbFile: " + localDBFile + ", localDB: " + localDB);
@@ -144,16 +157,29 @@ public class LocalDBReaderWriter {
         if (!localDBFile.getParent().toFile().exists())
             localDBFile.getParent().toFile().mkdirs();
 
-        try (FileWriter writer = new FileWriter(localDBFile.toFile())) {
+        File tmpFile = File.createTempFile(localDBFile.toFile().getName(), ".tmp", localDBFile.getParent().toFile());
+        try (FileWriter writer = new FileWriter(tmpFile)) {
             writer.write(localDB.toString());
+
+            // Atomically swap out the new local db file for the old local db file.
+            if (!tmpFile.renameTo(localDBFile.toFile()))
+                logger.error("Failed to persist local db: {}", localDB);
+        } finally {
+            if (tmpFile != null)
+                Files.deleteIfExists(tmpFile.toPath());
         }
+
     }
 
+    /**
+     * Reads the local database file stored on local file system.
+     *
+     * @param localDBFile path the local database.
+     * @return local database if file exists or empty local database.
+     * @throws Exception If there is any error in de-serializing the object or any other file system errors.
+     */
     public LocalDB readLocalDB(final Path localDBFile) throws Exception {
-        //Verify it is file and it exists.
-        if (localDBFile.toFile().isDirectory())
-            throw new Exception("Invalid Arguments: Path provided is directory and not a file: " + localDBFile.toString());
-
+        //Verify file exists
         if (!localDBFile.toFile().exists())
             return new LocalDB(new ArrayList<>());
 
@@ -161,7 +187,7 @@ public class LocalDBReaderWriter {
             LocalDB localDB = GsonJsonSerializer.getGson().fromJson(reader, LocalDB.class);
             String columnfamilyName = localDBFile.getParent().toFile().getName();
             String keyspaceName = localDBFile.getParent().getParent().toFile().getName();
-            localDB.getLocalDb().stream().forEach(localDBEntry -> {
+            localDB.getLocalDBEntries().forEach(localDBEntry -> {
                 localDBEntry.getFileUploadResult().setColumnFamilyName(columnfamilyName);
                 localDBEntry.getFileUploadResult().setKeyspaceName(keyspaceName);
             });
@@ -173,19 +199,15 @@ public class LocalDBReaderWriter {
     }
 
     static class LocalDB {
-        private List<LocalDBEntry> localDb;
+        private final List<LocalDBEntry> localDBEntries;
 
-        public LocalDB(List<LocalDBEntry> localDb) {
-            this.localDb = localDb;
+        public LocalDB(List<LocalDBEntry> localDBEntries) {
+            this.localDBEntries = localDBEntries;
         }
 
-        public List<LocalDBEntry> getLocalDb() {
+        public List<LocalDBEntry> getLocalDBEntries() {
 
-            return localDb;
-        }
-
-        public void setLocalDb(List<LocalDBEntry> localDb) {
-            this.localDb = localDb;
+            return localDBEntries;
         }
 
         @Override
@@ -195,7 +217,7 @@ public class LocalDBReaderWriter {
     }
 
     static class LocalDBEntry {
-        private FileUploadResult fileUploadResult;
+        private final FileUploadResult fileUploadResult;
         private Instant timeLastReferenced;
         private Instant backupTime;
 
@@ -205,10 +227,6 @@ public class LocalDBReaderWriter {
 
         public FileUploadResult getFileUploadResult() {
             return fileUploadResult;
-        }
-
-        public void setFileUploadResult(FileUploadResult fileUploadResult) {
-            this.fileUploadResult = fileUploadResult;
         }
 
         public Instant getTimeLastReferenced() {

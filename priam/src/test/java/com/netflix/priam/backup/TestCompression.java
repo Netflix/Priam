@@ -45,13 +45,12 @@ public class TestCompression
     public void setup() throws IOException
     {
         File f = new File("/tmp/compress-test.txt");
-        FileOutputStream stream = new FileOutputStream(f);
-        for (int i = 0; i < (1000 * 1000); i++)
-        {
-            stream.write("This is a test... Random things happen... and you are responsible for it...\n".getBytes("UTF-8"));
-            stream.write("The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.\n".getBytes("UTF-8"));
+        try(FileOutputStream stream = new FileOutputStream(f)) {
+            for (int i = 0; i < (1000 * 1000); i++) {
+                stream.write("This is a test... Random things happen... and you are responsible for it...\n".getBytes("UTF-8"));
+                stream.write("The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.The quick brown fox jumps over the lazy dog.\n".getBytes("UTF-8"));
+            }
         }
-        IOUtils.closeQuietly(stream);
     }
 
     @After
@@ -73,44 +72,38 @@ public class TestCompression
     public void zip() throws IOException
     {
         BufferedInputStream source = null;
-        FileOutputStream dest = new FileOutputStream("/tmp/compressed.zip");
-        ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(dest));
-        byte data[] = new byte[2048];
-        File file = new File("/tmp/compress-test.txt");
-        FileInputStream fi = new FileInputStream(file);
-        source = new BufferedInputStream(fi, 2048);
-        ZipEntry entry = new ZipEntry(file.getName());
-        out.putNextEntry(entry);
-        int count;
-        while ((count = source.read(data, 0, 2048)) != -1)
-        {
-            out.write(data, 0, count);
+        try(ZipOutputStream out = new ZipOutputStream(new BufferedOutputStream(new FileOutputStream("/tmp/compressed.zip")))) {
+            byte data[] = new byte[2048];
+            File file = new File("/tmp/compress-test.txt");
+            FileInputStream fi = new FileInputStream(file);
+            source = new BufferedInputStream(fi, 2048);
+            ZipEntry entry = new ZipEntry(file.getName());
+            out.putNextEntry(entry);
+            int count;
+            while ((count = source.read(data, 0, 2048)) != -1) {
+                out.write(data, 0, count);
+            }
         }
-        IOUtils.closeQuietly(out);
         validateCompression("/tmp/compress-test.txt", "/tmp/compressed.zip");
     }
 
     @Test
-    public void unzip() throws IOException
-    {
-        BufferedOutputStream dest1 = null;
-        BufferedInputStream is = null;
+    public void unzip() throws IOException {
         ZipFile zipfile = new ZipFile("/tmp/compressed.zip");
         Enumeration e = zipfile.entries();
         while (e.hasMoreElements())
         {
             ZipEntry entry = (ZipEntry) e.nextElement();
-            is = new BufferedInputStream(zipfile.getInputStream(entry));
-            int c;
-            byte d[] = new byte[2048];
-            FileOutputStream fos = new FileOutputStream("/tmp/compress-test-out-0.txt");
-            dest1 = new BufferedOutputStream(fos, 2048);
-            while ((c = is.read(d, 0, 2048)) != -1)
-            {
-                dest1.write(d, 0, c);
+            try(BufferedInputStream is = new BufferedInputStream(zipfile.getInputStream(entry));
+                BufferedOutputStream dest1 = new BufferedOutputStream(new FileOutputStream("/tmp/compress-test-out-0.txt"), 2048)) {
+                ;
+                int c;
+                byte d[] = new byte[2048];
+
+                while ((c = is.read(d, 0, 2048)) != -1) {
+                    dest1.write(d, 0, c);
+                }
             }
-            IOUtils.closeQuietly(dest1);
-            IOUtils.closeQuietly(is);
         }
         String md1 = SystemUtils.md5(new File("/tmp/compress-test.txt"));
         String md2 = SystemUtils.md5(new File("/tmp/compress-test-out-0.txt"));

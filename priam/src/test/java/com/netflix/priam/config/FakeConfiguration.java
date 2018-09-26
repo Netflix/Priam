@@ -44,6 +44,8 @@ public class FakeConfiguration implements IConfiguration
     public String instance_id;
     public String restorePrefix;
     public Map<String, Object> fakeConfig;
+    public Map<String, String> fakeProperties = new HashMap<>();
+
 
     public FakeConfiguration()
     {
@@ -70,8 +72,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public void intialize()
-    {
+    public void initialize() {
         // TODO Auto-generated method stub
 
     }
@@ -128,34 +129,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getJmxPort()
-    {
-        return 7199;
-    }
-
-    @Override
-    public String getJmxUsername()
-    {
-        return null;
-    }
-
-    @Override
-    public String getJmxPassword()
-    {
-        return null;
-    }
-
-    /**
-     * @return Enables Remote JMX connections n C*
-     */
-    @Override
-    public boolean enableRemoteJMX() {
-        return false;
-    }
-
-    @Override
-    public int getThriftPort()
-    {
+    public int getThriftPort() {
         return 9160;
     }
 
@@ -229,8 +203,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getAppName()
-    {
+    public String getAppName() {
         return appName;
     }
 
@@ -241,31 +214,19 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getMaxBackupUploadThreads()
-    {
-        // TODO Auto-generated method stub
-        return 2;
-    }
-
-    @Override
-    public String getSDBInstanceIdentityRegion()
-    {
+    public String getSDBInstanceIdentityRegion() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getDC()
-    {
-        // TODO Auto-generated method stub
+    public String getDC() {
         return this.region;
     }
 
     @Override
-    public int getMaxBackupDownloadThreads()
-    {
-        // TODO Auto-generated method stub
-        return 3;
+    public int getRestoreThreads() {
+        return 2;
     }
 
     public void setRestorePrefix(String prefix)
@@ -341,16 +302,11 @@ public class FakeConfiguration implements IConfiguration
         return false;
     }
 
-	@Override
-	public int getInMemoryCompactionLimit() {
-		return 8;
-	}
-
-	@Override
-	public int getCompactionThroughput() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
+    @Override
+    public int getCompactionThroughput() {
+        // TODO Auto-generated method stub
+        return 0;
+    }
 
     @Override
     public String getMaxDirectMemory()
@@ -378,15 +334,8 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public List<String> getRestoreKeySpaces()
-    {
-        return Lists.newArrayList();
-    }
-
-    @Override
-    public long getBackupChunkSize()
-    {        
-        return 5L*1024*1024;
+    public long getBackupChunkSize() {
+        return 5L * 1024 * 1024;
     }
 
     @Override
@@ -558,17 +507,6 @@ public class FakeConfiguration implements IConfiguration
         return false;
     }
 
-    public String getInternodeCompression()
-    {
-        return "all";
-    }
-
-    @Override
-    public boolean isBackingUpCommitLogs()
-    {
-        return false;
-    }
-
     @Override
     public String getCommitLogBackupPropsFile()
     {
@@ -648,26 +586,6 @@ public class FakeConfiguration implements IConfiguration
         return 1;
     }
 
-	@Override
-	public String getRpcServerType() {
-		return "hsha";
-	}
-
-    @Override
-    public int getRpcMinThreads() {
-        return 16;
-    }
-
-    @Override
-    public int getRpcMaxThreads() {
-        return 2048;
-    }
-
-	@Override
-	public int getIndexInterval() {
-		return 0;
-	}
-
     @Override
     public int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
@@ -687,15 +605,10 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getDseClusterType() {
-        // TODO Auto-generated method stub
-        return "cassandra";
-    }
 
-	@Override
-	public boolean isCreateNewTokenEnable() {
-		return true;  //allow Junit test to create new tokens
-	}
+    public boolean isCreateNewTokenEnable() {
+        return true;  //allow Junit test to create new tokens
+    }
 
 	@Override
 	public String getPrivateKeyLocation() {
@@ -713,15 +626,11 @@ public class FakeConfiguration implements IConfiguration
 	}
 
     @Override
-    public boolean isRestoreEncrypted() {
-        return false;
+
+    public String getAWSRoleAssumptionArn() {
+        return null;
     }
 
-    @Override
-	public String getAWSRoleAssumptionArn() {
-		return null;
-	}
-	
     @Override
 	public String getClassicEC2RoleAssumptionArn() {
 		return null;
@@ -731,11 +640,6 @@ public class FakeConfiguration implements IConfiguration
 	public String getVpcEC2RoleAssumptionArn() {
 		return null;
 	}
-
-    @Override
-	public boolean isDualAccount(){
-    	return false;
-    }
 
 	@Override
 	public String getGcsServiceAccountId() {
@@ -768,78 +672,13 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getRestoreKeyspaceFilter()
-    {
-        return null;
-    }
-	
-    @Override
-    public String getRestoreCFFilter() {
-    	return null;
-    }
-    
-   @Override
-    public String getIncrementalKeyspaceFilters() {
-    	return null;
-    }
-   
-    @Override
-    public String getIncrementalCFFilter() {
-    	return null;
-    }
-    
-    @Override
-    public String getSnapshotKeyspaceFilters() {
-    	return null;
-    }
-    
-    @Override
-    public String getSnapshotCFFilter() {
-    	return null;
-    }
-    
-    @Override
     public String getVpcId() {
     	return "";
     }
 
-	@Override
-	public Boolean isIncrBackupParallelEnabled() {
-		return false;
-	}
-
-	@Override
-	public int getIncrementalBkupMaxConsumers() {
-		return 2;
-	}
-
-	@Override
-    public int getIncrementalBkupQueueSize() {
-		return 100;
-	}
-
-    /**
-     * @return tombstone_warn_threshold in yaml
-     */
     @Override
-    public int getTombstoneWarnThreshold() {
-        return 1000;
-    }
-
-    /**
-     * @return tombstone_failure_threshold in yaml
-     */
-    @Override
-    public int getTombstoneFailureThreshold() {
-        return 100000;
-    }
-
-    /**
-     * @return streaming_socket_timeout_in_ms in yaml
-     */
-    @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return 86400000;
+    public int getBackupQueueSize() {
+        return 100;
     }
 
     @Override
@@ -855,11 +694,6 @@ public class FakeConfiguration implements IConfiguration
     @Override
     public String getBackupStatusFileLoc() {
         return "backupstatus.ser";
-    }
-
-    @Override
-    public boolean useSudo() {
-        return true;
     }
 
     @Override
@@ -897,8 +731,19 @@ public class FakeConfiguration implements IConfiguration
         return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
     }
 
-    @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return fakeProperties.getOrDefault(key, defaultValue);
+    }
+
+    @Override
+    public String getMergedConfigurationDirectory()
+    {
+        return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 }

@@ -22,7 +22,6 @@ import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
-import com.netflix.priam.utils.RetryableCallable;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.parser.JSONParser;
@@ -45,8 +44,8 @@ import java.util.List;
 public class MetaData {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
-    private final List<String> metaRemotePaths = new ArrayList<String>();
+    private static List<IMessageObserver> observers = new ArrayList<>();
+    private final List<String> metaRemotePaths = new ArrayList<>();
     private final IBackupFileSystem fs;
 
     @Inject

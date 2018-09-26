@@ -74,7 +74,7 @@ public class SnapshotMetaService extends AbstractBackup {
                         MetaFileWriterBuilder metaFileWriter, MetaFileManager metaFileManager, CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
         this.cassandraOperations = cassandraOperations;
-        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
+        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
         this.metaFileManager = metaFileManager;
     }
@@ -162,10 +162,10 @@ public class SnapshotMetaService extends AbstractBackup {
 
     private ColumnfamilyResult convertToColumnFamilyResult(String keyspace, String columnFamilyName, Map<String, List<FileUploadResult>> filePrefixToFileMap) {
         ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap.entrySet().forEach(sstableEntry -> {
+        filePrefixToFileMap.forEach((key, value) -> {
             ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
-            ssTableResult.setPrefix(sstableEntry.getKey());
-            ssTableResult.setSstableComponents(sstableEntry.getValue());
+            ssTableResult.setPrefix(key);
+            ssTableResult.setSstableComponents(value);
             columnfamilyResult.addSstable(ssTableResult);
         });
         return columnfamilyResult;

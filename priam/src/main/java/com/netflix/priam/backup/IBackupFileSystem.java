@@ -32,7 +32,7 @@ public interface IBackupFileSystem {
      *
      * @param remotePath fully qualified location of the file on remote file system.
      * @param localPath  location on the local file sytem where remote file should be downloaded.
-     * @param retry      No. of times to retry to download a file from remote file system. If <=0, it will try to download file exactly once.
+     * @param retry      No. of times to retry to download a file from remote file system. If &lt;1, it will try to download file exactly once.
      * @throws BackupRestoreException if file is not available, downloadable or any other error from remote file system.
      */
     void downloadFile(Path remotePath, Path localPath, int retry) throws BackupRestoreException;
@@ -42,12 +42,12 @@ public interface IBackupFileSystem {
      *
      * @param remotePath fully qualified location of the file on remote file system.
      * @param localPath  location on the local file sytem where remote file should be downloaded.
-     * @param retry      No. of times to retry to download a file from remote file system. If <=0, it will try to download file exactly once.
+     * @param retry      No. of times to retry to download a file from remote file system. If &lt;1, it will try to download file exactly once.
      * @return The future of the async job to monitor the progress of the job.
      * @throws BackupRestoreException     if file is not available, downloadable or any other error from remote file system.
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying to add the work to the queue.
      */
-    Future<Path> downloadFileAsync(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException, RejectedExecutionException;
+    Future<Path> asyncDownloadFile(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException, RejectedExecutionException;
 
 
     /**
@@ -60,7 +60,7 @@ public interface IBackupFileSystem {
      * @param localPath                   Path of the local file that needs to be uploaded.
      * @param remotePath                  Fully qualified path on the remote file system where file should be uploaded.
      * @param path                        AbstractBackupPath to be used to send backup notifications only.
-     * @param retry                       No of times to retry to upload a file. If <=0, it will try to upload file exactly once.
+     * @param retry                       No of times to retry to upload a file. If &lt;1, it will try to upload file exactly once.
      * @param deleteAfterSuccessfulUpload If true, delete the file denoted by localPath after it is successfully uploaded to the filesystem. If there is any failure, file will not be deleted.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not readable or remote file system errors.
      * @throws FileNotFoundException  If a file as denoted by localPath is not available or is a directory.
@@ -73,11 +73,11 @@ public interface IBackupFileSystem {
      * @param localPath                   Path of the local file that needs to be uploaded.
      * @param remotePath                  Fully qualified path on the remote file system where file should be uploaded.
      * @param path                        AbstractBackupPath to be used to send backup notifications only.
-     * @param retry                       No of times to retry to upload a file. If <=0, it will try to upload file exactly once.
+     * @param retry                       No of times to retry to upload a file. If &lt;1, it will try to upload file exactly once.
      * @param deleteAfterSuccessfulUpload If true, delete the file denoted by localPath after it is successfully uploaded to the filesystem. If there is any failure, file will not be deleted.
      * @return The future of the async job to monitor the progress of the job. This will be null if file was de-duped for upload.
-     * @throws BackupRestoreException in case of failure to upload for any reason including file not readable or remote file system errors.
-     * @throws FileNotFoundException  If a file as denoted by localPath is not available or is a directory.
+     * @throws BackupRestoreException     in case of failure to upload for any reason including file not readable or remote file system errors.
+     * @throws FileNotFoundException      If a file as denoted by localPath is not available or is a directory.
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying to add the work to the queue.
      */
     Future<Path> asyncUploadFile(final Path localPath, final Path remotePath, final AbstractBackupPath path, final int retry, final boolean deleteAfterSuccessfulUpload) throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
@@ -117,8 +117,16 @@ public interface IBackupFileSystem {
     long getFileSize(Path remotePath) throws BackupRestoreException;
 
     /**
-     * Get the number of tasks en-queue in the filesystem for download/upload.
+     * Get the number of tasks en-queue in the filesystem for upload.
+     *
      * @return the total no. of tasks to be executed.
      */
-    int getTasksQueued();
+    int getUploadTasksQueued();
+
+    /**
+     * Get the number of tasks en-queue in the filesystem for download.
+     *
+     * @return the total no. of tasks to be executed.
+     */
+    int getDownloadTasksQueued();
 }

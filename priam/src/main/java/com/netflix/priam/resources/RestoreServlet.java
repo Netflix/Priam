@@ -154,7 +154,7 @@ public class RestoreServlet {
             logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
-        setRestoreKeyspaces(keyspaces);
+        restoreObj.setRestoreConfiguration(keyspaces, null);
 
         try {
             restoreObj.restore(startTime, endTime);
@@ -177,17 +177,6 @@ public class RestoreServlet {
                 tokenList.add(new BigInteger(ins.getToken()));
         }
         return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
-    }
-
-    /*
-     * TODO: decouple the servlet, config, and restorer. this should not rely on a side
-     *       effect of a list mutation on the config object (treating it as global var).
-     */
-    private void setRestoreKeyspaces(String keyspaces) {
-        if (StringUtils.isNotBlank(keyspaces)) {
-            List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
-            config.setRestoreKeySpaces(newKeyspaces);
-        }
     }
 
 }

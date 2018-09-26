@@ -37,7 +37,6 @@ public class S3BackupPath extends AbstractBackupPath {
 
     /**
      * Format of backup path:
-     * Cassandra > 1.1
      * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
      */
     @Override

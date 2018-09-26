@@ -82,16 +82,15 @@ public class SDBInstanceData {
      */
     public Set<PriamInstance> getAllIds(String app) {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        Set<PriamInstance> inslist = new HashSet<PriamInstance>();
+        Set<PriamInstance> inslist = new HashSet<>();
         String nextToken = null;
         do {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, app));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
-            Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext()) {
-                inslist.add(transform(itemiter.next()));
+            for (Item item : result.getItems()) {
+                inslist.add(transform(item));
             }
 
         } while (nextToken != null);
@@ -140,7 +139,7 @@ public class SDBInstanceData {
 
     protected List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance) {
         instance.setUpdatetime(new Date().getTime());
-        List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
+        List<ReplaceableAttribute> attrs = new ArrayList<>();
         attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
         attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getToken(), true));
         attrs.add(new ReplaceableAttribute(Attributes.APP_ID, instance.getApp(), true));
@@ -154,7 +153,7 @@ public class SDBInstanceData {
     }
 
     protected List<Attribute> createAttributesToDeRegister(PriamInstance instance) {
-        List<Attribute> attrs = new ArrayList<Attribute>();
+        List<Attribute> attrs = new ArrayList<>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
         attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
         attrs.add(new Attribute(Attributes.APP_ID, instance.getApp()));
@@ -175,9 +174,7 @@ public class SDBInstanceData {
      */
     public PriamInstance transform(Item item) {
         PriamInstance ins = new PriamInstance();
-        Iterator<Attribute> attrs = item.getAttributes().iterator();
-        while (attrs.hasNext()) {
-            Attribute att = attrs.next();
+        for (Attribute att : item.getAttributes()) {
             if (att.getName().equals(Attributes.INSTANCE_ID))
                 ins.setInstanceId(att.getValue());
             else if (att.getName().equals(Attributes.TOKEN))

@@ -161,8 +161,8 @@ public class BackupServlet {
     @Path("/status")
     @Produces(MediaType.APPLICATION_JSON)
     public Response status() throws Exception {
-        int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
-        logger.debug("Thread counts for restore is: {}", restoreTCount);
+        int restoreQueueSize = restoreObj.getDownloadTasksQueued(); //Items left to restore from the filesystem.
+        logger.info("Thread counts for restore is: {}. Items in queue: {}", config.getRestoreThreads(), restoreQueueSize);
         JSONObject object = new JSONObject();
         object.put("SnapshotStatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
@@ -228,7 +228,7 @@ public class BackupServlet {
     public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
         List<BackupMetadata> metadata = this.completedBkups.locate(date);
         JSONObject object = new JSONObject();
-        List<String> snapshots = new ArrayList<String>();
+        List<String> snapshots = new ArrayList<>();
 
         if (metadata != null && !metadata.isEmpty())
             snapshots.addAll(metadata.stream().map(backupMetadata -> DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList()));
@@ -417,7 +417,7 @@ public class BackupServlet {
             logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
-        setRestoreKeyspaces(keyspaces);
+        restoreObj.setRestoreConfiguration(keyspaces, null);
 
         try {
             restoreObj.restore(startTime, endTime);
@@ -440,17 +440,6 @@ public class BackupServlet {
                 tokenList.add(new BigInteger(ins.getToken()));
         }
         return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
-    }
-
-    /*
-     * TODO: decouple the servlet, config, and restorer. this should not rely on a side
-     *       effect of a list mutation on the config object (treating it as global var).
-     */
-    private void setRestoreKeyspaces(String keyspaces) {
-        if (StringUtils.isNotBlank(keyspaces)) {
-            List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
-            config.setRestoreKeySpaces(newKeyspaces);
-        }
     }
 
     /*
@@ -521,12 +510,7 @@ public class BackupServlet {
                     .getRuntime()
                     .exec(cmd);
 
-            Callable<Integer> callable = new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    return p.waitFor();
-                }
-            };
+            Callable<Integer> callable = () -> p.waitFor();
 
             ExecutorService exeService = Executors.newSingleThreadExecutor();
             try {

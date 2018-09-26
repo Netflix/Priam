@@ -47,7 +47,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private Set<Path> tasksQueued;
     private ThreadPoolExecutor fileUploadExecutor;
     private ThreadPoolExecutor fileDownloadExecutor;
-    private static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L); //2 minutes.
 
     @Inject
     public AbstractFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
@@ -55,15 +54,23 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         this.backupMetrics = backupMetrics;
         //Add notifications.
         this.addObserver(backupNotificationMgr);
-        tasksQueued = new HashSet<>(configuration.getUncrementalBkupQueueSize());
-        BlockingQueue queue = new ArrayBlockingQueue(configuration.getUncrementalBkupQueueSize());
-        PolledMeter.using(backupMetrics.getRegistry()).withName(backupMetrics.uploadDownloadQueueSize).monitorSize(queue);
-        this.fileUploadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getMaxBackupUploadThreads(), queue, UPLOAD_TIMEOUT);
-        this.fileDownloadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getMaxBackupDownloadThreads(), queue, UPLOAD_TIMEOUT);
+        tasksQueued = new HashSet<>(configuration.getBackupQueueSize());
+        /*
+         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
+         files for "sync" feature which might compete with backups for scheduling.
+         Also, we may want to have different TIMEOUT for each kind of operation (upload/download) based on our file system choices.
+         */
+        BlockingQueue<Runnable> uploadQueue = new ArrayBlockingQueue<>(configuration.getBackupQueueSize());
+        PolledMeter.using(backupMetrics.getRegistry()).withName(backupMetrics.uploadQueueSize).monitorSize(uploadQueue);
+        this.fileUploadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getBackupThreads(), uploadQueue, configuration.getUploadTimeout());
+
+        BlockingQueue<Runnable> downloadQueue = new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
+        PolledMeter.using(backupMetrics.getRegistry()).withName(backupMetrics.downloadQueueSize).monitorSize(downloadQueue);
+        this.fileDownloadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getRestoreThreads(), downloadQueue, configuration.getDownloadTimeout());
     }
 
     @Override
-    public Future<Path> downloadFileAsync(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException, RejectedExecutionException {
+    public Future<Path> asyncDownloadFile(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException, RejectedExecutionException {
         return fileDownloadExecutor.submit(() -> {
             downloadFile(remotePath, localPath, retry);
             return remotePath;
@@ -109,8 +116,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     @Override
     public void uploadFile(final Path localPath, final Path remotePath, final AbstractBackupPath path, final int retry, final boolean deleteAfterSuccessfulUpload) throws FileNotFoundException, BackupRestoreException {
-        if (!localPath.toFile().exists() || localPath.toFile().isDirectory())
-            throw new FileNotFoundException("File do not exist or is a directory: {}" + localPath);
+        if (localPath == null || remotePath == null || !localPath.toFile().exists() || localPath.toFile().isDirectory())
+            throw new FileNotFoundException("File do not exist or is a directory. localPath: " + localPath + ", remotePath: " + remotePath);
 
         if (!tasksQueued.contains(localPath)) {
             //Add file to local memory
@@ -187,7 +194,12 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     @Override
-    public int getTasksQueued(){
+    public int getUploadTasksQueued(){
         return tasksQueued.size();
+    }
+
+    @Override
+    public int getDownloadTasksQueued(){
+        return fileDownloadExecutor.getQueue().size();
     }
 }

@@ -46,11 +46,11 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     protected AmazonS3 s3Client;
-    protected IConfiguration config;
-    protected Provider<AbstractBackupPath> pathProvider;
-    protected ICompression compress;
-    protected BlockingSubmitThreadPoolExecutor executor;
-    protected RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
+    protected final IConfiguration config;
+    protected final Provider<AbstractBackupPath> pathProvider;
+    protected final ICompression compress;
+    protected final BlockingSubmitThreadPoolExecutor executor;
+    protected final RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 
     public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
                             ICompression compress,
@@ -62,8 +62,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         this.compress = compress;
         this.config = config;
 
-        int threads = config.getMaxBackupUploadThreads();
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
+        int threads = config.getBackupThreads();
+        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(threads);
         this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
 
         double throttleLimit = config.getUploadThrottle();
@@ -160,7 +160,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public long getFileSize(Path remotePath) throws BackupRestoreException {
+    public long getFileSize(Path remotePath) throws BackupRestoreException{
         return s3Client.getObjectMetadata(getPrefix(config), remotePath.toString()).getContentLength();
     }
 
@@ -181,7 +181,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         return new S3FileIterator(pathProvider, s3Client, path, start, till);
     }
 
-    final long getChunkSize(Path localPath) throws BackupRestoreException {
+    final long getChunkSize(Path localPath) throws BackupRestoreException{
         long chunkSize = config.getBackupChunkSize();
         long fileSize = localPath.toFile().length();
 

@@ -17,7 +17,7 @@
 package com.netflix.priam.config;
 
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -75,21 +75,16 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_SSL_STORAGE_LISTERN_PORT_NAME = PRIAM_PRE + ".ssl.storage.port";
     private static final String CONFIG_CL_BK_LOCATION = PRIAM_PRE + ".backup.commitlog.location";
     private static final String CONFIG_THROTTLE_UPLOAD_PER_SECOND = PRIAM_PRE + ".upload.throttle";
-    private static final String CONFIG_IN_MEMORY_COMPACTION_LIMIT = PRIAM_PRE + ".memory.compaction.limit";
     private static final String CONFIG_COMPACTION_THROUHPUT = PRIAM_PRE + ".compaction.throughput";
     private static final String CONFIG_MAX_HINT_WINDOW_IN_MS = PRIAM_PRE + ".hint.window";
-    private static final String CONFIG_HINT_DELAY = PRIAM_PRE + ".hint.delay";
     private static final String CONFIG_BOOTCLUSTER_NAME = PRIAM_PRE + ".bootcluster";
     private static final String CONFIG_ENDPOINT_SNITCH = PRIAM_PRE + ".endpoint_snitch";
-    private static final String CONFIG_MEMTABLE_TOTAL_SPACE = PRIAM_PRE + ".memtabletotalspace";
     private static final String CONFIG_MEMTABLE_CLEANUP_THRESHOLD = PRIAM_PRE + ".memtable.cleanup.threshold";
     private static final String CONFIG_CASS_PROCESS_NAME = PRIAM_PRE + ".cass.process";
     private static final String CONFIG_VNODE_NUM_TOKENS = PRIAM_PRE + ".vnodes.numTokens";
     private static final String CONFIG_YAML_LOCATION = PRIAM_PRE + ".yamlLocation";
     private static final String CONFIG_AUTHENTICATOR = PRIAM_PRE + ".authenticator";
     private static final String CONFIG_AUTHORIZER = PRIAM_PRE + ".authorizer";
-    private static final String CONFIG_TARGET_KEYSPACE_NAME = PRIAM_PRE + ".target.keyspace";
-    private static final String CONFIG_TARGET_COLUMN_FAMILY_NAME = PRIAM_PRE + ".target.columnfamily";
     private static final String CONFIG_CASS_MANUAL_START_ENABLE = PRIAM_PRE + ".cass.manual.start.enable";
     private static final String CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S = PRIAM_PRE + ".remediate.dead.cassandra.rate";
     private static final String CONFIG_CREATE_NEW_TOKEN_ENABLE = PRIAM_PRE + ".create.new.token.enable";
@@ -98,14 +93,7 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_BACKUP_THREADS = PRIAM_PRE + ".backup.threads";
     private static final String CONFIG_RESTORE_PREFIX = PRIAM_PRE + ".restore.prefix";
     private static final String CONFIG_INCR_BK_ENABLE = PRIAM_PRE + ".backup.incremental.enable";
-    private static final String CONFIG_SNAPSHOT_KEYSPACE_FILTER = PRIAM_PRE + ".snapshot.keyspace.filter";
-    private static final String CONFIG_SNAPSHOT_CF_FILTER = PRIAM_PRE + ".snapshot.cf.filter";
-    private static final String CONFIG_INCREMENTAL_KEYSPACE_FILTER = PRIAM_PRE + ".incremental.keyspace.filter";
-    private static final String CONFIG_INCREMENTAL_CF_FILTER = PRIAM_PRE + ".incremental.cf.filter";
-    private static final String CONFIG_RESTORE_KEYSPACE_FILTER = PRIAM_PRE + ".restore.keyspace.filter";
-    private static final String CONFIG_RESTORE_CF_FILTER = PRIAM_PRE + ".restore.cf.filter";
 
-    private static final String CONFIG_CL_BK_ENABLE = PRIAM_PRE + ".backup.commitlog.enable";
     private static final String CONFIG_AUTO_RESTORE_SNAPSHOTNAME = PRIAM_PRE + ".restore.snapshot";
     private static final String CONFIG_BUCKET_NAME = PRIAM_PRE + ".s3.bucket";
     private static final String CONFIG_BACKUP_SCHEDULE_TYPE = PRIAM_PRE + ".backup.schedule.type";
@@ -114,12 +102,10 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_S3_BASE_DIR = PRIAM_PRE + ".s3.base_dir";
     private static final String CONFIG_RESTORE_THREADS = PRIAM_PRE + ".restore.threads";
     private static final String CONFIG_RESTORE_CLOSEST_TOKEN = PRIAM_PRE + ".restore.closesttoken";
-    private static final String CONFIG_RESTORE_KEYSPACES = PRIAM_PRE + ".restore.keyspaces";
     private static final String CONFIG_BACKUP_CHUNK_SIZE = PRIAM_PRE + ".backup.chunksizemb";
     private static final String CONFIG_BACKUP_RETENTION = PRIAM_PRE + ".backup.retention";
     private static final String CONFIG_BACKUP_RACS = PRIAM_PRE + ".backup.racs";
     private static final String CONFIG_BACKUP_STATUS_FILE_LOCATION = PRIAM_PRE + ".backup.status.location";
-    private static final String CONFIG_MULTITHREADED_COMPACTION = PRIAM_PRE + ".multithreaded.compaction";
     private static final String CONFIG_STREAMING_THROUGHPUT_MB = PRIAM_PRE + ".streaming.throughput.mb";
     private static final String CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS = PRIAM_PRE + ".streaming.socket.timeout.ms";
     private static final String CONFIG_TOMBSTONE_FAILURE_THRESHOLD = PRIAM_PRE + ".tombstone.failure.threshold";
@@ -153,10 +139,8 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_RPC_SERVER_TYPE = PRIAM_PRE + ".rpc.server.type";
     private static final String CONFIG_RPC_MIN_THREADS = PRIAM_PRE + ".rpc.min.threads";
     private static final String CONFIG_RPC_MAX_THREADS = PRIAM_PRE + ".rpc.max.threads";
-    private static final String CONFIG_INDEX_INTERVAL = PRIAM_PRE + ".index.interval";
     private static final String CONFIG_EXTRA_PARAMS = PRIAM_PRE + ".extra.params";
     private static final String CONFIG_AUTO_BOOTSTRAP = PRIAM_PRE + ".auto.bootstrap";
-    private static final String CONFIG_DSE_CLUSTER_TYPE = PRIAM_PRE + ".dse.cluster.type";
     private static final String CONFIG_EXTRA_ENV_PARAMS = PRIAM_PRE + ".extra.env.params";
 
     private static final String CONFIG_RESTORE_SOURCE_TYPE = PRIAM_PRE + ".restore.source.type"; //the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
@@ -249,7 +233,6 @@ public class PriamConfiguration implements IConfiguration {
     private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
     private static final int DEFAULT_RPC_MIN_THREADS = 16;
     private static final int DEFAULT_RPC_MAX_THREADS = 2048;
-    private static final int DEFAULT_INDEX_INTERVAL = 256;
     private static final int DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS = 86400000; // 24 Hours
     private static final int DEFAULT_TOMBSTONE_WARNING_THRESHOLD = 1000; // C* defaults
     private static final int DEFAULT_TOMBSTONE_FAILURE_THRESHOLD = 100000;// C* defaults
@@ -272,7 +255,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public void intialize() {
+    public void initialize() {
         try {
             if (this.insEnvIdentity.isClassic()) {
                 this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
@@ -344,8 +327,7 @@ public class PriamConfiguration implements IConfiguration {
             super(NUMBER_OF_RETRIES, WAIT_TIME);
             this.region = region;
             this.instanceId = instanceId;
-            client = new AmazonEC2Client(provider.getAwsCredentialProvider());
-            client.setEndpoint("ec2." + region + ".amazonaws.com");
+            client = AmazonEC2ClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(region).build();
         }
 
         @Override
@@ -371,8 +353,7 @@ public class PriamConfiguration implements IConfiguration {
      * Get the fist 3 available zones in the region
      */
     public void setDefaultRACList(String region) {
-        AmazonEC2 client = new AmazonEC2Client(provider.getAwsCredentialProvider());
-        client.setEndpoint("ec2." + region + ".amazonaws.com");
+        AmazonEC2 client = AmazonEC2ClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(region).build();
         DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
         List<String> zone = Lists.newArrayList();
         for (AvailabilityZone reg : res.getAvailabilityZones()) {
@@ -441,11 +422,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getRestorePrefix() {
         return config.get(CONFIG_RESTORE_PREFIX);
-    }
-
-    @Override
-    public List<String> getRestoreKeySpaces() {
-        return config.getList(CONFIG_RESTORE_KEYSPACES);
     }
 
     @Override
@@ -627,33 +603,33 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getSnapshotKeyspaceFilters() {
-        return config.get(CONFIG_SNAPSHOT_KEYSPACE_FILTER);
+    public String getSnapshotIncludeCFList() {
+        return config.get(PRIAM_PRE + ".snapshot.cf.include");
     }
 
     @Override
-    public String getSnapshotCFFilter() throws IllegalArgumentException {
-        return config.get(CONFIG_SNAPSHOT_CF_FILTER);
+    public String getSnapshotExcludeCFList() {
+        return config.get(PRIAM_PRE + ".snapshot.cf.exclude");
     }
 
     @Override
-    public String getIncrementalKeyspaceFilters() {
-        return config.get(CONFIG_INCREMENTAL_KEYSPACE_FILTER);
+    public String getIncrementalIncludeCFList() {
+        return config.get(PRIAM_PRE + ".incremental.cf.include");
     }
 
     @Override
-    public String getIncrementalCFFilter() {
-        return config.get(CONFIG_INCREMENTAL_CF_FILTER);
+    public String getIncrementalExcludeCFList() {
+        return config.get(PRIAM_PRE + ".incremental.cf.exclude");
     }
 
     @Override
-    public String getRestoreKeyspaceFilter() {
-        return config.get(CONFIG_RESTORE_KEYSPACE_FILTER);
+    public String getRestoreIncludeCFList() {
+        return config.get(PRIAM_PRE + ".restore.cf.include");
     }
 
     @Override
-    public String getRestoreCFFilter() {
-        return config.get(CONFIG_RESTORE_CF_FILTER);
+    public String getRestoreExcludeCFList() {
+        return config.get(PRIAM_PRE + ".restore.cf.exclude");
     }
 
     @Override
@@ -687,13 +663,12 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getMaxBackupUploadThreads() {
-
+    public int getBackupThreads() {
         return config.get(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
     }
 
     @Override
-    public int getMaxBackupDownloadThreads() {
+    public int getRestoreThreads() {
         return config.get(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
     }
 
@@ -742,11 +717,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getInMemoryCompactionLimit() {
-        return config.get(CONFIG_IN_MEMORY_COMPACTION_LIMIT, 128);
-    }
-
-    @Override
     public int getCompactionThroughput() {
         return config.get(CONFIG_COMPACTION_THROUHPUT, 8);
     }
@@ -760,10 +730,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
     }
 
-    public int getMaxHintThreads() {
-        return config.get(CONFIG_MAX_HINT_THREADS, DEFAULT_HINTS_MAX_THREADS);
-    }
-
     @Override
     public String getBootClusterName() {
         return config.get(CONFIG_BOOTCLUSTER_NAME, "");
@@ -774,9 +740,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
     }
 
-    /**
-     *   memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) = 0.11
-     */
     public double getMemtableCleanupThreshold() {
         return config.get(CONFIG_MEMTABLE_CLEANUP_THRESHOLD, 0.11);
     }
@@ -888,22 +851,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_VPC_RING, false);
     }
 
-    @Override
-    public void setRestoreKeySpaces(List<String> keyspaces) {
-        if (keyspaces == null)
-            return;
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < keyspaces.size(); i++) {
-            if (i > 0)
-                sb.append(",");
-
-            sb.append(keyspaces.get(i));
-        }
-
-        config.set(CONFIG_RESTORE_KEYSPACES, sb.toString());
-    }
-
     public boolean isClientSslEnabled() {
         return config.get(CONFIG_CLIENT_SSL_ENABLED, false);
     }
@@ -949,10 +896,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(CONFIG_RPC_MAX_THREADS, DEFAULT_RPC_MAX_THREADS);
     }
 
-    public int getIndexInterval() {
-        return config.get(CONFIG_INDEX_INTERVAL, DEFAULT_INDEX_INTERVAL);
-    }
-
     @Override
     public int getCompactionLargePartitionWarnThresholdInMB() {
         return config.get(PRIAM_PRE + ".compaction.large.partition.warn.threshold", 100);
@@ -969,7 +912,7 @@ public class PriamConfiguration implements IConfiguration {
             logger.info("getExtraEnvParams: No extra env params");
             return null;
         }
-        Map<String, String> extraEnvParamsMap = new HashMap<String, String>();
+        Map<String, String> extraEnvParamsMap = new HashMap<>();
         String[] pairs = envParams.split(",");
         logger.info("getExtraEnvParams: Extra cass params. From config :{}", envParams);
         for (int i = 0; i < pairs.length; i++) {
@@ -994,11 +937,6 @@ public class PriamConfiguration implements IConfiguration {
 
     public boolean getAutoBoostrap() {
         return config.get(CONFIG_AUTO_BOOTSTRAP, true);
-    }
-
-    //values are cassandra, solr, hadoop, spark or hadoop-spark
-    public String getDseClusterType() {
-        return config.get(CONFIG_DSE_CLUSTER_TYPE + "." + ASG_NAME, "cassandra");
     }
 
     @Override
@@ -1071,39 +1009,44 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public Boolean isIncrBackupParallelEnabled() {
-        return config.get(PRIAM_PRE + ".incremental.bkup.parallel", false);
+    public boolean enableAsyncIncremental() {
+        return config.get(PRIAM_PRE + ".async.incremental", false);
     }
 
     @Override
-    public int getIncrementalBkupMaxConsumers() {
-        return config.get(PRIAM_PRE + ".incremental.bkup.max.consumers", 4);
+    public boolean enableAsyncSnapshot() {
+        return config.get(PRIAM_PRE + ".async.snapshot", false);
     }
 
     @Override
-    public int getIncrementalBkupQueueSize() {
-        return config.get(PRIAM_PRE + ".incremental.bkup.queue.size", 100000);
+    public int getBackupQueueSize() {
+        return config.get(PRIAM_PRE + ".backup.queue.size", 100000);
     }
 
-    /**
-     * @return tombstone_warn_threshold in yaml
-     */
+    @Override
+    public int getDownloadQueueSize() {
+        return config.get(PRIAM_PRE + ".download.queue.size", 100000);
+    }
+
+    @Override
+    public long getUploadTimeout() {
+        return config.get(PRIAM_PRE + ".upload.timeout", (2 * 60 * 60 * 1000L));
+    }
+
+    public long getDownloadTimeout() {
+        return config.get(PRIAM_PRE + ".download.timeout", (10 * 60 * 60 * 1000L));
+    }
+
     @Override
     public int getTombstoneWarnThreshold() {
         return config.get(CONFIG_TOMBSTONE_WARNING_THRESHOLD, DEFAULT_TOMBSTONE_WARNING_THRESHOLD);
     }
 
-    /**
-     * @return tombstone_failure_threshold in yaml
-     */
     @Override
     public int getTombstoneFailureThreshold() {
         return config.get(CONFIG_TOMBSTONE_FAILURE_THRESHOLD, DEFAULT_TOMBSTONE_FAILURE_THRESHOLD);
     }
 
-    /**
-     * @return streaming_socket_timeout_in_ms in yaml
-     */
     @Override
     public int getStreamingSocketTimeoutInMS() {
         return config.get(CONFIG_STREAMING_SOCKET_TIMEOUT_IN_MS, DEFAULT_STREAMING_SOCKET_TIMEOUT_IN_MS);
@@ -1163,8 +1106,15 @@ public class PriamConfiguration implements IConfiguration {
     public int getPostRestoreHookHeartBeatTimeoutInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_TIMEOUT_MS, 120000);
     }
+
     @Override
     public int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return config.get(CONFIG_POST_RESTORE_HOOK_HEARTBEAT_CHECK_FREQUENCY_MS, 120000);
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue)
+    {
+        return config.get(key, defaultValue);
     }
 }

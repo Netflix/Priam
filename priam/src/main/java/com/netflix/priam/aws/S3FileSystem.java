@@ -150,7 +150,6 @@ public class S3FileSystem extends S3FileSystemBase{
 
         if (fileSize < chunkSize) {
             //Upload file without using multipart upload as it will be more efficient.
-
             if (logger.isDebugEnabled())
                 logger.debug("Uploading to {}/{} using PUT operation", config.getBackupPrefix(), remotePath);
 

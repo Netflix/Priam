@@ -22,14 +22,15 @@ import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Abstract Backup class for uploading files to backup location
@@ -58,25 +59,47 @@ public abstract class AbstractBackup extends Task{
         this.fs = fs;
     }
 
+    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) throws Exception {
+        final AbstractBackupPath bp = pathFactory.get();
+        bp.parseLocal(file, type);
+        return bp;
+    }
+
+
     /**
      * Upload files in the specified dir. Does not delete the file in case of
-     * error.  The files are uploaded serially.
+     * error.  The files are uploaded serially or async based on flag provided.
      *
      * @param parent Parent dir
      * @param type   Type of file (META, SST, SNAP etc)
+     * @param async  Upload the file(s) in async fashion if enabled.
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
+    protected List<AbstractBackupPath> upload(final File parent, final BackupFileType type, boolean async) throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
-        for (final File file : parent.listFiles()) {
-            //== decorate file with metadata
-            final AbstractBackupPath bp = pathFactory.get();
-            bp.parseLocal(file, type);
-            fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
-            bps.add(bp);
-            addToRemotePath(bp.getRemotePath());
+        final List<Future<Path>> futures = Lists.newArrayList();
+
+        for (File file : parent.listFiles()) {
+            if (file.isFile() && file.exists()) {
+                AbstractBackupPath bp = getAbstractBackupPath(file, type);
+
+                if (async)
+                    futures.add(fs.asyncUploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true));
+                else
+                    fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+
+                bps.add(bp);
+                addToRemotePath(bp.getRemotePath());
+            }
         }
+
+        //Wait for all files to be uploaded.
+        if (async) {
+            for (Future future : futures)
+                future.get(); //This might throw exception if there is any error
+        }
+
         return bps;
     }
 

@@ -46,7 +46,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
-        List<PriamInstance> return_ = new ArrayList<PriamInstance>();
+        List<PriamInstance> return_ = new ArrayList<>();
         for (PriamInstance instance : dao.getAllIds(appName)) {
             return_.add(instance);
         }

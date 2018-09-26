@@ -310,9 +310,11 @@ public class BackupServletTest
               restoreKeyspaces.clear();
               restoreKeyspaces.addAll(ImmutableList.of("keyspace1", "keyspace2"));
 
-              config.getRestoreKeySpaces(); result = restoreKeyspaces;
-              config.setDC(oldRegion);
-              priamServer.getId(); result = identity; times = 2;
+                result = restoreKeyspaces;
+                config.setDC(oldRegion);
+                priamServer.getId();
+                result = identity;
+                times = 2;
             }
         };
         new Expectations() {

@@ -32,11 +32,11 @@ public class PgpUtil {
      * exists.
      *
      * @param pgpSec a secret key ring collection.
-     * @param keyID keyID we want.
-     * @param pass passphrase to decrypt secret key with.
-     * @return
-     * @throws PGPException
-     * @throws NoSuchProviderException
+     * @param keyID  keyID we want.
+     * @param pass   passphrase to decrypt secret key with.
+     * @return secret or private key corresponding to the keyID.
+     * @throws PGPException if there is any exception in getting the PGP key corresponding to the ID provided.
+     * @throws NoSuchProviderException If PGP Provider is not available.
      */
     public static PGPPrivateKey findSecretKey(PGPSecretKeyRingCollection pgpSec, long keyID, char[] pass) throws PGPException, NoSuchProviderException {
 
@@ -60,10 +60,10 @@ public class PgpUtil {
      * A simple routine that opens a key ring file and loads the first available key
      * suitable for encryption.
      *
-     * @param input
-     * @return
-     * @throws IOException
-     * @throws PGPException
+     * @param input inputstream to the pgp file key ring.
+     * @return PGP key from the key ring.
+     * @throws IOException If any error in reading from the input stream.
+     * @throws PGPException if there is any error in getting key from key ring.
      */
     @SuppressWarnings("rawtypes")
     public static PGPPublicKey readPublicKey(InputStream input) throws IOException, PGPException {

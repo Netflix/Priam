@@ -23,8 +23,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.RetryableCallable;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

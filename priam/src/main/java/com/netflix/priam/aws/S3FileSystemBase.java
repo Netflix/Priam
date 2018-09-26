@@ -16,7 +16,6 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
@@ -26,30 +25,20 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventGenerator;
-import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
     protected static final int MAX_CHUNKS = 10000;
@@ -57,11 +46,11 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     protected AmazonS3 s3Client;
-    protected IConfiguration config;
-    protected Provider<AbstractBackupPath> pathProvider;
-    protected ICompression compress;
-    protected BlockingSubmitThreadPoolExecutor executor;
-    protected RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
+    protected final IConfiguration config;
+    protected final Provider<AbstractBackupPath> pathProvider;
+    protected final ICompression compress;
+    protected final BlockingSubmitThreadPoolExecutor executor;
+    protected final RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 
     public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
                             ICompression compress,
@@ -73,8 +62,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         this.compress = compress;
         this.config = config;
 
-        int threads = config.getMaxBackupUploadThreads();
-        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<Runnable>(threads);
+        int threads = config.getBackupThreads();
+        LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(threads);
         this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
 
         double throttleLimit = config.getUploadThrottle();

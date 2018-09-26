@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.GetObjectRequest;
 import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.netflix.priam.utils.RetryableCallable;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,11 +75,11 @@ public class RangeReadInputStream extends InputStream {
                         if (readTotal == 0 && rCnt == -1)
                             return -1;
                         offset += readTotal;
-                        return Integer.valueOf(readTotal);
+                        return readTotal;
                     }
                 }
             }.call();
-            return cnt.intValue();
+            return cnt;
         } catch (Exception e) {
             String msg = String.format("failed to read offset range %d-%d of file %s whose size is %d",
                     firstByte, endByte, remotePath, fileSize);

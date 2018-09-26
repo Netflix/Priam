@@ -39,10 +39,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
+import java.util.concurrent.*;
 
 /**
  * The goal of this class is to test common functionality which are encapsulated in AbstractFileSystem.
@@ -86,7 +83,7 @@ public class TestAbstractFileSystem {
         try {
             Collection<File> files = generateFiles(1, 1, 1);
             for (File file : files) {
-                failureFileSystem.uploadFile(file.toPath(), null, getDummyPath(file.toPath()), 2, true);
+                failureFileSystem.uploadFile(file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
             }
         } catch (BackupRestoreException e) {
             //Verify the failure metric for upload is incremented.
@@ -122,7 +119,7 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 1);
         //Dummy upload with compressed size.
         for (File file : files) {
-            myFileSystem.uploadFile(file.toPath(), null, getDummyPath(file.toPath()), 2, true);
+            myFileSystem.uploadFile(file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
             //Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
 
@@ -145,11 +142,11 @@ public class TestAbstractFileSystem {
         //Testing single async upload.
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
-            myFileSystem.asyncUploadFile(file.toPath(), null, getDummyPath(file.toPath()), 2, true).get();
+            myFileSystem.asyncUploadFile(file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true).get();
             //1. Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
             //2. The task queue is empty after upload is finished.
-            Assert.assertEquals(0, myFileSystem.getTasksQueued());
+            Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
             break;
         }
     }
@@ -161,7 +158,7 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 20);
         List<Future<Path>> futures = new ArrayList<>();
         for (File file : files) {
-            futures.add(myFileSystem.asyncUploadFile(file.toPath(), null, getDummyPath(file.toPath()), 2, true));
+            futures.add(myFileSystem.asyncUploadFile(file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true));
         }
 
         //Verify all the work is finished.
@@ -172,7 +169,7 @@ public class TestAbstractFileSystem {
         Assert.assertEquals(files.size(), (int) backupMetrics.getValidUploads().actualCount());
 
         //3. The task queue is empty after upload is finished.
-        Assert.assertEquals(0, myFileSystem.getTasksQueued());
+        Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
     }
 
     @Test
@@ -187,7 +184,7 @@ public class TestAbstractFileSystem {
         List<Callable<Boolean>> torun = new ArrayList<>(size);
         for (int i = 0; i < size; i++) {
             torun.add(() -> {
-                myFileSystem.uploadFile(file.toPath(), null, abstractBackupPath, 2, true);
+                myFileSystem.uploadFile(file.toPath(), file.toPath(), abstractBackupPath, 2, true);
                 return Boolean.TRUE;
             });
         }
@@ -198,7 +195,11 @@ public class TestAbstractFileSystem {
         // no more need for the threadpool
         threads.shutdown();
         for (Future future : futures) {
-            future.get();
+            try {
+                future.get();
+            }catch (InterruptedException | ExecutionException e){
+                //Do nothing.
+            }
         }
         //2. Verify the success metric for upload is not same as size, i.e. some amount of de-duping happened.
         Assert.assertNotEquals(size, (int) backupMetrics.getValidUploads().actualCount());
@@ -209,7 +210,7 @@ public class TestAbstractFileSystem {
         //Testing single async upload.
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
-            Future<Path> future = failureFileSystem.asyncUploadFile(file.toPath(), null, getDummyPath(file.toPath()), 2, true);
+            Future<Path> future = failureFileSystem.asyncUploadFile(file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
             try {
                 future.get();
             } catch (Exception e) {
@@ -219,7 +220,7 @@ public class TestAbstractFileSystem {
                 Assert.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
 
                 //3. The task queue is empty after upload is finished.
-                Assert.assertEquals(0, failureFileSystem.getTasksQueued());
+                Assert.assertEquals(0, failureFileSystem.getUploadTasksQueued());
                 break;
             }
         }
@@ -228,12 +229,12 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncDownload() throws Exception {
         //Testing single async download.
-        Future<Path> future = myFileSystem.downloadFileAsync(Paths.get(""), null, 2);
+        Future<Path> future = myFileSystem.asyncDownloadFile(Paths.get(""), null, 2);
         future.get();
         //1. Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
         //2. Verify the queue size is '0' after success.
-        Assert.assertEquals(0, myFileSystem.getTasksQueued());
+        Assert.assertEquals(0, myFileSystem.getDownloadTasksQueued());
     }
 
     @Test
@@ -243,7 +244,7 @@ public class TestAbstractFileSystem {
         int totalFiles = 1000;
         List<Future<Path>> futureList = new ArrayList<>();
         for (int i = 0; i < totalFiles; i++)
-            futureList.add(myFileSystem.downloadFileAsync(Paths.get("" + i), null, 2));
+            futureList.add(myFileSystem.asyncDownloadFile(Paths.get("" + i), null, 2));
 
         //Ensure processing is finished.
         for (Future future1 : futureList) {
@@ -254,12 +255,12 @@ public class TestAbstractFileSystem {
         Assert.assertEquals(totalFiles, (int) backupMetrics.getValidDownloads().actualCount());
 
         //3. The task queue is empty after download is finished.
-        Assert.assertEquals(0, myFileSystem.getTasksQueued());
+        Assert.assertEquals(0, myFileSystem.getDownloadTasksQueued());
     }
 
     @Test
     public void testAsyncDownloadFailure() throws Exception {
-        Future<Path> future = failureFileSystem.downloadFileAsync(Paths.get(""), null, 2);
+        Future<Path> future = failureFileSystem.asyncDownloadFile(Paths.get(""), null, 2);
         try {
             future.get();
         } catch (Exception e) {

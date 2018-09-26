@@ -56,7 +56,7 @@ public class MetaFileManager {
                 FileFilterUtils.or(FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX),
                         FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX + ".tmp")));
         Collection<File> files = FileUtils.listFiles(metaFileDirectory.toFile(), fileNameFilter, null);
-        files.stream().filter(file -> file.isFile()).forEach(file -> {
+        files.stream().filter(File::isFile).forEach(file -> {
             logger.debug("Deleting old META_V2 file found: {}", file.getAbsolutePath());
             file.delete();
         });

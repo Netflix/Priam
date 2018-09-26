@@ -42,7 +42,6 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Implementation of IBackupFileSystem for S3.  The upload/download will work with ciphertext.
@@ -51,8 +50,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class S3EncryptedFileSystem extends S3FileSystemBase {
 
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
-    private AtomicInteger uploadCount = new AtomicInteger();
-    private IFileCryptography encryptor;
+    private final IFileCryptography encryptor;
 
     @Inject
     public S3EncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, ICompression compress, final IConfiguration config, ICredential cred
@@ -70,7 +68,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
         try (OutputStream os = new FileOutputStream(localPath.toFile());
-             RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), super.getFileSize(remotePath), remotePath.toString());
+             RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(config), super.getFileSize(remotePath), remotePath.toString())
         ) {
             /*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.

@@ -48,7 +48,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
         moduleList.add(new PriamGuiceModule());
         injector = Guice.createInjector(moduleList);
         try {
-            injector.getInstance(IConfiguration.class).intialize();
+            injector.getInstance(IConfiguration.class).initialize();
             injector.getInstance(PriamServer.class).initialize();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -75,7 +75,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
     public static class JaxServletModule extends ServletModule {
         @Override
         protected void configureServlets() {
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put(PackagesResourceConfig.PROPERTY_PACKAGES, "unbound");
             params.put("com.sun.jersey.config.property.packages", "com.netflix.priam.resources");
             params.put(ServletContainer.PROPERTY_FILTER_CONTEXT_PATH, "/REST");

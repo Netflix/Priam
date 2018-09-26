@@ -27,7 +27,7 @@ public class S3InstanceCredential implements IS3Credential {
     private InstanceProfileCredentialsProvider credentialsProvider;
 
     public S3InstanceCredential() {
-        this.credentialsProvider = new InstanceProfileCredentialsProvider();
+        this.credentialsProvider = InstanceProfileCredentialsProvider.getInstance();
     }
 
     @Override

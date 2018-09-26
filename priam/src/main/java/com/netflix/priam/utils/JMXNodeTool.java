@@ -52,7 +52,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
 
-    private static Set<INodeToolObserver> observers = new HashSet<INodeToolObserver>();
+    private static Set<INodeToolObserver> observers = new HashSet<>();
 
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -211,9 +211,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         }
 
         logger.info("Connected to remote jmx agent, will notify interested parties!");
-        Iterator<INodeToolObserver> it = observers.iterator();
-        while (it.hasNext()) {
-            INodeToolObserver observer = it.next();
+        for (INodeToolObserver observer : observers) {
             observer.nodeToolHasChanged(tool);
         }
 
@@ -259,7 +257,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     public JSONArray ring(String keyspace) throws JSONException {
         JSONArray ring = new JSONArray();
         Map<String, String> tokenToEndpoint = getTokenToEndpointMap();
-        List<String> sortedTokens = new ArrayList<String>(tokenToEndpoint.keySet());
+        List<String> sortedTokens = new ArrayList<>(tokenToEndpoint.keySet());
 
         Collection<String> liveNodes = getLiveNodes();
         Collection<String> deadNodes = getUnreachableNodes();
@@ -307,9 +305,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
             else if (movingNodes.contains(primaryEndpoint))
                 state = "Moving";
 
-            String load = loadMap.containsKey(primaryEndpoint)
-                    ? loadMap.get(primaryEndpoint)
-                    : "?";
+            String load = loadMap.getOrDefault(primaryEndpoint, "?");
             String owns = new DecimalFormat("##0.00%").format(ownerships.get(token) == null ? 0.0F : ownerships.get(token));
             ring.put(createJson(primaryEndpoint, dataCenter, rack, status, state, load, owns, token));
         }

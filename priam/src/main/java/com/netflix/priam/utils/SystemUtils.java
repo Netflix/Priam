@@ -61,10 +61,12 @@ public class SystemUtils {
 
     }
 
-
     /**
-     * delete all the files/dirs in the given Directory but dont delete the dir
-     * itself.
+     * delete all the files/dirs in the given Directory but dont delete the dir itself.
+     *
+     * @param dirPath   The directory path where all the child directories exist.
+     * @param childdirs List of child directories to be cleaned up in the dirPath
+     * @throws IOException If there is any error encountered during cleanup.
      */
     public static void cleanupDir(String dirPath, List<String> childdirs) throws IOException {
         if (childdirs == null || childdirs.size() == 0)
@@ -95,7 +97,10 @@ public class SystemUtils {
     }
 
     /**
-     * Get a Md5 string which is similar to OS Md5sum
+     * Calculate the MD5 hashsum of the given file.
+     *
+     * @param file File for which md5 checksum should be calculated.
+     * @return Get a Md5 string which is similar to OS Md5sum
      */
     public static String md5(File file) {
         try {

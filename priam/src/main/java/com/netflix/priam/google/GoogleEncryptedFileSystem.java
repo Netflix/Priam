@@ -30,7 +30,6 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cred.ICredentialGeneric.KEY;
@@ -47,8 +46,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class GoogleEncryptedFileSystem extends AbstractFileSystem {
 
@@ -159,7 +156,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
                     throw new IOException("Exception when writing decrypted gcs private key value to disk.", e);
                 }
 
-                Collection<String> scopes = new ArrayList<String>(1);
+                Collection<String> scopes = new ArrayList<>(1);
                 scopes.add(StorageScopes.DEVSTORAGE_READ_ONLY);
                 this.credential = new GoogleCredential.Builder().setTransport(this.httpTransport)
                         .setJsonFactory(JSON_FACTORY)
@@ -185,16 +182,13 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
         }
 
         get.getMediaHttpDownloader().setDirectDownloadEnabled(true);  // If you're not using GCS' AppEngine, download the whole thing (instead of chunks) in one request, if possible.
-        InputStream is = null;
-        try(OutputStream os = new FileOutputStream(localPath.toFile())) {
-            is = get.executeMediaAsInputStream();
+        try(OutputStream os = new FileOutputStream(localPath.toFile());
+            InputStream is = get.executeMediaAsInputStream()) {
             IOUtils.copyLarge(is, os);
         } catch (IOException e) {
             throw new BackupRestoreException("IO error during streaming of object: " + objectName + " from bucket: " + this.srcBucketName, e);
         } catch (Exception ex) {
             throw new BackupRestoreException("Exception encountered when copying bytes from input to output", ex);
-        } finally {
-            IOUtils.closeQuietly(is);
         }
 
         backupMetrics.recordDownloadRate(get.getLastResponseHeaders().getContentLength());

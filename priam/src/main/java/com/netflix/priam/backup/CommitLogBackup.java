@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.utils.RetryableCallable;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -26,13 +26,14 @@ import com.netflix.spectator.api.Registry;
  */
 @Singleton
 public class BackupMetrics {
-    private Registry registry;
+    private final Registry registry;
     /**
      * Distribution summary will provide the metric like count (how many uploads were made), max no. of bytes uploaded and total amount of bytes uploaded.
      */
     private final DistributionSummary uploadRate, downloadRate;
     private final Counter validUploads, validDownloads, invalidUploads, invalidDownloads, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
-    public static final String uploadDownloadQueueSize = Metrics.METRIC_PREFIX + "upload.download.queue.size";
+    public static final String uploadQueueSize = Metrics.METRIC_PREFIX + "upload.queue.size";
+    public static final String downloadQueueSize = Metrics.METRIC_PREFIX + "download.queue.size";
 
     @Inject
     public BackupMetrics(Registry registry) {

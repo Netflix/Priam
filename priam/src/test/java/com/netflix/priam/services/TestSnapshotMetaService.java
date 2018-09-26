@@ -29,21 +29,15 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
-import org.apache.cassandra.io.sstable.Component;
-import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.EnumSet;
-import java.util.Random;
 
 /**
  * Created by aagrawal on 6/20/18.

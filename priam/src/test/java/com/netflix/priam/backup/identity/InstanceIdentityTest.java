@@ -26,6 +26,8 @@ import org.junit.Test;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 public class InstanceIdentityTest extends InstanceTestUtils
 {
@@ -66,11 +68,34 @@ public class InstanceIdentityTest extends InstanceTestUtils
     }
     
     @Test
-    public void testGetSeeds() throws Exception
+    public void testGetSeedsAutobootstrapTrue() throws Exception
     {
-        createInstances();
-        identity = createInstanceIdentity("az1", "fakeinstance1");
-        assertEquals(3, identity.getSeeds().size());
+        boolean previous = (Boolean) config.getFakeConfig("auto_bootstrap");
+        try {
+            config.setFakeConfig("auto_bootstrap", true);
+            createInstances();
+            identity = createInstanceIdentity("az1", "fakeinstance1");
+            assertEquals(3, identity.getSeeds().size());
+            assertFalse(identity.getSeeds().contains("fakeinstance1"));
+        } finally {
+            config.setFakeConfig("auto_bootstrap", previous);
+        }
+
+    }
+
+    @Test
+    public void testGetSeedsAutobootstrapFalse() throws Exception
+    {
+        boolean previous = (Boolean) config.getFakeConfig("auto_bootstrap");
+        try {
+            config.setFakeConfig("auto_bootstrap", false);
+            createInstances();
+            identity = createInstanceIdentity("az1", "fakeinstance1");
+            assertEquals(3, identity.getSeeds().size());
+            assertTrue(identity.getSeeds().contains("fakeinstance1"));
+        } finally {
+            config.setFakeConfig("auto_bootstrap", previous);
+        }
     }
 
     @Test

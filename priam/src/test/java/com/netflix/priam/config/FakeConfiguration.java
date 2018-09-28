@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -45,8 +46,7 @@ public class FakeConfiguration implements IConfiguration
     public String restorePrefix;
     public Map<String, Object> fakeConfig;
     public Map<String, String> fakeProperties = new HashMap<>();
-
-
+    
     public FakeConfiguration()
     {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");

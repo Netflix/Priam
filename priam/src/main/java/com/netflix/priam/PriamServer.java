@@ -28,6 +28,7 @@ import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
@@ -128,21 +129,30 @@ public class PriamServer {
         scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME, CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
 
 
-        //Set cleanup
+        // Set cleanup
         scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
 
-        //Set up nodetool flush task
+        // Set up nodetool flush task
         TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
             scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
         }
 
-        //Set up compaction task
+        // Set up compaction task
         TaskTimer compactionTimer = Compaction.getTimer(config);
         if (compactionTimer != null) {
             scheduler.addTask(IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
             logger.info("Added compaction task.");
+        }
+
+        // Set up the background configuration dumping thread
+        TaskTimer configurationPersisterTimer = PriamConfigurationPersister.getTimer(config);
+        if (configurationPersisterTimer != null) {
+            scheduler.addTask(PriamConfigurationPersister.NAME, PriamConfigurationPersister.class, configurationPersisterTimer);
+            logger.info("Added configuration persister task with schedule [{}]", configurationPersisterTimer.getCronExpression());
+        } else {
+            logger.warn("Priam configuration persister disabled!");
         }
 
         //Set up the SnapshotService

@@ -26,6 +26,11 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 

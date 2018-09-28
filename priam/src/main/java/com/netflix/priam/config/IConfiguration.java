@@ -825,7 +825,7 @@ public interface IConfiguration {
      *
      * Default: every minute
      *
-     * @return Cron expression for flush
+     * @return Cron expression for merged configuration writing
      * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */

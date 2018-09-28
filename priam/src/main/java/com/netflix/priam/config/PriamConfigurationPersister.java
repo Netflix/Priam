@@ -56,23 +56,27 @@ public class PriamConfigurationPersister extends Task
     public void execute() throws Exception
     {
         ensurePaths();
+        Path tempPath = null;
+        try {
+            File output = File.createTempFile(structuredPath.getFileName().toString(), ".tmp", mergedConfigDirectory.toFile());
+            tempPath = output.toPath();
 
-        File output = File.createTempFile(structuredPath.getFileName().toString(), ".tmp", mergedConfigDirectory.toFile());
+            // The configuration might contain sensitive information, so ... don't let non Priam users read it
+            // Theoretically createTempFile creates the file with the right permissions, but I want to be explicit
+            Files.setPosixFilePermissions(tempPath, PosixFilePermissions.fromString("rw-------"));
 
-        // The configuration might contain sensitive information, so ... don't let non Priam users read it
-        // Theoretically createTempFile creates the file with the right permissions, but I want to be explicit
-        Files.setPosixFilePermissions(output.toPath(), PosixFilePermissions.fromString("rw-------"));
+            Map<String, Object> structuredConfiguration = config.getStructuredConfiguration("all");
 
-        Map<String, Object> structuredConfiguration = config.getStructuredConfiguration("all");
+            ObjectMapper mapper = new ObjectMapper();
+            ObjectWriter structuredPathTmpWriter = mapper.writer(new MinimalPrettyPrinter());
+            structuredPathTmpWriter.writeValue(output, structuredConfiguration);
 
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectWriter structuredPathTmpWriter = mapper.writer(new MinimalPrettyPrinter());
-        structuredPathTmpWriter.writeValue(output, structuredConfiguration);
-
-        // Atomically swap out the new config for the old config.
-        if (!output.renameTo(structuredPath.toFile())) {
-            logger.error("Failed to persist structured Priam configuration");
-            output.delete();
+            // Atomically swap out the new config for the old config.
+            if (!output.renameTo(structuredPath.toFile()))
+                logger.error("Failed to persist structured Priam configuration");
+        } finally {
+            if (tempPath != null)
+                Files.deleteIfExists(tempPath);
         }
     }
 

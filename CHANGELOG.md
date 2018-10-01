@@ -1,4 +1,13 @@
 # Changelog
+## 2018/10/01 3.1.62
+* (#693) Bug fix: If priam has issue while uploading incrementals (when uploading in parallel), and exhaust the retries, it never tries to upload the file again. 
+
+## 2018/09/28 3.1.61
+### New Feature
+* (#712) Forgotten files: Cassandra has a bug where it can leave forfotten files in data folder. Priam will increment the forgotten file metric, if it figures out such a case, when it takes a full snapshot. 
+* (#718) Add local modification time to S3 objects. 
+* (#724) Expose priam configuration over HTTP and persist at regular interval (CRON) to local file system for automation/tooling. 
+
 ## 2018/08/20 3.1.60
 ***WARNING*** THIS IS A BREAKING RELEASE 
 ### New Feature

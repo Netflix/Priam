@@ -1,4 +1,8 @@
 # Changelog
+
+## 2018/09/10 3.11.31 
+* (#715) Bug Fix: Fix the bootstrap issue. Do not provide yourself as seed node if cluster is already up and running as it will lead to data loss. 
+
 ## 2018/08/20 3.11.30
 ***WARNING*** THIS IS A BREAKING RELEASE
 ### New Feature

@@ -56,8 +56,11 @@ public class IncrementalConsumer implements Runnable {
         logger.info("Consumer - about to upload file: {}", this.bp.getFileName());
 
         try {
-
-            new RetryableCallable<Void>() {
+            // Allow up to 30s of arbitrary failures at the top level. The upload call itself typically has retries
+            // as well so this top level retry is on top of those retries. Assuming that each call to upload has
+            // ~30s maximum of retries this yields about 3.5 minutes of retries at the top level since
+            // (6 * (5 + 30) = 210 seconds). Even if this fails, however, the upload will be re-enqueued
+            new RetryableCallable<Void>(6, 5000) {
                 @Override
                 public Void retriableCall() throws Exception {
 
@@ -76,6 +79,9 @@ public class IncrementalConsumer implements Runnable {
                         if (is == null) {
                             throw new NullPointerException("Unable to get handle on file: " + bp.getFileName());
                         }
+                        // Important context: this upload call typically has internal retries but those are only
+                        // to cover over very temporary (<10s) network partitions. For larger partitions re rely on
+                        // higher up retries and re-enqueues.
                         fs.upload(bp, is);
                         bp.setCompressedFileSize(fs.getBytesUploaded());
                         return null;
@@ -88,16 +94,20 @@ public class IncrementalConsumer implements Runnable {
                     }
                 }
             }.call();
-
-            this.bp.getBackupFile().delete(); //resource cleanup
-            this.callback.postProcessing(bp); //post processing
+            // Clean up the underlying file.
+            bp.getBackupFile().delete();
         } catch (Exception e) {
             if (e instanceof java.util.concurrent.CancellationException) {
                 logger.debug("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
             } else {
                 logger.error("Failed to upload local file {}. Ignoring to continue with rest of backup.  Msg: {}", this.bp.getFileName(), e.getLocalizedMessage());
             }
+        } finally {
+            // post processing must happen regardless of the outcome of the upload. Otherwise we can
+            // leak tasks into the underlying taskMgr queue and prevent re-enqueues of the upload itself
+            this.callback.postProcessing(bp);
         }
+        logger.info("Consumer - done with upload file: {}", this.bp.getFileName());
     }
 
 }

@@ -26,19 +26,26 @@ package com.netflix.priam.backup.parallel;
  */
 public interface ITaskQueueMgr<E> {
 
+    /**
+     * Adds the provided task into the queue if it does not already exist. For performance reasons
+     * this is best effort and therefore callers are responsible for handling duplicate tasks.
+     *
+     * This method will block if the queue of tasks is full
+     * @param task The task to put onto the queue
+     */
     void add(E task);
 
-    /*
+    /**
      * @return task, null if none is available.
      */
     E take() throws InterruptedException;
 
-    /*
+    /**
      * @return true if there are tasks within queue to be processed; false otherwise.
      */
     Boolean hasTasks();
 
-    /*
+    /**
      * A means to perform any post processing once the task has been completed.  If post processing is needed,
      * the consumer should notify this behavior via callback once the task is completed.
      *
@@ -46,10 +53,9 @@ public interface ITaskQueueMgr<E> {
      */
     void taskPostProcessing(E completedTask);
 
+    Integer getNumOfTasksToBeProcessed();
 
-    Integer getNumOfTasksToBeProessed();
-
-    /*
+    /**
      * @return true if all tasks completed (includes failures) for a date; false, if at least 1 task is still in queue.
      */
     Boolean tasksCompleted(java.util.Date date);

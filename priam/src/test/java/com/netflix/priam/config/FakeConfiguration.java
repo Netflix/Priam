@@ -709,7 +709,7 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getUncrementalBkupQueueSize() {
+    public int getIncrementalBkupQueueSize() {
         return 100;
     }
 
@@ -774,7 +774,7 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public String getPostRestoreHook() {
-        return "iostat -d 2 10";
+        return "echo";
     }
 
     @Override

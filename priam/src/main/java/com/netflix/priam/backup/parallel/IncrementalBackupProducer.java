@@ -70,7 +70,8 @@ public class IncrementalBackupProducer extends AbstractBackup implements IIncrem
             try {
                 final AbstractBackupPath bp = pathFactory.get();
                 bp.parseLocal(file, BackupFileType.SST);
-                this.taskQueueMgr.add(bp); //producer -- populate the queue of files.  *Note: producer will block if queue is full.
+                // producer -- populate the queue of files.  *Note: producer will block if queue is full.
+                this.taskQueueMgr.add(bp);
             } catch (Exception e) {
                 logger.warn("Unable to queue incremental file, treating as non-fatal and moving on to next.  Msg: {} Fail to queue file: {}",
                         e.getLocalizedMessage(), file.getAbsolutePath());

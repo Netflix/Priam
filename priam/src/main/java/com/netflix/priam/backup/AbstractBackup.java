@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.List;
 import java.util.concurrent.Future;
 
@@ -59,7 +60,7 @@ public abstract class AbstractBackup extends Task{
         this.fs = fs;
     }
 
-    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) throws Exception {
+    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) throws ParseException {
         final AbstractBackupPath bp = pathFactory.get();
         bp.parseLocal(file, type);
         return bp;

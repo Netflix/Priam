@@ -97,7 +97,7 @@ public class PriamServer {
 
             // Start the Incremental backup schedule if enabled
             if (config.isIncrBackup()) {
-                    scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
+                scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
                 logger.info("Added incremental backup job");
             }
 
@@ -109,7 +109,7 @@ public class PriamServer {
 
 
         // Determine if we need to restore from backup else start cassandra.
-        if (restoreContext.isRestoreEnabled()){
+        if (restoreContext.isRestoreEnabled()) {
             restoreContext.restore();
         } else { //no restores needed
             logger.info("No restore needed, task not scheduled");
@@ -149,7 +149,7 @@ public class PriamServer {
         setUpSnapshotService();
     }
 
-    private void setUpSnapshotService() throws Exception{
+    private void setUpSnapshotService() throws Exception {
         TaskTimer snapshotMetaServiceTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
         if (snapshotMetaServiceTimer != null) {
             scheduler.addTask(SnapshotMetaService.JOBNAME, SnapshotMetaService.class, snapshotMetaServiceTimer);

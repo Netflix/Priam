@@ -59,7 +59,7 @@ public class BackupRestoreUtil {
         final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
 
         String[] filters = inputFilter.split(",");
-        for (int i = 0; i < filters.length; i++) { //process each filter
+        for (int i = 0; i < filters.length; i++) { // process filter of form keyspace.* or keyspace.columnfamily
             if (columnFamilyFilterPattern.matcher(filters[i]).find()) {
 
                 String[] filter = filters[i].split("\\.");
@@ -93,7 +93,7 @@ public class BackupRestoreUtil {
             return false;
 
         String columnFamilyName = columnFamilyDir.split("-")[0];
-        //column family is in list of global CF filter
+        // column family is in list of global CF filter
         if (FILTER_COLUMN_FAMILY.containsKey(keyspace) && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName))
             return true;
 

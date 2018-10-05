@@ -38,6 +38,9 @@ import java.util.Set;
 import java.util.concurrent.*;
 
 /**
+ * This class is responsible for managing parallelism and orchestrating the upload and download, but the subclasses
+ * actually implement the details of uploading a file.
+ *
  * Created by aagrawal on 8/30/18.
  */
 public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
@@ -52,9 +55,9 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     public AbstractFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
                               BackupNotificationMgr backupNotificationMgr) {
         this.backupMetrics = backupMetrics;
-        //Add notifications.
+        // Add notifications.
         this.addObserver(backupNotificationMgr);
-        tasksQueued = new HashSet<>(configuration.getBackupQueueSize());
+        tasksQueued = new ConcurrentHashMap<>().newKeySet();
         /*
          Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
          files for "sync" feature which might compete with backups for scheduling.
@@ -92,8 +95,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                     return null;
                 }
             }.call();
-            //Note we only downloaded the bytes which are represented on file system (they are compressed and maybe encrypted).
-            //File size after decompression or decryption might be more/less.
+            // Note we only downloaded the bytes which are represented on file system (they are compressed and maybe encrypted).
+            // File size after decompression or decryption might be more/less.
             backupMetrics.recordDownloadRate(getFileSize(remotePath));
             backupMetrics.incrementValidDownloads();
             logger.info("Successfully downloaded file: {} to location: {}", remotePath, localPath);
@@ -119,10 +122,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         if (localPath == null || remotePath == null || !localPath.toFile().exists() || localPath.toFile().isDirectory())
             throw new FileNotFoundException("File do not exist or is a directory. localPath: " + localPath + ", remotePath: " + remotePath);
 
-        if (!tasksQueued.contains(localPath)) {
-            //Add file to local memory
-            tasksQueued.add(localPath);
-
+        if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {
                 notifyEventStart(new BackupEvent(path));
@@ -194,12 +194,12 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     @Override
-    public int getUploadTasksQueued(){
+    public int getUploadTasksQueued() {
         return tasksQueued.size();
     }
 
     @Override
-    public int getDownloadTasksQueued(){
+    public int getDownloadTasksQueued() {
         return fileDownloadExecutor.getQueue().size();
     }
 }

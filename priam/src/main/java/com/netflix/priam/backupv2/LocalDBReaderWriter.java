@@ -110,11 +110,17 @@ public class LocalDBReaderWriter {
         if (localDB == null || localDB.getLocalDBEntries() == null || localDB.getLocalDBEntries().isEmpty())
             return null;
 
-        //Get local db entry for same file and version.
+        // Get local db entry for same file and version.
         List<LocalDBEntry> localDBEntries = localDB.getLocalDBEntries().stream().filter(localDBEntry ->
-                (localDBEntry.getFileUploadResult().getFileName().toFile().getName().toLowerCase().equals(fileUploadResult.getFileName().toFile().getName().toLowerCase())))
-                .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getLastModifiedTime().equals(fileUploadResult.getLastModifiedTime())))
-                .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getCompression().equals(fileUploadResult.getCompression())))
+                // Name of the file should be same.
+                (localDBEntry.getFileUploadResult().getFileName().toFile().getName().toLowerCase().
+                        equals(fileUploadResult.getFileName().toFile().getName().toLowerCase())))
+                // Should be same version (same last modified time)
+                .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getLastModifiedTime().
+                        equals(fileUploadResult.getLastModifiedTime())))
+                // Same compression as before. If we switch compression technique we can upload again.
+                .filter(localDBEntry -> (localDBEntry.getFileUploadResult().getCompression().
+                        equals(fileUploadResult.getCompression())))
                 .collect(Collectors.toList());
 
         if (localDBEntries.isEmpty())

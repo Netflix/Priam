@@ -1,4 +1,19 @@
 # Changelog
+## 2018/10/05 3.1.63
+***WARNING*** THIS IS A BREAKING RELEASE 
+### New Feature
+* (#722) Restores will be async in nature by default. 
+* (#722) Support for async snapshots via configuration - `priam.async.snapshot`. Similar support for async incrementals via configuration - `priam.async.incremental`. 
+* (#722) Better metrics for upload and download to/from remote file system. 
+* (#722) Better support for include/exclude keyspaces/columnfamilies from backup, incremental backup and restores. 
+### Bug fix
+* (#722) Metrics are incremented only once and in a central location at AbstractFileSystem. 
+* (#722) Remove deprecated AWS API Calls.
+### Breaking changes
+* (#722) Removal of MBeans to collect metrics from S3FileSystem. They were unreliable and incorrect. 
+* (#722) Update to backup configurations :- isIncrBackupParallelEnabled, getIncrementalBkupMaxConsumers, getIncrementalBkupQueueSize. They are renamed to ensure naming consistency. Refer to wiki for more details. 
+* (#722) Changes to backup/restore configuration :- getSnapshotKeyspaceFilters, getSnapshotCFFilter, getIncrementalKeyspaceFilters, getIncrementalCFFilter, getRestoreKeyspaceFilter, getRestoreCFFilter. They are now centralized to ensure that we can support both include and exclude keyspaces/CF. Refer to wiki for more details. 
+
 ## 2018/10/01 3.1.62
 * (#693) Bug fix: If priam has issue while uploading incrementals (when uploading in parallel), and exhaust the retries, it never tries to upload the file again. 
 

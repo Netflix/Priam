@@ -22,7 +22,7 @@ import java.util.concurrent.*;
 
 public class NamedThreadPoolExecutor extends ThreadPoolExecutor {
     public NamedThreadPoolExecutor(int poolSize, String poolName) {
-        this(poolSize, poolName, new LinkedBlockingQueue<Runnable>());
+        this(poolSize, poolName, new LinkedBlockingQueue<>());
     }
 
     public NamedThreadPoolExecutor(int poolSize, String poolName, BlockingQueue<Runnable> queue) {

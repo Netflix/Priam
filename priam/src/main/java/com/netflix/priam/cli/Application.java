@@ -32,7 +32,7 @@ public class Application {
 
     static void initialize() {
         IConfiguration conf = getInjector().getInstance(IConfiguration.class);
-        conf.intialize();
+        conf.initialize();
     }
 
     static void shutdownAdditionalThreads() {

@@ -53,7 +53,7 @@ public class RestoreTokenSelector {
      * @return Token as BigInteger
      */
     public BigInteger getClosestToken(BigInteger tokenToSearch, Date startDate) {
-        List<BigInteger> tokenList = new ArrayList<BigInteger>();
+        List<BigInteger> tokenList = new ArrayList<>();
         Iterator<AbstractBackupPath> iter = fs.listPrefixes(startDate);
         while (iter.hasNext())
             tokenList.add(new BigInteger(iter.next().getToken()));

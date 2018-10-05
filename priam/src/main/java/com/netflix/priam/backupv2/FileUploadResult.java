@@ -18,7 +18,6 @@ package com.netflix.priam.backupv2;
 
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.utils.GsonJsonSerializer;
-import org.codehaus.jettison.json.JSONObject;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -31,7 +30,7 @@ import java.time.Instant;
  * Created by aagrawal on 6/20/18.
  */
 public class FileUploadResult {
-    private Path fileName;
+    private final Path fileName;
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     private String keyspaceName;
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
@@ -110,17 +109,17 @@ public class FileUploadResult {
         this.backupPath = backupPath;
     }
 
-    //
-    public JSONObject getJSONObject() throws Exception {
-        JSONObject result = new JSONObject();
-        result.put("file", fileName.toFile().getName());
-        result.put("modify", lastModifiedTime.toEpochMilli());
-        result.put("creation", fileCreationTime.toEpochMilli());
-        result.put("size", fileSizeOnDisk);
-        result.put("compression", compression.name());
-        result.put("uploaded", isUploaded);
-        result.put("loc", backupPath);
-        return result;
+    public void setLastModifiedTime(Instant lastModifiedTime) {
+        this.lastModifiedTime = lastModifiedTime;
+    }
+
+    public void setKeyspaceName(String keyspaceName) {
+
+        this.keyspaceName = keyspaceName;
+    }
+
+    public void setColumnFamilyName(String columnFamilyName) {
+        this.columnFamilyName = columnFamilyName;
     }
 
     @Override

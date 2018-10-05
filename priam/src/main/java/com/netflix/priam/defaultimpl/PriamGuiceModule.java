@@ -25,8 +25,6 @@ import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.parallel.CassandraBackupQueueMgr;
-import com.netflix.priam.backup.parallel.ITaskQueueMgr;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -47,8 +45,6 @@ public class PriamGuiceModule extends AbstractModule {
 
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
         bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(S3EncryptedFileSystem.class);
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("incr_restore")).to(S3FileSystem.class);
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("backup_status")).to(S3FileSystem.class);
 
         bind(S3CrossAccountFileSystem.class);
 
@@ -58,7 +54,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
         bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
-        bind(ITaskQueueMgr.class).annotatedWith(Names.named("backup")).to(CassandraBackupQueueMgr.class);
         bind(Registry.class).toInstance(new NoopRegistry());
     }
 }

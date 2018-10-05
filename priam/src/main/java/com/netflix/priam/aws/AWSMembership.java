@@ -17,11 +17,11 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClient;
+import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
 import com.amazonaws.services.autoscaling.model.*;
 import com.amazonaws.services.autoscaling.model.Instance;
 import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2Client;
+import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
 import com.google.common.collect.Lists;
@@ -149,7 +149,7 @@ public class AWSMembership implements IMembership {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
+            List<IpPermission> ipPermissions = new ArrayList<>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
 
             if (this.insEnvIdentity.isClassic()) {
@@ -204,7 +204,7 @@ public class AWSMembership implements IMembership {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            List<IpPermission> ipPermissions = new ArrayList<IpPermission>();
+            List<IpPermission> ipPermissions = new ArrayList<>();
             ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
 
             if (this.insEnvIdentity.isClassic()) {
@@ -235,7 +235,7 @@ public class AWSMembership implements IMembership {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            List<String> ipPermissions = new ArrayList<String>();
+            List<String> ipPermissions = new ArrayList<>();
 
             if (this.insEnvIdentity.isClassic()) {
 
@@ -295,20 +295,14 @@ public class AWSMembership implements IMembership {
     }
 
     protected AmazonAutoScaling getAutoScalingClient() {
-        AmazonAutoScaling client = new AmazonAutoScalingClient(provider.getAwsCredentialProvider());
-        client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
-        return client;
+        return AmazonAutoScalingClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
     }
 
     protected AmazonAutoScaling getCrossAccountAutoScalingClient() {
-        AmazonAutoScaling client = new AmazonAutoScalingClient(crossAccountProvider.getAwsCredentialProvider());
-        client.setEndpoint("autoscaling." + config.getDC() + ".amazonaws.com");
-        return client;
+        return AmazonAutoScalingClientBuilder.standard().withCredentials(crossAccountProvider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
     }
 
     protected AmazonEC2 getEc2Client() {
-        AmazonEC2 client = new AmazonEC2Client(provider.getAwsCredentialProvider());
-        client.setEndpoint("ec2." + config.getDC() + ".amazonaws.com");
-        return client;
+        return AmazonEC2ClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
     }
 }

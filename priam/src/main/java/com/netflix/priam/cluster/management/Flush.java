@@ -41,7 +41,7 @@ public class Flush extends IClusterManagement<String> {
 
     private final IConfiguration config;
     private final CassandraOperations cassandraOperations;
-    private List<String> keyspaces = new ArrayList<String>();
+    private List<String> keyspaces = new ArrayList<>();
 
     @Inject
     public Flush(IConfiguration config, CassandraOperations cassandraOperations, NodeToolFlushMeasurement nodeToolFlushMeasurement) {
@@ -55,7 +55,7 @@ public class Flush extends IClusterManagement<String> {
      * @return the keyspace(s) flushed.  List can be empty but never null.
      */
     protected String runTask() throws Exception {
-        List<String> flushed = new ArrayList<String>();
+        List<String> flushed = new ArrayList<>();
 
         //Get keyspaces to flush
         deriveKeyspaces();
@@ -88,7 +88,7 @@ public class Flush extends IClusterManagement<String> {
     /*
     Derive keyspace(s) to flush in the following order:  explicit list provided by caller, property, or all keyspaces.
      */
-    private void deriveKeyspaces() throws Exception{
+    private void deriveKeyspaces() throws Exception {
         //== get value from property
         String raw = this.config.getFlushKeyspaces();
         if (raw != null && !raw.isEmpty()) {
@@ -114,6 +114,7 @@ public class Flush extends IClusterManagement<String> {
      * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#HOUR} then it expects {@link IConfiguration#getFlushInterval()} in the format of hour=x or daily=x
      * <p>
      * If {@link IConfiguration#getFlushSchedulerType()} is {@link com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression from {@link IConfiguration#getFlushCronExpression()}
+     * @throws Exception if the configurations are wrong. .e.g invalid cron expression.
      */
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
 

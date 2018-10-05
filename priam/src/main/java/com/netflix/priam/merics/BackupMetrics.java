@@ -26,56 +26,55 @@ import com.netflix.spectator.api.Registry;
  */
 @Singleton
 public class BackupMetrics {
+    private final Registry registry;
     /**
      * Distribution summary will provide the metric like count (how many uploads were made), max no. of bytes uploaded and total amount of bytes uploaded.
      */
-    private final DistributionSummary uploadRate;
-    private final Counter validUploads, invalidUploads, validDownloads, invalidDownloads, awsSlowDownException, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
+    private final DistributionSummary uploadRate, downloadRate;
+    private final Counter validUploads, validDownloads, invalidUploads, invalidDownloads, snsNotificationSuccess, snsNotificationFailure, forgottenFiles;
+    public static final String uploadQueueSize = Metrics.METRIC_PREFIX + "upload.queue.size";
+    public static final String downloadQueueSize = Metrics.METRIC_PREFIX + "download.queue.size";
 
     @Inject
     public BackupMetrics(Registry registry) {
+        this.registry = registry;
         validDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.valid");
         invalidDownloads = registry.counter(Metrics.METRIC_PREFIX + "download.invalid");
         validUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.valid");
         invalidUploads = registry.counter(Metrics.METRIC_PREFIX + "upload.invalid");
         uploadRate = registry.distributionSummary(Metrics.METRIC_PREFIX + "upload.rate");
-        awsSlowDownException = registry.counter(Metrics.METRIC_PREFIX + "aws.slowDown");
+        downloadRate = registry.distributionSummary(Metrics.METRIC_PREFIX + "download.rate");
         snsNotificationSuccess = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.success");
         snsNotificationFailure = registry.counter(Metrics.METRIC_PREFIX + "sns.notification.failure");
         forgottenFiles = registry.counter(Metrics.METRIC_PREFIX + "forgotten.files");
     }
 
-    public void incrementValidUploads() {
-        this.validUploads.increment();
+    public DistributionSummary getUploadRate() {
+        return uploadRate;
+    }
+
+    public Counter getInvalidUploads() {
+        return invalidUploads;
+    }
+
+    public Counter getInvalidDownloads() {
+        return invalidDownloads;
+    }
+
+    public Counter getSnsNotificationSuccess() {
+        return snsNotificationSuccess;
+    }
+
+    public Counter getSnsNotificationFailure() {
+        return snsNotificationFailure;
     }
 
     public void incrementInvalidUploads() {
         this.invalidUploads.increment();
     }
 
-    public long getValidUploads() {
-        return this.validUploads.count();
-    }
-
-    public long getValidDownloads() {
-        return this.validDownloads.count();
-    }
-
-    public void incrementValidDownloads() {
-        this.invalidDownloads.increment();
-    }
-
-
     public void incrementInvalidDownloads() {
         this.invalidDownloads.increment();
-    }
-
-    public long getAwsSlowDownException() {
-        return awsSlowDownException.count();
-    }
-
-    public void incrementAwsSlowDownException(int awsSlowDown) {
-        awsSlowDownException.increment(awsSlowDown);
     }
 
     public void incrementSnsNotificationSuccess() {
@@ -90,6 +89,35 @@ public class BackupMetrics {
         uploadRate.record(sizeInBytes);
     }
 
-    public void incrementForgottenFiles(long forgottenFilesVal) {forgottenFiles.increment(forgottenFilesVal);}
+    public void incrementForgottenFiles(long forgottenFilesVal) {
+        forgottenFiles.increment(forgottenFilesVal);
+    }
 
+    public void recordDownloadRate(long sizeInBytes) {
+        downloadRate.record(sizeInBytes);
+    }
+
+    public DistributionSummary getDownloadRate() {
+        return downloadRate;
+    }
+
+    public Counter getValidUploads() {
+        return validUploads;
+    }
+
+    public Counter getValidDownloads() {
+        return validDownloads;
+    }
+
+    public void incrementValidUploads() {
+        this.validUploads.increment();
+    }
+
+    public void incrementValidDownloads() {
+        this.validDownloads.increment();
+    }
+
+    public Registry getRegistry() {
+        return registry;
+    }
 }

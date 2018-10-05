@@ -30,8 +30,6 @@ import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.DateUtil;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,7 +72,7 @@ public class SnapshotMetaService extends AbstractBackup {
                         MetaFileWriterBuilder metaFileWriter, MetaFileManager metaFileManager, CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
         this.cassandraOperations = cassandraOperations;
-        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotKeyspaceFilters(), config.getSnapshotCFFilter());
+        backupRestoreUtil = new BackupRestoreUtil(config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
         this.metaFileManager = metaFileManager;
     }
@@ -150,10 +148,10 @@ public class SnapshotMetaService extends AbstractBackup {
 
     private ColumnfamilyResult convertToColumnFamilyResult(String keyspace, String columnFamilyName, Map<String, List<FileUploadResult>> filePrefixToFileMap) {
         ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap.entrySet().forEach(sstableEntry -> {
+        filePrefixToFileMap.forEach((key, value) -> {
             ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
-            ssTableResult.setPrefix(sstableEntry.getKey());
-            ssTableResult.setSstableComponents(sstableEntry.getValue());
+            ssTableResult.setPrefix(key);
+            ssTableResult.setSstableComponents(value);
             columnfamilyResult.addSstable(ssTableResult);
         });
         return columnfamilyResult;

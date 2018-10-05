@@ -23,7 +23,6 @@ import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.cluster.management.IClusterManagement;
@@ -99,13 +98,8 @@ public class PriamServer {
 
             // Start the Incremental backup schedule if enabled
             if (config.isIncrBackup()) {
-                if (!config.isIncrBackupParallelEnabled()) {
-                    scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
-                    logger.info("Added incremental synchronous bkup");
-                } else {
-                    scheduler.addTask(IncrementalBackupProducer.JOBNAME, IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
-                    logger.info("Added incremental async-synchronous bkup, next fired time: {}", IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
-                }
+                scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
+                logger.info("Added incremental backup job");
             }
         }
 
@@ -115,7 +109,7 @@ public class PriamServer {
 
 
         // Determine if we need to restore from backup else start cassandra.
-        if (restoreContext.isRestoreEnabled()){
+        if (restoreContext.isRestoreEnabled()) {
             restoreContext.restore();
         } else { //no restores needed
             logger.info("No restore needed, task not scheduled");
@@ -164,7 +158,7 @@ public class PriamServer {
         setUpSnapshotService();
     }
 
-    private void setUpSnapshotService() throws Exception{
+    private void setUpSnapshotService() throws Exception {
         TaskTimer snapshotMetaServiceTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
         if (snapshotMetaServiceTimer != null) {
             scheduler.addTask(SnapshotMetaService.JOBNAME, SnapshotMetaService.class, snapshotMetaServiceTimer);

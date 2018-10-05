@@ -71,16 +71,14 @@ public class PriamScheduler {
         final JobDetail job = JobBuilder.newJob().withIdentity(name, Scheduler.DEFAULT_GROUP).ofType(taskclass).build();//new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
 
         //we know Priam doesn't do too many new tasks, so this is probably easy/safe/simple
-        new Thread(new Runnable() {
-            public void run() {
-                try {
-                    sleeper.sleepQuietly(delayInSeconds * 1000L);
-                    scheduler.scheduleJob(job, timer.getTrigger());
-                } catch (SchedulerException e) {
-                    logger.warn("problem occurred while scheduling a job with name {}", name, e);
-                } catch (ParseException e) {
-                    logger.warn("problem occurred while parsing a job with name {}", name, e);
-                }
+        new Thread(() -> {
+            try {
+                sleeper.sleepQuietly(delayInSeconds * 1000L);
+                scheduler.scheduleJob(job, timer.getTrigger());
+            } catch (SchedulerException e) {
+                logger.warn("problem occurred while scheduling a job with name {}", name, e);
+            } catch (ParseException e) {
+                logger.warn("problem occurred while parsing a job with name {}", name, e);
             }
         }).start();
     }

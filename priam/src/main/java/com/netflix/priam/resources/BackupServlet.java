@@ -79,7 +79,6 @@ public class BackupServlet {
     private PriamServer priamServer;
     private IConfiguration config;
     private IBackupFileSystem backupFs;
-    private IBackupFileSystem bkpStatusFs;
     private Restore restoreObj;
     private Provider<AbstractBackupPath> pathProvider;
     private ICassandraTuner tuner;
@@ -96,13 +95,12 @@ public class BackupServlet {
     private IBackupStatusMgr completedBkups;
 
     @Inject
-    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, @Named("backup_status") IBackupFileSystem bkpStatusFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
+    public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
                          SnapshotBackup snapshotBackup, IPriamInstanceFactory factory, ITokenManager tokenManager, ICassandraProcess cassProcess
             , IBackupStatusMgr completedBkups, BackupVerification backupVerification) {
         this.priamServer = priamServer;
         this.config = config;
         this.backupFs = backupFs;
-        this.bkpStatusFs = bkpStatusFs;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
         this.tuner = tuner;
@@ -135,7 +133,7 @@ public class BackupServlet {
      * Fetch the list of files for the requested date range.
      * 
      * @param date range
-     * @param filter.  The type of data files fetched.  E.g. META will only fetch the dailsy snapshot meta data file (meta.json).
+     * @param filter.  The type of data files fetched.  E.g. META will only fetch the daily snapshot meta data file (meta.json).
      * @return the list of files in json format as part of the Http response body.
      */
     public Response list(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter) throws Exception {
@@ -155,7 +153,7 @@ public class BackupServlet {
         logger.info("Parameters: {backupPrefix: [{}], daterange: [{}], filter: [{}]}",
                 config.getBackupPrefix(), daterange, filter);
 
-        Iterator<AbstractBackupPath> it = bkpStatusFs.list(config.getBackupPrefix(), startTime, endTime);
+        Iterator<AbstractBackupPath> it = backupFs.list(config.getBackupPrefix(), startTime, endTime);
         JSONObject object = new JSONObject();
         object = constructJsonResponse(object, it, filter);
         return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
@@ -166,12 +164,9 @@ public class BackupServlet {
     @Path("/status")
     @Produces(MediaType.APPLICATION_JSON)
     public Response status() throws Exception {
-        int restoreTCount = restoreObj.getActiveCount(); //Active threads performing the restore
-        logger.debug("Thread counts for restore is: {}", restoreTCount);
-        int backupTCount = backupFs.getActivecount();
-        logger.debug("Thread counts for snapshot backup is: {}", backupTCount);
+        int restoreQueueSize = restoreObj.getDownloadTasksQueued(); //Items left to restore from the filesystem.
+        logger.info("Thread counts for restore is: {}. Items in queue: {}", config.getRestoreThreads(), restoreQueueSize);
         JSONObject object = new JSONObject();
-        object.put("ThreadCount", new Integer(backupTCount)); //Number of active threads performing the snapshot backups
         object.put("SnapshotStatus", snapshotBackup.state().toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
@@ -238,7 +233,7 @@ public class BackupServlet {
     public Response snapshotsByDate(@PathParam("date") String date) throws Exception {
         List<BackupMetadata> metadata = this.completedBkups.locate(date);
         JSONObject object = new JSONObject();
-        List<String> snapshots = new ArrayList<String>();
+        List<String> snapshots = new ArrayList<>();
 
         if (metadata != null && !metadata.isEmpty())
             snapshots.addAll(metadata.stream().map(backupMetadata -> DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList()));
@@ -427,7 +422,7 @@ public class BackupServlet {
             logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
-        setRestoreKeyspaces(keyspaces);
+        restoreObj.setRestoreConfiguration(keyspaces, null);
 
         try {
             restoreObj.restore(startTime, endTime);
@@ -450,17 +445,6 @@ public class BackupServlet {
                 tokenList.add(new BigInteger(ins.getToken()));
         }
         return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
-    }
-
-    /*
-     * TODO: decouple the servlet, config, and restorer. this should not rely on a side
-     *       effect of a list mutation on the config object (treating it as global var).
-     */
-    private void setRestoreKeyspaces(String keyspaces) {
-        if (StringUtils.isNotBlank(keyspaces)) {
-            List<String> newKeyspaces = Lists.newArrayList(keyspaces.split(","));
-            config.setRestoreKeySpaces(newKeyspaces);
-        }
     }
 
     /*
@@ -531,12 +515,7 @@ public class BackupServlet {
                     .getRuntime()
                     .exec(cmd);
 
-            Callable<Integer> callable = new Callable<Integer>() {
-                @Override
-                public Integer call() throws Exception {
-                    return p.waitFor();
-                }
-            };
+            Callable<Integer> callable = () -> p.waitFor();
 
             ExecutorService exeService = Executors.newSingleThreadExecutor();
             try {

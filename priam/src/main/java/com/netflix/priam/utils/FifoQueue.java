@@ -24,12 +24,7 @@ public class FifoQueue<E extends Comparable<E>> extends TreeSet<E> {
     private int capacity;
 
     public FifoQueue(int capacity) {
-        super(new Comparator<E>() {
-            @Override
-            public int compare(E o1, E o2) {
-                return o1.compareTo(o2);
-            }
-        });
+        super(Comparator.naturalOrder());
         this.capacity = capacity;
     }
 

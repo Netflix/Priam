@@ -27,7 +27,7 @@ import java.time.Instant;
 
 /**
  * This is a utility class to get the backup location of the SSTables/Meta files with backup version 2.0.
- * TODO: All this functinality will be used when we have BackupUploadDownloadService.
+ * TODO: All this functionality will be used when we have BackupUploadDownloadService.
  * Created by aagrawal on 6/5/18.
  */
 public class PrefixGenerator {

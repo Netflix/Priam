@@ -182,6 +182,12 @@ public class SnapshotBackup extends AbstractBackup {
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
 
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
+
+        if (snapshotDir == null) {
+            logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
+            return;
+        }
+
         // Add files to this dir
         abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot()));
     }

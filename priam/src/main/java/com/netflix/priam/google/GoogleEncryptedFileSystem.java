@@ -31,25 +31,23 @@ import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cred.ICredentialGeneric.KEY;
 import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import java.io.*;
-import java.lang.management.ManagementFactory;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 
-public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncryptedFileSystemMBean {
+public class GoogleEncryptedFileSystem extends AbstractFileSystem {
 
     private static final Logger logger = LoggerFactory.getLogger(GoogleEncryptedFileSystem.class);
 
@@ -64,46 +62,34 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
     private Provider<AbstractBackupPath> pathProvider;
     private String srcBucketName;
     private IConfiguration config;
-    private AtomicInteger downloadCount = new AtomicInteger();
-    protected AtomicLong bytesDownloaded = new AtomicLong();
 
     private ICredentialGeneric gcsCredential;
+    private BackupMetrics backupMetrics;
 
     @Inject
     public GoogleEncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, final IConfiguration config
-            , @Named("gcscredential") ICredentialGeneric credential) {
-
+            , @Named("gcscredential") ICredentialGeneric credential, BackupMetrics backupMetrics, BackupNotificationMgr backupNotificationManager) {
+        super(config, backupMetrics, backupNotificationManager);
+        this.backupMetrics = backupMetrics;
         this.pathProvider = pathProvider;
         this.config = config;
         this.gcsCredential = credential;
 
         try {
-
             this.httpTransport = GoogleNetHttpTransport.newTrustedTransport();
-
         } catch (Exception e) {
             throw new IllegalStateException("Unable to create a handle to the Google Http tranport", e);
         }
 
         this.srcBucketName = getSourcebucket(getPathPrefix());
-
-        MBeanServer mbs = ManagementFactory.getPlatformMBeanServer();
-        String mbeanName = MBEAN_NAME;
-        try {
-            mbs.registerMBean(this, new ObjectName(mbeanName));
-        } catch (Exception e) {
-            throw new RuntimeException("Unable to regiser JMX bean: " + mbeanName + " to JMX server.  Msg: " + e.getLocalizedMessage(), e);
-        }
     }
 
     /*
     * @param pathprefix - the absolute path (including bucket name) to the object.
     */
     private String getSourcebucket(String pathPrefix) {
-
         String[] paths = pathPrefix.split(String.valueOf(S3BackupPath.PATH_SEP));
         return paths[0];
-
     }
 
     private Storage.Objects constructObjectResourceHandle() {
@@ -112,9 +98,7 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
         }
 
         constructGcsStorageHandle();
-
         this.objectsResoruceHandle = this.gcsStorageHandle.objects();
-
         return this.objectsResoruceHandle;
     }
 
@@ -124,16 +108,13 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
      * 
      * Note: GCS storage will use our credential to do auto-refresh of expired tokens
      */
-
     private Storage constructGcsStorageHandle() {
         if (this.gcsStorageHandle != null) {
             return this.gcsStorageHandle;
         }
 
         try {
-
             constructGcsCredential();
-
         } catch (Exception e) {
             throw new IllegalStateException("Exception during GCS authorization", e);
         }
@@ -164,29 +145,17 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
                 //Take the encrypted private key, decrypted into an in-transit file which is passed to GCS
                 File gcsPrivateKeyHandle = new File(this.config.getGcsServiceAccountPrivateKeyLoc() + ".output");
 
-                OutputStream os = new FileOutputStream(gcsPrivateKeyHandle);
-                BufferedOutputStream bos = new BufferedOutputStream(os);
                 ByteArrayOutputStream byteos = new ByteArrayOutputStream();
 
                 byte[] gcsPrivateKeyPlainText = this.gcsCredential.getValue(KEY.GCS_PRIVATE_KEY_LOC);
-                try {
-
+                try(BufferedOutputStream bos = new BufferedOutputStream(new FileOutputStream(gcsPrivateKeyHandle))) {
                     byteos.write(gcsPrivateKeyPlainText);
                     byteos.writeTo(bos);
-
                 } catch (IOException e) {
-
                     throw new IOException("Exception when writing decrypted gcs private key value to disk.", e);
-
-                } finally {
-                    try {
-                        bos.close();
-                    } catch (IOException e) {
-                        throw new IOException("Exception when closing decrypted gcs private key value to disk.", e);
-                    }
                 }
 
-                Collection<String> scopes = new ArrayList<String>(1);
+                Collection<String> scopes = new ArrayList<>(1);
                 scopes.add(StorageScopes.DEVSTORAGE_READ_ONLY);
                 this.credential = new GoogleCredential.Builder().setTransport(this.httpTransport)
                         .setJsonFactory(JSON_FACTORY)
@@ -195,68 +164,33 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
                         .setServiceAccountPrivateKeyFromP12File(gcsPrivateKeyHandle)  //Cryptex decrypted service account key derive from the GCS console
                         .build();
             }
-
         }
 
         return this.credential;
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException {
-
-        logger.info("Downloading {} from GCS bucket {}", path.getRemotePath(), this.srcBucketName);
-        this.downloadCount.incrementAndGet();
-
+    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException{
         String objectName = parseObjectname(getPathPrefix());
-
         com.google.api.services.storage.Storage.Objects.Get get = null;
+
         try {
-
-            get = constructObjectResourceHandle().get(this.srcBucketName, path.getRemotePath());
-
+            get = constructObjectResourceHandle().get(this.srcBucketName, remotePath.toString());
         } catch (IOException e) {
             throw new BackupRestoreException("IO error retrieving metadata for: " + objectName + " from bucket: " + this.srcBucketName, e);
         }
 
         get.getMediaHttpDownloader().setDirectDownloadEnabled(true);  // If you're not using GCS' AppEngine, download the whole thing (instead of chunks) in one request, if possible.
-        InputStream is = null;
-        try {
-
-            is = get.executeMediaAsInputStream();
+        try(OutputStream os = new FileOutputStream(localPath.toFile());
+            InputStream is = get.executeMediaAsInputStream()) {
             IOUtils.copyLarge(is, os);
-
-
         } catch (IOException e) {
             throw new BackupRestoreException("IO error during streaming of object: " + objectName + " from bucket: " + this.srcBucketName, e);
         } catch (Exception ex) {
-
             throw new BackupRestoreException("Exception encountered when copying bytes from input to output", ex);
-
-        } finally {
-            IOUtils.closeQuietly(is);
-            IOUtils.closeQuietly(os);
         }
 
-        bytesDownloaded.addAndGet(get.getLastResponseHeaders().getContentLength());
-
-    }
-
-    @Override
-    public void download(AbstractBackupPath path, OutputStream os, String filePath) throws BackupRestoreException {
-        try {
-
-            download(path, os);
-
-        } catch (Exception e) {
-            throw new BackupRestoreException(e.getMessage(), e);
-        }
-    }
-
-    @Override
-    public void upload(AbstractBackupPath path, InputStream in)
-            throws BackupRestoreException {
-        throw new UnsupportedOperationException();
-
+        backupMetrics.recordDownloadRate(get.getLastResponseHeaders().getContentLength());
     }
 
     @Override
@@ -273,59 +207,27 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
     @Override
     public void cleanup() {
         // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public int getActivecount() {
-        // TODO Auto-generated method stub
-        return 0;
-
     }
 
     @Override
     public void shutdown() {
         // TODO Auto-generated method stub
-
     }
 
     @Override
-    public int downloadCount() {
-        return this.downloadCount.get();
+    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public int uploadCount() {
-        // TODO Auto-generated method stub
+    public long getFileSize(Path remotePath) throws BackupRestoreException {
         return 0;
-    }
-
-    @Override
-    public long bytesUploaded() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public long getBytesUploaded() {
-        return 0;
-    }
-
-    @Override
-    public long getAWSSlowDownExceptionCounter() {
-        return 0;
-    }
-
-    @Override
-    public long bytesDownloaded() {
-        return this.bytesDownloaded.get();
     }
 
     /**
      * Get restore prefix which will be used to locate GVS files
      */
-    public String getPathPrefix() {
-
+    private String getPathPrefix() {
         String prefix;
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
@@ -339,11 +241,8 @@ public class GoogleEncryptedFileSystem implements IBackupFileSystem, GoogleEncry
      * @param pathPrefix
      * @return objectName
      */
-    public static String parseObjectname(String pathPrefix) {
+    static String parseObjectname(String pathPrefix) {
         int offset = pathPrefix.lastIndexOf(0x2f);
         return pathPrefix.substring(offset + 1);
-
     }
-
-
 }

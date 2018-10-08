@@ -109,7 +109,7 @@ public class CassandraProcessManager implements ICassandraProcess {
     }
 
     protected List<String> getStartCommand() {
-        List<String> startCmd = new LinkedList<String>();
+        List<String> startCmd = new LinkedList<>();
         for (String param : config.getCassStartupScript().split(" ")) {
             if (StringUtils.isNotBlank(param))
                 startCmd.add(param);

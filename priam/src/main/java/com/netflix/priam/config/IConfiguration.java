@@ -16,6 +16,8 @@
  */
 package com.netflix.priam.config;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.config.PriamConfiguration;
@@ -24,6 +26,11 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
+import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -33,7 +40,7 @@ import java.util.Map;
 @ImplementedBy(PriamConfiguration.class)
 public interface IConfiguration {
 
-    void intialize();
+    void initialize();
 
     /**
      * @return Path to the home dir of Cassandra
@@ -114,7 +121,7 @@ public interface IConfiguration {
     String getBackupPrefix();
 
     /**
-     * Location containing backup files. Typically bucket name followed by path
+     * @return Location containing backup files. Typically bucket name followed by path
      * to the clusters backup
      */
     String getRestorePrefix();
@@ -123,12 +130,6 @@ public interface IConfiguration {
      * @param prefix Set the current restore prefix
      */
     void setRestorePrefix(String prefix);
-
-    /**
-     * @return List of keyspaces to restore. If none, all keyspaces are
-     * restored.
-     */
-    List<String> getRestoreKeySpaces();
 
     /**
      * @return Location of the local data dir
@@ -168,26 +169,33 @@ public interface IConfiguration {
     /**
      * @return Cassandra's JMX port
      */
-    int getJmxPort();
+    default int getJmxPort() {
+        return 7199;
+    }
 
     /**
      * @return Cassandra's JMX username
      */
-    String getJmxUsername();
+    default String getJmxUsername() {
+        return null;
+    }
 
     /**
      * @return Cassandra's JMX password
      */
-    String getJmxPassword();
+    default String getJmxPassword() {
+        return null;
+    }
 
     /**
      * @return Enables Remote JMX connections n C*
      */
-    boolean enableRemoteJMX();
-
+    default boolean enableRemoteJMX() {
+        return false;
+    }
 
     /**
-     * Cassandra storage/cluster communication port
+     * @return Cassandra storage/cluster communication port
      */
     int getStoragePort();
 
@@ -265,7 +273,6 @@ public interface IConfiguration {
         return null;
     }
 
-
     /**
      * Column family(ies), comma delimited, to exclude while starting compaction (user-initiated or on CRON).
      * Note 1: The expected format is keyspace.cfname. If no value is provided then compaction is scheduled for all KS,CF(s)
@@ -298,47 +305,83 @@ public interface IConfiguration {
      *
      * @return Type of scheduler to use for backup.  Note the default is TIMER based i.e. to use {@link #getBackupHour()}.
      * If value of "CRON" is provided it starts using {@link #getBackupCronExpression()}.
+     * @throws UnsupportedTypeException if the scheduler type is not CRON/HOUR.
      */
     SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
 
-    /*
-     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
-     */
-    String getSnapshotKeyspaceFilters();
 
-    /*
-     * Column Family(ies), comma delimited, to filter from backup.
-     * *Note:  the expected format is keyspace.cfname  
+    /**
+     * Column Family(ies), comma delimited, to include during snapshot backup.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then snapshot contains all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getSnapshotExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getSnapshotIncludeCFList()} is applied to include the CF's/keyspaces.
+     *
+     * @return Column Family(ies), comma delimited, to include in snapshot backup.  If no filter is applied, returns null.
+     */
+    default String getSnapshotIncludeCFList() {
+        return null;
+    }
+
+    /**
+     * Column family(ies), comma delimited, to exclude during snapshot backup.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then snapshot is scheduled for all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getSnapshotExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getSnapshotIncludeCFList()} is applied to include the CF's/keyspaces.
      * 
-     * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
+     * @return Column Family(ies), comma delimited, to exclude from snapshot backup.  If no filter is applied, returns null.
      */
-    String getSnapshotCFFilter();
+    default String getSnapshotExcludeCFList() {
+        return null;
+    }
 
-    /*
-     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+    /**
+     * Column Family(ies), comma delimited, to include during incremental backup.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then incremental contains all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getIncrementalExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getIncrementalIncludeCFList()} is applied to include the CF's/keyspaces.
+     *
+     * @return Column Family(ies), comma delimited, to include in incremental backup.  If no filter is applied, returns null.
      */
-    String getIncrementalKeyspaceFilters();
+    default String getIncrementalIncludeCFList() {
+        return null;
+    }
 
-    /*
-     * Column Family(ies), comma delimited, to filter from backup.
-     * *Note:  the expected format is keyspace.cfname  
+    /**
+     * Column family(ies), comma delimited, to exclude during incremental backup.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then incremental is scheduled for all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getIncrementalExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getIncrementalIncludeCFList()} is applied to include the CF's/keyspaces.
      * 
-     * @return Column Family(ies), comma delimited, to filter from backup.  If no filter is applied, returns null.
+     * @return Column Family(ies), comma delimited, to exclude from incremental backup.  If no filter is applied, returns null.
      */
-    String getIncrementalCFFilter();
+    default String getIncrementalExcludeCFList() {
+        return null;
+    }
 
-    /*
-     * @return key spaces, comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+    /**
+     * Column Family(ies), comma delimited, to include during restore.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then restore contains all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getRestoreExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getRestoreIncludeCFList()} is applied to include the CF's/keyspaces.
+     *
+     * @return Column Family(ies), comma delimited, to include in restore.  If no filter is applied, returns null.
      */
-    String getRestoreKeyspaceFilter();
+    default String getRestoreIncludeCFList() {
+        return null;
+    }
 
-    /*
-     * Column Family(ies), comma delimited, to filter from backup.
-     * Note:  the expected format is keyspace.cfname  
+    /**
+     * Column family(ies), comma delimited, to exclude during restore.
+     * Note 1: The expected format is keyspace.cfname. If no value is provided then restore is scheduled for all KS,CF(s)
+     * Note 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1.
+     * Note 3: {@link #getRestoreExcludeCFList()} is applied first to exclude CF/keyspace and then {@link #getRestoreIncludeCFList()} is applied to include the CF's/keyspaces.
      * 
-     * @return Column Family(ies), comma delimited, to filter from restore.  If no filter is applied, returns null or empty string.
+     * @return Column Family(ies), comma delimited, to exclude from restore.  If no filter is applied, returns null.
      */
-    String getRestoreCFFilter();
+    default String getRestoreExcludeCFList() {
+        return null;
+    }
+
 
     /**
      * Specifies the start and end time used for restoring data (yyyyMMddHHmm
@@ -369,14 +412,18 @@ public interface IConfiguration {
     boolean isMultiDC();
 
     /**
-     * @return Number of backup threads for uploading
+     * @return Number of backup threads for uploading files when using async feature
      */
-    int getMaxBackupUploadThreads();
+    default int getBackupThreads() {
+        return 2;
+    }
 
     /**
-     * @return Number of download threads
+     * @return Number of download threads for downloading files when using async feature
      */
-    int getMaxBackupDownloadThreads();
+    default int getRestoreThreads() {
+        return 8;
+    }
 
     /**
      * @return true if restore should search for nearest token if current token
@@ -425,11 +472,6 @@ public interface IConfiguration {
     boolean isLocalBootstrapEnabled();
 
     /**
-     * @return In memory compaction limit
-     */
-    int getInMemoryCompactionLimit();
-
-    /**
      * @return Compaction throughput
      */
     int getCompactionThroughput();
@@ -460,9 +502,13 @@ public interface IConfiguration {
     String getSeedProviderName();
 
     /**
+     * memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) = 0.11
+     *
      * @return memtable_cleanup_threshold in C* yaml
      */
-    double getMemtableCleanupThreshold();
+    default double getMemtableCleanupThreshold() {
+        return 0.11;
+    }
 
     /**
      * @return stream_throughput_outbound_megabits_per_sec in yaml
@@ -519,13 +565,17 @@ public interface IConfiguration {
     /**
      * @return possible values: all, dc, none
      */
-    String getInternodeCompression();
+    default String getInternodeCompression() {
+        return "all";
+    }
 
     /**
      * Enable/disable backup/restore of commit logs.
      * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default: false.
      */
-    boolean isBackingUpCommitLogs();
+    default boolean isBackingUpCommitLogs() {
+        return false;
+    }
 
     String getCommitLogBackupPropsFile();
 
@@ -544,8 +594,6 @@ public interface IConfiguration {
      */
     boolean isVpcRing();
 
-    void setRestoreKeySpaces(List<String> keyspaces);
-
     boolean isClientSslEnabled();
 
     String getInternodeEncryption();
@@ -562,13 +610,17 @@ public interface IConfiguration {
 
     int getConcurrentCompactorsCnt();
 
-    String getRpcServerType();
+    default String getRpcServerType() {
+        return "hsha";
+    }
 
-    int getRpcMinThreads();
+    default int getRpcMinThreads() {
+        return 16;
+    }
 
-    int getRpcMaxThreads();
-
-    int getIndexInterval();
+    default int getRpcMaxThreads() {
+        return 2048;
+    }
 
     /*
      * @return the warning threshold in MB's for large partitions encountered during compaction.
@@ -582,9 +634,6 @@ public interface IConfiguration {
 
     boolean getAutoBoostrap();
 
-    //if using with Datastax Enterprise
-    String getDseClusterType();
-
     boolean isCreateNewTokenEnable();
 
     /*
@@ -592,59 +641,64 @@ public interface IConfiguration {
      */
     String getPrivateKeyLocation();
 
-    /*
+    /**
      * @return the type of source for the restore.  Valid values are: AWSCROSSACCT or GOOGLE.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
-     * 
+     * <p>
      * AWSCROSSACCT
      * - You are restoring from an AWS account which requires cross account assumption where an IAM user in one account is allowed to access resources that belong
      * to a different account.
-     * 
+     * <p>
      * GOOGLE
      * - You are restoring from Google Cloud Storage
-     * 
      */
     String getRestoreSourceType();
 
-    /*
+    /**
+     * Should backups be encrypted. If this is on, then all the files uploaded will be compressed and encrypted before being uploaded to remote file system.
+     *
      * @return true to enable encryption of backup (snapshots, incrementals, commit logs).
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
-    boolean isEncryptBackupEnabled();
+    default boolean isEncryptBackupEnabled() {
+        return false;
+    }
 
     /**
      * Data that needs to be restored is encrypted?
      * @return true if data that needs to be restored is encrypted. Note that setting this value does not play any role until {@link #getRestoreSnapshot()} is set to a non-null value.
      */
-    boolean isRestoreEncrypted();
+    default boolean isRestoreEncrypted() {
+        return false;
+    }
 
-    /*
+    /**
      * @return the Amazon Resource Name (ARN).  This is applicable when restoring from an AWS account which requires cross account assumption. 
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     String getAWSRoleAssumptionArn();
 
-    /*
+    /**
      * @return Google Cloud Storage service account id to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     String getGcsServiceAccountId();
 
-    /*
+    /**
      * @return the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate).  
      * This information is to be use within the restore functionality.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality.
      */
     String getGcsServiceAccountPrivateKeyLoc();
 
-    /*
+    /**
      * @return the pass phrase use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     String getPgpPasswordPhrase();
 
-    /*
-     * @return key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
+    /**
+     * @return public key use by PGP cryptography.  This information is to be use within the restore and backup functionality when encryption is enabled.
      * Note: for backward compatibility, this property should be optional.  Specifically, if it does not exist, it should not cause an adverse impact on current functionality. 
      */
     String getPgpPublicKeyLoc();
@@ -652,11 +706,11 @@ public interface IConfiguration {
     /**
      * Use this method for adding extra/ dynamic cassandra startup options or env properties
      *
-     * @return
+     * @return A map of extra paramaters.
      */
     Map<String, String> getExtraEnvParams();
 
-    /*
+    /**
      * @return the vpc id of the running instance.
      */
     String getVpcId();
@@ -671,37 +725,93 @@ public interface IConfiguration {
      */
     String getVpcEC2RoleAssumptionArn();
 
-    /*
+    /**
+     * Is cassandra cluster spanning more than one account. This may be true if you are migrating your cluster from one account to another.
+     *
      * @return if the dual account support
      */
-    boolean isDualAccount();
+    default boolean isDualAccount() {
+        return false;
+    }
 
-    Boolean isIncrBackupParallelEnabled();
-
-    /*
-     * The number of workers for parallel uploads.
+    /**
+     * Should incremental backup be uploaded in async fashion? If this is false, then incrementals will be in sync fashion.
+     *
+     * @return enable async incrementals for backup
      */
-    int getIncrementalBkupMaxConsumers();
+    default boolean enableAsyncIncremental() {
+        return false;
+    }
 
-    /*
-     * The max number of files queued to be uploaded.
+    /**
+     * Should snapshot backup be uploaded in async fashion? If this is false, then snapshot will be in sync fashion.
+     *
+     * @return enable async snapshot for backup
      */
-    int getIncrementalBkupQueueSize();
+    default boolean enableAsyncSnapshot() {
+        return false;
+    }
+
+    /**
+     * Queue size to be used for backup uploads. Note that once queue is full, we would wait for {@link #getUploadTimeout()}
+     * to add any new item before declining the request and throwing exception.
+     *
+     * @return size of the queue for uploads.
+     */
+    default int getBackupQueueSize() {
+        return 100000;
+    }
+
+    /**
+     * Queue size to be used for file downloads. Note that once queue is full, we would wait for {@link #getDownloadTimeout()}
+     * to add any new item before declining the request and throwing exception.
+     *
+     * @return size of the queue for downloads.
+     */
+    default int getDownloadQueueSize() {
+        return 100000;
+    }
+
+    /**
+     * Uploads are scheduled in {@link #getBackupQueueSize()}. If queue is full then we wait for {@link #getUploadTimeout()}
+     * for the queue to have an entry available for queueing the current task after which we throw RejectedExecutionException.
+     *
+     * @return timeout for uploads to wait to blocking queue
+     */
+    default long getUploadTimeout() {
+        return (2 * 60 * 60 * 1000L); //2 minutes.
+    }
+
+    /**
+     * Downloads are scheduled in {@link #getDownloadQueueSize()}. If queue is full then we wait for {@link #getDownloadTimeout()}
+     * for the queue to have an entry available for queueing the current task after which we throw RejectedExecutionException.
+     *
+     * @return timeout for downloads to wait to blocking queue
+     */
+    default long getDownloadTimeout() {
+        return (10 * 60 * 60 * 1000L); //10 minutes.
+    }
 
     /**
      * @return tombstone_warn_threshold in C* yaml
      */
-    int getTombstoneWarnThreshold();
+    default int getTombstoneWarnThreshold() {
+        return 1000;
+    }
 
     /**
      * @return tombstone_failure_threshold in C* yaml
      */
-    int getTombstoneFailureThreshold();
+    default int getTombstoneFailureThreshold() {
+        return 100000;
+    }
 
     /**
      * @return streaming_socket_timeout_in_ms in C* yaml
      */
-    int getStreamingSocketTimeoutInMS();
+    default int getStreamingSocketTimeoutInMS() {
+        return 86400000;
+    }
 
     /**
      * List of keyspaces to flush. Default: all keyspaces.
@@ -721,10 +831,11 @@ public interface IConfiguration {
     String getFlushInterval();
 
     /**
-     * Scheduler type to use for flush.
+     * Scheduler type to use for flush. Default: HOUR.
      *
      * @return Type of scheduler to use for flush.  Note the default is TIMER based i.e. to use {@link #getFlushInterval()}.
      * If value of "CRON" is provided it starts using {@link #getFlushCronExpression()}.
+     * @throws UnsupportedTypeException if the scheduler type is not HOUR/CRON.
      */
     SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
 
@@ -744,7 +855,12 @@ public interface IConfiguration {
      */
     String getBackupStatusFileLoc();
 
-    boolean useSudo();
+    /**
+     * @return Decides whether to use sudo to start C* or not
+     */
+    default boolean useSudo() {
+        return true;
+    }
 
     /**
      * SNS Notification topic to be used for sending backup event notifications.
@@ -811,4 +927,65 @@ public interface IConfiguration {
     default int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return 120000;
     }
+
+    /**
+     * Grace period for the file(that should have been deleted by cassandra) that are considered to be forgotten. Only required for cassandra 2.x.
+     *
+     * @return grace period for the forgotten files.
+     */
+    default int getForgottenFileGracePeriodDays() {
+        return 1;
+    }
+
+    /**
+     * A method for allowing access to outside programs to Priam configuration when paired with the Priam configuration
+     * HTTP endpoint at /v1/config/structured/all/property
+     * @param group The group of configuration options to return, currently just returns everything no matter what
+     * @return A Map representation of this configuration, or null if the method doesn't exist
+     */
+    @SuppressWarnings("unchecked")
+    @JsonIgnore
+    default Map<String, Object> getStructuredConfiguration(String group) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        return objectMapper.convertValue(this, Map.class);
+    }
+
+    /**
+     * Cron expression to be used for persisting Priam merged configuration to disk. Use "-1" to disable the CRON.
+     * This will persist the fully merged value of Priam's configuration to the {@link #getMergedConfigurationDirectory()}
+     * as two JSON files: structured.json and unstructured.json which persist structured config and
+     * unstructured config respectively. We recommend you only rely on unstructured for the time being until the
+     * structured interface is finalized.
+     *
+     * Default: every minute
+     *
+     * @return Cron expression for merged configuration writing
+     * @see <a href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
+     */
+    default String getMergedConfigurationCronExpression() {
+        // Every minute on the top of the minute.
+        return "0 * * * * ? *";
+    }
+
+    /**
+     * Returns the path to the directory that Priam should write merged configuration to. Note that if you disable
+     * the merged configuration cron above {@link #getMergedConfigurationCronExpression()} then this directory is
+     * not created or used
+     * @return A string representation of the path to the merged priam configuration directory.
+     */
+    default String getMergedConfigurationDirectory() {
+        return "/tmp/priam_configuration";
+    }
+
+    /**
+     * Escape hatch for getting any arbitrary property by key
+     * This is useful so we don't have to keep adding methods to this interface for every single configuration
+     * option ever. Also exposed via HTTP at v1/config/unstructured/X
+     *
+     * @param key The arbitrary configuration property to look up
+     * @param defaultValue The default value to return if the key is not found.
+     * @return The result for the property, or the defaultValue if provided (null otherwise)
+     */
+    String getProperty(String key, String defaultValue);
 }

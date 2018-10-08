@@ -201,12 +201,8 @@ public class StandardTuner implements ICassandraTuner {
         props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
         props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
 
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()));
+        try(FileOutputStream fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
             props.store(fos, "cassandra commit log archive props, as written by priam");
-        } finally {
-            IOUtils.closeQuietly(fos);
         }
     }
 

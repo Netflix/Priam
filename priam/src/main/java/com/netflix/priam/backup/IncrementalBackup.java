@@ -38,17 +38,17 @@ import java.util.List;
 public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
-    private final List<String> incrementalRemotePaths = new ArrayList<String>();
+    private final List<String> incrementalRemotePaths = new ArrayList<>();
     private IncrementalMetaData metaData;
     private BackupRestoreUtil backupRestoreUtil;
-    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private static List<IMessageObserver> observers = new ArrayList<>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
             , IncrementalMetaData metaData) {
         super(config, backupFileSystemCtx, pathFactory);
         this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
-        backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
+        backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
     }
 
     @Override
@@ -94,7 +94,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
 
     @Override
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
-        List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
+        List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental());
 
         if (!uploadedFiles.isEmpty()) {
             String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)

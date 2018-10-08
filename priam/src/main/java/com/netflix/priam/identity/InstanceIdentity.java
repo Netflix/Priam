@@ -17,7 +17,6 @@
 package com.netflix.priam.identity;
 
 import com.google.common.base.Predicate;
-import com.google.common.base.Supplier;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
 import com.google.common.collect.Lists;
@@ -50,11 +49,7 @@ public class InstanceIdentity {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
     public static final String DUMMY_INSTANCE_ID = "new_slot";
 
-    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), new Supplier<List<PriamInstance>>() {
-        public List<PriamInstance> get() {
-            return Lists.newArrayList();
-        }
-    });
+    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), () -> Lists.newArrayList());
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;

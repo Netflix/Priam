@@ -22,13 +22,16 @@ import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.text.ParseException;
 import java.util.List;
+import java.util.concurrent.Future;
 
 /**
  * Abstract Backup class for uploading files to backup location
@@ -57,73 +60,48 @@ public abstract class AbstractBackup extends Task{
         this.fs = fs;
     }
 
-    /**
-     * Upload files in the specified dir. Does not delete the file in case of
-     * error.  The files are uploaded serially.
-     *
-     * @param parent Parent dir
-     * @param type   Type of file (META, SST, SNAP etc)
-     * @return List of files that are successfully uploaded as part of backup
-     * @throws Exception when there is failure in uploading files.
-     */
-    List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
-        final List<AbstractBackupPath> bps = Lists.newArrayList();
-        for (final File file : parent.listFiles()) {
-            //== decorate file with metadata
-            final AbstractBackupPath bp = pathFactory.get();
-            bp.parseLocal(file, type);
-
-            try {
-                logger.info("About to upload file {} for backup", file.getCanonicalFile());
-
-                // Allow up to 30s of arbitrary failures at the top level. The upload call itself typically has retries
-                // as well so this top level retry is on top of those retries. Assuming that each call to upload has
-                // ~30s maximum of retries this yields about 3.5 minutes of retries at the top level since
-                // (6 * (5 + 30) = 210 seconds). Even if this fails, however, higher level schedulers (e.g. in
-                // incremental) will hopefully re-enqueue.
-                AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(6, 5000) {
-                    public AbstractBackupPath retriableCall() throws Exception {
-                        upload(bp);
-                        file.delete();
-                        return bp;
-                    }
-                }.call();
-
-                if (abp != null)
-                    bps.add(abp);
-
-                addToRemotePath(abp.getRemotePath());
-            } catch (Exception e) {
-                //Throw exception to the caller. This will allow them to take appropriate decision.
-                logger.error("Failed to upload local file {} within CF {}.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
-                throw e;
-            }
-        }
-        return bps;
+    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) throws ParseException {
+        final AbstractBackupPath bp = pathFactory.get();
+        bp.parseLocal(file, type);
+        return bp;
     }
 
 
     /**
-     * Upload specified file (RandomAccessFile)
+     * Upload files in the specified dir. Does not delete the file in case of
+     * error.  The files are uploaded serially or async based on flag provided.
      *
-     * @param bp backup path to be uploaded.
+     * @param parent Parent dir
+     * @param type   Type of file (META, SST, SNAP etc)
+     * @param async  Upload the file(s) in async fashion if enabled.
+     * @return List of files that are successfully uploaded as part of backup
+     * @throws Exception when there is failure in uploading files.
      */
-    protected void upload(final AbstractBackupPath bp) throws Exception {
-        java.io.InputStream is = null;
-        try {
-            is = bp.localReader();
-            if (is == null) {
-                throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
+    protected List<AbstractBackupPath> upload(final File parent, final BackupFileType type, boolean async) throws Exception {
+        final List<AbstractBackupPath> bps = Lists.newArrayList();
+        final List<Future<Path>> futures = Lists.newArrayList();
+
+        for (File file : parent.listFiles()) {
+            if (file.isFile() && file.exists()) {
+                AbstractBackupPath bp = getAbstractBackupPath(file, type);
+
+                if (async)
+                    futures.add(fs.asyncUploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true));
+                else
+                    fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+
+                bps.add(bp);
+                addToRemotePath(bp.getRemotePath());
             }
-            fs.upload(bp, is);
-            bp.setCompressedFileSize(fs.getBytesUploaded());
-        } catch (Exception e) {
-            logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
-            if (is != null) {
-                is.close();
-            }
-            throw e;
         }
+
+        //Wait for all files to be uploaded.
+        if (async) {
+            for (Future future : futures)
+                future.get(); //This might throw exception if there is any error
+        }
+
+        return bps;
     }
 
     protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {

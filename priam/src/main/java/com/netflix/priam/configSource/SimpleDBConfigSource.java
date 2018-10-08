@@ -75,9 +75,7 @@ public final class SimpleDBConfigSource extends AbstractConfigSource {
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
-            Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext())
-                addProperty(itemiter.next());
+            for (Item item : result.getItems()) addProperty(item);
 
         }
         while (nextToken != null);

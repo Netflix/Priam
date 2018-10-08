@@ -23,8 +23,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.RetryableCallable;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -160,17 +158,7 @@ public class MetaFileWriterBuilder {
         public void uploadMetaFile(boolean deleteOnSuccess) throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
             abstractBackupPath.parseLocal(metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            new RetryableCallable<Void>(6, 5000) {
-                @Override
-                public Void retriableCall() throws Exception {
-                    backupFileSystem.upload(abstractBackupPath, abstractBackupPath.localReader());
-                    abstractBackupPath.setCompressedFileSize(backupFileSystem.getBytesUploaded());
-                    return null;
-                }
-            }.call();
-
-            if (deleteOnSuccess)
-                FileUtils.deleteQuietly(metaFilePath.toFile());
+            backupFileSystem.uploadFile(metaFilePath, Paths.get(abstractBackupPath.getRemotePath()), abstractBackupPath, 10, deleteOnSuccess);
         }
 
         public Path getMetaFilePath(){

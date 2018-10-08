@@ -64,8 +64,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected Date time;
     protected long size; //uncompressed file size
     protected long compressedFileSize = 0;
-    protected boolean isCassandra1_0;
-
     protected final InstanceIdentity factory;
     protected final IConfiguration config;
     protected File backupFile;
@@ -125,7 +123,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.type = type;
         if (BackupFileType.isDataFile(type)) {
             this.keyspace = elements[0];
-            if (!isCassandra1_0)
                 this.columnFamily = elements[1];
         }
         if (type == BackupFileType.SNAP)
@@ -157,15 +154,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (type == BackupFileType.CL) {
             buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
         } else {
-
             buff.append(config.getDataFileLocation()).append(PATH_SEP);
-            if (type != BackupFileType.META && type != BackupFileType.META_V2) {
-                if (isCassandra1_0)
-                    buff.append(keyspace).append(PATH_SEP);
-                else
+            if (type != BackupFileType.META && type != BackupFileType.META_V2)
                     buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
             }
-        }
 
         buff.append(fileName);
 
@@ -175,7 +167,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             parent.mkdirs();
         return return_;
     }
-
 
 
     @Override
@@ -279,14 +270,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return backupFile;
     }
 
-    public boolean isCassandra1_0() {
-        return isCassandra1_0;
-    }
-
-    public void setCassandra1_0(boolean isCassandra1_0) {
-        this.isCassandra1_0 = isCassandra1_0;
-    }
-
     public void setFileName(String fileName) {
         this.fileName = fileName;
     }
@@ -307,7 +290,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return lastModified;
     }
 
-    public static class RafInputStream extends InputStream {
+    public static class RafInputStream extends InputStream implements AutoCloseable {
         private RandomAccessFile raf;
 
         public RafInputStream(RandomAccessFile raf) {

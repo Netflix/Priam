@@ -80,7 +80,7 @@ public class UpdateSecuritySettings extends Task {
         List<PriamInstance> instances = factory.getAllIds(config.getAppName());
 
         // iterate to add...
-        Set<String> add = new HashSet<String>();
+        Set<String> add = new HashSet<>();
         List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
         for (PriamInstance instance : allInstances) {
             String range = instance.getHostIP() + "/32";

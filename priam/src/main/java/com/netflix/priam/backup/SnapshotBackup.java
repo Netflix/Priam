@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -203,12 +204,12 @@ public class SnapshotBackup extends AbstractBackup {
             return;
         }
 
-        findForgottenFiles(snapshotDir);
+        findAndMoveForgottenFiles(snapshotDir);
         // Add files to this dir
         abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot()));
     }
 
-    private void findForgottenFiles(File snapshotDir) {
+    private void findAndMoveForgottenFiles(File snapshotDir) {
         try {
             Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
             File columnfamilyDir = snapshotDir.getParentFile().getParentFile();
@@ -245,16 +246,23 @@ public class SnapshotBackup extends AbstractBackup {
             backupMetrics.incrementForgottenFiles(columnfamilyFiles.size());
 
             //Move the files to lost_found directory if configured.
-            final Path destDir = Paths.get(columnfamilyDir.getAbsolutePath(), "lost_found");
+            final Path destDir = Paths.get(columnfamilyDir.getAbsolutePath(), "lost+found");
             for (File file : columnfamilyFiles) {
-                logger.info("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName());
-                if (config.shouldMoveForgottenFiles())
-                    FileUtils.moveFileToDirectory(file, destDir.toFile(), true);
+                logger.warn("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName());
+                if (config.shouldMoveForgottenFiles()) {
+                    try {
+                        FileUtils.moveFileToDirectory(file, destDir.toFile(), true);
+                    } catch (IOException e) {
+                        logger.error("Exception occurred while trying to move forgottenFile: {}. Ignoring the error and continuing with remaining backup/forgotten files.", file);
+                        e.printStackTrace();
+                    }
+                }
             }
 
         } catch (Exception e) {
             //Eat the exception, if there, for any reason. This should not stop the snapshot for any reason.
             logger.error("Exception occurred while trying to find forgottenFile. Ignoring the error and continuing with remaining backup", e);
+            e.printStackTrace();
         }
     }
 

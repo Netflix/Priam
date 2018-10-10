@@ -926,7 +926,7 @@ public interface IConfiguration {
      * at later time at the same time ensuring that Cassandra does not resurrect data.
      * @return true if Priam should move forgotten file to "lost_found" directory of that CF.
      */
-    default boolean shouldMoveForgottenFiles() { return false; }
+    default boolean isForgottenFileMoveEnabled() { return false; }
 
     /**
      * A method for allowing access to outside programs to Priam configuration when paired with the Priam configuration

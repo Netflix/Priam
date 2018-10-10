@@ -249,7 +249,7 @@ public class SnapshotBackup extends AbstractBackup {
             final Path destDir = Paths.get(columnfamilyDir.getAbsolutePath(), "lost+found");
             for (File file : columnfamilyFiles) {
                 logger.warn("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName());
-                if (config.shouldMoveForgottenFiles()) {
+                if (config.isForgottenFileMoveEnabled()) {
                     try {
                         FileUtils.moveFileToDirectory(file, destDir.toFile(), true);
                     } catch (IOException e) {

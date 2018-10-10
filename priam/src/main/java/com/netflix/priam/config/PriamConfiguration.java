@@ -1097,11 +1097,11 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public int getForgottenFileGracePeriodDays() {
-        return config.get(PRIAM_PRE + ".forgotten.file.grace.period", 1);
+        return config.get(PRIAM_PRE + ".forgottenFileGracePeriodDays", 1);
     }
 
     @Override
-    public boolean shouldMoveForgottenFiles() {
-        return config.get(PRIAM_PRE + ".forgotten.file.move.enable", false);
+    public boolean isForgottenFileMoveEnabled() {
+        return config.get(PRIAM_PRE + ".forgottenFileMoveEnabled", false);
     }
 }

@@ -47,9 +47,9 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
 
     private String bucket = "";
     private String clusterPath = "";
-    private SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");
+    private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");
     private ObjectListing objectListing = null;
-    Date date;
+    final Date date;
 
     @Inject
     public S3PrefixIterator(IConfiguration config, Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, Date date) {
@@ -57,7 +57,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
         this.pathProvider = pathProvider;
         this.s3Client = s3Client;
         this.date = date;
-        String path = "";
+        String path;
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             path = config.getRestorePrefix();
         else
@@ -120,7 +120,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
      * Get remote prefix upto the token
      */
     private String remotePrefix(String location) {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1) {
             buff.append(config.getBackupLocation()).append(S3BackupPath.PATH_SEP);

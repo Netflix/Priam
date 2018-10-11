@@ -24,9 +24,9 @@ import com.netflix.priam.identity.InstanceEnvIdentity;
 
 public class EC2RoleAssumptionCredential implements ICredential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "AwsRoleAssumptionSession";
-    private ICredential cred;
-    private IConfiguration config;
-    private InstanceEnvIdentity insEnvIdentity;
+    private final ICredential cred;
+    private final IConfiguration config;
+    private final InstanceEnvIdentity insEnvIdentity;
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
@@ -42,7 +42,7 @@ public class EC2RoleAssumptionCredential implements ICredential {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
 
-                    String roleArn = null;
+                    String roleArn;
                     /**
                      *  Create the assumed IAM role based on the environment.
                      *  For example, if the current environment is VPC,

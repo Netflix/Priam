@@ -32,8 +32,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class S3PartUploader extends BoundedExponentialRetryCallable<Void>
 {
     private final AmazonS3 client;
-    private DataPart dataPart;
-    private List<PartETag> partETags;
+    private final DataPart dataPart;
+    private final List<PartETag> partETags;
     private AtomicInteger partsUploaded = null; //num of data parts successfully uploaded
 
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);

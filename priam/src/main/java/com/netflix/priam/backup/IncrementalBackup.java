@@ -39,9 +39,9 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
     private final List<String> incrementalRemotePaths = new ArrayList<>();
-    private IncrementalMetaData metaData;
-    private BackupRestoreUtil backupRestoreUtil;
-    private static List<IMessageObserver> observers = new ArrayList<>();
+    private final IncrementalMetaData metaData;
+    private final BackupRestoreUtil backupRestoreUtil;
+    private static final List<IMessageObserver> observers = new ArrayList<>();
 
     @Inject
     public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx

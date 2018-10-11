@@ -21,7 +21,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.restore.Restore;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -49,7 +48,7 @@ public class StandardTuner implements ICassandraTuner {
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
         File yamlFile = new File(yamlLocation);
-        Map map = (Map) yaml.load(new FileInputStream(yamlFile));
+        Map map = yaml.load(new FileInputStream(yamlFile));
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
@@ -211,7 +210,7 @@ public class StandardTuner implements ICassandraTuner {
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
         @SuppressWarnings("rawtypes")
-        Map map = (Map) yaml.load(new FileInputStream(yamlFile));
+        Map map = yaml.load(new FileInputStream(yamlFile));
         //Dont bootstrap in restore mode
         map.put("auto_bootstrap", autobootstrap);
         if (logger.isInfoEnabled()) {
@@ -236,8 +235,8 @@ public class StandardTuner implements ICassandraTuner {
 
         String[] pairs = params.split(",");
         logger.info("Updating yaml: adding extra cass params");
-        for (int i = 0; i < pairs.length; i++) {
-            String[] pair = pairs[i].split("=");
+        for (String pair1 : pairs) {
+            String[] pair = pair1.split("=");
             String priamKey = pair[0];
             String cassKey = pair[1];
             String cassVal = config.getCassYamlVal(priamKey);

@@ -32,11 +32,11 @@ import java.util.Random;
 public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRetriever {
 
     private static final Logger logger = LoggerFactory.getLogger(NewTokenRetriever.class);
-    private IPriamInstanceFactory<PriamInstance> factory;
-    private IMembership membership;
-    private IConfiguration config;
-    private Sleeper sleeper;
-    private ITokenManager tokenManager;
+    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IMembership membership;
+    private final IConfiguration config;
+    private final Sleeper sleeper;
+    private final ITokenManager tokenManager;
     private ListMultimap<String, PriamInstance> locMap;
 
     @Inject
@@ -64,7 +64,7 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
         for (PriamInstance data : allInstances)
             max = (data.getRac().equals(config.getRac()) && (data.getId() > max)) ? data.getId() : max;
         int maxSlot = max - hash;
-        int my_slot = 0;
+        int my_slot;
 
         if (hash == max && locMap.get(config.getRac()).size() == 0) {
             int idx = config.getRacs().indexOf(config.getRac());

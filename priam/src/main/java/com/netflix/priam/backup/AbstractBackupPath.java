@@ -150,7 +150,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      * Local restore file
      */
     public File newRestoreFile() {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         if (type == BackupFileType.CL) {
             buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
         } else {
@@ -176,9 +176,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     @Override
     public boolean equals(Object obj) {
-        if (!obj.getClass().equals(this.getClass()))
-            return false;
-        return getRemotePath().equals(((AbstractBackupPath) obj).getRemotePath());
+        return obj.getClass().equals(this.getClass()) && getRemotePath().equals(((AbstractBackupPath) obj).getRemotePath());
     }
 
     /**
@@ -291,7 +289,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public static class RafInputStream extends InputStream implements AutoCloseable {
-        private RandomAccessFile raf;
+        private final RandomAccessFile raf;
 
         public RafInputStream(RandomAccessFile raf) {
             this.raf = raf;

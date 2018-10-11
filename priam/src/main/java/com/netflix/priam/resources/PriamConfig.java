@@ -40,7 +40,7 @@ import com.netflix.priam.PriamServer;
 public class PriamConfig
 {
     private static final Logger logger = LoggerFactory.getLogger(PriamConfig.class);
-    private PriamServer priamServer;
+    private final PriamServer priamServer;
 
     @Inject
     public PriamConfig(PriamServer server) {

@@ -24,7 +24,7 @@ import com.amazonaws.auth.InstanceProfileCredentialsProvider;
  */
 public class S3InstanceCredential implements IS3Credential {
 
-    private InstanceProfileCredentialsProvider credentialsProvider;
+    private final InstanceProfileCredentialsProvider credentialsProvider;
 
     public S3InstanceCredential() {
         this.credentialsProvider = InstanceProfileCredentialsProvider.getInstance();

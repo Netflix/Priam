@@ -39,7 +39,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private static final String STARTED = "started";
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
-    private INotificationService notificationService;
+    private final INotificationService notificationService;
 
     @Inject
     public BackupNotificationMgr(IConfiguration config, INotificationService notificationService) {

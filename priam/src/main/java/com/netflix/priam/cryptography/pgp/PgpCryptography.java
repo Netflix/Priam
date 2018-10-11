@@ -180,10 +180,10 @@ public class PgpCryptography implements IFileCryptography {
         private static final int MAX_CHUNK = 10 * 1024 * 1024;
 
         private boolean hasnext = true;
-        private InputStream is;
-        private InputStream encryptedSrc;
-        private ByteArrayOutputStream bos;
-        private BufferedOutputStream pgout;
+        private final InputStream is;
+        private final InputStream encryptedSrc;
+        private final ByteArrayOutputStream bos;
+        private final BufferedOutputStream pgout;
 
         public ChunkEncryptorStream(InputStream is, String fileName, PGPPublicKey pubKey) {
             this.is = is;
@@ -257,7 +257,7 @@ public class PgpCryptography implements IFileCryptography {
 
     public class EncryptedInputStream extends InputStream {
 
-        private InputStream srcHandle; //handle to the source stream
+        private final InputStream srcHandle; //handle to the source stream
         private ByteArrayOutputStream bos = null; //Handle to encrypted stream
         private int bosOff = 0; //current position within encrypted stream
         private OutputStream pgpBosWrapper; //wrapper around the buffer which will contain the encrypted data.

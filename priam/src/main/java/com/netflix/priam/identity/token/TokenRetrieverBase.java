@@ -23,7 +23,7 @@ public class TokenRetrieverBase {
 
     public static final String DUMMY_INSTANCE_ID = "new_slot";
     private static final int MAX_VALUE_IN_MILISECS = 300000; //sleep up to 5 minutes
-    protected Random randomizer;
+    protected final Random randomizer;
 
     public TokenRetrieverBase() {
         this.randomizer = new Random();

@@ -19,7 +19,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.DistributionSummary;
-import com.netflix.spectator.api.Gauge;
 import com.netflix.spectator.api.Registry;
 
 /**

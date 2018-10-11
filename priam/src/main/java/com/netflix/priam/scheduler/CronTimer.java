@@ -28,7 +28,7 @@ import java.text.ParseException;
  */
 public class CronTimer implements TaskTimer {
     private static final Logger logger = LoggerFactory.getLogger(CronTimer.class);
-    private String cronExpression;
+    private final String cronExpression;
     private String name;
 
     public enum DayOfWeek {

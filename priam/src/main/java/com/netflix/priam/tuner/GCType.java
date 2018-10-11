@@ -81,7 +81,7 @@ public enum GCType {
 
     private static String getSupportedValues()
     {
-        StringBuffer supportedValues = new StringBuffer();
+        StringBuilder supportedValues = new StringBuilder();
         boolean first = true;
         for (GCType type : GCType.values()) {
             if (!first)

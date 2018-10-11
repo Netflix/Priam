@@ -258,10 +258,10 @@ public class PriamConfiguration implements IConfiguration {
     public void initialize() {
         try {
             if (this.insEnvIdentity.isClassic()) {
-                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
+                this.instanceDataRetriever = (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AwsClassicInstanceDataRetriever").newInstance();
 
             } else if (this.insEnvIdentity.isNonDefaultVpc()) {
-                this.instanceDataRetriever =  (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
+                this.instanceDataRetriever = (InstanceDataRetriever) Class.forName("com.netflix.priam.identity.config.AWSVpcInstanceDataRetriever").newInstance();
             } else {
                 throw new IllegalStateException("Unable to determine environemt (vpc, classic) for running instance.");
             }
@@ -284,8 +284,8 @@ public class PriamConfiguration implements IConfiguration {
         SystemUtils.createDirs(getDataFileLocation());
     }
 
-    public InstanceDataRetriever getInstanceDataRetriever()  {
-       return instanceDataRetriever;
+    public InstanceDataRetriever getInstanceDataRetriever() {
+        return instanceDataRetriever;
     }
 
     private void setupEnvVars() {
@@ -369,7 +369,7 @@ public class PriamConfiguration implements IConfiguration {
         config.set(CONFIG_REGION_NAME, REGION);
     }
 
-    public String getInstanceName(){
+    public String getInstanceName() {
         return INSTANCE_ID;
     }
 
@@ -616,7 +616,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isRestoreEncrypted(){
+    public boolean isRestoreEncrypted() {
         return config.get(PRIAM_PRE + ".encrypted.restore.enabled", false);
     }
 
@@ -1036,7 +1036,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getBackupStatusFileLoc() {
-        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION,  getDataFileLocation() + File.separator + "backup.status");
+        return config.get(CONFIG_BACKUP_STATUS_FILE_LOCATION, getDataFileLocation() + File.separator + "backup.status");
     }
 
     @Override
@@ -1085,8 +1085,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getProperty(String key, String defaultValue)
-    {
+    public String getProperty(String key, String defaultValue) {
         return config.get(key, defaultValue);
     }
 
@@ -1094,5 +1093,15 @@ public class PriamConfiguration implements IConfiguration {
     public String getMergedConfigurationCronExpression() {
         // Every minute on the top of the minute.
         return config.get(PRIAM_PRE + ".configMerge.cron", "0 * * * * ? *");
+    }
+
+    @Override
+    public int getForgottenFileGracePeriodDays() {
+        return config.get(PRIAM_PRE + ".forgottenFileGracePeriodDays", 1);
+    }
+
+    @Override
+    public boolean isForgottenFileMoveEnabled() {
+        return config.get(PRIAM_PRE + ".forgottenFileMoveEnabled", false);
     }
 }

@@ -38,6 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -126,6 +129,7 @@ public class SnapshotBackup extends AbstractBackup {
 
         } catch (Exception e) {
             logger.error("Exception occurred while taking snapshot: {}. Exception: {}", snapshotName, e.getLocalizedMessage());
+            e.printStackTrace();
             snapshotStatusMgr.failed(backupMetadata);
             throw e;
         } finally {
@@ -200,12 +204,12 @@ public class SnapshotBackup extends AbstractBackup {
             return;
         }
 
-        findForgottenFiles(snapshotDir);
+        findAndMoveForgottenFiles(snapshotDir);
         // Add files to this dir
         abstractBackupPaths.addAll(upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot()));
     }
 
-    private void findForgottenFiles(File snapshotDir) {
+    private void findAndMoveForgottenFiles(File snapshotDir) {
         try {
             Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
             File columnfamilyDir = snapshotDir.getParentFile().getParentFile();
@@ -238,14 +242,27 @@ public class SnapshotBackup extends AbstractBackup {
             if (columnfamilyFiles.size() == 0)
                 return;
 
-            columnfamilyFiles.parallelStream().forEach(file -> logger.info("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName()));
-
-            //TODO: The eventual plan is to move the forgotten files to a lost+found directory and clean the directory after 'x' amount of time. This behavior should be configurable. 
-            backupMetrics.incrementForgottenFiles(columnfamilyFiles.size());
             logger.warn("# of forgotten files: {} found for CF: {}", columnfamilyFiles.size(), columnfamilyDir.getName());
+            backupMetrics.incrementForgottenFiles(columnfamilyFiles.size());
+
+            //Move the files to lost_found directory if configured.
+            final Path destDir = Paths.get(columnfamilyDir.getAbsolutePath(), "lost+found");
+            for (File file : columnfamilyFiles) {
+                logger.warn("Forgotten file: {} found for CF: {}", file.getAbsolutePath(), columnfamilyDir.getName());
+                if (config.isForgottenFileMoveEnabled()) {
+                    try {
+                        FileUtils.moveFileToDirectory(file, destDir.toFile(), true);
+                    } catch (IOException e) {
+                        logger.error("Exception occurred while trying to move forgottenFile: {}. Ignoring the error and continuing with remaining backup/forgotten files.", file);
+                        e.printStackTrace();
+                    }
+                }
+            }
+
         } catch (Exception e) {
             //Eat the exception, if there, for any reason. This should not stop the snapshot for any reason.
             logger.error("Exception occurred while trying to find forgottenFile. Ignoring the error and continuing with remaining backup", e);
+            e.printStackTrace();
         }
     }
 

@@ -919,6 +919,16 @@ public interface IConfiguration {
     }
 
     /**
+     * If any forgotten file is found in Cassandra, it is usually good practice to move/delete them so when cassandra
+     * restarts, it does not load old data which should be removed else you may run into data resurrection issues.
+     * This behavior is fixed in 3.x.
+     * This configuration will allow Priam to move the forgotten files to a "lost_found" directory for user to review
+     * at later time at the same time ensuring that Cassandra does not resurrect data.
+     * @return true if Priam should move forgotten file to "lost_found" directory of that CF.
+     */
+    default boolean isForgottenFileMoveEnabled() { return false; }
+
+    /**
      * A method for allowing access to outside programs to Priam configuration when paired with the Priam configuration
      * HTTP endpoint at /v1/config/structured/all/property
      * @param group The group of configuration options to return, currently just returns everything no matter what

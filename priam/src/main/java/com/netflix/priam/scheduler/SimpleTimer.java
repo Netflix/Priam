@@ -29,7 +29,7 @@ import java.util.Date;
  * regular frequency's. Frequency of the execution timestamp since epoch.
  */
 public class SimpleTimer implements TaskTimer {
-    private Trigger trigger;
+    private final Trigger trigger;
 
     public SimpleTimer(String name, long interval) {
         this.trigger = TriggerBuilder.newTrigger()

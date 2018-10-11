@@ -183,50 +183,15 @@ public class PriamConfiguration implements IConfiguration {
 
     //== vpc specific   
     private String NETWORK_VPC;  //Fetch the vpc id of running instance
-
-    // Defaults 
-    private final String DEFAULT_CLUSTER_NAME = "cass_cluster";
-    private final String DEFAULT_DATA_LOCATION = "/var/lib/cassandra/data";
-    private final String DEFAULT_LOGS_LOCATION = "/var/lib/cassandra/logs";
-    private final String DEFAULT_COMMIT_LOG_LOCATION = "/var/lib/cassandra/commitlog";
-    private final String DEFAULT_CACHE_LOCATION = "/var/lib/cassandra/saved_caches";
-    private final String DEFAULT_ENDPOINT_SNITCH = "org.apache.cassandra.locator.Ec2Snitch";
-    private final String DEFAULT_SEED_PROVIDER = "com.netflix.priam.cassandra.extensions.NFSeedProvider";
-    private final String DEFAULT_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
+    private final String CASS_BASE_DATA_DIR = "/var/lib/cassandra";
     public static final String DEFAULT_AUTHENTICATOR = "org.apache.cassandra.auth.AllowAllAuthenticator";
     public static final String DEFAULT_AUTHORIZER = "org.apache.cassandra.auth.AllowAllAuthorizer";
     public static final String DEFAULT_COMMITLOG_PROPS_FILE = "/conf/commitlog_archiving.properties";
 
-    // rpm based. Can be modified for tar based.
-    private final String DEFAULT_CASS_HOME_DIR = "/etc/cassandra";
-    private final String DEFAULT_CASS_START_SCRIPT = "/etc/init.d/cassandra start";
-    private final String DEFAULT_CASS_STOP_SCRIPT = "/etc/init.d/cassandra stop";
-    private final String DEFAULT_BACKUP_LOCATION = "backup";
-    private final String DEFAULT_BUCKET_NAME = "cassandra-archive";
     //    private String DEFAULT_AVAILABILITY_ZONES = "";
     private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
-    private final String DEFAULT_CASS_PROCESS_NAME = "CassandraDaemon";
 
-    private final String DEFAULT_MAX_DIRECT_MEM = "50G";
-    private final String DEFAULT_MAX_HEAP = "8G";
-    private final String DEFAULT_MAX_NEWGEN_HEAP = "2G";
-    private final int DEFAULT_JMX_PORT = 7199;
-    private final int DEFAULT_THRIFT_PORT = 9160;
-    private final int DEFAULT_NATIVE_PROTOCOL_PORT = 9042;
-    private final int DEFAULT_STORAGE_PORT = 7000;
-    private final int DEFAULT_SSL_STORAGE_PORT = 7001;
-    private final int DEFAULT_BACKUP_HOUR = 12;
-    private final String DEFAULT_BACKUP_CRON_EXPRESSION = "0 0 12 1/1 * ? *"; //Backup daily at 12.
-    private final int DEFAULT_BACKUP_THREADS = 2;
-    private final int DEFAULT_RESTORE_THREADS = 8;
-    private final int DEFAULT_BACKUP_CHUNK_SIZE = 10;
-    private final int DEFAULT_BACKUP_RETENTION = 0;
-    private final int DEFAULT_VNODE_NUM_TOKENS = 1;
     private final int DEFAULT_HINTS_MAX_THREADS = 2; //default value from 1.2 yaml
-    private final int DEFAULT_HINTS_THROTTLE_KB = 1024; //default value from 1.2 yaml
-    private final String DEFAULT_INTERNODE_COMPRESSION = "all";  //default value from 1.2 yaml
-    // Default to restarting Cassandra automatically once per hour.
-    private final int DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S = 60 * 60;
 
     private static final String DEFAULT_RPC_SERVER_TYPE = "hsha";
     private static final int DEFAULT_RPC_MIN_THREADS = 16;
@@ -243,7 +208,7 @@ public class PriamConfiguration implements IConfiguration {
     private final ICredential provider;
 
     @JsonIgnore
-    private InstanceEnvIdentity insEnvIdentity;
+    private final InstanceEnvIdentity insEnvIdentity;
     @JsonIgnore
     private InstanceDataRetriever instanceDataRetriever;
 
@@ -375,12 +340,12 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getCassStartupScript() {
-        return config.get(CONFIG_CASS_START_SCRIPT, DEFAULT_CASS_START_SCRIPT);
+        return config.get(CONFIG_CASS_START_SCRIPT, "/etc/init.d/cassandra start");
     }
 
     @Override
     public String getCassStopScript() {
-        return config.get(CONFIG_CASS_STOP_SCRIPT, DEFAULT_CASS_STOP_SCRIPT);
+        return config.get(CONFIG_CASS_STOP_SCRIPT, "/etc/init.d/cassandra stop");
     }
 
     @Override
@@ -390,27 +355,27 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public int getRemediateDeadCassandraRate() {
-        return config.get(CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S, DEFAULT_REMEDIATE_DEAD_CASSANDRA_RATE_S);
+        return config.get(CONFIG_REMEDIATE_DEAD_CASSANDRA_RATE_S, 3600); //Default to once per hour
     }
 
     @Override
     public String getCassHome() {
-        return config.get(CONFIG_CASS_HOME_DIR, DEFAULT_CASS_HOME_DIR);
+        return config.get(CONFIG_CASS_HOME_DIR, "/etc/cassandra");
     }
 
     @Override
     public String getBackupLocation() {
-        return config.get(CONFIG_S3_BASE_DIR, DEFAULT_BACKUP_LOCATION);
+        return config.get(CONFIG_S3_BASE_DIR, "backup");
     }
 
     @Override
     public String getBackupPrefix() {
-        return config.get(CONFIG_BUCKET_NAME, DEFAULT_BUCKET_NAME);
+        return config.get(CONFIG_BUCKET_NAME, "cassandra-archive");
     }
 
     @Override
     public int getBackupRetentionDays() {
-        return config.get(CONFIG_BACKUP_RETENTION, DEFAULT_BACKUP_RETENTION);
+        return config.get(CONFIG_BACKUP_RETENTION, 0);
     }
 
     @Override
@@ -425,22 +390,22 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getDataFileLocation() {
-        return config.get(CONFIG_DATA_LOCATION, DEFAULT_DATA_LOCATION);
+        return config.get(CONFIG_DATA_LOCATION, CASS_BASE_DATA_DIR + "/data");
     }
 
     @Override
     public String getLogDirLocation() {
-        return config.get(CONFIG_LOGS_LOCATION, DEFAULT_LOGS_LOCATION);
+        return config.get(CONFIG_LOGS_LOCATION, CASS_BASE_DATA_DIR + "/logs");
     }
 
     @Override
     public String getCacheLocation() {
-        return config.get(CONFIG_SAVE_CACHE_LOCATION, DEFAULT_CACHE_LOCATION);
+        return config.get(CONFIG_SAVE_CACHE_LOCATION, CASS_BASE_DATA_DIR + "/saved_caches");
     }
 
     @Override
     public String getCommitLogLocation() {
-        return config.get(CONFIG_CL_LOCATION, DEFAULT_COMMIT_LOG_LOCATION);
+        return config.get(CONFIG_CL_LOCATION, CASS_BASE_DATA_DIR + "/commitlog");
     }
 
     @Override
@@ -450,13 +415,13 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public long getBackupChunkSize() {
-        long size = config.get(CONFIG_BACKUP_CHUNK_SIZE, DEFAULT_BACKUP_CHUNK_SIZE);
+        long size = config.get(CONFIG_BACKUP_CHUNK_SIZE, 10);
         return size * 1024 * 1024L;
     }
 
     @Override
     public int getJmxPort() {
-        return config.get(CONFIG_JMX_LISTERN_PORT_NAME, DEFAULT_JMX_PORT);
+        return config.get(CONFIG_JMX_LISTERN_PORT_NAME, 7199);
     }
 
     @Override
@@ -478,32 +443,32 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     public int getNativeTransportPort() {
-        return config.get(CONFIG_NATIVE_PROTOCOL_PORT, DEFAULT_NATIVE_PROTOCOL_PORT);
+        return config.get(CONFIG_NATIVE_PROTOCOL_PORT, 9042);
     }
 
     @Override
     public int getThriftPort() {
-        return config.get(CONFIG_THRIFT_LISTEN_PORT_NAME, DEFAULT_THRIFT_PORT);
+        return config.get(CONFIG_THRIFT_LISTEN_PORT_NAME, 9160);
     }
 
     @Override
     public int getStoragePort() {
-        return config.get(CONFIG_STORAGE_LISTERN_PORT_NAME, DEFAULT_STORAGE_PORT);
+        return config.get(CONFIG_STORAGE_LISTERN_PORT_NAME, 7000);
     }
 
     @Override
     public int getSSLStoragePort() {
-        return config.get(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, DEFAULT_SSL_STORAGE_PORT);
+        return config.get(CONFIG_SSL_STORAGE_LISTERN_PORT_NAME, 7001);
     }
 
     @Override
     public String getSnitch() {
-        return config.get(CONFIG_ENDPOINT_SNITCH, DEFAULT_ENDPOINT_SNITCH);
+        return config.get(CONFIG_ENDPOINT_SNITCH, "org.apache.cassandra.locator.Ec2Snitch");
     }
 
     @Override
     public String getAppName() {
-        return config.get(CONFIG_CLUSTER_NAME, DEFAULT_CLUSTER_NAME);
+        return config.get(CONFIG_CLUSTER_NAME, "cass_cluster");
     }
 
     @Override
@@ -525,27 +490,27 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getHeapSize() {
-        return config.get(CONFIG_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_HEAP);
+        return config.get(CONFIG_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), "8G");
     }
 
     @Override
     public String getHeapNewSize() {
-        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_NEWGEN_HEAP);
+        return config.get(CONFIG_NEW_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), "2G");
     }
 
     @Override
     public String getMaxDirectMemory() {
-        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), DEFAULT_MAX_DIRECT_MEM);
+        return config.get(CONFIG_DIRECT_MAX_HEAP_SIZE + getInstanceDataRetriever().getInstanceType(), "50G");
     }
 
     @Override
     public int getBackupHour() {
-        return config.get(CONFIG_BACKUP_HOUR, DEFAULT_BACKUP_HOUR);
+        return config.get(CONFIG_BACKUP_HOUR, 12);
     }
 
     @Override
     public String getBackupCronExpression() {
-        return config.get(CONFIG_BACKUP_CRON_EXPRESSION, DEFAULT_BACKUP_CRON_EXPRESSION);
+        return config.get(CONFIG_BACKUP_CRON_EXPRESSION, "0 0 12 1/1 * ? *"); //Backup daily at 12
     }
 
     @Override
@@ -642,12 +607,12 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public int getBackupThreads() {
-        return config.get(CONFIG_BACKUP_THREADS, DEFAULT_BACKUP_THREADS);
+        return config.get(CONFIG_BACKUP_THREADS, 2);
     }
 
     @Override
     public int getRestoreThreads() {
-        return config.get(CONFIG_RESTORE_THREADS, DEFAULT_RESTORE_THREADS);
+        return config.get(CONFIG_RESTORE_THREADS, 8);
     }
 
     @Override
@@ -705,7 +670,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     public int getHintedHandoffThrottleKb() {
-        return config.get(CONFIG_HINTS_THROTTLE_KB, DEFAULT_HINTS_THROTTLE_KB);
+        return config.get(CONFIG_HINTS_THROTTLE_KB, 1024);
     }
 
     @Override
@@ -715,7 +680,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getSeedProviderName() {
-        return config.get(CONFIG_SEED_PROVIDER_NAME, DEFAULT_SEED_PROVIDER);
+        return config.get(CONFIG_SEED_PROVIDER_NAME, "com.netflix.priam.cassandra.extensions.NFSeedProvider");
     }
 
     public double getMemtableCleanupThreshold() {
@@ -728,7 +693,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     public String getPartitioner() {
-        return config.get(CONFIG_PARTITIONER, DEFAULT_PARTITIONER);
+        return config.get(CONFIG_PARTITIONER, "org.apache.cassandra.dht.RandomPartitioner");
     }
 
     public String getKeyCacheSizeInMB() {
@@ -749,11 +714,11 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getCassProcessName() {
-        return config.get(CONFIG_CASS_PROCESS_NAME, DEFAULT_CASS_PROCESS_NAME);
+        return config.get(CONFIG_CASS_PROCESS_NAME, "CassandraDaemon");
     }
 
     public int getNumTokens() {
-        return config.get(CONFIG_VNODE_NUM_TOKENS, DEFAULT_VNODE_NUM_TOKENS);
+        return config.get(CONFIG_VNODE_NUM_TOKENS, 1);
     }
 
     public String getYamlLocation() {
@@ -774,7 +739,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     public String getInternodeCompression() {
-        return config.get(CONFIG_INTERNODE_COMPRESSION, DEFAULT_INTERNODE_COMPRESSION);
+        return config.get(CONFIG_INTERNODE_COMPRESSION, "all");
     }
 
     @Override
@@ -887,8 +852,8 @@ public class PriamConfiguration implements IConfiguration {
         Map<String, String> extraEnvParamsMap = new HashMap<>();
         String[] pairs = envParams.split(",");
         logger.info("getExtraEnvParams: Extra cass params. From config :{}", envParams);
-        for (int i = 0; i < pairs.length; i++) {
-            String[] pair = pairs[i].split("=");
+        for (String pair1 : pairs) {
+            String[] pair = pair1.split("=");
             if (pair.length > 1) {
                 String priamKey = pair[0];
                 String cassKey = pair[1];

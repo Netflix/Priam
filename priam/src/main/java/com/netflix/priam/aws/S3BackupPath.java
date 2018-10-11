@@ -41,7 +41,7 @@ public class S3BackupPath extends AbstractBackupPath {
      */
     @Override
     public String getRemotePath() {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
         buff.append(region).append(S3BackupPath.PATH_SEP);
         buff.append(clusterName).append(S3BackupPath.PATH_SEP);// Cluster name
@@ -98,7 +98,7 @@ public class S3BackupPath extends AbstractBackupPath {
 
     @Override
     public String remotePrefix(Date start, Date end, String location) {
-        StringBuffer buff = new StringBuffer(clusterPrefix(location));
+        StringBuilder buff = new StringBuilder(clusterPrefix(location));
         token = factory.getInstance().getToken();
         buff.append(token).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.
@@ -108,7 +108,7 @@ public class S3BackupPath extends AbstractBackupPath {
 
     @Override
     public String clusterPrefix(String location) {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1) {
             baseDir = config.getBackupLocation();

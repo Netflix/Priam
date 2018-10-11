@@ -40,9 +40,9 @@ import java.util.Map;
 public class AWSSnsNotificationService implements INotificationService {
 	private static final Logger logger = LoggerFactory.getLogger(AWSSnsNotificationService.class);
 
-	private IConfiguration configuration;
-	private AmazonSNS snsClient;
-	private BackupMetrics backupMetrics;
+	private final IConfiguration configuration;
+	private final AmazonSNS snsClient;
+	private final BackupMetrics backupMetrics;
 	
 	@Inject
 	public AWSSnsNotificationService(IConfiguration config, IAMCredential iamCredential
@@ -62,7 +62,7 @@ public class AWSSnsNotificationService implements INotificationService {
 			return;
 		}
 		
-		PublishResult publishResult = null;
+		PublishResult publishResult;
 		try {
 			publishResult = new BoundedExponentialRetryCallable<PublishResult>() {
 				@Override

@@ -35,10 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
+import java.util.*;
 
 /**
  * Class to query amazon ASG for its members to provide - Number of valid nodes
@@ -239,7 +236,7 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
 
-                DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Arrays.asList(config.getACLGroupName()));
+                DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Collections.singletonList(config.getACLGroupName()));
                 DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
                 for (SecurityGroup group : result.getSecurityGroups())
                     for (IpPermission perm : group.getIpPermissions())

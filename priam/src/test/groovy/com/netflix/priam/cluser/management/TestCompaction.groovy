@@ -132,7 +132,7 @@ class TestCompaction extends Specification {
         1 || 0
     }
 
-    private int concurrentRuns(int size) {
+    private static int concurrentRuns(int size) {
         CassandraMonitor.setIsCassadraStarted();
         ExecutorService threads = Executors.newFixedThreadPool(size)
         List<Callable<Boolean>> torun = new ArrayList<>(size)
@@ -190,12 +190,12 @@ class TestCompaction extends Specification {
 
     private static class MockCassandraOperations extends MockUp<CassandraOperations> {
         @Mock
-        void forceKeyspaceCompaction(String keyspaceName, String... columnfamily) throws Exception{
+        static void forceKeyspaceCompaction(String keyspaceName, String... columnfamily) throws Exception{
             Thread.sleep(2000)
         }
 
         @Mock
-        Map<String,List<String>> getColumnfamilies() throws Exception{
+        static Map<String,List<String>> getColumnfamilies() throws Exception{
             Map<String, List<String>> result = new HashMap<>()
             result.put("abc", Arrays.asList("column1"))
             result.put("def", Arrays.asList("dude", "ghi"))

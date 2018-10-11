@@ -148,14 +148,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         cassProcess.stop(true);
     }
 
-<<<<<<< Updated upstream
-    private final String getRestorePrefix() {
-        String prefix = "";
-=======
     private String getRestorePrefix() {
         String prefix;
->>>>>>> Stashed changes
-
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
         else

@@ -33,8 +33,6 @@ import java.util.Properties;
 public class DseTunerTest {
     private IConfiguration config;
     private DseConfigStub dseConfig;
-    private DseTuner dseTunerYaml;
-    private DseTuner dseTunerLog4j;
     private AuditLogTunerYaml auditLogTunerYaml;
     private AuditLogTunerLog4J auditLogTunerLog4j;
     private File targetFile;
@@ -46,8 +44,8 @@ public class DseTunerTest {
         dseConfig = new DseConfigStub();
         auditLogTunerYaml = new AuditLogTunerYaml(dseConfig);
         auditLogTunerLog4j = new AuditLogTunerLog4J(config, dseConfig);
-        dseTunerYaml = new DseTuner(config, dseConfig, auditLogTunerYaml);
-        dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
+        DseTuner dseTunerYaml = new DseTuner(config, dseConfig, auditLogTunerYaml);
+        DseTuner dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
 
         File targetDir = new File(config.getCassHome() + "/conf");
         if (!targetDir.exists())

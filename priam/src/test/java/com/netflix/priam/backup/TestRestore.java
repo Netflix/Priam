@@ -129,9 +129,6 @@ public class TestRestore {
             Assert.assertFalse(true);//No exception thrown
         } catch (IllegalStateException e) {
             //We are ok. No snapshot found.
-        }catch (Exception e)
-        {
-            throw e;
         }
     }
 

@@ -33,12 +33,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class Murmur3TokenManagerTest {
-    private IConfiguration config;
     private TokenManager tokenManager;
 
     @Before
     public void setUp() {
-        this.config = new Murmur3Configuration();
+        IConfiguration config = new Murmur3Configuration();
         this.tokenManager = new TokenManager(config);
     }
 

@@ -32,12 +32,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 public class RandomTokenManagerTest {
-    private FakeConfiguration config;
     private TokenManager tokenManager;
 
     @Before
     public void setUp() {
-        this.config = new FakeConfiguration();
+        FakeConfiguration config = new FakeConfiguration();
         this.tokenManager = new TokenManager(config);
     }
 

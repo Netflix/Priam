@@ -38,7 +38,7 @@ public class IncrementalMetaData extends MetaData {
 
     @Override
     public File createTmpMetaFile() throws IOException {
-        File metafile = null, destFile = null;
+        File metafile, destFile;
 
         if (this.metaFileName == null) {
 

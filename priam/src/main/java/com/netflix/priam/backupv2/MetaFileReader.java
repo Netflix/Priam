@@ -34,7 +34,6 @@ import java.nio.file.Path;
 public abstract class MetaFileReader {
 
     private static final Logger logger = LoggerFactory.getLogger(MetaFileReader.class);
-    private JsonReader jsonReader;
     private MetaFileInfo metaFileInfo;
 
     public MetaFileInfo getMetaFileInfo() {
@@ -45,7 +44,7 @@ public abstract class MetaFileReader {
      * Reads the local meta file as denoted by metaFilePath.
      *
      * @param metaFilePath local file path for the meta file.
-     * @throws IOException
+     * @throws IOException if not enough permissions or file is not valid format.
      */
     public void readMeta(Path metaFilePath) throws IOException {
         //Validate if meta file exists and is right file name.
@@ -55,7 +54,7 @@ public abstract class MetaFileReader {
 
         //Read the meta file.
         logger.info("Trying to read the meta file: {}", metaFilePath);
-        jsonReader = new JsonReader(new FileReader(metaFilePath.toFile()));
+        JsonReader jsonReader = new JsonReader(new FileReader(metaFilePath.toFile()));
         jsonReader.beginObject();
         while (jsonReader.hasNext()) {
             switch (jsonReader.nextName()) {

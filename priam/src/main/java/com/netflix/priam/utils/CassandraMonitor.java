@@ -45,9 +45,9 @@ public class CassandraMonitor extends Task {
     public static final String JOBNAME = "CASS_MONITOR_THREAD";
     private static final Logger logger = LoggerFactory.getLogger(CassandraMonitor.class);
     private static final AtomicBoolean isCassandraStarted = new AtomicBoolean(false);
-    private InstanceState instanceState;
-    private ICassandraProcess cassProcess;
-    private CassMonitorMetrics cassMonitorMetrics;
+    private final InstanceState instanceState;
+    private final ICassandraProcess cassProcess;
+    private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
     protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess, CassMonitorMetrics cassMonitorMetrics) {
@@ -138,7 +138,7 @@ public class CassandraMonitor extends Task {
             throw new IllegalStateException(String.format("Directory: {} does not exist", directory));
 
         if (!directory.canRead() || !directory.canWrite())
-            throw new IllegalStateException(String.format("Directory: {} does not have read/write permissions."));
+            throw new IllegalStateException(String.format("Directory: {} does not have read/write permissions.", directory));
     }
 
     public static TaskTimer getTimer() {

@@ -21,7 +21,6 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import org.apache.cassandra.io.util.FileUtils;
-import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -32,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.RandomAccessFile;
 import java.text.ParseException;
 import java.util.Date;
 
@@ -93,7 +93,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             }
 
             lastModified = backupFile.lastModified();
-            ret = new RafInputStream(RandomAccessReader.open(backupFile));
+            ret = new RafInputStream(new RandomAccessFile(backupFile, "r"));
 
             // Verify that the file hasn't changed since we opened it.
             // We could avoid this flow by using the fstat() system call,
@@ -149,7 +149,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      * Local restore file
      */
     public File newRestoreFile() {
-        StringBuffer buff = new StringBuffer();
+        StringBuilder buff = new StringBuilder();
         if (type == BackupFileType.CL) {
             buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
         } else {
@@ -175,9 +175,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     @Override
     public boolean equals(Object obj) {
-        if (!obj.getClass().equals(this.getClass()))
-            return false;
-        return getRemotePath().equals(((AbstractBackupPath) obj).getRemotePath());
+        return obj.getClass().equals(this.getClass()) && getRemotePath().equals(((AbstractBackupPath) obj).getRemotePath());
     }
 
     /**
@@ -290,9 +288,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public static class RafInputStream extends InputStream implements AutoCloseable {
-        private RandomAccessReader raf;
+        private final RandomAccessFile raf;
 
-        public RafInputStream(RandomAccessReader raf) {
+        public RafInputStream(RandomAccessFile raf) {
             this.raf = raf;
         }
 

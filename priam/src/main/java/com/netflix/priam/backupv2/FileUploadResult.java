@@ -36,8 +36,8 @@ public class FileUploadResult {
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     private String columnFamilyName;
     private Instant lastModifiedTime;
-    private Instant fileCreationTime;
-    private long fileSizeOnDisk; //Size on disk in bytes
+    private final Instant fileCreationTime;
+    private final long fileSizeOnDisk; //Size on disk in bytes
     private Boolean isUploaded;
     //Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
     private ICompression.CompressionAlgorithm compression = ICompression.CompressionAlgorithm.SNAPPY;

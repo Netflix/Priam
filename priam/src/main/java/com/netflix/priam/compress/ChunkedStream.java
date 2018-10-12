@@ -30,11 +30,11 @@ import java.util.Iterator;
  */
 public class ChunkedStream implements Iterator<byte[]> {
     private boolean hasnext = true;
-    private ByteArrayOutputStream bos;
-    private SnappyOutputStream compress;
-    private InputStream origin;
-    private long chunkSize;
-    private static int BYTES_TO_READ = 2048;
+    private final ByteArrayOutputStream bos;
+    private final SnappyOutputStream compress;
+    private final InputStream origin;
+    private final long chunkSize;
+    private static final int BYTES_TO_READ = 2048;
 
     public ChunkedStream(InputStream is, long chunkSize) throws IOException {
         this.origin = is;

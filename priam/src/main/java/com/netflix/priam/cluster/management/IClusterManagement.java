@@ -33,9 +33,9 @@ public abstract class IClusterManagement<T> extends Task {
     public enum Task {FLUSH, COMPACTION}
 
     private static final Logger logger = LoggerFactory.getLogger(IClusterManagement.class);
-    private Task taskType;
-    private IMeasurement measurement;
-    private static Lock lock = new ReentrantLock();
+    private final Task taskType;
+    private final IMeasurement measurement;
+    private static final Lock lock = new ReentrantLock();
 
     protected IClusterManagement(IConfiguration config, Task taskType, IMeasurement measurement) {
         super(config);

@@ -103,7 +103,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                 compressedBos.write(compressedChunk);
             }
         } catch (Exception e) {
-            String message = String.format("Exception in compressing the input data during upload to EncryptedStore  Msg: " + e.getMessage());
+            String message = "Exception in compressing the input data during upload to EncryptedStore  Msg: " + e.getMessage();
             logger.error(message, e);
             throw new BackupRestoreException(message);
         }

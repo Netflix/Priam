@@ -56,9 +56,7 @@ final public class BackupMetadata implements Serializable {
 
         BackupMetadata that = (BackupMetadata) o;
 
-        if (!this.snapshotDate.equals(that.snapshotDate)) return false;
-        if (!this.token.equals(that.token)) return false;
-        return this.start.equals(that.start);
+        return this.snapshotDate.equals(that.snapshotDate) && this.token.equals(that.token) && this.start.equals(that.start);
     }
 
     @Override

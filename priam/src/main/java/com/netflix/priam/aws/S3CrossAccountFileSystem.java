@@ -40,9 +40,9 @@ public class S3CrossAccountFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(S3CrossAccountFileSystem.class);
 
     private AmazonS3 s3Client;
-    private S3FileSystem s3fs;
-    private IConfiguration config;
-    private IS3Credential s3Credential;
+    private final S3FileSystem s3fs;
+    private final IConfiguration config;
+    private final IS3Credential s3Credential;
 
     @Inject
     public S3CrossAccountFileSystem(@Named("backup") IBackupFileSystem fs, @Named("awss3roleassumption") IS3Credential s3Credential, IConfiguration config) {

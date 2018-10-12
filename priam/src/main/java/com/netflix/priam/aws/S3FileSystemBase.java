@@ -41,22 +41,21 @@ import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
-    protected static final int MAX_CHUNKS = 10000;
-    protected static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
-    protected static final long UPLOAD_TIMEOUT = (2 * 60 * 60 * 1000L);
+    private static final int MAX_CHUNKS = 10000;
+    static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
-    protected AmazonS3 s3Client;
-    protected final IConfiguration config;
-    protected final Provider<AbstractBackupPath> pathProvider;
-    protected final ICompression compress;
-    protected final BlockingSubmitThreadPoolExecutor executor;
-    protected final RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
+    AmazonS3 s3Client;
+    final IConfiguration config;
+    private final Provider<AbstractBackupPath> pathProvider;
+    final ICompression compress;
+    final BlockingSubmitThreadPoolExecutor executor;
+    final RateLimiter rateLimiter; //a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
 
-    public S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
-                            ICompression compress,
-                            final IConfiguration config,
-                            BackupMetrics backupMetrics,
-                            BackupNotificationMgr backupNotificationMgr) {
+    S3FileSystemBase(Provider<AbstractBackupPath> pathProvider,
+                     ICompression compress,
+                     final IConfiguration config,
+                     BackupMetrics backupMetrics,
+                     BackupNotificationMgr backupNotificationMgr) {
         super(config, backupMetrics, backupNotificationMgr);
         this.pathProvider = pathProvider;
         this.compress = compress;
@@ -64,14 +63,14 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
         int threads = config.getBackupThreads();
         LinkedBlockingQueue<Runnable> queue = new LinkedBlockingQueue<>(threads);
-        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, UPLOAD_TIMEOUT);
+        this.executor = new BlockingSubmitThreadPoolExecutor(threads, queue, config.getUploadTimeout());
 
         double throttleLimit = config.getUploadThrottle();
         this.rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
     }
 
 
-    public AmazonS3 getS3Client() {
+    private AmazonS3 getS3Client() {
         return s3Client;
     }
 
@@ -85,7 +84,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     /**
      * Get S3 prefix which will be used to locate S3 files
      */
-    protected String getPrefix(IConfiguration config) {
+    String getPrefix(IConfiguration config) {
         String prefix;
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
@@ -151,7 +150,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         return true;
     }
 
-    protected void checkSuccessfulUpload(CompleteMultipartUploadResult resultS3MultiPartUploadComplete, Path localPath) throws BackupRestoreException {
+    void checkSuccessfulUpload(CompleteMultipartUploadResult resultS3MultiPartUploadComplete, Path localPath) throws BackupRestoreException {
         if (null != resultS3MultiPartUploadComplete && null != resultS3MultiPartUploadComplete.getETag()) {
             logger.info("Uploaded file: {}, object eTag: {}", localPath, resultS3MultiPartUploadComplete.getETag());
         } else {

@@ -40,8 +40,8 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      * Note:  A {@link LinkedList} was chosen for fastest retrieval of latest snapshot.
      */
     Map<String, LinkedList<BackupMetadata>> backupMetadataMap;
-    int capacity;
-    private InstanceState instanceState;
+    final int capacity;
+    private final InstanceState instanceState;
 
     /**
      * @param capacity Capacity to hold in-memory snapshot status days.
@@ -177,10 +177,9 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
     @Override
     public String toString() {
-        final StringBuffer sb = new StringBuffer("BackupStatusMgr{");
-        sb.append("backupMetadataMap=").append(backupMetadataMap);
-        sb.append(", capacity=").append(capacity);
-        sb.append('}');
-        return sb.toString();
+        String sb = "BackupStatusMgr{" + "backupMetadataMap=" + backupMetadataMap +
+                ", capacity=" + capacity +
+                '}';
+        return sb;
     }
 }

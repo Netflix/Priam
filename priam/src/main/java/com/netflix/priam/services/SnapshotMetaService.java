@@ -60,11 +60,11 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
-    private BackupRestoreUtil backupRestoreUtil;
-    private MetaFileWriterBuilder metaFileWriter;
+    private final BackupRestoreUtil backupRestoreUtil;
+    private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
-    private MetaFileManager metaFileManager;
-    private CassandraOperations cassandraOperations;
+    private final MetaFileManager metaFileManager;
+    private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
 
     @Inject

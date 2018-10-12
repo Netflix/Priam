@@ -21,24 +21,21 @@ import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.TestModule;
+import com.netflix.priam.config.IConfiguration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.management.MBeanServerFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import javax.management.MBeanServerFactory;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-
-public class TestScheduler
-{
+public class TestScheduler {
     // yuck, but marginally better than using Thread.sleep
     private static CountDownLatch latch;
 
     @Test
-    public void testSchedule() throws Exception
-    {
+    public void testSchedule() throws Exception {
         latch = new CountDownLatch(1);
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
@@ -50,9 +47,9 @@ public class TestScheduler
     }
 
     @Test
-    @Ignore("not sure what this test really does, except test countdown latch and thread context switching")
-    public void testSingleInstanceSchedule() throws Exception
-    {
+    @Ignore(
+            "not sure what this test really does, except test countdown latch and thread context switching")
+    public void testSingleInstanceSchedule() throws Exception {
         latch = new CountDownLatch(3);
         Injector inject = Guice.createInjector(new TestModule());
         PriamScheduler scheduler = inject.getInstance(PriamScheduler.class);
@@ -65,65 +62,54 @@ public class TestScheduler
     }
 
     @Ignore
-    public static class TestTask extends Task
-    {
+    public static class TestTask extends Task {
         @Inject
-        public TestTask(IConfiguration config)
-        {
-            // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate registrations
+        public TestTask(IConfiguration config) {
+            // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate
+            // registrations
             super(config, MBeanServerFactory.newMBeanServer());
         }
 
         @Override
-        public void execute()
-        {
+        public void execute() {
             latch.countDown();
         }
 
         @Override
-        public String getName()
-        {
+        public String getName() {
             return "test";
         }
-
     }
 
     @Ignore
     @Singleton
-    public static class SingleTestTask extends Task
-    {
+    public static class SingleTestTask extends Task {
         @Inject
-        public SingleTestTask(IConfiguration config)
-        {
+        public SingleTestTask(IConfiguration config) {
             super(config, MBeanServerFactory.newMBeanServer());
         }
 
-        public static int count =0;
+        public static int count = 0;
+
         @Override
-        public void execute()
-        {
+        public void execute() {
             ++count;
             latch.countDown();
-            try
-            {
+            try {
                 // todo : why is this sleep important?
-                Thread.sleep(55);//5sec
-            }
-            catch (InterruptedException e)
-            {
+                Thread.sleep(55); // 5sec
+            } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();
             }
         }
 
         @Override
-        public String getName()
-        {
+        public String getName() {
             return "test2";
         }
 
-        public static TaskTimer getTimer()
-        {
+        public static TaskTimer getTimer() {
             return new SimpleTimer("test2", 11L);
         }
     }

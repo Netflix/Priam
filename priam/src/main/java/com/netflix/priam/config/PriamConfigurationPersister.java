@@ -16,6 +16,12 @@
  */
 package com.netflix.priam.config;
 
+import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.netflix.priam.scheduler.CronTimer;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,23 +31,12 @@ import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.inject.Singleton;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.util.MinimalPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.netflix.priam.scheduler.CronTimer;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
-
-/**
- * Task that persists structured and merged priam configuration to disk.
- */
+/** Task that persists structured and merged priam configuration to disk. */
 @Singleton
-public class PriamConfigurationPersister extends Task
-{
+public class PriamConfigurationPersister extends Task {
     public static final String NAME = "PriamConfigurationPersister";
 
     private static final Logger logger = LoggerFactory.getLogger(PriamConfigurationPersister.class);
@@ -57,28 +52,32 @@ public class PriamConfigurationPersister extends Task
         structuredPath = Paths.get(config.getMergedConfigurationDirectory(), "structured.json");
     }
 
-    private synchronized void ensurePaths() throws IOException
-    {
+    private synchronized void ensurePaths() throws IOException {
         File directory = mergedConfigDirectory.toFile();
 
         if (directory.mkdirs()) {
-            Files.setPosixFilePermissions(mergedConfigDirectory, PosixFilePermissions.fromString("rwx------"));
+            Files.setPosixFilePermissions(
+                    mergedConfigDirectory, PosixFilePermissions.fromString("rwx------"));
             logger.info("Set up PriamConfigurationPersister directory successfully");
         }
     }
 
-
     @Override
-    public void execute() throws Exception
-    {
+    public void execute() throws Exception {
         ensurePaths();
         Path tempPath = null;
         try {
-            File output = File.createTempFile(structuredPath.getFileName().toString(), ".tmp", mergedConfigDirectory.toFile());
+            File output =
+                    File.createTempFile(
+                            structuredPath.getFileName().toString(),
+                            ".tmp",
+                            mergedConfigDirectory.toFile());
             tempPath = output.toPath();
 
-            // The configuration might contain sensitive information, so ... don't let non Priam users read it
-            // Theoretically createTempFile creates the file with the right permissions, but I want to be explicit
+            // The configuration might contain sensitive information, so ... don't let non Priam
+            // users read it
+            // Theoretically createTempFile creates the file with the right permissions, but I want
+            // to be explicit
             Files.setPosixFilePermissions(tempPath, PosixFilePermissions.fromString("rw-------"));
 
             Map<String, Object> structuredConfiguration = config.getStructuredConfiguration("all");
@@ -91,14 +90,12 @@ public class PriamConfigurationPersister extends Task
             if (!output.renameTo(structuredPath.toFile()))
                 logger.error("Failed to persist structured Priam configuration");
         } finally {
-            if (tempPath != null)
-                Files.deleteIfExists(tempPath);
+            if (tempPath != null) Files.deleteIfExists(tempPath);
         }
     }
 
     @Override
-    public String getName()
-    {
+    public String getName() {
         return NAME;
     }
 
@@ -106,10 +103,10 @@ public class PriamConfigurationPersister extends Task
      * Timer to be used for configuration writing.
      *
      * @param config {@link IConfiguration} to get configuration details from priam.
-     * @return the timer to be used for Configuration Persisting from {@link IConfiguration#getMergedConfigurationCronExpression()}
+     * @return the timer to be used for Configuration Persisting from {@link
+     *     IConfiguration#getMergedConfigurationCronExpression()}
      */
     public static TaskTimer getTimer(IConfiguration config) {
         return CronTimer.getCronTimer(NAME, config.getMergedConfigurationCronExpression());
     }
-
 }

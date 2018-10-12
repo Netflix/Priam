@@ -1,38 +1,36 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.restore.Restore;
+import java.io.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
-import java.io.*;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 /**
- * Tune the standard cassandra parameters/configurations. eg. cassandra.yaml, jvm.options, bootstrap etc.
+ * Tune the standard cassandra parameters/configurations. eg. cassandra.yaml, jvm.options, bootstrap
+ * etc.
  */
 public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
@@ -43,7 +41,8 @@ public class StandardTuner implements ICassandraTuner {
         this.config = config;
     }
 
-    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider) throws Exception {
+    public void writeAllProperties(String yamlLocation, String hostname, String seedProvider)
+            throws Exception {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
@@ -58,7 +57,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
-        //Dont bootstrap in restore mode
+        // Dont bootstrap in restore mode
         if (!Restore.isRestoreEnabled(config)) {
             map.put("auto_bootstrap", config.getAutoBoostrap());
         } else {
@@ -70,7 +69,10 @@ public class StandardTuner implements ICassandraTuner {
         map.put("hints_directory", config.getHintsLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
 
-        boolean enableIncremental = (SnapshotBackup.isBackupEnabled(config) && config.isIncrBackup()) && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()));
+        boolean enableIncremental =
+                (SnapshotBackup.isBackupEnabled(config) && config.isIncrBackup())
+                        && (CollectionUtils.isEmpty(config.getBackupRacs())
+                                || config.getBackupRacs().contains(config.getRac()));
         map.put("incremental_backups", enableIncremental);
 
         map.put("endpoint_snitch", config.getSnitch());
@@ -78,7 +80,9 @@ public class StandardTuner implements ICassandraTuner {
             map.remove("in_memory_compaction_limit_in_mb");
         }
         map.put("compaction_throughput_mb_per_sec", config.getCompactionThroughput());
-        map.put("partitioner", derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
+        map.put(
+                "partitioner",
+                derivePartitioner(map.get("partitioner").toString(), config.getPartitioner()));
 
         if (map.containsKey("memtable_total_space_in_mb")) {
             map.remove("memtable_total_space_in_mb");
@@ -103,17 +107,19 @@ public class StandardTuner implements ICassandraTuner {
         map.put("rpc_server_type", config.getRpcServerType());
         map.put("rpc_min_threads", config.getRpcMinThreads());
         map.put("rpc_max_threads", config.getRpcMaxThreads());
-        // Add private ip address as broadcast_rpc_address. This will ensure that COPY function works correctly. 
+        // Add private ip address as broadcast_rpc_address. This will ensure that COPY function
+        // works correctly.
         map.put("broadcast_rpc_address", config.getInstanceDataRetriever().getPrivateIP());
-        //map.put("index_interval", config.getIndexInterval());
-
+        // map.put("index_interval", config.getIndexInterval());
 
         map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
         map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
 
         map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
-        map.put("compaction_large_partition_warning_threshold_mb", config.getCompactionLargePartitionWarnThresholdInMB());
+        map.put(
+                "compaction_large_partition_warning_threshold_mb",
+                config.getCompactionLargePartitionWarnThresholdInMB());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);
@@ -121,13 +127,12 @@ public class StandardTuner implements ICassandraTuner {
 
         configfureSecurity(map);
         configureGlobalCaches(config, map);
-        //force to 1 until vnodes are properly supported
+        // force to 1 until vnodes are properly supported
         map.put("num_tokens", 1);
-
 
         addExtraCassParams(map);
 
-        //remove troublesome properties
+        // remove troublesome properties
         map.remove("flush_largest_memtables_at");
         map.remove("reduce_cache_capacity_to");
 
@@ -146,17 +151,14 @@ public class StandardTuner implements ICassandraTuner {
         return config.getSnitch();
     }
 
-    /**
-     * Setup the cassandra 1.1 global cache values
-     */
+    /** Setup the cassandra 1.1 global cache values */
     private void configureGlobalCaches(IConfiguration config, Map yaml) {
         final String keyCacheSize = config.getKeyCacheSizeInMB();
         if (keyCacheSize != null) {
             yaml.put("key_cache_size_in_mb", Integer.valueOf(keyCacheSize));
 
             final String keyCount = config.getKeyCacheKeysToSave();
-            if (keyCount != null)
-                yaml.put("key_cache_keys_to_save", Integer.valueOf(keyCount));
+            if (keyCount != null) yaml.put("key_cache_keys_to_save", Integer.valueOf(keyCount));
         }
 
         final String rowCacheSize = config.getRowCacheSizeInMB();
@@ -164,43 +166,41 @@ public class StandardTuner implements ICassandraTuner {
             yaml.put("row_cache_size_in_mb", Integer.valueOf(rowCacheSize));
 
             final String rowCount = config.getRowCacheKeysToSave();
-            if (rowCount != null)
-                yaml.put("row_cache_keys_to_save", Integer.valueOf(rowCount));
+            if (rowCount != null) yaml.put("row_cache_keys_to_save", Integer.valueOf(rowCount));
         }
     }
 
     String derivePartitioner(String fromYaml, String fromConfig) {
-        if (fromYaml == null || fromYaml.isEmpty())
-            return fromConfig;
-        //this check is to prevent against overwriting an existing yaml file that has
+        if (fromYaml == null || fromYaml.isEmpty()) return fromConfig;
+        // this check is to prevent against overwriting an existing yaml file that has
         // a partitioner not RandomPartitioner or (as of cass 1.2) Murmur3Partitioner.
-        //basically we don't want to hose existing deployments by changing the partitioner unexpectedly on them
+        // basically we don't want to hose existing deployments by changing the partitioner
+        // unexpectedly on them
         final String lowerCase = fromYaml.toLowerCase();
-        if (lowerCase.contains("randomparti") || lowerCase.contains("murmur"))
-            return fromConfig;
+        if (lowerCase.contains("randomparti") || lowerCase.contains("murmur")) return fromConfig;
         return fromYaml;
     }
 
     protected void configfureSecurity(Map map) {
-        //the client-side ssl settings
+        // the client-side ssl settings
         Map clientEnc = (Map) map.get("client_encryption_options");
         clientEnc.put("enabled", config.isClientSslEnabled());
 
-        //the server-side (internode) ssl settings
+        // the server-side (internode) ssl settings
         Map serverEnc = (Map) map.get("server_encryption_options");
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
     protected void configureCommitLogBackups() throws IOException {
-        if (!config.isBackingUpCommitLogs())
-            return;
+        if (!config.isBackingUpCommitLogs()) return;
         Properties props = new Properties();
         props.put("archive_command", config.getCommitLogBackupArchiveCmd());
         props.put("restore_command", config.getCommitLogBackupRestoreCmd());
         props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
         props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
 
-        try(FileOutputStream fos = new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
+        try (FileOutputStream fos =
+                new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
             props.store(fos, "cassandra commit log archive props, as written by priam");
         }
     }
@@ -211,7 +211,7 @@ public class StandardTuner implements ICassandraTuner {
         Yaml yaml = new Yaml(options);
         @SuppressWarnings("rawtypes")
         Map map = yaml.load(new FileInputStream(yamlFile));
-        //Dont bootstrap in restore mode
+        // Dont bootstrap in restore mode
         map.put("auto_bootstrap", autobootstrap);
         if (logger.isInfoEnabled()) {
             logger.info("Updating yaml: " + yaml.dump(map));
@@ -222,7 +222,7 @@ public class StandardTuner implements ICassandraTuner {
     @Override
     public final void updateJVMOptions() throws Exception {
         JVMOptionsTuner tuner = new JVMOptionsTuner(config);
-        //Overwrite default jvm.options file.
+        // Overwrite default jvm.options file.
         tuner.updateAndSaveJVMOptions(config.getJVMOptionsFileLocation());
     }
 
@@ -240,7 +240,11 @@ public class StandardTuner implements ICassandraTuner {
             String priamKey = pair[0];
             String cassKey = pair[1];
             String cassVal = config.getCassYamlVal(priamKey);
-            logger.info("Updating yaml: Priamkey[{}], CassKey[{}], Val[{}]", priamKey, cassKey, cassVal);
+            logger.info(
+                    "Updating yaml: Priamkey[{}], CassKey[{}], Val[{}]",
+                    priamKey,
+                    cassKey,
+                    cassVal);
             map.put(cassKey, cassVal);
         }
     }

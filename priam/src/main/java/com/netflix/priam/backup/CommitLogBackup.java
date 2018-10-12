@@ -1,16 +1,14 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.backup;
@@ -20,17 +18,15 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-
-//Providing this if we want to use it outside Quart
+// Providing this if we want to use it outside Quart
 public class CommitLogBackup {
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
     private final Provider<AbstractBackupPath> pathFactory;
@@ -39,7 +35,8 @@ public class CommitLogBackup {
     private final IBackupFileSystem fs;
 
     @Inject
-    public CommitLogBackup(Provider<AbstractBackupPath> pathFactory, @Named("backup") IBackupFileSystem fs) {
+    public CommitLogBackup(
+            Provider<AbstractBackupPath> pathFactory, @Named("backup") IBackupFileSystem fs) {
         this.pathFactory = pathFactory;
         this.fs = fs;
     }
@@ -54,7 +51,8 @@ public class CommitLogBackup {
 
         File archivedCommitLogDir = new File(archivedDir);
         if (!archivedCommitLogDir.exists()) {
-            throw new IllegalArgumentException("The archived commitlog director does not exist: " + archivedDir);
+            throw new IllegalArgumentException(
+                    "The archived commitlog director does not exist: " + archivedDir);
         }
 
         if (logger.isDebugEnabled()) {
@@ -67,14 +65,21 @@ public class CommitLogBackup {
                 AbstractBackupPath bp = pathFactory.get();
                 bp.parseLocal(file, BackupFileType.CL);
 
-                if (snapshotName != null)
-                    bp.time = bp.parseDate(snapshotName);
+                if (snapshotName != null) bp.time = bp.parseDate(snapshotName);
 
-                fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+                fs.uploadFile(
+                        Paths.get(bp.getBackupFile().getAbsolutePath()),
+                        Paths.get(bp.getRemotePath()),
+                        bp,
+                        10,
+                        true);
                 bps.add(bp);
                 addToRemotePath(bp.getRemotePath());
             } catch (Exception e) {
-                logger.error("Failed to upload local file {}. Ignoring to continue with rest of backup.", file, e);
+                logger.error(
+                        "Failed to upload local file {}. Ignoring to continue with rest of backup.",
+                        file,
+                        e);
             }
         }
         return bps;

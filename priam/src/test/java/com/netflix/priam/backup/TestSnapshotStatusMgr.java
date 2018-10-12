@@ -21,6 +21,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,33 +31,25 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
-/**
- * Created by aagrawal on 7/11/17.
- */
+/** Created by aagrawal on 7/11/17. */
 public class TestSnapshotStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
 
     private static IBackupStatusMgr backupStatusMgr;
 
     @BeforeClass
-    public static void setup()  {
+    public static void setup() {
         Injector injector = Guice.createInjector(new BRTestModule());
-        //cleanup old saved file, if any
+        // cleanup old saved file, if any
         IConfiguration configuration = injector.getInstance(IConfiguration.class);
         File f = new File(configuration.getBackupStatusFileLoc());
-        if (f.exists())
-            f.delete();
+        if (f.exists()) f.delete();
 
         backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
     }
 
     @Test
-    public void testSnapshotStatusAddFinish() throws Exception
-    {
+    public void testSnapshotStatusAddFinish() throws Exception {
         Date startTime = DateUtil.getDate("198407110720");
 
         BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
@@ -77,8 +72,7 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusAddFailed() throws Exception
-    {
+    public void testSnapshotStatusAddFailed() throws Exception {
         Date startTime = DateUtil.getDate("198407120720");
 
         BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
@@ -101,13 +95,11 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusMultiAddFinishInADay() throws Exception
-    {
+    public void testSnapshotStatusMultiAddFinishInADay() throws Exception {
         final int noOfEntries = 10;
         Date startTime = DateUtil.getDate("19840101");
 
-        for (int i = 0 ; i < noOfEntries; i++)
-        {
+        for (int i = 0; i < noOfEntries; i++) {
             Date time = new DateTime(startTime.getTime()).plusHours(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);
@@ -118,13 +110,11 @@ public class TestSnapshotStatusMgr {
         Assert.assertEquals(noOfEntries, metadataList.size());
         logger.info(metadataList.toString());
 
-        //Ensure that list is always maintained from latest to eldest
+        // Ensure that list is always maintained from latest to eldest
         Date latest = null;
-        for (BackupMetadata backupMetadata: metadataList) {
-            if (latest == null)
-                latest = backupMetadata.getStart();
-            else
-            {
+        for (BackupMetadata backupMetadata : metadataList) {
+            if (latest == null) latest = backupMetadata.getStart();
+            else {
                 Assert.assertTrue(backupMetadata.getStart().before(latest));
                 latest = backupMetadata.getStart();
             }
@@ -132,13 +122,11 @@ public class TestSnapshotStatusMgr {
     }
 
     @Test
-    public void testSnapshotStatusSize() throws Exception
-    {
+    public void testSnapshotStatusSize() throws Exception {
         final int noOfEntries = backupStatusMgr.getCapacity() + 1;
         Date startTime = DateUtil.getDate("19850101");
 
-        for (int i = 0 ; i < noOfEntries; i++)
-        {
+        for (int i = 0; i < noOfEntries; i++) {
             Date time = new DateTime(startTime.getTime()).plusDays(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);
@@ -146,7 +134,7 @@ public class TestSnapshotStatusMgr {
         }
 
         // Verify there is only capacity entries
-        Assert.assertEquals(backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
+        Assert.assertEquals(
+                backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
     }
-
 }

@@ -1,16 +1,14 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.resources;
@@ -18,30 +16,29 @@ package com.netflix.priam.resources;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.defaultimpl.ICassandraProcess;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.restore.Restore;
 import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.ITokenManager;
-import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.math.BigInteger;
+import java.util.Date;
+import java.util.List;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import java.math.BigInteger;
-import java.util.Date;
-import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Path("/v1")
 @Produces(MediaType.APPLICATION_JSON)
@@ -66,8 +63,16 @@ public class RestoreServlet {
     private final InstanceState instanceState;
 
     @Inject
-    public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-            , IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, InstanceState instanceState) {
+    public RestoreServlet(
+            IConfiguration config,
+            Restore restoreObj,
+            Provider<AbstractBackupPath> pathProvider,
+            PriamServer priamServer,
+            IPriamInstanceFactory factory,
+            ICassandraTuner tuner,
+            ICassandraProcess cassProcess,
+            ITokenManager tokenManager,
+            InstanceState instanceState) {
         this.config = config;
         this.restoreObj = restoreObj;
         this.pathProvider = pathProvider;
@@ -78,7 +83,6 @@ public class RestoreServlet {
         this.tokenManager = tokenManager;
         this.instanceState = instanceState;
     }
-
 
     /*
      * @return metadata of current restore.  If no restore in progress, returns the metadata of most recent restore attempt.
@@ -95,8 +99,13 @@ public class RestoreServlet {
 
     @GET
     @Path("/restore")
-    public Response restore(@QueryParam(REST_HEADER_RANGE) String daterange, @QueryParam(REST_HEADER_REGION) String region, @QueryParam(REST_HEADER_TOKEN) String token,
-                            @QueryParam(REST_KEYSPACES) String keyspaces, @QueryParam(REST_RESTORE_PREFIX) String restorePrefix) throws Exception {
+    public Response restore(
+            @QueryParam(REST_HEADER_RANGE) String daterange,
+            @QueryParam(REST_HEADER_REGION) String region,
+            @QueryParam(REST_HEADER_TOKEN) String token,
+            @QueryParam(REST_KEYSPACES) String keyspaces,
+            @QueryParam(REST_RESTORE_PREFIX) String restorePrefix)
+            throws Exception {
         Date startTime;
         Date endTime;
 
@@ -115,14 +124,20 @@ public class RestoreServlet {
             config.setRestorePrefix(restorePrefix);
         }
 
-        logger.info("Parameters: { token: [{}], region: [{}], startTime: [{}], endTime: [{}], keyspaces: [{}], restorePrefix: [{}]}",
-                token, region, startTime, endTime, keyspaces, restorePrefix);
+        logger.info(
+                "Parameters: { token: [{}], region: [{}], startTime: [{}], endTime: [{}], keyspaces: [{}], restorePrefix: [{}]}",
+                token,
+                region,
+                startTime,
+                endTime,
+                keyspaces,
+                restorePrefix);
 
         restore(token, region, startTime, endTime, keyspaces);
 
-        //Since this call is probably never called in parallel, config is multi-thread safe to be edited
-        if (origRestorePrefix != null)
-            config.setRestorePrefix(origRestorePrefix);
+        // Since this call is probably never called in parallel, config is multi-thread safe to be
+        // edited
+        if (origRestorePrefix != null) config.setRestorePrefix(origRestorePrefix);
         else config.setRestorePrefix("");
 
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
@@ -131,26 +146,35 @@ public class RestoreServlet {
     /**
      * Restore with the specified start and end time.
      *
-     * @param token     Overrides the current token with this one, if specified
-     * @param region    Override the region for searching backup
+     * @param token Overrides the current token with this one, if specified
+     * @param region Override the region for searching backup
      * @param startTime Start time
-     * @param endTime   End time upto which the restore should fetch data
+     * @param endTime End time upto which the restore should fetch data
      * @param keyspaces Comma seperated list of keyspaces to restore
      * @throws Exception
      */
-    private void restore(String token, String region, Date startTime, Date endTime, String keyspaces) throws Exception {
+    private void restore(
+            String token, String region, Date startTime, Date endTime, String keyspaces)
+            throws Exception {
         String origRegion = config.getDC();
         String origToken = priamServer.getId().getInstance().getToken();
-        if (StringUtils.isNotBlank(token))
-            priamServer.getId().getInstance().setToken(token);
+        if (StringUtils.isNotBlank(token)) priamServer.getId().getInstance().setToken(token);
 
         if (config.isRestoreClosestToken())
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), config.getDC()));
+            priamServer
+                    .getId()
+                    .getInstance()
+                    .setToken(
+                            closestToken(
+                                    priamServer.getId().getInstance().getToken(), config.getDC()));
 
         if (StringUtils.isNotBlank(region)) {
             config.setDC(region);
             logger.info("Restoring from region {}", region);
-            priamServer.getId().getInstance().setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
+            priamServer
+                    .getId()
+                    .getInstance()
+                    .setToken(closestToken(priamServer.getId().getInstance().getToken(), region));
             logger.info("Restore will use token {}", priamServer.getId().getInstance().getToken());
         }
 
@@ -166,17 +190,13 @@ public class RestoreServlet {
         cassProcess.start(true);
     }
 
-    /**
-     * Find closest token in the specified region
-     */
+    /** Find closest token in the specified region */
     private String closestToken(String token, String region) {
         List<PriamInstance> plist = factory.getAllIds(config.getAppName());
         List<BigInteger> tokenList = Lists.newArrayList();
         for (PriamInstance ins : plist) {
-            if (ins.getDC().equalsIgnoreCase(region))
-                tokenList.add(new BigInteger(ins.getToken()));
+            if (ins.getDC().equalsIgnoreCase(region)) tokenList.add(new BigInteger(ins.getToken()));
         }
         return tokenManager.findClosestToken(new BigInteger(token), tokenList).toString();
     }
-
 }

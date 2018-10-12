@@ -18,14 +18,10 @@ package com.netflix.priam.merics;
 
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
-
 import javax.inject.Inject;
 import javax.inject.Singleton;
 
-/**
- * Measurement class for scheduled compactions
- * Created by aagrawal on 2/28/18.
- */
+/** Measurement class for scheduled compactions Created by aagrawal on 2/28/18. */
 @Singleton
 public class CompactionMeasurement implements IMeasurement {
     private final Counter failure, success;
@@ -35,7 +31,6 @@ public class CompactionMeasurement implements IMeasurement {
         failure = registry.counter(Metrics.METRIC_PREFIX + "compaction.failure");
         success = registry.counter(Metrics.METRIC_PREFIX + "compaction.success");
     }
-
 
     public void incrementFailure() {
         this.failure.increment();

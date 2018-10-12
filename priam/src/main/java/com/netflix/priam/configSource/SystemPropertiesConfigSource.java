@@ -19,15 +19,15 @@ package com.netflix.priam.configSource;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Maps;
 import com.netflix.priam.config.PriamConfiguration;
-
 import java.util.Map;
 import java.util.Properties;
 
 /**
  * Loads {@link System#getProperties()} as a source.
  *
- * Implementation note: {@link #set(String, String)} does not write to system properties, but will write to a new map.
- * This means that setting values to this source has no effect on system properties or other instances of this class.
+ * <p>Implementation note: {@link #set(String, String)} does not write to system properties, but
+ * will write to a new map. This means that setting values to this source has no effect on system
+ * properties or other instances of this class.
  */
 public final class SystemPropertiesConfigSource extends AbstractConfigSource {
     private static final String BLANK = "";
@@ -41,8 +41,7 @@ public final class SystemPropertiesConfigSource extends AbstractConfigSource {
         Properties systemProps = System.getProperties();
 
         for (final String key : systemProps.stringPropertyNames()) {
-            if (!key.startsWith(PriamConfiguration.PRIAM_PRE))
-                continue;
+            if (!key.startsWith(PriamConfiguration.PRIAM_PRE)) continue;
             final String value = systemProps.getProperty(key);
             if (value != null && !BLANK.equals(value)) {
                 data.put(key, value);

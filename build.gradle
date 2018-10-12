@@ -1,5 +1,14 @@
 plugins {
     id 'nebula.netflixoss' version '5.2.0'
+    id 'com.github.sherter.google-java-format' version '0.7.1'
+}
+
+repositories {
+    jcenter()
+}
+
+googleJavaFormat {
+    options style: 'AOSP'
 }
 
 ext.githubProjectName = 'Priam'

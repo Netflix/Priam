@@ -20,12 +20,10 @@ package com.netflix.priam.utils;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * Created by aagrawal on 7/11/17.
- */
+/** Created by aagrawal on 7/11/17. */
 /*
- Limit the size of the hashmap using FIFO algorithm.
- */
+Limit the size of the hashmap using FIFO algorithm.
+*/
 public class MaxSizeHashMap<K, V> extends LinkedHashMap<K, V> {
     private final int maxSize;
 
@@ -38,4 +36,3 @@ public class MaxSizeHashMap<K, V> extends LinkedHashMap<K, V> {
         return size() > maxSize;
     }
 }
-

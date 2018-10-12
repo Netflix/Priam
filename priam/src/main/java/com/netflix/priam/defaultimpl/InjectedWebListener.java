@@ -22,25 +22,25 @@ import com.google.inject.Injector;
 import com.google.inject.Module;
 import com.google.inject.servlet.GuiceServletContextListener;
 import com.google.inject.servlet.ServletModule;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.config.IConfiguration;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletContextEvent;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletContextEvent;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class InjectedWebListener extends GuiceServletContextListener {
     protected static final Logger logger = LoggerFactory.getLogger(InjectedWebListener.class);
     private Injector injector;
+
     @Override
     protected Injector getInjector() {
         List<Module> moduleList = Lists.newArrayList();
@@ -59,14 +59,12 @@ public class InjectedWebListener extends GuiceServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
-        try
-        {
-            for (Scheduler scheduler : injector.getInstance(SchedulerFactory.class).getAllSchedulers()){
+        try {
+            for (Scheduler scheduler :
+                    injector.getInstance(SchedulerFactory.class).getAllSchedulers()) {
                 scheduler.shutdown();
             }
-        }
-        catch (SchedulerException e)
-        {
+        } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
         super.contextDestroyed(servletContextEvent);
@@ -82,5 +80,4 @@ public class InjectedWebListener extends GuiceServletContextListener {
             serve("/REST/*").with(GuiceContainer.class, params);
         }
     }
-
 }

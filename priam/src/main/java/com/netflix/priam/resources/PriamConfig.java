@@ -16,6 +16,8 @@
  */
 package com.netflix.priam.resources;
 
+import com.google.inject.Inject;
+import com.netflix.priam.PriamServer;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.GET;
@@ -25,20 +27,15 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
 
 /**
  * This servlet will provide the configuration API service for use by external scripts and tooling
  */
 @Path("/v1/config")
 @Produces(MediaType.APPLICATION_JSON)
-public class PriamConfig
-{
+public class PriamConfig {
     private static final Logger logger = LoggerFactory.getLogger(PriamConfig.class);
     private final PriamServer priamServer;
 
@@ -50,7 +47,8 @@ public class PriamConfig
     private Response doGetPriamConfig(String group, String name) {
         try {
             final Map<String, Object> result = new HashMap<>();
-            final Map<String, Object> value = priamServer.getConfiguration().getStructuredConfiguration(group);
+            final Map<String, Object> value =
+                    priamServer.getConfiguration().getStructuredConfiguration(group);
             if (name != null && value.containsKey(name)) {
                 result.put(name, value.get(name));
                 return Response.ok(result, MediaType.APPLICATION_JSON).build();
@@ -68,22 +66,24 @@ public class PriamConfig
         }
     }
 
-
     @GET
     @Path("/structured/{group}")
-    public Response getPriamConfig(@PathParam("group") String group, @PathParam("name") String name) {
+    public Response getPriamConfig(
+            @PathParam("group") String group, @PathParam("name") String name) {
         return doGetPriamConfig(group, null);
     }
 
     @GET
     @Path("/structured/{group}/{name}")
-    public Response getPriamConfigByName(@PathParam("group") String group, @PathParam("name") String name) {
+    public Response getPriamConfigByName(
+            @PathParam("group") String group, @PathParam("name") String name) {
         return doGetPriamConfig(group, name);
     }
 
     @GET
     @Path("/unstructured/{name}")
-    public Response getProperty(@PathParam("name") String name, @QueryParam("default") String defaultValue) {
+    public Response getProperty(
+            @PathParam("name") String name, @QueryParam("default") String defaultValue) {
         Map<String, Object> result = new HashMap<>();
         try {
             String value = priamServer.getConfiguration().getProperty(name, defaultValue);

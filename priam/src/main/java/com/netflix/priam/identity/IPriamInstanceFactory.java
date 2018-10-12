@@ -18,18 +18,18 @@ package com.netflix.priam.identity;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.SDBInstanceFactory;
-
 import java.util.List;
 import java.util.Map;
 
 /**
- *  Interface for managing Cassandra instance data. Provides functionality
- *  to register, update, delete or list instances from the registry 
+ * Interface for managing Cassandra instance data. Provides functionality to register, update,
+ * delete or list instances from the registry
  */
 @ImplementedBy(SDBInstanceFactory.class)
 public interface IPriamInstanceFactory<T> {
     /**
      * Return a list of all Cassandra server nodes registered.
+     *
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
@@ -37,6 +37,7 @@ public interface IPriamInstanceFactory<T> {
 
     /**
      * Return the Cassandra server node with the given {@code id}.
+     *
      * @param appName the cluster name
      * @param id the node id
      * @return the node with the given {@code id}, or {@code null} if none found
@@ -45,6 +46,7 @@ public interface IPriamInstanceFactory<T> {
 
     /**
      * Create/Register an instance of the server with its info.
+     *
      * @param app
      * @param id
      * @param instanceID
@@ -55,28 +57,40 @@ public interface IPriamInstanceFactory<T> {
      * @param token
      * @return the new node
      */
-    PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
+    PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token);
 
     /**
      * Delete the server node from the registry
+     *
      * @param inst the node to delete
      */
     void delete(PriamInstance inst);
 
     /**
      * Update the details of the server node in registry
+     *
      * @param inst the node to update
      */
     void update(PriamInstance inst);
 
     /**
      * Sort the list by instance ID
+     *
      * @param return_ the list of nodes to sort
      */
     void sort(List<T> return_);
 
     /**
      * Attach volumes if required
+     *
      * @param instance
      * @param mountPath
      * @param device

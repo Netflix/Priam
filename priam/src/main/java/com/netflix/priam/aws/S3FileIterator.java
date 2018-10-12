@@ -23,16 +23,13 @@ import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.common.collect.Lists;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Iterator representing list of backup files available on S3
- */
+/** Iterator representing list of backup files available on S3 */
 public class S3FileIterator implements Iterator<AbstractBackupPath> {
     private static final Logger logger = LoggerFactory.getLogger(S3FileIterator.class);
     private final Provider<AbstractBackupPath> pathProvider;
@@ -42,7 +39,12 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
     private Iterator<AbstractBackupPath> iterator;
     private ObjectListing objectListing;
 
-    public S3FileIterator(Provider<AbstractBackupPath> pathProvider, AmazonS3 s3Client, String path, Date start, Date till) {
+    public S3FileIterator(
+            Provider<AbstractBackupPath> pathProvider,
+            AmazonS3 s3Client,
+            String path,
+            Date start,
+            Date till) {
         this.start = start;
         this.till = till;
         this.pathProvider = pathProvider;
@@ -64,7 +66,6 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
                 objectListing = s3Client.listNextBatchOfObjects(objectListing);
                 iterator = createIterator();
             }
-
         }
         return iterator.hasNext();
     }
@@ -74,8 +75,15 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
         for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(summary.getKey());
-            logger.debug("New key {} path = {} start: {} end: {} my {}", summary.getKey(), path.getRemotePath(), start, till, path.getTime());
-            if ((path.getTime().after(start) && path.getTime().before(till)) || path.getTime().equals(start)) {
+            logger.debug(
+                    "New key {} path = {} start: {} end: {} my {}",
+                    summary.getKey(),
+                    path.getRemotePath(),
+                    start,
+                    till,
+                    path.getTime());
+            if ((path.getTime().after(start) && path.getTime().before(till))
+                    || path.getTime().equals(start)) {
                 temp.add(path);
                 logger.debug("Added key {}", summary.getKey());
             }

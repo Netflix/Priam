@@ -1,26 +1,21 @@
 package com.netflix.priam.resources;
 
+import static org.junit.Assert.*;
+
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.config.FakeConfiguration;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-
+import mockit.Expectations;
+import mockit.Mocked;
+import mockit.integration.junit4.JMockit;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
-
-import static org.junit.Assert.*;
-
 @RunWith(JMockit.class)
-public class PriamConfigTest
-{
+public class PriamConfigTest {
     private @Mocked PriamServer priamServer;
 
     private PriamConfig resource;
@@ -34,10 +29,8 @@ public class PriamConfigTest
         fakeConfiguration.fakeProperties.put("test.prop", "test_value");
     }
 
-
     @Test
-    public void getPriamConfig()
-    {
+    public void getPriamConfig() {
         final Map<String, String> expected = new HashMap<>();
         expected.put("backupLocation", "casstestbackup");
         new Expectations() {
@@ -57,8 +50,7 @@ public class PriamConfigTest
     }
 
     @Test
-    public void getProperty()
-    {
+    public void getProperty() {
         final Map<String, String> expected = new HashMap<>();
         expected.put("test.prop", "test_value");
         new Expectations() {

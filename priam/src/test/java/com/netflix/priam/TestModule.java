@@ -40,21 +40,23 @@ import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
-
 @Ignore
-public class TestModule extends AbstractModule
-{
+public class TestModule extends AbstractModule {
 
     @Override
-    protected void configure()
-    {
-        bind(IConfiguration.class).toInstance(
-                new FakeConfiguration(FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
+    protected void configure() {
+        bind(IConfiguration.class)
+                .toInstance(
+                        new FakeConfiguration(
+                                FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
         bind(IBackupRestoreConfig.class).to(FakeBackupRestoreConfig.class);
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
-        bind(IMembership.class).toInstance(new FakeMembership(
-                ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
+        bind(IMembership.class)
+                .toInstance(
+                        new FakeMembership(
+                                ImmutableList.of(
+                                        "fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(Sleeper.class).to(FakeSleeper.class);

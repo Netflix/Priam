@@ -27,63 +27,82 @@ import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Set;
 import java.util.concurrent.*;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * This class is responsible for managing parallelism and orchestrating the upload and download, but the subclasses
- * actually implement the details of uploading a file.
+ * This class is responsible for managing parallelism and orchestrating the upload and download, but
+ * the subclasses actually implement the details of uploading a file.
  *
- * Created by aagrawal on 8/30/18.
+ * <p>Created by aagrawal on 8/30/18.
  */
 public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
-    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers =
+            new CopyOnWriteArrayList<>();
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
     private final ThreadPoolExecutor fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
 
     @Inject
-    public AbstractFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
-                              BackupNotificationMgr backupNotificationMgr) {
+    public AbstractFileSystem(
+            IConfiguration configuration,
+            BackupMetrics backupMetrics,
+            BackupNotificationMgr backupNotificationMgr) {
         this.backupMetrics = backupMetrics;
         // Add notifications.
         this.addObserver(backupNotificationMgr);
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
         /*
-         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
-         files for "sync" feature which might compete with backups for scheduling.
-         Also, we may want to have different TIMEOUT for each kind of operation (upload/download) based on our file system choices.
-         */
-        BlockingQueue<Runnable> uploadQueue = new ArrayBlockingQueue<>(configuration.getBackupQueueSize());
-        PolledMeter.using(backupMetrics.getRegistry()).withName(backupMetrics.uploadQueueSize).monitorSize(uploadQueue);
-        this.fileUploadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getBackupThreads(), uploadQueue, configuration.getUploadTimeout());
+        Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
+        files for "sync" feature which might compete with backups for scheduling.
+        Also, we may want to have different TIMEOUT for each kind of operation (upload/download) based on our file system choices.
+        */
+        BlockingQueue<Runnable> uploadQueue =
+                new ArrayBlockingQueue<>(configuration.getBackupQueueSize());
+        PolledMeter.using(backupMetrics.getRegistry())
+                .withName(backupMetrics.uploadQueueSize)
+                .monitorSize(uploadQueue);
+        this.fileUploadExecutor =
+                new BlockingSubmitThreadPoolExecutor(
+                        configuration.getBackupThreads(),
+                        uploadQueue,
+                        configuration.getUploadTimeout());
 
-        BlockingQueue<Runnable> downloadQueue = new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
-        PolledMeter.using(backupMetrics.getRegistry()).withName(backupMetrics.downloadQueueSize).monitorSize(downloadQueue);
-        this.fileDownloadExecutor = new BlockingSubmitThreadPoolExecutor(configuration.getRestoreThreads(), downloadQueue, configuration.getDownloadTimeout());
+        BlockingQueue<Runnable> downloadQueue =
+                new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
+        PolledMeter.using(backupMetrics.getRegistry())
+                .withName(backupMetrics.downloadQueueSize)
+                .monitorSize(downloadQueue);
+        this.fileDownloadExecutor =
+                new BlockingSubmitThreadPoolExecutor(
+                        configuration.getRestoreThreads(),
+                        downloadQueue,
+                        configuration.getDownloadTimeout());
     }
 
     @Override
-    public Future<Path> asyncDownloadFile(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException, RejectedExecutionException {
-        return fileDownloadExecutor.submit(() -> {
-            downloadFile(remotePath, localPath, retry);
-            return remotePath;
-        });
+    public Future<Path> asyncDownloadFile(
+            final Path remotePath, final Path localPath, final int retry)
+            throws BackupRestoreException, RejectedExecutionException {
+        return fileDownloadExecutor.submit(
+                () -> {
+                    downloadFile(remotePath, localPath, retry);
+                    return remotePath;
+                });
     }
 
     @Override
-    public void downloadFile(final Path remotePath, final Path localPath, final int retry) throws BackupRestoreException {
-        //TODO: Should we download the file if localPath already exists?
-        if (remotePath == null)
-            return;
+    public void downloadFile(final Path remotePath, final Path localPath, final int retry)
+            throws BackupRestoreException {
+        // TODO: Should we download the file if localPath already exists?
+        if (remotePath == null) return;
 
         logger.info("Downloading file: {} to location: {}", remotePath, localPath);
         try {
@@ -94,7 +113,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                     return null;
                 }
             }.call();
-            // Note we only downloaded the bytes which are represented on file system (they are compressed and maybe encrypted).
+            // Note we only downloaded the bytes which are represented on file system (they are
+            // compressed and maybe encrypted).
             // File size after decompression or decryption might be more/less.
             backupMetrics.recordDownloadRate(getFileSize(remotePath));
             backupMetrics.incrementValidDownloads();
@@ -106,68 +126,92 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         }
     }
 
-    protected abstract void downloadFileImpl(final Path remotePath, final Path localPath) throws BackupRestoreException;
+    protected abstract void downloadFileImpl(final Path remotePath, final Path localPath)
+            throws BackupRestoreException;
 
     @Override
-    public Future<Path> asyncUploadFile(final Path localPath, final Path remotePath, final AbstractBackupPath path, final int retry, final boolean deleteAfterSuccessfulUpload) throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
-        return fileUploadExecutor.submit(() -> {
-            uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);
-            return localPath;
-        });
+    public Future<Path> asyncUploadFile(
+            final Path localPath,
+            final Path remotePath,
+            final AbstractBackupPath path,
+            final int retry,
+            final boolean deleteAfterSuccessfulUpload)
+            throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
+        return fileUploadExecutor.submit(
+                () -> {
+                    uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);
+                    return localPath;
+                });
     }
 
     @Override
-    public void uploadFile(final Path localPath, final Path remotePath, final AbstractBackupPath path, final int retry, final boolean deleteAfterSuccessfulUpload) throws FileNotFoundException, BackupRestoreException {
-        if (localPath == null || remotePath == null || !localPath.toFile().exists() || localPath.toFile().isDirectory())
-            throw new FileNotFoundException("File do not exist or is a directory. localPath: " + localPath + ", remotePath: " + remotePath);
+    public void uploadFile(
+            final Path localPath,
+            final Path remotePath,
+            final AbstractBackupPath path,
+            final int retry,
+            final boolean deleteAfterSuccessfulUpload)
+            throws FileNotFoundException, BackupRestoreException {
+        if (localPath == null
+                || remotePath == null
+                || !localPath.toFile().exists()
+                || localPath.toFile().isDirectory())
+            throw new FileNotFoundException(
+                    "File do not exist or is a directory. localPath: "
+                            + localPath
+                            + ", remotePath: "
+                            + remotePath);
 
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {
                 notifyEventStart(new BackupEvent(path));
-                long uploadedFileSize = new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
-                    @Override
-                    public Long retriableCall() throws Exception {
-                        return uploadFileImpl(localPath, remotePath);
-                    }
-                }.call();
+                long uploadedFileSize =
+                        new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
+                            @Override
+                            public Long retriableCall() throws Exception {
+                                return uploadFileImpl(localPath, remotePath);
+                            }
+                        }.call();
                 backupMetrics.recordUploadRate(uploadedFileSize);
                 backupMetrics.incrementValidUploads();
                 path.setCompressedFileSize(uploadedFileSize);
                 notifyEventSuccess(new BackupEvent(path));
-                logger.info("Successfully uploaded file: {} to location: {}", localPath, remotePath);
+                logger.info(
+                        "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
                 if (deleteAfterSuccessfulUpload && !FileUtils.deleteQuietly(localPath.toFile()))
-                    logger.warn(String.format("Failed to delete local file %s.", localPath.toFile().getAbsolutePath()));
+                    logger.warn(
+                            String.format(
+                                    "Failed to delete local file %s.",
+                                    localPath.toFile().getAbsolutePath()));
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
                 notifyEventFailure(new BackupEvent(path));
-                logger.error("Error while uploading file: {} to location: {}", localPath, remotePath);
+                logger.error(
+                        "Error while uploading file: {} to location: {}", localPath, remotePath);
                 throw new BackupRestoreException(e.getMessage());
             } finally {
-                //Remove the task from the list so if we try to upload file ever again, we can.
+                // Remove the task from the list so if we try to upload file ever again, we can.
                 tasksQueued.remove(localPath);
             }
-        } else
-            logger.info("Already in queue, no-op.  File: {}", localPath);
-
+        } else logger.info("Already in queue, no-op.  File: {}", localPath);
     }
 
-    protected abstract long uploadFileImpl(final Path localPath, final Path remotePath) throws BackupRestoreException;
+    protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
+            throws BackupRestoreException;
 
     @Override
     public final void addObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null)
-            throw new NullPointerException("observer must not be null.");
+        if (observer == null) throw new NullPointerException("observer must not be null.");
 
         observers.addIfAbsent(observer);
     }
 
     @Override
     public void removeObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null)
-            throw new NullPointerException("observer must not be null.");
+        if (observer == null) throw new NullPointerException("observer must not be null.");
 
         observers.remove(observer);
     }

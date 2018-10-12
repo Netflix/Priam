@@ -31,16 +31,13 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Ignore
-public abstract class InstanceTestUtils
-{
+public abstract class InstanceTestUtils {
 
     List<String> instances = new ArrayList<String>();
     IMembership membership;
@@ -50,13 +47,12 @@ public abstract class InstanceTestUtils
     Sleeper sleeper;
     DeadTokenRetriever deadTokenRetriever;
     PreGeneratedTokenRetriever preGeneratedTokenRetriever;
-	NewTokenRetriever newTokenRetriever;
-  	ITokenManager tokenManager;
-  	InstanceEnvIdentity insEnvIdentity;  
+    NewTokenRetriever newTokenRetriever;
+    ITokenManager tokenManager;
+    InstanceEnvIdentity insEnvIdentity;
 
     @Before
-    public void setup()
-    {
+    public void setup() {
         instances.add("fakeinstance1");
         instances.add("fakeinstance2");
         instances.add("fakeinstance3");
@@ -72,13 +68,15 @@ public abstract class InstanceTestUtils
         tokenManager = new TokenManager(config);
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
-        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
-        this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
-        this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
+        this.deadTokenRetriever =
+                new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
+        this.preGeneratedTokenRetriever =
+                new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
+        this.newTokenRetriever =
+                new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }
 
-    public void createInstances() throws Exception
-    {
+    public void createInstances() throws Exception {
         createInstanceIdentity("az1", "fakeinstance1");
         createInstanceIdentity("az1", "fakeinstance2");
         createInstanceIdentity("az1", "fakeinstance3");
@@ -92,14 +90,18 @@ public abstract class InstanceTestUtils
         createInstanceIdentity("az3", "fakeinstance9");
     }
 
-    protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception
-    {
+    protected InstanceIdentity createInstanceIdentity(String zone, String instanceId)
+            throws Exception {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager(config)
-        , this.deadTokenRetriever
-        , this.preGeneratedTokenRetriever
-        , this.newTokenRetriever
-        );
+        return new InstanceIdentity(
+                factory,
+                membership,
+                config,
+                sleeper,
+                new TokenManager(config),
+                this.deadTokenRetriever,
+                this.preGeneratedTokenRetriever,
+                this.newTokenRetriever);
     }
 }

@@ -38,9 +38,11 @@ public class InstanceState {
     private static final Logger logger = LoggerFactory.getLogger(InstanceState.class);
 
     public enum NODE_STATE {
-        JOIN, // This state to be used when Priam is joining the ring for the first time or was
-              // already assigned this token.
-        REPLACE // This state to be used when Priam replaces an instance from the token range.
+        // This state to be used when Priam is joining the ring for the first time or was
+        // already assigned this token.
+        JOIN,
+        // This state to be used when Priam replaces an instance from the token range.
+        REPLACE
     }
 
     // Bootstrap status
@@ -226,9 +228,8 @@ public class InstanceState {
         private LocalDateTime executionStartTime,
                 executionEndTime; // Start-end time of the actual restore execution
         private String snapshotMetaFile; // Location of the snapshot meta file selected for restore.
-        private Status
-                status; // the state of a restore.  Note: this is different than the "status" of a
-                        // Task.
+        // the state of a restore.  Note: this is different than the "status" of a Task.
+        private Status status;
 
         public void resetStatus() {
             this.snapshotMetaFile = null;

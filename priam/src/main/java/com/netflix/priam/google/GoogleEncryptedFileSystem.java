@@ -52,8 +52,8 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     private static final JsonFactory JSON_FACTORY = JacksonFactory.getDefaultInstance();
 
     private HttpTransport httpTransport;
-    private Credential
-            credential; // represents our "service account" credentials we will use to access GCS
+    // represents our "service account" credentials we will use to access GCS
+    private Credential credential;
     private Storage gcsStorageHandle;
     private Storage.Objects objectsResoruceHandle = null;
 
@@ -172,15 +172,14 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
 
                 Collection<String> scopes = new ArrayList<>(1);
                 scopes.add(StorageScopes.DEVSTORAGE_READ_ONLY);
+                // Cryptex decrypted service account key derive from the GCS console
                 this.credential =
                         new GoogleCredential.Builder()
                                 .setTransport(this.httpTransport)
                                 .setJsonFactory(JSON_FACTORY)
                                 .setServiceAccountId(service_acct_email)
                                 .setServiceAccountScopes(scopes)
-                                .setServiceAccountPrivateKeyFromP12File(
-                                        gcsPrivateKeyHandle) // Cryptex decrypted service account
-                                                             // key derive from the GCS console
+                                .setServiceAccountPrivateKeyFromP12File(gcsPrivateKeyHandle)
                                 .build();
             }
         }
@@ -204,10 +203,9 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
                     e);
         }
 
-        get.getMediaHttpDownloader()
-                .setDirectDownloadEnabled(
-                        true); // If you're not using GCS' AppEngine, download the whole thing
-                               // (instead of chunks) in one request, if possible.
+        // If you're not using GCS' AppEngine, download the whole thing (instead of chunks) in one
+        // request, if possible.
+        get.getMediaHttpDownloader().setDirectDownloadEnabled(true);
         try (OutputStream os = new FileOutputStream(localPath.toFile());
                 InputStream is = get.executeMediaAsInputStream()) {
             IOUtils.copyLarge(is, os);

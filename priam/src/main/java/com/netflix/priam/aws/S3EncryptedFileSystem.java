@@ -95,22 +95,20 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     @Override
     protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
         long chunkSize = getChunkSize(localPath);
+        // initialize chunking request to aws
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(
-                        config.getBackupPrefix(),
-                        remotePath.toString()); // initialize chunking request to aws
-        InitiateMultipartUploadResult initResponse =
-                s3Client.initiateMultipartUpload(
-                        initRequest); // Fetch the aws generated upload id for this chunking request
+                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
+        // Fetch the aws generated upload id for this chunking request
+        InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part =
                 new DataPart(
                         config.getBackupPrefix(),
                         remotePath.toString(),
                         initResponse.getUploadId());
-        List<PartETag> partETags =
-                Lists.newArrayList(); // Metadata on number of parts to be uploaded
+        // Metadata on number of parts to be uploaded
+        List<PartETag> partETags = Lists.newArrayList();
 
-        // == Read chunks from src, compress it, and write to temp file
+        // Read chunks from src, compress it, and write to temp file
         File compressedDstFile = new File(localPath.toString() + ".compressed");
         if (logger.isDebugEnabled())
             logger.debug(
@@ -140,12 +138,14 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             Iterator<byte[]> chunks =
                     this.encryptor.encryptStream(compressedBis, remotePath.toString());
 
-            int partNum = 0; // identifies this part position in the object we are uploading
+            // identifies this part position in the object we are uploading
+            int partNum = 0;
             long encryptedFileSize = 0;
 
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
-                rateLimiter.acquire(chunk.length); // throttle upload to endpoint
+                // throttle upload to endpoint
+                rateLimiter.acquire(chunk.length);
 
                 DataPart dp =
                         new DataPart(
@@ -169,11 +169,10 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                                 + ")");
             }
 
+            // complete the aws chunking upload by providing to aws the ETag that uniquely
+            // identifies the combined object datav
             CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
-                    new S3PartUploader(s3Client, part, partETags)
-                            .completeUpload(); // complete the aws chunking upload by providing to
-                                               // aws the ETag that uniquely identifies the combined
-                                               // object data
+                    new S3PartUploader(s3Client, part, partETags).completeUpload();
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
             return encryptedFileSize;
         } catch (Exception e) {

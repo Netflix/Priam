@@ -34,8 +34,8 @@ public class PgpCryptography implements IFileCryptography {
     private IConfiguration config;
 
     static {
-        Security.addProvider(
-                new BouncyCastleProvider()); // tell the JVM the security provider is PGP
+        // tell the JVM the security provider is PGP
+        Security.addProvider(new BouncyCastleProvider());
     }
 
     @Inject
@@ -101,32 +101,27 @@ public class PgpCryptography implements IFileCryptography {
 
         in = PGPUtil.getDecoderStream(in);
 
-        PGPObjectFactory inPgpReader =
-                new PGPObjectFactory(in); // general class for reading a stream of data.
+        // general class for reading a stream of data.
+        PGPObjectFactory inPgpReader = new PGPObjectFactory(in);
         Object o = inPgpReader.nextObject();
 
         PGPEncryptedDataList encryptedDataList;
         // the first object might be a PGP marker packet.
         if (o instanceof PGPEncryptedDataList) encryptedDataList = (PGPEncryptedDataList) o;
         else
-            encryptedDataList =
-                    (PGPEncryptedDataList)
-                            inPgpReader
-                                    .nextObject(); // first object was a marker, the real data is
-                                                   // the next one.
+            // first object was a marker, the real data is the next one.
+            encryptedDataList = (PGPEncryptedDataList) inPgpReader.nextObject();
 
-        Iterator encryptedDataIterator =
-                encryptedDataList
-                        .getEncryptedDataObjects(); // get the iterator so we can iterate through
-                                                    // all the encrypted data.
+        // get the iterator so we can iterate through all the encrypted data.
+        Iterator encryptedDataIterator = encryptedDataList.getEncryptedDataObjects();
 
-        PGPPrivateKey privateKey = null; // to be use for decryption
-        PGPPublicKeyEncryptedData encryptedDataStreamHandle =
-                null; // a handle to the encrypted data stream
+        // to be use for decryption
+        PGPPrivateKey privateKey = null;
+        // a handle to the encrypted data stream
+        PGPPublicKeyEncryptedData encryptedDataStreamHandle = null;
         while (privateKey == null && encryptedDataIterator.hasNext()) {
-            encryptedDataStreamHandle =
-                    (PGPPublicKeyEncryptedData)
-                            encryptedDataIterator.next(); // a handle to the encrypted data stream
+            // a handle to the encrypted data stream
+            encryptedDataStreamHandle = (PGPPublicKeyEncryptedData) encryptedDataIterator.next();
 
             try {
                 privateKey =
@@ -154,19 +149,17 @@ public class PgpCryptography implements IFileCryptography {
         PGPObjectFactory decryptedDataReader = new PGPObjectFactory(decryptInputStream);
 
         // the decrypted data object is compressed, lets decompress it.
+        // get a handle to the decrypted, compress data stream
         PGPCompressedData compressedDataReader =
-                (PGPCompressedData)
-                        decryptedDataReader
-                                .nextObject(); // get a handle to the decrypted, compress data
-                                               // stream
+                (PGPCompressedData) decryptedDataReader.nextObject();
         InputStream compressedStream =
                 new BufferedInputStream(compressedDataReader.getDataStream());
         PGPObjectFactory compressedStreamReader = new PGPObjectFactory(compressedStream);
         Object data = compressedStreamReader.nextObject();
         if (data instanceof PGPLiteralData) {
             PGPLiteralData dataPgpReader = (PGPLiteralData) data;
-            return dataPgpReader
-                    .getInputStream(); // a handle to the decrypted, uncompress data stream
+            // a handle to the decrypted, uncompress data stream
+            return dataPgpReader.getInputStream();
 
         } else if (data instanceof PGPOnePassSignatureList) {
             throw new PGPException(
@@ -246,7 +239,8 @@ public class PgpCryptography implements IFileCryptography {
                     pgout.write(buffer, 0, count);
                     if (bos.size() >= MAX_CHUNK) return returnSafe();
                 }
-                return done(); // flush remaining data in buffer and close resources.
+                // flush remaining data in buffer and close resources.
+                return done();
 
             } catch (Exception e) {
                 throw new RuntimeException(
@@ -308,16 +302,11 @@ public class PgpCryptography implements IFileCryptography {
                     new PGPEncryptedDataGenerator(
                             PGPEncryptedData.CAST5, true, new SecureRandom(), "BC");
             try {
-                encryptedDataGenerator.addMethod(
-                        pubKey); // Add a key encryption method to be used to encrypt the session
-                                 // data associated with this encrypted data
-                pgpBosWrapper =
-                        encryptedDataGenerator.open(
-                                bos,
-                                new byte
-                                        [1
-                                                << 15]); // wrapper around the buffer which will
-                                                         // contain the encrypted data.
+                // Add a key encryption method to be used to encrypt the session data associated
+                // with this encrypted data
+                encryptedDataGenerator.addMethod(pubKey);
+                // wrapper around the buffer which will contain the encrypted data.
+                pgpBosWrapper = encryptedDataGenerator.open(bos, new byte[1 << 15]);
             } catch (Exception e) {
                 throw new RuntimeException(
                         "Exception when wrapping PGP around our output stream", e);
@@ -380,26 +369,15 @@ public class PgpCryptography implements IFileCryptography {
             byte[] buff = new byte[1 << 16];
             int bytesRead = 0; // num of bytes read from the source input stream
 
-            while (this.bos.size() < len
-                    && (bytesRead = this.srcHandle.read(buff, 0, len))
-                            > 0) { // lets process each chunk from input until we fill our output
-                                   // stream or we reach end of input
-
-                /* TODO: msg was only for debug purposes
-                 *
-                logger.info("Reading input file: " + this.fileName + ", number of bytes read from input stream: " + bytesRead
-                		+ ", size of buffer: "
-                		+ buff.length
-                		);
-
-                */
-
+            while (this.bos.size() < len && (bytesRead = this.srcHandle.read(buff, 0, len)) > 0) {
+                // lets process each chunk from input until we fill our output
+                // stream or we reach end of input
                 this.encryptedOsWrapper.write(buff, 0, bytesRead);
             }
 
-            if (bytesRead
-                    < 0) { // we have read everything from the source input, lets perform cleanup on
-                           // any resources.
+            if (bytesRead < 0) {
+                // we have read everything from the source input, lets perform cleanup on
+                // any resources.
                 this.encryptedOsWrapper.close();
                 this.compressedDataGenerator.close();
                 this.pgpBosWrapper.close();
@@ -436,16 +414,11 @@ public class PgpCryptography implements IFileCryptography {
              */
             int wlen =
                     (this.bos.size() - this.bosOff) < len ? (this.bos.size() - this.bosOff) : len;
-            System.arraycopy(
-                    this.bos.toByteArray(),
-                    this.bosOff,
-                    buff,
-                    off,
-                    wlen); // copy data within encrypted stream to the output buffer
+            // copy data within encrypted stream to the output buffer
+            System.arraycopy(this.bos.toByteArray(), this.bosOff, buff, off, wlen);
 
-            this.bosOff =
-                    this.bosOff
-                            + wlen; // now update the current position within the encrypted stream
+            // now update the current position within the encrypted stream
+            this.bosOff = this.bosOff + wlen;
             return wlen;
         }
 

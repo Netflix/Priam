@@ -158,11 +158,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         String ip;
         for (PriamInstance ins : allIds) {
             logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
-            if (ins.getToken().equals(token)
-                    || !ins.getDC()
-                            .equals(
-                                    location)) { // avoid using dead instance and other regions'
-                                                 // instances
+            if (ins.getToken().equals(token) || !ins.getDC().equals(location)) {
+                // avoid using dead instance and other regions instances
                 continue;
             }
 

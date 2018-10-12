@@ -49,9 +49,9 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
             IFileSystemContext backupFileSystemCtx,
             IncrementalMetaData metaData) {
         super(config, backupFileSystemCtx, pathFactory);
-        this.metaData =
-                metaData; // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files
-                          // successfully uploaded)
+        // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
+        // uploaded)
+        this.metaData = metaData;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
@@ -101,11 +101,9 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
                 upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental());
 
         if (!uploadedFiles.isEmpty()) {
+            // format of yyyymmddhhmm (e.g. 201505060901)
             String incrementalUploadTime =
-                    AbstractBackupPath.formatDate(
-                            uploadedFiles
-                                    .get(0)
-                                    .getTime()); // format of yyyymmddhhmm (e.g. 201505060901)
+                    AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime());
             String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
             logger.info("Uploading meta file for incremental backup: {}", metaFileName);
             this.metaData.setMetaFileName(metaFileName);

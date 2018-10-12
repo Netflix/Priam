@@ -66,10 +66,8 @@ public class S3RoleAssumptionCredential implements IS3Credential {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
 
-                    final String roleArn =
-                            this.config
-                                    .getAWSRoleAssumptionArn(); // IAM role created for bucket own
-                                                                // by account "awsprodbackup"
+                    final String roleArn = this.config.getAWSRoleAssumptionArn();
+                    // IAM role created for bucket own by account "awsprodbackup"
                     if (roleArn == null || roleArn.isEmpty()) {
                         logger.warn(
                                 "Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
@@ -77,7 +75,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
                         // throw new NullPointerException("Role ARN is null or empty probably due to
                         // missing config entry");
                     } else {
-                        // == Get handle to an implementation that uses AWS Security Token Service
+                        // Get handle to an implementation that uses AWS Security Token Service
                         // (STS) to create temporary, short-lived session with explicit refresh for
                         // session/token expiration.
                         try {

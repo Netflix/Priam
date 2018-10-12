@@ -146,9 +146,8 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
             if (tool != null) {
                 try {
-                    tool
-                            .close(); // Ensure we properly close any existing (even if it's
-                                      // corrupted) connection to the remote jmx agent
+                    tool.close(); // Ensure we properly close any existing (even if it's
+                    // corrupted) connection to the remote jmx agent
                 } catch (IOException e) {
                     logger.warn(
                             "Exception performing house cleaning -- closing current connection to jmx remote agent.  Msg: {}",
@@ -177,7 +176,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
 
         if (tool
                 != null) { // lets make sure we properly close any existing (even if it's corrupted)
-                           // connection to the remote jmx agent
+            // connection to the remote jmx agent
             try {
                 tool.close();
             } catch (IOException e) {

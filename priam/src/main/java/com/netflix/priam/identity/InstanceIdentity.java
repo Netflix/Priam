@@ -198,11 +198,11 @@ public class InstanceIdentity {
 
                                 isReplace =
                                         true; // indicate that we are acquiring a dead instance's
-                                              // token
+                                // token
 
                                 if (deadTokenRetriever.getReplaceIp()
                                         != null) { // The IP address of the dead instance to which
-                                                   // we will acquire its token
+                                    // we will acquire its token
                                     replacedIp = deadTokenRetriever.getReplaceIp();
                                 }
                             }

@@ -128,7 +128,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                         new BufferedOutputStream(
                                                 new FileOutputStream(
                                                         decryptedFile)); // destination file after
-                                                                         // decryption)
+                                // decryption)
                                 InputStream in =
                                         new BufferedInputStream(
                                                 new FileInputStream(tempFile.getAbsolutePath()))) {

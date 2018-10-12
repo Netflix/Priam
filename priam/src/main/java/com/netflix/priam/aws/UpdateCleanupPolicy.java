@@ -33,7 +33,7 @@ import com.netflix.priam.utils.RetryableCallable;
 @Singleton
 public class UpdateCleanupPolicy extends Task {
     public static final String JOBNAME = "UpdateCleanupPolicy";
-    private IBackupFileSystem fs;
+    private final IBackupFileSystem fs;
 
     @Inject
     public UpdateCleanupPolicy(IConfiguration config, @Named("backup") IBackupFileSystem fs) {

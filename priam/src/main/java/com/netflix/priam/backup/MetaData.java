@@ -44,7 +44,7 @@ import java.util.List;
 public class MetaData {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    private static List<IMessageObserver> observers = new ArrayList<>();
+    private static final List<IMessageObserver> observers = new ArrayList<>();
     private final List<String> metaRemotePaths = new ArrayList<>();
     private final IBackupFileSystem fs;
 
@@ -138,9 +138,9 @@ public class MetaData {
         List<AbstractBackupPath> files = Lists.newArrayList();
         try {
             JSONArray jsonObj = (JSONArray) new JSONParser().parse(new FileReader(input));
-            for (int i = 0; i < jsonObj.size(); i++) {
+            for (Object aJsonObj : jsonObj) {
                 AbstractBackupPath p = pathFactory.get();
-                p.parseRemote((String) jsonObj.get(i));
+                p.parseRemote((String) aJsonObj);
                 files.add(p);
             }
 

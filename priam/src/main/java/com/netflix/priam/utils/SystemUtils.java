@@ -48,7 +48,7 @@ public class SystemUtils {
             byte[] b = new byte[2048];
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
-            int c = 0;
+            int c;
             while ((c = d.read(b, 0, b.length)) != -1)
                 bos.write(b, 0, c);
             String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
@@ -112,9 +112,9 @@ public class SystemUtils {
     }
 
     public static String toHex(byte[] digest) {
-        StringBuffer sb = new StringBuffer(digest.length * 2);
-        for (int i = 0; i < digest.length; i++) {
-            String hex = Integer.toHexString(digest[i]);
+        StringBuilder sb = new StringBuilder(digest.length * 2);
+        for (byte aDigest : digest) {
+            String hex = Integer.toHexString(aDigest);
             if (hex.length() == 1) {
                 sb.append("0");
             } else if (hex.length() == 8) {
@@ -165,7 +165,7 @@ public class SystemUtils {
     public static void writeToFile(String filename, String line) {
         File f = new File(filename);
         PrintWriter pw = null;
-        FileWriter fw = null;
+        FileWriter fw;
         try {
             if (!f.exists()) {
                 f.createNewFile();

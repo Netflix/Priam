@@ -44,7 +44,7 @@ import java.util.List;
  * Created by aagrawal on 6/12/18.
  */
 public class MetaFileWriterBuilder {
-    private MetaFileWriter metaFileWriter;
+    private final MetaFileWriter metaFileWriter;
     private static final Logger logger = LoggerFactory.getLogger(MetaFileWriterBuilder.class);
 
     @Inject
@@ -74,8 +74,8 @@ public class MetaFileWriterBuilder {
         private final Provider<AbstractBackupPath> pathFactory;
         private final IBackupFileSystem backupFileSystem;
 
-        private MetaFileInfo metaFileInfo;
-        private MetaFileManager metaFileManager;
+        private final MetaFileInfo metaFileInfo;
+        private final MetaFileManager metaFileManager;
         private JsonWriter jsonWriter;
         private Path metaFilePath;
 
@@ -92,7 +92,7 @@ public class MetaFileWriterBuilder {
         /**
          * Start the generation of meta file.
          *
-         * @throws IOException
+         * @throws IOException if unable to write to meta file (permissions, disk full etc)
          */
         public DataStep startMetaFileGeneration(Instant snapshotInstant) throws IOException {
             //Compute meta file name.
@@ -115,7 +115,7 @@ public class MetaFileWriterBuilder {
          * Add {@link ColumnfamilyResult} after it has been processed so it can be streamed to meta.json. Streaming write to meta.json is required so we don't get Priam OOM.
          *
          * @param columnfamilyResult a POJO encapsulating the column family result
-         * @throws IOException
+         * @throws IOException if unable to write to the file or if JSON is not valid
          */
         public MetaFileWriterBuilder.DataStep addColumnfamilyResult(ColumnfamilyResult columnfamilyResult) throws IOException {
             if (jsonWriter == null)
@@ -130,7 +130,7 @@ public class MetaFileWriterBuilder {
          * Finish the generation of meta.json file and save it on local media.
          *
          * @return {@link Path} to the local meta.json produced.
-         * @throws IOException
+         * @throws IOException if unable to write to file or if JSON is not valid
          */
         public MetaFileWriterBuilder.UploadStep endMetaFileGeneration() throws IOException {
             if (jsonWriter == null)

@@ -31,11 +31,11 @@ import java.util.regex.Pattern;
  */
 public class BackupRestoreUtil {
     private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
-    private static Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
+    private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private Map<String, List<String>> includeFilter;
     private Map<String, List<String>> excludeFilter;
 
-    public static final List<String> FILTER_KEYSPACE = Arrays.asList("OpsCenter");
+    public static final List<String> FILTER_KEYSPACE = Collections.singletonList("OpsCenter");
     private static final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "hints", "compactions_in_progress", "LocationInfo"));
 
     @Inject
@@ -59,10 +59,10 @@ public class BackupRestoreUtil {
         final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
 
         String[] filters = inputFilter.split(",");
-        for (int i = 0; i < filters.length; i++) { // process filter of form keyspace.* or keyspace.columnfamily
-            if (columnFamilyFilterPattern.matcher(filters[i]).find()) {
+        for (String cfFilter : filters) { // process filter of form keyspace.* or keyspace.columnfamily
+            if (columnFamilyFilterPattern.matcher(cfFilter).find()) {
 
-                String[] filter = filters[i].split("\\.");
+                String[] filter = cfFilter.split("\\.");
                 String keyspaceName = filter[0];
                 String columnFamilyName = filter[1];
 
@@ -75,7 +75,7 @@ public class BackupRestoreUtil {
                 columnFamilyFilter.put(keyspaceName, existingCfs);
 
             } else {
-                throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
+                throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cfFilter);
             }
         }
         return columnFamilyFilter;

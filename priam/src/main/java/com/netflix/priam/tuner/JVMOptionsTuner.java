@@ -105,7 +105,7 @@ public class JVMOptionsTuner {
             configuredOptions.add("#################");
 
             configuredOptions.addAll(upsertSet.values().stream()
-                    .map(jvmOption -> jvmOption.toJVMOptionString()).collect(Collectors.toList()));
+                    .map(JVMOption::toJVMOptionString).collect(Collectors.toList()));
         }
 
         return configuredOptions;
@@ -131,7 +131,7 @@ public class JVMOptionsTuner {
 
         //Is parameter for heap setting.
         if (option.isHeapJVMOption()) {
-            String configuredValue = null;
+            String configuredValue;
             switch (option.getJvmOption()) {
                 //Special handling for heap new size ("Xmn")
                 case "-Xmn":
@@ -192,8 +192,8 @@ public class JVMOptionsTuner {
     public static final Map<String, JVMOption> parseJVMOptions(String property) {
         if (StringUtils.isEmpty(property))
             return null;
-        return new HashSet<String>(Arrays.asList(property.split(","))).stream()
-                .map(line -> JVMOption.parse(line)).filter(jvmOption -> jvmOption != null).collect(Collectors.toMap(jvmOption -> jvmOption.getJvmOption(), jvmOption -> jvmOption));
+        return new HashSet<>(Arrays.asList(property.split(","))).stream()
+                .map(JVMOption::parse).filter(Objects::nonNull).collect(Collectors.toMap(JVMOption::getJvmOption, jvmOption -> jvmOption));
     }
 
 }

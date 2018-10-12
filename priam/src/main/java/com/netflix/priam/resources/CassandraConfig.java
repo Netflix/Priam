@@ -44,8 +44,8 @@ import java.util.Map;
 @Produces(MediaType.TEXT_PLAIN)
 public class CassandraConfig {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
-    private PriamServer priamServer;
-    private DoubleRing doubleRing;
+    private final PriamServer priamServer;
+    private final DoubleRing doubleRing;
 
     @Inject
     public CassandraConfig(PriamServer server, DoubleRing doubleRing) {

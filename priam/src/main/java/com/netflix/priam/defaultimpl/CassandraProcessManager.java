@@ -39,8 +39,8 @@ public class CassandraProcessManager implements ICassandraProcess {
     private static final String SUDO_STRING = "/usr/bin/sudo";
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
     protected final IConfiguration config;
-    private InstanceState instanceState;
-    private CassMonitorMetrics cassMonitorMetrics;
+    private final InstanceState instanceState;
+    private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
     public CassandraProcessManager(IConfiguration config, InstanceState instanceState, CassMonitorMetrics cassMonitorMetrics) {

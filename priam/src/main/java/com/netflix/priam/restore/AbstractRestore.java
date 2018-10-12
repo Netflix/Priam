@@ -57,14 +57,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private static BigInteger restoreToken;
     final IBackupFileSystem fs;
     final Sleeper sleeper;
-    private BackupRestoreUtil backupRestoreUtil;
-    private Provider<AbstractBackupPath> pathProvider;
-    private InstanceIdentity id;
-    private RestoreTokenSelector tokenSelector;
-    private ICassandraProcess cassProcess;
-    private InstanceState instanceState;
-    private MetaData metaData;
-    private IPostRestoreHook postRestoreHook;
+    private final BackupRestoreUtil backupRestoreUtil;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final InstanceIdentity id;
+    private final RestoreTokenSelector tokenSelector;
+    private final ICassandraProcess cassProcess;
+    private final InstanceState instanceState;
+    private final MetaData metaData;
+    private final IPostRestoreHook postRestoreHook;
 
     AbstractRestore(IConfiguration config, IBackupFileSystem fs, String name, Sleeper sleeper,
                     Provider<AbstractBackupPath> pathProvider,
@@ -93,7 +93,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         backupRestoreUtil.setFilters(restoreIncludeCFList, restoreExcludeCFList);
     }
 
-    private final List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType, boolean waitForCompletion) throws Exception {
+    private List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator, BackupFileType bkupFileType, boolean waitForCompletion) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
@@ -126,7 +126,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             future.get();
     }
 
-    private final List<Future<Path>> downloadCommitLogs(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN, boolean waitForCompletion) throws Exception {
+    private List<Future<Path>> downloadCommitLogs(Iterator<AbstractBackupPath> fsIterator, BackupFileType filter, int lastN, boolean waitForCompletion) throws Exception {
         if (fsIterator == null)
             return null;
 
@@ -144,12 +144,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         return download(bl.iterator(), filter, waitForCompletion);
     }
 
-    private final void stopCassProcess() throws IOException {
+    private void stopCassProcess() throws IOException {
         cassProcess.stop(true);
     }
 
     private String getRestorePrefix() {
-        String prefix = "";
+        String prefix;
 
         if (StringUtils.isNotBlank(config.getRestorePrefix()))
             prefix = config.getRestorePrefix();
@@ -162,7 +162,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     /*
      * Fetches meta.json used to store snapshots metadata.
      */
-    private final void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException {
+    private void fetchSnapshotMetaFile(String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime) throws IllegalStateException {
         logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
 
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);

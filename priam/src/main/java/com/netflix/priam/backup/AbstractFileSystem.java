@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.*;
 
@@ -46,10 +45,10 @@ import java.util.concurrent.*;
 public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
     private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers = new CopyOnWriteArrayList<>();
-    protected BackupMetrics backupMetrics;
-    private Set<Path> tasksQueued;
-    private ThreadPoolExecutor fileUploadExecutor;
-    private ThreadPoolExecutor fileDownloadExecutor;
+    protected final BackupMetrics backupMetrics;
+    private final Set<Path> tasksQueued;
+    private final ThreadPoolExecutor fileUploadExecutor;
+    private final ThreadPoolExecutor fileDownloadExecutor;
 
     @Inject
     public AbstractFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
@@ -138,8 +137,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 notifyEventSuccess(new BackupEvent(path));
                 logger.info("Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
-                if (deleteAfterSuccessfulUpload)
-                    FileUtils.deleteQuietly(localPath.toFile());
+                if (deleteAfterSuccessfulUpload && !FileUtils.deleteQuietly(localPath.toFile()))
+                    logger.warn(String.format("Failed to delete local file %s.", localPath.toFile().getAbsolutePath()));
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();

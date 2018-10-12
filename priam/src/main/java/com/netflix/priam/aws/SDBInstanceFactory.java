@@ -47,9 +47,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
         List<PriamInstance> return_ = new ArrayList<>();
-        for (PriamInstance instance : dao.getAllIds(appName)) {
-            return_.add(instance);
-        }
+        return_.addAll(dao.getAllIds(appName));
         sort(return_);
         return return_;
     }
@@ -103,17 +101,13 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
 
     @Override
     public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>() {
+        Comparator<? super PriamInstance> comparator = (Comparator<PriamInstance>) (o1, o2) -> {
 
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2) {
-
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
+            Integer c1 = o1.getId();
+            Integer c2 = o2.getId();
+            return c1.compareTo(c2);
         };
-        Collections.sort(return_, comparator);
+        return_.sort(comparator);
     }
 
     @Override
@@ -122,7 +116,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     }
 
     private PriamInstance makePriamInstance(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
-        Map<String, Object> v = (volumes == null) ? new HashMap<String, Object>() : volumes;
+        Map<String, Object> v = (volumes == null) ? new HashMap<>() : volumes;
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
         ins.setRac(rac);

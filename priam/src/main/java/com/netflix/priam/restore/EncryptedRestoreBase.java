@@ -36,7 +36,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides common functionality applicable to all restore strategies
@@ -44,10 +43,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class EncryptedRestoreBase extends AbstractRestore{
     private static final Logger logger = LoggerFactory.getLogger(EncryptedRestoreBase.class);
 
-    private String jobName;
-    private ICredentialGeneric pgpCredential;
-    private IFileCryptography fileCryptography;
-    private ICompression compress;
+    private final String jobName;
+    private final ICredentialGeneric pgpCredential;
+    private final IFileCryptography fileCryptography;
+    private final ICompression compress;
     private final ThreadPoolExecutor executor;
 
     protected EncryptedRestoreBase(IConfiguration config, IBackupFileSystem fs, String jobName, Sleeper sleeper,

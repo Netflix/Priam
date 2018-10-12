@@ -53,7 +53,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     private static volatile JMXNodeTool tool = null;
     private MBeanServerConnection mbeanServerConn = null;
 
-    private static Set<INodeToolObserver> observers = new HashSet<>();
+    private static final Set<INodeToolObserver> observers = new HashSet<>();
 
     /**
      * Hostname and Port to talk to will be same server for now optionally we
@@ -183,11 +183,11 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
                     }
 
                     Field fields[] = NodeProbe.class.getDeclaredFields();
-                    for (int i = 0; i < fields.length; i++) {
-                        if (!fields[i].getName().equals("mbeanServerConn"))
+                    for (Field field : fields) {
+                        if (!field.getName().equals("mbeanServerConn"))
                             continue;
-                        fields[i].setAccessible(true);
-                        nodetool.mbeanServerConn = (MBeanServerConnection) fields[i].get(nodetool);
+                        field.setAccessible(true);
+                        nodetool.mbeanServerConn = (MBeanServerConnection) field.get(nodetool);
                     }
 
                     return nodetool;

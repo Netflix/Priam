@@ -37,8 +37,8 @@ import java.util.List;
  */
 public class AuditLogTunerLog4J implements IAuditLogTuner {
 
-    private IConfiguration config;
-    private IDseConfiguration dseConfig;
+    private final IConfiguration config;
+    private final IDseConfiguration dseConfig;
     protected static final String AUDIT_LOG_ADDITIVE_ENTRY = "log4j.additivity.DataAudit";
     protected static final String AUDIT_LOG_FILE = "/conf/log4j-server.properties";
     protected static final String PRIMARY_AUDIT_LOG_ENTRY = "log4j.logger.DataAudit";
@@ -112,7 +112,7 @@ public class AuditLogTunerLog4J implements IAuditLogTuner {
     }
 
 
-    private final String findAuditLoggerName(List<String> lines) throws IllegalStateException {
+    private String findAuditLoggerName(List<String> lines) throws IllegalStateException {
         for (final String l : lines) {
             if (l.contains(PRIMARY_AUDIT_LOG_ENTRY)) {
                 final String[] valTokens = l.split(",");

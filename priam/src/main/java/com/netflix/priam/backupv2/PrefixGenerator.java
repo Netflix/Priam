@@ -32,8 +32,8 @@ import java.time.Instant;
  */
 public class PrefixGenerator {
 
-    private IConfiguration configuration;
-    private InstanceIdentity instanceIdentity;
+    private final IConfiguration configuration;
+    private final InstanceIdentity instanceIdentity;
 
     @Inject
     PrefixGenerator(IConfiguration configuration, InstanceIdentity instanceIdentity) {

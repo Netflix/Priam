@@ -55,15 +55,15 @@ public class RestoreServlet {
     private static final String REST_RESTORE_PREFIX = "restoreprefix";
     private static final String REST_SUCCESS = "[\"ok\"]";
 
-    private IConfiguration config;
-    private Restore restoreObj;
-    private Provider<AbstractBackupPath> pathProvider;
-    private PriamServer priamServer;
-    private IPriamInstanceFactory factory;
-    private ICassandraTuner tuner;
-    private ICassandraProcess cassProcess;
-    private ITokenManager tokenManager;
-    private InstanceState instanceState;
+    private final IConfiguration config;
+    private final Restore restoreObj;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final PriamServer priamServer;
+    private final IPriamInstanceFactory factory;
+    private final ICassandraTuner tuner;
+    private final ICassandraProcess cassProcess;
+    private final ITokenManager tokenManager;
+    private final InstanceState instanceState;
 
     @Inject
     public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer

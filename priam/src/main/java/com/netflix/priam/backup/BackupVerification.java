@@ -43,8 +43,8 @@ import java.util.stream.Collectors;
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private IBackupFileSystem bkpStatusFs;
-    private IConfiguration config;
+    private final IBackupFileSystem bkpStatusFs;
+    private final IConfiguration config;
 
     @Inject
     BackupVerification(@Named("backup") IBackupFileSystem bkpStatusFs, IConfiguration config) {
@@ -122,8 +122,7 @@ public class BackupVerification {
 
             JSONParser jsonParser = new JSONParser();
             org.json.simple.JSONArray fileList = (org.json.simple.JSONArray) jsonParser.parse(new FileReader(metaFileLocation.toFile()));
-            for (int i = 0; i < fileList.size(); i++)
-                metaFileList.add(fileList.get(i).toString());
+            for (Object aFileList : fileList) metaFileList.add(aFileList.toString());
 
         } catch (Exception e) {
             logger.error("Error while fetching meta.json from path: {}", metas.get(0), e);

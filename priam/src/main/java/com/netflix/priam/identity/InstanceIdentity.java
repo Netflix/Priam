@@ -49,7 +49,7 @@ public class InstanceIdentity {
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
     public static final String DUMMY_INSTANCE_ID = "new_slot";
 
-    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), () -> Lists.newArrayList());
+    private final ListMultimap<String, PriamInstance> locMap = Multimaps.newListMultimap(new HashMap<String, Collection<PriamInstance>>(), Lists::newArrayList);
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;
@@ -82,9 +82,9 @@ public class InstanceIdentity {
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
-    private IDeadTokenRetriever deadTokenRetriever;
-    private IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
-    private INewTokenRetriever newTokenRetriever;
+    private final IDeadTokenRetriever deadTokenRetriever;
+    private final IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
+    private final INewTokenRetriever newTokenRetriever;
 
     @Inject
     //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.
@@ -163,7 +163,7 @@ public class InstanceIdentity {
 
                 @Override
                 public PriamInstance retriableCall() throws Exception {
-                    PriamInstance result = null;
+                    PriamInstance result;
                     result = deadTokenRetriever.get();
                     if (result != null) {
 
@@ -195,7 +195,7 @@ public class InstanceIdentity {
 
                 @Override
                 public PriamInstance retriableCall() throws Exception {
-                    PriamInstance result = null;
+                    PriamInstance result;
                     result = preGeneratedTokenRetriever.get();
                     if (result != null) {
                         isTokenPregenerated = true;
@@ -255,7 +255,7 @@ public class InstanceIdentity {
 
     public List<String> getSeeds() throws UnknownHostException {
         populateRacMap();
-        List<String> seeds = new LinkedList<String>();
+        List<String> seeds = new LinkedList<>();
         // Handle single zone deployment
         if (config.getRacs().size() == 1) {
             // Return empty list if all nodes are not up

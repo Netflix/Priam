@@ -57,7 +57,7 @@ public class StaticMembership implements IMembership {
         for (String name : config.stringPropertyNames()) {
             if (name.startsWith(INSTANCES_PRE)) {
                 racCount += 1;
-                if (name == INSTANCES_PRE + racName)
+                if (name.equals(INSTANCES_PRE + racName))
                     racMembership = Arrays.asList(config.getProperty(name).split(","));
             }
         }

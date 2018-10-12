@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.ITokenManager;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,14 +87,9 @@ public class DoubleRing {
     public void backup() throws IOException {
         // writing to the backup file.
         TMP_BACKUP_FILE = File.createTempFile("Backup-instance-data", ".dat");
-        OutputStream out = new FileOutputStream(TMP_BACKUP_FILE);
-        ObjectOutputStream stream = new ObjectOutputStream(out);
-        try {
+        try (ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(TMP_BACKUP_FILE))) {
             stream.writeObject(filteredRemote(factory.getAllIds(config.getAppName())));
             logger.info("Wrote the backup of the instances to: {}", TMP_BACKUP_FILE.getAbsolutePath());
-        } finally {
-            IOUtils.closeQuietly(stream);
-            IOUtils.closeQuietly(out);
         }
     }
 
@@ -110,17 +104,12 @@ public class DoubleRing {
             factory.delete(data);
 
         // read from the file.
-        InputStream in = new FileInputStream(TMP_BACKUP_FILE);
-        ObjectInputStream stream = new ObjectInputStream(in);
-        try {
+        try (ObjectInputStream stream = new ObjectInputStream(new FileInputStream(TMP_BACKUP_FILE))) {
             @SuppressWarnings("unchecked")
             List<PriamInstance> allInstances = (List<PriamInstance>) stream.readObject();
             for (PriamInstance data : allInstances)
                 factory.create(data.getApp(), data.getId(), data.getInstanceId(), data.getHostName(), data.getHostIP(), data.getRac(), data.getVolumes(), data.getToken());
-            logger.info("Sucecsfully restored the Instances from the backup: {}", TMP_BACKUP_FILE.getAbsolutePath());
-        } finally {
-            IOUtils.closeQuietly(stream);
-            IOUtils.closeQuietly(in);
+            logger.info("Successfully restored the Instances from the backup: {}", TMP_BACKUP_FILE.getAbsolutePath());
         }
     }
 

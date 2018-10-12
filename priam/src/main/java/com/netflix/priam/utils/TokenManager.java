@@ -23,6 +23,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 public class TokenManager implements ITokenManager {
@@ -36,7 +37,7 @@ public class TokenManager implements ITokenManager {
     private final BigInteger maximumToken;
     private final BigInteger tokenRangeSize;
 
-    private IConfiguration config;
+    private final IConfiguration config;
 
     @Inject
     public TokenManager(IConfiguration config) {
@@ -103,7 +104,7 @@ public class TokenManager implements ITokenManager {
     public BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList) {
         Preconditions.checkArgument(!tokenList.isEmpty(), "token list must not be empty");
         List<BigInteger> sortedTokens = Ordering.natural().sortedCopy(tokenList);
-        int index = Ordering.natural().binarySearch(sortedTokens, tokenToSearch);
+        int index = Collections.binarySearch(sortedTokens, tokenToSearch, Ordering.natural());
         if (index < 0) {
             int i = Math.abs(index) - 1;
             if ((i >= sortedTokens.size()) || (i > 0 && sortedTokens.get(i).subtract(tokenToSearch)

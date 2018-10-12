@@ -47,7 +47,7 @@ public class JVMOption {
     }
 
     public String toJVMOptionString() {
-        final StringBuffer sb = new StringBuffer();
+        final StringBuilder sb = new StringBuilder();
         if (isCommented)
             sb.append("#");
         sb.append(jvmOption);

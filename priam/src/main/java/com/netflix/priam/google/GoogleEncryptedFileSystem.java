@@ -59,12 +59,12 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     private Storage gcsStorageHandle;
     private Storage.Objects objectsResoruceHandle = null;
 
-    private Provider<AbstractBackupPath> pathProvider;
+    private final Provider<AbstractBackupPath> pathProvider;
     private String srcBucketName;
-    private IConfiguration config;
+    private final IConfiguration config;
 
-    private ICredentialGeneric gcsCredential;
-    private BackupMetrics backupMetrics;
+    private final ICredentialGeneric gcsCredential;
+    private final BackupMetrics backupMetrics;
 
     @Inject
     public GoogleEncryptedFileSystem(Provider<AbstractBackupPath> pathProvider, final IConfiguration config
@@ -172,7 +172,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException{
         String objectName = parseObjectname(getPathPrefix());
-        com.google.api.services.storage.Storage.Objects.Get get = null;
+        com.google.api.services.storage.Storage.Objects.Get get;
 
         try {
             get = constructObjectResourceHandle().get(this.srcBucketName, remotePath.toString());

@@ -19,25 +19,22 @@ package com.netflix.priam.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.tuner.JVMOption;
-import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-
+import com.netflix.priam.tuner.GCType;
+import com.netflix.priam.tuner.JVMOption;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Singleton
-public class FakeConfiguration implements IConfiguration
-{
+public class FakeConfiguration implements IConfiguration {
 
-	public static final String FAKE_REGION = "us-east-1";
+    public static final String FAKE_REGION = "us-east-1";
 
     public String region;
     public String appName;
@@ -46,19 +43,17 @@ public class FakeConfiguration implements IConfiguration
     public String restorePrefix;
     public Map<String, Object> fakeConfig;
     public Map<String, String> fakeProperties = new HashMap<>();
-    
-    public FakeConfiguration()
-    {
+
+    public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
     }
 
-    public FakeConfiguration(String region, String appName, String zone, String ins_id)
-    {
+    public FakeConfiguration(String region, String appName, String zone, String ins_id) {
         this.region = region;
         this.appName = appName;
         this.zone = zone;
         this.instance_id = ins_id;
-        this.restorePrefix  = "";
+        this.restorePrefix = "";
         fakeConfig = new HashMap<>();
         fakeConfig.put("auto_bootstrap", false);
     }
@@ -78,29 +73,25 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getBackupLocation()
-    {
+    public String getBackupLocation() {
         // TODO Auto-generated method stub
         return "casstestbackup";
     }
 
     @Override
-    public String getBackupPrefix()
-    {
+    public String getBackupPrefix() {
         // TODO Auto-generated method stub
         return "TEST-netflix.platform.S3";
     }
 
     @Override
-    public String getCommitLogLocation()
-    {
+    public String getCommitLogLocation() {
         // TODO Auto-generated method stub
         return "cass/commitlog";
     }
 
     @Override
-    public String getDataFileLocation()
-    {
+    public String getDataFileLocation() {
         // TODO Auto-generated method stub
         return "target/data";
     }
@@ -116,15 +107,13 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getCacheLocation()
-    {
+    public String getCacheLocation() {
         // TODO Auto-generated method stub
         return "cass/caches";
     }
 
     @Override
-    public List<String> getRacs()
-    {
+    public List<String> getRacs() {
         return Arrays.asList("az1", "az2", "az3");
     }
 
@@ -134,53 +123,45 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getNativeTransportPort()
-    {
+    public int getNativeTransportPort() {
         return 9042;
     }
 
     @Override
-    public String getSnitch()
-    {
+    public String getSnitch() {
         return "org.apache.cassandra.locator.SimpleSnitch";
     }
 
     @Override
-    public String getRac()
-    {
+    public String getRac() {
         return this.zone;
     }
 
     @Override
-    public String getHostname()
-    {
+    public String getHostname() {
         // TODO Auto-generated method stub
         return instance_id;
     }
 
     @Override
-    public String getInstanceName()
-    {
+    public String getInstanceName() {
         return instance_id;
     }
 
     @Override
-    public String getHeapSize()
-    {
+    public String getHeapSize() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getHeapNewSize()
-    {
+    public String getHeapNewSize() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public int getBackupHour()
-    {
+    public int getBackupHour() {
         // TODO Auto-generated method stub
         return 12;
     }
@@ -196,8 +177,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getRestoreSnapshot()
-    {
+    public String getRestoreSnapshot() {
         // TODO Auto-generated method stub
         return null;
     }
@@ -208,8 +188,7 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getACLGroupName()
-    {
+    public String getACLGroupName() {
         return this.getAppName();
     }
 
@@ -229,41 +208,37 @@ public class FakeConfiguration implements IConfiguration
         return 2;
     }
 
-    public void setRestorePrefix(String prefix)
-    {
+    public void setRestorePrefix(String prefix) {
         // TODO Auto-generated method stub
         restorePrefix = prefix;
     }
 
     @Override
-    public String getRestorePrefix()
-    {
+    public String getRestorePrefix() {
         // TODO Auto-generated method stub
         return restorePrefix;
     }
 
     @Override
-    public String getBackupCommitLogLocation()
-    {
+    public String getBackupCommitLogLocation() {
         return "cass/backup/cl/";
     }
 
     @Override
-    public boolean isMultiDC()
-    {
+    public boolean isMultiDC() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public String getASGName()
-    {
+    public String getASGName() {
         // TODO Auto-generated method stub
         return null;
     }
 
     /**
-     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
+     * consider while calculating RAC membership
      */
     @Override
     public String getSiblingASGNames() {
@@ -271,28 +246,25 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public boolean isIncrBackup()
-    {
+    public boolean isIncrBackup() {
         return true;
     }
 
     @Override
-    public String getHostIP()
-    {
+    public String getHostIP() {
         // TODO Auto-generated method stub
         return null;
     }
 
-
     @Override
-    public int getUploadThrottle()
-    {
+    public int getUploadThrottle() {
         // TODO Auto-generated method stub
         return 0;
     }
 
     @Override
-    public InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public InstanceDataRetriever getInstanceDataRetriever()
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return new LocalInstanceDataRetriever();
     }
 
@@ -309,27 +281,23 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getMaxDirectMemory()
-    {
+    public String getMaxDirectMemory() {
         // TODO Auto-generated method stub
         return null;
     }
 
     @Override
-    public String getBootClusterName()
-    {
+    public String getBootClusterName() {
         return "cass_bootstrap";
     }
 
     @Override
-    public String getCassHome()
-    {
+    public String getCassHome() {
         return "/tmp/priam";
     }
 
     @Override
-    public String getCassStartupScript()
-    {
+    public String getCassStartupScript() {
         return "/usr/bin/false";
     }
 
@@ -339,22 +307,19 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public void setDC(String region)
-    {
+    public void setDC(String region) {
         // TODO Auto-generated method stub
-        
+
     }
 
     @Override
-    public boolean isRestoreClosestToken()
-    {
+    public boolean isRestoreClosestToken() {
         // TODO Auto-generated method stub
         return false;
     }
 
     @Override
-    public String getCassStopScript()
-    {
+    public String getCassStopScript() {
         return "true";
     }
 
@@ -369,104 +334,84 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public int getStoragePort()
-    {
+    public int getStoragePort() {
         return 7101;
     }
 
     @Override
-    public String getSeedProviderName()
-    {
+    public String getSeedProviderName() {
         return "org.apache.cassandra.locator.SimpleSeedProvider";
     }
 
     @Override
-    public int getBackupRetentionDays()
-    {
+    public int getBackupRetentionDays() {
         return 5;
     }
 
     @Override
-    public List<String> getBackupRacs()
-    {
+    public List<String> getBackupRacs() {
         return Lists.newArrayList();
     }
-    
-    public int getMaxHintWindowInMS()
-    {
+
+    public int getMaxHintWindowInMS() {
         return 36000;
     }
 
-    public int getHintedHandoffThrottleKb()
-    {
+    public int getHintedHandoffThrottleKb() {
         return 1024;
     }
 
-    public int getMaxHintThreads()
-    {
+    public int getMaxHintThreads() {
         return 1;
     }
 
-
-
-    /**
-     * @return memtable_cleanup_threshold in C* yaml
-     */
+    /** @return memtable_cleanup_threshold in C* yaml */
     @Override
     public double getMemtableCleanupThreshold() {
         return 0.11;
     }
 
     @Override
-    public int getStreamingThroughputMB()
-    {
+    public int getStreamingThroughputMB() {
         return 400;
     }
-
 
     public String getPartitioner() {
         return "org.apache.cassandra.dht.RandomPartitioner";
     }
 
     @Override
-    public int getSSLStoragePort()
-    {
+    public int getSSLStoragePort() {
         // TODO Auto-generated method stub
         return 7103;
     }
 
-    public String getKeyCacheSizeInMB()
-    {
+    public String getKeyCacheSizeInMB() {
         return "16";
     }
 
-    public String getKeyCacheKeysToSave()
-    {
+    public String getKeyCacheKeysToSave() {
         return "32";
     }
 
-    public String getRowCacheSizeInMB()
-    {
+    public String getRowCacheSizeInMB() {
         return "4";
     }
 
-    public String getRowCacheKeysToSave()
-    {
+    public String getRowCacheKeysToSave() {
         return "4";
     }
 
-	@Override
-	public String getCassProcessName() {
-		return "CassandraDaemon";
-	}
+    @Override
+    public String getCassProcessName() {
+        return "CassandraDaemon";
+    }
 
-    public int getNumTokens()
-    {
+    public int getNumTokens() {
         return 1;
     }
 
-    public String getYamlLocation()
-    {
+    public String getYamlLocation() {
         return "conf/cassandra.yaml";
     }
 
@@ -490,14 +435,14 @@ public class FakeConfiguration implements IConfiguration
         return null;
     }
 
-    public String getAuthenticator()
-    {
+    public String getAuthenticator() {
         return PriamConfiguration.DEFAULT_AUTHENTICATOR;
     }
 
     public String getAuthorizer() {
         return PriamConfiguration.DEFAULT_AUTHORIZER;
     }
+
     public boolean doesCassandraStartManually() {
         return false;
     }
@@ -508,81 +453,66 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getCommitLogBackupPropsFile()
-    {
+    public String getCommitLogBackupPropsFile() {
         return getCassHome() + PriamConfiguration.DEFAULT_COMMITLOG_PROPS_FILE;
     }
 
     @Override
-    public String getCommitLogBackupArchiveCmd()
-    {
+    public String getCommitLogBackupArchiveCmd() {
         return null;
     }
 
     @Override
-    public String getCommitLogBackupRestoreCmd()
-    {
+    public String getCommitLogBackupRestoreCmd() {
         return null;
     }
 
     @Override
-    public String getCommitLogBackupRestoreFromDirs()
-    {
+    public String getCommitLogBackupRestoreFromDirs() {
         return null;
     }
 
     @Override
-    public String getCommitLogBackupRestorePointInTime()
-    {
+    public String getCommitLogBackupRestorePointInTime() {
         return null;
     }
 
-    public void setRestoreKeySpaces(List<String> keyspaces) {
-            
-    }
+    public void setRestoreKeySpaces(List<String> keyspaces) {}
 
     @Override
-    public int maxCommitLogsRestore() {		
-       return 0;
+    public int maxCommitLogsRestore() {
+        return 0;
     }
 
-    public boolean isClientSslEnabled()
-    {
+    public boolean isClientSslEnabled() {
         return true;
     }
 
-    public String getInternodeEncryption()
-    {
+    public String getInternodeEncryption() {
         return "all";
     }
 
-    public boolean isDynamicSnitchEnabled()
-    {
+    public boolean isDynamicSnitchEnabled() {
         return true;
     }
 
-    public boolean isThriftEnabled()
-    {
+    public boolean isThriftEnabled() {
         return true;
     }
 
-    public boolean isNativeTransportEnabled()
-    {
+    public boolean isNativeTransportEnabled() {
         return false;
     }
 
-    public int getConcurrentReadsCnt()
-    {
+    public int getConcurrentReadsCnt() {
         return 8;
     }
 
-    public int getConcurrentWritesCnt()
-    {
+    public int getConcurrentWritesCnt() {
         return 8;
     }
 
-    public int getConcurrentCompactorsCnt()
-    {
+    public int getConcurrentCompactorsCnt() {
         return 1;
     }
 
@@ -592,11 +522,11 @@ public class FakeConfiguration implements IConfiguration
     }
 
     public String getExtraConfigParams() {
-		return null;
-	}
-	
+        return null;
+    }
+
     public String getCassYamlVal(String priamKey) {
-    	return "";
+        return "";
     }
 
     @Override
@@ -605,61 +535,59 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-
     public boolean isCreateNewTokenEnable() {
-        return true;  //allow Junit test to create new tokens
+        return true; // allow Junit test to create new tokens
     }
 
-	@Override
-	public String getPrivateKeyLocation() {
-		return null;
-	}
-
-	@Override
-	public String getRestoreSourceType() {
-		return null;
-	}
-
-	@Override
-	public boolean isEncryptBackupEnabled() {
-		return false;
-	}
+    @Override
+    public String getPrivateKeyLocation() {
+        return null;
+    }
 
     @Override
+    public String getRestoreSourceType() {
+        return null;
+    }
 
+    @Override
+    public boolean isEncryptBackupEnabled() {
+        return false;
+    }
+
+    @Override
     public String getAWSRoleAssumptionArn() {
         return null;
     }
 
     @Override
-	public String getClassicEC2RoleAssumptionArn() {
-		return null;
-	}
+    public String getClassicEC2RoleAssumptionArn() {
+        return null;
+    }
 
     @Override
-	public String getVpcEC2RoleAssumptionArn() {
-		return null;
-	}
+    public String getVpcEC2RoleAssumptionArn() {
+        return null;
+    }
 
-	@Override
-	public String getGcsServiceAccountId() {
-		return null;
-	}
+    @Override
+    public String getGcsServiceAccountId() {
+        return null;
+    }
 
-	@Override
-	public String getGcsServiceAccountPrivateKeyLoc() {
-		return null;
-	}
+    @Override
+    public String getGcsServiceAccountPrivateKeyLoc() {
+        return null;
+    }
 
-	@Override
-	public String getPgpPasswordPhrase() {
-		return null;
-	}
+    @Override
+    public String getPgpPasswordPhrase() {
+        return null;
+    }
 
-	@Override
-	public String getPgpPublicKeyLoc() {
-		return null;
-	}
+    @Override
+    public String getPgpPublicKeyLoc() {
+        return null;
+    }
 
     /**
      * Use this method for adding extra/ dynamic cassandra startup options or env properties
@@ -673,7 +601,7 @@ public class FakeConfiguration implements IConfiguration
 
     @Override
     public String getVpcId() {
-    	return "";
+        return "";
     }
 
     @Override
@@ -736,14 +664,12 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getProperty(String key, String defaultValue)
-    {
+    public String getProperty(String key, String defaultValue) {
         return fakeProperties.getOrDefault(key, defaultValue);
     }
 
     @Override
-    public String getMergedConfigurationDirectory()
-    {
+    public String getMergedConfigurationDirectory() {
         return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 }

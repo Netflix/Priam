@@ -19,17 +19,14 @@ package com.netflix.priam.aws;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 
-/**
- * Updates the cleanup policy for the bucket
- *
- */
+/** Updates the cleanup policy for the bucket */
 @Singleton
 public class UpdateCleanupPolicy extends Task {
     public static final String JOBNAME = "UpdateCleanupPolicy";
@@ -61,5 +58,4 @@ public class UpdateCleanupPolicy extends Task {
     public static TaskTimer getTimer() {
         return new SimpleTimer(JOBNAME);
     }
-
 }

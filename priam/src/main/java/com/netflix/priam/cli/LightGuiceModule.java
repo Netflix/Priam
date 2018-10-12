@@ -17,10 +17,9 @@
 package com.netflix.priam.cli;
 
 import com.google.inject.AbstractModule;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.config.PriamConfiguration;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 
 class LightGuiceModule extends AbstractModule {
@@ -31,4 +30,3 @@ class LightGuiceModule extends AbstractModule {
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
     }
 }
-

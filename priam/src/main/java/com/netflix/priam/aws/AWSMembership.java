@@ -31,15 +31,14 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.InstanceEnvIdentity;
+import java.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
 /**
- * Class to query amazon ASG for its members to provide - Number of valid nodes
- * in the ASG - Number of zones - Methods for adding ACLs for the nodes
+ * Class to query amazon ASG for its members to provide - Number of valid nodes in the ASG - Number
+ * of zones - Methods for adding ACLs for the nodes
  */
 public class AWSMembership implements IMembership {
     private static final Logger logger = LoggerFactory.getLogger(AWSMembership.class);
@@ -49,7 +48,11 @@ public class AWSMembership implements IMembership {
     private final ICredential crossAccountProvider;
 
     @Inject
-    public AWSMembership(IConfiguration config, ICredential provider, @Named("awsec2roleassumption") ICredential crossAccountProvider, InstanceEnvIdentity insEnvIdentity) {
+    public AWSMembership(
+            IConfiguration config,
+            ICredential provider,
+            @Named("awsec2roleassumption") ICredential crossAccountProvider,
+            InstanceEnvIdentity insEnvIdentity) {
         this.config = config;
         this.provider = provider;
         this.insEnvIdentity = insEnvIdentity;
@@ -64,35 +67,43 @@ public class AWSMembership implements IMembership {
             asgNames.add(config.getASGName());
             asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgNames.toArray(new String[asgNames.size()]));
+            DescribeAutoScalingGroupsRequest asgReq =
+                    new DescribeAutoScalingGroupsRequest()
+                            .withAutoScalingGroupNames(
+                                    asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
             List<String> instanceIds = Lists.newArrayList();
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
-                            .equalsIgnoreCase("Terminated")))
+                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
+                            || ins.getLifecycleState().equalsIgnoreCase("shutting-down")
+                            || ins.getLifecycleState().equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s", config.getRac(), StringUtils.join(asgNames, ","), StringUtils.join(instanceIds, ",")));
+                logger.info(
+                        String.format(
+                                "Querying Amazon returned following instance in the RAC: %s, ASGs: %s --> %s",
+                                config.getRac(),
+                                StringUtils.join(asgNames, ","),
+                                StringUtils.join(instanceIds, ",")));
             }
             return instanceIds;
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
-    /**
-     * Actual membership AWS source of truth...
-     */
+    /** Actual membership AWS source of truth... */
     @Override
     public int getRacMembershipSize() {
         AmazonAutoScaling client = null;
         try {
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq =
+                    new DescribeAutoScalingGroupsRequest()
+                            .withAutoScalingGroupNames(config.getASGName());
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
             int size = 0;
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
@@ -101,8 +112,7 @@ public class AWSMembership implements IMembership {
             logger.info("Query on ASG returning {} instances", size);
             return size;
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
@@ -114,23 +124,29 @@ public class AWSMembership implements IMembership {
             asgNames.add(config.getASGName());
             asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
             client = getCrossAccountAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(asgNames.toArray(new String[asgNames.size()]));
+            DescribeAutoScalingGroupsRequest asgReq =
+                    new DescribeAutoScalingGroupsRequest()
+                            .withAutoScalingGroupNames(
+                                    asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
             List<String> instanceIds = Lists.newArrayList();
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating") || ins.getLifecycleState().equalsIgnoreCase("shutting-down") || ins.getLifecycleState()
-                            .equalsIgnoreCase("Terminated")))
+                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
+                            || ins.getLifecycleState().equalsIgnoreCase("shutting-down")
+                            || ins.getLifecycleState().equalsIgnoreCase("Terminated")))
                         instanceIds.add(ins.getInstanceId());
             }
             if (logger.isInfoEnabled()) {
-                logger.info(String.format("Querying Amazon returned following instance in the cross-account ASG: %s --> %s", config.getRac(), StringUtils.join(instanceIds, ",")));
+                logger.info(
+                        String.format(
+                                "Querying Amazon returned following instance in the cross-account ASG: %s --> %s",
+                                config.getRac(), StringUtils.join(instanceIds, ",")));
             }
             return instanceIds;
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
@@ -140,33 +156,45 @@ public class AWSMembership implements IMembership {
     }
 
     /**
-     * Adding peers' IPs as ingress to the running instance SG.  The running instance could be in "classic" or "vpc"
+     * Adding peers' IPs as ingress to the running instance SG. The running instance could be in
+     * "classic" or "vpc"
      */
     public void addACL(Collection<String> listIPs, int from, int to) {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<>();
-            ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
+            ipPermissions.add(
+                    new IpPermission()
+                            .withFromPort(from)
+                            .withIpProtocol("tcp")
+                            .withIpRanges(listIPs)
+                            .withToPort(to));
 
             if (this.insEnvIdentity.isClassic()) {
-                client.authorizeSecurityGroupIngress(new AuthorizeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+                client.authorizeSecurityGroupIngress(
+                        new AuthorizeSecurityGroupIngressRequest(
+                                config.getACLGroupName(), ipPermissions));
                 if (logger.isInfoEnabled()) {
                     logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
                 }
             } else {
-                AuthorizeSecurityGroupIngressRequest sgIngressRequest = new AuthorizeSecurityGroupIngressRequest();
-                sgIngressRequest.withGroupId(getVpcGoupId()); //fetch SG group id for vpc account of the running instance.
-                client.authorizeSecurityGroupIngress(sgIngressRequest.withIpPermissions(ipPermissions)); //Adding peers' IPs as ingress to the running instance SG
+                AuthorizeSecurityGroupIngressRequest sgIngressRequest =
+                        new AuthorizeSecurityGroupIngressRequest();
+                sgIngressRequest.withGroupId(
+                        getVpcGoupId()); // fetch SG group id for vpc account of the running
+                                         // instance.
+                client.authorizeSecurityGroupIngress(
+                        sgIngressRequest.withIpPermissions(
+                                ipPermissions)); // Adding peers' IPs as ingress to the running
+                                                 // instance SG
                 if (logger.isInfoEnabled()) {
                     logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
                 }
             }
 
-
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
@@ -177,57 +205,75 @@ public class AWSMembership implements IMembership {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            Filter nameFilter = new Filter().withName("group-name").withValues(config.getACLGroupName()); //SG
+            Filter nameFilter =
+                    new Filter().withName("group-name").withValues(config.getACLGroupName()); // SG
             Filter vpcFilter = new Filter().withName("vpc-id").withValues(config.getVpcId());
 
-            DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
+            DescribeSecurityGroupsRequest req =
+                    new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
             DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
             for (SecurityGroup group : result.getSecurityGroups()) {
-                logger.debug("got group-id:{} for group-name:{},vpc-id:{}", group.getGroupId(), config.getACLGroupName(), config.getVpcId());
+                logger.debug(
+                        "got group-id:{} for group-name:{},vpc-id:{}",
+                        group.getGroupId(),
+                        config.getACLGroupName(),
+                        config.getVpcId());
                 return group.getGroupId();
             }
-            logger.error("unable to get group-id for group-name={} vpc-id={}", config.getACLGroupName(), config.getVpcId());
+            logger.error(
+                    "unable to get group-id for group-name={} vpc-id={}",
+                    config.getACLGroupName(),
+                    config.getVpcId());
             return "";
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
-    /**
-     * removes a iplist from the SG
-     */
+    /** removes a iplist from the SG */
     public void removeACL(Collection<String> listIPs, int from, int to) {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
             List<IpPermission> ipPermissions = new ArrayList<>();
-            ipPermissions.add(new IpPermission().withFromPort(from).withIpProtocol("tcp").withIpRanges(listIPs).withToPort(to));
+            ipPermissions.add(
+                    new IpPermission()
+                            .withFromPort(from)
+                            .withIpProtocol("tcp")
+                            .withIpRanges(listIPs)
+                            .withToPort(to));
 
             if (this.insEnvIdentity.isClassic()) {
-                client.revokeSecurityGroupIngress(new RevokeSecurityGroupIngressRequest(config.getACLGroupName(), ipPermissions));
+                client.revokeSecurityGroupIngress(
+                        new RevokeSecurityGroupIngressRequest(
+                                config.getACLGroupName(), ipPermissions));
                 if (logger.isInfoEnabled()) {
-                    logger.info("Done removing from ACL within classic env for running instance: " + StringUtils.join(listIPs, ","));
+                    logger.info(
+                            "Done removing from ACL within classic env for running instance: "
+                                    + StringUtils.join(listIPs, ","));
                 }
             } else {
                 RevokeSecurityGroupIngressRequest req = new RevokeSecurityGroupIngressRequest();
-                req.withGroupId(getVpcGoupId());  //fetch SG group id for vpc account of the running instance.
-                client.revokeSecurityGroupIngress(req.withIpPermissions(ipPermissions));  //Adding peers' IPs as ingress to the running instance SG
+                req.withGroupId(
+                        getVpcGoupId()); // fetch SG group id for vpc account of the running
+                                         // instance.
+                client.revokeSecurityGroupIngress(
+                        req.withIpPermissions(
+                                ipPermissions)); // Adding peers' IPs as ingress to the running
+                                                 // instance SG
                 if (logger.isInfoEnabled()) {
-                    logger.info("Done removing from ACL within vpc env for running instance: " + StringUtils.join(listIPs, ","));
+                    logger.info(
+                            "Done removing from ACL within vpc env for running instance: "
+                                    + StringUtils.join(listIPs, ","));
                 }
             }
 
-
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
-    /**
-     * List SG ACL's
-     */
+    /** List SG ACL's */
     public List<String> listACL(int from, int to) {
         AmazonEC2 client = null;
         try {
@@ -236,7 +282,10 @@ public class AWSMembership implements IMembership {
 
             if (this.insEnvIdentity.isClassic()) {
 
-                DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withGroupNames(Collections.singletonList(config.getACLGroupName()));
+                DescribeSecurityGroupsRequest req =
+                        new DescribeSecurityGroupsRequest()
+                                .withGroupNames(
+                                        Collections.singletonList(config.getACLGroupName()));
                 DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
                 for (SecurityGroup group : result.getSecurityGroups())
                     for (IpPermission perm : group.getIpPermissions())
@@ -246,14 +295,22 @@ public class AWSMembership implements IMembership {
                 logger.debug("Fetch current permissions for classic env of running instance");
             } else {
 
-                Filter nameFilter = new Filter().withName("group-name").withValues(config.getACLGroupName());
+                Filter nameFilter =
+                        new Filter().withName("group-name").withValues(config.getACLGroupName());
                 String vpcid = config.getVpcId();
                 if (vpcid == null || vpcid.isEmpty()) {
-                    throw new IllegalStateException("vpcid is null even though instance is running in vpc.");
+                    throw new IllegalStateException(
+                            "vpcid is null even though instance is running in vpc.");
                 }
 
-                Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpcid); //only fetch SG for the vpc id of the running instance
-                DescribeSecurityGroupsRequest req = new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
+                Filter vpcFilter =
+                        new Filter()
+                                .withName("vpc-id")
+                                .withValues(
+                                        vpcid); // only fetch SG for the vpc id of the running
+                                                // instance
+                DescribeSecurityGroupsRequest req =
+                        new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
                 DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);
                 for (SecurityGroup group : result.getSecurityGroups())
                     for (IpPermission perm : group.getIpPermissions())
@@ -263,11 +320,9 @@ public class AWSMembership implements IMembership {
                 logger.debug("Fetch current permissions for vpc env of running instance");
             }
 
-
             return ipPermissions;
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
@@ -276,7 +331,9 @@ public class AWSMembership implements IMembership {
         AmazonAutoScaling client = null;
         try {
             client = getAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq = new DescribeAutoScalingGroupsRequest().withAutoScalingGroupNames(config.getASGName());
+            DescribeAutoScalingGroupsRequest asgReq =
+                    new DescribeAutoScalingGroupsRequest()
+                            .withAutoScalingGroupNames(config.getASGName());
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
             AutoScalingGroup asg = res.getAutoScalingGroups().get(0);
             UpdateAutoScalingGroupRequest ureq = new UpdateAutoScalingGroupRequest();
@@ -286,20 +343,28 @@ public class AWSMembership implements IMembership {
             ureq.setDesiredCapacity(asg.getMinSize() + 1);
             client.updateAutoScalingGroup(ureq);
         } finally {
-            if (client != null)
-                client.shutdown();
+            if (client != null) client.shutdown();
         }
     }
 
     protected AmazonAutoScaling getAutoScalingClient() {
-        return AmazonAutoScalingClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+        return AmazonAutoScalingClientBuilder.standard()
+                .withCredentials(provider.getAwsCredentialProvider())
+                .withRegion(config.getDC())
+                .build();
     }
 
     protected AmazonAutoScaling getCrossAccountAutoScalingClient() {
-        return AmazonAutoScalingClientBuilder.standard().withCredentials(crossAccountProvider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+        return AmazonAutoScalingClientBuilder.standard()
+                .withCredentials(crossAccountProvider.getAwsCredentialProvider())
+                .withRegion(config.getDC())
+                .build();
     }
 
     protected AmazonEC2 getEc2Client() {
-        return AmazonEC2ClientBuilder.standard().withCredentials(provider.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+        return AmazonEC2ClientBuilder.standard()
+                .withCredentials(provider.getAwsCredentialProvider())
+                .withRegion(config.getDC())
+                .build();
     }
 }

@@ -22,13 +22,13 @@ import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-
 /**
- * Tune Cassandra (Open source or DSE) via updating various configuration files (dse.yaml, cassandra.yaml, jvm.options etc)
+ * Tune Cassandra (Open source or DSE) via updating various configuration files (dse.yaml,
+ * cassandra.yaml, jvm.options etc)
  */
 @Singleton
 public class TuneCassandra extends Task {
@@ -38,7 +38,8 @@ public class TuneCassandra extends Task {
     private final InstanceState instanceState;
 
     @Inject
-    public TuneCassandra(IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {
+    public TuneCassandra(
+            IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {
         super(config);
         this.tuner = tuner;
         this.instanceState = instanceState;
@@ -50,7 +51,8 @@ public class TuneCassandra extends Task {
 
         while (!isDone) {
             try {
-                tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
+                tuner.writeAllProperties(
+                        config.getYamlLocation(), null, config.getSeedProviderName());
                 tuner.updateJVMOptions();
                 isDone = true;
                 instanceState.setYmlWritten(true);
@@ -58,7 +60,6 @@ public class TuneCassandra extends Task {
                 LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);
             }
         }
-
     }
 
     @Override

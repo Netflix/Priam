@@ -19,17 +19,16 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * Incremental/SSTable backup
@@ -44,16 +43,23 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     private static final List<IMessageObserver> observers = new ArrayList<>();
 
     @Inject
-    public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
-            , IncrementalMetaData metaData) {
+    public IncrementalBackup(
+            IConfiguration config,
+            Provider<AbstractBackupPath> pathFactory,
+            IFileSystemContext backupFileSystemCtx,
+            IncrementalMetaData metaData) {
         super(config, backupFileSystemCtx, pathFactory);
-        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
-        backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
+        this.metaData =
+                metaData; // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files
+                          // successfully uploaded)
+        backupRestoreUtil =
+                new BackupRestoreUtil(
+                        config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
     }
 
     @Override
     public void execute() throws Exception {
-        //Clearing remotePath List
+        // Clearing remotePath List
         incrementalRemotePaths.clear();
         initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
         if (incrementalRemotePaths.size() > 0) {
@@ -61,10 +67,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         }
     }
 
-
-    /**
-     * Run every 10 Sec
-     */
+    /** Run every 10 Sec */
     public static TaskTimer getTimer() {
         return new SimpleTimer(JOBNAME, 10L * 1000);
     }
@@ -87,24 +90,28 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
             if (observer != null) {
                 logger.debug("Updating incremental observers now ...");
                 observer.update(BACKUP_MESSAGE_TYPE.INCREMENTAL, incrementalRemotePaths);
-            } else
-                logger.info("Observer is Null, hence can not notify ...");
+            } else logger.info("Observer is Null, hence can not notify ...");
         }
     }
 
     @Override
-    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
-        List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental());
+    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
+            throws Exception {
+        List<AbstractBackupPath> uploadedFiles =
+                upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental());
 
         if (!uploadedFiles.isEmpty()) {
-            String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
+            String incrementalUploadTime =
+                    AbstractBackupPath.formatDate(
+                            uploadedFiles
+                                    .get(0)
+                                    .getTime()); // format of yyyymmddhhmm (e.g. 201505060901)
             String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
             logger.info("Uploading meta file for incremental backup: {}", metaFileName);
             this.metaData.setMetaFileName(metaFileName);
             this.metaData.set(uploadedFiles, incrementalUploadTime);
             logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
         }
-
     }
 
     @Override
@@ -121,5 +128,4 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     public String getJobName() {
         return JOBNAME;
     }
-
 }

@@ -16,12 +16,11 @@
  */
 package com.netflix.priam.utils;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
 
 public abstract class RetryableCallable<T> implements Callable<T> {
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);

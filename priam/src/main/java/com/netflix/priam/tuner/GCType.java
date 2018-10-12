@@ -23,17 +23,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Garbage collection types supported by Priam for Cassandra (CMS/G1GC).
- * Created by aagrawal on 8/24/17.
+ * Garbage collection types supported by Priam for Cassandra (CMS/G1GC). Created by aagrawal on
+ * 8/24/17.
  */
 public enum GCType {
-    CMS("CMS"),G1GC("G1GC");
+    CMS("CMS"),
+    G1GC("G1GC");
 
     private static final Logger logger = LoggerFactory.getLogger(GCType.class);
     private final String gcType;
 
-    GCType(String gcType)
-    {
+    GCType(String gcType) {
         this.gcType = gcType.toUpperCase();
     }
 
@@ -51,25 +51,32 @@ public enum GCType {
      * Illegal value     |NA               |False             |UnsupportedTypeException
      */
 
-    public static GCType lookup(String gcType, boolean acceptNullOrEmpty, boolean acceptIllegalValue) throws UnsupportedTypeException {
+    public static GCType lookup(
+            String gcType, boolean acceptNullOrEmpty, boolean acceptIllegalValue)
+            throws UnsupportedTypeException {
         if (StringUtils.isEmpty(gcType))
-            if(acceptNullOrEmpty)
-                return null;
-            else
-            {
-                String message = String.format("%s is not a supported GC Type. Supported values are %s", gcType, getSupportedValues());
+            if (acceptNullOrEmpty) return null;
+            else {
+                String message =
+                        String.format(
+                                "%s is not a supported GC Type. Supported values are %s",
+                                gcType, getSupportedValues());
                 logger.error(message);
                 throw new UnsupportedTypeException(message);
             }
 
-        try{
+        try {
             return GCType.valueOf(gcType.toUpperCase());
-        }catch (IllegalArgumentException ex)
-        {
-            String message = String.format("%s is not a supported GCType. Supported values are %s", gcType, getSupportedValues());
+        } catch (IllegalArgumentException ex) {
+            String message =
+                    String.format(
+                            "%s is not a supported GCType. Supported values are %s",
+                            gcType, getSupportedValues());
 
             if (acceptIllegalValue) {
-                message = message + ". Since acceptIllegalValue is set to True, returning NULL instead.";
+                message =
+                        message
+                                + ". Since acceptIllegalValue is set to True, returning NULL instead.";
                 logger.error(message);
                 return null;
             }
@@ -79,13 +86,11 @@ public enum GCType {
         }
     }
 
-    private static String getSupportedValues()
-    {
+    private static String getSupportedValues() {
         StringBuilder supportedValues = new StringBuilder();
         boolean first = true;
         for (GCType type : GCType.values()) {
-            if (!first)
-                supportedValues.append(",");
+            if (!first) supportedValues.append(",");
             supportedValues.append(type);
             first = false;
         }
@@ -93,14 +98,11 @@ public enum GCType {
         return supportedValues.toString();
     }
 
-    public static GCType lookup(String gcType) throws UnsupportedTypeException
-    {
+    public static GCType lookup(String gcType) throws UnsupportedTypeException {
         return lookup(gcType, false, false);
     }
 
-    public String getGcType()
-    {
+    public String getGcType() {
         return gcType;
     }
-
 }

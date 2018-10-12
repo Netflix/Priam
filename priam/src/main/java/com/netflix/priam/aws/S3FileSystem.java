@@ -23,18 +23,15 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -43,34 +40,56 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Implementation of IBackupFileSystem for S3
- */
+/** Implementation of IBackupFileSystem for S3 */
 @Singleton
-public class S3FileSystem extends S3FileSystemBase{
+public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
 
     @Inject
-    public S3FileSystem(@Named("awss3roleassumption") IS3Credential cred, Provider<AbstractBackupPath> pathProvider,
-                        ICompression compress,
-                        final IConfiguration config,
-                        BackupMetrics backupMetrics,
-                        BackupNotificationMgr backupNotificationMgr) {
+    public S3FileSystem(
+            @Named("awss3roleassumption") IS3Credential cred,
+            Provider<AbstractBackupPath> pathProvider,
+            ICompression compress,
+            final IConfiguration config,
+            BackupMetrics backupMetrics,
+            BackupNotificationMgr backupNotificationMgr) {
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
-        s3Client = AmazonS3Client.builder().withCredentials(cred.getAwsCredentialProvider()).withRegion(config.getDC()).build();
+        s3Client =
+                AmazonS3Client.builder()
+                        .withCredentials(cred.getAwsCredentialProvider())
+                        .withRegion(config.getDC())
+                        .build();
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException{
+    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
         try {
             long remoteFileSize = super.getFileSize(remotePath);
-            RangeReadInputStream rris = new RangeReadInputStream(s3Client, getPrefix(this.config), remoteFileSize, remotePath.toString());
-            final long bufSize = MAX_BUFFERED_IN_STREAM_SIZE > remoteFileSize ? remoteFileSize : MAX_BUFFERED_IN_STREAM_SIZE;
-            compress.decompressAndClose(new BufferedInputStream(rris, (int) bufSize), new BufferedOutputStream(new FileOutputStream(localPath.toFile())));
+            RangeReadInputStream rris =
+                    new RangeReadInputStream(
+                            s3Client,
+                            getPrefix(this.config),
+                            remoteFileSize,
+                            remotePath.toString());
+            final long bufSize =
+                    MAX_BUFFERED_IN_STREAM_SIZE > remoteFileSize
+                            ? remoteFileSize
+                            : MAX_BUFFERED_IN_STREAM_SIZE;
+            compress.decompressAndClose(
+                    new BufferedInputStream(rris, (int) bufSize),
+                    new BufferedOutputStream(new FileOutputStream(localPath.toFile())));
         } catch (Exception e) {
-            throw new BackupRestoreException("Exception encountered downloading " + remotePath + " from S3 bucket " + getPrefix(config)
-                    + ", Msg: " + e.getMessage(), e);
+            throw new BackupRestoreException(
+                    "Exception encountered downloading "
+                            + remotePath
+                            + " from S3 bucket "
+                            + getPrefix(config)
+                            + ", Msg: "
+                            + e.getMessage(),
+                    e);
         }
     }
 
@@ -92,14 +111,23 @@ public class S3FileSystem extends S3FileSystemBase{
     private long uploadMultipart(Path localPath, Path remotePath) throws BackupRestoreException {
         long chunkSize = getChunkSize(localPath);
         if (logger.isDebugEnabled())
-            logger.debug("Uploading to {}/{} with chunk size {}", config.getBackupPrefix(), remotePath, chunkSize);
-        InitiateMultipartUploadRequest initRequest = new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
+            logger.debug(
+                    "Uploading to {}/{} with chunk size {}",
+                    config.getBackupPrefix(),
+                    remotePath,
+                    chunkSize);
+        InitiateMultipartUploadRequest initRequest =
+                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
         initRequest.withObjectMetadata(getObjectMetadata(localPath));
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
-        DataPart part = new DataPart(config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
+        DataPart part =
+                new DataPart(
+                        config.getBackupPrefix(),
+                        remotePath.toString(),
+                        initResponse.getUploadId());
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
 
-        try(InputStream in = new FileInputStream(localPath.toFile())) {
+        try (InputStream in = new FileInputStream(localPath.toFile())) {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
             // Upload parts.
             int partNum = 0;
@@ -109,28 +137,53 @@ public class S3FileSystem extends S3FileSystemBase{
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
-                DataPart dp = new DataPart(++partNum, chunk, config.getBackupPrefix(), remotePath.toString(), initResponse.getUploadId());
-                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsUploaded);
+                DataPart dp =
+                        new DataPart(
+                                ++partNum,
+                                chunk,
+                                config.getBackupPrefix(),
+                                remotePath.toString(),
+                                initResponse.getUploadId());
+                S3PartUploader partUploader =
+                        new S3PartUploader(s3Client, dp, partETags, partsUploaded);
                 compressedFileSize += chunk.length;
-                //TODO: Get the future over here and create a new arraylist.
+                // TODO: Get the future over here and create a new arraylist.
                 Future<Void> future = executor.submit(partUploader);
             }
 
-            //TODO: Instead of waiting for executor thread to be empty we should wait for all the futures to finish.
+            // TODO: Instead of waiting for executor thread to be empty we should wait for all the
+            // futures to finish.
             executor.sleepTillEmpty();
-            logger.info("All chunks uploaded for file {}, num of expected parts:{}, num of actual uploaded parts: {}", localPath.toFile().getName(), partNum, partsUploaded.get());
+            logger.info(
+                    "All chunks uploaded for file {}, num of expected parts:{}, num of actual uploaded parts: {}",
+                    localPath.toFile().getName(),
+                    partNum,
+                    partsUploaded.get());
 
             if (partNum != partETags.size())
-                throw new BackupRestoreException("Number of parts(" + partNum + ")  does not match the uploaded parts(" + partETags.size() + ")");
+                throw new BackupRestoreException(
+                        "Number of parts("
+                                + partNum
+                                + ")  does not match the uploaded parts("
+                                + partETags.size()
+                                + ")");
 
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete = new S3PartUploader(s3Client, part, partETags).completeUpload();
+            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
+                    new S3PartUploader(s3Client, part, partETags).completeUpload();
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
 
             if (logger.isDebugEnabled()) {
-                final S3ResponseMetadata responseMetadata = s3Client.getCachedResponseMetadata(initRequest);
-                final String requestId = responseMetadata.getRequestId(); // "x-amz-request-id" header
+                final S3ResponseMetadata responseMetadata =
+                        s3Client.getCachedResponseMetadata(initRequest);
+                final String requestId =
+                        responseMetadata.getRequestId(); // "x-amz-request-id" header
                 final String hostId = responseMetadata.getHostId(); // "x-amz-id-2" header
-                logger.debug("S3 AWS x-amz-request-id[" + requestId + "], and x-amz-id-2[" + hostId + "]");
+                logger.debug(
+                        "S3 AWS x-amz-request-id["
+                                + requestId
+                                + "], and x-amz-id-2["
+                                + hostId
+                                + "]");
             }
 
             return compressedFileSize;
@@ -140,17 +193,21 @@ public class S3FileSystem extends S3FileSystemBase{
         }
     }
 
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException{
+    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
         long chunkSize = config.getBackupChunkSize();
         long fileSize = localPath.toFile().length();
 
         if (fileSize < chunkSize) {
-            //Upload file without using multipart upload as it will be more efficient.
+            // Upload file without using multipart upload as it will be more efficient.
             if (logger.isDebugEnabled())
-                logger.debug("Uploading to {}/{} using PUT operation", config.getBackupPrefix(), remotePath);
+                logger.debug(
+                        "Uploading to {}/{} using PUT operation",
+                        config.getBackupPrefix(),
+                        remotePath);
 
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                 InputStream in = new BufferedInputStream(new FileInputStream(localPath.toFile()))) {
+                    InputStream in =
+                            new BufferedInputStream(new FileInputStream(localPath.toFile()))) {
                 Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);
                 while (chunkedStream.hasNext()) {
                     byteArrayOutputStream.write(chunkedStream.next());
@@ -160,23 +217,32 @@ public class S3FileSystem extends S3FileSystemBase{
                 rateLimiter.acquire(chunk.length);
                 ObjectMetadata objectMetadata = getObjectMetadata(localPath);
                 objectMetadata.setContentLength(chunk.length);
-                PutObjectRequest putObjectRequest = new PutObjectRequest(config.getBackupPrefix(), remotePath.toString(), new ByteArrayInputStream(chunk), objectMetadata);
-                //Retry if failed.
-                PutObjectResult upload = new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
-                    @Override
-                    public PutObjectResult retriableCall() throws Exception {
-                        return s3Client.putObject(putObjectRequest);
-                    }
-                }.call();
+                PutObjectRequest putObjectRequest =
+                        new PutObjectRequest(
+                                config.getBackupPrefix(),
+                                remotePath.toString(),
+                                new ByteArrayInputStream(chunk),
+                                objectMetadata);
+                // Retry if failed.
+                PutObjectResult upload =
+                        new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+                            @Override
+                            public PutObjectResult retriableCall() throws Exception {
+                                return s3Client.putObject(putObjectRequest);
+                            }
+                        }.call();
 
                 if (logger.isDebugEnabled())
-                    logger.debug("Successfully uploaded file with putObject: {} and etag: {}", remotePath, upload.getETag());
+                    logger.debug(
+                            "Successfully uploaded file with putObject: {} and etag: {}",
+                            remotePath,
+                            upload.getETag());
 
                 return compressedFileSize;
             } catch (Exception e) {
-                throw new BackupRestoreException("Error uploading file: " + localPath.toFile().getName(), e);
+                throw new BackupRestoreException(
+                        "Error uploading file: " + localPath.toFile().getName(), e);
             }
-        } else
-            return uploadMultipart(localPath, remotePath);
+        } else return uploadMultipart(localPath, remotePath);
     }
 }

@@ -16,27 +16,22 @@
  */
 package com.netflix.priam.configSource;
 
-import com.netflix.priam.configSource.CompositeConfigSource;
-import com.netflix.priam.configSource.PropertiesConfigSource;
-import com.netflix.priam.configSource.SimpleDBConfigSource;
-import com.netflix.priam.configSource.SystemPropertiesConfigSource;
-import com.netflix.priam.configSource.IConfigSource;
-
 import javax.inject.Inject;
 
 /**
- * Default {@link IConfigSource} pulling in configs from SimpleDB, local Properties, and System Properties.
+ * Default {@link com.netflix.priam.configSource.IConfigSource} pulling in configs from SimpleDB,
+ * local Properties, and System Properties.
  */
 public class PriamConfigSource extends CompositeConfigSource {
 
     @Inject
-    public PriamConfigSource(final SimpleDBConfigSource simpleDBConfigSource,
-                             final PropertiesConfigSource propertiesConfigSource,
-                             final SystemPropertiesConfigSource systemPropertiesConfigSource) {
-        // this order was based off PriamConfigurations loading.  W/e loaded last could override, but with Composite, first
+    public PriamConfigSource(
+            final SimpleDBConfigSource simpleDBConfigSource,
+            final PropertiesConfigSource propertiesConfigSource,
+            final SystemPropertiesConfigSource systemPropertiesConfigSource) {
+        // this order was based off PriamConfigurations loading.  W/e loaded last could override,
+        // but with Composite, first
         // has the highest priority.
-        super(simpleDBConfigSource,
-                propertiesConfigSource,
-                systemPropertiesConfigSource);
+        super(simpleDBConfigSource, propertiesConfigSource, systemPropertiesConfigSource);
     }
 }

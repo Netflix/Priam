@@ -17,18 +17,16 @@
 package com.netflix.priam.configSource;
 
 import com.google.inject.ImplementedBy;
-
 import java.util.List;
 
-/**
- * Defines the configurations for an application.
- */
+/** Defines the configurations for an application. */
 @ImplementedBy(PriamConfigSource.class)
 public interface IConfigSource {
 
     /**
-     * Must be called before any other method.  This method will allow implementations to do any setup that they require
-     * before being called.
+     * Must be called before any other method. This method will allow implementations to do any
+     * setup that they require before being called.
+     *
      * @param asgName: Name of the asg
      * @param region: Name of the region
      */
@@ -67,7 +65,7 @@ public interface IConfigSource {
     /**
      * Get a String associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -76,7 +74,7 @@ public interface IConfigSource {
     /**
      * Get a boolean associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -85,7 +83,7 @@ public interface IConfigSource {
     /**
      * Get a Class associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -94,9 +92,9 @@ public interface IConfigSource {
     /**
      * Get a Enum associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
-     * @param <T>          enum type.
+     * @param <T> enum type.
      * @return value from config or defaultValue if not present.
      */
     <T extends Enum<T>> T get(String key, T defaultValue);
@@ -104,7 +102,7 @@ public interface IConfigSource {
     /**
      * Get a int associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -113,7 +111,7 @@ public interface IConfigSource {
     /**
      * Get a long associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -122,7 +120,7 @@ public interface IConfigSource {
     /**
      * Get a float associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -131,7 +129,7 @@ public interface IConfigSource {
     /**
      * Get a double associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -140,7 +138,7 @@ public interface IConfigSource {
     /**
      * Get a list of strings associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @return value from config or an immutable list if not present.
      */
     List<String> getList(String key);
@@ -148,7 +146,7 @@ public interface IConfigSource {
     /**
      * Get a list of strings associated with the given configuration key.
      *
-     * @param key          to look up value.
+     * @param key to look up value.
      * @param defaultValue if value is not present.
      * @return value from config or defaultValue if not present.
      */
@@ -157,7 +155,7 @@ public interface IConfigSource {
     /**
      * Set the value for the given key.
      *
-     * @param key   to set value for.
+     * @param key to set value for.
      * @param value to set.
      */
     void set(String key, String value);

@@ -23,18 +23,17 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
 public class TestBackupFile {
     private static Injector injector;
@@ -42,11 +41,11 @@ public class TestBackupFile {
     @BeforeClass
     public static void setup() throws IOException {
         injector = Guice.createInjector(new BRTestModule());
-        File file = new File("target/data/Keyspace1/Standard1/", "Keyspace1-Standard1-ia-5-Data.db");
+        File file =
+                new File("target/data/Keyspace1/Standard1/", "Keyspace1-Standard1-ia-5-Data.db");
         if (!file.exists()) {
             File dir1 = new File("target/data/Keyspace1/Standard1/");
-            if (!dir1.exists())
-                dir1.mkdirs();
+            if (!dir1.exists()) dir1.mkdirs();
             byte b = 8;
             long oneKB = (1024L);
             System.out.println(oneKB);
@@ -58,7 +57,7 @@ public class TestBackupFile {
             bos1.close();
         }
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        factory.getInstance().setToken("1234567");//Token
+        factory.getInstance().setToken("1234567"); // Token
     }
 
     @AfterClass
@@ -70,7 +69,8 @@ public class TestBackupFile {
     @Test
     public void testBackupFileCreation() throws ParseException {
         // Test snapshot file
-        String snapshotfile = "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
+        String snapshotfile =
+                "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
@@ -80,12 +80,16 @@ public class TestBackupFile {
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
+        Assert.assertEquals(
+                "casstestbackup/"
+                        + FakeConfiguration.FAKE_REGION
+                        + "/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db",
+                backupfile.getRemotePath());
     }
 
     @Test
     public void testIncBackupFileCreation() throws ParseException {
-        // Test incremental file        
+        // Test incremental file
         File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.SST);
@@ -97,7 +101,13 @@ public class TestBackupFile {
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
         String datestr = AbstractBackupPath.formatDate(new Date(bfile.lastModified()));
-        Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/1234567/" + datestr + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db", backupfile.getRemotePath());
+        Assert.assertEquals(
+                "casstestbackup/"
+                        + FakeConfiguration.FAKE_REGION
+                        + "/fake-app/1234567/"
+                        + datestr
+                        + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db",
+                backupfile.getRemotePath());
     }
 
     @Test
@@ -113,6 +123,10 @@ public class TestBackupFile {
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(FakeConfiguration.FAKE_REGION, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/1234567/201108082320/META/1234567.meta", backupfile.getRemotePath());
+        Assert.assertEquals(
+                "casstestbackup/"
+                        + FakeConfiguration.FAKE_REGION
+                        + "/fake-app/1234567/201108082320/META/1234567.meta",
+                backupfile.getRemotePath());
     }
 }

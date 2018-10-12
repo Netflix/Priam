@@ -37,23 +37,36 @@ import com.netflix.spectator.api.Registry;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
-
 public class PriamGuiceModule extends AbstractModule {
     @Override
     protected void configure() {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
 
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(S3EncryptedFileSystem.class);
+        bind(IBackupFileSystem.class)
+                .annotatedWith(Names.named("encryptedbackup"))
+                .to(S3EncryptedFileSystem.class);
 
         bind(S3CrossAccountFileSystem.class);
 
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("gcsencryptedbackup")).to(GoogleEncryptedFileSystem.class);
-        bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);
-        bind(ICredential.class).annotatedWith(Names.named("awsec2roleassumption")).to(EC2RoleAssumptionCredential.class);
-        bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
-        bind(ICredentialGeneric.class).annotatedWith(Names.named("gcscredential")).to(GcsCredential.class);
-        bind(ICredentialGeneric.class).annotatedWith(Names.named("pgpcredential")).to(PgpCredential.class);
+        bind(IBackupFileSystem.class)
+                .annotatedWith(Names.named("gcsencryptedbackup"))
+                .to(GoogleEncryptedFileSystem.class);
+        bind(IS3Credential.class)
+                .annotatedWith(Names.named("awss3roleassumption"))
+                .to(S3RoleAssumptionCredential.class);
+        bind(ICredential.class)
+                .annotatedWith(Names.named("awsec2roleassumption"))
+                .to(EC2RoleAssumptionCredential.class);
+        bind(IFileCryptography.class)
+                .annotatedWith(Names.named("filecryptoalgorithm"))
+                .to(PgpCryptography.class);
+        bind(ICredentialGeneric.class)
+                .annotatedWith(Names.named("gcscredential"))
+                .to(GcsCredential.class);
+        bind(ICredentialGeneric.class)
+                .annotatedWith(Names.named("pgpcredential"))
+                .to(PgpCredential.class);
         bind(Registry.class).toInstance(new NoopRegistry());
     }
 }

@@ -33,40 +33,38 @@ import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import mockit.Mock;
-import mockit.MockUp;
-import org.junit.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.List;
+import mockit.Mock;
+import mockit.MockUp;
+import org.junit.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestS3FileSystem {
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestS3FileSystem.class);
-    private static String FILE_PATH = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+    private static String FILE_PATH =
+            "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
     private static BackupMetrics backupMetrics;
 
-    public TestS3FileSystem(){
-        if (injector == null)
-            injector = Guice.createInjector(new BRTestModule());
+    public TestS3FileSystem() {
+        if (injector == null) injector = Guice.createInjector(new BRTestModule());
 
-        if (backupMetrics == null)
-            backupMetrics = injector.getInstance(BackupMetrics.class);
+        if (backupMetrics == null) backupMetrics = injector.getInstance(BackupMetrics.class);
     }
+
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
         new MockS3PartUploader();
         new MockAmazonS3Client();
 
         File dir1 = new File("target/data/Keyspace1/Standard1/backups/201108082320");
-        if (!dir1.exists())
-            dir1.mkdirs();
+        if (!dir1.exists()) dir1.mkdirs();
         File file = new File(FILE_PATH);
         long fiveKB = (5L * 1024);
         byte b = 8;
@@ -90,7 +88,12 @@ public class TestS3FileSystem {
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
+        fs.uploadFile(
+                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
+                Paths.get(backupfile.getRemotePath()),
+                backupfile,
+                0,
+                false);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -100,15 +103,22 @@ public class TestS3FileSystem {
         MockS3PartUploader.partFailure = true;
         long noOfFailures = backupMetrics.getInvalidUploads().count();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+        String snapshotfile =
+                "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
-            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
+            fs.uploadFile(
+                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
+                    Paths.get(backupfile.getRemotePath()),
+                    backupfile,
+                    0,
+                    false);
         } catch (BackupRestoreException e) {
             // ignore
         }
-        //Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES, MockS3PartUploader.partAttempts);
+        // Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES,
+        // MockS3PartUploader.partAttempts);
         Assert.assertEquals(0, MockS3PartUploader.compattempts);
         Assert.assertEquals(1, backupMetrics.getInvalidUploads().count() - noOfFailures);
     }
@@ -118,17 +128,23 @@ public class TestS3FileSystem {
         MockS3PartUploader.setup();
         MockS3PartUploader.completionFailure = true;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile = "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+        String snapshotfile =
+                "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
-            fs.uploadFile(Paths.get(backupfile.getBackupFile().getAbsolutePath()), Paths.get(backupfile.getRemotePath()), backupfile, 0, false);
+            fs.uploadFile(
+                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
+                    Paths.get(backupfile.getRemotePath()),
+                    backupfile,
+                    0,
+                    false);
         } catch (BackupRestoreException e) {
             // ignore
         }
-        //Assert.assertEquals(1, MockS3PartUploader.partAttempts);
+        // Assert.assertEquals(1, MockS3PartUploader.partAttempts);
         // No retries with the new logic
-        //Assert.assertEquals(1, MockS3PartUploader.compattempts);
+        // Assert.assertEquals(1, MockS3PartUploader.compattempts);
     }
 
     @Test
@@ -139,7 +155,8 @@ public class TestS3FileSystem {
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
+        Assert.assertEquals(
+                "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -151,10 +168,10 @@ public class TestS3FileSystem {
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
+        Assert.assertEquals(
+                "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
-
 
     // Mock Nodeprobe class
     static class MockS3PartUploader extends MockUp<S3PartUploader> {
@@ -172,8 +189,7 @@ public class TestS3FileSystem {
         @Mock
         private Void uploadPart() throws AmazonClientException, BackupRestoreException {
             ++partAttempts;
-            if (partFailure)
-                throw new BackupRestoreException("Test exception");
+            if (partFailure) throw new BackupRestoreException("Test exception");
             partETags.add(new PartETag(0, null));
             return null;
         }
@@ -181,15 +197,13 @@ public class TestS3FileSystem {
         @Mock
         public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException {
             ++compattempts;
-            if (completionFailure)
-                throw new BackupRestoreException("Test exception");
+            if (completionFailure) throw new BackupRestoreException("Test exception");
 
             return null;
         }
 
         @Mock
-        public void abortUpload() {
-        }
+        public void abortUpload() {}
 
         @Mock
         public Void retriableCall() throws AmazonClientException, BackupRestoreException {
@@ -210,15 +224,17 @@ public class TestS3FileSystem {
         static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
 
         @Mock
-        public void $init() {
-        }
+        public void $init() {}
 
         @Mock
-        public InitiateMultipartUploadResult initiateMultipartUpload(InitiateMultipartUploadRequest initiateMultipartUploadRequest) throws AmazonClientException {
+        public InitiateMultipartUploadResult initiateMultipartUpload(
+                InitiateMultipartUploadRequest initiateMultipartUploadRequest)
+                throws AmazonClientException {
             return new InitiateMultipartUploadResult();
         }
 
-        public PutObjectResult putObject(PutObjectRequest putObjectRequest) throws SdkClientException, AmazonServiceException {
+        public PutObjectResult putObject(PutObjectRequest putObjectRequest)
+                throws SdkClientException, AmazonServiceException {
             PutObjectResult result = new PutObjectResult();
             result.setETag("ad");
             return result;
@@ -228,21 +244,24 @@ public class TestS3FileSystem {
         public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
             List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
             if (ruleAvailable) {
-                String clusterPath = "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/";
-                BucketLifecycleConfiguration.Rule rule = new BucketLifecycleConfiguration.Rule().withExpirationInDays(5).withPrefix(clusterPath);
+                String clusterPath =
+                        "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/";
+                BucketLifecycleConfiguration.Rule rule =
+                        new BucketLifecycleConfiguration.Rule()
+                                .withExpirationInDays(5)
+                                .withPrefix(clusterPath);
                 rule.setStatus(BucketLifecycleConfiguration.ENABLED);
                 rule.setId(clusterPath);
                 rules.add(rule);
-
             }
             bconf.setRules(rules);
             return bconf;
         }
 
         @Mock
-        public void setBucketLifecycleConfiguration(String bucketName, BucketLifecycleConfiguration bucketLifecycleConfiguration) {
+        public void setBucketLifecycleConfiguration(
+                String bucketName, BucketLifecycleConfiguration bucketLifecycleConfiguration) {
             bconf = bucketLifecycleConfiguration;
         }
-
     }
 }

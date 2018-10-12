@@ -23,13 +23,12 @@ import com.google.inject.Injector;
 import com.google.inject.Singleton;
 import com.netflix.priam.TestModule;
 import com.netflix.priam.config.IConfiguration;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import javax.management.MBeanServerFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-
-import javax.management.MBeanServerFactory;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 public class TestScheduler {
     // yuck, but marginally better than using Thread.sleep
@@ -48,7 +47,8 @@ public class TestScheduler {
     }
 
     @Test
-    @Ignore("not sure what this test really does, except test countdown latch and thread context switching")
+    @Ignore(
+            "not sure what this test really does, except test countdown latch and thread context switching")
     public void testSingleInstanceSchedule() throws Exception {
         latch = new CountDownLatch(3);
         Injector inject = Guice.createInjector(new TestModule());
@@ -65,7 +65,8 @@ public class TestScheduler {
     public static class TestTask extends Task {
         @Inject
         public TestTask(IConfiguration config) {
-            // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate registrations
+            // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate
+            // registrations
             super(config, MBeanServerFactory.newMBeanServer());
         }
 
@@ -78,7 +79,6 @@ public class TestScheduler {
         public String getName() {
             return "test";
         }
-
     }
 
     @Ignore
@@ -97,7 +97,7 @@ public class TestScheduler {
             latch.countDown();
             try {
                 // todo : why is this sleep important?
-                Thread.sleep(55);//5sec
+                Thread.sleep(55); // 5sec
             } catch (InterruptedException e) {
                 // TODO Auto-generated catch block
                 e.printStackTrace();

@@ -26,9 +26,7 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
 
-/**
- * Updates the cleanup policy for the bucket
- */
+/** Updates the cleanup policy for the bucket */
 @Singleton
 public class UpdateCleanupPolicy extends Task {
     public static final String JOBNAME = "UpdateCleanupPolicy";
@@ -60,5 +58,4 @@ public class UpdateCleanupPolicy extends Task {
     public static TaskTimer getTimer() {
         return new SimpleTimer(JOBNAME);
     }
-
 }

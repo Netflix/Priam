@@ -17,10 +17,16 @@
 
 package com.netflix.priam.resources;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.ImmutableList;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import java.util.List;
+import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.integration.junit4.JMockit;
@@ -28,24 +34,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
-
 @RunWith(JMockit.class)
 public class PriamInstanceResourceTest {
     private static final String APP_NAME = "myApp";
     private static final int NODE_ID = 3;
 
-    private
-    @Mocked
-    IConfiguration config;
-    private
-    @Mocked
-    IPriamInstanceFactory factory;
+    private @Mocked IConfiguration config;
+    private @Mocked IPriamInstanceFactory factory;
     private PriamInstanceResource resource;
 
     @Before
@@ -54,7 +49,10 @@ public class PriamInstanceResourceTest {
     }
 
     @Test
-    public void getInstances(@Mocked final PriamInstance instance1, @Mocked final PriamInstance instance2, @Mocked final PriamInstance instance3) {
+    public void getInstances(
+            @Mocked final PriamInstance instance1,
+            @Mocked final PriamInstance instance2,
+            @Mocked final PriamInstance instance3) {
         new Expectations() {
             List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
 
@@ -94,19 +92,22 @@ public class PriamInstanceResourceTest {
 
     @Test
     public void getInstance_notFound() {
-        new Expectations() {{
-            config.getAppName();
-            result = APP_NAME;
-            factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
-            result = null;
-        }};
+        new Expectations() {
+            {
+                config.getAppName();
+                result = APP_NAME;
+                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                result = null;
+            }
+        };
 
         try {
             resource.getInstance(NODE_ID);
             fail("Expected WebApplicationException thrown");
         } catch (WebApplicationException e) {
             assertEquals(404, e.getResponse().getStatus());
-            assertEquals("No priam instance with id " + NODE_ID + " found", e.getResponse().getEntity());
+            assertEquals(
+                    "No priam instance with id " + NODE_ID + " found", e.getResponse().getEntity());
         }
     }
 
@@ -152,19 +153,22 @@ public class PriamInstanceResourceTest {
 
     @Test
     public void deleteInstance_notFound() {
-        new Expectations() {{
-            config.getAppName();
-            result = APP_NAME;
-            factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
-            result = null;
-        }};
+        new Expectations() {
+            {
+                config.getAppName();
+                result = APP_NAME;
+                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                result = null;
+            }
+        };
 
         try {
             resource.getInstance(NODE_ID);
             fail("Expected WebApplicationException thrown");
         } catch (WebApplicationException e) {
             assertEquals(404, e.getResponse().getStatus());
-            assertEquals("No priam instance with id " + NODE_ID + " found", e.getResponse().getEntity());
+            assertEquals(
+                    "No priam instance with id " + NODE_ID + " found", e.getResponse().getEntity());
         }
     }
 }

@@ -17,14 +17,13 @@
 
 package com.netflix.priam.backup.identity;
 
+import static org.junit.Assert.assertEquals;
+
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import org.junit.Test;
-
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class InstanceIdentityTest extends InstanceTestUtils {
 
@@ -79,8 +78,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         factory.sort(lst);
         for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
-            if (0 == i % 2)
-                continue;
+            if (0 == i % 2) continue;
             assertEquals(InstanceIdentity.DUMMY_INSTANCE_ID, lst.get(i).getInstanceId());
         }
         assertEquals(before * 2, lst.size());
@@ -100,7 +98,5 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     private void printInstance(PriamInstance ins, int hash) {
         System.out.println("ID: " + (ins.getId() - hash));
         System.out.println("PayLoad: " + ins.getToken());
-
     }
-
 }

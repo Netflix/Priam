@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
-
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
@@ -29,8 +28,10 @@ import java.util.Iterator;
 public class NullBackupFileSystem extends AbstractFileSystem {
 
     @Inject
-    public NullBackupFileSystem(IConfiguration configuration, BackupMetrics backupMetrics,
-                                BackupNotificationMgr backupNotificationMgr){
+    public NullBackupFileSystem(
+            IConfiguration configuration,
+            BackupMetrics backupMetrics,
+            BackupNotificationMgr backupNotificationMgr) {
         super(configuration, backupMetrics, backupNotificationMgr);
     }
 
@@ -40,7 +41,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     public void shutdown() {
-        //NOP
+        // NOP
     }
 
     @Override
@@ -59,9 +60,8 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-
-    }
+    protected void downloadFileImpl(Path remotePath, Path localPath)
+            throws BackupRestoreException {}
 
     @Override
     protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {

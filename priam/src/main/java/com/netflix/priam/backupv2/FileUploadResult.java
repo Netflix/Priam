@@ -18,7 +18,6 @@ package com.netflix.priam.backupv2;
 
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.utils.GsonJsonSerializer;
-
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -26,24 +25,28 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 
 /**
- * This is a POJO that will encapsulate the result of file upload.
- * Created by aagrawal on 6/20/18.
+ * This is a POJO that will encapsulate the result of file upload. Created by aagrawal on 6/20/18.
  */
 public class FileUploadResult {
     private final Path fileName;
-    @GsonJsonSerializer.PriamAnnotation.GsonIgnore
-    private String keyspaceName;
-    @GsonJsonSerializer.PriamAnnotation.GsonIgnore
-    private String columnFamilyName;
+    @GsonJsonSerializer.PriamAnnotation.GsonIgnore private String keyspaceName;
+    @GsonJsonSerializer.PriamAnnotation.GsonIgnore private String columnFamilyName;
     private Instant lastModifiedTime;
     private final Instant fileCreationTime;
-    private final long fileSizeOnDisk; //Size on disk in bytes
+    private final long fileSizeOnDisk; // Size on disk in bytes
     private Boolean isUploaded;
-    //Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
-    private ICompression.CompressionAlgorithm compression = ICompression.CompressionAlgorithm.SNAPPY;
+    // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
+    private ICompression.CompressionAlgorithm compression =
+            ICompression.CompressionAlgorithm.SNAPPY;
     private Path backupPath;
 
-    public FileUploadResult(Path fileName, String keyspaceName, String columnFamilyName, Instant lastModifiedTime, Instant fileCreationTime, long fileSizeOnDisk) {
+    public FileUploadResult(
+            Path fileName,
+            String keyspaceName,
+            String columnFamilyName,
+            Instant lastModifiedTime,
+            Instant fileCreationTime,
+            long fileSizeOnDisk) {
         this.fileName = fileName;
         this.keyspaceName = keyspaceName;
         this.columnFamilyName = columnFamilyName;
@@ -52,12 +55,20 @@ public class FileUploadResult {
         this.fileSizeOnDisk = fileSizeOnDisk;
     }
 
-    public static FileUploadResult getFileUploadResult(String keyspaceName, String columnFamilyName, Path file) throws Exception {
+    public static FileUploadResult getFileUploadResult(
+            String keyspaceName, String columnFamilyName, Path file) throws Exception {
         BasicFileAttributes fileAttributes = Files.readAttributes(file, BasicFileAttributes.class);
-        return new FileUploadResult(file, keyspaceName, columnFamilyName, fileAttributes.lastModifiedTime().toInstant(), fileAttributes.creationTime().toInstant(), fileAttributes.size());
+        return new FileUploadResult(
+                file,
+                keyspaceName,
+                columnFamilyName,
+                fileAttributes.lastModifiedTime().toInstant(),
+                fileAttributes.creationTime().toInstant(),
+                fileAttributes.size());
     }
 
-    public static FileUploadResult getFileUploadResult(String keyspaceName, String columnFamilyName, File file) throws Exception {
+    public static FileUploadResult getFileUploadResult(
+            String keyspaceName, String columnFamilyName, File file) throws Exception {
         return getFileUploadResult(keyspaceName, columnFamilyName, file.toPath());
     }
 

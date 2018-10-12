@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
@@ -39,31 +38,42 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
+import java.util.Arrays;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
-
-import java.util.Arrays;
 
 @Ignore
 public class BRTestModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(IConfiguration.class).toInstance(new FakeConfiguration(FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
+        bind(IConfiguration.class)
+                .toInstance(
+                        new FakeConfiguration(
+                                FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
         bind(IBackupRestoreConfig.class).to(FakeBackupRestoreConfig.class);
 
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
+        bind(IBackupFileSystem.class)
+                .annotatedWith(Names.named("backup"))
+                .to(FakeBackupFileSystem.class)
+                .in(Scopes.SINGLETON);
         bind(Sleeper.class).to(FakeSleeper.class);
 
-        bind(IS3Credential.class).annotatedWith(Names.named("awss3roleassumption")).to(S3RoleAssumptionCredential.class);
+        bind(IS3Credential.class)
+                .annotatedWith(Names.named("awss3roleassumption"))
+                .to(S3RoleAssumptionCredential.class);
 
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("encryptedbackup")).to(NullBackupFileSystem.class);
-        bind(IFileCryptography.class).annotatedWith(Names.named("filecryptoalgorithm")).to(PgpCryptography.class);
+        bind(IBackupFileSystem.class)
+                .annotatedWith(Names.named("encryptedbackup"))
+                .to(NullBackupFileSystem.class);
+        bind(IFileCryptography.class)
+                .annotatedWith(Names.named("filecryptoalgorithm"))
+                .to(PgpCryptography.class);
         bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);

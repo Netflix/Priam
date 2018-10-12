@@ -40,5 +40,4 @@ public class FakeDeadTokenRetriever implements IDeadTokenRetriever {
         // TODO Auto-generated method stub
 
     }
-
 }

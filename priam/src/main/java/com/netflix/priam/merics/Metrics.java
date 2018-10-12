@@ -17,9 +17,7 @@
 
 package com.netflix.priam.merics;
 
-/**
- * Created by aagrawal on 8/15/18.
- */
+/** Created by aagrawal on 8/15/18. */
 public interface Metrics {
     String METRIC_PREFIX = "priam.";
 }

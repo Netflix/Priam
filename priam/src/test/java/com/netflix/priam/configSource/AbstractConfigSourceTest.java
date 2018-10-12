@@ -18,15 +18,15 @@
 package com.netflix.priam.configSource;
 
 import com.google.common.collect.ImmutableList;
+import java.util.List;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 public final class AbstractConfigSourceTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(AbstractConfigSourceTest.class.getName());
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(AbstractConfigSourceTest.class.getName());
 
     @Test
     public void lists() {

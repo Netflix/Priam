@@ -30,33 +30,51 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Main class for restoring data from backup. Backup restored using this way are not encrypted.
- */
+/** Main class for restoring data from backup. Backup restored using this way are not encrypted. */
 @Singleton
 public class Restore extends AbstractRestore {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
 
     @Inject
-    public Restore(IConfiguration config, @Named("backup") IBackupFileSystem fs, Sleeper sleeper, ICassandraProcess cassProcess,
-                   Provider<AbstractBackupPath> pathProvider,
-                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
-        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState, postRestoreHook);
+    public Restore(
+            IConfiguration config,
+            @Named("backup") IBackupFileSystem fs,
+            Sleeper sleeper,
+            ICassandraProcess cassProcess,
+            Provider<AbstractBackupPath> pathProvider,
+            InstanceIdentity instanceIdentity,
+            RestoreTokenSelector tokenSelector,
+            MetaData metaData,
+            InstanceState instanceState,
+            IPostRestoreHook postRestoreHook) {
+        super(
+                config,
+                fs,
+                JOBNAME,
+                sleeper,
+                pathProvider,
+                instanceIdentity,
+                tokenSelector,
+                cassProcess,
+                metaData,
+                instanceState,
+                postRestoreHook);
     }
 
     @Override
-    protected final Future<Path> downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception {
+    protected final Future<Path> downloadFile(
+            final AbstractBackupPath path, final File restoreLocation) throws Exception {
         tracker.adjustAndAdd(path);
-        return fs.asyncDownloadFile(Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
+        return fs.asyncDownloadFile(
+                Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
     }
 
     public static TaskTimer getTimer() {

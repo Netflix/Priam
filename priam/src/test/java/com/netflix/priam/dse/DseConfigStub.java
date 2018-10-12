@@ -19,7 +19,6 @@ package com.netflix.priam.dse;
 
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.tuner.dse.IDseConfiguration;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -51,8 +50,10 @@ public class DseConfigStub implements IDseConfiguration {
     }
 
     public Set<AuditLogCategory> getAuditLogCategories() {
-        return new HashSet<AuditLogCategory>() {{
-            this.add(AuditLogCategory.ALL);
-        }};
+        return new HashSet<AuditLogCategory>() {
+            {
+                this.add(AuditLogCategory.ALL);
+            }
+        };
     }
 }

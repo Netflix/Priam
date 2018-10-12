@@ -123,9 +123,8 @@ public class SnapshotBackup extends AbstractBackup {
             // All the files are uploaded successfully as part of snapshot.
             // pre condition notifiy of meta.json upload
             File tmpMetaFile =
-                    metaData
-                            .createTmpMetaFile(); // Note: no need to remove this temp as it is done
-                                                  // within createTmpMetaFile()
+                    metaData.createTmpMetaFile(); // Note: no need to remove this temp as it is done
+            // within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
 
             // Upload meta file

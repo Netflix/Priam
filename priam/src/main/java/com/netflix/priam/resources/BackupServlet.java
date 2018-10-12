@@ -512,7 +512,7 @@ public class BackupServlet {
                 if ("meta".equalsIgnoreCase(filter)) { // only check for existence of meta file
                     p.setFileName(
                             "meta.json"); // ignore incremental meta files, we are only interested
-                                          // in daily snapshot
+                    // in daily snapshot
                     if (metaData.doesExist(p)) {
                         // if here, snapshot completed.
                         fileCnt++;

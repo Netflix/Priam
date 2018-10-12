@@ -95,8 +95,8 @@ public class Compaction extends IClusterManagement<String> {
                         if (includeCFFilter != null
                                 && !includeCFFilter
                                         .isEmpty()) // If include filter is empty or null, it means
-                                                    // include all.
-                        columnfamilies =
+                            // include all.
+                            columnfamilies =
                                     (List<String>)
                                             CollectionUtils.intersection(
                                                     columnfamilies, includeCFFilter);

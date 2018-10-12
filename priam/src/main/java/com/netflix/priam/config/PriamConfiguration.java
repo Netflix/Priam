@@ -153,19 +153,16 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_EXTRA_ENV_PARAMS = PRIAM_PRE + ".extra.env.params";
 
     private static final String CONFIG_RESTORE_SOURCE_TYPE =
-            PRIAM_PRE
-                    + ".restore.source.type"; // the type of source for the restore.  Valid values
-                                              // are: AWSCROSSACCT or GOOGLE.
+            PRIAM_PRE + ".restore.source.type"; // the type of source for the restore.  Valid values
+    // are: AWSCROSSACCT or GOOGLE.
     private static final String CONFIG_ENCRYPTED_BACKUP_ENABLED =
-            PRIAM_PRE
-                    + ".encrypted.backup.enabled"; // enable encryption of backup (snapshots,
-                                                   // incrementals, commit logs).
+            PRIAM_PRE + ".encrypted.backup.enabled"; // enable encryption of backup (snapshots,
+    // incrementals, commit logs).
 
     // Backup and restore cryptography
     private static final String CONFIG_PRIKEY_LOC =
-            PRIAM_PRE
-                    + ".private.key.location"; // the location on disk of the private key used by
-                                               // the cryptography algorithm
+            PRIAM_PRE + ".private.key.location"; // the location on disk of the private key used by
+    // the cryptography algorithm
     private static final String CONFIG_PGP_PASSWORD_PHRASE =
             PRIAM_PRE + ".pgp.password.phrase"; // pass phrase used by the cryptography algorithm
     private static final String CONFIG_PGP_PUB_KEY_LOC = PRIAM_PRE + ".pgp.pubkey.file.location";
@@ -174,11 +171,10 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_GCS_SERVICE_ACCT_ID =
             PRIAM_PRE + ".gcs.service.acct.id"; // Google Cloud Storage service account id
     private static final String CONFIG_GCS_SERVICE_ACCT_PRIVATE_KEY_LOC =
-            PRIAM_PRE
-                    + ".gcs.service.acct.private.key"; // the absolute path on disk for the Google
-                                                       // Cloud Storage PFX file (i.e. the combined
-                                                       // format of the private key and
-                                                       // certificate).
+            PRIAM_PRE + ".gcs.service.acct.private.key"; // the absolute path on disk for the Google
+    // Cloud Storage PFX file (i.e. the combined
+    // format of the private key and
+    // certificate).
 
     // Amazon specific
     private static final String CONFIG_ASG_NAME = PRIAM_PRE + ".az.asgname";
@@ -193,8 +189,8 @@ public class PriamConfiguration implements IConfiguration {
     private static final String CONFIG_S3_ROLE_ASSUMPTION_ARN =
             PRIAM_PRE
                     + ".roleassumption.arn"; // Restore from AWS.  This is applicable when restoring
-                                             // from an AWS account which requires cross account
-                                             // assumption.
+    // from an AWS account which requires cross account
+    // assumption.
     private static final String CONFIG_EC2_ROLE_ASSUMPTION_ARN =
             PRIAM_PRE + ".ec2.roleassumption.arn";
     private static final String CONFIG_VPC_ROLE_ASSUMPTION_ARN =

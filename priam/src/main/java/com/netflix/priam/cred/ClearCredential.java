@@ -19,19 +19,17 @@ package com.netflix.priam.cred;
 import com.amazonaws.auth.AWSCredentials;
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import java.io.FileInputStream;
+import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileInputStream;
-import java.util.Properties;
-
 /**
- * This is a basic implementation of ICredentials. User should prefer to
- * implement their own versions for more secured access. This class requires
- * clear AWS key and access.
- * <p>
- * Set the following properties in "conf/awscredntial.properties"
+ * This is a basic implementation of ICredentials. User should prefer to implement their own
+ * versions for more secured access. This class requires clear AWS key and access.
+ *
+ * <p>Set the following properties in "conf/awscredntial.properties"
  */
 public class ClearCredential implements ICredential {
     private static final Logger logger = LoggerFactory.getLogger(ClearCredential.class);
@@ -45,7 +43,10 @@ public class ClearCredential implements ICredential {
             fis = new FileInputStream(CRED_FILE);
             final Properties props = new Properties();
             props.load(fis);
-            AWS_ACCESS_ID = props.getProperty("AWSACCESSID") != null ? props.getProperty("AWSACCESSID").trim() : "";
+            AWS_ACCESS_ID =
+                    props.getProperty("AWSACCESSID") != null
+                            ? props.getProperty("AWSACCESSID").trim()
+                            : "";
             AWS_KEY = props.getProperty("AWSKEY") != null ? props.getProperty("AWSKEY").trim() : "";
         } catch (Exception e) {
             logger.error("Exception with credential file ", e);

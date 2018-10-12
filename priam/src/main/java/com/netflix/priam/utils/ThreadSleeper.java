@@ -16,9 +16,7 @@
  */
 package com.netflix.priam.utils;
 
-/**
- * Sleeper impl that delegates to Thread.sleep
- */
+/** Sleeper impl that delegates to Thread.sleep */
 public class ThreadSleeper implements Sleeper {
     @Override
     public void sleep(long waitTimeMs) throws InterruptedException {
@@ -29,10 +27,7 @@ public class ThreadSleeper implements Sleeper {
         try {
             sleep(waitTimeMs);
         } catch (InterruptedException e) {
-            //no-op
+            // no-op
         }
-
     }
-
-
 }

@@ -20,7 +20,6 @@ import com.google.gson.*;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
-
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -30,23 +29,22 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Date;
 
-/**
- * Created by aagrawal on 10/12/17.
- */
+/** Created by aagrawal on 10/12/17. */
 public class GsonJsonSerializer {
-    private static final Gson gson = new GsonBuilder()
-            //.serializeNulls()
-            .serializeSpecialFloatingPointValues()
-            .setPrettyPrinting()
-            .disableHtmlEscaping()
-            .registerTypeAdapter(Date.class, new DateTypeAdapter())
-            .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
-            .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
-            .registerTypeAdapter(Path.class, new PathTypeAdapter())
-            .setExclusionStrategies(new PriamAnnotationExclusionStrategy())
-            .create();
+    private static final Gson gson =
+            new GsonBuilder()
+                    // .serializeNulls()
+                    .serializeSpecialFloatingPointValues()
+                    .setPrettyPrinting()
+                    .disableHtmlEscaping()
+                    .registerTypeAdapter(Date.class, new DateTypeAdapter())
+                    .registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter())
+                    .registerTypeAdapter(Instant.class, new InstantTypeAdapter())
+                    .registerTypeAdapter(Path.class, new PathTypeAdapter())
+                    .setExclusionStrategies(new PriamAnnotationExclusionStrategy())
+                    .create();
 
-    public static Gson getGson(){
+    public static Gson getGson() {
         return gson;
     }
 
@@ -63,7 +61,7 @@ public class GsonJsonSerializer {
 
     public static class PriamAnnotation {
         @Retention(RetentionPolicy.RUNTIME)
-//    @Target({ElementType.FIELD,ElementType.METHOD})
+        //    @Target({ElementType.FIELD,ElementType.METHOD})
         public @interface GsonIgnore {
             // Field tag only annotation
         }
@@ -71,8 +69,7 @@ public class GsonJsonSerializer {
 
     static class DateTypeAdapter extends TypeAdapter<Date> {
         @Override
-        public void write(JsonWriter out, Date value)
-                throws IOException {
+        public void write(JsonWriter out, Date value) throws IOException {
             out.value(DateUtil.formatyyyyMMddHHmm(value));
         }
 
@@ -87,14 +84,12 @@ public class GsonJsonSerializer {
                 return null;
             }
             return DateUtil.getDate(result);
-
         }
     }
 
     static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
-        public void write(JsonWriter out, LocalDateTime value)
-                throws IOException {
+        public void write(JsonWriter out, LocalDateTime value) throws IOException {
             out.value(DateUtil.formatyyyyMMddHHmm(value));
         }
 
@@ -109,19 +104,17 @@ public class GsonJsonSerializer {
                 return null;
             }
             return DateUtil.getLocalDateTime(result);
-
         }
     }
 
     static class InstantTypeAdapter extends TypeAdapter<Instant> {
         @Override
-        public void write(JsonWriter out, Instant value)
-                throws IOException {
-                out.value(getEpoch(value));
+        public void write(JsonWriter out, Instant value) throws IOException {
+            out.value(getEpoch(value));
         }
 
-        private long getEpoch(Instant value){
-            return (value == null)? null: value.toEpochMilli();
+        private long getEpoch(Instant value) {
+            return (value == null) ? null : value.toEpochMilli();
         }
 
         @Override
@@ -135,15 +128,13 @@ public class GsonJsonSerializer {
                 return null;
             }
             return Instant.ofEpochMilli(Long.parseLong(result));
-
         }
     }
 
     static class PathTypeAdapter extends TypeAdapter<Path> {
         @Override
-        public void write(JsonWriter out, Path value)
-                throws IOException {
-            String fileName = (value != null)? value.toFile().getName():null;
+        public void write(JsonWriter out, Path value) throws IOException {
+            String fileName = (value != null) ? value.toFile().getName() : null;
             out.value(fileName);
         }
 
@@ -158,7 +149,6 @@ public class GsonJsonSerializer {
                 return null;
             }
             return Paths.get(result);
-
         }
     }
 }

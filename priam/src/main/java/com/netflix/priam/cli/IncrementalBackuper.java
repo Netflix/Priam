@@ -26,7 +26,8 @@ public class IncrementalBackuper {
     public static void main(String[] args) {
         try {
             Application.initialize();
-            IncrementalBackup backuper = Application.getInjector().getInstance(IncrementalBackup.class);
+            IncrementalBackup backuper =
+                    Application.getInjector().getInstance(IncrementalBackup.class);
             try {
                 backuper.execute();
             } catch (Exception e) {

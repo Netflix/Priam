@@ -18,19 +18,38 @@ package com.netflix.priam.backup;
 
 import java.util.List;
 
-
 public interface IMessageObserver {
 
-    enum BACKUP_MESSAGE_TYPE {SNAPSHOT, INCREMENTAL, COMMITLOG, META}
+    enum BACKUP_MESSAGE_TYPE {
+        SNAPSHOT,
+        INCREMENTAL,
+        COMMITLOG,
+        META
+    }
 
-    enum RESTORE_MESSAGE_TYPE {SNAPSHOT, INCREMENTAL, COMMITLOG, META}
+    enum RESTORE_MESSAGE_TYPE {
+        SNAPSHOT,
+        INCREMENTAL,
+        COMMITLOG,
+        META
+    }
 
-    enum RESTORE_MESSAGE_STATUS {UPLOADED, DOWNLOADED, STREAMED}
+    enum RESTORE_MESSAGE_STATUS {
+        UPLOADED,
+        DOWNLOADED,
+        STREAMED
+    }
 
     void update(BACKUP_MESSAGE_TYPE bkpMsgType, List<String> remotePathNames);
 
-    void update(RESTORE_MESSAGE_TYPE rstMsgType, List<String> remotePathNames, RESTORE_MESSAGE_STATUS rstMsgStatus);
+    void update(
+            RESTORE_MESSAGE_TYPE rstMsgType,
+            List<String> remotePathNames,
+            RESTORE_MESSAGE_STATUS rstMsgStatus);
 
-    void update(RESTORE_MESSAGE_TYPE rstMsgType, String remotePath, String fileDiskPath, RESTORE_MESSAGE_STATUS rstMsgStatus);
-
+    void update(
+            RESTORE_MESSAGE_TYPE rstMsgType,
+            String remotePath,
+            String fileDiskPath,
+            RESTORE_MESSAGE_STATUS rstMsgStatus);
 }

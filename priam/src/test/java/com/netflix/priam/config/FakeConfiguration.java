@@ -23,13 +23,11 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration {
@@ -43,7 +41,6 @@ public class FakeConfiguration implements IConfiguration {
     private String restorePrefix;
 
     public Map<String, String> fakeProperties = new HashMap<>();
-
 
     public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
@@ -93,8 +90,7 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getCacheLocation()
-    {
+    public String getCacheLocation() {
         // TODO Auto-generated method stub
         return "cass/caches";
     }
@@ -224,7 +220,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     /**
-     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
+     * consider while calculating RAC membership
      */
     @Override
     public String getSiblingASGNames() {
@@ -242,7 +239,6 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-
     @Override
     public int getUploadThrottle() {
         // TODO Auto-generated method stub
@@ -250,7 +246,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public InstanceDataRetriever getInstanceDataRetriever()
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return new LocalInstanceDataRetriever();
     }
 
@@ -353,10 +350,7 @@ public class FakeConfiguration implements IConfiguration {
         return 1;
     }
 
-
-    /**
-     * @return memtable_cleanup_threshold in C* yaml
-     */
+    /** @return memtable_cleanup_threshold in C* yaml */
     @Override
     public double getMemtableCleanupThreshold() {
         return 0.11;
@@ -449,9 +443,7 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-    public void setRestoreKeySpaces(List<String> keyspaces) {
-
-    }
+    public void setRestoreKeySpaces(List<String> keyspaces) {}
 
     @Override
     public int maxCommitLogsRestore() {
@@ -511,7 +503,7 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public boolean isCreateNewTokenEnable() {
-        return true;  //allow Junit test to create new tokens
+        return true; // allow Junit test to create new tokens
     }
 
     @Override
@@ -538,7 +530,6 @@ public class FakeConfiguration implements IConfiguration {
     public String getVpcEC2RoleAssumptionArn() {
         return null;
     }
-
 
     @Override
     public String getGcsServiceAccountId() {
@@ -630,14 +621,12 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getProperty(String key, String defaultValue)
-    {
+    public String getProperty(String key, String defaultValue) {
         return fakeProperties.getOrDefault(key, defaultValue);
     }
 
     @Override
-    public String getMergedConfigurationDirectory()
-    {
+    public String getMergedConfigurationDirectory() {
         return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 }

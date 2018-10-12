@@ -17,15 +17,14 @@
 
 package com.netflix.priam.tuner;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.io.Files;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
+import java.io.File;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.io.File;
-
-import static org.junit.Assert.assertEquals;
 
 public class StandardTunerTest {
     /* note: these are, more or less, arbitrary paritioner class names. as long as the tests exercise the code, all is good */
@@ -81,7 +80,9 @@ public class StandardTunerTest {
     @Test
     public void dump() throws Exception {
         String target = "/tmp/priam_test.yaml";
-        Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File("/tmp/priam_test.yaml"));
+        Files.copy(
+                new File("src/main/resources/incr-restore-cassandra.yaml"),
+                new File("/tmp/priam_test.yaml"));
         tuner.writeAllProperties(target, "your_host", "YourSeedProvider");
     }
 }

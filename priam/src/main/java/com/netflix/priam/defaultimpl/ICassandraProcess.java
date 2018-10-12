@@ -17,7 +17,6 @@
 package com.netflix.priam.defaultimpl;
 
 import com.google.inject.ImplementedBy;
-
 import java.io.IOException;
 
 /**

@@ -21,13 +21,10 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-
 import java.util.Date;
 import java.util.List;
 
-/**
- * Represents an S3 object key
- */
+/** Represents an S3 object key */
 public class S3BackupPath extends AbstractBackupPath {
 
     @Inject
@@ -44,12 +41,15 @@ public class S3BackupPath extends AbstractBackupPath {
         StringBuilder buff = new StringBuilder();
         buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
         buff.append(region).append(S3BackupPath.PATH_SEP);
-        buff.append(clusterName).append(S3BackupPath.PATH_SEP);// Cluster name
+        buff.append(clusterName).append(S3BackupPath.PATH_SEP); // Cluster name
         buff.append(token).append(S3BackupPath.PATH_SEP);
         buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
         buff.append(type).append(S3BackupPath.PATH_SEP);
         if (BackupFileType.isDataFile(type))
-            buff.append(keyspace).append(S3BackupPath.PATH_SEP).append(columnFamily).append(S3BackupPath.PATH_SEP);
+            buff.append(keyspace)
+                    .append(S3BackupPath.PATH_SEP)
+                    .append(columnFamily)
+                    .append(S3BackupPath.PATH_SEP);
         buff.append(fileName);
         return buff.toString();
     }
@@ -60,8 +60,7 @@ public class S3BackupPath extends AbstractBackupPath {
         // parse out things which are empty
         List<String> pieces = Lists.newArrayList();
         for (String ele : elements) {
-            if (ele.equals(""))
-                continue;
+            if (ele.equals("")) continue;
             pieces.add(ele);
         }
         assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
@@ -85,8 +84,7 @@ public class S3BackupPath extends AbstractBackupPath {
         // parse out things which are empty
         List<String> pieces = Lists.newArrayList();
         for (String ele : elements) {
-            if (ele.equals(""))
-                continue;
+            if (ele.equals("")) continue;
             pieces.add(ele);
         }
         assert pieces.size() >= 4 : "Too few elements in path " + remoteFilePath;
@@ -126,5 +124,4 @@ public class S3BackupPath extends AbstractBackupPath {
 
         return buff.toString();
     }
-
 }

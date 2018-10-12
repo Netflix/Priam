@@ -17,28 +17,31 @@
 package com.netflix.priam.scheduler;
 
 import com.netflix.priam.config.IConfiguration;
+import java.lang.management.ManagementFactory;
+import java.util.concurrent.atomic.AtomicInteger;
+import javax.management.MBeanServer;
+import javax.management.ObjectName;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Task class that should be implemented by all cron tasks. Jobconf will contain
- * any instance specific data
- * <p>
- * NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to failure
+ * Task class that should be implemented by all cron tasks. Jobconf will contain any instance
+ * specific data
+ *
+ * <p>NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to
+ * failure
  */
 public abstract class Task implements Job, TaskMBean {
     public STATE status = STATE.DONE;
 
     public enum STATE {
-        ERROR, RUNNING, DONE, NOT_APPLICABLE
+        ERROR,
+        RUNNING,
+        DONE,
+        NOT_APPLICABLE
     }
 
     protected final IConfiguration config;
@@ -63,24 +66,18 @@ public abstract class Task implements Job, TaskMBean {
         }
     }
 
-
-    /**
-     * This method has to be implemented and cannot thow any exception.
-     */
+    /** This method has to be implemented and cannot thow any exception. */
     public void initialize() throws ExecutionException {
         // nothing to initialize
     }
 
     public abstract void execute() throws Exception;
 
-    /**
-     * Main method to execute a task
-     */
+    /** Main method to execute a task */
     public void execute(JobExecutionContext context) throws JobExecutionException {
         executions.incrementAndGet();
         try {
-            if (status == STATE.RUNNING)
-                return;
+            if (status == STATE.RUNNING) return;
             status = STATE.RUNNING;
             execute();
 
@@ -89,8 +86,7 @@ public abstract class Task implements Job, TaskMBean {
             logger.error("Couldnt execute the task because of {}", e.getMessage(), e);
             errors.incrementAndGet();
         }
-        if (status != STATE.ERROR)
-            status = STATE.DONE;
+        if (status != STATE.ERROR) status = STATE.DONE;
     }
 
     public STATE state() {
@@ -106,5 +102,4 @@ public abstract class Task implements Job, TaskMBean {
     }
 
     public abstract String getName();
-
 }

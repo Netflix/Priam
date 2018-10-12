@@ -17,15 +17,14 @@
 
 package com.netflix.priam.backup.identity;
 
+import static org.junit.Assert.assertEquals;
+
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import org.junit.Test;
-
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
+import org.junit.Test;
 
 public class DoubleRingTest extends InstanceTestUtils {
 
@@ -45,7 +44,6 @@ public class DoubleRingTest extends InstanceTestUtils {
         List<String> validator = Lists.newArrayList();
         for (int i = 0; i < doubled.size(); i++) {
             validator.add(tokenManager.createToken(i, doubled.size(), config.getDC()));
-
         }
 
         for (int i = 0; i < doubled.size(); i++) {
@@ -53,8 +51,7 @@ public class DoubleRingTest extends InstanceTestUtils {
             assertEquals(validator.get(i), ins.getToken());
             int id = ins.getId() - tokenManager.regionOffset(config.getDC());
             System.out.println(ins);
-            if (0 != id % 2)
-                assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
+            if (0 != id % 2) assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
         }
     }
 

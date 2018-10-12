@@ -34,5 +34,4 @@ public class FakeNewTokenRetriever implements INewTokenRetriever {
         // TODO Auto-generated method stub
 
     }
-
 }

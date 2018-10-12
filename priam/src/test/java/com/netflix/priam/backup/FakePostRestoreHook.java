@@ -24,6 +24,6 @@ public class FakePostRestoreHook implements IPostRestoreHook {
     }
 
     public void execute() {
-        //no op
+        // no op
     }
 }

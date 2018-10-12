@@ -35,5 +35,4 @@ public class FakeInstanceEnvIdentity implements InstanceEnvIdentity {
     public Boolean isNonDefaultVpc() {
         return null;
     }
-
 }

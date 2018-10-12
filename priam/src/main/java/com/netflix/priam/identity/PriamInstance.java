@@ -16,11 +16,10 @@
  */
 package com.netflix.priam.identity;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.Serializable;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PriamInstance implements Serializable {
     private static final long serialVersionUID = 5606412386974488659L;
@@ -36,7 +35,7 @@ public class PriamInstance implements Serializable {
     private String publicip;
     private String location;
     private String token;
-    //Handles Storage objects
+    // Handles Storage objects
     private Map<String, Object> volumes;
 
     public String getApp() {
@@ -110,8 +109,9 @@ public class PriamInstance implements Serializable {
 
     @Override
     public String toString() {
-        return String.format("Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s", getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(),
-                getToken());
+        return String.format(
+                "Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s",
+                getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(), getToken());
     }
 
     public String getDC() {
@@ -137,6 +137,4 @@ public class PriamInstance implements Serializable {
     public void setOutOfService(boolean outOfService) {
         this.outOfService = outOfService;
     }
-
-
 }

@@ -23,7 +23,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class SystemPropertiesConfigSourceTest {
-    private static final Logger LOGGER = LoggerFactory.getLogger(SystemPropertiesConfigSourceTest.class.getName());
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(SystemPropertiesConfigSourceTest.class.getName());
 
     @Test
     public void read() {

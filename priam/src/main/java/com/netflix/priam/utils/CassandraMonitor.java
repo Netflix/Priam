@@ -25,16 +25,15 @@ import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import org.apache.cassandra.tools.NodeProbe;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.cassandra.tools.NodeProbe;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * This task checks if the Cassandra process is running.
@@ -50,7 +49,11 @@ public class CassandraMonitor extends Task {
     private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    protected CassandraMonitor(IConfiguration config, InstanceState instanceState, ICassandraProcess cassProcess, CassMonitorMetrics cassMonitorMetrics) {
+    protected CassandraMonitor(
+            IConfiguration config,
+            InstanceState instanceState,
+            ICassandraProcess cassProcess,
+            CassMonitorMetrics cassMonitorMetrics) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
@@ -59,11 +62,10 @@ public class CassandraMonitor extends Task {
 
     @Override
     public void execute() throws Exception {
-        try{
+        try {
             checkRequiredDirectories();
             instanceState.setIsRequiredDirectoriesExist(true);
-        }catch (IllegalStateException e)
-        {
+        } catch (IllegalStateException e) {
             instanceState.setIsRequiredDirectoriesExist(false);
         }
 
@@ -71,14 +73,20 @@ public class CassandraMonitor extends Task {
         BufferedReader input = null;
         try {
             // This returns pid for the Cassandra process
-            // This needs to be sent as command list as "pipe" of results is not allowed. Also, do not try to change
-            // with pgrep as it has limitation of 4K command list (cassandra command can go upto 5-6 KB as cassandra lists all the libraries in command.
-            final String[] cmd = { "/bin/sh", "-c", "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()};
+            // This needs to be sent as command list as "pipe" of results is not allowed. Also, do
+            // not try to change
+            // with pgrep as it has limitation of 4K command list (cassandra command can go upto 5-6
+            // KB as cassandra lists all the libraries in command.
+            final String[] cmd = {
+                "/bin/sh",
+                "-c",
+                "ps -ef |grep -v -P \"\\sgrep\\s\" | grep " + config.getCassProcessName()
+            };
             process = Runtime.getRuntime().exec(cmd);
             input = new BufferedReader(new InputStreamReader(process.getInputStream()));
             String line = input.readLine();
             if (line != null) {
-                //Setting cassandra flag to true
+                // Setting cassandra flag to true
                 instanceState.setCassandraProcessAlive(true);
                 isCassandraStarted.set(true);
                 NodeProbe bean = JMXNodeTool.instance(this.config);
@@ -86,7 +94,7 @@ public class CassandraMonitor extends Task {
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
                 instanceState.setIsThriftActive(bean.isThriftServerRunning());
             } else {
-                //Setting cassandra flag to false
+                // Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);
                 isCassandraStarted.set(false);
             }
@@ -101,16 +109,18 @@ public class CassandraMonitor extends Task {
                 IOUtils.closeQuietly(process.getErrorStream());
             }
 
-            if (input != null)
-                IOUtils.closeQuietly(input);
+            if (input != null) IOUtils.closeQuietly(input);
         }
 
         try {
             int rate = config.getRemediateDeadCassandraRate();
             if (rate >= 0 && !config.doesCassandraStartManually()) {
-                if (instanceState.shouldCassandraBeAlive() && !instanceState.isCassandraProcessAlive()) {
+                if (instanceState.shouldCassandraBeAlive()
+                        && !instanceState.isCassandraProcessAlive()) {
                     long msNow = System.currentTimeMillis();
-                    if (rate == 0 || ((instanceState.getLastAttemptedStartTime() + rate * 1000) < msNow)) {
+                    if (rate == 0
+                            || ((instanceState.getLastAttemptedStartTime() + rate * 1000)
+                                    < msNow)) {
                         cassMonitorMetrics.incCassAutoStart();
                         cassProcess.start(true);
                         instanceState.markLastAttemptedStartTime();
@@ -135,10 +145,13 @@ public class CassandraMonitor extends Task {
 
     private void checkDirectory(File directory) {
         if (!directory.exists())
-            throw new IllegalStateException(String.format("Directory: {} does not exist", directory));
+            throw new IllegalStateException(
+                    String.format("Directory: {} does not exist", directory));
 
         if (!directory.canRead() || !directory.canWrite())
-            throw new IllegalStateException(String.format("Directory: {} does not have read/write permissions.", directory));
+            throw new IllegalStateException(
+                    String.format(
+                            "Directory: {} does not have read/write permissions.", directory));
     }
 
     public static TaskTimer getTimer() {
@@ -154,10 +167,9 @@ public class CassandraMonitor extends Task {
         return isCassandraStarted.get();
     }
 
-    //Added for testing only
+    // Added for testing only
     public static void setIsCassadraStarted() {
-        //Setting cassandra flag to true
+        // Setting cassandra flag to true
         isCassandraStarted.set(true);
     }
-
 }

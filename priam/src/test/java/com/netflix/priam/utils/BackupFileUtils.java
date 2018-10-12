@@ -17,20 +17,17 @@
 
 package com.netflix.priam.utils;
 
-import org.apache.cassandra.io.sstable.Component;
-import org.apache.commons.io.FileUtils;
-
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.EnumSet;
+import org.apache.cassandra.io.sstable.Component;
+import org.apache.commons.io.FileUtils;
 
-/**
- * Created by aagrawal on 9/23/18.
- */
+/** Created by aagrawal on 9/23/18. */
 public class BackupFileUtils {
-    public static void cleanupDir(Path dir){
+    public static void cleanupDir(Path dir) {
         if (dir.toFile().exists())
             try {
                 FileUtils.cleanDirectory(dir.toFile());
@@ -39,8 +36,15 @@ public class BackupFileUtils {
             }
     }
 
-    public static void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables, String backupDir, String snapshotName) throws Exception {
-        //Clean the dummy directory
+    public static void generateDummyFiles(
+            Path dummyDir,
+            int noOfKeyspaces,
+            int noOfCf,
+            int noOfSstables,
+            String backupDir,
+            String snapshotName)
+            throws Exception {
+        // Clean the dummy directory
         cleanupDir(dummyDir);
 
         for (int i = 1; i <= noOfKeyspaces; i++) {
@@ -53,17 +57,30 @@ public class BackupFileUtils {
                     String prefixName = "mc-" + k + "-big";
 
                     for (Component.Type type : EnumSet.allOf(Component.Type.class)) {
-                        Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, prefixName + "-" + type.name() + ".db");
+                        Path componentPath =
+                                Paths.get(
+                                        dummyDir.toFile().getAbsolutePath(),
+                                        keyspaceName,
+                                        columnfamilyname,
+                                        backupDir,
+                                        snapshotName,
+                                        prefixName + "-" + type.name() + ".db");
                         componentPath.getParent().toFile().mkdirs();
                         try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
                             fileWriter.write("");
                         }
-
                     }
                 }
 
-                Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, "manifest.json");
-                try(FileWriter fileWriter = new FileWriter(componentPath.toFile())){
+                Path componentPath =
+                        Paths.get(
+                                dummyDir.toFile().getAbsolutePath(),
+                                keyspaceName,
+                                columnfamilyname,
+                                backupDir,
+                                snapshotName,
+                                "manifest.json");
+                try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
                     fileWriter.write("");
                 }
             }

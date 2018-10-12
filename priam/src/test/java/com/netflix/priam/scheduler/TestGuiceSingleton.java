@@ -59,6 +59,5 @@ public class TestGuiceSingleton {
         protected void configure() {
             bind(EmptryInterface.class).to(GuiceSingleton.class).asEagerSingleton();
         }
-
     }
 }

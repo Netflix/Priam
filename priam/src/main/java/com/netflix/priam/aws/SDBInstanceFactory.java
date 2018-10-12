@@ -22,15 +22,11 @@ import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
-/**
- * SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be
- * created ahead
- */
+/** SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be created ahead */
 @Singleton
 public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
@@ -58,18 +54,29 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     }
 
     @Override
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
+    public PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token) {
         try {
-            PriamInstance ins = makePriamInstance(app, id, instanceID, hostname, ip, rac, volumes, token);
+            PriamInstance ins =
+                    makePriamInstance(app, id, instanceID, hostname, ip, rac, volumes, token);
             // remove old data node which are dead.
             if (app.endsWith("-dead")) {
                 try {
                     PriamInstance oldData = dao.getInstance(app, config.getDC(), id);
                     // clean up a very old data...
-                    if (null != oldData && oldData.getUpdatetime() < (System.currentTimeMillis() - (3 * 60 * 1000)))
+                    if (null != oldData
+                            && oldData.getUpdatetime()
+                                    < (System.currentTimeMillis() - (3 * 60 * 1000)))
                         dao.deregisterInstance(oldData);
                 } catch (Exception ex) {
-                    //Do nothing
+                    // Do nothing
                     logger.error(ex.getMessage(), ex);
                 }
             }
@@ -101,12 +108,13 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
 
     @Override
     public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator = (Comparator<PriamInstance>) (o1, o2) -> {
-
-            Integer c1 = o1.getId();
-            Integer c2 = o2.getId();
-            return c1.compareTo(c2);
-        };
+        Comparator<? super PriamInstance> comparator =
+                (Comparator<PriamInstance>)
+                        (o1, o2) -> {
+                            Integer c1 = o1.getId();
+                            Integer c2 = o2.getId();
+                            return c1.compareTo(c2);
+                        };
         return_.sort(comparator);
     }
 
@@ -115,7 +123,15 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
         // TODO Auto-generated method stub
     }
 
-    private PriamInstance makePriamInstance(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
+    private PriamInstance makePriamInstance(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token) {
         Map<String, Object> v = (volumes == null) ? new HashMap<>() : volumes;
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);

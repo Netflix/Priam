@@ -21,6 +21,9 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import java.io.File;
+import java.util.Date;
+import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -28,13 +31,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.Date;
-import java.util.List;
-
-/**
- * Created by aagrawal on 7/11/17.
- */
+/** Created by aagrawal on 7/11/17. */
 public class TestSnapshotStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
 
@@ -43,11 +40,10 @@ public class TestSnapshotStatusMgr {
     @BeforeClass
     public static void setup() {
         Injector injector = Guice.createInjector(new BRTestModule());
-        //cleanup old saved file, if any
+        // cleanup old saved file, if any
         IConfiguration configuration = injector.getInstance(IConfiguration.class);
         File f = new File(configuration.getBackupStatusFileLoc());
-        if (f.exists())
-            f.delete();
+        if (f.exists()) f.delete();
 
         backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
     }
@@ -114,11 +110,10 @@ public class TestSnapshotStatusMgr {
         Assert.assertEquals(noOfEntries, metadataList.size());
         logger.info(metadataList.toString());
 
-        //Ensure that list is always maintained from latest to eldest
+        // Ensure that list is always maintained from latest to eldest
         Date latest = null;
         for (BackupMetadata backupMetadata : metadataList) {
-            if (latest == null)
-                latest = backupMetadata.getStart();
+            if (latest == null) latest = backupMetadata.getStart();
             else {
                 Assert.assertTrue(backupMetadata.getStart().before(latest));
                 latest = backupMetadata.getStart();
@@ -139,7 +134,7 @@ public class TestSnapshotStatusMgr {
         }
 
         // Verify there is only capacity entries
-        Assert.assertEquals(backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
+        Assert.assertEquals(
+                backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
     }
-
 }

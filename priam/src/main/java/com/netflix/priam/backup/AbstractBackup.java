@@ -23,19 +23,16 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.List;
 import java.util.concurrent.Future;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Abstract Backup class for uploading files to backup location
- */
+/** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
     public static final String INCREMENTAL_BACKUP_FOLDER = "backups";
@@ -46,38 +43,39 @@ public abstract class AbstractBackup extends Task {
     protected IBackupFileSystem fs;
 
     @Inject
-    public AbstractBackup(IConfiguration config, IFileSystemContext backupFileSystemCtx,
-                          Provider<AbstractBackupPath> pathFactory) {
+    public AbstractBackup(
+            IConfiguration config,
+            IFileSystemContext backupFileSystemCtx,
+            Provider<AbstractBackupPath> pathFactory) {
         super(config);
         this.pathFactory = pathFactory;
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    /**
-     * A means to override the type of backup strategy chosen via BackupFileSystemContext
-     */
+    /** A means to override the type of backup strategy chosen via BackupFileSystemContext */
     protected void setFileSystem(IBackupFileSystem fs) {
         this.fs = fs;
     }
 
-    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) throws ParseException {
+    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type)
+            throws ParseException {
         final AbstractBackupPath bp = pathFactory.get();
         bp.parseLocal(file, type);
         return bp;
     }
 
-
     /**
-     * Upload files in the specified dir. Does not delete the file in case of
-     * error.  The files are uploaded serially or async based on flag provided.
+     * Upload files in the specified dir. Does not delete the file in case of error. The files are
+     * uploaded serially or async based on flag provided.
      *
      * @param parent Parent dir
-     * @param type   Type of file (META, SST, SNAP etc)
-     * @param async  Upload the file(s) in async fashion if enabled.
+     * @param type Type of file (META, SST, SNAP etc)
+     * @param async Upload the file(s) in async fashion if enabled.
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected List<AbstractBackupPath> upload(final File parent, final BackupFileType type, boolean async) throws Exception {
+    protected List<AbstractBackupPath> upload(
+            final File parent, final BackupFileType type, boolean async) throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         final List<Future<Path>> futures = Lists.newArrayList();
 
@@ -86,35 +84,47 @@ public abstract class AbstractBackup extends Task {
                 AbstractBackupPath bp = getAbstractBackupPath(file, type);
 
                 if (async)
-                    futures.add(fs.asyncUploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true));
+                    futures.add(
+                            fs.asyncUploadFile(
+                                    Paths.get(bp.getBackupFile().getAbsolutePath()),
+                                    Paths.get(bp.getRemotePath()),
+                                    bp,
+                                    10,
+                                    true));
                 else
-                    fs.uploadFile(Paths.get(bp.getBackupFile().getAbsolutePath()), Paths.get(bp.getRemotePath()), bp, 10, true);
+                    fs.uploadFile(
+                            Paths.get(bp.getBackupFile().getAbsolutePath()),
+                            Paths.get(bp.getRemotePath()),
+                            bp,
+                            10,
+                            true);
 
                 bps.add(bp);
                 addToRemotePath(bp.getRemotePath());
             }
         }
 
-        //Wait for all files to be uploaded.
+        // Wait for all files to be uploaded.
         if (async) {
             for (Future future : futures)
-                future.get(); //This might throw exception if there is any error
+                future.get(); // This might throw exception if there is any error
         }
 
         return bps;
     }
 
-    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
+    protected final void initiateBackup(
+            String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
         if (!dataDir.exists()) {
-            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
-                    + config.getDataFileLocation());
+            throw new IllegalArgumentException(
+                    "The configured 'data file location' does not exist: "
+                            + config.getDataFileLocation());
         }
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
         for (File keyspaceDir : dataDir.listFiles()) {
-            if (keyspaceDir.isFile())
-                continue;
+            if (keyspaceDir.isFile()) continue;
 
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
 
@@ -127,45 +137,43 @@ public abstract class AbstractBackup extends Task {
 
                 String columnFamilyName = columnFamilyDir.getName().split("-")[0];
 
-                if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
-                    //Clean the backup/snapshot directory else files will keep getting accumulated.
+                if (backupRestoreUtil.isFiltered(
+                        keyspaceDir.getName(), columnFamilyDir.getName())) {
+                    // Clean the backup/snapshot directory else files will keep getting accumulated.
                     SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
                     continue;
                 }
 
                 processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
-            } //end processing all CFs for keyspace
-        } //end processing keyspaces under the C* data dir
-
+            } // end processing all CFs for keyspace
+        } // end processing keyspaces under the C* data dir
     }
 
     /**
      * Process the columnfamily in a given snapshot/backup directory.
      *
-     * @param keyspace     Name of the keyspace
+     * @param keyspace Name of the keyspace
      * @param columnFamily Name of the columnfamily
-     * @param backupDir    Location of the backup/snapshot directory in that columnfamily.
+     * @param backupDir Location of the backup/snapshot directory in that columnfamily.
      * @throws Exception throws exception if there is any error in process the directory.
      */
-    protected abstract void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception;
+    protected abstract void processColumnFamily(
+            String keyspace, String columnFamily, File backupDir) throws Exception;
 
-    /**
-     * Filters unwanted keyspaces
-     */
+    /** Filters unwanted keyspaces */
     public boolean isValidBackupDir(File keyspaceDir, File backupDir) {
-        if (!backupDir.isDirectory() && !backupDir.exists())
-            return false;
+        if (!backupDir.isDirectory() && !backupDir.exists()) return false;
         String keyspaceName = keyspaceDir.getName();
         if (BackupRestoreUtil.FILTER_KEYSPACE.contains(keyspaceName)) {
-            logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
+            logger.debug(
+                    "{} is not consider a valid keyspace backup directory, will be bypass.",
+                    keyspaceName);
             return false;
         }
 
         return true;
     }
 
-    /**
-     * Adds Remote path to the list of Remote Paths
-     */
+    /** Adds Remote path to the list of Remote Paths */
     protected abstract void addToRemotePath(String remotePath);
 }

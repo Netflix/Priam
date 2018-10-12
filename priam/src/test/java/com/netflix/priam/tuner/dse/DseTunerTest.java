@@ -21,14 +21,13 @@ import com.google.common.io.Files;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.dse.DseConfigStub;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
 
 public class DseTunerTest {
     private IConfiguration config;
@@ -48,8 +47,7 @@ public class DseTunerTest {
         DseTuner dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
 
         File targetDir = new File(config.getCassHome() + "/conf");
-        if (!targetDir.exists())
-            targetDir.mkdirs();
+        if (!targetDir.exists()) targetDir.mkdirs();
 
         targetFile = new File(config.getCassHome() + AuditLogTunerLog4J.AUDIT_LOG_FILE);
         Files.copy(new File("src/test/resources/" + AuditLogTunerLog4J.AUDIT_LOG_FILE), targetFile);
@@ -76,8 +74,8 @@ public class DseTunerTest {
     }
 
     /**
-     * This is different because we test the disabled step using the already used enabled file
-     * (not a clean copy over of the original props file from the resources dir), and vice versa
+     * This is different because we test the disabled step using the already used enabled file (not
+     * a clean copy over of the original props file from the resources dir), and vice versa
      *
      * @throws IOException
      */
@@ -113,13 +111,16 @@ public class DseTunerTest {
         }
 
         int index = dseConfig.getDseYamlLocation().lastIndexOf('/') + 1;
-        targetDseYamlFile = new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
-        Files.copy(new File("src/test/resources/conf/" + dseConfig.getDseYamlLocation().substring(index)), targetDseYamlFile);
-
+        targetDseYamlFile =
+                new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
+        Files.copy(
+                new File(
+                        "src/test/resources/conf/"
+                                + dseConfig.getDseYamlLocation().substring(index)),
+                targetDseYamlFile);
 
         dseConfig.setAuditLogEnabled(true);
         auditLogTunerYaml.tuneAuditLog();
-
     }
 
     @Test
@@ -130,9 +131,13 @@ public class DseTunerTest {
         }
 
         int index = dseConfig.getDseYamlLocation().lastIndexOf('/') + 1;
-        targetDseYamlFile = new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
-        Files.copy(new File("src/test/resources/conf/" + dseConfig.getDseYamlLocation().substring(index)), targetDseYamlFile);
-
+        targetDseYamlFile =
+                new File(targetDseDir + dseConfig.getDseYamlLocation().substring(index - 1));
+        Files.copy(
+                new File(
+                        "src/test/resources/conf/"
+                                + dseConfig.getDseYamlLocation().substring(index)),
+                targetDseYamlFile);
 
         dseConfig.setAuditLogEnabled(false);
         auditLogTunerYaml.tuneAuditLog();

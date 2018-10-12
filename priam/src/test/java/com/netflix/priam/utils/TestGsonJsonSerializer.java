@@ -18,17 +18,14 @@ package com.netflix.priam.utils;
 
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.health.InstanceState;
+import java.time.LocalDateTime;
+import java.util.Calendar;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.LocalDateTime;
-import java.util.Calendar;
-
-/**
- * Created by aagrawal on 10/12/17.
- */
+/** Created by aagrawal on 10/12/17. */
 public class TestGsonJsonSerializer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestGsonJsonSerializer.class);
@@ -38,8 +35,9 @@ public class TestGsonJsonSerializer {
         BackupMetadata metadata = new BackupMetadata("123", Calendar.getInstance().getTime());
         String json = metadata.toString();
         LOG.info(json);
-        //Deserialize it.
-        BackupMetadata metadata1 = GsonJsonSerializer.getGson().fromJson(json, BackupMetadata.class);
+        // Deserialize it.
+        BackupMetadata metadata1 =
+                GsonJsonSerializer.getGson().fromJson(json, BackupMetadata.class);
         LOG.info(metadata1.toString());
         Assert.assertEquals(metadata.getSnapshotDate(), metadata1.getSnapshotDate());
         Assert.assertEquals(metadata.getToken(), metadata1.getToken());
@@ -53,10 +51,13 @@ public class TestGsonJsonSerializer {
         restoreStatus.setExecutionStartTime(LocalDateTime.now().withSecond(0).withNano(0));
         LOG.info(restoreStatus.toString());
 
-        InstanceState.RestoreStatus restoreStatus1 = GsonJsonSerializer.getGson().fromJson(restoreStatus.toString(), InstanceState.RestoreStatus.class);
+        InstanceState.RestoreStatus restoreStatus1 =
+                GsonJsonSerializer.getGson()
+                        .fromJson(restoreStatus.toString(), InstanceState.RestoreStatus.class);
         LOG.info(restoreStatus1.toString());
 
-        Assert.assertEquals(restoreStatus.getExecutionStartTime(), restoreStatus1.getExecutionStartTime());
+        Assert.assertEquals(
+                restoreStatus.getExecutionStartTime(), restoreStatus1.getExecutionStartTime());
         Assert.assertEquals(restoreStatus.getStartDateRange(), restoreStatus1.getStartDateRange());
         Assert.assertEquals(restoreStatus.getEndDateRange(), restoreStatus1.getEndDateRange());
     }

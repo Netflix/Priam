@@ -20,33 +20,25 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.cassandra.locator.SeedProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Retrieves the list of seeds from Priam.
- */
-public class NFSeedProvider implements SeedProvider
-{
+/** Retrieves the list of seeds from Priam. */
+public class NFSeedProvider implements SeedProvider {
     private static final Logger logger = LoggerFactory.getLogger(NFSeedProvider.class);
 
-    public NFSeedProvider(Map<String, String> args)
-    {    }
+    public NFSeedProvider(Map<String, String> args) {}
 
     @Override
-    public List<InetAddress> getSeeds()
-    {
+    public List<InetAddress> getSeeds() {
         List<InetAddress> seeds = new ArrayList<InetAddress>();
-        try
-        {
-            String priamSeeds = DataFetcher.fetchData("http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
-            for (String seed : priamSeeds.split(","))
-                seeds.add(InetAddress.getByName(seed));
-        }
-        catch (Exception e)
-        {
+        try {
+            String priamSeeds =
+                    DataFetcher.fetchData(
+                            "http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_seeds");
+            for (String seed : priamSeeds.split(",")) seeds.add(InetAddress.getByName(seed));
+        } catch (Exception e) {
             logger.error("Failed to load seed data", e);
         }
         return seeds;

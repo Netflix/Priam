@@ -19,16 +19,13 @@ package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import java.util.*;
+import java.util.regex.Pattern;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.regex.Pattern;
-
-/**
- * Created by aagrawal on 8/14/17.
- */
+/** Created by aagrawal on 8/14/17. */
 public class BackupRestoreUtil {
     private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
@@ -36,7 +33,11 @@ public class BackupRestoreUtil {
     private Map<String, List<String>> excludeFilter;
 
     public static final List<String> FILTER_KEYSPACE = Collections.singletonList("OpsCenter");
-    private static final Map<String, List<String>> FILTER_COLUMN_FAMILY = ImmutableMap.of("system", Arrays.asList("local", "peers", "hints", "compactions_in_progress", "LocationInfo"));
+    private static final Map<String, List<String>> FILTER_COLUMN_FAMILY =
+            ImmutableMap.of(
+                    "system",
+                    Arrays.asList(
+                            "local", "peers", "hints", "compactions_in_progress", "LocationInfo"));
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {
@@ -51,15 +52,16 @@ public class BackupRestoreUtil {
         return this;
     }
 
+    public static final Map<String, List<String>> getFilter(String inputFilter)
+            throws IllegalArgumentException {
+        if (StringUtils.isEmpty(inputFilter)) return null;
 
-    public static final Map<String, List<String>> getFilter(String inputFilter) throws IllegalArgumentException {
-        if (StringUtils.isEmpty(inputFilter))
-            return null;
-
-        final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
+        final Map<String, List<String>> columnFamilyFilter =
+                new HashMap<>(); // key: keyspace, value: a list of CFs within the keyspace
 
         String[] filters = inputFilter.split(",");
-        for (String cfFilter : filters) { // process filter of form keyspace.* or keyspace.columnfamily
+        for (String cfFilter :
+                filters) { // process filter of form keyspace.* or keyspace.columnfamily
             if (columnFamilyFilterPattern.matcher(cfFilter).find()) {
 
                 String[] filter = cfFilter.split("\\.");
@@ -69,13 +71,15 @@ public class BackupRestoreUtil {
                 if (columnFamilyName.contains("-"))
                     columnFamilyName = columnFamilyName.substring(0, columnFamilyName.indexOf("-"));
 
-                List<String> existingCfs = columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
-                if (!columnFamilyName.equalsIgnoreCase("*"))
-                    existingCfs.add(columnFamilyName);
+                List<String> existingCfs =
+                        columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
+                if (!columnFamilyName.equalsIgnoreCase("*")) existingCfs.add(columnFamilyName);
                 columnFamilyFilter.put(keyspaceName, existingCfs);
 
             } else {
-                throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + cfFilter);
+                throw new IllegalArgumentException(
+                        "Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: "
+                                + cfFilter);
             }
         }
         return columnFamilyFilter;
@@ -84,30 +88,37 @@ public class BackupRestoreUtil {
     /**
      * Returns if provided keyspace and/or columnfamily is filtered for backup or restore.
      *
-     * @param keyspace        name of the keyspace in consideration
+     * @param keyspace name of the keyspace in consideration
      * @param columnFamilyDir name of the columnfamily directory in consideration
      * @return true if directory should be filter from processing; otherwise, false.
      */
     public final boolean isFiltered(String keyspace, String columnFamilyDir) {
-        if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir))
-            return false;
+        if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir)) return false;
 
         String columnFamilyName = columnFamilyDir.split("-")[0];
         // column family is in list of global CF filter
-        if (FILTER_COLUMN_FAMILY.containsKey(keyspace) && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName))
-            return true;
+        if (FILTER_COLUMN_FAMILY.containsKey(keyspace)
+                && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName)) return true;
 
         if (excludeFilter != null)
-            if (excludeFilter.containsKey(keyspace) &&
-                    (excludeFilter.get(keyspace).isEmpty() || excludeFilter.get(keyspace).contains(columnFamilyName))) {
-                logger.debug("Skipping: keyspace: {}, CF: {} is part of exclude list.", keyspace, columnFamilyName);
+            if (excludeFilter.containsKey(keyspace)
+                    && (excludeFilter.get(keyspace).isEmpty()
+                            || excludeFilter.get(keyspace).contains(columnFamilyName))) {
+                logger.debug(
+                        "Skipping: keyspace: {}, CF: {} is part of exclude list.",
+                        keyspace,
+                        columnFamilyName);
                 return true;
             }
 
         if (includeFilter != null)
-            if (!(includeFilter.containsKey(keyspace) &&
-                    (includeFilter.get(keyspace).isEmpty() || includeFilter.get(keyspace).contains(columnFamilyName)))) {
-                logger.debug("Skipping: keyspace: {}, CF: {} is not part of include list.", keyspace, columnFamilyName);
+            if (!(includeFilter.containsKey(keyspace)
+                    && (includeFilter.get(keyspace).isEmpty()
+                            || includeFilter.get(keyspace).contains(columnFamilyName)))) {
+                logger.debug(
+                        "Skipping: keyspace: {}, CF: {} is not part of include list.",
+                        keyspace,
+                        columnFamilyName);
                 return true;
             }
 

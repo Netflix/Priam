@@ -26,11 +26,10 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
-import org.junit.Before;
-import org.junit.Ignore;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.junit.Before;
+import org.junit.Ignore;
 
 @Ignore
 abstract class InstanceTestUtils {
@@ -64,9 +63,12 @@ abstract class InstanceTestUtils {
         tokenManager = new TokenManager(config);
         factory = new FakePriamInstanceFactory(config);
         sleeper = new FakeSleeper();
-        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
-        this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
-        this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
+        this.deadTokenRetriever =
+                new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
+        this.preGeneratedTokenRetriever =
+                new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
+        this.newTokenRetriever =
+                new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
     }
 
     void createInstances() throws Exception {
@@ -86,10 +88,14 @@ abstract class InstanceTestUtils {
     InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
         config.zone = zone;
         config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager(config)
-                , this.deadTokenRetriever
-                , this.preGeneratedTokenRetriever
-                , this.newTokenRetriever
-        );
+        return new InstanceIdentity(
+                factory,
+                membership,
+                config,
+                sleeper,
+                new TokenManager(config),
+                this.deadTokenRetriever,
+                this.preGeneratedTokenRetriever,
+                this.newTokenRetriever);
     }
 }

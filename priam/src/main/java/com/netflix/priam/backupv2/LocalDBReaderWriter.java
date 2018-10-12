@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
  */
 public class LocalDBReaderWriter {
     private static final Logger logger = LoggerFactory.getLogger(LocalDBReaderWriter.class);
-    private IConfiguration configuration;
+    private final IConfiguration configuration;
     public static final String LOCAL_DB = "localdb";
 
     @Inject

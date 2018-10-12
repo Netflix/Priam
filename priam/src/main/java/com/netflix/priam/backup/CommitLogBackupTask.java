@@ -34,11 +34,11 @@ import java.util.List;
 //Provide this to be run as a Quart job
 @Singleton
 public class CommitLogBackupTask extends AbstractBackup {
-    public static String JOBNAME = "CommitLogBackup";
+    public static final String JOBNAME = "CommitLogBackup";
 
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackupTask.class);
     private final List<String> clRemotePaths = new ArrayList<>();
-    private static List<IMessageObserver> observers = new ArrayList<>();
+    private static final List<IMessageObserver> observers = new ArrayList<>();
     private final CommitLogBackup clBackup;
 
 

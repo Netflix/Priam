@@ -34,7 +34,7 @@ import java.util.List;
 public class CommitLogBackup {
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    static List<IMessageObserver> observers = new ArrayList();
+    static final List<IMessageObserver> observers = new ArrayList();
     private final List<String> clRemotePaths = new ArrayList();
     private final IBackupFileSystem fs;
 

@@ -37,7 +37,7 @@ import java.util.Map;
 public class FileSnapshotStatusMgr extends BackupStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(FileSnapshotStatusMgr.class);
     private static final int IN_MEMORY_SNAPSHOT_CAPACITY = 60;
-    private String filename;
+    private final String filename;
 
     /**
      * Constructor to initialize the file based snapshot status manager.

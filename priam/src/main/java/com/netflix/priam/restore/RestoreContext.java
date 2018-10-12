@@ -113,7 +113,7 @@ public class RestoreContext {
 
 
         private static String getSupportedValues() {
-            StringBuffer supportedValues = new StringBuffer();
+            StringBuilder supportedValues = new StringBuilder();
             boolean first = true;
             for (SourceType type : SourceType.values()) {
                 if (!first)

@@ -64,7 +64,7 @@ public class InstanceState {
     private BackupMetadata backupStatus;
 
     //Restore status
-    private RestoreStatus restoreStatus;
+    private final RestoreStatus restoreStatus;
 
     @Inject
     InstanceState(RestoreStatus restoreStatus){

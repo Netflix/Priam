@@ -41,10 +41,10 @@ public class PostRestoreHook implements IPostRestoreHook {
     private static final Logger logger = LoggerFactory.getLogger(PostRestoreHook.class);
     private final IConfiguration config;
     private final Sleeper sleeper;
-    private static String PostRestoreHookCommandDelimiter = " ";
-    private static String PriamPostRestoreHookFilePrefix = "PriamFileForPostRestoreHook";
-    private static String PriamPostRestoreHookFileSuffix = ".tmp";
-    private static String PriamPostRestoreHookFileOptionName = "--parentHookFilePath=";
+    private static final String PostRestoreHookCommandDelimiter = " ";
+    private static final String PriamPostRestoreHookFilePrefix = "PriamFileForPostRestoreHook";
+    private static final String PriamPostRestoreHookFileSuffix = ".tmp";
+    private static final String PriamPostRestoreHookFileOptionName = "--parentHookFilePath=";
 
     @Inject
     public PostRestoreHook(IConfiguration config, Sleeper sleeper) {

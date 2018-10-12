@@ -31,7 +31,7 @@ import java.util.*;
  */
 public class CassandraOperations {
     private static final Logger logger = LoggerFactory.getLogger(CassandraOperations.class);
-    private IConfiguration configuration;
+    private final IConfiguration configuration;
 
     @Inject
     CassandraOperations(IConfiguration configuration)
@@ -128,7 +128,7 @@ public class CassandraOperations {
         new RetryableCallable<Void>(){
             public Void retriableCall() throws Exception{
                 try(JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
-                   nodeTool.forceKeyspaceFlush(keyspaceName, new String[0]);
+                   nodeTool.forceKeyspaceFlush(keyspaceName);
                     return null;
                 }
             }

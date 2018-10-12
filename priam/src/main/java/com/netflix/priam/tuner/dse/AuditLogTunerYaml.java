@@ -35,7 +35,7 @@ import java.util.Map;
  */
 public class AuditLogTunerYaml implements IAuditLogTuner {
 
-    private IDseConfiguration dseConfig;
+    private final IDseConfiguration dseConfig;
     private static final String AUDIT_LOG_DSE_ENTRY = "audit_logging_options";
     private static final Logger logger = LoggerFactory.getLogger(AuditLogTunerYaml.class);
 
@@ -50,7 +50,7 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
         Yaml yaml = new Yaml(options);
         String dseYaml = dseConfig.getDseYamlLocation();
         try {
-            Map<String, Object> map = (Map<String, Object>) yaml.load(new FileInputStream(dseYaml));
+            Map<String, Object> map = yaml.load(new FileInputStream(dseYaml));
 
             if (map.containsKey(AUDIT_LOG_DSE_ENTRY)) {
                 Boolean isEnabled = (Boolean) ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).get("enabled");

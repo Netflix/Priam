@@ -33,7 +33,7 @@ public class TuneCassandra extends Task {
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
     private static final String JOBNAME = "Tune-Cassandra";
     private final ICassandraTuner tuner;
-    private InstanceState instanceState;
+    private final InstanceState instanceState;
 
     @Inject
     public TuneCassandra(IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {

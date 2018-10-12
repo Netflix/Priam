@@ -75,7 +75,7 @@ public enum SchedulerType {
     }
 
     private static String getSupportedValues() {
-        StringBuffer supportedValues = new StringBuffer();
+        StringBuilder supportedValues = new StringBuilder();
         boolean first = true;
         for (SchedulerType type : SchedulerType.values()) {
             if (!first)

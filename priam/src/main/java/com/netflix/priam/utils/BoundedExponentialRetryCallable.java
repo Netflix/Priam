@@ -28,9 +28,9 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
     protected final static int MAX_RETRIES = 10;
 
     private static final Logger logger = LoggerFactory.getLogger(BoundedExponentialRetryCallable.class);
-    private long max;
-    private long min;
-    private int maxRetries;
+    private final long max;
+    private final long min;
+    private final int maxRetries;
     private final ThreadSleeper sleeper = new ThreadSleeper();
 
     public BoundedExponentialRetryCallable() {

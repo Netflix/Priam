@@ -26,7 +26,7 @@ import com.netflix.priam.identity.IMembership;
 class LightGuiceModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(IConfiguration.class).to(PriamConfiguration.class).asEagerSingleton();
+        bind(IConfiguration.class).asEagerSingleton();
         bind(IMembership.class).to(StaticMembership.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
     }

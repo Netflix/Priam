@@ -16,7 +16,6 @@
  */
 package com.netflix.priam.scheduler;
 
-import com.google.common.base.Throwables;
 import com.netflix.priam.config.IConfiguration;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
@@ -60,7 +59,7 @@ public abstract class Task implements Job, TaskMBean {
             mBeanServer.registerMBean(this, new ObjectName(mbeanName));
             initialize();
         } catch (Exception e) {
-            throw Throwables.propagate(e);
+            throw new RuntimeException(e);
         }
     }
 

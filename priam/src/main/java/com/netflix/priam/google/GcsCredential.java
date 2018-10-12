@@ -26,7 +26,7 @@ import com.netflix.priam.cred.ICredentialGeneric;
  */
 public class GcsCredential implements ICredentialGeneric {
 
-    private IConfiguration config;
+    private final IConfiguration config;
 
     @Inject
     public GcsCredential(IConfiguration config) {

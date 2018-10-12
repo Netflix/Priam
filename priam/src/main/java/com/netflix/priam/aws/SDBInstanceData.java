@@ -100,8 +100,8 @@ public class SDBInstanceData {
     /**
      * Create a new instance entry in SimpleDB
      *
-     * @param instance
-     * @throws AmazonServiceException
+     * @param instance Instance entry to be created.
+     * @throws AmazonServiceException If unable to write to Simple DB because of any error.
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
@@ -112,8 +112,8 @@ public class SDBInstanceData {
     /**
      * Register a new instance. Registration will fail if a prior entry exists
      *
-     * @param instance
-     * @throws AmazonServiceException
+     * @param instance Instance entry to be registered.
+     * @throws AmazonServiceException If unable to write to Simple DB because of any error.
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();

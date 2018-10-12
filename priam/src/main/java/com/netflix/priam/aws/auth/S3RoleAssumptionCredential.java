@@ -30,8 +30,8 @@ public class S3RoleAssumptionCredential implements IS3Credential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "S3RoleAssumptionSession";
     private static final Logger logger = LoggerFactory.getLogger(S3RoleAssumptionCredential.class);
 
-    private ICredential cred;
-    private IConfiguration config;
+    private final ICredential cred;
+    private final IConfiguration config;
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject

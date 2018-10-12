@@ -42,13 +42,13 @@ import java.util.Random;
 
 public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadTokenRetriever {
     private static final Logger logger = LoggerFactory.getLogger(DeadTokenRetriever.class);
-    private IPriamInstanceFactory factory;
-    private IMembership membership;
-    private IConfiguration config;
-    private Sleeper sleeper;
+    private final IPriamInstanceFactory factory;
+    private final IMembership membership;
+    private final IConfiguration config;
+    private final Sleeper sleeper;
     private String replacedIp; //The IP address of the dead instance to which we will acquire its token
     private ListMultimap<String, PriamInstance> locMap;
-    private InstanceEnvIdentity insEnvIdentity;
+    private final InstanceEnvIdentity insEnvIdentity;
 
 
     @Inject
@@ -130,7 +130,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     }
 
     private String findReplaceIp(List<PriamInstance> allIds, String token, String location) {
-        String ip = null;
+        String ip;
         for (PriamInstance ins : allIds) {
             logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
             if (ins.getToken().equals(token) || !ins.getDC().equals(location)) { //avoid using dead instance and other regions' instances
@@ -159,7 +159,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         WebResource service = client.resource(baseURI);
 
         ClientResponse clientResp;
-        String textEntity = null;
+        String textEntity;
 
         try {
             clientResp = service.path("Priam/REST/v1/cassadmin/gossipinfo").accept(MediaType.APPLICATION_JSON).get(ClientResponse.class);

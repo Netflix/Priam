@@ -35,10 +35,10 @@ import java.util.List;
 public class GoogleFileIterator implements Iterator<AbstractBackupPath> {
     private static final Logger logger = LoggerFactory.getLogger(GoogleFileIterator.class);
 
-    private Date start;
-    private Date till;
+    private final Date start;
+    private final Date till;
     private Iterator<AbstractBackupPath> iterator;
-    private Provider<AbstractBackupPath> pathProvider;
+    private final Provider<AbstractBackupPath> pathProvider;
     private String bucketName;
 
     private Storage.Objects objectsResoruceHandle = null;

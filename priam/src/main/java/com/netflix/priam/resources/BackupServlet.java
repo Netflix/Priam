@@ -76,23 +76,23 @@ public class BackupServlet {
     private static final String SSTABLE2JSON_DIR_LOCATION = "/tmp/priam_sstables";
     private static final String SSTABLE2JSON_COMMAND_FROM_CASSHOME = "/bin/sstable2json";
 
-    private PriamServer priamServer;
-    private IConfiguration config;
-    private IBackupFileSystem backupFs;
-    private Restore restoreObj;
-    private Provider<AbstractBackupPath> pathProvider;
-    private ICassandraTuner tuner;
-    private SnapshotBackup snapshotBackup;
-    private IPriamInstanceFactory factory;
+    private final PriamServer priamServer;
+    private final IConfiguration config;
+    private final IBackupFileSystem backupFs;
+    private final Restore restoreObj;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final ICassandraTuner tuner;
+    private final SnapshotBackup snapshotBackup;
+    private final IPriamInstanceFactory factory;
     private final ITokenManager tokenManager;
     private final ICassandraProcess cassProcess;
-    private BackupVerification backupVerification;
+    private final BackupVerification backupVerification;
     @Inject
     private PriamScheduler scheduler;
     @Inject
     private MetaData metaData;
 
-    private IBackupStatusMgr completedBkups;
+    private final IBackupStatusMgr completedBkups;
 
     @Inject
     public BackupServlet(PriamServer priamServer, IConfiguration config, @Named("backup") IBackupFileSystem backupFs, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, ICassandraTuner tuner,
@@ -350,7 +350,7 @@ public class BackupServlet {
         Date endTime;
         //Creating Dir for Json storage
         SystemUtils.createDirs(SSTABLE2JSON_DIR_LOCATION);
-        String JSON_FILE_PATH = "";
+        String JSON_FILE_PATH;
 
         try {
 
@@ -515,7 +515,7 @@ public class BackupServlet {
                     .getRuntime()
                     .exec(cmd);
 
-            Callable<Integer> callable = () -> p.waitFor();
+            Callable<Integer> callable = p::waitFor;
 
             ExecutorService exeService = Executors.newSingleThreadExecutor();
             try {
@@ -541,12 +541,12 @@ public class BackupServlet {
     public String formulateCommandToRun(String rowkey, String keyspace, String cf, String fileExtension, String jsonFilePath) {
         StringBuffer sbuff = new StringBuffer();
 
-        sbuff.append("for i in $(ls " + config.getDataFileLocation() + File.separator + keyspace + File.separator + cf + File.separator + fileExtension + "-*-Data.db); do " + config.getCassHome() + SSTABLE2JSON_COMMAND_FROM_CASSHOME + " $i -k ");
+        sbuff.append("for i in $(ls ").append(config.getDataFileLocation()).append(File.separator).append(keyspace).append(File.separator).append(cf).append(File.separator).append(fileExtension).append("-*-Data.db); do ").append(config.getCassHome()).append(SSTABLE2JSON_COMMAND_FROM_CASSHOME).append(" $i -k ");
         sbuff.append(rowkey);
         sbuff.append("  | grep ");
         sbuff.append(rowkey);
         sbuff.append(" >> ");
-        sbuff.append(SSTABLE2JSON_DIR_LOCATION + File.separator + jsonFilePath);
+        sbuff.append(SSTABLE2JSON_DIR_LOCATION).append(File.separator).append(jsonFilePath);
         sbuff.append(" ; done");
 
         logger.info("SSTable2JSON location <" + SSTABLE2JSON_DIR_LOCATION + "{}{}>", File.separator, jsonFilePath);

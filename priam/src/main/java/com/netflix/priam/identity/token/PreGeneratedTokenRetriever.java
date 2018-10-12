@@ -31,10 +31,10 @@ import java.util.Random;
 public class PreGeneratedTokenRetriever extends TokenRetrieverBase implements IPreGeneratedTokenRetriever {
 
     private static final Logger logger = LoggerFactory.getLogger(PreGeneratedTokenRetriever.class);
-    private IPriamInstanceFactory factory;
-    private IMembership membership;
-    private IConfiguration config;
-    private Sleeper sleeper;
+    private final IPriamInstanceFactory factory;
+    private final IMembership membership;
+    private final IConfiguration config;
+    private final Sleeper sleeper;
     private ListMultimap<String, PriamInstance> locMap;
 
     @Inject

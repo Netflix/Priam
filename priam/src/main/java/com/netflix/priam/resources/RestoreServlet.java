@@ -47,38 +47,37 @@ import java.util.List;
 @Produces(MediaType.APPLICATION_JSON)
 public class RestoreServlet {
 
-	private static final Logger logger = LoggerFactory.getLogger(RestoreServlet.class);
-	private static final String REST_HEADER_RANGE = "daterange";
-	private static final String REST_HEADER_REGION = "region";
-	private static final String REST_HEADER_TOKEN = "token";
-	private static final String REST_KEYSPACES = "keyspaces";
-	private static final String REST_RESTORE_PREFIX = "restoreprefix";
-	private static final String REST_SUCCESS = "[\"ok\"]";
-	
-	private IConfiguration config;
-	private Restore restoreObj;
-	private Provider<AbstractBackupPath> pathProvider;
-	private PriamServer priamServer;
-	private IPriamInstanceFactory factory;
-	private ICassandraTuner tuner;
-	private ICassandraProcess cassProcess;
-	private ITokenManager tokenManager;
-	private InstanceState instanceState;
+    private static final Logger logger = LoggerFactory.getLogger(RestoreServlet.class);
+    private static final String REST_HEADER_RANGE = "daterange";
+    private static final String REST_HEADER_REGION = "region";
+    private static final String REST_HEADER_TOKEN = "token";
+    private static final String REST_KEYSPACES = "keyspaces";
+    private static final String REST_RESTORE_PREFIX = "restoreprefix";
+    private static final String REST_SUCCESS = "[\"ok\"]";
 
-	@Inject
-	public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
-			, IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, InstanceState instanceState) {
-		this.config = config;
-		this.restoreObj = restoreObj;
-		this.pathProvider = pathProvider;
-		this.priamServer = priamServer;
-		this.factory = factory;
-		this.tuner = tuner;
-		this.cassProcess = cassProcess;
-		this.tokenManager = tokenManager;
-		this.instanceState = instanceState;
-	}
+    private final IConfiguration config;
+    private final Restore restoreObj;
+    private final Provider<AbstractBackupPath> pathProvider;
+    private final PriamServer priamServer;
+    private final IPriamInstanceFactory factory;
+    private final ICassandraTuner tuner;
+    private final ICassandraProcess cassProcess;
+    private final ITokenManager tokenManager;
+    private final InstanceState instanceState;
 
+    @Inject
+    public RestoreServlet(IConfiguration config, Restore restoreObj, Provider<AbstractBackupPath> pathProvider, PriamServer priamServer
+            , IPriamInstanceFactory factory, ICassandraTuner tuner, ICassandraProcess cassProcess, ITokenManager tokenManager, InstanceState instanceState) {
+        this.config = config;
+        this.restoreObj = restoreObj;
+        this.pathProvider = pathProvider;
+        this.priamServer = priamServer;
+        this.factory = factory;
+        this.tuner = tuner;
+        this.cassProcess = cassProcess;
+        this.tokenManager = tokenManager;
+        this.instanceState = instanceState;
+    }
 
     /*
      * @return metadata of current restore.  If no restore in progress, returns the metadata of most recent restore attempt.

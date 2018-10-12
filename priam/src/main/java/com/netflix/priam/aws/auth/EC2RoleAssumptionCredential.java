@@ -48,17 +48,11 @@ public class EC2RoleAssumptionCredential implements ICredential {
                      * vice versa.
                      */
                     if (this.insEnvIdentity.isClassic()) {
-                        roleArn =
-                                this.config
-                                        .getClassicEC2RoleAssumptionArn(); // Env is EC2 classic -->
-                                                                           // IAM assumed role for
-                                                                           // VPC created
+                        roleArn = this.config.getClassicEC2RoleAssumptionArn();
+                        // Env is EC2 classic --> IAM assumed role for VPC created
                     } else {
-                        roleArn =
-                                this.config
-                                        .getVpcEC2RoleAssumptionArn(); // Env is VPC --> IAM assumed
-                                                                       // role for EC2 classic
-                                                                       // created
+                        roleArn = this.config.getVpcEC2RoleAssumptionArn();
+                        // Env is VPC --> IAM assumed role for EC2 classic created.
                     }
 
                     //

@@ -46,9 +46,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     private final Provider<AbstractBackupPath> pathProvider;
     final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
-    final RateLimiter
-            rateLimiter; // a throttling mechanism, we can limit the amount of bytes uploaded to
-                         // endpoint per second.
+    // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
+    final RateLimiter rateLimiter;
 
     S3FileSystemBase(
             Provider<AbstractBackupPath> pathProvider,

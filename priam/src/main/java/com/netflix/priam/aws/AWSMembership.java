@@ -181,13 +181,12 @@ public class AWSMembership implements IMembership {
             } else {
                 AuthorizeSecurityGroupIngressRequest sgIngressRequest =
                         new AuthorizeSecurityGroupIngressRequest();
-                sgIngressRequest.withGroupId(
-                        getVpcGoupId()); // fetch SG group id for vpc account of the running
-                                         // instance.
+                sgIngressRequest.withGroupId(getVpcGoupId());
+                // fetch SG group id for vpc account of the running instance.
                 client.authorizeSecurityGroupIngress(
                         sgIngressRequest.withIpPermissions(
                                 ipPermissions)); // Adding peers' IPs as ingress to the running
-                                                 // instance SG
+                // instance SG
                 if (logger.isInfoEnabled()) {
                     logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
                 }
@@ -254,13 +253,10 @@ public class AWSMembership implements IMembership {
                 }
             } else {
                 RevokeSecurityGroupIngressRequest req = new RevokeSecurityGroupIngressRequest();
-                req.withGroupId(
-                        getVpcGoupId()); // fetch SG group id for vpc account of the running
-                                         // instance.
-                client.revokeSecurityGroupIngress(
-                        req.withIpPermissions(
-                                ipPermissions)); // Adding peers' IPs as ingress to the running
-                                                 // instance SG
+                // fetch SG group id for vpc account of the running instance.
+                req.withGroupId(getVpcGoupId());
+                // Adding peers' IPs as ingress to the running instance SG
+                client.revokeSecurityGroupIngress(req.withIpPermissions(ipPermissions));
                 if (logger.isInfoEnabled()) {
                     logger.info(
                             "Done removing from ACL within vpc env for running instance: "
@@ -303,12 +299,8 @@ public class AWSMembership implements IMembership {
                             "vpcid is null even though instance is running in vpc.");
                 }
 
-                Filter vpcFilter =
-                        new Filter()
-                                .withName("vpc-id")
-                                .withValues(
-                                        vpcid); // only fetch SG for the vpc id of the running
-                                                // instance
+                // only fetch SG for the vpc id of the running instance
+                Filter vpcFilter = new Filter().withName("vpc-id").withValues(vpcid);
                 DescribeSecurityGroupsRequest req =
                         new DescribeSecurityGroupsRequest().withFilters(nameFilter, vpcFilter);
                 DescribeSecurityGroupsResult result = client.describeSecurityGroups(req);

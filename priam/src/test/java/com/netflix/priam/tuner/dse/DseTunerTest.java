@@ -43,8 +43,6 @@ public class DseTunerTest {
         dseConfig = new DseConfigStub();
         auditLogTunerYaml = new AuditLogTunerYaml(dseConfig);
         auditLogTunerLog4j = new AuditLogTunerLog4J(config, dseConfig);
-        dseTunerYaml = new DseTuner(config, dseConfig, auditLogTunerYaml);
-        dseTunerLog4j = new DseTuner(config, dseConfig, auditLogTunerLog4j);
 
         File targetDir = new File(config.getCassHome() + "/conf");
         if (!targetDir.exists()) targetDir.mkdirs();

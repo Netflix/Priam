@@ -31,7 +31,7 @@ import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -54,11 +54,14 @@ public class TestS3FileSystem {
     private static String FILE_PATH =
             "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
     private static BackupMetrics backupMetrics;
+    private static String region;
 
     public TestS3FileSystem() {
         if (injector == null) injector = Guice.createInjector(new BRTestModule());
 
         if (backupMetrics == null) backupMetrics = injector.getInstance(BackupMetrics.class);
+        InstanceInfo instanceInfo = injector.getInstance(InstanceInfo.class);
+        region = instanceInfo.getRegion();
     }
 
     @BeforeClass
@@ -120,8 +123,6 @@ public class TestS3FileSystem {
         } catch (BackupRestoreException e) {
             // ignore
         }
-        // Assert.assertEquals(RetryableCallable.DEFAULT_NUMBER_OF_RETRIES,
-        // MockS3PartUploader.partAttempts);
         Assert.assertEquals(0, MockS3PartUploader.compattempts);
         Assert.assertEquals(1, backupMetrics.getInvalidUploads().count() - noOfFailures);
     }
@@ -145,9 +146,6 @@ public class TestS3FileSystem {
         } catch (BackupRestoreException e) {
             // ignore
         }
-        // Assert.assertEquals(1, MockS3PartUploader.partAttempts);
-        // No retries with the new logic
-        // Assert.assertEquals(1, MockS3PartUploader.compattempts);
     }
 
     @Test
@@ -158,8 +156,7 @@ public class TestS3FileSystem {
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals(
-                "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -171,8 +168,7 @@ public class TestS3FileSystem {
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
         logger.info(rule.getPrefix());
-        Assert.assertEquals(
-                "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/", rule.getPrefix());
+        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getPrefix());
         Assert.assertEquals(5, rule.getExpirationInDays());
     }
 
@@ -247,8 +243,7 @@ public class TestS3FileSystem {
         public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
             List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
             if (ruleAvailable) {
-                String clusterPath =
-                        "casstestbackup/" + FakeConfiguration.FAKE_REGION + "/fake-app/";
+                String clusterPath = "casstestbackup/" + region + "/fake-app/";
                 BucketLifecycleConfiguration.Rule rule =
                         new BucketLifecycleConfiguration.Rule()
                                 .withExpirationInDays(5)

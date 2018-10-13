@@ -55,7 +55,7 @@ public class CassandraConfig {
     @Path("/get_seeds")
     public Response getSeeds() {
         try {
-            final List<String> seeds = priamServer.getId().getSeeds();
+            final List<String> seeds = priamServer.getInstanceIdentity().getSeeds();
             if (!seeds.isEmpty()) return Response.ok(StringUtils.join(seeds, ',')).build();
             logger.error("Cannot find the Seeds");
         } catch (Exception e) {
@@ -69,10 +69,11 @@ public class CassandraConfig {
     @Path("/get_token")
     public Response getToken() {
         try {
-            String token = priamServer.getId().getInstance().getToken();
+            String token = priamServer.getInstanceIdentity().getInstance().getToken();
             if (StringUtils.isNotBlank(token)) {
                 logger.info("Returning token value \"{}\" for this instance to caller.", token);
-                return Response.ok(priamServer.getId().getInstance().getToken()).build();
+                return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken())
+                        .build();
             }
 
             logger.error("Cannot find token for this instance.");
@@ -88,7 +89,8 @@ public class CassandraConfig {
     @Path("/is_replace_token")
     public Response isReplaceToken() {
         try {
-            return Response.ok(String.valueOf(priamServer.getId().isReplace())).build();
+            return Response.ok(String.valueOf(priamServer.getInstanceIdentity().isReplace()))
+                    .build();
         } catch (Exception e) {
             // TODO: can this ever happen? if so, what conditions would cause an exception here?
             logger.error("Error while executing is_replace_token", e);
@@ -100,7 +102,8 @@ public class CassandraConfig {
     @Path("/get_replaced_ip")
     public Response getReplacedIp() {
         try {
-            return Response.ok(String.valueOf(priamServer.getId().getReplacedIp())).build();
+            return Response.ok(String.valueOf(priamServer.getInstanceIdentity().getReplacedIp()))
+                    .build();
         } catch (Exception e) {
             logger.error("Error while executing get_replaced_ip", e);
             return Response.serverError().build();
@@ -111,7 +114,7 @@ public class CassandraConfig {
     @Path("/set_replaced_ip")
     public Response setReplacedIp(@QueryParam("ip") String ip) {
         try {
-            priamServer.getId().setReplacedIp(ip);
+            priamServer.getInstanceIdentity().setReplacedIp(ip);
             return Response.ok().build();
         } catch (Exception e) {
             logger.error("Error while overriding replacement ip", e);

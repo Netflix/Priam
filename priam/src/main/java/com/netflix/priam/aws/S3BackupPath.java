@@ -97,7 +97,7 @@ public class S3BackupPath extends AbstractBackupPath {
     @Override
     public String remotePrefix(Date start, Date end, String location) {
         StringBuilder buff = new StringBuilder(clusterPrefix(location));
-        token = factory.getInstance().getToken();
+        token = instanceIdentity.getInstance().getToken();
         buff.append(token).append(S3BackupPath.PATH_SEP);
         // match the common characters to prefix.
         buff.append(match(start, end));
@@ -110,7 +110,7 @@ public class S3BackupPath extends AbstractBackupPath {
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1) {
             baseDir = config.getBackupLocation();
-            region = config.getDC();
+            region = instanceIdentity.getInstanceInfo().getRegion();
             clusterName = config.getAppName();
         } else {
             assert elements.length >= 4 : "Too few elements in path " + location;

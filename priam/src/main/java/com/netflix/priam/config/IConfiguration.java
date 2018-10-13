@@ -19,13 +19,14 @@ package com.netflix.priam.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
 import com.netflix.priam.tuner.JVMOption;
+import java.io.File;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /** Interface for Priam's configuration */
 @ImplementedBy(PriamConfiguration.class)
@@ -67,7 +68,9 @@ public interface IConfiguration {
      *     seconds before gracefully draining cassandra (nodetool drain) and stopping cassandra with
      *     the stop script.
      */
-    int getGracefulDrainHealthWaitSeconds();
+    default int getGracefulDrainHealthWaitSeconds() {
+        return -1;
+    }
 
     /**
      * @return int representing how often (in seconds) Priam should auto-remediate Cassandra process
@@ -76,7 +79,9 @@ public interface IConfiguration {
      *     seconds. For example a value of 60 means that Priam will only restart Cassandra once per
      *     60 seconds If a negative number, Priam will not restart Cassandra due to crash at all
      */
-    int getRemediateDeadCassandraRate();
+    default int getRemediateDeadCassandraRate() {
+        return 3600;
+    }
 
     /**
      * Eg: 'my_backup' will result in all files stored under this dir/prefix
@@ -103,9 +108,6 @@ public interface IConfiguration {
      *     clusters backup
      */
     String getRestorePrefix();
-
-    /** @param prefix Set the current restore prefix */
-    void setRestorePrefix(String prefix);
 
     /** @return Location of the local data dir */
     String getDataFileLocation();
@@ -153,15 +155,23 @@ public interface IConfiguration {
     }
 
     /** @return Cassandra storage/cluster communication port */
-    int getStoragePort();
+    default int getStoragePort() {
+        return 7000;
+    }
 
-    int getSSLStoragePort();
+    default int getSSLStoragePort() {
+        return 7001;
+    }
 
     /** @return Cassandra's thrift port */
-    int getThriftPort();
+    default int getThriftPort() {
+        return 9160;
+    }
 
     /** @return Port for CQL binary transport. */
-    int getNativeTransportPort();
+    default int getNativeTransportPort() {
+        return 9042;
+    }
 
     /** @return Snitch to be used in cassandra.yaml */
     String getSnitch();
@@ -169,17 +179,8 @@ public interface IConfiguration {
     /** @return Cluster name */
     String getAppName();
 
-    /** @return RAC (or zone for AWS) */
-    String getRac();
-
     /** @return List of all RAC used for the cluster */
     List<String> getRacs();
-
-    /** @return Local hostmame */
-    String getHostname();
-
-    /** @return Get instance name (for AWS) */
-    String getInstanceName();
 
     /** @return Max heap size be used for Cassandra */
     String getHeapSize();
@@ -233,10 +234,13 @@ public interface IConfiguration {
 
     /**
      * @return Backup hour for snapshot backups (0 - 23)
-     * @deprecated Use the {{@link #getBackupCronExpression()}} instead.
+     * @deprecated Use the {{@link #getBackupCronExpression()}} instead. Scheduled for deletion in
+     *     Dec 2018.
      */
     @Deprecated
-    int getBackupHour();
+    default int getBackupHour() {
+        return 12;
+    }
 
     /**
      * Cron expression to be used for snapshot backups.
@@ -246,7 +250,9 @@ public interface IConfiguration {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
-    String getBackupCronExpression();
+    default String getBackupCronExpression() {
+        return "0 0 12 1/1 * ? *";
+    }
 
     /**
      * Backup scheduler type to use for backup.
@@ -256,7 +262,9 @@ public interface IConfiguration {
      *     #getBackupCronExpression()}.
      * @throws UnsupportedTypeException if the scheduler type is not CRON/HOUR.
      */
-    SchedulerType getBackupSchedulerType() throws UnsupportedTypeException;
+    default SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
+        return SchedulerType.HOUR;
+    }
 
     /**
      * Column Family(ies), comma delimited, to include during snapshot backup. Note 1: The expected
@@ -359,14 +367,10 @@ public interface IConfiguration {
     /** @return Get the region to connect to SDB for instance identity */
     String getSDBInstanceIdentityRegion();
 
-    /** @return Get the Data Center name (or region for AWS) */
-    String getDC();
-
-    /** @param region Set the current data center */
-    void setDC(String region);
-
     /** @return true if it is a multi regional cluster */
-    boolean isMultiDC();
+    default boolean isMultiDC() {
+        return false;
+    }
 
     /** @return Number of backup threads for uploading files when using async feature */
     default int getBackupThreads() {
@@ -379,10 +383,9 @@ public interface IConfiguration {
     }
 
     /** @return true if restore should search for nearest token if current token is not found */
-    boolean isRestoreClosestToken();
-
-    /** Amazon specific setting to query ASG Membership */
-    String getASGName();
+    default boolean isRestoreClosestToken() {
+        return false;
+    }
 
     /**
      * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
@@ -394,35 +397,37 @@ public interface IConfiguration {
     String getACLGroupName();
 
     /** @return true if incremental backups are enabled */
-    boolean isIncrBackup();
-
-    /** @return Get host IP */
-    String getHostIP();
+    default boolean isIncrementalBackupEnabled() {
+        return true;
+    }
 
     /** @return Bytes per second to throttle for backups */
-    int getUploadThrottle();
-
-    /**
-     * @return InstanceDataRetriever which encapsulates meta-data about the running instance like
-     *     region, RAC, name, ip address etc.
-     */
-    InstanceDataRetriever getInstanceDataRetriever()
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException;
+    default int getUploadThrottle() {
+        return -1;
+    }
 
     /** @return true if Priam should local config file for tokens and seeds */
     boolean isLocalBootstrapEnabled();
 
     /** @return Compaction throughput */
-    int getCompactionThroughput();
+    default int getCompactionThroughput() {
+        return 8;
+    }
 
     /** @return compaction_throughput_mb_per_sec */
-    int getMaxHintWindowInMS();
+    default int getMaxHintWindowInMS() {
+        return 10800000;
+    }
 
     /** @return hinted_handoff_throttle_in_kb */
-    int getHintedHandoffThrottleKb();
+    default int getHintedHandoffThrottleKb() {
+        return 1024;
+    }
 
     /** @return Size of Cassandra max direct memory */
-    String getMaxDirectMemory();
+    default String getMaxDirectMemory() {
+        return "50G";
+    }
 
     /** @return Bootstrap cluster name (depends on another cass cluster) */
     String getBootClusterName();
@@ -440,7 +445,9 @@ public interface IConfiguration {
     }
 
     /** @return stream_throughput_outbound_megabits_per_sec in yaml */
-    int getStreamingThroughputMB();
+    default int getStreamingThroughputMB() {
+        return 400;
+    }
 
     /**
      * Get the paritioner for this cassandra cluster/node.
@@ -465,10 +472,14 @@ public interface IConfiguration {
     String getCassProcessName();
 
     /** Defaults to 'allow all'. */
-    String getAuthenticator();
+    default String getAuthenticator() {
+        return "org.apache.cassandra.auth.AllowAllAuthenticator";
+    }
 
     /** Defaults to 'allow all'. */
-    String getAuthorizer();
+    default String getAuthorizer() {
+        return "org.apache.cassandra.auth.AllowAllAuthorizer";
+    }
 
     /** @return true/false, if Cassandra needs to be started manually */
     boolean doesCassandraStartManually();
@@ -499,9 +510,6 @@ public interface IConfiguration {
     String getCommitLogBackupRestorePointInTime();
 
     int maxCommitLogsRestore();
-
-    /** @return true/false, if Cassandra is running in a VPC environment */
-    boolean isVpcRing();
 
     boolean isClientSslEnabled();
 
@@ -630,9 +638,6 @@ public interface IConfiguration {
      */
     Map<String, String> getExtraEnvParams();
 
-    /** @return the vpc id of the running instance. */
-    String getVpcId();
-
     /*
      * @return the Amazon Resource Name (ARN) for EC2 classic.
      */
@@ -744,10 +749,13 @@ public interface IConfiguration {
      *
      * @return the interval to run the flush task. Format is name=value where “name” is an enum of
      *     hour, daily, value is ...
-     * @deprecated Use the {{@link #getFlushCronExpression()} instead.
+     * @deprecated Use the {{@link #getFlushCronExpression()} instead. This is set for deletion in
+     *     Dec 2018.
      */
     @Deprecated
-    String getFlushInterval();
+    default String getFlushInterval() {
+        return null;
+    }
 
     /**
      * Scheduler type to use for flush. Default: HOUR.
@@ -757,7 +765,9 @@ public interface IConfiguration {
      *     #getFlushCronExpression()}.
      * @throws UnsupportedTypeException if the scheduler type is not HOUR/CRON.
      */
-    SchedulerType getFlushSchedulerType() throws UnsupportedTypeException;
+    default SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
+        return SchedulerType.HOUR;
+    }
 
     /**
      * Cron expression to be used for flush. Use "-1" to disable the CRON. Default: -1
@@ -772,7 +782,9 @@ public interface IConfiguration {
     }
 
     /** @return the absolute path to store the backup status on disk */
-    String getBackupStatusFileLoc();
+    default String getBackupStatusFileLoc() {
+        return getDataFileLocation() + File.separator + "backup.status";
+    }
 
     /** @return Decides whether to use sudo to start C* or not */
     default boolean useSudo() {
@@ -787,7 +799,9 @@ public interface IConfiguration {
      *
      * @return SNS Topic ARN to be used to send notification.
      */
-    String getBackupNotificationTopicArn();
+    default String getBackupNotificationTopicArn() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * Post restore hook enabled state. If enabled, jar represented by getPostRepairHook is called
@@ -805,7 +819,7 @@ public interface IConfiguration {
      * @return post restore hook to be executed once restore is complete
      */
     default String getPostRestoreHook() {
-        return "";
+        return StringUtils.EMPTY;
     }
 
     /**

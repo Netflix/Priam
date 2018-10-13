@@ -25,6 +25,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import java.io.File;
@@ -58,7 +59,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     final Sleeper sleeper;
     private final BackupRestoreUtil backupRestoreUtil;
     private final Provider<AbstractBackupPath> pathProvider;
-    private final InstanceIdentity id;
+    private final InstanceIdentity instanceIdentity;
     private final RestoreTokenSelector tokenSelector;
     private final ICassandraProcess cassProcess;
     private final InstanceState instanceState;
@@ -81,7 +82,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         this.fs = fs;
         this.sleeper = sleeper;
         this.pathProvider = pathProvider;
-        this.id = instanceIdentity;
+        this.instanceIdentity = instanceIdentity;
         this.tokenSelector = tokenSelector;
         this.cassProcess = cassProcess;
         this.metaData = metaData;
@@ -92,11 +93,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         this.postRestoreHook = postRestoreHook;
     }
 
-    public static final boolean isRestoreEnabled(IConfiguration conf) {
+    public static final boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
         boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
         boolean isBackedupRac =
                 (CollectionUtils.isEmpty(conf.getBackupRacs())
-                        || conf.getBackupRacs().contains(conf.getRac()));
+                        || conf.getBackupRacs().contains(instanceInfo.getRac()));
         return (isRestoreMode && isBackedupRac);
     }
 
@@ -207,13 +208,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
     @Override
     public void execute() throws Exception {
-        if (!isRestoreEnabled(config)) return;
+        if (!isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) return;
 
         logger.info("Starting restore for {}", config.getRestoreSnapshot());
         String[] restore = config.getRestoreSnapshot().split(",");
-        AbstractBackupPath path = pathProvider.get();
-        final Date startTime = path.parseDate(restore[0]);
-        final Date endTime = path.parseDate(restore[1]);
+        final Date startTime = DateUtil.getDate(restore[0]);
+        final Date endTime = DateUtil.getDate(restore[1]);
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
                 logger.info("Attempting restore");
@@ -239,12 +239,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
         instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
         instanceState.setRestoreStatus(Status.STARTED);
-        String origToken = id.getInstance().getToken();
+        String origToken = instanceIdentity.getInstance().getToken();
 
         try {
             if (config.isRestoreClosestToken()) {
                 restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
-                id.getInstance().setToken(restoreToken.toString());
+                instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
 
             // Stop cassandra if its running
@@ -331,7 +331,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             logger.error("Error while trying to restore: {}", e.getMessage(), e);
             throw e;
         } finally {
-            id.getInstance().setToken(origToken);
+            instanceIdentity.getInstance().setToken(origToken);
         }
     }
 

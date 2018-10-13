@@ -22,22 +22,28 @@ import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be created ahead */
+/**
+ * SimpleDB based instance instanceIdentity. Requires 'InstanceIdentity' domain to be created ahead
+ */
 @Singleton
 public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
     private final IConfiguration config;
     private final SDBInstanceData dao;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public SDBInstanceFactory(IConfiguration config, SDBInstanceData dao) {
+    public SDBInstanceFactory(
+            IConfiguration config, SDBInstanceData dao, InstanceInfo instanceInfo) {
         this.config = config;
         this.dao = dao;
+        this.instanceInfo = instanceInfo;
     }
 
     @Override
@@ -69,7 +75,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
             // remove old data node which are dead.
             if (app.endsWith("-dead")) {
                 try {
-                    PriamInstance oldData = dao.getInstance(app, config.getDC(), id);
+                    PriamInstance oldData = dao.getInstance(app, instanceInfo.getRegion(), id);
                     // clean up a very old data...
                     if (null != oldData
                             && oldData.getUpdatetime()
@@ -140,7 +146,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
         ins.setHostIP(ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);
-        ins.setDC(config.getDC());
+        ins.setDC(instanceInfo.getRegion());
         ins.setToken(token);
         ins.setVolumes(v);
         return ins;

@@ -33,7 +33,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     public void testCreateToken() throws Exception {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
-        int hash = tokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         assertEquals(0, identity.getInstance().getId() - hash);
 
         identity = createInstanceIdentity("az1", "fakeinstance2");
@@ -42,7 +42,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         identity = createInstanceIdentity("az1", "fakeinstance3");
         assertEquals(6, identity.getInstance().getId() - hash);
 
-        // try next region
+        // try next zone
         identity = createInstanceIdentity("az2", "fakeinstance4");
         assertEquals(1, identity.getInstance().getId() - hash);
 
@@ -94,8 +94,8 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     @Test
     public void testDoubleSlots() throws Exception {
         createInstances();
-        int before = factory.getAllIds("fake-app").size();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
+        int before = factory.getAllIds(config.getAppName()).size();
+        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
         List<PriamInstance> lst = factory.getAllIds(config.getAppName());
         // sort it so it will look good if you want to print it.
         factory.sort(lst);
@@ -110,10 +110,8 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     @Test
     public void testDoubleGrap() throws Exception {
         createInstances();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
-        config.zone = "az1";
-        config.instance_id = "fakeinstancex";
-        int hash = tokenManager.regionOffset(config.getDC());
+        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
+        int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }

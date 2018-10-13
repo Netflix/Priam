@@ -17,6 +17,7 @@ import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.HashMap;
 import java.util.Map;
 import org.codehaus.jettison.json.JSONException;
@@ -37,11 +38,16 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
     private final INotificationService notificationService;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public BackupNotificationMgr(IConfiguration config, INotificationService notificationService) {
+    public BackupNotificationMgr(
+            IConfiguration config,
+            INotificationService notificationService,
+            InstanceInfo instanceInfo) {
         this.config = config;
         this.notificationService = notificationService;
+        this.instanceInfo = instanceInfo;
     }
 
     private void notify(AbstractBackupPath abp, String uploadStatus) {
@@ -53,7 +59,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("keyspace", abp.getKeyspace());
             jsonObject.put("cf", abp.getColumnFamily());
             jsonObject.put("region", abp.getRegion());
-            jsonObject.put("rack", this.config.getRac());
+            jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", abp.getToken());
             jsonObject.put("filename", abp.getFileName());
             jsonObject.put("uncompressfilesize", abp.getSize());

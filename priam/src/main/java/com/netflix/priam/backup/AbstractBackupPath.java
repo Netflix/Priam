@@ -66,14 +66,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected Date time;
     private long size; // uncompressed file size
     private long compressedFileSize = 0;
-    protected final InstanceIdentity factory;
+    protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
     private File backupFile;
     private long lastModified = 0;
     private Date uploadedTs;
 
-    public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
-        this.factory = factory;
+    public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
+        this.instanceIdentity = instanceIdentity;
         this.config = config;
     }
 
@@ -121,8 +121,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         String[] elements = rpath.split("" + PATH_SEP);
         this.clusterName = config.getAppName();
         this.baseDir = config.getBackupLocation();
-        this.region = config.getDC();
-        this.token = factory.getInstance().getToken();
+        this.region = instanceIdentity.getInstanceInfo().getRegion();
+        this.token = instanceIdentity.getInstance().getToken();
         this.type = type;
         if (BackupFileType.isDataFile(type)) {
             this.keyspace = elements[0];
@@ -259,7 +259,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     public InstanceIdentity getInstanceIdentity() {
-        return this.factory;
+        return this.instanceIdentity;
     }
 
     public void setUploadedTs(Date uploadedTs) {

@@ -19,6 +19,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.Sleeper;
 import java.util.List;
 import java.util.Random;
@@ -34,17 +35,20 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase
     private final IConfiguration config;
     private final Sleeper sleeper;
     private ListMultimap<String, PriamInstance> locMap;
+    private InstanceInfo instanceInfo;
 
     @Inject
     public PreGeneratedTokenRetriever(
             IPriamInstanceFactory factory,
             IMembership membership,
             IConfiguration config,
-            Sleeper sleeper) {
+            Sleeper sleeper,
+            InstanceInfo instanceInfo) {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
         this.sleeper = sleeper;
+        this.instanceInfo = instanceInfo;
     }
 
     @Override
@@ -57,7 +61,7 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase
         sleeper.sleep(new Random().nextInt(5000) + 10000);
         for (PriamInstance dead : allIds) {
             // test same zone and is it is alive.
-            if (!dead.getRac().equals(config.getRac())
+            if (!dead.getRac().equals(instanceInfo.getRac())
                     || asgInstances.contains(dead.getInstanceId())
                     || !isInstanceDummy(dead)) continue;
             logger.info("Found pre-generated token: {}", dead.getToken());
@@ -82,10 +86,10 @@ public class PreGeneratedTokenRetriever extends TokenRetrieverBase
             return factory.create(
                     config.getAppName(),
                     markAsDead.getId(),
-                    config.getInstanceName(),
-                    config.getHostname(),
-                    config.getHostIP(),
-                    config.getRac(),
+                    instanceInfo.getInstanceId(),
+                    instanceInfo.getHostname(),
+                    instanceInfo.getHostIP(),
+                    instanceInfo.getRac(),
                     markAsDead.getVolumes(),
                     payLoad);
         }

@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.net.URI;
 import java.util.List;
 import javax.ws.rs.*;
@@ -37,13 +38,16 @@ public class PriamInstanceResource {
 
     private final IConfiguration config;
     private final IPriamInstanceFactory<PriamInstance> factory;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    // Note: do not parameterized the generic type variable to an implementation as it confuses
+    // Note: do not parameterize the generic type variable to an implementation as it confuses
     // Guice in the binding.
-    public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory) {
+    public PriamInstanceResource(
+            IConfiguration config, IPriamInstanceFactory factory, InstanceInfo instanceInfo) {
         this.config = config;
         this.factory = factory;
+        this.instanceInfo = instanceInfo;
     }
 
     /**
@@ -126,7 +130,8 @@ public class PriamInstanceResource {
      * @return PriamInstance with the given {@code id}
      */
     private PriamInstance getByIdIfFound(int id) {
-        PriamInstance instance = factory.getInstance(config.getAppName(), config.getDC(), id);
+        PriamInstance instance =
+                factory.getInstance(config.getAppName(), instanceInfo.getRegion(), id);
         if (instance == null) {
             throw notFound(String.format("No priam instance with id %s found", id));
         }

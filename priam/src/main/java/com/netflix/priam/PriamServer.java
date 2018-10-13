@@ -48,7 +48,7 @@ public class PriamServer {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
     private final IBackupRestoreConfig backupRestoreConfig;
-    private final InstanceIdentity id;
+    private final InstanceIdentity instanceIdentity;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
     private final RestoreContext restoreContext;
@@ -67,14 +67,14 @@ public class PriamServer {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
-        this.id = id;
+        this.instanceIdentity = id;
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
         this.restoreContext = restoreContext;
     }
 
     public void initialize() throws Exception {
-        if (id.getInstance().isOutOfService()) return;
+        if (instanceIdentity.getInstance().isOutOfService()) return;
 
         // start to schedule jobs
         scheduler.start();
@@ -84,13 +84,14 @@ public class PriamServer {
             scheduler.runTaskNow(UpdateSecuritySettings.class);
             // sleep for 150 sec if this is a new node with new IP for SG to be updated by other
             // seed nodes
-            if (id.isReplace() || id.isTokenPregenerated()) sleeper.sleep(150 * 1000);
+            if (instanceIdentity.isReplace() || instanceIdentity.isTokenPregenerated())
+                sleeper.sleep(150 * 1000);
             else if (UpdateSecuritySettings.firstTimeUpdated) sleeper.sleep(60 * 1000);
 
             scheduler.addTask(
                     UpdateSecuritySettings.JOBNAME,
                     UpdateSecuritySettings.class,
-                    UpdateSecuritySettings.getTimer(id));
+                    UpdateSecuritySettings.getTimer(instanceIdentity));
         }
 
         // Run the task to tune Cassandra
@@ -100,7 +101,8 @@ public class PriamServer {
         // set it off, set backup hour to -1) or set backup cron to "-1"
         if (SnapshotBackup.getTimer(config) != null
                 && (CollectionUtils.isEmpty(config.getBackupRacs())
-                        || config.getBackupRacs().contains(config.getRac()))) {
+                        || config.getBackupRacs()
+                                .contains(instanceIdentity.getInstanceInfo().getRac()))) {
             scheduler.addTask(
                     SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
@@ -194,7 +196,7 @@ public class PriamServer {
     }
 
     public InstanceIdentity getId() {
-        return id;
+        return instanceIdentity;
     }
 
     public PriamScheduler getScheduler() {

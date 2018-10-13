@@ -25,7 +25,7 @@ public class PriamConfigTest {
     @Before
     public void setUp() {
         resource = new PriamConfig(priamServer);
-        fakeConfiguration = new FakeConfiguration("test", "cass_test", "test", "12345");
+        fakeConfiguration = new FakeConfiguration("cass_test");
         fakeConfiguration.fakeProperties.put("test.prop", "test_value");
     }
 

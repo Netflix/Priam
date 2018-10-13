@@ -30,7 +30,7 @@ public final class CompositeConfigSourceTest {
     public void read() {
         MemoryConfigSource memoryConfigSource = new MemoryConfigSource();
         IConfigSource configSource = new CompositeConfigSource(memoryConfigSource);
-        configSource.intialize("foo", "bar");
+        configSource.initialize("foo", "bar");
 
         Assert.assertEquals(0, configSource.size());
         configSource.set("foo", "bar");

@@ -21,6 +21,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,16 +42,19 @@ public class S3CrossAccountFileSystem {
     private final S3FileSystem s3fs;
     private final IConfiguration config;
     private final IS3Credential s3Credential;
+    private final InstanceInfo instanceInfo;
 
     @Inject
     public S3CrossAccountFileSystem(
             @Named("backup") IBackupFileSystem fs,
             @Named("awss3roleassumption") IS3Credential s3Credential,
-            IConfiguration config) {
+            IConfiguration config,
+            InstanceInfo instanceInfo) {
 
         this.s3fs = (S3FileSystem) fs;
         this.config = config;
         this.s3Credential = s3Credential;
+        this.instanceInfo = instanceInfo;
     }
 
     public IBackupFileSystem getBackupFileSystem() {
@@ -68,7 +72,7 @@ public class S3CrossAccountFileSystem {
                         this.s3Client =
                                 AmazonS3Client.builder()
                                         .withCredentials(s3Credential.getAwsCredentialProvider())
-                                        .withRegion(config.getDC())
+                                        .withRegion(instanceInfo.getRegion())
                                         .build();
 
                     } catch (Exception e) {

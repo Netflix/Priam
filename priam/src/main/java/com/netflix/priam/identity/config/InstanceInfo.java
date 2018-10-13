@@ -13,10 +13,11 @@
  */
 package com.netflix.priam.identity.config;
 
-import org.codehaus.jettison.json.JSONException;
+import com.google.inject.ImplementedBy;
 
 /** A means to fetch meta data of running instance */
-public interface InstanceDataRetriever {
+@ImplementedBy(AWSInstanceInfo.class)
+public interface InstanceInfo {
     /**
      * Get the availability zone of the running instance.
      *
@@ -25,19 +26,20 @@ public interface InstanceDataRetriever {
     String getRac();
 
     /**
-     * Get the public hostname for the running instance.
+     * Get the hostname for the running instance. Cannot be null.
      *
      * @return the public hostname for the running instance. e.g.:
-     *     ec2-12-34-56-78.compute-1.amazonaws.com
+     *     ec2-12-34-56-78.compute-1.amazonaws.com, if available. Else return private ip address for
+     *     running instance.
      */
-    String getPublicHostname();
+    String getHostname();
 
     /**
-     * Get public ip address for running instance. Can be null.
+     * Get ip address for running instance. Cannot be null.
      *
-     * @return private ip address for running instance.
+     * @return public ip if one is provided or private ip address for running instance.
      */
-    String getPublicIP();
+    String getHostIP();
 
     /**
      * Get private ip address for running instance.
@@ -61,13 +63,6 @@ public interface InstanceDataRetriever {
     String getInstanceType();
 
     /**
-     * Get the id of the network interface for running instance.
-     *
-     * @return id of the network interface for running instance
-     */
-    String getMac();
-
-    /**
      * Get the id of the vpc account for running instance.
      *
      * @return the id of the vpc account for running instance, null if does not exist.
@@ -75,27 +70,31 @@ public interface InstanceDataRetriever {
     String getVpcId(); // the id of the vpc for running instance
 
     /**
-     * AWS Account ID of running instance.
-     *
-     * @return the id (e.g. 12345) of the AWS account of running instance, could be null /empty.
-     * @throws JSONException
-     */
-    String getAWSAccountId() throws JSONException;
-
-    /**
      * Get the region of the AWS account of running instance
      *
      * @return the region (e.g. us-east-1) of the AWS account of running instance, could be null
      *     /empty.
-     * @throws JSONException
      */
-    String getRegion() throws JSONException;
+    String getRegion();
 
     /**
-     * Get the availability zone of the running instance.
+     * Get the ASG in which this instance is deployed. Note that Priam requires instances to be
+     * under an ASG.
      *
-     * @return the availability zone of the running instance. e.g. us-east-1c
-     * @throws JSONException
+     * @return the ASG of the instance. ex: cassandra_app--useast1e
      */
-    String getAvailabilityZone() throws JSONException;
+    String getAutoScalingGroup();
+
+    /**
+     * Environment of the current running instance. AWS only allows VPC environment (default).
+     * Classic is deprecated environment by AWS.
+     *
+     * @return Environment of the current running instance.
+     */
+    InstanceEnvironment getInstanceEnvironment();
+
+    enum InstanceEnvironment {
+        CLASSIC,
+        VPC
+    }
 }

@@ -30,7 +30,7 @@ public interface IConfigSource {
      * @param asgName: Name of the asg
      * @param region: Name of the region
      */
-    void intialize(String asgName, String region);
+    void initialize(String asgName, String region);
 
     /**
      * A non-negative integer indicating a count of elements.

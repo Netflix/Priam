@@ -38,6 +38,8 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -63,6 +65,8 @@ public class SnapshotBackup extends AbstractBackup {
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private final CassandraOperations cassandraOperations;
     private BackupMetrics backupMetrics;
+    private static final Lock lock = new ReentrantLock();
+
     private final String TMP_EXT = ".tmp";
     private final Pattern tmpFilePattern =
             Pattern.compile("^((.*)\\-(.*)\\-)?tmp(link)?\\-((?:l|k).)\\-(\\d)*\\-(.*)$");
@@ -99,6 +103,21 @@ public class SnapshotBackup extends AbstractBackup {
             sleeper.sleep(WAIT_TIME_MS);
         }
 
+        // Do not allow more than one snapshot to run at the same time. This is possible as this
+        // happens on CRON.
+        if (!lock.tryLock()) {
+            logger.error("Snapshot Operation is already running! Try again later.");
+            throw new Exception("Snapshot Operation already running");
+        }
+
+        try {
+            executeSnapshot();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void executeSnapshot() throws Exception {
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
         snapshotName = pathFactory.get().formatDate(startTime);
         snapshotInstant = DateUtil.getInstant();
@@ -121,10 +140,9 @@ public class SnapshotBackup extends AbstractBackup {
             initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
 
             // All the files are uploaded successfully as part of snapshot.
-            // pre condition notifiy of meta.json upload
-            File tmpMetaFile =
-                    metaData.createTmpMetaFile(); // Note: no need to remove this temp as it is done
-            // within createTmpMetaFile()
+            // pre condition notify of meta.json upload
+            File tmpMetaFile = metaData.createTmpMetaFile();
+            // Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
 
             // Upload meta file

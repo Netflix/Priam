@@ -135,7 +135,6 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
                     if (backupMetadata1.equals(backupMetadata)) {
                         backupMetadata1.setCompleted(backupMetadata.getCompleted());
                         backupMetadata1.setStatus(backupMetadata.getStatus());
-                        return;
                     }
                 });
     }
@@ -177,13 +176,11 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
     @Override
     public String toString() {
-        String sb =
-                "BackupStatusMgr{"
-                        + "backupMetadataMap="
-                        + backupMetadataMap
-                        + ", capacity="
-                        + capacity
-                        + '}';
-        return sb;
+        return "BackupStatusMgr{"
+                + "backupMetadataMap="
+                + backupMetadataMap
+                + ", capacity="
+                + capacity
+                + '}';
     }
 }

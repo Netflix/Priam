@@ -99,7 +99,6 @@ public class Flush extends IClusterManagement<String> {
 
         // == no override via FP, default to all keyspaces
         this.keyspaces = cassandraOperations.getKeyspaces();
-        return;
     }
 
     /**

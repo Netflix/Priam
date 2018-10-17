@@ -186,7 +186,7 @@ public class CassandraProcessManager implements ICassandraProcess {
 
             // In case drain hangs, timeout the future and continue stopping anyways. Give drain 30s
             // always
-            // In production we freqently see servers that do not want to drain
+            // In production we frequently see servers that do not want to drain
             try {
                 drainFuture.get(config.getGracefulDrainHealthWaitSeconds() + 30, TimeUnit.SECONDS);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {

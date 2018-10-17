@@ -154,7 +154,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             throws Exception {
         if (fsIterator == null) return null;
 
-        BoundedList bl = new BoundedList(lastN);
+        BoundedList<AbstractBackupPath> bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (temp.getType() == BackupFileType.SST && tracker.contains(temp)) continue;

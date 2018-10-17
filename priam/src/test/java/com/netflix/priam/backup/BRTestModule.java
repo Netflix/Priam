@@ -73,7 +73,6 @@ public class BRTestModule extends AbstractModule {
         bind(IFileCryptography.class)
                 .annotatedWith(Names.named("filecryptoalgorithm"))
                 .to(PgpCryptography.class);
-        bind(IIncrementalBackup.class).to(IncrementalBackup.class);
         bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
         bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);

@@ -74,8 +74,7 @@ public class AWSSnsNotificationService implements INotificationService {
                             PublishRequest publishRequest =
                                     new PublishRequest(topic_arn, msg)
                                             .withMessageAttributes(messageAttributes);
-                            PublishResult result = snsClient.publish(publishRequest);
-                            return result;
+                            return snsClient.publish(publishRequest);
                         }
                     }.call();
 

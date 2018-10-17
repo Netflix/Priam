@@ -49,11 +49,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         META_V2;
 
         public static boolean isDataFile(BackupFileType type) {
-            if (type != BackupFileType.META
+            return type != BackupFileType.META
                     && type != BackupFileType.META_V2
-                    && type != BackupFileType.CL) return true;
-
-            return false;
+                    && type != BackupFileType.CL;
         }
     }
 
@@ -66,13 +64,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String token;
     protected String region;
     protected Date time;
-    protected long size; // uncompressed file size
-    protected long compressedFileSize = 0;
+    private long size; // uncompressed file size
+    private long compressedFileSize = 0;
     protected final InstanceIdentity factory;
     protected final IConfiguration config;
-    protected File backupFile;
-    protected long lastModified = 0;
-    protected Date uploadedTs;
+    private File backupFile;
+    private long lastModified = 0;
+    private Date uploadedTs;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity factory) {
         this.factory = factory;
@@ -138,7 +136,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
-    public String match(Date start, Date end) {
+    protected String match(Date start, Date end) {
         String sString = formatDate(start);
         String eString = formatDate(end);
         int diff = StringUtils.indexOfDifference(sString, eString);

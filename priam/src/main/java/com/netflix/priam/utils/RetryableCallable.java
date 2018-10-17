@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 public abstract class RetryableCallable<T> implements Callable<T> {
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
     private static final int DEFAULT_NUMBER_OF_RETRIES = 15;
-    public static final long DEFAULT_WAIT_TIME = 100;
+    private static final long DEFAULT_WAIT_TIME = 100;
     private int retrys;
     private long waitTime;
 

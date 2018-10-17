@@ -31,6 +31,8 @@ import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.ThreadSleeper;
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +52,7 @@ public class SnapshotBackup extends AbstractBackup {
     private String snapshotName = null;
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private final CassandraOperations cassandraOperations;
+    private static final Lock lock = new ReentrantLock();
 
     @Inject
     public SnapshotBackup(
@@ -81,6 +84,21 @@ public class SnapshotBackup extends AbstractBackup {
             sleeper.sleep(WAIT_TIME_MS);
         }
 
+        // Do not allow more than one snapshot to run at the same time. This is possible as this
+        // happens on CRON.
+        if (!lock.tryLock()) {
+            logger.warn("Snapshot Operation is already running! Try again later.");
+            throw new Exception("Snapshot Operation already running");
+        }
+
+        try {
+            executeSnapshot();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void executeSnapshot() throws Exception {
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
         snapshotName = pathFactory.get().formatDate(startTime);
         String token = instanceIdentity.getInstance().getToken();
@@ -103,9 +121,8 @@ public class SnapshotBackup extends AbstractBackup {
 
             // All the files are uploaded successfully as part of snapshot.
             // pre condition notify of meta.json upload
-            File tmpMetaFile =
-                    metaData.createTmpMetaFile(); // Note: no need to remove this temp as it is done
-            // within createTmpMetaFile()
+            File tmpMetaFile = metaData.createTmpMetaFile();
+            // Note: no need to remove this temp as it is done within createTmpMetaFile()
             AbstractBackupPath metaJsonAbp = metaData.decorateMetaJson(tmpMetaFile, snapshotName);
 
             // Upload meta file

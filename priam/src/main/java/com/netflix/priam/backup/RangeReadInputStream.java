@@ -57,29 +57,26 @@ public class RangeReadInputStream extends InputStream {
         // meaning if you want to download the first 10 bytes of a file, request bytes 0..9
         final long endByte = curEndByte - 1;
         try {
-            Integer cnt =
-                    new RetryableCallable<Integer>() {
-                        public Integer retriableCall() throws IOException {
-                            GetObjectRequest req = new GetObjectRequest(bucketName, remotePath);
-                            req.setRange(firstByte, endByte);
-                            try (S3ObjectInputStream is =
-                                    s3Client.getObject(req).getObjectContent()) {
-                                byte[] readBuf = new byte[4092];
-                                int rCnt;
-                                int readTotal = 0;
-                                int incomingOffet = off;
-                                while ((rCnt = is.read(readBuf, 0, readBuf.length)) >= 0) {
-                                    System.arraycopy(readBuf, 0, b, incomingOffet, rCnt);
-                                    readTotal += rCnt;
-                                    incomingOffet += rCnt;
-                                }
-                                if (readTotal == 0 && rCnt == -1) return -1;
-                                offset += readTotal;
-                                return readTotal;
-                            }
+            return new RetryableCallable<Integer>() {
+                public Integer retriableCall() throws IOException {
+                    GetObjectRequest req = new GetObjectRequest(bucketName, remotePath);
+                    req.setRange(firstByte, endByte);
+                    try (S3ObjectInputStream is = s3Client.getObject(req).getObjectContent()) {
+                        byte[] readBuf = new byte[4092];
+                        int rCnt;
+                        int readTotal = 0;
+                        int incomingOffet = off;
+                        while ((rCnt = is.read(readBuf, 0, readBuf.length)) >= 0) {
+                            System.arraycopy(readBuf, 0, b, incomingOffet, rCnt);
+                            readTotal += rCnt;
+                            incomingOffet += rCnt;
                         }
-                    }.call();
-            return cnt;
+                        if (readTotal == 0 && rCnt == -1) return -1;
+                        offset += readTotal;
+                        return readTotal;
+                    }
+                }
+            }.call();
         } catch (Exception e) {
             String msg =
                     String.format(

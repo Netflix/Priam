@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * Incremental/SSTable backup
  */
 @Singleton
-public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup {
+public class IncrementalBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
     private final List<String> incrementalRemotePaths = new ArrayList<>();
@@ -104,7 +104,7 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
             // format of yyyymmddhhmm (e.g. 201505060901)
             String incrementalUploadTime =
                     AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime());
-            String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
+            String metaFileName = "meta_" + columnFamily + "_" + incrementalUploadTime;
             logger.info("Uploading meta file for incremental backup: {}", metaFileName);
             this.metaData.setMetaFileName(metaFileName);
             this.metaData.set(uploadedFiles, incrementalUploadTime);
@@ -115,15 +115,5 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
     @Override
     protected void addToRemotePath(String remotePath) {
         incrementalRemotePaths.add(remotePath);
-    }
-
-    @Override
-    public long getNumPendingFiles() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getJobName() {
-        return JOBNAME;
     }
 }

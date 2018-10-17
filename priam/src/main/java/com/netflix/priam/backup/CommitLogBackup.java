@@ -20,7 +20,6 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import java.io.File;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -30,8 +29,8 @@ import org.slf4j.LoggerFactory;
 public class CommitLogBackup {
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    static final List<IMessageObserver> observers = new ArrayList();
-    private final List<String> clRemotePaths = new ArrayList();
+    private static final List<IMessageObserver> observers = Lists.newArrayList();
+    private final List<String> clRemotePaths = Lists.newArrayList();
     private final IBackupFileSystem fs;
 
     @Inject
@@ -58,7 +57,7 @@ public class CommitLogBackup {
         if (logger.isDebugEnabled()) {
             logger.debug("Scanning for backup in: {}", archivedCommitLogDir.getAbsolutePath());
         }
-        List bps = Lists.newArrayList();
+        List<AbstractBackupPath> bps = Lists.newArrayList();
         for (final File file : archivedCommitLogDir.listFiles()) {
             logger.debug("Uploading commit log {} for backup", file.getCanonicalFile());
             try {
@@ -103,7 +102,7 @@ public class CommitLogBackup {
             }
     }
 
-    protected void addToRemotePath(String remotePath) {
+    private void addToRemotePath(String remotePath) {
         this.clRemotePaths.add(remotePath);
     }
 }

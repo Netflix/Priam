@@ -55,7 +55,7 @@ public class FileUploadResult {
         this.fileSizeOnDisk = fileSizeOnDisk;
     }
 
-    public static FileUploadResult getFileUploadResult(
+    private static FileUploadResult getFileUploadResult(
             String keyspaceName, String columnFamilyName, Path file) throws Exception {
         BasicFileAttributes fileAttributes = Files.readAttributes(file, BasicFileAttributes.class);
         return new FileUploadResult(

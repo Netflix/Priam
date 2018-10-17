@@ -429,7 +429,7 @@ public class CassandraAdmin {
     }
 
     // helper method for parsing, to be tested easily
-    protected static JSONObject parseGossipInfo(String gossipinfo) throws JSONException {
+    private static JSONObject parseGossipInfo(String gossipinfo) throws JSONException {
         String[] ginfo = gossipinfo.split("\n");
         JSONObject rootObj = new JSONObject();
         JSONObject obj = new JSONObject();

@@ -35,12 +35,12 @@ import org.slf4j.LoggerFactory;
 /** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
-    public static final String INCREMENTAL_BACKUP_FOLDER = "backups";
+    static final String INCREMENTAL_BACKUP_FOLDER = "backups";
     public static final String SNAPSHOT_FOLDER = "snapshots";
 
-    protected final Provider<AbstractBackupPath> pathFactory;
+    final Provider<AbstractBackupPath> pathFactory;
 
-    protected IBackupFileSystem fs;
+    private IBackupFileSystem fs;
 
     @Inject
     public AbstractBackup(
@@ -74,12 +74,15 @@ public abstract class AbstractBackup extends Task {
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected List<AbstractBackupPath> upload(
-            final File parent, final BackupFileType type, boolean async) throws Exception {
+    List<AbstractBackupPath> upload(final File parent, final BackupFileType type, boolean async)
+            throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         final List<Future<Path>> futures = Lists.newArrayList();
 
-        for (File file : parent.listFiles()) {
+        File[] files = parent.listFiles();
+        if (files == null) return bps;
+
+        for (File file : files) {
             if (file.isFile() && file.exists()) {
                 AbstractBackupPath bp = getAbstractBackupPath(file, type);
 
@@ -117,18 +120,23 @@ public abstract class AbstractBackup extends Task {
             String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
-        if (!dataDir.exists()) {
+        if (!dataDir.exists() || !dataDir.isDirectory()) {
             throw new IllegalArgumentException(
-                    "The configured 'data file location' does not exist: "
+                    "The configured 'data file location' does not exist or is not a directory: "
                             + config.getDataFileLocation());
         }
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
-        for (File keyspaceDir : dataDir.listFiles()) {
+        File[] keyspaceDirectories = dataDir.listFiles();
+        if (keyspaceDirectories == null) return;
+
+        for (File keyspaceDir : keyspaceDirectories) {
             if (keyspaceDir.isFile()) continue;
 
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
+            File[] columnFamilyDirectories = keyspaceDir.listFiles();
+            if (columnFamilyDirectories == null) continue;
 
-            for (File columnFamilyDir : keyspaceDir.listFiles()) {
+            for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
 
                 if (!isValidBackupDir(keyspaceDir, backupDir)) {
@@ -161,8 +169,8 @@ public abstract class AbstractBackup extends Task {
             String keyspace, String columnFamily, File backupDir) throws Exception;
 
     /** Filters unwanted keyspaces */
-    public boolean isValidBackupDir(File keyspaceDir, File backupDir) {
-        if (!backupDir.isDirectory() && !backupDir.exists()) return false;
+    private boolean isValidBackupDir(File keyspaceDir, File backupDir) {
+        if (backupDir == null || !backupDir.isDirectory() || !backupDir.exists()) return false;
         String keyspaceName = keyspaceDir.getName();
         if (BackupRestoreUtil.FILTER_KEYSPACE.contains(keyspaceName)) {
             logger.debug(

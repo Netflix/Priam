@@ -1,4 +1,13 @@
 # Changelog
+## 2018/10/17 3.1.65
+* (#738) BugFix: Null pointer exception while traversing filesystem. 
+* (#736) Google java format validator addition. Use ./gradlew goJF to fix the formatting before sending PR. 
+* (#741) Last but not least, a new logo for Priam. 
+
+## 2018/10/10 3.1.64
+### New Feature
+* (#732) Move forgotten files to `lost+found` directory. This is enabled by configuration `priam.forgottenFileMoveEnabled`. This is disabled by default. 
+
 ## 2018/10/05 3.1.63
 ***WARNING*** THIS IS A BREAKING RELEASE 
 ### New Feature

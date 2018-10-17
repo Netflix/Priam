@@ -176,13 +176,11 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
 
     @Override
     public String toString() {
-        String sb =
-                "BackupStatusMgr{"
-                        + "backupMetadataMap="
-                        + backupMetadataMap
-                        + ", capacity="
-                        + capacity
-                        + '}';
-        return sb;
+        return "BackupStatusMgr{"
+                + "backupMetadataMap="
+                + backupMetadataMap
+                + ", capacity="
+                + capacity
+                + '}';
     }
 }

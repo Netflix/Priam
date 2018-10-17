@@ -29,6 +29,8 @@ import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
@@ -65,6 +67,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private final MetaFileManager metaFileManager;
     private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
+    private static final Lock lock = new ReentrantLock();
 
     @Inject
     SnapshotMetaService(
@@ -128,6 +131,13 @@ public class SnapshotMetaService extends AbstractBackup {
             return;
         }
 
+        // Do not allow more than one snapshotMetaService to run at the same time. This is possible
+        // as this happens on CRON.
+        if (!lock.tryLock()) {
+            logger.warn("SnapshotMetaService is already running! Try again later.");
+            throw new Exception("SnapshotMetaService already running");
+        }
+
         try {
             Instant snapshotInstant = DateUtil.getInstant();
             snapshotName = generateSnapshotName(snapshotInstant);
@@ -153,6 +163,8 @@ public class SnapshotMetaService extends AbstractBackup {
             logger.info("Finished processing snapshot meta service");
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
+        } finally {
+            lock.unlock();
         }
     }
 

@@ -114,7 +114,7 @@ public class SnapshotMetaService extends AbstractBackup {
         // Do not allow more than one snapshotMetaService to run at the same time. This is possible
         // as this happens on CRON.
         if (!lock.tryLock()) {
-            logger.error("SnapshotMetaService is already running! Try again later.");
+            logger.warn("SnapshotMetaService is already running! Try again later.");
             throw new Exception("SnapshotMetaService already running");
         }
 

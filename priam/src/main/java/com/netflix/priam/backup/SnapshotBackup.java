@@ -106,7 +106,7 @@ public class SnapshotBackup extends AbstractBackup {
         // Do not allow more than one snapshot to run at the same time. This is possible as this
         // happens on CRON.
         if (!lock.tryLock()) {
-            logger.error("Snapshot Operation is already running! Try again later.");
+            logger.warn("Snapshot Operation is already running! Try again later.");
             throw new Exception("Snapshot Operation already running");
         }
 

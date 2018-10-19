@@ -35,7 +35,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestRestore {
-    private static Injector injector;
     private static FakeBackupFileSystem filesystem;
     private static ArrayList<String> fileList;
     private static Calendar cal;
@@ -45,7 +44,7 @@ public class TestRestore {
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
-        injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new BRTestModule());
         filesystem =
                 (FakeBackupFileSystem)
                         injector.getInstance(

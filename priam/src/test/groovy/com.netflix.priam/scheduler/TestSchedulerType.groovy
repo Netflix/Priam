@@ -15,7 +15,7 @@ class TestSchedulerType extends Specification{
         SchedulerType.lookup(schedulerType, acceptNullorEmpty, acceptIllegalValue)
 
         then:
-        def error = thrown(expectedException)
+        thrown(expectedException)
 
         where:
         schedulerType  | acceptNullorEmpty | acceptIllegalValue || expectedException

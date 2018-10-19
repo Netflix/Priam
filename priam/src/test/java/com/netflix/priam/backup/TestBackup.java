@@ -44,7 +44,7 @@ public class TestBackup {
     private static Injector injector;
     private static FakeBackupFileSystem filesystem;
     private static final Logger logger = LoggerFactory.getLogger(TestBackup.class);
-    private static Set<String> expectedFiles = new HashSet<String>();
+    private static final Set<String> expectedFiles = new HashSet<>();
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
@@ -120,7 +120,7 @@ public class TestBackup {
         if (tmp.exists()) cleanup(tmp);
         // Generate "data"
         generateIncrementalFiles();
-        Set<String> systemfiles = new HashSet<String>();
+        Set<String> systemfiles = new HashSet<>();
         // Generate system files
         for (String columnFamilyDir : columnFamilyDirs) {
             String columnFamily = columnFamilyDir.split("-")[0];
@@ -151,7 +151,7 @@ public class TestBackup {
         File tmp = new File("target/data/");
         if (tmp.exists()) cleanup(tmp);
         // Setup
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Data.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
@@ -185,16 +185,13 @@ public class TestBackup {
     // Mock Nodeprobe class
     @Ignore
     static class MockNodeProbe extends MockUp<NodeProbe> {
-        @Mock
-        public void $init(String host, int port) throws IOException, InterruptedException {}
 
         @Mock
-        public void takeSnapshot(String snapshotName, String columnFamily, String... keyspaces)
-                throws IOException {
+        public void takeSnapshot(String snapshotName, String columnFamily, String... keyspaces) {
             File tmp = new File("target/data/");
             if (tmp.exists()) cleanup(tmp);
             // Setup
-            Set<String> files = new HashSet<String>();
+            Set<String> files = new HashSet<>();
             files.add(
                     "target/data/Keyspace1/Standard1/snapshots/"
                             + snapshotName
@@ -210,16 +207,13 @@ public class TestBackup {
             for (String filePath : files) {
                 File file = new File(filePath);
                 genTestFile(file);
-                if (filePath.indexOf("Keyspace1-Standard1-ia-6-Data.db") == -1) // skip
+                if (!filePath.contains("Keyspace1-Standard1-ia-6-Data.db")) // skip
                 expectedFiles.add(file.getAbsolutePath());
             }
         }
 
         @Mock
-        public void close() throws IOException {}
-
-        @Mock
-        public void clearSnapshot(String tag, String... keyspaces) throws IOException {
+        public void clearSnapshot(String tag, String... keyspaces) {
             cleanup(new File("target/data"));
         }
     }

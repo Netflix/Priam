@@ -16,7 +16,7 @@ class TestFlushTask extends Specification {
         Flush.getTimer(new FlushConfiguration(flushSchedulerType, flushCronExpression, flushInterval))
 
         then:
-        def error = thrown(expectedException)
+        thrown(expectedException)
 
         where:
         flushSchedulerType | flushCronExpression | flushInterval    || expectedException

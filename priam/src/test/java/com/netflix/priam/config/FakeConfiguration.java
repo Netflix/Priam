@@ -28,10 +28,10 @@ import java.util.Map;
 @Singleton
 public class FakeConfiguration implements IConfiguration {
 
-    private String appName;
+    private final String appName;
     private String restorePrefix = "";
 
-    public Map<String, String> fakeProperties = new HashMap<>();
+    public final Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration() {
         this("my_fake_cluster");

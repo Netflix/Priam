@@ -56,7 +56,7 @@ public class PriamInstanceResourceTest {
             @Mocked final PriamInstance instance2,
             @Mocked final PriamInstance instance3) {
         new Expectations() {
-            List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
+            final List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
 
             {
                 config.getAppName();

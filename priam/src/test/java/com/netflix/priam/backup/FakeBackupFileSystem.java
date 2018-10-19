@@ -36,7 +36,9 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     private List<AbstractBackupPath> flist;
     public Set<String> downloadedFiles;
     public Set<String> uploadedFiles;
-    public String baseDir, region, clusterName;
+    private String baseDir;
+    private String region;
+    private String clusterName;
 
     @Inject private Provider<S3BackupPath> pathProvider;
 
@@ -130,7 +132,9 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             try (FileWriter fr = new FileWriter(localPath.toFile())) {
                 JSONArray jsonObj = new JSONArray();
                 for (AbstractBackupPath filePath : flist) {
-                    if (filePath.type == BackupFileType.SNAP) jsonObj.add(filePath.getRemotePath());
+                    if (filePath.type == BackupFileType.SNAP) {
+                        jsonObj.add(filePath.getRemotePath());
+                    }
                 }
                 fr.write(jsonObj.toJSONString());
                 fr.flush();

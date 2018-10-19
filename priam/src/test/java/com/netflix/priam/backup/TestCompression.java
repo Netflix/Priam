@@ -29,7 +29,6 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import org.apache.cassandra.io.util.RandomAccessReader;
-import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -61,15 +60,15 @@ public class TestCompression {
         if (f.exists()) f.delete();
     }
 
-    private void validateCompression(String uncompress, String compress) {
-        File uncompressed = new File(uncompress);
+    private void validateCompression(String compress) {
+        File uncompressed = new File("/tmp/compress-test.txt");
         File compressed = new File(compress);
         assertTrue(uncompressed.length() > compressed.length());
     }
 
     @Test
     public void zip() throws IOException {
-        BufferedInputStream source = null;
+        BufferedInputStream source;
         try (ZipOutputStream out =
                 new ZipOutputStream(
                         new BufferedOutputStream(new FileOutputStream("/tmp/compressed.zip")))) {
@@ -84,7 +83,7 @@ public class TestCompression {
                 out.write(data, 0, count);
             }
         }
-        validateCompression("/tmp/compress-test.txt", "/tmp/compressed.zip");
+        validateCompression("/tmp/compressed.zip");
     }
 
     @Test
@@ -96,7 +95,7 @@ public class TestCompression {
             try (BufferedInputStream is = new BufferedInputStream(zipfile.getInputStream(entry));
                     BufferedOutputStream dest1 =
                             new BufferedOutputStream(
-                                    new FileOutputStream("/tmp/compress-test-out-0.txt"), 2048)) {;
+                                    new FileOutputStream("/tmp/compress-test-out-0.txt"), 2048)) {
                 int c;
                 byte d[] = new byte[2048];
 
@@ -112,42 +111,41 @@ public class TestCompression {
 
     @Test
     public void snappyCompress() throws IOException {
-        FileInputStream fi = new FileInputStream("/tmp/compress-test.txt");
-        SnappyOutputStream out =
-                new SnappyOutputStream(
-                        new BufferedOutputStream(new FileOutputStream("/tmp/test0.snp")));
-        BufferedInputStream origin = new BufferedInputStream(fi, 1024);
-        byte data[] = new byte[1024];
-        int count;
-        while ((count = origin.read(data, 0, 1024)) != -1) {
-            out.write(data, 0, count);
+        try (BufferedInputStream origin =
+                        new BufferedInputStream(
+                                new FileInputStream("/tmp/compress-test.txt"), 1024);
+                SnappyOutputStream out =
+                        new SnappyOutputStream(
+                                new BufferedOutputStream(new FileOutputStream("/tmp/test0.snp")))) {
+            byte data[] = new byte[1024];
+            int count;
+            while ((count = origin.read(data, 0, 1024)) != -1) {
+                out.write(data, 0, count);
+            }
+            validateCompression("/tmp/test0.snp");
         }
-        IOUtils.closeQuietly(origin);
-        IOUtils.closeQuietly(fi);
-        IOUtils.closeQuietly(out);
-
-        validateCompression("/tmp/compress-test.txt", "/tmp/test0.snp");
     }
 
     @Test
     public void snappyDecompress() throws IOException {
         // decompress normally.
-        SnappyInputStream is =
-                new SnappyInputStream(
-                        new BufferedInputStream(new FileInputStream("/tmp/test0.snp")));
-        byte d[] = new byte[1024];
-        FileOutputStream fos = new FileOutputStream("/tmp/compress-test-out-1.txt");
-        BufferedOutputStream dest1 = new BufferedOutputStream(fos, 1024);
-        int c;
-        while ((c = is.read(d, 0, 1024)) != -1) {
-            dest1.write(d, 0, c);
-        }
-        IOUtils.closeQuietly(dest1);
-        IOUtils.closeQuietly(is);
+        try (SnappyInputStream is =
+                        new SnappyInputStream(
+                                new BufferedInputStream(new FileInputStream("/tmp/test0.snp")));
+                BufferedOutputStream dest1 =
+                        new BufferedOutputStream(
+                                new FileOutputStream("/tmp/compress-test-out-1.txt"), 1024)) {
 
-        String md1 = SystemUtils.md5(new File("/tmp/compress-test-out-1.txt"));
-        String md2 = SystemUtils.md5(new File("/tmp/compress-test.txt"));
-        assertEquals(md1, md2);
+            byte d[] = new byte[1024];
+            int c;
+            while ((c = is.read(d, 0, 1024)) != -1) {
+                dest1.write(d, 0, c);
+            }
+
+            String md1 = SystemUtils.md5(new File("/tmp/compress-test-out-1.txt"));
+            String md2 = SystemUtils.md5(new File("/tmp/compress-test.txt"));
+            assertEquals(md1, md2);
+        }
     }
 
     @Test
@@ -159,13 +157,13 @@ public class TestCompression {
                 compress.compress(
                         new AbstractBackupPath.RafInputStream(RandomAccessReader.open(file)),
                         chunkSize);
-        FileOutputStream ostream = new FileOutputStream("/tmp/test1.snp");
-        while (it.hasNext()) {
-            byte[] chunk = it.next();
-            ostream.write(chunk);
+        try (FileOutputStream ostream = new FileOutputStream("/tmp/test1.snp")) {
+            while (it.hasNext()) {
+                byte[] chunk = it.next();
+                ostream.write(chunk);
+            }
         }
-        IOUtils.closeQuietly(ostream);
-        validateCompression("/tmp/compress-test.txt", "/tmp/test1.snp");
+        validateCompression("/tmp/test1.snp");
     }
 
     @Test

@@ -2,6 +2,10 @@ plugins {
     id 'org.akhikhl.gretty' version '1.4.2'
 }
 
+gretty {
+    jacocoEnabled false
+}
+
 apply plugin: 'war'
 
 dependencies {

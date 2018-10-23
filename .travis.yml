@@ -1,9 +1,13 @@
 language: java
 jdk:
 - oraclejdk8
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
 sudo: false
 install: ./installViaTravis.sh
-script: ./buildViaTravis.sh
+script:
+  - ./buildViaTravis.sh
+  - ./gradlew codeCoverageReport
 cache:
   directories:
   - $HOME/.gradle

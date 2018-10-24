@@ -67,3 +67,7 @@ atlassian-ide-plugin.xml
 # NetBeans specific files/directories
 .nbattrs
 >>>>>>> build/multi-project
+
+#ghpages, tox working directory
+site/
+.env/

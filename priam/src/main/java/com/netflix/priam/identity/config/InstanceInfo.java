@@ -70,10 +70,9 @@ public interface InstanceInfo {
     String getVpcId(); // the id of the vpc for running instance
 
     /**
-     * Get the region of the AWS account of running instance
+     * Get the region/data center of running instance
      *
-     * @return the region (e.g. us-east-1) of the AWS account of running instance, could be null
-     *     /empty.
+     * @return the region of running instance, could be null/empty. (e.g. us-east-1)
      */
     String getRegion();
 

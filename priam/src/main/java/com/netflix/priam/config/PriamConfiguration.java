@@ -364,7 +364,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isIncrBackup() {
+    public boolean isIncrementalBackupEnabled() {
         return config.get(PRIAM_PRE + ".backup.incremental.enable", true);
     }
 

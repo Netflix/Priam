@@ -107,7 +107,7 @@ public class PriamServer {
                     SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
             // Start the Incremental backup schedule if enabled
-            if (config.isIncrBackup()) {
+            if (config.isIncrementalBackupEnabled()) {
                 scheduler.addTask(
                         IncrementalBackup.JOBNAME,
                         IncrementalBackup.class,
@@ -195,7 +195,7 @@ public class PriamServer {
         }
     }
 
-    public InstanceIdentity getId() {
+    public InstanceIdentity getInstanceIdentity() {
         return instanceIdentity;
     }
 

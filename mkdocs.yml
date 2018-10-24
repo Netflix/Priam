@@ -8,4 +8,4 @@ extra:
   feature:
     tabs: false
 nav:
-  - "Getting started.": "index.md"
+  - "Getting started.": "latest/index.md"

@@ -1,4 +1,4 @@
-![alt text](images/priam.png "Priam Logo")
+![alt text](../images/priam.png "Priam Logo")
 
 # Table Of Contents
 

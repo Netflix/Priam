@@ -68,7 +68,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
 
         boolean enableIncremental =
-                (SnapshotBackup.isBackupEnabled(config) && config.isIncrBackup())
+                (SnapshotBackup.isBackupEnabled(config) && config.isIncrementalBackupEnabled())
                         && (CollectionUtils.isEmpty(config.getBackupRacs())
                                 || config.getBackupRacs().contains(instanceInfo.getRac()));
         map.put("incremental_backups", enableIncremental);

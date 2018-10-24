@@ -24,6 +24,7 @@ import com.netflix.priam.scheduler.UnsupportedTypeException;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /** Interface for Priam's configuration */
 @ImplementedBy(PriamConfiguration.class)
@@ -371,7 +372,7 @@ public interface IConfiguration {
     String getACLGroupName();
 
     /** @return true if incremental backups are enabled */
-    default boolean isIncrBackup() {
+    default boolean isIncrementalBackupEnabled() {
         return true;
     }
 
@@ -774,7 +775,7 @@ public interface IConfiguration {
      * @return SNS Topic ARN to be used to send notification.
      */
     default String getBackupNotificationTopicArn() {
-        return "";
+        return StringUtils.EMPTY;
     }
 
     /**
@@ -793,7 +794,7 @@ public interface IConfiguration {
      * @return post restore hook to be executed once restore is complete
      */
     default String getPostRestoreHook() {
-        return "";
+        return StringUtils.EMPTY;
     }
 
     /**

@@ -41,7 +41,6 @@ public class AWSInstanceInfo implements InstanceInfo {
     private String instanceId;
     private String instanceType;
     private String mac;
-    private String availabilityZone;
     private ICredential credential;
     private String vpcId;
     private InstanceEnvironment instanceEnvironment;
@@ -53,62 +52,69 @@ public class AWSInstanceInfo implements InstanceInfo {
 
     @Override
     public String getPrivateIP() {
-        if (privateIp == null)
+        if (privateIp == null) {
             privateIp =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/local-ipv4");
+        }
         return privateIp;
     }
 
     @Override
     public String getRac() {
-        if (rac == null)
+        if (rac == null) {
             rac =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/placement/availability-zone");
+        }
         return rac;
     }
 
     public String getPublicHostname() {
-        if (publicHostName == null)
+        if (publicHostName == null) {
             publicHostName =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/public-hostname");
+        }
         return publicHostName;
     }
 
     public String getPublicIP() {
-        if (publicIp == null)
+        if (publicIp == null) {
             publicIp =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/public-ipv4");
+        }
         return publicIp;
     }
 
     @Override
     public String getInstanceId() {
-        if (instanceId == null)
+        if (instanceId == null) {
             instanceId =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/instance-id");
+        }
         return instanceId;
     }
 
     @Override
     public String getInstanceType() {
-        if (instanceType == null)
+        if (instanceType == null) {
             instanceType =
                     SystemUtils.getDataFromUrl(
                             "http://169.254.169.254/latest/meta-data/instance-type");
+        }
         return instanceType;
     }
 
     private String getMac() {
-        if (mac == null)
+        if (mac == null) {
             mac =
                     SystemUtils.getDataFromUrl(
                                     "http://169.254.169.254/latest/meta-data/network/interfaces/macs/")
                             .trim();
+        }
         return mac;
     }
 

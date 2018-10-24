@@ -31,23 +31,21 @@ public class TestCustomizedTPE {
     private static final int MAX_THREADS = 10;
     // timeout 1 sec
     private static final int TIME_OUT = 10 * 1000;
-    private BlockingSubmitThreadPoolExecutor startTest =
+    private final BlockingSubmitThreadPoolExecutor startTest =
             new BlockingSubmitThreadPoolExecutor(
-                    MAX_THREADS, new LinkedBlockingDeque<Runnable>(MAX_THREADS), TIME_OUT);
+                    MAX_THREADS, new LinkedBlockingDeque<>(MAX_THREADS), TIME_OUT);
 
     @Test
     public void testExecutor() throws InterruptedException {
         final AtomicInteger count = new AtomicInteger();
         for (int i = 0; i < 100; i++) {
             startTest.submit(
-                    new Callable<Void>() {
-                        @Override
-                        public Void call() throws Exception {
-                            Thread.sleep(100);
-                            logger.info("Count:{}", count.incrementAndGet());
-                            return null;
-                        }
-                    });
+                    (Callable<Void>)
+                            () -> {
+                                Thread.sleep(100);
+                                logger.info("Count:{}", count.incrementAndGet());
+                                return null;
+                            });
         }
         startTest.sleepTillEmpty();
         Assert.assertEquals(100, count.get());
@@ -59,14 +57,12 @@ public class TestCustomizedTPE {
         try {
             for (int i = 0; i < 100; i++) {
                 startTest.submit(
-                        new Callable<Void>() {
-                            @Override
-                            public Void call() throws Exception {
-                                logger.info("Sleeping for 2 * timeout.");
-                                Thread.sleep(TIME_OUT * 2);
-                                return null;
-                            }
-                        });
+                        (Callable<Void>)
+                                () -> {
+                                    logger.info("Sleeping for 2 * timeout.");
+                                    Thread.sleep(TIME_OUT * 2);
+                                    return null;
+                                });
             }
         } catch (RuntimeException ex) {
             success = true;

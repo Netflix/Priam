@@ -30,7 +30,7 @@ class TestBackupScheduler extends Specification {
         SnapshotBackup.isBackupEnabled(new BackupConfiguration("cron", configCRON, 1))
 
         then:
-        def error = thrown(expectedException)
+        thrown(expectedException)
 
         where:
         configCRON || expectedException

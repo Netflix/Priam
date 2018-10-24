@@ -138,11 +138,11 @@ public class TestSnapshotMetaService {
         test(1000, 2, 2);
     }
 
-    public static class TestMetaFileReader extends MetaFileReader {
+    static class TestMetaFileReader extends MetaFileReader {
 
         private int noOfSstables;
 
-        public void setNoOfSstables(int noOfSstables) {
+        void setNoOfSstables(int noOfSstables) {
             this.noOfSstables = noOfSstables;
         }
 

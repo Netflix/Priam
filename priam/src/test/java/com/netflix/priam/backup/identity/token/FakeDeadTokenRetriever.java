@@ -21,7 +21,7 @@ import com.google.common.collect.ListMultimap;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 
-public class FakeDeadTokenRetriever implements IDeadTokenRetriever {
+class FakeDeadTokenRetriever implements IDeadTokenRetriever {
 
     @Override
     public PriamInstance get() throws Exception {

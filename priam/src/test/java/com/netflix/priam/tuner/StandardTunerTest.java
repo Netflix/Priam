@@ -32,7 +32,7 @@ public class StandardTunerTest {
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
-    private StandardTuner tuner;
+    private final StandardTuner tuner;
 
     public StandardTunerTest() {
         this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);

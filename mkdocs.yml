@@ -1,0 +1,11 @@
+site_name: 'Priam'
+repo_name: 'Netflix/priam'
+theme: 'material'
+repo_url: https://github.com/Netflix/priam
+site_author: Netflix
+copyright: Copyright 2018 Netflix, Inc.
+extra:
+  feature:
+    tabs: false
+nav:
+  - "Getting started.": "index.md"

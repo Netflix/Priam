@@ -1,0 +1,5 @@
+
+#ghpages, tox working directory
+site/
+.env/ 
+bin/

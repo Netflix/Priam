@@ -23,9 +23,9 @@ import com.netflix.priam.identity.config.InstanceDataRetriever;
 import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-
 import java.io.File;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,6 +40,8 @@ public class FakeConfiguration implements IConfiguration {
     public String instance_id;
     private String restorePrefix;
 
+    public Map<String, String> fakeProperties = new HashMap<>();
+
     public FakeConfiguration() {
         this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
     }
@@ -53,7 +55,7 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public void intialize() {
+    public void initialize() {
         // TODO Auto-generated method stub
 
     }
@@ -88,8 +90,7 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getCacheLocation()
-    {
+    public String getCacheLocation() {
         // TODO Auto-generated method stub
         return "cass/caches";
     }
@@ -97,31 +98,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public List<String> getRacs() {
         return Arrays.asList("az1", "az2", "az3");
-    }
-
-    @Override
-    public int getJmxPort() {
-        return 7199;
-    }
-
-    @Override
-    public String getJmxUsername()
-    {
-        return null;
-    }
-
-    @Override
-    public String getJmxPassword()
-    {
-        return null;
-    }
-
-    /**
-     * @return Enables Remote JMX connections n C*
-     */
-    @Override
-    public boolean enableRemoteJMX() {
-        return false;
     }
 
     @Override
@@ -190,11 +166,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isRestoreEncrypted(){
-        return false;
-    }
-
-    @Override
     public String getAppName() {
         return appName;
     }
@@ -205,12 +176,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getMaxBackupUploadThreads() {
-        // TODO Auto-generated method stub
-        return 2;
-    }
-
-    @Override
     public String getSDBInstanceIdentityRegion() {
         // TODO Auto-generated method stub
         return null;
@@ -218,14 +183,12 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public String getDC() {
-        // TODO Auto-generated method stub
         return this.region;
     }
 
     @Override
-    public int getMaxBackupDownloadThreads() {
-        // TODO Auto-generated method stub
-        return 3;
+    public int getRestoreThreads() {
+        return 2;
     }
 
     public void setRestorePrefix(String prefix) {
@@ -257,7 +220,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     /**
-     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to consider while calculating RAC membership
+     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
+     * consider while calculating RAC membership
      */
     @Override
     public String getSiblingASGNames() {
@@ -275,7 +239,6 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-
     @Override
     public int getUploadThrottle() {
         // TODO Auto-generated method stub
@@ -283,7 +246,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public InstanceDataRetriever getInstanceDataRetriever() throws InstantiationException, IllegalAccessException, ClassNotFoundException {
+    public InstanceDataRetriever getInstanceDataRetriever()
+            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
         return new LocalInstanceDataRetriever();
     }
 
@@ -291,11 +255,6 @@ public class FakeConfiguration implements IConfiguration {
     public boolean isLocalBootstrapEnabled() {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public int getInMemoryCompactionLimit() {
-        return 8;
     }
 
     @Override
@@ -325,12 +284,6 @@ public class FakeConfiguration implements IConfiguration {
     public String getCassStartupScript() {
         // TODO Auto-generated method stub
         return "/usr/bin/false";
-    }
-
-    @Override
-    public List<String> getRestoreKeySpaces() {
-        // TODO Auto-generated method stub
-        return Lists.newArrayList();
     }
 
     @Override
@@ -397,10 +350,7 @@ public class FakeConfiguration implements IConfiguration {
         return 1;
     }
 
-
-    /**
-     * @return memtable_cleanup_threshold in C* yaml
-     */
+    /** @return memtable_cleanup_threshold in C* yaml */
     @Override
     public double getMemtableCleanupThreshold() {
         return 0.11;
@@ -468,15 +418,6 @@ public class FakeConfiguration implements IConfiguration {
         return false;
     }
 
-    public String getInternodeCompression() {
-        return "all";
-    }
-
-    @Override
-    public boolean isBackingUpCommitLogs() {
-        return false;
-    }
-
     @Override
     public String getCommitLogBackupPropsFile() {
         return getCassHome() + PriamConfiguration.DEFAULT_COMMITLOG_PROPS_FILE;
@@ -502,9 +443,7 @@ public class FakeConfiguration implements IConfiguration {
         return null;
     }
 
-    public void setRestoreKeySpaces(List<String> keyspaces) {
-
-    }
+    public void setRestoreKeySpaces(List<String> keyspaces) {}
 
     @Override
     public int maxCommitLogsRestore() {
@@ -544,26 +483,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getRpcServerType() {
-        return "hsha";
-    }
-
-    @Override
-    public int getRpcMinThreads() {
-        return 16;
-    }
-
-    @Override
-    public int getRpcMaxThreads() {
-        return 2048;
-    }
-
-    @Override
-    public int getIndexInterval() {
-        return 0;
-    }
-
-    @Override
     public int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
     }
@@ -583,14 +502,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getDseClusterType() {
-        // TODO Auto-generated method stub
-        return "cassandra";
-    }
-
-    @Override
     public boolean isCreateNewTokenEnable() {
-        return true;  //allow Junit test to create new tokens
+        return true; // allow Junit test to create new tokens
     }
 
     @Override
@@ -601,11 +514,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getRestoreSourceType() {
         return null;
-    }
-
-    @Override
-    public boolean isEncryptBackupEnabled() {
-        return false;
     }
 
     @Override
@@ -621,11 +529,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getVpcEC2RoleAssumptionArn() {
         return null;
-    }
-
-    @Override
-    public boolean isDualAccount() {
-        return false;
     }
 
     @Override
@@ -659,77 +562,13 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getRestoreKeyspaceFilter() {
-        return null;
-    }
-
-    @Override
-    public String getRestoreCFFilter() {
-        return null;
-    }
-
-    @Override
-    public String getIncrementalKeyspaceFilters() {
-        return null;
-    }
-
-    @Override
-    public String getIncrementalCFFilter() {
-        return null;
-    }
-
-    @Override
-    public String getSnapshotKeyspaceFilters() {
-        return null;
-    }
-
-    @Override
-    public String getSnapshotCFFilter() {
-        return null;
-    }
-
-    @Override
     public String getVpcId() {
         return "";
     }
 
     @Override
-    public Boolean isIncrBackupParallelEnabled() {
-        return false;
-    }
-
-    @Override
-    public int getIncrementalBkupMaxConsumers() {
-        return 2;
-    }
-
-    @Override
-    public int getUncrementalBkupQueueSize() {
+    public int getBackupQueueSize() {
         return 100;
-    }
-
-    /**
-     * @return tombstone_warn_threshold in yaml
-     */
-    @Override
-    public int getTombstoneWarnThreshold() {
-        return 1000;
-    }
-
-    /**
-     * @return tombstone_failure_threshold in yaml
-     */
-    @Override
-    public int getTombstoneFailureThreshold() {
-        return 100000;
-    }
-
-    /**
-     * @return streaming_socket_timeout_in_ms in yaml
-     */
-    @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return 86400000;
     }
 
     @Override
@@ -745,11 +584,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getBackupStatusFileLoc() {
         return "backupstatus.ser";
-    }
-
-    @Override
-    public boolean useSudo() {
-        return true;
     }
 
     @Override
@@ -769,7 +603,7 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public String getPostRestoreHook() {
-        return "iostat -d 2 10";
+        return "echo";
     }
 
     @Override
@@ -782,8 +616,17 @@ public class FakeConfiguration implements IConfiguration {
         return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
     }
 
-    @Override
     public int getPostRestoreHookTimeOutInDays() {
         return 2;
+    }
+
+    @Override
+    public String getProperty(String key, String defaultValue) {
+        return fakeProperties.getOrDefault(key, defaultValue);
+    }
+
+    @Override
+    public String getMergedConfigurationDirectory() {
+        return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 }

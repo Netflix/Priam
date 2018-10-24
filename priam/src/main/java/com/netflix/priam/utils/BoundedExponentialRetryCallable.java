@@ -16,21 +16,21 @@
  */
 package com.netflix.priam.utils;
 
+import java.util.concurrent.CancellationException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CancellationException;
-
 public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallable<T> {
-    private final static long MAX_SLEEP = 10000;
-    private final static long MIN_SLEEP = 1000;
-    private final static int MAX_RETRIES = 10;
+    protected static final long MAX_SLEEP = 10000;
+    protected static final long MIN_SLEEP = 1000;
+    protected static final int MAX_RETRIES = 10;
 
-    private static final Logger logger = LoggerFactory.getLogger(BoundedExponentialRetryCallable.class);
-    private long max;
-    private long min;
-    private int maxRetries;
+    private static final Logger logger =
+            LoggerFactory.getLogger(BoundedExponentialRetryCallable.class);
+    private final long max;
+    private final long min;
+    private final int maxRetries;
     private final ThreadSleeper sleeper = new ThreadSleeper();
 
     public BoundedExponentialRetryCallable() {
@@ -46,7 +46,7 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
     }
 
     public T call() throws Exception {
-        long delay = min;// ms
+        long delay = min; // ms
         int retry = 0;
         int logCounter = 0;
         while (true) {
@@ -65,7 +65,10 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
                     sleeper.sleep(delay);
                 } else if (delay >= max && retry <= maxRetries) {
                     if (logger.isErrorEnabled()) {
-                        logger.error(String.format("Retry #%d for: %s", retry, ExceptionUtils.getStackTrace(e)));
+                        logger.error(
+                                String.format(
+                                        "Retry #%d for: %s",
+                                        retry, ExceptionUtils.getStackTrace(e)));
                     }
                     sleeper.sleep(max);
                 } else {
@@ -76,5 +79,4 @@ public abstract class BoundedExponentialRetryCallable<T> extends RetryableCallab
             }
         }
     }
-
 }

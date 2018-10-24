@@ -23,20 +23,20 @@ import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 
 @Singleton
 public class TuneCassandra extends Task {
     private static final Logger LOGGER = LoggerFactory.getLogger(TuneCassandra.class);
     private static final String JOBNAME = "Tune-Cassandra";
     private final ICassandraTuner tuner;
-    private InstanceState instanceState;
+    private final InstanceState instanceState;
 
     @Inject
-    public TuneCassandra(IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {
+    public TuneCassandra(
+            IConfiguration config, ICassandraTuner tuner, InstanceState instanceState) {
         super(config);
         this.tuner = tuner;
         this.instanceState = instanceState;
@@ -47,14 +47,14 @@ public class TuneCassandra extends Task {
 
         while (!isDone) {
             try {
-                tuner.writeAllProperties(config.getYamlLocation(), null, config.getSeedProviderName());
+                tuner.writeAllProperties(
+                        config.getYamlLocation(), null, config.getSeedProviderName());
                 isDone = true;
                 instanceState.setYmlWritten(true);
             } catch (IOException e) {
                 LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);
             }
         }
-
     }
 
     @Override

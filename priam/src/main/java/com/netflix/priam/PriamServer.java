@@ -23,12 +23,12 @@ import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.CommitLogBackupTask;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.backup.SnapshotBackup;
-import com.netflix.priam.backup.parallel.IncrementalBackupProducer;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
@@ -42,10 +42,7 @@ import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Start all tasks here - Property update task - Backup task - Restore task -
- * Incremental backup
- */
+/** Start all tasks here - Property update task - Backup task - Restore task - Incremental backup */
 @Singleton
 public class PriamServer {
     private final PriamScheduler scheduler;
@@ -59,7 +56,14 @@ public class PriamServer {
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
-    public PriamServer(IConfiguration config, IBackupRestoreConfig backupRestoreConfig, PriamScheduler scheduler, InstanceIdentity id, Sleeper sleeper, ICassandraProcess cassProcess, RestoreContext restoreContext) {
+    public PriamServer(
+            IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
+            PriamScheduler scheduler,
+            InstanceIdentity id,
+            Sleeper sleeper,
+            ICassandraProcess cassProcess,
+            RestoreContext restoreContext) {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
@@ -70,8 +74,7 @@ public class PriamServer {
     }
 
     public void initialize() throws Exception {
-        if (id.getInstance().isOutOfService())
-            return;
+        if (id.getInstance().isOutOfService()) return;
 
         // start to schedule jobs
         scheduler.start();
@@ -79,13 +82,15 @@ public class PriamServer {
         // update security settings.
         if (config.isMultiDC()) {
             scheduler.runTaskNow(UpdateSecuritySettings.class);
-            // sleep for 150 sec if this is a new node with new IP for SG to be updated by other seed nodes
-            if (id.isReplace() || id.isTokenPregenerated())
-                sleeper.sleep(150 * 1000);
-            else if (UpdateSecuritySettings.firstTimeUpdated)
-                sleeper.sleep(60 * 1000);
+            // sleep for 150 sec if this is a new node with new IP for SG to be updated by other
+            // seed nodes
+            if (id.isReplace() || id.isTokenPregenerated()) sleeper.sleep(150 * 1000);
+            else if (UpdateSecuritySettings.firstTimeUpdated) sleeper.sleep(60 * 1000);
 
-            scheduler.addTask(UpdateSecuritySettings.JOBNAME, UpdateSecuritySettings.class, UpdateSecuritySettings.getTimer(id));
+            scheduler.addTask(
+                    UpdateSecuritySettings.JOBNAME,
+                    UpdateSecuritySettings.class,
+                    UpdateSecuritySettings.getTimer(id));
         }
 
         // Run the task to tune Cassandra
@@ -93,71 +98,97 @@ public class PriamServer {
 
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1) or set backup cron to "-1"
-        if (SnapshotBackup.getTimer(config) != null && (CollectionUtils.isEmpty(config.getBackupRacs()) || config.getBackupRacs().contains(config.getRac()))) {
-            scheduler.addTask(SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
+        if (SnapshotBackup.getTimer(config) != null
+                && (CollectionUtils.isEmpty(config.getBackupRacs())
+                        || config.getBackupRacs().contains(config.getRac()))) {
+            scheduler.addTask(
+                    SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
             // Start the Incremental backup schedule if enabled
             if (config.isIncrBackup()) {
-                if (!config.isIncrBackupParallelEnabled()) {
-                    scheduler.addTask(IncrementalBackup.JOBNAME, IncrementalBackup.class, IncrementalBackup.getTimer());
-                    logger.info("Added incremental synchronous bkup");
-                } else {
-                    scheduler.addTask(IncrementalBackupProducer.JOBNAME, IncrementalBackupProducer.class, IncrementalBackupProducer.getTimer());
-                    logger.info("Added incremental async-synchronous bkup, next fired time: {}", IncrementalBackupProducer.getTimer().getTrigger().getNextFireTime());
-                }
+                scheduler.addTask(
+                        IncrementalBackup.JOBNAME,
+                        IncrementalBackup.class,
+                        IncrementalBackup.getTimer());
+                logger.info("Added incremental backup job");
             }
         }
 
         if (config.isBackingUpCommitLogs()) {
-            scheduler.addTask(CommitLogBackupTask.JOBNAME, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
+            scheduler.addTask(
+                    CommitLogBackupTask.JOBNAME,
+                    CommitLogBackupTask.class,
+                    CommitLogBackupTask.getTimer(config));
         }
-
 
         // Determine if we need to restore from backup else start cassandra.
-        if (restoreContext.isRestoreEnabled()){
+        if (restoreContext.isRestoreEnabled()) {
             restoreContext.restore();
-        } else { //no restores needed
+        } else { // no restores needed
             logger.info("No restore needed, task not scheduled");
-            if (!config.doesCassandraStartManually())
-                cassProcess.start(true);                                 // Start cassandra.
+            if (!config.doesCassandraStartManually()) cassProcess.start(true); // Start cassandra.
             else
-                logger.info("config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+                logger.info(
+                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         }
-
 
         /*
          *  Run the delayed task (after 10 seconds) to Monitor Cassandra
-         *  If Restore option is chosen, then Running Cassandra instance is stopped 
+         *  If Restore option is chosen, then Running Cassandra instance is stopped
          *  Hence waiting for Cassandra to stop
          */
-        scheduler.addTaskWithDelay(CassandraMonitor.JOBNAME, CassandraMonitor.class, CassandraMonitor.getTimer(), CASSANDRA_MONITORING_INITIAL_DELAY);
+        scheduler.addTaskWithDelay(
+                CassandraMonitor.JOBNAME,
+                CassandraMonitor.class,
+                CassandraMonitor.getTimer(),
+                CASSANDRA_MONITORING_INITIAL_DELAY);
 
+        // Set cleanup
+        scheduler.addTask(
+                UpdateCleanupPolicy.JOBNAME,
+                UpdateCleanupPolicy.class,
+                UpdateCleanupPolicy.getTimer());
 
-        //Set cleanup
-        scheduler.addTask(UpdateCleanupPolicy.JOBNAME, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
-
-        //Set up nodetool flush task
+        // Set up nodetool flush task
         TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
             scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
             logger.info("Added nodetool flush task.");
         }
 
-        //Set up compaction task
+        // Set up compaction task
         TaskTimer compactionTimer = Compaction.getTimer(config);
         if (compactionTimer != null) {
-            scheduler.addTask(IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
+            scheduler.addTask(
+                    IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
             logger.info("Added compaction task.");
         }
 
-        //Set up the SnapshotService
+        // Set up the background configuration dumping thread
+        TaskTimer configurationPersisterTimer = PriamConfigurationPersister.getTimer(config);
+        if (configurationPersisterTimer != null) {
+            scheduler.addTask(
+                    PriamConfigurationPersister.NAME,
+                    PriamConfigurationPersister.class,
+                    configurationPersisterTimer);
+            logger.info(
+                    "Added configuration persister task with schedule [{}]",
+                    configurationPersisterTimer.getCronExpression());
+        } else {
+            logger.warn("Priam configuration persister disabled!");
+        }
+
+        // Set up the SnapshotService
         setUpSnapshotService();
     }
 
-    private void setUpSnapshotService() throws Exception{
+    private void setUpSnapshotService() throws Exception {
         TaskTimer snapshotMetaServiceTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
         if (snapshotMetaServiceTimer != null) {
-            scheduler.addTask(SnapshotMetaService.JOBNAME, SnapshotMetaService.class, snapshotMetaServiceTimer);
+            scheduler.addTask(
+                    SnapshotMetaService.JOBNAME,
+                    SnapshotMetaService.class,
+                    snapshotMetaServiceTimer);
             logger.info("Added SnapshotMetaService Task.");
         }
     }
@@ -173,5 +204,4 @@ public class PriamServer {
     public IConfiguration getConfiguration() {
         return config;
     }
-
 }

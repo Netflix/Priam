@@ -21,8 +21,8 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
-
 import java.math.BigInteger;
+import java.util.Collections;
 import java.util.List;
 
 public class TokenManager implements ITokenManager {
@@ -31,12 +31,11 @@ public class TokenManager implements ITokenManager {
     public static final BigInteger MINIMUM_TOKEN_MURMUR3 = new BigInteger("-2").pow(63);
     public static final BigInteger MAXIMUM_TOKEN_MURMUR3 = new BigInteger("2").pow(63);
 
-
     private final BigInteger minimumToken;
     private final BigInteger maximumToken;
     private final BigInteger tokenRangeSize;
 
-    private IConfiguration config;
+    private final IConfiguration config;
 
     @Inject
     public TokenManager(IConfiguration config) {
@@ -53,13 +52,14 @@ public class TokenManager implements ITokenManager {
     }
 
     /**
-     * Calculate a token for the given position, evenly spaced from other size-1 nodes.  See
+     * Calculate a token for the given position, evenly spaced from other size-1 nodes. See
      * http://wiki.apache.org/cassandra/Operations.
      *
-     * @param size     number of slots by which the token space will be divided
+     * @param size number of slots by which the token space will be divided
      * @param position slot number, multiplier
-     * @param offset   added to token
-     * @return MAXIMUM_TOKEN / size * position + offset, if <= MAXIMUM_TOKEN, otherwise wrap around the MINIMUM_TOKEN
+     * @param offset added to token
+     * @return MAXIMUM_TOKEN / size * position + offset, if <= MAXIMUM_TOKEN, otherwise wrap around
+     *     the MINIMUM_TOKEN
      */
     @VisibleForTesting
     BigInteger initialToken(int size, int position, int offset) {
@@ -70,7 +70,8 @@ public class TokenManager implements ITokenManager {
          * unit test failures.
          */
         Preconditions.checkArgument(position >= 0, "position must be >= 0");
-        return tokenRangeSize.divide(BigInteger.valueOf(size))
+        return tokenRangeSize
+                .divide(BigInteger.valueOf(size))
                 .multiply(BigInteger.valueOf(position))
                 .add(BigInteger.valueOf(offset))
                 .add(minimumToken);
@@ -79,10 +80,10 @@ public class TokenManager implements ITokenManager {
     /**
      * Creates a token given the following parameter
      *
-     * @param my_slot   -- Slot where this instance has to be.
+     * @param my_slot -- Slot where this instance has to be.
      * @param rac_count -- Rac count is the numeber of RAC's
-     * @param rac_size  -- number of memberships in the rac
-     * @param region    -- name of the DC where it this token is created.
+     * @param rac_size -- number of memberships in the rac
+     * @param region -- name of the DC where it this token is created.
      */
     @Override
     public String createToken(int my_slot, int rac_count, int rac_size, String region) {
@@ -99,20 +100,23 @@ public class TokenManager implements ITokenManager {
     public BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList) {
         Preconditions.checkArgument(!tokenList.isEmpty(), "token list must not be empty");
         List<BigInteger> sortedTokens = Ordering.natural().sortedCopy(tokenList);
-        int index = Ordering.natural().binarySearch(sortedTokens, tokenToSearch);
+        int index = Collections.binarySearch(sortedTokens, tokenToSearch, Ordering.natural());
         if (index < 0) {
             int i = Math.abs(index) - 1;
-            if ((i >= sortedTokens.size()) || (i > 0 && sortedTokens.get(i).subtract(tokenToSearch)
-                    .compareTo(tokenToSearch.subtract(sortedTokens.get(i - 1))) > 0))
-                --i;
+            if ((i >= sortedTokens.size())
+                    || (i > 0
+                            && sortedTokens
+                                            .get(i)
+                                            .subtract(tokenToSearch)
+                                            .compareTo(
+                                                    tokenToSearch.subtract(sortedTokens.get(i - 1)))
+                                    > 0)) --i;
             return sortedTokens.get(i);
         }
         return sortedTokens.get(index);
     }
 
-    /**
-     * Create an offset to add to token values by hashing the region name.
-     */
+    /** Create an offset to add to token values by hashing the region name. */
     @Override
     public int regionOffset(String region) {
         return Math.abs(region.hashCode());

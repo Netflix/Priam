@@ -27,64 +27,54 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.atomic.AtomicInteger;
-
-/**
- * Main class for restoring data from backup. Backup restored using this way are not encrypted.
- */
+/** Main class for restoring data from backup. Backup restored using this way are not encrypted. */
 @Singleton
 public class Restore extends AbstractRestore {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
     private static final Logger logger = LoggerFactory.getLogger(Restore.class);
-    private final ThreadPoolExecutor executor;
-    private AtomicInteger count = new AtomicInteger();
 
     @Inject
-    public Restore(IConfiguration config, @Named("backup") IBackupFileSystem fs, Sleeper sleeper, ICassandraProcess cassProcess,
-                   Provider<AbstractBackupPath> pathProvider,
-                   InstanceIdentity instanceIdentity, RestoreTokenSelector tokenSelector, MetaData metaData, InstanceState instanceState, IPostRestoreHook postRestoreHook) {
-        super(config, fs, JOBNAME, sleeper, pathProvider, instanceIdentity, tokenSelector, cassProcess, metaData, instanceState, postRestoreHook);
-        executor = new NamedThreadPoolExecutor(config.getMaxBackupDownloadThreads(), JOBNAME);
-        executor.allowCoreThreadTimeOut(true);
+    public Restore(
+            IConfiguration config,
+            @Named("backup") IBackupFileSystem fs,
+            Sleeper sleeper,
+            ICassandraProcess cassProcess,
+            Provider<AbstractBackupPath> pathProvider,
+            InstanceIdentity instanceIdentity,
+            RestoreTokenSelector tokenSelector,
+            MetaData metaData,
+            InstanceState instanceState,
+            IPostRestoreHook postRestoreHook) {
+        super(
+                config,
+                fs,
+                JOBNAME,
+                sleeper,
+                pathProvider,
+                instanceIdentity,
+                tokenSelector,
+                cassProcess,
+                metaData,
+                instanceState,
+                postRestoreHook);
     }
 
     @Override
-    protected final void downloadFile(final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        count.incrementAndGet();
-        executor.submit(new RetryableCallable<Integer>() {
-            @Override
-            public Integer retriableCall() throws Exception {
-                logger.info("Downloading file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());
-                fs.download(path, new FileOutputStream(restoreLocation), restoreLocation.getAbsolutePath());
-                tracker.adjustAndAdd(path);
-                // TODO: fix me -> if there is exception the why hang?
-                logger.info("Completed download of file: {} to: {}", path.getRemotePath(), restoreLocation.getAbsolutePath());
-                return count.decrementAndGet();
-            }
-        });
-    }
-
-    @Override
-    protected final void waitToComplete() {
-        while (count.get() != 0) {
-            try {
-                sleeper.sleep(1000);
-            } catch (InterruptedException e) {
-                logger.error("Interrupted: ", e);
-                Thread.currentThread().interrupt();
-            }
-        }
+    protected final Future<Path> downloadFile(
+            final AbstractBackupPath path, final File restoreLocation) throws Exception {
+        tracker.adjustAndAdd(path);
+        return fs.asyncDownloadFile(
+                Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
     }
 
     public static TaskTimer getTimer() {
@@ -94,9 +84,5 @@ public class Restore extends AbstractRestore {
     @Override
     public String getName() {
         return JOBNAME;
-    }
-
-    public int getActiveCount() {
-        return (executor == null) ? 0 : executor.getActiveCount();
     }
 }

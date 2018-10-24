@@ -1,16 +1,14 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.aws.auth;
@@ -30,8 +28,8 @@ public class S3RoleAssumptionCredential implements IS3Credential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "S3RoleAssumptionSession";
     private static final Logger logger = LoggerFactory.getLogger(S3RoleAssumptionCredential.class);
 
-    private ICredential cred;
-    private IConfiguration config;
+    private final ICredential cred;
+    private final IConfiguration config;
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
@@ -68,27 +66,37 @@ public class S3RoleAssumptionCredential implements IS3Credential {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
 
-                    final String roleArn = this.config.getAWSRoleAssumptionArn();  //IAM role created for bucket own by account "awsprodbackup"
+                    final String roleArn = this.config.getAWSRoleAssumptionArn();
+                    // IAM role created for bucket own by account "awsprodbackup"
                     if (roleArn == null || roleArn.isEmpty()) {
-                        logger.warn("Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
+                        logger.warn(
+                                "Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
                         this.stsSessionCredentialsProvider = this.cred.getAwsCredentialProvider();
-                        //throw new NullPointerException("Role ARN is null or empty probably due to missing config entry");
+                        // throw new NullPointerException("Role ARN is null or empty probably due to
+                        // missing config entry");
                     } else {
-                        //== Get handle to an implementation that uses AWS Security Token Service (STS) to create temporary, short-lived session with explicit refresh for session/token expiration.
+                        // Get handle to an implementation that uses AWS Security Token Service
+                        // (STS) to create temporary, short-lived session with explicit refresh for
+                        // session/token expiration.
                         try {
 
-                            this.stsSessionCredentialsProvider = new STSAssumeRoleSessionCredentialsProvider(this.cred.getAwsCredentialProvider(), roleArn, AWS_ROLE_ASSUMPTION_SESSION_NAME);
+                            this.stsSessionCredentialsProvider =
+                                    new STSAssumeRoleSessionCredentialsProvider(
+                                            this.cred.getAwsCredentialProvider(),
+                                            roleArn,
+                                            AWS_ROLE_ASSUMPTION_SESSION_NAME);
 
                         } catch (Exception ex) {
-                            throw new IllegalStateException("Exception in getting handle to AWS Security Token Service (STS).  Msg: " + ex.getLocalizedMessage(), ex);
+                            throw new IllegalStateException(
+                                    "Exception in getting handle to AWS Security Token Service (STS).  Msg: "
+                                            + ex.getLocalizedMessage(),
+                                    ex);
                         }
                     }
-
                 }
             }
         }
 
         return this.stsSessionCredentialsProvider;
     }
-
 }

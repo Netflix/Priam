@@ -16,17 +16,16 @@
  */
 package com.netflix.priam.utils;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.Callable;
-import java.util.concurrent.CancellationException;
-
 public abstract class RetryableCallable<T> implements Callable<T> {
     private static final Logger logger = LoggerFactory.getLogger(RetryableCallable.class);
     private static final int DEFAULT_NUMBER_OF_RETRIES = 15;
-    public static final long DEFAULT_WAIT_TIME = 100;
+    private static final long DEFAULT_WAIT_TIME = 100;
     private int retrys;
     private long waitTime;
 

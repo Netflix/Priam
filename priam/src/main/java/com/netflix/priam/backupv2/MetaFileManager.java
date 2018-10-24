@@ -18,48 +18,50 @@
 package com.netflix.priam.backupv2;
 
 import com.netflix.priam.config.IConfiguration;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Collection;
+import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.inject.Inject;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Collection;
-
-/**
- * Do any management task for meta files.
- * Created by aagrawal on 8/2/18.
- */
+/** Do any management task for meta files. Created by aagrawal on 8/2/18. */
 public class MetaFileManager {
     private static final Logger logger = LoggerFactory.getLogger(MetaFileManager.class);
     private final Path metaFileDirectory;
 
     @Inject
-    MetaFileManager(IConfiguration configuration){
+    MetaFileManager(IConfiguration configuration) {
         metaFileDirectory = Paths.get(configuration.getDataFileLocation());
     }
 
-    public Path getMetaFileDirectory(){
+    public Path getMetaFileDirectory() {
         return metaFileDirectory;
     }
 
-    /**
-     * Delete the old meta files, if any present in the metaFileDirectory
-     */
+    /** Delete the old meta files, if any present in the metaFileDirectory */
     public void cleanupOldMetaFiles() {
         logger.info("Deleting any old META_V2 files if any");
-        IOFileFilter fileNameFilter = FileFilterUtils.and(FileFilterUtils.prefixFileFilter(MetaFileInfo.META_FILE_PREFIX),
-                FileFilterUtils.or(FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX),
-                        FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX + ".tmp")));
-        Collection<File> files = FileUtils.listFiles(metaFileDirectory.toFile(), fileNameFilter, null);
-        files.stream().filter(file -> file.isFile()).forEach(file -> {
-            logger.debug("Deleting old META_V2 file found: {}", file.getAbsolutePath());
-            file.delete();
-        });
+        IOFileFilter fileNameFilter =
+                FileFilterUtils.and(
+                        FileFilterUtils.prefixFileFilter(MetaFileInfo.META_FILE_PREFIX),
+                        FileFilterUtils.or(
+                                FileFilterUtils.suffixFileFilter(MetaFileInfo.META_FILE_SUFFIX),
+                                FileFilterUtils.suffixFileFilter(
+                                        MetaFileInfo.META_FILE_SUFFIX + ".tmp")));
+        Collection<File> files =
+                FileUtils.listFiles(metaFileDirectory.toFile(), fileNameFilter, null);
+        files.stream()
+                .filter(File::isFile)
+                .forEach(
+                        file -> {
+                            logger.debug(
+                                    "Deleting old META_V2 file found: {}", file.getAbsolutePath());
+                            file.delete();
+                        });
     }
-
 }

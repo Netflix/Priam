@@ -20,18 +20,16 @@ import com.google.common.base.Charsets;
 import com.google.common.hash.HashCode;
 import com.google.common.hash.Hashing;
 import com.google.common.io.Files;
-import org.apache.commons.codec.binary.Base64;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.management.remote.JMXConnector;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.List;
-
+import javax.management.remote.JMXConnector;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SystemUtils {
     private static final Logger logger = LoggerFactory.getLogger(SystemUtils.class);
@@ -48,9 +46,8 @@ public class SystemUtils {
             byte[] b = new byte[2048];
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             DataInputStream d = new DataInputStream((FilterInputStream) conn.getContent());
-            int c = 0;
-            while ((c = d.read(b, 0, b.length)) != -1)
-                bos.write(b, 0, c);
+            int c;
+            while ((c = d.read(b, 0, b.length)) != -1) bos.write(b, 0, c);
             String return_ = new String(bos.toByteArray(), Charsets.UTF_8);
             logger.info("Calling URL API: {} returns: {}", url, return_);
             conn.disconnect();
@@ -58,20 +55,19 @@ public class SystemUtils {
         } catch (Exception ex) {
             throw new RuntimeException(ex);
         }
-
     }
 
-
     /**
-     * delete all the files/dirs in the given Directory but dont delete the dir
-     * itself.
+     * delete all the files/dirs in the given Directory but dont delete the dir itself.
+     *
+     * @param dirPath The directory path where all the child directories exist.
+     * @param childdirs List of child directories to be cleaned up in the dirPath
+     * @throws IOException If there is any error encountered during cleanup.
      */
     public static void cleanupDir(String dirPath, List<String> childdirs) throws IOException {
-        if (childdirs == null || childdirs.size() == 0)
-            FileUtils.cleanDirectory(new File(dirPath));
+        if (childdirs == null || childdirs.size() == 0) FileUtils.cleanDirectory(new File(dirPath));
         else {
-            for (String cdir : childdirs)
-                FileUtils.cleanDirectory(new File(dirPath + "/" + cdir));
+            for (String cdir : childdirs) FileUtils.cleanDirectory(new File(dirPath + "/" + cdir));
         }
     }
 
@@ -80,8 +76,7 @@ public class SystemUtils {
         if (dirFile.exists() && dirFile.isFile()) {
             dirFile.delete();
             dirFile.mkdirs();
-        } else if (!dirFile.exists())
-            dirFile.mkdirs();
+        } else if (!dirFile.exists()) dirFile.mkdirs();
     }
 
     public static byte[] md5(byte[] buf) {
@@ -95,7 +90,10 @@ public class SystemUtils {
     }
 
     /**
-     * Get a Md5 string which is similar to OS Md5sum
+     * Calculate the MD5 hashsum of the given file.
+     *
+     * @param file File for which md5 checksum should be calculated.
+     * @return Get a Md5 string which is similar to OS Md5sum
      */
     public static String md5(File file) {
         try {
@@ -107,9 +105,9 @@ public class SystemUtils {
     }
 
     public static String toHex(byte[] digest) {
-        StringBuffer sb = new StringBuffer(digest.length * 2);
-        for (int i = 0; i < digest.length; i++) {
-            String hex = Integer.toHexString(digest[i]);
+        StringBuilder sb = new StringBuilder(digest.length * 2);
+        for (byte aDigest : digest) {
+            String hex = Integer.toHexString(aDigest);
             if (hex.length() == 1) {
                 sb.append("0");
             } else if (hex.length() == 8) {
@@ -131,7 +129,6 @@ public class SystemUtils {
         } catch (Exception e) {
             logger.warn("failed to close jxm node tool", e);
         }
-
     }
 
     public static void closeQuietly(JMXConnector jmc) {
@@ -160,7 +157,7 @@ public class SystemUtils {
     public static void writeToFile(String filename, String line) {
         File f = new File(filename);
         PrintWriter pw = null;
-        FileWriter fw = null;
+        FileWriter fw;
         try {
             if (!f.exists()) {
                 f.createNewFile();

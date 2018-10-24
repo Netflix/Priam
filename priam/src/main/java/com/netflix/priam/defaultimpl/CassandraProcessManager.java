@@ -1,16 +1,14 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.defaultimpl;
@@ -21,10 +19,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.utils.JMXNodeTool;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -33,17 +27,23 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CassandraProcessManager implements ICassandraProcess {
     private static final Logger logger = LoggerFactory.getLogger(CassandraProcessManager.class);
     private static final String SUDO_STRING = "/usr/bin/sudo";
     private static final int SCRIPT_EXECUTE_WAIT_TIME_MS = 5000;
     protected final IConfiguration config;
-    private InstanceState instanceState;
-    private CassMonitorMetrics cassMonitorMetrics;
+    private final InstanceState instanceState;
+    private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    public CassandraProcessManager(IConfiguration config, InstanceState instanceState, CassMonitorMetrics cassMonitorMetrics) {
+    public CassandraProcessManager(
+            IConfiguration config,
+            InstanceState instanceState,
+            CassMonitorMetrics cassMonitorMetrics) {
         this.config = config;
         this.instanceState = instanceState;
         this.cassMonitorMetrics = cassMonitorMetrics;
@@ -62,15 +62,14 @@ public class CassandraProcessManager implements ICassandraProcess {
         env.put("CASS_LOGS_DIR", config.getLogDirLocation());
     }
 
-    public void start(boolean join_ring) throws IOException
-    {
+    public void start(boolean join_ring) throws IOException {
         logger.info("Starting cassandra server ....Join ring={}", join_ring);
         instanceState.markLastAttemptedStartTime();
         instanceState.setShouldCassandraBeAlive(true);
 
         List<String> command = Lists.newArrayList();
 
-        if(config.useSudo()) {
+        if (config.useSudo()) {
             logger.info("Configured to use sudo to start C*");
             if (!"root".equals(System.getProperty("user.name"))) {
                 command.add(SUDO_STRING);
@@ -95,14 +94,12 @@ public class CassandraProcessManager implements ICassandraProcess {
 
         logger.info("Starting cassandra server ....");
         try {
-            int code =  starter.waitFor();
+            int code = starter.waitFor();
             if (code == 0) {
                 logger.info("Cassandra server has been started");
                 instanceState.setCassandraProcessAlive(true);
                 this.cassMonitorMetrics.incCassStart();
-            }
-            else
-                logger.error("Unable to start cassandra server. Error code: {}", code);
+            } else logger.error("Unable to start cassandra server. Error code: {}", code);
 
             logProcessOutput(starter);
         } catch (Exception e) {
@@ -111,10 +108,9 @@ public class CassandraProcessManager implements ICassandraProcess {
     }
 
     protected List<String> getStartCommand() {
-        List<String> startCmd = new LinkedList<String>();
+        List<String> startCmd = new LinkedList<>();
         for (String param : config.getCassStartupScript().split(" ")) {
-            if (StringUtils.isNotBlank(param))
-                startCmd.add(param);
+            if (StringUtils.isNotBlank(param)) startCmd.add(param);
         }
         return startCmd;
     }
@@ -134,16 +130,14 @@ public class CassandraProcessManager implements ICassandraProcess {
         final byte[] buffer = new byte[512];
         final ByteArrayOutputStream baos = new ByteArrayOutputStream(buffer.length);
         int cnt;
-        while ((cnt = inputStream.read(buffer)) != -1)
-            baos.write(buffer, 0, cnt);
+        while ((cnt = inputStream.read(buffer)) != -1) baos.write(buffer, 0, cnt);
         return baos.toString();
     }
-
 
     public void stop(boolean force) throws IOException {
         logger.info("Stopping cassandra server ....");
         List<String> command = Lists.newArrayList();
-        if(config.useSudo()) {
+        if (config.useSudo()) {
             logger.info("Configured to use sudo to stop C*");
 
             if (!"root".equals(System.getProperty("user.name"))) {
@@ -153,8 +147,7 @@ public class CassandraProcessManager implements ICassandraProcess {
             }
         }
         for (String param : config.getCassStopScript().split(" ")) {
-            if (StringUtils.isNotBlank(param))
-                command.add(param);
+            if (StringUtils.isNotBlank(param)) command.add(param);
         }
         ProcessBuilder stopCass = new ProcessBuilder(command);
         stopCass.directory(new File("/"));
@@ -163,31 +156,42 @@ public class CassandraProcessManager implements ICassandraProcess {
         instanceState.setShouldCassandraBeAlive(false);
         if (!force && config.getGracefulDrainHealthWaitSeconds() >= 0) {
             ExecutorService executor = Executors.newSingleThreadExecutor();
-            Future drainFuture = executor.submit(() -> {
-                // As the node has been marked as shutting down above in setShouldCassandraBeAlive, we wait this
-                // duration to allow external healthcheck systems time to pick up the state change.
-                try {
-                    Thread.sleep(config.getGracefulDrainHealthWaitSeconds() * 1000);
-                } catch (InterruptedException e) {
-                    return;
-                }
+            Future drainFuture =
+                    executor.submit(
+                            () -> {
+                                // As the node has been marked as shutting down above in
+                                // setShouldCassandraBeAlive, we wait this
+                                // duration to allow external healthcheck systems time to pick up
+                                // the state change.
+                                try {
+                                    Thread.sleep(config.getGracefulDrainHealthWaitSeconds() * 1000);
+                                } catch (InterruptedException e) {
+                                    return;
+                                }
 
-                try {
-                    JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                    nodetool.drain();
-                } catch (InterruptedException | IOException | ExecutionException e) {
-                    logger.error("Exception draining Cassandra, could not drain. Proceeding with shutdown.", e);
-                }
-                // Once Cassandra is drained the thrift/native servers are shutdown and there is no need to wait to
-                // stop Cassandra. Just stop it now.
-            });
+                                try {
+                                    JMXNodeTool nodetool = JMXNodeTool.instance(config);
+                                    nodetool.drain();
+                                } catch (InterruptedException
+                                        | IOException
+                                        | ExecutionException e) {
+                                    logger.error(
+                                            "Exception draining Cassandra, could not drain. Proceeding with shutdown.",
+                                            e);
+                                }
+                                // Once Cassandra is drained the thrift/native servers are shutdown
+                                // and there is no need to wait to
+                                // stop Cassandra. Just stop it now.
+                            });
 
-            // In case drain hangs, timeout the future and continue stopping anyways. Give drain 30s always
-            // In production we freqently see servers that do not want to drain
+            // In case drain hangs, timeout the future and continue stopping anyways. Give drain 30s
+            // always
+            // In production we frequently see servers that do not want to drain
             try {
                 drainFuture.get(config.getGracefulDrainHealthWaitSeconds() + 30, TimeUnit.SECONDS);
             } catch (ExecutionException | TimeoutException | InterruptedException e) {
-                logger.error("Waited 30s for drain but it did not complete, continuing to shutdown", e);
+                logger.error(
+                        "Waited 30s for drain but it did not complete, continuing to shutdown", e);
             }
         }
         Process stopper = stopCass.start();
@@ -197,8 +201,7 @@ public class CassandraProcessManager implements ICassandraProcess {
                 logger.info("Cassandra server has been stopped");
                 this.cassMonitorMetrics.incCassStop();
                 instanceState.setCassandraProcessAlive(false);
-            }
-            else {
+            } else {
                 logger.error("Unable to stop cassandra server. Error code: {}", code);
                 logProcessOutput(stopper);
             }

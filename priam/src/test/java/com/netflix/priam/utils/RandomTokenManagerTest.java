@@ -17,27 +17,25 @@
 
 package com.netflix.priam.utils;
 
-import com.google.common.collect.ImmutableList;
-import com.netflix.priam.config.FakeConfiguration;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
-
 import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN_RANDOM;
 import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN_RANDOM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+import com.google.common.collect.ImmutableList;
+import com.netflix.priam.config.FakeConfiguration;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+
 public class RandomTokenManagerTest {
-    private FakeConfiguration config;
     private TokenManager tokenManager;
 
     @Before
     public void setUp() {
-        this.config = new FakeConfiguration();
+        FakeConfiguration config = new FakeConfiguration();
         this.tokenManager = new TokenManager(config);
     }
 
@@ -65,9 +63,14 @@ public class RandomTokenManagerTest {
 
     @Test
     public void initialToken_offsets_zeroPosition() {
-        assertEquals(MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(7)), tokenManager.initialToken(1, 0, 7));
-        assertEquals(MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(11)), tokenManager.initialToken(2, 0, 11));
-        assertEquals(MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(Integer.MAX_VALUE)),
+        assertEquals(
+                MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(7)),
+                tokenManager.initialToken(1, 0, 7));
+        assertEquals(
+                MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(11)),
+                tokenManager.initialToken(2, 0, 11));
+        assertEquals(
+                MINIMUM_TOKEN_RANDOM.add(BigInteger.valueOf(Integer.MAX_VALUE)),
                 tokenManager.initialToken(256, 0, Integer.MAX_VALUE));
     }
 
@@ -76,12 +79,17 @@ public class RandomTokenManagerTest {
         final int maxRingSize = Integer.MAX_VALUE;
         final int maxPosition = maxRingSize - 1;
         final int maxOffset = Integer.MAX_VALUE;
-        assertEquals(1, MAXIMUM_TOKEN_RANDOM.compareTo(tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
+        assertEquals(
+                1,
+                MAXIMUM_TOKEN_RANDOM.compareTo(
+                        tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
     }
 
     @Test
     public void createToken() {
-        assertEquals(MAXIMUM_TOKEN_RANDOM.divide(BigInteger.valueOf(8 * 32))
+        assertEquals(
+                MAXIMUM_TOKEN_RANDOM
+                        .divide(BigInteger.valueOf(8 * 32))
                         .multiply(BigInteger.TEN)
                         .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
                         .toString(),
@@ -96,33 +104,46 @@ public class RandomTokenManagerTest {
     @Test
     public void findClosestToken_singleTokenList() {
         final BigInteger onlyToken = BigInteger.valueOf(100);
-        assertEquals(onlyToken, tokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
+        assertEquals(
+                onlyToken,
+                tokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
     }
 
     @Test
     public void findClosestToken_multipleTokenList() {
-        List<BigInteger> tokenList = ImmutableList.of(BigInteger.ONE, BigInteger.TEN, BigInteger.valueOf(100));
+        List<BigInteger> tokenList =
+                ImmutableList.of(BigInteger.ONE, BigInteger.TEN, BigInteger.valueOf(100));
         assertEquals(BigInteger.ONE, tokenManager.findClosestToken(BigInteger.ONE, tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
         assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.TEN, tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
-        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
-        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
+        assertEquals(
+                BigInteger.valueOf(100),
+                tokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
+        assertEquals(
+                BigInteger.valueOf(100),
+                tokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
     }
 
     @Test
     public void findClosestToken_tieGoesToLargerToken() {
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(5),
-                ImmutableList.of(BigInteger.ZERO, BigInteger.TEN)));
+        assertEquals(
+                BigInteger.TEN,
+                tokenManager.findClosestToken(
+                        BigInteger.valueOf(5), ImmutableList.of(BigInteger.ZERO, BigInteger.TEN)));
     }
 
     @Test
     public void test4Splits() {
         // example tokens from http://wiki.apache.org/cassandra/Operations
 
-        final String expectedTokens = "0,42535295865117307932921825928971026432,"
-                + "85070591730234615865843651857942052864,127605887595351923798765477786913079296";
+        final String expectedTokens =
+                "0,42535295865117307932921825928971026432,"
+                        + "85070591730234615865843651857942052864,127605887595351923798765477786913079296";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
@@ -131,14 +152,15 @@ public class RandomTokenManagerTest {
 
     @Test
     public void test16Splits() {
-        final String expectedTokens = "0,10633823966279326983230456482242756608,"
-                + "21267647932558653966460912964485513216,31901471898837980949691369446728269824,"
-                + "42535295865117307932921825928971026432,53169119831396634916152282411213783040,"
-                + "63802943797675961899382738893456539648,74436767763955288882613195375699296256,"
-                + "85070591730234615865843651857942052864,95704415696513942849074108340184809472,"
-                + "106338239662793269832304564822427566080,116972063629072596815535021304670322688,"
-                + "127605887595351923798765477786913079296,138239711561631250781995934269155835904,"
-                + "148873535527910577765226390751398592512,159507359494189904748456847233641349120";
+        final String expectedTokens =
+                "0,10633823966279326983230456482242756608,"
+                        + "21267647932558653966460912964485513216,31901471898837980949691369446728269824,"
+                        + "42535295865117307932921825928971026432,53169119831396634916152282411213783040,"
+                        + "63802943797675961899382738893456539648,74436767763955288882613195375699296256,"
+                        + "85070591730234615865843651857942052864,95704415696513942849074108340184809472,"
+                        + "106338239662793269832304564822427566080,116972063629072596815535021304670322688,"
+                        + "127605887595351923798765477786913079296,138239711561631250781995934269155835904,"
+                        + "148873535527910577765226390751398592512,159507359494189904748456847233641349120";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
@@ -151,10 +173,13 @@ public class RandomTokenManagerTest {
 
         for (String region1 : allRegions.split(","))
             for (String region2 : allRegions.split(",")) {
-                if (region1.equals(region2))
-                    continue;
-                assertFalse("Diffrence seems to be low",
-                        Math.abs(tokenManager.regionOffset(region1) - tokenManager.regionOffset(region2)) < 100);
+                if (region1.equals(region2)) continue;
+                assertFalse(
+                        "Diffrence seems to be low",
+                        Math.abs(
+                                        tokenManager.regionOffset(region1)
+                                                - tokenManager.regionOffset(region2))
+                                < 100);
             }
     }
 

@@ -17,28 +17,26 @@
 
 package com.netflix.priam.utils;
 
-import com.google.common.collect.ImmutableList;
-import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
-import org.junit.Before;
-import org.junit.Test;
-
-import java.math.BigInteger;
-import java.util.Collections;
-import java.util.List;
-
 import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN_MURMUR3;
 import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN_MURMUR3;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
+import com.google.common.collect.ImmutableList;
+import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IConfiguration;
+import java.math.BigInteger;
+import java.util.Collections;
+import java.util.List;
+import org.junit.Before;
+import org.junit.Test;
+
 public class Murmur3TokenManagerTest {
-    private IConfiguration config;
     private TokenManager tokenManager;
 
     @Before
     public void setUp() {
-        this.config = new Murmur3Configuration();
+        IConfiguration config = new Murmur3Configuration();
         this.tokenManager = new TokenManager(config);
     }
 
@@ -66,9 +64,14 @@ public class Murmur3TokenManagerTest {
 
     @Test
     public void initialToken_offsets_zeroPosition() {
-        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(7)), tokenManager.initialToken(1, 0, 7));
-        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(11)), tokenManager.initialToken(2, 0, 11));
-        assertEquals(MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(Integer.MAX_VALUE)),
+        assertEquals(
+                MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(7)),
+                tokenManager.initialToken(1, 0, 7));
+        assertEquals(
+                MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(11)),
+                tokenManager.initialToken(2, 0, 11));
+        assertEquals(
+                MINIMUM_TOKEN_MURMUR3.add(BigInteger.valueOf(Integer.MAX_VALUE)),
                 tokenManager.initialToken(256, 0, Integer.MAX_VALUE));
     }
 
@@ -77,12 +80,18 @@ public class Murmur3TokenManagerTest {
         final int maxRingSize = Integer.MAX_VALUE;
         final int maxPosition = maxRingSize - 1;
         final int maxOffset = Integer.MAX_VALUE;
-        assertEquals(1, MAXIMUM_TOKEN_MURMUR3.compareTo(tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
+        assertEquals(
+                1,
+                MAXIMUM_TOKEN_MURMUR3.compareTo(
+                        tokenManager.initialToken(maxRingSize, maxPosition, maxOffset)));
     }
 
     @Test
     public void createToken() {
-        assertEquals(MAXIMUM_TOKEN_MURMUR3.subtract(MINIMUM_TOKEN_MURMUR3).divide(BigInteger.valueOf(8 * 32))
+        assertEquals(
+                MAXIMUM_TOKEN_MURMUR3
+                        .subtract(MINIMUM_TOKEN_MURMUR3)
+                        .divide(BigInteger.valueOf(8 * 32))
                         .multiply(BigInteger.TEN)
                         .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
                         .add(MINIMUM_TOKEN_MURMUR3)
@@ -98,33 +107,45 @@ public class Murmur3TokenManagerTest {
     @Test
     public void findClosestToken_singleTokenList() {
         final BigInteger onlyToken = BigInteger.valueOf(100);
-        assertEquals(onlyToken, tokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
+        assertEquals(
+                onlyToken,
+                tokenManager.findClosestToken(BigInteger.TEN, ImmutableList.of(onlyToken)));
     }
 
     @Test
     public void findClosestToken_multipleTokenList() {
-        List<BigInteger> tokenList = ImmutableList.of(BigInteger.ONE, BigInteger.TEN, BigInteger.valueOf(100));
+        List<BigInteger> tokenList =
+                ImmutableList.of(BigInteger.ONE, BigInteger.TEN, BigInteger.valueOf(100));
         assertEquals(BigInteger.ONE, tokenManager.findClosestToken(BigInteger.ONE, tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(9), tokenList));
         assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.TEN, tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
-        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
-        assertEquals(BigInteger.valueOf(100), tokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(12), tokenList));
+        assertEquals(
+                BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(51), tokenList));
+        assertEquals(
+                BigInteger.valueOf(100),
+                tokenManager.findClosestToken(BigInteger.valueOf(56), tokenList));
+        assertEquals(
+                BigInteger.valueOf(100),
+                tokenManager.findClosestToken(BigInteger.valueOf(100), tokenList));
     }
 
     @Test
     public void findClosestToken_tieGoesToLargerToken() {
-        assertEquals(BigInteger.TEN, tokenManager.findClosestToken(BigInteger.valueOf(5),
-                ImmutableList.of(BigInteger.ZERO, BigInteger.TEN)));
+        assertEquals(
+                BigInteger.TEN,
+                tokenManager.findClosestToken(
+                        BigInteger.valueOf(5), ImmutableList.of(BigInteger.ZERO, BigInteger.TEN)));
     }
 
     @Test
     public void test4Splits() {
         // example tokens from http://wiki.apache.org/cassandra/Operations
 
-        final String expectedTokens = "-9223372036854775808,-4611686018427387904,"
-                + "0,4611686018427387904";
+        final String expectedTokens =
+                "-9223372036854775808,-4611686018427387904," + "0,4611686018427387904";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
@@ -133,14 +154,15 @@ public class Murmur3TokenManagerTest {
 
     @Test
     public void test16Splits() {
-        final String expectedTokens = "-9223372036854775808,-8070450532247928832,"
-                + "-6917529027641081856,-5764607523034234880,"
-                + "-4611686018427387904,-3458764513820540928,"
-                + "-2305843009213693952,-1152921504606846976,"
-                + "0,1152921504606846976,"
-                + "2305843009213693952,3458764513820540928,"
-                + "4611686018427387904,5764607523034234880,"
-                + "6917529027641081856,8070450532247928832";
+        final String expectedTokens =
+                "-9223372036854775808,-8070450532247928832,"
+                        + "-6917529027641081856,-5764607523034234880,"
+                        + "-4611686018427387904,-3458764513820540928,"
+                        + "-2305843009213693952,-1152921504606846976,"
+                        + "0,1152921504606846976,"
+                        + "2305843009213693952,3458764513820540928,"
+                        + "4611686018427387904,5764607523034234880,"
+                        + "6917529027641081856,8070450532247928832";
         String[] tokens = expectedTokens.split(",");
         int splits = tokens.length;
         for (int i = 0; i < splits; i++)
@@ -153,10 +175,13 @@ public class Murmur3TokenManagerTest {
 
         for (String region1 : allRegions.split(","))
             for (String region2 : allRegions.split(",")) {
-                if (region1.equals(region2))
-                    continue;
-                assertFalse("Diffrence seems to be low",
-                        Math.abs(tokenManager.regionOffset(region1) - tokenManager.regionOffset(region2)) < 100);
+                if (region1.equals(region2)) continue;
+                assertFalse(
+                        "Diffrence seems to be low",
+                        Math.abs(
+                                        tokenManager.regionOffset(region1)
+                                                - tokenManager.regionOffset(region2))
+                                < 100);
             }
     }
 

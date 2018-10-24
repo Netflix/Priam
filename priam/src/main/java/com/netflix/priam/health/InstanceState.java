@@ -21,34 +21,36 @@ import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.utils.GsonJsonSerializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * Contains the state of the health of processed managed by Priam, and
- * maintains the isHealthy flag used for reporting discovery health check.
- * <p>
- * Created by aagrawal on 9/19/17.
+ * Contains the state of the health of processed managed by Priam, and maintains the isHealthy flag
+ * used for reporting discovery health check.
+ *
+ * <p>Created by aagrawal on 9/19/17.
  */
 @Singleton
 public class InstanceState {
     private static final Logger logger = LoggerFactory.getLogger(InstanceState.class);
 
     public enum NODE_STATE {
-        JOIN, //This state to be used when Priam is joining the ring for the first time or was already assigned this token.
-        REPLACE //This state to be used when Priam replaces an instance from the token range.
+        // This state to be used when Priam is joining the ring for the first time or was
+        // already assigned this token.
+        JOIN,
+        // This state to be used when Priam replaces an instance from the token range.
+        REPLACE
     }
 
-    //Bootstrap status
+    // Bootstrap status
     private final AtomicBoolean isBootstrapping = new AtomicBoolean(false);
     private NODE_STATE nodeState;
     private LocalDateTime bootstrapTime;
 
-    //Cassandra process status
+    // Cassandra process status
     private final AtomicBoolean isCassandraProcessAlive = new AtomicBoolean(false);
     private final AtomicBoolean shouldCassandraBeAlive = new AtomicBoolean(false);
     private final AtomicLong lastAttemptedStartTime = new AtomicLong(Long.MAX_VALUE);
@@ -60,14 +62,14 @@ public class InstanceState {
     private final AtomicBoolean isHealthy = new AtomicBoolean(false);
     private final AtomicBoolean isHealthyOverride = new AtomicBoolean(true);
 
-    //Backup status
+    // Backup status
     private BackupMetadata backupStatus;
 
-    //Restore status
-    private RestoreStatus restoreStatus;
+    // Restore status
+    private final RestoreStatus restoreStatus;
 
     @Inject
-    InstanceState(RestoreStatus restoreStatus){
+    InstanceState(RestoreStatus restoreStatus) {
         this.restoreStatus = restoreStatus;
     }
 
@@ -185,8 +187,9 @@ public class InstanceState {
         return restoreStatus;
     }
 
-    // A dirty way to set restore status. This is required as setting restore status implies health could change.
-    public void setRestoreStatus(Status status){
+    // A dirty way to set restore status. This is required as setting restore status implies health
+    // could change.
+    public void setRestoreStatus(Status status) {
         restoreStatus.status = status;
         setHealthy();
     }
@@ -195,20 +198,21 @@ public class InstanceState {
         return isHealthy.get();
     }
 
-    private boolean isRestoring(){
-        return restoreStatus != null && restoreStatus.getStatus() != null && restoreStatus.getStatus() == Status.STARTED;
+    private boolean isRestoring() {
+        return restoreStatus != null
+                && restoreStatus.getStatus() != null
+                && restoreStatus.getStatus() == Status.STARTED;
     }
+
     private void setHealthy() {
         this.isHealthy.set(
-            isRestoring() ||
-                (isCassandraProcessAlive() &&
-                    isRequiredDirectoriesExist() &&
-                    isGossipActive() &&
-                    isYmlWritten() &&
-                    isHealthyOverride() &&
-                    (isThriftActive() || isNativeTransportActive())
-                )
-        );
+                isRestoring()
+                        || (isCassandraProcessAlive()
+                                && isRequiredDirectoriesExist()
+                                && isGossipActive()
+                                && isYmlWritten()
+                                && isHealthyOverride()
+                                && (isThriftActive() || isNativeTransportActive())));
     }
 
     public boolean isYmlWritten() {
@@ -220,12 +224,14 @@ public class InstanceState {
     }
 
     public static class RestoreStatus {
-        private LocalDateTime startDateRange, endDateRange; //Date range to restore from
-        private LocalDateTime executionStartTime, executionEndTime; //Start-end time of the actual restore execution
-        private String snapshotMetaFile; //Location of the snapshot meta file selected for restore.
-        private Status status;  //the state of a restore.  Note: this is different than the "status" of a Task.
+        private LocalDateTime startDateRange, endDateRange; // Date range to restore from
+        private LocalDateTime executionStartTime,
+                executionEndTime; // Start-end time of the actual restore execution
+        private String snapshotMetaFile; // Location of the snapshot meta file selected for restore.
+        // the state of a restore.  Note: this is different than the "status" of a Task.
+        private Status status;
 
-        public void resetStatus(){
+        public void resetStatus() {
             this.snapshotMetaFile = null;
             this.status = null;
             this.startDateRange = endDateRange = null;

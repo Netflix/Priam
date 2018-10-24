@@ -20,19 +20,16 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.net.URI;
+import java.util.List;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.UriBuilder;
-import java.net.URI;
-import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Resource for manipulating priam instances.
- */
+/** Resource for manipulating priam instances. */
 @Path("/v1/instances")
 @Produces(MediaType.TEXT_PLAIN)
 public class PriamInstanceResource {
@@ -42,7 +39,8 @@ public class PriamInstanceResource {
     private final IPriamInstanceFactory<PriamInstance> factory;
 
     @Inject
-    //Note: do not parameterized the generic type variable to an implementation as it confuses Guice in the binding.    
+    // Note: do not parameterized the generic type variable to an implementation as it confuses
+    // Guice in the binding.
     public PriamInstanceResource(IConfiguration config, IPriamInstanceFactory factory) {
         this.config = config;
         this.factory = factory;
@@ -85,12 +83,23 @@ public class PriamInstanceResource {
      */
     @POST
     public Response createInstance(
-            @QueryParam("id") int id, @QueryParam("instanceID") String instanceID,
-            @QueryParam("hostname") String hostname, @QueryParam("ip") String ip,
-            @QueryParam("rack") String rack, @QueryParam("token") String token) {
-        log.info("Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
-                id, instanceID, hostname, ip, rack, token);
-        PriamInstance instance = factory.create(config.getAppName(), id, instanceID, hostname, ip, rack, null, token);
+            @QueryParam("id") int id,
+            @QueryParam("instanceID") String instanceID,
+            @QueryParam("hostname") String hostname,
+            @QueryParam("ip") String ip,
+            @QueryParam("rack") String rack,
+            @QueryParam("token") String token) {
+        log.info(
+                "Creating instance [id={}, instanceId={}, hostname={}, ip={}, rack={}, token={}",
+                id,
+                instanceID,
+                hostname,
+                ip,
+                rack,
+                token);
+        PriamInstance instance =
+                factory.create(
+                        config.getAppName(), id, instanceID, hostname, ip, rack, null, token);
         URI uri = UriBuilder.fromPath("/{id}").build(instance.getId());
         return Response.created(uri).build();
     }
@@ -110,8 +119,8 @@ public class PriamInstanceResource {
     }
 
     /**
-     * Returns the PriamInstance with the given {@code id}, or
-     * throws a WebApplicationException(400) if none found.
+     * Returns the PriamInstance with the given {@code id}, or throws a WebApplicationException(400)
+     * if none found.
      *
      * @param id the node id
      * @return PriamInstance with the given {@code id}
@@ -125,6 +134,7 @@ public class PriamInstanceResource {
     }
 
     private static WebApplicationException notFound(String message) {
-        return new WebApplicationException(Response.status(Response.Status.NOT_FOUND).entity(message).build());
+        return new WebApplicationException(
+                Response.status(Response.Status.NOT_FOUND).entity(message).build());
     }
 }

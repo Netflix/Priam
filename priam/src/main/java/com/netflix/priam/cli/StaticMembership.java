@@ -17,16 +17,15 @@
 package com.netflix.priam.cli;
 
 import com.netflix.priam.identity.IMembership;
-import org.apache.cassandra.io.util.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import org.apache.cassandra.io.util.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class StaticMembership implements IMembership {
     private static final String MEMBERSHIP_PRE = "membership.";
@@ -57,7 +56,7 @@ public class StaticMembership implements IMembership {
         for (String name : config.stringPropertyNames()) {
             if (name.startsWith(INSTANCES_PRE)) {
                 racCount += 1;
-                if (name == INSTANCES_PRE + racName)
+                if (name.equals(INSTANCES_PRE + racName))
                     racMembership = Arrays.asList(config.getProperty(name).split(","));
             }
         }
@@ -75,8 +74,7 @@ public class StaticMembership implements IMembership {
 
     @Override
     public int getRacMembershipSize() {
-        if (racMembership == null)
-            return 0;
+        if (racMembership == null) return 0;
         return racMembership.size();
     }
 
@@ -86,12 +84,10 @@ public class StaticMembership implements IMembership {
     }
 
     @Override
-    public void addACL(Collection<String> listIPs, int from, int to) {
-    }
+    public void addACL(Collection<String> listIPs, int from, int to) {}
 
     @Override
-    public void removeACL(Collection<String> listIPs, int from, int to) {
-    }
+    public void removeACL(Collection<String> listIPs, int from, int to) {}
 
     @Override
     public List<String> listACL(int from, int to) {
@@ -99,6 +95,5 @@ public class StaticMembership implements IMembership {
     }
 
     @Override
-    public void expandRacMembership(int count) {
-    }
+    public void expandRacMembership(int count) {}
 }

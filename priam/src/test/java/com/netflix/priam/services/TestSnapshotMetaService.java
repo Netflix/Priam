@@ -27,28 +27,21 @@ import com.netflix.priam.backupv2.PrefixGenerator;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
-import org.apache.cassandra.io.sstable.Component;
-import org.apache.commons.io.FileUtils;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileWriter;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.EnumSet;
-import java.util.Random;
-
-/**
- * Created by aagrawal on 6/20/18.
- */
+/** Created by aagrawal on 6/20/18. */
 public class TestSnapshotMetaService {
-    private static final Logger logger = LoggerFactory.getLogger(TestSnapshotMetaService.class.getName());
+    private static final Logger logger =
+            LoggerFactory.getLogger(TestSnapshotMetaService.class.getName());
     private static Path dummyDataDirectoryLocation;
     private static IConfiguration configuration;
     private static IBackupRestoreConfig backupRestoreConfig;
@@ -60,8 +53,7 @@ public class TestSnapshotMetaService {
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
 
-        if (configuration == null)
-            configuration = injector.getInstance(IConfiguration.class);
+        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
 
         if (backupRestoreConfig == null)
             backupRestoreConfig = injector.getInstance(IBackupRestoreConfig.class);
@@ -69,15 +61,12 @@ public class TestSnapshotMetaService {
         if (snapshotMetaService == null)
             snapshotMetaService = injector.getInstance(SnapshotMetaService.class);
 
-        if (metaFileReader == null)
-            metaFileReader = new TestMetaFileReader();
+        if (metaFileReader == null) metaFileReader = new TestMetaFileReader();
 
-        if (prefixGenerator == null)
-            prefixGenerator = injector.getInstance(PrefixGenerator.class);
+        if (prefixGenerator == null) prefixGenerator = injector.getInstance(PrefixGenerator.class);
 
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
-        cleanupDir(dummyDataDirectoryLocation);
-
+        BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
     }
 
     @Test
@@ -87,7 +76,7 @@ public class TestSnapshotMetaService {
     }
 
     @Test
-    public void testPrefix() throws Exception{
+    public void testPrefix() throws Exception {
         Assert.assertTrue(prefixGenerator.getPrefix().endsWith("ppa-ekaf/1808575600"));
         Assert.assertTrue(prefixGenerator.getMetaPrefix().endsWith("ppa-ekaf/1808575600/META"));
     }
@@ -101,17 +90,24 @@ public class TestSnapshotMetaService {
         Assert.assertFalse(metaFileReader.isValidMetaFile(path));
     }
 
-    private void test(int noOfSstables, int noOfKeyspaces, int noOfCf) throws Exception{
+    private void test(int noOfSstables, int noOfKeyspaces, int noOfCf) throws Exception {
         Instant snapshotInstant = DateUtil.getInstant();
         String snapshotName = snapshotMetaService.generateSnapshotName(snapshotInstant);
-        generateDummyFiles(dummyDataDirectoryLocation, noOfKeyspaces, noOfCf, noOfSstables, AbstractBackup.SNAPSHOT_FOLDER, snapshotName);
+        BackupFileUtils.generateDummyFiles(
+                dummyDataDirectoryLocation,
+                noOfKeyspaces,
+                noOfCf,
+                noOfSstables,
+                AbstractBackup.SNAPSHOT_FOLDER,
+                snapshotName);
         snapshotMetaService.setSnapshotName(snapshotName);
-        Path metaFileLocation = snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();
+        Path metaFileLocation =
+                snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
 
-        //Try reading meta file.
+        // Try reading meta file.
         metaFileReader.setNoOfSstables(noOfSstables + 1);
         metaFileReader.readMeta(metaFileLocation);
 
@@ -121,65 +117,19 @@ public class TestSnapshotMetaService {
         Assert.assertEquals(configuration.getRac(), metaFileInfo.getRack());
         Assert.assertEquals(configuration.getDC(), metaFileInfo.getRegion());
 
-        //Cleanup
+        // Cleanup
         metaFileLocation.toFile().delete();
-        cleanupDir(dummyDataDirectoryLocation);
+        BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
     }
 
     @Test
     public void testMetaFile() throws Exception {
-        test(5, 1,1);
-    }
-
-    private void cleanupDir(Path dir){
-        if (dir.toFile().exists())
-            try {
-                FileUtils.cleanDirectory(dir.toFile());
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+        test(5, 1, 1);
     }
 
     @Test
     public void testSize() throws Exception {
-        test (1000, 2,2);
-    }
-
-    private void generateDummyFiles(Path dummyDir, int noOfKeyspaces, int noOfCf, int noOfSstables, String backupDir, String snapshotName) throws Exception {
-        if (dummyDir == null)
-            dummyDir = dummyDataDirectoryLocation;
-
-        //Clean the dummy directory
-        if (dummyDir.toFile().exists())
-            FileUtils.cleanDirectory(dummyDir.toFile());
-
-        Random random = new Random();
-
-        for (int i = 1; i <= noOfKeyspaces; i++) {
-            String keyspaceName = "sample" + i;
-
-            for (int j = 1; j <= noOfCf; j++) {
-                String columnfamilyname = "cf" + j;
-
-                for (int k = 1; k <= noOfSstables; k++) {
-                    String prefixName = "mc-" + k + "-big";
-
-                    for (Component.Type type : EnumSet.allOf(Component.Type.class)) {
-                        Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, prefixName + "-" + type.name() + ".db");
-                        componentPath.getParent().toFile().mkdirs();
-                        try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
-                            fileWriter.write("");
-                        }
-
-                    }
-                }
-
-                Path componentPath = Paths.get(dummyDir.toFile().getAbsolutePath(), keyspaceName, columnfamilyname, backupDir, snapshotName, "manifest.json");
-                try(FileWriter fileWriter = new FileWriter(componentPath.toFile())){
-                    fileWriter.write("");
-                }
-            }
-        }
+        test(1000, 2, 2);
     }
 
     public static class TestMetaFileReader extends MetaFileReader {
@@ -195,6 +145,4 @@ public class TestSnapshotMetaService {
             Assert.assertEquals(noOfSstables, columnfamilyResult.getSstables().size());
         }
     }
-
-
 }

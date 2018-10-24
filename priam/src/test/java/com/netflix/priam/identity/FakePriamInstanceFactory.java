@@ -20,7 +20,6 @@ package com.netflix.priam.identity;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
-
 import java.util.*;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
@@ -43,7 +42,15 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     }
 
     @Override
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload) {
+    public PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String payload) {
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
         ins.setRac(rac);
@@ -67,18 +74,18 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
         instances.put(inst.getId(), inst);
     }
 
-
     @Override
     public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>() {
+        Comparator<? super PriamInstance> comparator =
+                new Comparator<PriamInstance>() {
 
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2) {
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
-        };
+                    @Override
+                    public int compare(PriamInstance o1, PriamInstance o2) {
+                        Integer c1 = o1.getId();
+                        Integer c2 = o2.getId();
+                        return c1.compareTo(c2);
+                    }
+                };
         Collections.sort(return_, comparator);
     }
 
@@ -86,6 +93,4 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     public void attachVolumes(PriamInstance instance, String mountPath, String device) {
         // TODO Auto-generated method stub
     }
-
-
 }

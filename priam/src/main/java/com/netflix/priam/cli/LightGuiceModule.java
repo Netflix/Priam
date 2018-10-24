@@ -20,15 +20,13 @@ import com.google.inject.AbstractModule;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.config.PriamConfiguration;
 import com.netflix.priam.identity.IMembership;
 
 class LightGuiceModule extends AbstractModule {
     @Override
     protected void configure() {
-        bind(IConfiguration.class).to(PriamConfiguration.class).asEagerSingleton();
+        bind(IConfiguration.class).asEagerSingleton();
         bind(IMembership.class).to(StaticMembership.class);
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
     }
 }
-

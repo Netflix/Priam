@@ -1,99 +1,62 @@
 /**
  * Copyright 2018 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.cluster.management;
 
+import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.merics.CompactionMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import javax.inject.Singleton;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.regex.Pattern;
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import org.apache.commons.collections4.CollectionUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-/**
- * Utility class to compact the keyspaces/columnfamilies
- * Created by aagrawal on 1/25/18.
- */
+/** Utility class to compact the keyspaces/columnfamilies Created by aagrawal on 1/25/18. */
 @Singleton
 public class Compaction extends IClusterManagement<String> {
     private static final Logger logger = LoggerFactory.getLogger(Compaction.class);
     private final IConfiguration config;
-    private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private final CassandraOperations cassandraOperations;
 
     @Inject
-    public Compaction(IConfiguration config, CassandraOperations cassandraOperations, CompactionMeasurement compactionMeasurement) {
+    public Compaction(
+            IConfiguration config,
+            CassandraOperations cassandraOperations,
+            CompactionMeasurement compactionMeasurement) {
         super(config, Task.COMPACTION, compactionMeasurement);
         this.config = config;
         this.cassandraOperations = cassandraOperations;
     }
 
-    private final Map<String, List<String>> getCompactionFilter(String compactionFilter) throws IllegalArgumentException {
-        if (StringUtils.isEmpty(compactionFilter))
-            return null;
-
-        final Map<String, List<String>> columnFamilyFilter = new HashMap<>(); //key: keyspace, value: a list of CFs within the keyspace
-
-        String[] filters = compactionFilter.split(",");
-        for (int i = 0; i < filters.length; i++) { //process each filter
-            if (columnFamilyFilterPattern.matcher(filters[i]).find()) {
-
-                String[] filter = filters[i].split("\\.");
-                String keyspaceName = filter[0];
-                String columnFamilyName = filter[1];
-
-                if (columnFamilyName.indexOf("-") != -1)
-                    columnFamilyName = columnFamilyName.substring(0, columnFamilyName.indexOf("-"));
-
-                List<String> existingCfs = columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
-                if (!columnFamilyName.equalsIgnoreCase("*"))
-                    existingCfs.add(columnFamilyName);
-                columnFamilyFilter.put(keyspaceName, existingCfs);
-
-            } else {
-                throw new IllegalArgumentException("Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: " + filters[i]);
-            }
-        }
-        return columnFamilyFilter;
-    }
-
-    final Map<String, List<String>> getCompactionIncludeFilter(IConfiguration config) throws Exception {
-        if (StringUtils.isEmpty(config.getCompactionIncludeCFList()))
-            return null;
-
-        Map<String, List<String>> columnFamilyFilter = getCompactionFilter(config.getCompactionIncludeCFList());
+    final Map<String, List<String>> getCompactionIncludeFilter(IConfiguration config)
+            throws Exception {
+        Map<String, List<String>> columnFamilyFilter =
+                BackupRestoreUtil.getFilter(config.getCompactionIncludeCFList());
         logger.info("Compaction: Override for include CF provided by user: {}", columnFamilyFilter);
         return columnFamilyFilter;
     }
 
-    final Map<String, List<String>> getCompactionExcludeFilter(IConfiguration config) throws Exception {
-        if (StringUtils.isEmpty(config.getCompactionExcludeCFList()))
-            return null;
-
-        Map<String, List<String>> columnFamilyFilter = getCompactionFilter(config.getCompactionExcludeCFList());
+    final Map<String, List<String>> getCompactionExcludeFilter(IConfiguration config)
+            throws Exception {
+        Map<String, List<String>> columnFamilyFilter =
+                BackupRestoreUtil.getFilter(config.getCompactionExcludeCFList());
         logger.info("Compaction: Override for exclude CF provided by user: {}", columnFamilyFilter);
         return columnFamilyFilter;
     }
@@ -104,37 +67,44 @@ public class Compaction extends IClusterManagement<String> {
         final Map<String, List<String>> allColumnfamilies = cassandraOperations.getColumnfamilies();
         Map<String, List<String>> result = new HashMap<>();
 
-
-        allColumnfamilies.entrySet().forEach(entry -> {
-            String keyspaceName = entry.getKey();
-            if (SchemaConstant.isSystemKeyspace(keyspaceName)) //no need to compact system keyspaces.
-                return;
-
-            List<String> columnfamilies = entry.getValue();
-            if (excludeFilter != null && excludeFilter.containsKey(keyspaceName)) {
-                List<String> excludeCFFilter = excludeFilter.get(keyspaceName);
-                //Is CF list null/empty? If yes, then exclude all CF's for this keyspace.
-                if (excludeCFFilter == null || excludeCFFilter.isEmpty())
+        allColumnfamilies.forEach(
+                (keyspaceName, columnfamilies) -> {
+                    if (SchemaConstant.isSystemKeyspace(
+                            keyspaceName)) // no need to compact system keyspaces.
                     return;
 
-                columnfamilies = (List<String>) CollectionUtils.removeAll(columnfamilies, excludeCFFilter);
-            }
+                    if (excludeFilter != null && excludeFilter.containsKey(keyspaceName)) {
+                        List<String> excludeCFFilter = excludeFilter.get(keyspaceName);
+                        // Is CF list null/empty? If yes, then exclude all CF's for this keyspace.
+                        if (excludeCFFilter == null || excludeCFFilter.isEmpty()) return;
 
-            if (includeFilter != null) {
-                //Include filter is not empty and this keyspace is not provided in include filter. Ignore processing of this keyspace.
-                if (!includeFilter.containsKey(keyspaceName))
-                    return;
+                        columnfamilies =
+                                (List<String>)
+                                        CollectionUtils.removeAll(columnfamilies, excludeCFFilter);
+                    }
 
-                List<String> includeCFFilter = includeFilter.get(keyspaceName);
-                //If include filter is empty or null, it means include all.
-                //If not, then we need to find intersection of CF's which are present and one which are configured to compact.
-                if (includeCFFilter != null && !includeCFFilter.isEmpty()) //If include filter is empty or null, it means include all.
-                    columnfamilies = (List<String>) CollectionUtils.intersection(columnfamilies, includeCFFilter);
-            }
+                    if (includeFilter != null) {
+                        // Include filter is not empty and this keyspace is not provided in include
+                        // filter. Ignore processing of this keyspace.
+                        if (!includeFilter.containsKey(keyspaceName)) return;
 
-            if (columnfamilies != null && !columnfamilies.isEmpty())
-                result.put(keyspaceName, columnfamilies);
-        });
+                        List<String> includeCFFilter = includeFilter.get(keyspaceName);
+                        // If include filter is empty or null, it means include all.
+                        // If not, then we need to find intersection of CF's which are present and
+                        // one which are configured to compact.
+                        if (includeCFFilter != null
+                                && !includeCFFilter
+                                        .isEmpty()) // If include filter is empty or null, it means
+                            // include all.
+                            columnfamilies =
+                                    (List<String>)
+                                            CollectionUtils.intersection(
+                                                    columnfamilies, includeCFFilter);
+                    }
+
+                    if (columnfamilies != null && !columnfamilies.isEmpty())
+                        result.put(keyspaceName, columnfamilies);
+                });
 
         return result;
     }
@@ -147,7 +117,8 @@ public class Compaction extends IClusterManagement<String> {
 
         if (!columnfamilies.isEmpty())
             for (Map.Entry<String, List<String>> entry : columnfamilies.entrySet()) {
-                cassandraOperations.forceKeyspaceCompaction(entry.getKey(), entry.getValue().toArray(new String[0]));
+                cassandraOperations.forceKeyspaceCompaction(
+                        entry.getKey(), entry.getValue().toArray(new String[0]));
             }
 
         return columnfamilies.toString();
@@ -157,10 +128,11 @@ public class Compaction extends IClusterManagement<String> {
      * Timer to be used for compaction interval.
      *
      * @param config {@link IConfiguration} to get configuration details from priam.
-     * @return the timer to be used for compaction interval  from {@link IConfiguration#getCompactionCronExpression()}
+     * @return the timer to be used for compaction interval from {@link
+     *     IConfiguration#getCompactionCronExpression()}
+     * @throws Exception If the cron expression is invalid.
      */
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
         return CronTimer.getCronTimer(Task.COMPACTION.name(), config.getCompactionCronExpression());
     }
-
 }

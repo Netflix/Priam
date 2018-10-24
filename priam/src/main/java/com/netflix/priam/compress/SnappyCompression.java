@@ -16,16 +16,12 @@
  */
 package com.netflix.priam.compress;
 
+import java.io.*;
+import java.util.Iterator;
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
 
-import java.io.*;
-import java.util.Iterator;
-
-/**
- * Class to generate compressed chunks of data from an input stream using
- * SnappyCompression
- */
+/** Class to generate compressed chunks of data from an input stream using SnappyCompression */
 public class SnappyCompression implements ICompression {
     private static final int BUFFER = 2 * 1024;
 
@@ -45,17 +41,13 @@ public class SnappyCompression implements ICompression {
     }
 
     private void decompress(InputStream input, OutputStream output) throws IOException {
-        SnappyInputStream is = new SnappyInputStream(new BufferedInputStream(input));
         byte data[] = new byte[BUFFER];
-        BufferedOutputStream dest1 = new BufferedOutputStream(output, BUFFER);
-        try {
+        try (BufferedOutputStream dest1 = new BufferedOutputStream(output, BUFFER);
+                SnappyInputStream is = new SnappyInputStream(new BufferedInputStream(input))) {
             int c;
             while ((c = is.read(data, 0, BUFFER)) != -1) {
                 dest1.write(data, 0, c);
             }
-        } finally {
-            IOUtils.closeQuietly(dest1);
-            IOUtils.closeQuietly(is);
         }
     }
 }

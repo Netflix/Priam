@@ -27,20 +27,20 @@ import com.netflix.priam.config.IConfiguration;
 import com.sun.jersey.api.core.PackagesResourceConfig;
 import com.sun.jersey.guice.spi.container.servlet.GuiceContainer;
 import com.sun.jersey.spi.container.servlet.ServletContainer;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletContextEvent;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
 import org.quartz.SchedulerFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.servlet.ServletContextEvent;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public class InjectedWebListener extends GuiceServletContextListener {
     protected static final Logger logger = LoggerFactory.getLogger(InjectedWebListener.class);
     private Injector injector;
+
     @Override
     protected Injector getInjector() {
         List<Module> moduleList = Lists.newArrayList();
@@ -48,7 +48,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
         moduleList.add(new PriamGuiceModule());
         injector = Guice.createInjector(moduleList);
         try {
-            injector.getInstance(IConfiguration.class).intialize();
+            injector.getInstance(IConfiguration.class).initialize();
             injector.getInstance(PriamServer.class).initialize();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
@@ -59,14 +59,12 @@ public class InjectedWebListener extends GuiceServletContextListener {
 
     @Override
     public void contextDestroyed(ServletContextEvent servletContextEvent) {
-        try
-        {
-            for (Scheduler scheduler : injector.getInstance(SchedulerFactory.class).getAllSchedulers()){
+        try {
+            for (Scheduler scheduler :
+                    injector.getInstance(SchedulerFactory.class).getAllSchedulers()) {
                 scheduler.shutdown();
             }
-        }
-        catch (SchedulerException e)
-        {
+        } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
         super.contextDestroyed(servletContextEvent);
@@ -75,12 +73,11 @@ public class InjectedWebListener extends GuiceServletContextListener {
     public static class JaxServletModule extends ServletModule {
         @Override
         protected void configureServlets() {
-            Map<String, String> params = new HashMap<String, String>();
+            Map<String, String> params = new HashMap<>();
             params.put(PackagesResourceConfig.PROPERTY_PACKAGES, "unbound");
             params.put("com.sun.jersey.config.property.packages", "com.netflix.priam.resources");
             params.put(ServletContainer.PROPERTY_FILTER_CONTEXT_PATH, "/REST");
             serve("/REST/*").with(GuiceContainer.class, params);
         }
     }
-
 }

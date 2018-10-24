@@ -25,29 +25,36 @@ import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.PriamInstance;
-
 import java.util.*;
 
-/**
- * DAO for handling Instance identity information such as token, zone, region
- */
+/** DAO for handling Instance identity information such as token, zone, region */
 @Singleton
 public class SDBInstanceData {
     public static class Attributes {
-        public final static String APP_ID = "appId";
-        public final static String ID = "id";
-        public final static String INSTANCE_ID = "instanceId";
-        public final static String TOKEN = "token";
-        public final static String AVAILABILITY_ZONE = "availabilityZone";
-        public final static String ELASTIC_IP = "elasticIP";
-        public final static String UPDATE_TS = "updateTimestamp";
-        public final static String LOCATION = "location";
-        public final static String HOSTNAME = "hostname";
+        public static final String APP_ID = "appId";
+        public static final String ID = "id";
+        public static final String INSTANCE_ID = "instanceId";
+        public static final String TOKEN = "token";
+        public static final String AVAILABILITY_ZONE = "availabilityZone";
+        public static final String ELASTIC_IP = "elasticIP";
+        public static final String UPDATE_TS = "updateTimestamp";
+        public static final String LOCATION = "location";
+        public static final String HOSTNAME = "hostname";
     }
 
     public static final String DOMAIN = "InstanceIdentity";
-    public static final String ALL_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
-    public static final String INSTANCE_QUERY = "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s' and " + Attributes.LOCATION + "='%s' and " + Attributes.ID + "='%d'";
+    public static final String ALL_QUERY =
+            "select * from " + DOMAIN + " where " + Attributes.APP_ID + "='%s'";
+    public static final String INSTANCE_QUERY =
+            "select * from "
+                    + DOMAIN
+                    + " where "
+                    + Attributes.APP_ID
+                    + "='%s' and "
+                    + Attributes.LOCATION
+                    + "='%s' and "
+                    + Attributes.ID
+                    + "='%d'";
 
     private final ICredential provider;
     private final IConfiguration configuration;
@@ -62,15 +69,14 @@ public class SDBInstanceData {
      * Get the instance details from SimpleDB
      *
      * @param app Cluster name
-     * @param id  Node ID
+     * @param id Node ID
      * @return the node with the given {@code id}, or {@code null} if no such node exists
      */
     public PriamInstance getInstance(String app, String dc, int id) {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
         SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
         SelectResult result = simpleDBClient.select(request);
-        if (result.getItems().size() == 0)
-            return null;
+        if (result.getItems().size() == 0) return null;
         return transform(result.getItems().get(0));
     }
 
@@ -82,16 +88,15 @@ public class SDBInstanceData {
      */
     public Set<PriamInstance> getAllIds(String app) {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        Set<PriamInstance> inslist = new HashSet<PriamInstance>();
+        Set<PriamInstance> inslist = new HashSet<>();
         String nextToken = null;
         do {
             SelectRequest request = new SelectRequest(String.format(ALL_QUERY, app));
             request.setNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
-            Iterator<Item> itemiter = result.getItems().iterator();
-            while (itemiter.hasNext()) {
-                inslist.add(transform(itemiter.next()));
+            for (Item item : result.getItems()) {
+                inslist.add(transform(item));
             }
 
         } while (nextToken != null);
@@ -101,24 +106,28 @@ public class SDBInstanceData {
     /**
      * Create a new instance entry in SimpleDB
      *
-     * @param instance
-     * @throws AmazonServiceException
+     * @param instance Instance entry to be created.
+     * @throws AmazonServiceException If unable to write to Simple DB because of any error.
      */
     public void createInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq =
+                new PutAttributesRequest(
+                        DOMAIN, getKey(instance), createAttributesToRegister(instance));
         simpleDBClient.putAttributes(putReq);
     }
 
     /**
      * Register a new instance. Registration will fail if a prior entry exists
      *
-     * @param instance
-     * @throws AmazonServiceException
+     * @param instance Instance entry to be registered.
+     * @throws AmazonServiceException If unable to write to Simple DB because of any error.
      */
     public void registerInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        PutAttributesRequest putReq = new PutAttributesRequest(DOMAIN, getKey(instance), createAttributesToRegister(instance));
+        PutAttributesRequest putReq =
+                new PutAttributesRequest(
+                        DOMAIN, getKey(instance), createAttributesToRegister(instance));
         UpdateCondition expected = new UpdateCondition();
         expected.setName(Attributes.INSTANCE_ID);
         expected.setExists(false);
@@ -134,27 +143,33 @@ public class SDBInstanceData {
      */
     public void deregisterInstance(PriamInstance instance) throws AmazonServiceException {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        DeleteAttributesRequest delReq = new DeleteAttributesRequest(DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
+        DeleteAttributesRequest delReq =
+                new DeleteAttributesRequest(
+                        DOMAIN, getKey(instance), createAttributesToDeRegister(instance));
         simpleDBClient.deleteAttributes(delReq);
     }
 
     protected List<ReplaceableAttribute> createAttributesToRegister(PriamInstance instance) {
         instance.setUpdatetime(new Date().getTime());
-        List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
-        attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
+        List<ReplaceableAttribute> attrs = new ArrayList<>();
+        attrs.add(
+                new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
         attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getToken(), true));
         attrs.add(new ReplaceableAttribute(Attributes.APP_ID, instance.getApp(), true));
-        attrs.add(new ReplaceableAttribute(Attributes.ID, Integer.toString(instance.getId()), true));
+        attrs.add(
+                new ReplaceableAttribute(Attributes.ID, Integer.toString(instance.getId()), true));
         attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getRac(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ELASTIC_IP, instance.getHostIP(), true));
         attrs.add(new ReplaceableAttribute(Attributes.HOSTNAME, instance.getHostName(), true));
         attrs.add(new ReplaceableAttribute(Attributes.LOCATION, instance.getDC(), true));
-        attrs.add(new ReplaceableAttribute(Attributes.UPDATE_TS, Long.toString(instance.getUpdatetime()), true));
+        attrs.add(
+                new ReplaceableAttribute(
+                        Attributes.UPDATE_TS, Long.toString(instance.getUpdatetime()), true));
         return attrs;
     }
 
     protected List<Attribute> createAttributesToDeRegister(PriamInstance instance) {
-        List<Attribute> attrs = new ArrayList<Attribute>();
+        List<Attribute> attrs = new ArrayList<>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
         attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
         attrs.add(new Attribute(Attributes.APP_ID, instance.getApp()));
@@ -175,25 +190,16 @@ public class SDBInstanceData {
      */
     public PriamInstance transform(Item item) {
         PriamInstance ins = new PriamInstance();
-        Iterator<Attribute> attrs = item.getAttributes().iterator();
-        while (attrs.hasNext()) {
-            Attribute att = attrs.next();
-            if (att.getName().equals(Attributes.INSTANCE_ID))
-                ins.setInstanceId(att.getValue());
-            else if (att.getName().equals(Attributes.TOKEN))
-                ins.setToken(att.getValue());
-            else if (att.getName().equals(Attributes.APP_ID))
-                ins.setApp(att.getValue());
+        for (Attribute att : item.getAttributes()) {
+            if (att.getName().equals(Attributes.INSTANCE_ID)) ins.setInstanceId(att.getValue());
+            else if (att.getName().equals(Attributes.TOKEN)) ins.setToken(att.getValue());
+            else if (att.getName().equals(Attributes.APP_ID)) ins.setApp(att.getValue());
             else if (att.getName().equals(Attributes.ID))
                 ins.setId(Integer.parseInt(att.getValue()));
-            else if (att.getName().equals(Attributes.AVAILABILITY_ZONE))
-                ins.setRac(att.getValue());
-            else if (att.getName().equals(Attributes.ELASTIC_IP))
-                ins.setHostIP(att.getValue());
-            else if (att.getName().equals(Attributes.HOSTNAME))
-                ins.setHost(att.getValue());
-            else if (att.getName().equals(Attributes.LOCATION))
-                ins.setDC(att.getValue());
+            else if (att.getName().equals(Attributes.AVAILABILITY_ZONE)) ins.setRac(att.getValue());
+            else if (att.getName().equals(Attributes.ELASTIC_IP)) ins.setHostIP(att.getValue());
+            else if (att.getName().equals(Attributes.HOSTNAME)) ins.setHost(att.getValue());
+            else if (att.getName().equals(Attributes.LOCATION)) ins.setDC(att.getValue());
             else if (att.getName().equals(Attributes.UPDATE_TS))
                 ins.setUpdatetime(Long.parseLong(att.getValue()));
         }
@@ -205,7 +211,10 @@ public class SDBInstanceData {
     }
 
     private AmazonSimpleDB getSimpleDBClient() {
-        //Create per request
-        return AmazonSimpleDBClient.builder().withCredentials(provider.getAwsCredentialProvider()).withRegion(configuration.getSDBInstanceIdentityRegion()).build();
+        // Create per request
+        return AmazonSimpleDBClient.builder()
+                .withCredentials(provider.getAwsCredentialProvider())
+                .withRegion(configuration.getSDBInstanceIdentityRegion())
+                .build();
     }
 }

@@ -20,24 +20,27 @@ import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-
 import java.util.Collection;
 
 /**
- * A {@link IConfigSource} that delegates method calls to the underline sources.  The order in which values are provided
- * depend on the {@link IConfigSource}s provided.  If user asks for key 'foo', and this composite has three sources, it
- * will first check if the key is found in the first source, if not it will check the second and if not, the third, else
- * return null or false if {@link #contains(String)} was called.
- * <p>
- * Implementation note: get methods with a default are implemented in {@link AbstractConfigSource}, if the underlying
- * source overrides one of these methods, then that implementation will be ignored.
+ * A {@link IConfigSource} that delegates method calls to the underline sources. The order in which
+ * values are provided depend on the {@link IConfigSource}s provided. If user asks for key 'foo',
+ * and this composite has three sources, it will first check if the key is found in the first
+ * source, if not it will check the second and if not, the third, else return null or false if
+ * {@link #contains(String)} was called.
+ *
+ * <p>Implementation note: get methods with a default are implemented in {@link
+ * AbstractConfigSource}, if the underlying source overrides one of these methods, then that
+ * implementation will be ignored.
  */
 public class CompositeConfigSource extends AbstractConfigSource {
 
     private final ImmutableCollection<? extends IConfigSource> sources;
 
     public CompositeConfigSource(final ImmutableCollection<? extends IConfigSource> sources) {
-        Preconditions.checkArgument(!sources.isEmpty(), "Can not create a composite config source without config sources!");
+        Preconditions.checkArgument(
+                !sources.isEmpty(),
+                "Can not create a composite config source without config sources!");
         this.sources = sources;
     }
 
@@ -56,7 +59,7 @@ public class CompositeConfigSource extends AbstractConfigSource {
     @Override
     public void intialize(final String asgName, final String region) {
         for (final IConfigSource source : sources) {
-            //TODO should this catch any potential exceptions?
+            // TODO should this catch any potential exceptions?
             source.intialize(asgName, region);
         }
     }
@@ -96,8 +99,10 @@ public class CompositeConfigSource extends AbstractConfigSource {
     public void set(final String key, final String value) {
         Preconditions.checkNotNull(value, "Value can not be null for configurations.");
         final IConfigSource firstSource = Iterables.getFirst(sources, null);
-        // firstSource shouldn't be null because the collection is immutable, and the collection is non empty.
-        Preconditions.checkState(firstSource != null, "There was no IConfigSource found at the first location?");
+        // firstSource shouldn't be null because the collection is immutable, and the collection is
+        // non empty.
+        Preconditions.checkState(
+                firstSource != null, "There was no IConfigSource found at the first location?");
         firstSource.set(key, value);
     }
 }

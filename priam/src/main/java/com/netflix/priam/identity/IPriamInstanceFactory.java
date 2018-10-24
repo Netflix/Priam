@@ -18,13 +18,12 @@ package com.netflix.priam.identity;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.SDBInstanceFactory;
-
 import java.util.List;
 import java.util.Map;
 
 /**
- * Interface for managing Cassandra instance data. Provides functionality
- * to register, update, delete or list instances from the registry
+ * Interface for managing Cassandra instance data. Provides functionality to register, update,
+ * delete or list instances from the registry
  */
 @ImplementedBy(SDBInstanceFactory.class)
 public interface IPriamInstanceFactory<T> {
@@ -40,7 +39,7 @@ public interface IPriamInstanceFactory<T> {
      * Return the Cassandra server node with the given {@code id}.
      *
      * @param appName the cluster name
-     * @param id      the node id
+     * @param id the node id
      * @return the node with the given {@code id}, or {@code null} if none found
      */
     PriamInstance getInstance(String appName, String dc, int id);
@@ -58,7 +57,15 @@ public interface IPriamInstanceFactory<T> {
      * @param token
      * @return the new node
      */
-    PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token);
+    PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token);
 
     /**
      * Delete the server node from the registry

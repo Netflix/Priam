@@ -16,9 +16,7 @@
 
 package com.netflix.priam.restore;
 
-/**
- * Exception raised by PostRestoreHook
- */
+/** Exception raised by PostRestoreHook */
 public class PostRestoreHookException extends Exception {
 
     public PostRestoreHookException(String message) {
@@ -28,5 +26,4 @@ public class PostRestoreHookException extends Exception {
     public PostRestoreHookException(String message, Exception e) {
         super(message, e);
     }
-
 }

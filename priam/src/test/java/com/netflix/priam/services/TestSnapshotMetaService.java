@@ -26,6 +26,7 @@ import com.netflix.priam.backupv2.MetaFileReader;
 import com.netflix.priam.backupv2.PrefixGenerator;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
@@ -48,9 +49,9 @@ public class TestSnapshotMetaService {
     private static SnapshotMetaService snapshotMetaService;
     private static TestMetaFileReader metaFileReader;
     private static PrefixGenerator prefixGenerator;
+    private static InstanceInfo instanceInfo;
 
-    @Before
-    public void setUp() {
+    public TestSnapshotMetaService() {
         Injector injector = Guice.createInjector(new BRTestModule());
 
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
@@ -65,6 +66,11 @@ public class TestSnapshotMetaService {
 
         if (prefixGenerator == null) prefixGenerator = injector.getInstance(PrefixGenerator.class);
 
+        if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
+    }
+
+    @Before
+    public void setUp() {
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
         BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
     }
@@ -114,8 +120,8 @@ public class TestSnapshotMetaService {
         MetaFileInfo metaFileInfo = metaFileReader.getMetaFileInfo();
         Assert.assertEquals(1, metaFileInfo.getVersion());
         Assert.assertEquals(configuration.getAppName(), metaFileInfo.getAppName());
-        Assert.assertEquals(configuration.getRac(), metaFileInfo.getRack());
-        Assert.assertEquals(configuration.getDC(), metaFileInfo.getRegion());
+        Assert.assertEquals(instanceInfo.getRac(), metaFileInfo.getRack());
+        Assert.assertEquals(instanceInfo.getRegion(), metaFileInfo.getRegion());
 
         // Cleanup
         metaFileLocation.toFile().delete();

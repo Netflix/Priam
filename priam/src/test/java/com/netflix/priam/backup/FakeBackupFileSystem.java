@@ -50,21 +50,21 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
 
     public void setupTest(List<String> files) {
         clearTest();
-        flist = new ArrayList<AbstractBackupPath>();
+        flist = new ArrayList<>();
         for (String file : files) {
             S3BackupPath path = pathProvider.get();
             path.parseRemote(file);
             flist.add(path);
         }
-        downloadedFiles = new HashSet<String>();
-        uploadedFiles = new HashSet<String>();
+        downloadedFiles = new HashSet<>();
+        uploadedFiles = new HashSet<>();
     }
 
     public void setupTest() {
         clearTest();
-        flist = new ArrayList<AbstractBackupPath>();
-        downloadedFiles = new HashSet<String>();
-        uploadedFiles = new HashSet<String>();
+        flist = new ArrayList<>();
+        downloadedFiles = new HashSet<>();
+        uploadedFiles = new HashSet<>();
     }
 
     private void clearTest() {
@@ -88,7 +88,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             clusterName = paths[3];
         }
 
-        List<AbstractBackupPath> tmpList = new ArrayList<AbstractBackupPath>();
+        List<AbstractBackupPath> tmpList = new ArrayList<>();
         for (AbstractBackupPath path : flist) {
 
             if ((path.time.after(start) && path.time.before(till))

@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableList;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
@@ -41,11 +42,12 @@ public class PriamInstanceResourceTest {
 
     private @Mocked IConfiguration config;
     private @Mocked IPriamInstanceFactory factory;
+    private @Mocked InstanceInfo instanceInfo;
     private PriamInstanceResource resource;
 
     @Before
     public void setUp() {
-        resource = new PriamInstanceResource(config, factory);
+        resource = new PriamInstanceResource(config, factory, instanceInfo);
     }
 
     @Test
@@ -80,7 +82,7 @@ public class PriamInstanceResourceTest {
             {
                 config.getAppName();
                 result = APP_NAME;
-                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                factory.getInstance(APP_NAME, instanceInfo.getRegion(), NODE_ID);
                 result = instance;
                 instance.toString();
                 result = expected;
@@ -96,7 +98,7 @@ public class PriamInstanceResourceTest {
             {
                 config.getAppName();
                 result = APP_NAME;
-                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                factory.getInstance(APP_NAME, instanceInfo.getRegion(), NODE_ID);
                 result = null;
             }
         };
@@ -141,7 +143,7 @@ public class PriamInstanceResourceTest {
             {
                 config.getAppName();
                 result = APP_NAME;
-                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                factory.getInstance(APP_NAME, instanceInfo.getRegion(), NODE_ID);
                 result = instance;
                 factory.delete(instance);
             }
@@ -157,7 +159,7 @@ public class PriamInstanceResourceTest {
             {
                 config.getAppName();
                 result = APP_NAME;
-                factory.getInstance(APP_NAME, config.getDC(), NODE_ID);
+                factory.getInstance(APP_NAME, instanceInfo.getRegion(), NODE_ID);
                 result = null;
             }
         };

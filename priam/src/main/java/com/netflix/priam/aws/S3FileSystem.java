@@ -29,6 +29,7 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
@@ -55,12 +56,13 @@ public class S3FileSystem extends S3FileSystemBase {
             ICompression compress,
             final IConfiguration config,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr) {
+            BackupNotificationMgr backupNotificationMgr,
+            InstanceInfo instanceInfo) {
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
-                        .withRegion(config.getDC())
+                        .withRegion(instanceInfo.getRegion())
                         .build();
     }
 

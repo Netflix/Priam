@@ -30,7 +30,7 @@ public abstract class AbstractConfigSource implements IConfigSource {
     private String region;
 
     @Override
-    public void intialize(final String asgName, final String region) {
+    public void initialize(final String asgName, final String region) {
         this.asgName = checkNotNull(asgName, "ASG name is not defined");
         this.region = checkNotNull(region, "Region is not defined");
     }

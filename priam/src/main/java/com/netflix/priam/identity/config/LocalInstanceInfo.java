@@ -13,25 +13,26 @@
  */
 package com.netflix.priam.identity.config;
 
-import org.codehaus.jettison.json.JSONException;
-
 /**
  * Looks at local (system) properties for metadata about the running 'instance'. Typically, this is
  * used for locally-deployed testing.
  */
-public class LocalInstanceDataRetriever implements InstanceDataRetriever {
+public class LocalInstanceInfo implements InstanceInfo {
     private static final String PREFIX = "Priam.localInstance.";
 
+    @Override
     public String getRac() {
         return System.getProperty(PREFIX + "availabilityZone", "");
     }
 
-    public String getPublicHostname() {
-        return System.getProperty(PREFIX + "publicHostname", "");
+    @Override
+    public String getHostname() {
+        return System.getProperty(PREFIX + "privateIp", "");
     }
 
-    public String getPublicIP() {
-        return System.getProperty(PREFIX + "publicIp", "");
+    @Override
+    public String getHostIP() {
+        return System.getProperty(PREFIX + "privateIp", "");
     }
 
     @Override
@@ -39,17 +40,14 @@ public class LocalInstanceDataRetriever implements InstanceDataRetriever {
         return System.getProperty(PREFIX + "privateIp", "");
     }
 
+    @Override
     public String getInstanceId() {
         return System.getProperty(PREFIX + "instanceId", "");
     }
 
+    @Override
     public String getInstanceType() {
         return System.getProperty(PREFIX + "instanceType", "");
-    }
-
-    @Override
-    public String getMac() {
-        return System.getProperty(PREFIX + "networkinterface", "");
     }
 
     @Override
@@ -58,17 +56,17 @@ public class LocalInstanceDataRetriever implements InstanceDataRetriever {
     }
 
     @Override
-    public String getAWSAccountId() throws JSONException {
-        return System.getProperty(PREFIX + "awsacctid", "");
+    public String getAutoScalingGroup() {
+        return System.getProperty(PREFIX + "asg", "");
     }
 
     @Override
-    public String getAvailabilityZone() throws JSONException {
-        return System.getProperty(PREFIX + "availabilityzone", "");
+    public InstanceEnvironment getInstanceEnvironment() {
+        return (getVpcId() == null) ? InstanceEnvironment.CLASSIC : InstanceEnvironment.VPC;
     }
 
     @Override
-    public String getRegion() throws JSONException {
+    public String getRegion() {
         return System.getProperty(PREFIX + "region", "");
     }
 }

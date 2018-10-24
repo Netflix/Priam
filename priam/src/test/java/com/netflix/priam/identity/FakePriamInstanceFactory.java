@@ -20,15 +20,18 @@ package com.netflix.priam.identity;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
     private final IConfiguration config;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public FakePriamInstanceFactory(IConfiguration config) {
+    public FakePriamInstanceFactory(IConfiguration config, InstanceInfo instanceInfo) {
         this.config = config;
+        this.instanceInfo = instanceInfo;
     }
 
     @Override
@@ -59,7 +62,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
         ins.setInstanceId(instanceID);
         ins.setToken(payload);
         ins.setVolumes(volumes);
-        ins.setDC(config.getDC());
+        ins.setDC(instanceInfo.getRegion());
         instances.put(id, ins);
         return ins;
     }

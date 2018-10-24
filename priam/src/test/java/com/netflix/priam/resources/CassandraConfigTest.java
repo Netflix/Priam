@@ -52,7 +52,7 @@ public class CassandraConfigTest {
         final List<String> seeds = ImmutableList.of("seed1", "seed2", "seed3");
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 times = 1;
                 identity.getSeeds();
@@ -71,7 +71,7 @@ public class CassandraConfigTest {
         final List<String> seeds = ImmutableList.of();
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 times = 1;
                 identity.getSeeds();
@@ -89,7 +89,7 @@ public class CassandraConfigTest {
             throws Exception {
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.getSeeds();
                 result = new UnknownHostException();
@@ -106,7 +106,7 @@ public class CassandraConfigTest {
         final String token = "myToken";
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 times = 2;
                 identity.getInstance();
@@ -129,7 +129,7 @@ public class CassandraConfigTest {
         final String token = "";
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.getInstance();
                 result = instance;
@@ -147,7 +147,7 @@ public class CassandraConfigTest {
             @Mocked final InstanceIdentity identity, @Mocked final PriamInstance instance) {
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.getInstance();
                 result = instance;
@@ -164,7 +164,7 @@ public class CassandraConfigTest {
     public void isReplaceToken(@Mocked final InstanceIdentity identity) {
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.isReplace();
                 result = true;
@@ -180,7 +180,7 @@ public class CassandraConfigTest {
     public void isReplaceToken_handlesException(@Mocked final InstanceIdentity identity) {
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.isReplace();
                 result = new RuntimeException();
@@ -196,7 +196,7 @@ public class CassandraConfigTest {
         final String replacedIp = "127.0.0.1";
         new Expectations() {
             {
-                priamServer.getId();
+                priamServer.getInstanceIdentity();
                 result = identity;
                 identity.getReplacedIp();
                 result = replacedIp;

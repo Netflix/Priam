@@ -20,14 +20,13 @@ package com.netflix.priam.tuner;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.io.Files;
-import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
+import com.google.inject.Guice;
+import com.netflix.priam.backup.BRTestModule;
 import java.io.File;
-import org.junit.Before;
 import org.junit.Test;
 
 public class StandardTunerTest {
-    /* note: these are, more or less, arbitrary paritioner class names. as long as the tests exercise the code, all is good */
+    /* note: these are, more or less, arbitrary partitioner class names. as long as the tests exercise the code, all is good */
     private static final String A_PARTITIONER = "com.netflix.priam.utils.NonexistentPartitioner";
     private static final String RANDOM_PARTITIONER = "org.apache.cassandra.dht.RandomPartitioner";
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
@@ -35,10 +34,8 @@ public class StandardTunerTest {
 
     private StandardTuner tuner;
 
-    @Before
-    public void setup() {
-        IConfiguration config = new FakeConfiguration();
-        tuner = new StandardTuner(config);
+    public StandardTunerTest() {
+        this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);
     }
 
     @Test

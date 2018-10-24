@@ -18,6 +18,7 @@ import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILE
 
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.tuner.StandardTuner;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -40,8 +41,11 @@ public class DseTuner extends StandardTuner {
 
     @Inject
     public DseTuner(
-            IConfiguration config, IDseConfiguration dseConfig, IAuditLogTuner auditLogTuner) {
-        super(config);
+            IConfiguration config,
+            IDseConfiguration dseConfig,
+            IAuditLogTuner auditLogTuner,
+            InstanceInfo instanceInfo) {
+        super(config, instanceInfo);
         this.dseConfig = dseConfig;
         this.auditLogTuner = auditLogTuner;
     }

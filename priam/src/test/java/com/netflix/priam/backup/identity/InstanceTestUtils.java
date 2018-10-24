@@ -34,7 +34,7 @@ import org.junit.Ignore;
 @Ignore
 abstract class InstanceTestUtils {
 
-    private List<String> instances = new ArrayList<String>();
+    private final List<String> instances = new ArrayList<>();
     private IMembership membership;
     FakeConfiguration config;
     IPriamInstanceFactory factory;
@@ -60,7 +60,7 @@ abstract class InstanceTestUtils {
         config = new FakeConfiguration("fake-app");
         instanceInfo = new FakeInstanceInfo("fakeinstance1", "az1", region);
         tokenManager = new TokenManager(config);
-        factory = new FakePriamInstanceFactory(config, instanceInfo);
+        factory = new FakePriamInstanceFactory(instanceInfo);
         sleeper = new FakeSleeper();
         identity = createInstanceIdentity(instanceInfo.getRac(), instanceInfo.getInstanceId());
     }

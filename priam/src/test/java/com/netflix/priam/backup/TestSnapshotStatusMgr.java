@@ -100,6 +100,7 @@ public class TestSnapshotStatusMgr {
         Date startTime = DateUtil.getDate("19840101");
 
         for (int i = 0; i < noOfEntries; i++) {
+            assert startTime != null;
             Date time = new DateTime(startTime.getTime()).plusHours(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);
@@ -127,6 +128,7 @@ public class TestSnapshotStatusMgr {
         Date startTime = DateUtil.getDate("19850101");
 
         for (int i = 0; i < noOfEntries; i++) {
+            assert startTime != null;
             Date time = new DateTime(startTime.getTime()).plusDays(i).toDate();
             BackupMetadata backupMetadata = new BackupMetadata("123", time);
             backupStatusMgr.start(backupMetadata);

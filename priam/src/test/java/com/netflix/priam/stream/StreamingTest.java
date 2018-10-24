@@ -32,7 +32,7 @@ public class StreamingTest {
 
     @Test
     public void testFifoAddAndRemove() {
-        FifoQueue<Long> queue = new FifoQueue<Long>(10);
+        FifoQueue<Long> queue = new FifoQueue<>(10);
         for (long i = 0; i < 100; i++) queue.adjustAndAdd(i);
         Assert.assertEquals(10, queue.size());
         Assert.assertEquals(new Long(90), queue.first());
@@ -45,7 +45,7 @@ public class StreamingTest {
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
         String region = factory.getInstanceInfo().getRegion();
 
-        FifoQueue<AbstractBackupPath> queue = new FifoQueue<AbstractBackupPath>(10);
+        FifoQueue<AbstractBackupPath> queue = new FifoQueue<>(10);
         for (int i = 10; i < 30; i++) {
             S3BackupPath path = new S3BackupPath(conf, factory);
             path.parseRemote(

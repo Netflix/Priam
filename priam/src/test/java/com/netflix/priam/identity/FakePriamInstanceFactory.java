@@ -19,24 +19,21 @@ package com.netflix.priam.identity;
 
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
-    private final IConfiguration config;
     private final InstanceInfo instanceInfo;
 
     @Inject
-    public FakePriamInstanceFactory(IConfiguration config, InstanceInfo instanceInfo) {
-        this.config = config;
+    public FakePriamInstanceFactory(InstanceInfo instanceInfo) {
         this.instanceInfo = instanceInfo;
     }
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
-        return new ArrayList<PriamInstance>(instances.values());
+        return new ArrayList<>(instances.values());
     }
 
     @Override
@@ -80,16 +77,13 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     @Override
     public void sort(List<PriamInstance> return_) {
         Comparator<? super PriamInstance> comparator =
-                new Comparator<PriamInstance>() {
-
-                    @Override
-                    public int compare(PriamInstance o1, PriamInstance o2) {
-                        Integer c1 = o1.getId();
-                        Integer c2 = o2.getId();
-                        return c1.compareTo(c2);
-                    }
-                };
-        Collections.sort(return_, comparator);
+                (Comparator<PriamInstance>)
+                        (o1, o2) -> {
+                            Integer c1 = o1.getId();
+                            Integer c2 = o2.getId();
+                            return c1.compareTo(c2);
+                        };
+        return_.sort(comparator);
     }
 
     @Override

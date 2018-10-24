@@ -25,6 +25,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.IAMCredential;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import java.util.Map;
@@ -45,10 +46,13 @@ public class AWSSnsNotificationService implements INotificationService {
 
     @Inject
     public AWSSnsNotificationService(
-            IConfiguration config, IAMCredential iamCredential, BackupMetrics backupMetrics) {
+            IConfiguration config,
+            IAMCredential iamCredential,
+            BackupMetrics backupMetrics,
+            InstanceInfo instanceInfo) {
         this.configuration = config;
         this.backupMetrics = backupMetrics;
-        String ec2_region = this.configuration.getDC();
+        String ec2_region = instanceInfo.getRegion();
         snsClient =
                 AmazonSNSClient.builder()
                         .withCredentials(iamCredential.getAwsCredentialProvider())

@@ -33,8 +33,7 @@ public class CassandraProcessManagerTest {
 
     @Before
     public void setup() {
-        IConfiguration config =
-                new FakeConfiguration("us-east-1", "test_cluster", "us-east-1a", "i-2378afd3");
+        IConfiguration config = new FakeConfiguration("test_cluster");
         InstanceState instanceState =
                 Guice.createInjector(new BRTestModule()).getInstance(InstanceState.class);
         CassMonitorMetrics cassMonitorMetrics =

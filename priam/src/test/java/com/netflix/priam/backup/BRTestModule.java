@@ -22,7 +22,6 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
-import com.netflix.priam.backup.identity.FakeInstanceEnvIdentity;
 import com.netflix.priam.config.FakeBackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IBackupRestoreConfig;
@@ -33,6 +32,8 @@ import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.identity.*;
+import com.netflix.priam.identity.config.FakeInstanceInfo;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.IPostRestoreHook;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
@@ -48,11 +49,10 @@ public class BRTestModule extends AbstractModule {
 
     @Override
     protected void configure() {
-        bind(IConfiguration.class)
-                .toInstance(
-                        new FakeConfiguration(
-                                FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
+        bind(IConfiguration.class).toInstance(new FakeConfiguration("fake-app"));
         bind(IBackupRestoreConfig.class).to(FakeBackupRestoreConfig.class);
+        bind(InstanceInfo.class)
+                .toInstance(new FakeInstanceInfo("fakeInstance1", "az1", "us-east-1"));
 
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
@@ -74,7 +74,6 @@ public class BRTestModule extends AbstractModule {
         bind(IFileCryptography.class)
                 .annotatedWith(Names.named("filecryptoalgorithm"))
                 .to(PgpCryptography.class);
-        bind(InstanceEnvIdentity.class).to(FakeInstanceEnvIdentity.class);
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
         bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);
         bind(Registry.class).toInstance(new DefaultRegistry());

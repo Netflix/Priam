@@ -24,6 +24,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Iterator;
@@ -48,6 +49,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
     private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");
     private ObjectListing objectListing = null;
     final Date date;
+    @Inject private InstanceInfo instanceInfo;
 
     @Inject
     public S3PrefixIterator(
@@ -119,7 +121,7 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
         String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
         if (elements.length <= 1) {
             buff.append(config.getBackupLocation()).append(S3BackupPath.PATH_SEP);
-            buff.append(config.getDC()).append(S3BackupPath.PATH_SEP);
+            buff.append(instanceInfo.getRegion()).append(S3BackupPath.PATH_SEP);
             buff.append(config.getAppName()).append(S3BackupPath.PATH_SEP);
         } else {
             assert elements.length >= 4 : "Too few elements in path " + location;

@@ -95,8 +95,8 @@ public class MetaFileWriterBuilder {
             metaFileInfo =
                     new MetaFileInfo(
                             configuration.getAppName(),
-                            configuration.getDC(),
-                            configuration.getRac(),
+                            instanceIdentity.getInstanceInfo().getRegion(),
+                            instanceIdentity.getInstanceInfo().getRac(),
                             backupIdentifier);
         }
 

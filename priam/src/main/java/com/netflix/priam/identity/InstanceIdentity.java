@@ -24,6 +24,7 @@ import com.google.common.collect.Multimaps;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
 import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
@@ -71,6 +72,8 @@ public class InstanceIdentity {
             };
 
     private PriamInstance myInstance;
+    // Instance information contains other information like ASG/vpc-id etc.
+    private InstanceInfo myInstanceInfo;
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
@@ -89,7 +92,8 @@ public class InstanceIdentity {
             ITokenManager tokenManager,
             IDeadTokenRetriever deadTokenRetriever,
             IPreGeneratedTokenRetriever preGeneratedTokenRetriever,
-            INewTokenRetriever newTokenRetriever)
+            INewTokenRetriever newTokenRetriever,
+            InstanceInfo instanceInfo)
             throws Exception {
         this.factory = factory;
         this.membership = membership;
@@ -99,11 +103,16 @@ public class InstanceIdentity {
         this.deadTokenRetriever = deadTokenRetriever;
         this.preGeneratedTokenRetriever = preGeneratedTokenRetriever;
         this.newTokenRetriever = newTokenRetriever;
+        this.myInstanceInfo = instanceInfo;
         init();
     }
 
     public PriamInstance getInstance() {
         return myInstance;
+    }
+
+    public InstanceInfo getInstanceInfo() {
+        return myInstanceInfo;
     }
 
     public void init() throws Exception {
@@ -112,13 +121,13 @@ public class InstanceIdentity {
                 new RetryableCallable<PriamInstance>() {
                     @Override
                     public PriamInstance retriableCall() throws Exception {
-                        // Check if this node is decomissioned
+                        // Check if this node is decommissioned
                         List<PriamInstance> deadInstances =
                                 factory.getAllIds(config.getAppName() + "-dead");
                         for (PriamInstance ins : deadInstances) {
                             logger.info(
                                     "[Dead] Iterating though the hosts: {}", ins.getInstanceId());
-                            if (ins.getInstanceId().equals(config.getInstanceName())) {
+                            if (ins.getInstanceId().equals(myInstanceInfo.getInstanceId())) {
                                 ins.setOutOfService(true);
                                 logger.info(
                                         "[Dead]  found that this node is dead."
@@ -145,7 +154,7 @@ public class InstanceIdentity {
                                     "[Alive] Iterating though the hosts: {} My id = [{}]",
                                     ins.getInstanceId(),
                                     ins.getId());
-                            if (ins.getInstanceId().equals(config.getInstanceName())) {
+                            if (ins.getInstanceId().equals(myInstanceInfo.getInstanceId())) {
                                 logger.info(
                                         "[Alive]  found that this node is alive."
                                                 + " application: {}"

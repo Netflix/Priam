@@ -19,10 +19,6 @@ package com.netflix.priam.config;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
-import com.netflix.priam.identity.config.InstanceDataRetriever;
-import com.netflix.priam.identity.config.LocalInstanceDataRetriever;
-import com.netflix.priam.scheduler.SchedulerType;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -32,26 +28,17 @@ import java.util.Map;
 @Singleton
 public class FakeConfiguration implements IConfiguration {
 
-    public static final String FAKE_REGION = "us-east-1";
-
-    private String region;
     private String appName;
-    public String zone;
-    public String instance_id;
-    private String restorePrefix;
+    private String restorePrefix = "";
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
     public FakeConfiguration() {
-        this(FAKE_REGION, "my_fake_cluster", "my_zone", "i-01234567");
+        this("my_fake_cluster");
     }
 
-    public FakeConfiguration(String region, String appName, String zone, String ins_id) {
-        this.region = region;
+    public FakeConfiguration(String appName) {
         this.appName = appName;
-        this.zone = zone;
-        this.instance_id = ins_id;
-        this.restorePrefix = "";
     }
 
     @Override
@@ -101,34 +88,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getThriftPort() {
-        return 9160;
-    }
-
-    @Override
-    public int getNativeTransportPort() {
-        return 9042;
-    }
-
-    @Override
     public String getSnitch() {
         return "org.apache.cassandra.locator.SimpleSnitch";
-    }
-
-    @Override
-    public String getRac() {
-        return this.zone;
-    }
-
-    @Override
-    public String getHostname() {
-        // TODO Auto-generated method stub
-        return instance_id;
-    }
-
-    @Override
-    public String getInstanceName() {
-        return instance_id;
     }
 
     @Override
@@ -141,22 +102,6 @@ public class FakeConfiguration implements IConfiguration {
     public String getHeapNewSize() {
         // TODO Auto-generated method stub
         return null;
-    }
-
-    @Override
-    public int getBackupHour() {
-        // TODO Auto-generated method stub
-        return 12;
-    }
-
-    @Override
-    public String getBackupCronExpression() {
-        return null;
-    }
-
-    @Override
-    public SchedulerType getBackupSchedulerType() {
-        return SchedulerType.HOUR;
     }
 
     @Override
@@ -182,24 +127,18 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getDC() {
-        return this.region;
-    }
-
-    @Override
     public int getRestoreThreads() {
         return 2;
     }
 
-    public void setRestorePrefix(String prefix) {
-        // TODO Auto-generated method stub
-        restorePrefix = prefix;
-    }
-
     @Override
     public String getRestorePrefix() {
-        // TODO Auto-generated method stub
-        return restorePrefix;
+        return this.restorePrefix;
+    }
+
+    // For testing purposes only.
+    public void setRestorePrefix(String restorePrefix) {
+        this.restorePrefix = restorePrefix;
     }
 
     @Override
@@ -208,65 +147,14 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isMultiDC() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public String getASGName() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    /**
-     * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
-     * consider while calculating RAC membership
-     */
-    @Override
     public String getSiblingASGNames() {
         return null;
-    }
-
-    @Override
-    public boolean isIncrBackup() {
-        return true;
-    }
-
-    @Override
-    public String getHostIP() {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
-    public int getUploadThrottle() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public InstanceDataRetriever getInstanceDataRetriever()
-            throws InstantiationException, IllegalAccessException, ClassNotFoundException {
-        return new LocalInstanceDataRetriever();
     }
 
     @Override
     public boolean isLocalBootstrapEnabled() {
         // TODO Auto-generated method stub
         return false;
-    }
-
-    @Override
-    public int getCompactionThroughput() {
-        // TODO Auto-generated method stub
-        return 0;
-    }
-
-    @Override
-    public String getMaxDirectMemory() {
-        // TODO Auto-generated method stub
-        return null;
     }
 
     @Override
@@ -292,35 +180,13 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public void setDC(String region) {
-        // TODO Auto-generated method stub
-
-    }
-
-    @Override
-    public boolean isRestoreClosestToken() {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
     public String getCassStopScript() {
         return "true";
     }
 
     @Override
-    public int getGracefulDrainHealthWaitSeconds() {
-        return -1;
-    }
-
-    @Override
     public int getRemediateDeadCassandraRate() {
         return 1;
-    }
-
-    @Override
-    public int getStoragePort() {
-        return 7101;
     }
 
     @Override
@@ -338,37 +204,8 @@ public class FakeConfiguration implements IConfiguration {
         return Lists.newArrayList();
     }
 
-    public int getMaxHintWindowInMS() {
-        return 36000;
-    }
-
-    public int getHintedHandoffThrottleKb() {
-        return 1024;
-    }
-
-    public int getMaxHintThreads() {
-        return 1;
-    }
-
-    /** @return memtable_cleanup_threshold in C* yaml */
-    @Override
-    public double getMemtableCleanupThreshold() {
-        return 0.11;
-    }
-
-    @Override
-    public int getStreamingThroughputMB() {
-        return 400;
-    }
-
     public String getPartitioner() {
         return "org.apache.cassandra.dht.RandomPartitioner";
-    }
-
-    @Override
-    public int getSSLStoragePort() {
-        // TODO Auto-generated method stub
-        return 7103;
     }
 
     public String getKeyCacheSizeInMB() {
@@ -392,20 +229,8 @@ public class FakeConfiguration implements IConfiguration {
         return "CassandraDaemon";
     }
 
-    public int getNumTokens() {
-        return 1;
-    }
-
     public String getYamlLocation() {
         return "conf/cassandra.yaml";
-    }
-
-    public String getAuthenticator() {
-        return PriamConfiguration.DEFAULT_AUTHENTICATOR;
-    }
-
-    public String getAuthorizer() {
-        return PriamConfiguration.DEFAULT_AUTHORIZER;
     }
 
     @Override
@@ -414,13 +239,8 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isVpcRing() {
-        return false;
-    }
-
-    @Override
     public String getCommitLogBackupPropsFile() {
-        return getCassHome() + PriamConfiguration.DEFAULT_COMMITLOG_PROPS_FILE;
+        return getCassHome() + "/conf/commitlog_archiving.properties";
     }
 
     @Override
@@ -442,8 +262,6 @@ public class FakeConfiguration implements IConfiguration {
     public String getCommitLogBackupRestorePointInTime() {
         return null;
     }
-
-    public void setRestoreKeySpaces(List<String> keyspaces) {}
 
     @Override
     public int maxCommitLogsRestore() {
@@ -562,11 +380,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getVpcId() {
-        return "";
-    }
-
-    @Override
     public int getBackupQueueSize() {
         return 100;
     }
@@ -574,26 +387,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getFlushKeyspaces() {
         return "";
-    }
-
-    @Override
-    public String getFlushInterval() {
-        return null;
-    }
-
-    @Override
-    public String getBackupStatusFileLoc() {
-        return "backupstatus.ser";
-    }
-
-    @Override
-    public String getBackupNotificationTopicArn() {
-        return null;
-    }
-
-    @Override
-    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-        return SchedulerType.HOUR;
     }
 
     @Override
@@ -614,10 +407,6 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getPostRestoreHookDoneFileName() {
         return System.getProperty("java.io.tmpdir") + File.separator + "postrestorehook.done";
-    }
-
-    public int getPostRestoreHookTimeOutInDays() {
-        return 2;
     }
 
     @Override

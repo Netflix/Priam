@@ -18,8 +18,8 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.InstanceEnvIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.Sleeper;
 import com.sun.jersey.api.client.Client;
 import com.sun.jersey.api.client.ClientResponse;
@@ -46,7 +46,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     private String
             replacedIp; // The IP address of the dead instance to which we will acquire its token
     private ListMultimap<String, PriamInstance> locMap;
-    private final InstanceEnvIdentity insEnvIdentity;
+    private final InstanceInfo instanceInfo;
 
     @Inject
     public DeadTokenRetriever(
@@ -54,12 +54,12 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             IMembership membership,
             IConfiguration config,
             Sleeper sleeper,
-            InstanceEnvIdentity insEnvIdentity) {
+            InstanceInfo instanceInfo) {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
         this.sleeper = sleeper;
-        this.insEnvIdentity = insEnvIdentity;
+        this.instanceInfo = instanceInfo;
     }
 
     private List<String> getDualAccountRacMembership(List<String> asgInstances) {
@@ -68,7 +68,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         List<String> crossAccountAsgInstances = membership.getCrossAccountRacMembership();
 
         if (logger.isInfoEnabled()) {
-            if (insEnvIdentity.isClassic()) {
+            if (instanceInfo.getInstanceEnvironment() == InstanceInfo.InstanceEnvironment.CLASSIC) {
                 logger.info(
                         "EC2 classic instances (local ASG): "
                                 + Arrays.toString(asgInstances.toArray()));
@@ -109,7 +109,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         sleeper.sleep(new Random().nextInt(5000) + 10000);
         for (PriamInstance dead : allIds) {
             // test same zone and is it is alive.
-            if (!dead.getRac().equals(config.getRac())
+            if (!dead.getRac().equals(instanceInfo.getRac())
                     || asgInstances.contains(dead.getInstanceId())
                     || super.isInstanceDummy(dead)) continue;
             logger.info("Found dead instances: {}", dead.getInstanceId());
@@ -138,10 +138,10 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             return factory.create(
                     config.getAppName(),
                     markAsDead.getId(),
-                    config.getInstanceName(),
-                    config.getHostname(),
-                    config.getHostIP(),
-                    config.getRac(),
+                    instanceInfo.getInstanceId(),
+                    instanceInfo.getHostname(),
+                    instanceInfo.getHostIP(),
+                    instanceInfo.getRac(),
                     markAsDead.getVolumes(),
                     payLoad);
         }

@@ -18,21 +18,22 @@ import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
-import com.netflix.priam.identity.InstanceEnvIdentity;
+import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.config.InstanceInfo;
 
 public class EC2RoleAssumptionCredential implements ICredential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "AwsRoleAssumptionSession";
     private final ICredential cred;
     private final IConfiguration config;
-    private final InstanceEnvIdentity insEnvIdentity;
+    private final InstanceIdentity instanceIdentity;
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
     public EC2RoleAssumptionCredential(
-            ICredential cred, IConfiguration config, InstanceEnvIdentity insEnvIdentity) {
+            ICredential cred, IConfiguration config, InstanceIdentity instanceIdentity) {
         this.cred = cred;
         this.config = config;
-        this.insEnvIdentity = insEnvIdentity;
+        this.instanceIdentity = instanceIdentity;
     }
 
     @Override
@@ -47,7 +48,8 @@ public class EC2RoleAssumptionCredential implements ICredential {
                      * current environment is VPC, then the assumed role is for EC2 classic, and
                      * vice versa.
                      */
-                    if (this.insEnvIdentity.isClassic()) {
+                    if (instanceIdentity.getInstanceInfo().getInstanceEnvironment()
+                            == InstanceInfo.InstanceEnvironment.CLASSIC) {
                         roleArn = this.config.getClassicEC2RoleAssumptionArn();
                         // Env is EC2 classic --> IAM assumed role for VPC created
                     } else {

@@ -17,6 +17,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
 import java.io.*;
 import java.util.List;
@@ -31,10 +32,12 @@ import org.yaml.snakeyaml.Yaml;
 public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public StandardTuner(IConfiguration config) {
+    public StandardTuner(IConfiguration config, InstanceInfo instanceInfo) {
         this.config = config;
+        this.instanceInfo = instanceInfo;
     }
 
     public void writeAllProperties(String yamlLocation, String hostname, String seedProvider)
@@ -54,7 +57,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         // Dont bootstrap in restore mode
-        if (!Restore.isRestoreEnabled(config)) {
+        if (!Restore.isRestoreEnabled(config, instanceInfo)) {
             map.put("auto_bootstrap", config.getAutoBoostrap());
         } else {
             map.put("auto_bootstrap", false);
@@ -65,9 +68,9 @@ public class StandardTuner implements ICassandraTuner {
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
 
         boolean enableIncremental =
-                (SnapshotBackup.isBackupEnabled(config) && config.isIncrBackup())
+                (SnapshotBackup.isBackupEnabled(config) && config.isIncrementalBackupEnabled())
                         && (CollectionUtils.isEmpty(config.getBackupRacs())
-                                || config.getBackupRacs().contains(config.getRac()));
+                                || config.getBackupRacs().contains(instanceInfo.getRac()));
         map.put("incremental_backups", enableIncremental);
 
         map.put("endpoint_snitch", config.getSnitch());
@@ -104,8 +107,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("rpc_max_threads", config.getRpcMaxThreads());
         // Add private ip address as broadcast_rpc_address. This will ensure that COPY function
         // works correctly.
-        map.put("broadcast_rpc_address", config.getInstanceDataRetriever().getPrivateIP());
-        // map.put("index_interval", config.getIndexInterval());
+        map.put("broadcast_rpc_address", instanceInfo.getPrivateIP());
 
         map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());

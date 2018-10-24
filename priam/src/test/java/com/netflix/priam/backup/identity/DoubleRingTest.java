@@ -32,7 +32,7 @@ public class DoubleRingTest extends InstanceTestUtils {
     public void testDouble() throws Exception {
         createInstances();
         int originalSize = factory.getAllIds(config.getAppName()).size();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
+        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
         List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
         factory.sort(doubled);
 
@@ -43,13 +43,13 @@ public class DoubleRingTest extends InstanceTestUtils {
     private void validate(List<PriamInstance> doubled) {
         List<String> validator = Lists.newArrayList();
         for (int i = 0; i < doubled.size(); i++) {
-            validator.add(tokenManager.createToken(i, doubled.size(), config.getDC()));
+            validator.add(tokenManager.createToken(i, doubled.size(), instanceInfo.getRegion()));
         }
 
         for (int i = 0; i < doubled.size(); i++) {
             PriamInstance ins = doubled.get(i);
             assertEquals(validator.get(i), ins.getToken());
-            int id = ins.getId() - tokenManager.regionOffset(config.getDC());
+            int id = ins.getId() - tokenManager.regionOffset(instanceInfo.getRegion());
             System.out.println(ins);
             if (0 != id % 2) assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
         }
@@ -59,7 +59,7 @@ public class DoubleRingTest extends InstanceTestUtils {
     public void testBR() throws Exception {
         createInstances();
         int intialSize = factory.getAllIds(config.getAppName()).size();
-        DoubleRing ring = new DoubleRing(config, factory, tokenManager);
+        DoubleRing ring = new DoubleRing(config, factory, tokenManager, identity);
         ring.backup();
         ring.doubleSlots();
         assertEquals(intialSize * 2, factory.getAllIds(config.getAppName()).size());

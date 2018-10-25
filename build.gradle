@@ -13,11 +13,23 @@ googleJavaFormat {
 
 ext.githubProjectName = 'Priam'
 
+allprojects {
+    apply plugin: 'jacoco'
+    apply plugin: 'java'
+
+    jacocoTestReport {
+        reports {
+            html.enabled = true
+            xml.enabled = true
+            csv.enabled = false
+        }
+    }
+}
+
 subprojects {
     apply plugin: 'nebula.netflixoss'
-    apply plugin: 'java'
+    apply plugin: 'project-report'
     
-
     group = 'com.netflix.priam'
 
     repositories {
@@ -77,5 +89,32 @@ subprojects {
 
       sourceCompatibility = JavaVersion.VERSION_1_8
       targetCompatibility = JavaVersion.VERSION_1_8
+    }
+}
+
+task codeCoverageReport(type: JacocoReport, group: "Coverage reports") {
+    executionData fileTree(project.rootDir.absolutePath).include("**/build/jacoco/*.exec")
+    dependsOn subprojects*.test
+
+    subprojects.each {
+        sourceSets it.sourceSets.main
+    }
+
+    reports {
+        xml.enabled = true
+        xml.destination new File("${buildDir}/reports/jacoco/report.xml")
+        html.enabled = true
+        html.destination new File("${buildDir}/reports/jacoco/html")
+        csv.enabled = false
+    }
+    afterEvaluate {
+        // Exclude generated files from top-level coverage report
+        classDirectories = files(
+                classDirectories.files.collect {
+                    fileTree(
+                            dir: it
+                    )
+                }
+        )
     }
 }

@@ -148,7 +148,7 @@ public class TestFileIterator {
                         "TESTBUCKET",
                         stime,
                         etime);
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(0, files.size());
     }
@@ -176,7 +176,7 @@ public class TestFileIterator {
                         "TESTBUCKET",
                         startTime,
                         endTime);
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(3, files.size());
         Assert.assertTrue(
@@ -224,7 +224,7 @@ public class TestFileIterator {
                         "TESTBUCKET",
                         startTime,
                         endTime);
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(5, files.size());
         Assert.assertTrue(
@@ -288,7 +288,7 @@ public class TestFileIterator {
                         "TESTBUCKET",
                         startTime,
                         endTime);
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(2, files.size());
         Assert.assertFalse(
@@ -348,7 +348,7 @@ public class TestFileIterator {
                         "RESTOREBUCKET/test_restore_backup/fake-restore-region/fakerestorecluster",
                         startTime,
                         endTime);
-        Set<String> files = new HashSet<String>();
+        Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
 
@@ -391,8 +391,8 @@ public class TestFileIterator {
                                 + "/fakecluster/123456/201108110600/SST/ks2/cf1/f3.db"));
     }
 
-    public static List<S3ObjectSummary> getObjectSummary() {
-        List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
+    private static List<S3ObjectSummary> getObjectSummary() {
+        List<S3ObjectSummary> list = new ArrayList<>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey(
                 "test_backup/" + region + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db");
@@ -411,12 +411,12 @@ public class TestFileIterator {
         return list;
     }
 
-    public static List<S3ObjectSummary> getObjectSummaryEmpty() {
-        return new ArrayList<S3ObjectSummary>();
+    private static List<S3ObjectSummary> getObjectSummaryEmpty() {
+        return new ArrayList<>();
     }
 
-    public static List<S3ObjectSummary> getNextObjectSummary() {
-        List<S3ObjectSummary> list = new ArrayList<S3ObjectSummary>();
+    private static List<S3ObjectSummary> getNextObjectSummary() {
+        List<S3ObjectSummary> list = new ArrayList<>();
         S3ObjectSummary summary = new S3ObjectSummary();
         summary.setKey(
                 "test_backup/" + region + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db");

@@ -132,8 +132,9 @@ class TestCompaction extends Specification {
         1 || 0
     }
 
-    private int concurrentRuns(int size) {
-        CassandraMonitor.setIsCassadraStarted();
+
+    private static int concurrentRuns(int size) {
+        CassandraMonitor.setIsCassadraStarted()
         ExecutorService threads = Executors.newFixedThreadPool(size)
         List<Callable<Boolean>> torun = new ArrayList<>(size)
         for (int i = 0; i < size; i++) {
@@ -156,7 +157,7 @@ class TestCompaction extends Specification {
             //We expect exception here.
             try{
                 fut.get()
-            }catch(Exception e){
+            }catch(Exception ignored){
                 noOfBadRun++
             }
         }

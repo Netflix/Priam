@@ -116,7 +116,7 @@ public class BackupServletTest {
 
             {
                 DateUtil.getDate(dateRange.split(",")[0]);
-                result = new DateTime(2011, 01, 01, 00, 00).toDate();
+                result = new DateTime(2011, 1, 1, 0, 0).toDate();
                 times = 1;
                 DateUtil.getDate(dateRange.split(",")[1]);
                 result = new DateTime(2011, 12, 31, 23, 59).toDate();
@@ -137,8 +137,8 @@ public class BackupServletTest {
     }
 
     // TODO: create CassandraController interface and inject, instead of static util method
-    private Expectations expectCassandraStartup() {
-        return new Expectations() {
+    private void expectCassandraStartup() {
+        new Expectations() {
             {
                 config.getCassStartupScript();
                 result = "/usr/bin/false";

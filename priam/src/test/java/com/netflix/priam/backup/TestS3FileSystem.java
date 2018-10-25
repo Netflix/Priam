@@ -18,7 +18,6 @@
 package com.netflix.priam.backup;
 
 import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
 import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
@@ -51,7 +50,7 @@ import org.slf4j.LoggerFactory;
 public class TestS3FileSystem {
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestS3FileSystem.class);
-    private static String FILE_PATH =
+    private static final String FILE_PATH =
             "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
     private static BackupMetrics backupMetrics;
     private static String region;
@@ -202,9 +201,6 @@ public class TestS3FileSystem {
         }
 
         @Mock
-        public void abortUpload() {}
-
-        @Mock
         public Void retriableCall() throws AmazonClientException, BackupRestoreException {
             logger.info("MOCK UPLOADING...");
             return uploadPart();
@@ -223,9 +219,6 @@ public class TestS3FileSystem {
         static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
 
         @Mock
-        public void $init() {}
-
-        @Mock
         public InitiateMultipartUploadResult initiateMultipartUpload(
                 InitiateMultipartUploadRequest initiateMultipartUploadRequest)
                 throws AmazonClientException {
@@ -233,7 +226,7 @@ public class TestS3FileSystem {
         }
 
         public PutObjectResult putObject(PutObjectRequest putObjectRequest)
-                throws SdkClientException, AmazonServiceException {
+                throws SdkClientException {
             PutObjectResult result = new PutObjectResult();
             result.setETag("ad");
             return result;

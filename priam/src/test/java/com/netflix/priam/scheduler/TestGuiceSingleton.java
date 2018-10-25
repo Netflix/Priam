@@ -41,16 +41,16 @@ public class TestGuiceSingleton {
         injector.getInstance(EmptryInterface.class).print();
     }
 
-    public interface EmptryInterface {
-        String print();
+    interface EmptryInterface {
+        void print();
     }
 
     @Singleton
     public static class GuiceSingleton implements EmptryInterface {
 
-        public String print() {
+        public void print() {
             System.out.println(this.toString());
-            return this.toString();
+            this.toString();
         }
     }
 

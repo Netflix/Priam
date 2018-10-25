@@ -83,7 +83,7 @@ public class TestInstanceStatus {
     }
 
     private class TestInstanceState {
-        private InstanceState instanceState;
+        private final InstanceState instanceState;
 
         TestInstanceState(InstanceState instanceState1) {
             this.instanceState = instanceState1;

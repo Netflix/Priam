@@ -33,7 +33,9 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
-        return new ArrayList<>(instances.values());
+        List<PriamInstance> result = new ArrayList<>(instances.values());
+        sort(result);
+        return result;
     }
 
     @Override

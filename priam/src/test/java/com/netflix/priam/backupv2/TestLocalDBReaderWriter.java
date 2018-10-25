@@ -87,21 +87,17 @@ public class TestLocalDBReaderWriter {
         List<LocalDBReaderWriter.LocalDB> localDBList =
                 generateDummyLocalDB(noOfKeyspaces, noOfCf, noOfSstables);
 
-        localDBList
-                .stream()
-                .forEach(
-                        localDB -> {
-                            FileUploadResult fileUploadResult =
-                                    localDB.getLocalDBEntries().get(0).getFileUploadResult();
-                            final Path localDBPath =
-                                    localDBReaderWriter.getLocalDBPath(fileUploadResult);
-                            try {
-                                localDBReaderWriter.writeLocalDB(localDBPath, localDB);
-                            } catch (Exception e) {
-                                logger.error(
-                                        "Error while writing to local DB: " + e.getMessage(), e);
-                            }
-                        });
+        localDBList.forEach(
+                localDB -> {
+                    FileUploadResult fileUploadResult =
+                            localDB.getLocalDBEntries().get(0).getFileUploadResult();
+                    final Path localDBPath = localDBReaderWriter.getLocalDBPath(fileUploadResult);
+                    try {
+                        localDBReaderWriter.writeLocalDB(localDBPath, localDB);
+                    } catch (Exception e) {
+                        logger.error("Error while writing to local DB: " + e.getMessage(), e);
+                    }
+                });
 
         // Verify the write succeeded for each KS/CF/SStable.
         Assert.assertEquals(localDbPath.toFile().listFiles().length, noOfKeyspaces);
@@ -121,7 +117,6 @@ public class TestLocalDBReaderWriter {
 
         // Lets do write with each LocalDBEntry first.
         localDB.getLocalDBEntries()
-                .stream()
                 .forEach(
                         localDBEntry -> {
                             try {
@@ -168,21 +163,17 @@ public class TestLocalDBReaderWriter {
     @Test
     public void readConcurrentLocalDB() throws Exception {
         List<LocalDBReaderWriter.LocalDB> localDBList = generateDummyLocalDB(1, 1, 1);
-        localDBList
-                .stream()
-                .forEach(
-                        localDB -> {
-                            FileUploadResult fileUploadResult =
-                                    localDB.getLocalDBEntries().get(0).getFileUploadResult();
-                            final Path localDBPath =
-                                    localDBReaderWriter.getLocalDBPath(fileUploadResult);
-                            try {
-                                localDBReaderWriter.writeLocalDB(localDBPath, localDB);
-                            } catch (Exception e) {
-                                logger.error(
-                                        "Error while writing to local DB: " + e.getMessage(), e);
-                            }
-                        });
+        localDBList.forEach(
+                localDB -> {
+                    FileUploadResult fileUploadResult =
+                            localDB.getLocalDBEntries().get(0).getFileUploadResult();
+                    final Path localDBPath = localDBReaderWriter.getLocalDBPath(fileUploadResult);
+                    try {
+                        localDBReaderWriter.writeLocalDB(localDBPath, localDB);
+                    } catch (Exception e) {
+                        logger.error("Error while writing to local DB: " + e.getMessage(), e);
+                    }
+                });
 
         FileUploadResult sample =
                 localDBList.get(0).getLocalDBEntries().get(0).getFileUploadResult();
@@ -247,7 +238,7 @@ public class TestLocalDBReaderWriter {
     }
 
     private List<LocalDBReaderWriter.LocalDB> generateDummyLocalDB(
-            int noOfKeyspaces, int noOfCf, int noOfSstables) throws Exception {
+            int noOfKeyspaces, int noOfCf, int noOfSstables) {
 
         // Clean the dummy directory
         cleanupDir(dummyDataDirectoryLocation);

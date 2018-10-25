@@ -33,7 +33,7 @@ public class TestDoublingLogic {
 
     @Test
     public void testSkip() {
-        List<String> nodes = new ArrayList<String>();
+        List<String> nodes = new ArrayList<>();
         for (int i = 0; i < NODES_PER_RACS; i++)
             for (int j = 0; j < RACS; j++) nodes.add("RAC-" + j);
         // printNodes(nodes);
@@ -81,8 +81,8 @@ public class TestDoublingLogic {
     }
 
     private List<String> doubleNodes(List<String> nodes) {
-        List<String> lst = new ArrayList<String>();
-        Map<Integer, String> return_ = new HashMap<Integer, String>();
+        List<String> lst = new ArrayList<>();
+        Map<Integer, String> return_ = new HashMap<>();
         for (int i = 0; i < nodes.size(); i++) {
             return_.put(i * 2, nodes.get(i));
         }

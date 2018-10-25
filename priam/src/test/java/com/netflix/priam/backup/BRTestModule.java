@@ -39,7 +39,7 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
-import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
@@ -56,7 +56,8 @@ public class BRTestModule extends AbstractModule {
 
         bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
-        bind(IMembership.class).toInstance(new FakeMembership(Arrays.asList("fakeInstance1")));
+        bind(IMembership.class)
+                .toInstance(new FakeMembership(Collections.singletonList("fakeInstance1")));
         bind(ICredential.class).to(FakeNullCredential.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class)
                 .annotatedWith(Names.named("backup"))

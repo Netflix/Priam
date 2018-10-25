@@ -37,8 +37,6 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The goal of this class is to test common functionality which are encapsulated in
@@ -46,8 +44,6 @@ import org.slf4j.LoggerFactory;
  * scope of this class. Created by aagrawal on 9/22/18.
  */
 public class TestAbstractFileSystem {
-    private static final Logger logger =
-            LoggerFactory.getLogger(TestAbstractFileSystem.class.getName());
     private Injector injector;
     private IConfiguration configuration;
     private BackupMetrics backupMetrics;
@@ -310,7 +306,7 @@ public class TestAbstractFileSystem {
 
     class MyFileSystem extends NullBackupFileSystem {
 
-        private Random random = new Random();
+        private final Random random = new Random();
 
         @Inject
         public MyFileSystem(

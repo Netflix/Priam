@@ -61,6 +61,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
+    private static final String CASSANDRA_SCHEMA_FILE = "schema.cql";
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
@@ -164,6 +165,14 @@ public class SnapshotMetaService extends AbstractBackup {
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
         } finally {
+            // Make sure you clean up snapshots whatever be the case.
+            try {
+                cassandraOperations.clearSnapshot(snapshotName);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
+
+            // Release the lock.
             lock.unlock();
         }
     }
@@ -229,11 +238,14 @@ public class SnapshotMetaService extends AbstractBackup {
                 if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_MANIFEST_FILE))
                     prefix = "manifest";
 
+                if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_SCHEMA_FILE))
+                    prefix = "schema";
+
                 if (prefix == null) {
                     logger.error(
-                            "Unknown file type with no SSTFileBase found: ",
+                            "Unknown file type with no SSTFileBase found: {}",
                             file.getAbsolutePath());
-                    return;
+                    continue;
                 }
 
                 FileUploadResult fileUploadResult =

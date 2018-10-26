@@ -1,5 +1,8 @@
 # Changelog
-## 2018/10/17 3.11.34
+## 2018/10/26 3.11.36
+* (#747) Aggregate InstanceData in InstanceInfo and pull information about running instance 
+
+## 2018/10/17 3.11.35
 * (#739) BugFix: Null pointer exception while traversing filesystem. 
 * (#737) Google java format validator addition. Use ./gradlew goJF to fix the formatting before sending PR. 
 * (#740) Last but not least, a new logo for Priam. 

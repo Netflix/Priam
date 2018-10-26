@@ -1,4 +1,7 @@
 # Changelog
+## 2018/10/26 3.1.66
+* (#744) Aggregate InstanceData in InstanceInfo and pull basic information about running instance from machine itself.  
+
 ## 2018/10/17 3.1.65
 * (#738) BugFix: Null pointer exception while traversing filesystem. 
 * (#736) Google java format validator addition. Use ./gradlew goJF to fix the formatting before sending PR. 

@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,7 +69,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 
                     final String roleArn = this.config.getAWSRoleAssumptionArn();
                     // IAM role created for bucket own by account "awsprodbackup"
-                    if (roleArn == null || roleArn.isEmpty()) {
+                    if (StringUtils.isEmpty(roleArn)) {
                         logger.warn(
                                 "Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
                         this.stsSessionCredentialsProvider = this.cred.getAwsCredentialProvider();

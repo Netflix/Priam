@@ -144,6 +144,11 @@ public class SnapshotMetaService extends AbstractBackup {
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
         } finally {
+            try {
+                cassandraOperations.clearSnapshot(snapshotName);
+            } catch (Exception e) {
+                logger.error(e.getMessage(), e);
+            }
             lock.unlock();
         }
     }
@@ -211,9 +216,9 @@ public class SnapshotMetaService extends AbstractBackup {
 
                 if (prefix == null) {
                     logger.error(
-                            "Unknown file type with no SSTFileBase found: ",
+                            "Unknown file type with no SSTFileBase found: {}",
                             file.getAbsolutePath());
-                    return;
+                    continue;
                 }
 
                 FileUploadResult fileUploadResult =

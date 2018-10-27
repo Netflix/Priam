@@ -19,6 +19,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
+import org.apache.commons.lang3.StringUtils;
 
 public class EC2RoleAssumptionCredential implements ICredential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "AwsRoleAssumptionSession";
@@ -57,7 +58,7 @@ public class EC2RoleAssumptionCredential implements ICredential {
                     }
 
                     //
-                    if (roleArn == null || roleArn.isEmpty())
+                    if (StringUtils.isEmpty(roleArn))
                         throw new NullPointerException(
                                 "Role ARN is null or empty probably due to missing config entry");
 

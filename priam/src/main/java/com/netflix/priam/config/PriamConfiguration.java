@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 public class PriamConfiguration implements IConfiguration {
     public static final String PRIAM_PRE = "priam";
 
-    private static final String CONFIG_RESTORE_PREFIX = PRIAM_PRE + ".restore.prefix";
     private final String CASS_BASE_DATA_DIR = "/var/lib/cassandra";
 
     private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
@@ -136,7 +135,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getRestorePrefix() {
-        return config.get(CONFIG_RESTORE_PREFIX);
+        return config.get(PRIAM_PRE + ".restore.prefix");
     }
 
     @Override

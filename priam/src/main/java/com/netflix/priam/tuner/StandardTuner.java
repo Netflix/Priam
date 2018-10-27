@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -231,7 +232,7 @@ public class StandardTuner implements ICassandraTuner {
 
     public void addExtraCassParams(Map map) {
         String params = config.getExtraConfigParams();
-        if (params == null) {
+        if (StringUtils.isEmpty(params)) {
             logger.info("Updating yaml: no extra cass params");
             return;
         }

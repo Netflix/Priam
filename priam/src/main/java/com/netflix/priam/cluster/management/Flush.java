@@ -25,6 +25,8 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import javax.inject.Inject;
 import javax.inject.Singleton;
+
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,7 +90,7 @@ public class Flush extends IClusterManagement<String> {
     private void deriveKeyspaces() throws Exception {
         // == get value from property
         String raw = this.config.getFlushKeyspaces();
-        if (raw != null && !raw.isEmpty()) {
+        if (!StringUtils.isEmpty(raw)) {
             String k[] = raw.split(",");
             for (int i = 0; i < k.length; i++) {
                 this.keyspaces.add(i, k[i]);

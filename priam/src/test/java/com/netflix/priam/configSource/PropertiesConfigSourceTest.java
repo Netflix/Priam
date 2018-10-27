@@ -36,7 +36,7 @@ public final class PropertiesConfigSourceTest {
         Assert.assertEquals(7102, configSource.get("Priam.thrift.port", 0));
         // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(12, configSource.size());
+        Assert.assertEquals(13, configSource.size());
     }
 
     @Test
@@ -46,11 +46,11 @@ public final class PropertiesConfigSourceTest {
 
         // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(12, configSource.size());
+        Assert.assertEquals(13, configSource.size());
 
         configSource.set("foo", "bar");
 
-        Assert.assertEquals(13, configSource.size());
+        Assert.assertEquals(14, configSource.size());
 
         Assert.assertEquals("bar", configSource.get("foo"));
 

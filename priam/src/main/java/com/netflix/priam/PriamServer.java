@@ -38,6 +38,7 @@ import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.SystemUtils;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,7 +74,20 @@ public class PriamServer {
         this.restoreContext = restoreContext;
     }
 
+    private void createDirectories() {
+        SystemUtils.createDirs(config.getBackupCommitLogLocation());
+        SystemUtils.createDirs(config.getCommitLogLocation());
+        SystemUtils.createDirs(config.getCacheLocation());
+        SystemUtils.createDirs(config.getDataFileLocation());
+        SystemUtils.createDirs(config.getLogDirLocation());
+        SystemUtils.createDirs(config.getHintsLocation());
+    }
+
     public void initialize() throws Exception {
+        // Create all the required directories for priam and Cassandra.
+        createDirectories();
+
+        // Do not start Priam if you are out of service.
         if (instanceIdentity.getInstance().isOutOfService()) return;
 
         // start to schedule jobs

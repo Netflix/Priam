@@ -85,10 +85,12 @@ public class JVMOptionsTuner {
         validate(jvmOptionsFile);
         final GCType configuredGC = config.getGCType();
 
-        final Map<String, JVMOption> excludeSet = config.getJVMExcludeSet();
+        final Map<String, JVMOption> excludeSet =
+                JVMOptionsTuner.parseJVMOptions(config.getJVMExcludeSet());
 
         // Make a copy of upsertSet, so we can delete the entries as we process them.
-        Map<String, JVMOption> upsertSet = config.getJVMUpsertSet();
+        Map<String, JVMOption> upsertSet =
+                JVMOptionsTuner.parseJVMOptions(config.getJVMUpsertSet());
 
         // Don't use streams for processing as upsertSet jvm options needs to be removed if we find
         // them

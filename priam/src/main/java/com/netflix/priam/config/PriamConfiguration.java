@@ -30,7 +30,6 @@ import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -42,9 +41,6 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class PriamConfiguration implements IConfiguration {
     public static final String PRIAM_PRE = "priam";
-
-    private final String CASS_BASE_DATA_DIR = "/var/lib/cassandra";
-
     private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
 
     private final IConfigSource config;
@@ -65,10 +61,6 @@ public class PriamConfiguration implements IConfiguration {
     public void initialize() {
         this.config.initialize(instanceInfo.getAutoScalingGroup(), instanceInfo.getRegion());
         setDefaultRACList(instanceInfo.getRegion());
-        SystemUtils.createDirs(getBackupCommitLogLocation());
-        SystemUtils.createDirs(getCommitLogLocation());
-        SystemUtils.createDirs(getCacheLocation());
-        SystemUtils.createDirs(getDataFileLocation());
     }
 
     /** Get the fist 3 available zones in the region */
@@ -140,22 +132,22 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getDataFileLocation() {
-        return config.get(PRIAM_PRE + ".data.location", CASS_BASE_DATA_DIR + "/data");
+        return config.get(PRIAM_PRE + ".data.location", getCassandraBaseDirectory() + "/data");
     }
 
     @Override
     public String getLogDirLocation() {
-        return config.get(PRIAM_PRE + ".logs.location", CASS_BASE_DATA_DIR + "/logs");
+        return config.get(PRIAM_PRE + ".logs.location", getCassandraBaseDirectory() + "/logs");
     }
 
     @Override
     public String getCacheLocation() {
-        return config.get(PRIAM_PRE + ".cache.location", CASS_BASE_DATA_DIR + "/saved_caches");
+        return config.get(PRIAM_PRE + ".cache.location", getCassandraBaseDirectory() + "/saved_caches");
     }
 
     @Override
     public String getCommitLogLocation() {
-        return config.get(PRIAM_PRE + ".commitlog.location", CASS_BASE_DATA_DIR + "/commitlog");
+        return config.get(PRIAM_PRE + ".commitlog.location", getCassandraBaseDirectory() + "/commitlog");
     }
 
     @Override
@@ -552,6 +544,7 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(PRIAM_PRE + ".extra.params");
     }
 
+    @Override
     public Map<String, String> getExtraEnvParams() {
 
         String envParams = config.get(PRIAM_PRE + ".extra.env.params");

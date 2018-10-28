@@ -16,17 +16,10 @@
  */
 package com.netflix.priam.config;
 
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.AvailabilityZone;
-import com.amazonaws.services.ec2.model.DescribeAvailabilityZonesResult;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.configSource.IConfigSource;
-import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
@@ -41,18 +34,14 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class PriamConfiguration implements IConfiguration {
     public static final String PRIAM_PRE = "priam";
-    private List<String> DEFAULT_AVAILABILITY_ZONES = ImmutableList.of();
 
     private final IConfigSource config;
     private static final Logger logger = LoggerFactory.getLogger(PriamConfiguration.class);
-    private final ICredential provider;
 
     @JsonIgnore private InstanceInfo instanceInfo;
 
     @Inject
-    public PriamConfiguration(
-            ICredential provider, IConfigSource config, InstanceInfo instanceInfo) {
-        this.provider = provider;
+    public PriamConfiguration(IConfigSource config, InstanceInfo instanceInfo) {
         this.config = config;
         this.instanceInfo = instanceInfo;
     }
@@ -60,23 +49,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public void initialize() {
         this.config.initialize(instanceInfo.getAutoScalingGroup(), instanceInfo.getRegion());
-        setDefaultRACList(instanceInfo.getRegion());
-    }
-
-    /** Get the fist 3 available zones in the region */
-    private void setDefaultRACList(String region) {
-        AmazonEC2 client =
-                AmazonEC2ClientBuilder.standard()
-                        .withCredentials(provider.getAwsCredentialProvider())
-                        .withRegion(region)
-                        .build();
-        DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
-        List<String> zone = Lists.newArrayList();
-        for (AvailabilityZone reg : res.getAvailabilityZones()) {
-            if (reg.getState().equals("available")) zone.add(reg.getZoneName());
-            if (zone.size() == 3) break;
-        }
-        DEFAULT_AVAILABILITY_ZONES = ImmutableList.copyOf(zone);
     }
 
     @Override
@@ -142,12 +114,14 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getCacheLocation() {
-        return config.get(PRIAM_PRE + ".cache.location", getCassandraBaseDirectory() + "/saved_caches");
+        return config.get(
+                PRIAM_PRE + ".cache.location", getCassandraBaseDirectory() + "/saved_caches");
     }
 
     @Override
     public String getCommitLogLocation() {
-        return config.get(PRIAM_PRE + ".commitlog.location", getCassandraBaseDirectory() + "/commitlog");
+        return config.get(
+                PRIAM_PRE + ".commitlog.location", getCassandraBaseDirectory() + "/commitlog");
     }
 
     @Override
@@ -213,7 +187,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public List<String> getRacs() {
-        return config.getList(PRIAM_PRE + ".zones.available", DEFAULT_AVAILABILITY_ZONES);
+        return config.getList(PRIAM_PRE + ".zones.available", instanceInfo.getDefaultRacks());
     }
 
     @Override

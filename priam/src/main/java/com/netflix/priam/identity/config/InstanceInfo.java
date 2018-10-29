@@ -13,7 +13,10 @@
  */
 package com.netflix.priam.identity.config;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.ImplementedBy;
+import com.netflix.priam.config.IConfiguration;
+import java.util.List;
 
 /** A means to fetch meta data of running instance */
 @ImplementedBy(AWSInstanceInfo.class)
@@ -24,6 +27,16 @@ public interface InstanceInfo {
      * @return the availability zone of the running instance. e.g. us-east-1c
      */
     String getRac();
+
+    /**
+     * Get the list of default racks available for this DC. This is used if no value is configured
+     * for {@link IConfiguration#getRacs()}
+     *
+     * @return list of default racks.
+     */
+    default List<String> getDefaultRacks() {
+        return ImmutableList.of(getRac());
+    }
 
     /**
      * Get the hostname for the running instance. Cannot be null.

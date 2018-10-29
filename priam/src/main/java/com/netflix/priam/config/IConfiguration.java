@@ -22,8 +22,8 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
-import com.netflix.priam.tuner.JVMOption;
 import java.io.File;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
@@ -35,30 +35,47 @@ public interface IConfiguration {
     void initialize();
 
     /** @return Path to the home dir of Cassandra */
-    String getCassHome();
+    default String getCassHome() {
+        return "/etc/cassandra";
+    }
 
-    String getYamlLocation();
+    /** @return Location to `cassandra.yaml`. */
+    default String getYamlLocation() {
+        return getCassHome() + "/conf/cassandra.yaml";
+    }
 
     /** @return Path to jvm.options file. This is used to pass JVM options to Cassandra. */
-    String getJVMOptionsFileLocation();
+    default String getJVMOptionsFileLocation() {
+        return getCassHome() + "/conf/jvm.options";
+    }
 
     /**
      * @return Type of garbage collection mechanism to use for Cassandra. Supported values are
      *     CMS,G1GC
      */
-    GCType getGCType() throws UnsupportedTypeException;
+    default GCType getGCType() throws UnsupportedTypeException {
+        return GCType.CMS;
+    }
 
     /** @return Set of JVM options to exclude/comment. */
-    Map<String, JVMOption> getJVMExcludeSet();
+    default String getJVMExcludeSet() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return Set of JMV options to add/upsert */
-    Map<String, JVMOption> getJVMUpsertSet();
+    default String getJVMUpsertSet() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return Path to Cassandra startup script */
-    String getCassStartupScript();
+    default String getCassStartupScript() {
+        return "/etc/init.d/cassandra start";
+    }
 
     /** @return Path to Cassandra stop sript */
-    String getCassStopScript();
+    default String getCassStopScript() {
+        return "/etc/init.d/cassandra stop";
+    }
 
     /**
      * @return int representing how many seconds Priam should fail healthchecks for before
@@ -88,29 +105,56 @@ public interface IConfiguration {
      *
      * @return Prefix that will be added to remote backup location
      */
-    String getBackupLocation();
+    default String getBackupLocation() {
+        return "backup";
+    }
 
     /** @return Get Backup retention in days */
-    int getBackupRetentionDays();
+    default int getBackupRetentionDays() {
+        return 0;
+    }
 
     /** @return Get list of racs to backup. Backup all racs if empty */
-    List<String> getBackupRacs();
+    default List<String> getBackupRacs() {
+        return Collections.EMPTY_LIST;
+    }
 
     /**
-     * Bucket name in case of AWS
+     * Backup location i.e. remote file system to upload backups. e.g. for S3 it will be s3 bucket
+     * name
      *
      * @return Bucket name used for backups
      */
-    String getBackupPrefix();
+    default String getBackupPrefix() {
+        return "cassandra-archive";
+    }
 
     /**
      * @return Location containing backup files. Typically bucket name followed by path to the
      *     clusters backup
      */
-    String getRestorePrefix();
+    default String getRestorePrefix() {
+        return StringUtils.EMPTY;
+    }
+
+    /**
+     * This is the location of the data/logs/hints for the cassandra. Priam will by default, create
+     * all the sub-directories required. This dir should have permission to be altered by both
+     * cassandra and Priam. If this is configured correctly, there is no need to configure {@link
+     * #getDataFileLocation()}, {@link #getLogDirLocation()}, {@link #getCacheLocation()} and {@link
+     * #getCommitLogLocation()}. Alternatively all the other directories should be set explicitly by
+     * user. Set this location to a drive with fast read/writes performance and sizable disk space.
+     *
+     * @return Location where all the data/logs/hints for the cassandra will sit.
+     */
+    default String getCassandraBaseDirectory() {
+        return "/var/lib/cassandra";
+    }
 
     /** @return Location of the local data dir */
-    String getDataFileLocation();
+    default String getDataFileLocation() {
+        return getCassandraBaseDirectory() + "/data";
+    }
 
     /**
      * Path where cassandra logs should be stored. This is passed to Cassandra as where to store
@@ -118,21 +162,34 @@ public interface IConfiguration {
      *
      * @return Path to cassandra logs.
      */
-    String getLogDirLocation();
+    default String getLogDirLocation() {
+        return getCassandraBaseDirectory() + "/logs";
+    }
 
     /** @return Location of the hints data directory */
-    String getHintsLocation();
+    default String getHintsLocation() {
+        return getCassandraBaseDirectory() + "/hints";
+    }
+
     /** @return Location of local cache */
-    String getCacheLocation();
+    default String getCacheLocation() {
+        return getCassandraBaseDirectory() + "/saved_caches";
+    }
 
     /** @return Location of local commit log dir */
-    String getCommitLogLocation();
+    default String getCommitLogLocation() {
+        return getCassandraBaseDirectory() + "/commitlog";
+    }
 
     /** @return Remote commit log location for backups */
-    String getBackupCommitLogLocation();
+    default String getBackupCommitLogLocation() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return Preferred data part size for multi part uploads */
-    long getBackupChunkSize();
+    default long getBackupChunkSize() {
+        return 10 * 1024 * 1024L;
+    }
 
     /** @return Cassandra's JMX port */
     default int getJmxPort() {
@@ -174,19 +231,27 @@ public interface IConfiguration {
     }
 
     /** @return Snitch to be used in cassandra.yaml */
-    String getSnitch();
+    default String getSnitch() {
+        return "org.apache.cassandra.locator.Ec2Snitch";
+    }
 
     /** @return Cluster name */
-    String getAppName();
+    default String getAppName() {
+        return "cass_cluster";
+    }
 
     /** @return List of all RAC used for the cluster */
     List<String> getRacs();
 
     /** @return Max heap size be used for Cassandra */
-    String getHeapSize();
+    default String getHeapSize() {
+        return "8G";
+    }
 
     /** @return New heap size for Cassandra */
-    String getHeapNewSize();
+    default String getHeapNewSize() {
+        return "2G";
+    }
 
     /**
      * Cron expression to be used to schedule regular compactions. Use "-1" to disable the CRON.
@@ -362,10 +427,14 @@ public interface IConfiguration {
      *
      * @return Snapshot to be searched and restored
      */
-    String getRestoreSnapshot();
+    default String getRestoreSnapshot() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return Get the region to connect to SDB for instance identity */
-    String getSDBInstanceIdentityRegion();
+    default String getSDBInstanceIdentityRegion() {
+        return "us-east-1";
+    }
 
     /** @return true if it is a multi regional cluster */
     default boolean isMultiDC() {
@@ -391,10 +460,14 @@ public interface IConfiguration {
      * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
      * consider while calculating RAC membership
      */
-    String getSiblingASGNames();
+    default String getSiblingASGNames() {
+        return ",";
+    }
 
     /** Get the security group associated with nodes in this cluster */
-    String getACLGroupName();
+    default String getACLGroupName() {
+        return getAppName();
+    }
 
     /** @return true if incremental backups are enabled */
     default boolean isIncrementalBackupEnabled() {
@@ -407,7 +480,9 @@ public interface IConfiguration {
     }
 
     /** @return true if Priam should local config file for tokens and seeds */
-    boolean isLocalBootstrapEnabled();
+    default boolean isLocalBootstrapEnabled() {
+        return false;
+    }
 
     /** @return Compaction throughput */
     default int getCompactionThroughput() {
@@ -430,10 +505,14 @@ public interface IConfiguration {
     }
 
     /** @return Bootstrap cluster name (depends on another cass cluster) */
-    String getBootClusterName();
+    default String getBootClusterName() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return Get the name of seed provider */
-    String getSeedProviderName();
+    default String getSeedProviderName() {
+        return "com.netflix.priam.cassandra.extensions.NFSeedProvider";
+    }
 
     /**
      * memtable_cleanup_threshold defaults to 1 / (memtable_flush_writers + 1) = 0.11
@@ -454,22 +533,34 @@ public interface IConfiguration {
      *
      * @return the fully-qualified name of the partitioner class
      */
-    String getPartitioner();
+    default String getPartitioner() {
+        return "org.apache.cassandra.dht.RandomPartitioner";
+    }
 
     /** Support for c* 1.1 global key cache size */
-    String getKeyCacheSizeInMB();
+    default String getKeyCacheSizeInMB() {
+        return StringUtils.EMPTY;
+    }
 
     /** Support for limiting the total number of keys in c* 1.1 global key cache. */
-    String getKeyCacheKeysToSave();
+    default String getKeyCacheKeysToSave() {
+        return StringUtils.EMPTY;
+    }
 
     /** Support for c* 1.1 global row cache size */
-    String getRowCacheSizeInMB();
+    default String getRowCacheSizeInMB() {
+        return StringUtils.EMPTY;
+    }
 
     /** Support for limiting the total number of rows in c* 1.1 global row cache. */
-    String getRowCacheKeysToSave();
+    default String getRowCacheKeysToSave() {
+        return StringUtils.EMPTY;
+    }
 
     /** @return C* Process Name */
-    String getCassProcessName();
+    default String getCassProcessName() {
+        return "CassandraDaemon";
+    }
 
     /** Defaults to 'allow all'. */
     default String getAuthenticator() {
@@ -482,7 +573,9 @@ public interface IConfiguration {
     }
 
     /** @return true/false, if Cassandra needs to be started manually */
-    boolean doesCassandraStartManually();
+    default boolean doesCassandraStartManually() {
+        return false;
+    }
 
     /** @return possible values: all, dc, none */
     default String getInternodeCompression() {
@@ -499,33 +592,61 @@ public interface IConfiguration {
         return false;
     }
 
-    String getCommitLogBackupPropsFile();
+    default String getCommitLogBackupPropsFile() {
+        return getCassHome() + "/conf/commitlog_archiving.properties";
+    }
 
-    String getCommitLogBackupArchiveCmd();
+    default String getCommitLogBackupArchiveCmd() {
+        return "/bin/ln %path /mnt/data/backup/%name";
+    }
 
-    String getCommitLogBackupRestoreCmd();
+    default String getCommitLogBackupRestoreCmd() {
+        return "/bin/mv %from %to";
+    }
 
-    String getCommitLogBackupRestoreFromDirs();
+    default String getCommitLogBackupRestoreFromDirs() {
+        return "/mnt/data/backup/commitlog/";
+    }
 
-    String getCommitLogBackupRestorePointInTime();
+    default String getCommitLogBackupRestorePointInTime() {
+        return StringUtils.EMPTY;
+    }
 
-    int maxCommitLogsRestore();
+    default int maxCommitLogsRestore() {
+        return 10;
+    }
 
-    boolean isClientSslEnabled();
+    default boolean isClientSslEnabled() {
+        return false;
+    }
 
-    String getInternodeEncryption();
+    default String getInternodeEncryption() {
+        return "none";
+    }
 
-    boolean isDynamicSnitchEnabled();
+    default boolean isDynamicSnitchEnabled() {
+        return true;
+    }
 
-    boolean isThriftEnabled();
+    default boolean isThriftEnabled() {
+        return true;
+    }
 
-    boolean isNativeTransportEnabled();
+    default boolean isNativeTransportEnabled() {
+        return true;
+    }
 
-    int getConcurrentReadsCnt();
+    default int getConcurrentReadsCnt() {
+        return 32;
+    }
 
-    int getConcurrentWritesCnt();
+    default int getConcurrentWritesCnt() {
+        return 32;
+    }
 
-    int getConcurrentCompactorsCnt();
+    default int getConcurrentCompactorsCnt() {
+        return Runtime.getRuntime().availableProcessors();
+    }
 
     default String getRpcServerType() {
         return "hsha";
@@ -543,20 +664,30 @@ public interface IConfiguration {
      * @return the warning threshold in MB's for large partitions encountered during compaction.
      * Default value of 100 is used (default from cassandra.yaml)
      */
-    int getCompactionLargePartitionWarnThresholdInMB();
+    default int getCompactionLargePartitionWarnThresholdInMB() {
+        return 100;
+    }
 
-    String getExtraConfigParams();
+    default String getExtraConfigParams() {
+        return StringUtils.EMPTY;
+    }
 
     String getCassYamlVal(String priamKey);
 
-    boolean getAutoBoostrap();
+    default boolean getAutoBoostrap() {
+        return true;
+    }
 
-    boolean isCreateNewTokenEnable();
+    default boolean isCreateNewTokenEnable() {
+        return true;
+    }
 
     /*
      * @return the location on disk of the private key used by the cryptography algorithm
      */
-    String getPrivateKeyLocation();
+    default String getPrivateKeyLocation() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * @return the type of source for the restore. Valid values are: AWSCROSSACCT or GOOGLE. Note:
@@ -567,7 +698,9 @@ public interface IConfiguration {
      *     a different account.
      *     <p>GOOGLE - You are restoring from Google Cloud Storage
      */
-    String getRestoreSourceType();
+    default String getRestoreSourceType() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * Should backups be encrypted. If this is on, then all the files uploaded will be compressed
@@ -597,14 +730,18 @@ public interface IConfiguration {
      *     should be optional. Specifically, if it does not exist, it should not cause an adverse
      *     impact on current functionality.
      */
-    String getAWSRoleAssumptionArn();
+    default String getAWSRoleAssumptionArn() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * @return Google Cloud Storage service account id to be use within the restore functionality.
      *     Note: for backward compatibility, this property should be optional. Specifically, if it
      *     does not exist, it should not cause an adverse impact on current functionality.
      */
-    String getGcsServiceAccountId();
+    default String getGcsServiceAccountId() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * @return the absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined
@@ -613,7 +750,9 @@ public interface IConfiguration {
      *     optional. Specifically, if it does not exist, it should not cause an adverse impact on
      *     current functionality.
      */
-    String getGcsServiceAccountPrivateKeyLoc();
+    default String getGcsServiceAccountPrivateKeyLoc() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * @return the pass phrase use by PGP cryptography. This information is to be use within the
@@ -621,7 +760,9 @@ public interface IConfiguration {
      *     compatibility, this property should be optional. Specifically, if it does not exist, it
      *     should not cause an adverse impact on current functionality.
      */
-    String getPgpPasswordPhrase();
+    default String getPgpPasswordPhrase() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * @return public key use by PGP cryptography. This information is to be use within the restore
@@ -629,24 +770,32 @@ public interface IConfiguration {
      *     this property should be optional. Specifically, if it does not exist, it should not cause
      *     an adverse impact on current functionality.
      */
-    String getPgpPublicKeyLoc();
+    default String getPgpPublicKeyLoc() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * Use this method for adding extra/ dynamic cassandra startup options or env properties
      *
      * @return A map of extra paramaters.
      */
-    Map<String, String> getExtraEnvParams();
+    default Map<String, String> getExtraEnvParams() {
+        return Collections.EMPTY_MAP;
+    }
 
     /*
      * @return the Amazon Resource Name (ARN) for EC2 classic.
      */
-    String getClassicEC2RoleAssumptionArn();
+    default String getClassicEC2RoleAssumptionArn() {
+        return StringUtils.EMPTY;
+    }
 
     /*
      * @return the Amazon Resource Name (ARN) for VPC.
      */
-    String getVpcEC2RoleAssumptionArn();
+    default String getVpcEC2RoleAssumptionArn() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * Is cassandra cluster spanning more than one account. This may be true if you are migrating
@@ -742,7 +891,9 @@ public interface IConfiguration {
      *
      * @return a comma delimited list of keyspaces to flush
      */
-    String getFlushKeyspaces();
+    default String getFlushKeyspaces() {
+        return StringUtils.EMPTY;
+    }
 
     /**
      * Interval to be used for flush.

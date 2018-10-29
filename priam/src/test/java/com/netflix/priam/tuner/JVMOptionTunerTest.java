@@ -232,8 +232,8 @@ public class JVMOptionTunerTest {
         }
 
         @Override
-        public Map<String, JVMOption> getJVMExcludeSet() {
-            return JVMOptionsTuner.parseJVMOptions(configuredJVMExclude);
+        public String getJVMExcludeSet() {
+            return configuredJVMExclude;
         }
 
         @Override
@@ -247,8 +247,8 @@ public class JVMOptionTunerTest {
         }
 
         @Override
-        public Map<String, JVMOption> getJVMUpsertSet() {
-            return JVMOptionsTuner.parseJVMOptions(configuredJVMUpsert);
+        public String getJVMUpsertSet() {
+            return configuredJVMUpsert;
         }
     }
 }

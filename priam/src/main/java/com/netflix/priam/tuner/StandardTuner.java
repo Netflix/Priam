@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
@@ -156,19 +157,21 @@ public class StandardTuner implements ICassandraTuner {
     /** Setup the cassandra 1.1 global cache values */
     private void configureGlobalCaches(IConfiguration config, Map yaml) {
         final String keyCacheSize = config.getKeyCacheSizeInMB();
-        if (keyCacheSize != null) {
+        if (!StringUtils.isEmpty(keyCacheSize)) {
             yaml.put("key_cache_size_in_mb", Integer.valueOf(keyCacheSize));
 
             final String keyCount = config.getKeyCacheKeysToSave();
-            if (keyCount != null) yaml.put("key_cache_keys_to_save", Integer.valueOf(keyCount));
+            if (!StringUtils.isEmpty(keyCount))
+                yaml.put("key_cache_keys_to_save", Integer.valueOf(keyCount));
         }
 
         final String rowCacheSize = config.getRowCacheSizeInMB();
-        if (rowCacheSize != null) {
+        if (!StringUtils.isEmpty(rowCacheSize)) {
             yaml.put("row_cache_size_in_mb", Integer.valueOf(rowCacheSize));
 
             final String rowCount = config.getRowCacheKeysToSave();
-            if (rowCount != null) yaml.put("row_cache_keys_to_save", Integer.valueOf(rowCount));
+            if (!StringUtils.isEmpty(rowCount))
+                yaml.put("row_cache_keys_to_save", Integer.valueOf(rowCount));
         }
     }
 
@@ -230,7 +233,7 @@ public class StandardTuner implements ICassandraTuner {
 
     public void addExtraCassParams(Map map) {
         String params = config.getExtraConfigParams();
-        if (params == null) {
+        if (StringUtils.isEmpty(params)) {
             logger.info("Updating yaml: no extra cass params");
             return;
         }

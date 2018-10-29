@@ -15,15 +15,15 @@ package com.netflix.priam.identity.config;
 
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.DescribeInstancesRequest;
-import com.amazonaws.services.ec2.model.DescribeInstancesResult;
-import com.amazonaws.services.ec2.model.Instance;
-import com.amazonaws.services.ec2.model.Reservation;
+import com.amazonaws.services.ec2.model.*;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -69,6 +69,23 @@ public class AWSInstanceInfo implements InstanceInfo {
                             "http://169.254.169.254/latest/meta-data/placement/availability-zone");
         }
         return rac;
+    }
+
+    @Override
+    public List<String> getDefaultRacks() {
+        // Get the fist 3 available zones in the region
+        AmazonEC2 client =
+                AmazonEC2ClientBuilder.standard()
+                        .withCredentials(credential.getAwsCredentialProvider())
+                        .withRegion(getRegion())
+                        .build();
+        DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
+        List<String> zone = Lists.newArrayList();
+        for (AvailabilityZone reg : res.getAvailabilityZones()) {
+            if (reg.getState().equals("available")) zone.add(reg.getZoneName());
+            if (zone.size() == 3) break;
+        }
+        return ImmutableList.copyOf(zone);
     }
 
     public String getPublicHostname() {

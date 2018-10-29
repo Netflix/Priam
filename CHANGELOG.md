@@ -1,4 +1,9 @@
 # Changelog
+## 2018/10/29 3.1.67
+* Bug Fix: SnapshotMetaService can leave snapshots if there is any error. 
+* Bug Fix: SnapshotMetaService should continue building snapshot even if an unexpected file is found in snapshot. 
+* More cleanup of IConfiguration and moving code to appropriate places. 
+
 ## 2018/10/26 3.1.66
 * (#744) Aggregate InstanceData in InstanceInfo and pull basic information about running instance from machine itself.  
 

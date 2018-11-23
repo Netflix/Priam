@@ -87,7 +87,7 @@ public class MetaData {
             throws ParseException {
         AbstractBackupPath backupfile = pathFactory.get();
         backupfile.parseLocal(metafile, BackupFileType.META);
-        backupfile.time = backupfile.parseDate(snapshotName);
+        backupfile.setTime(backupfile.parseDate(snapshotName));
         return backupfile;
     }
 

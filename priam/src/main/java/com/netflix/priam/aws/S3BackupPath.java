@@ -19,8 +19,12 @@ package com.netflix.priam.aws;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 
@@ -32,54 +36,138 @@ public class S3BackupPath extends AbstractBackupPath {
         super(config, factory);
     }
 
+    private Path getV2Prefix() {
+        return Paths.get(baseDir, getAppNameWithHash(), instanceIdentity.getInstance().getToken());
+    }
+
+    private void parseV2Prefix(Path remoteFilePath) {
+        assert remoteFilePath.getNameCount() >= 3;
+        baseDir = remoteFilePath.getName(0).toString();
+        clusterName = parseAndValidateAppNameWithHash(remoteFilePath.getName(1).toString());
+        token = remoteFilePath.getName(2).toString();
+    }
+
+    /* This will ensure that there is some randomness in the path at the start so that remote file systems
+    can hash the contents better when we have lot of clusters backing up at the same remote location.
+    */
+    private String getAppNameWithHash() {
+        return (config.getAppName().hashCode() % 10000) + "_" + config.getAppName();
+    }
+
+    private String parseAndValidateAppNameWithHash(String appNameWithHash) {
+        int hash = Integer.parseInt(appNameWithHash.substring(0, appNameWithHash.indexOf("_")));
+        String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
+        // Validate the hash
+        int calculatedHash = appName.hashCode() % 10000;
+        assert calculatedHash == hash;
+        return appName;
+    }
+
+    /*
+     * This method will generate the location for the V2 backups.
+     * Note that we use epochMillis to sort the directory instead of traditional YYYYMMddHHmm. This will allow greater flexibility when doing restores
+     * as the s3 list calls with common prefix will have greater chance of match instead of traditional way (where it fails miserably when month or year changes).
+     * Also, to note that with backup v2 file layout, S3 list calls will be directly proportional to no. of tables in the cassandra clusters.
+     * For shared clusters (or clusters with huge no. of tables) this might be an issue and slowdowns in restore can happen, but the time will be always proportional vs. unpredictable time in V1 backups.
+     * The new way of storage will also allow for greater flexibility where we would be able to provide per table TTL for backups, if we want to in future.
+     */
+    private Path getV2Location() {
+        Path prefix = Paths.get(getV2Prefix().toString(), type.toString());
+
+        if (type == BackupFileType.SST_V2) {
+            prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
+        }
+
+        return Paths.get(
+                prefix.toString(),
+                getLastModified().toEpochMilli() + "",
+                fileName + "." + getCompression().toString());
+    }
+
+    private void parseV2Location(String remoteFile) {
+        Path remoteFilePath = Paths.get(remoteFile);
+        parseV2Prefix(remoteFilePath);
+        assert remoteFilePath.getNameCount() >= 6;
+        type = BackupFileType.valueOf(remoteFilePath.getName(3).toString());
+        if (type == BackupFileType.SST_V2) {
+            keyspace = remoteFilePath.getName(4).toString();
+            columnFamily = remoteFilePath.getName(5).toString();
+        }
+        String lastModifiedTimeString =
+                remoteFilePath.getName(remoteFilePath.getNameCount() - 2).toString();
+        setLastModified(Instant.ofEpochMilli(Long.parseLong(lastModifiedTimeString)));
+
+        String fileNameCompression =
+                remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();
+        fileName = fileNameCompression.substring(0, fileNameCompression.lastIndexOf("."));
+        setCompression(
+                ICompression.CompressionAlgorithm.valueOf(
+                        fileNameCompression.substring(fileNameCompression.lastIndexOf(".") + 1)));
+    }
+
     /**
-     * Format of backup path:
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNP|META]/KEYSPACE/COLUMNFAMILY/FILE
+     * Format of backup path: 1. For old style backups:
+     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNAP|META]/KEYSPACE/COLUMNFAMILY/FILE
+     *
+     * <p>2. For new style backups (SnapshotMetaService)
+     * BASE/[cluster_name_hash]_cluster/TOKEN//[META_V2|SST_V2]/KEYSPACE/COLUMNFAMILY/[last_modified_time_ms]/FILE.compression
      */
     @Override
     public String getRemotePath() {
         StringBuilder buff = new StringBuilder();
-        buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
-        buff.append(region).append(S3BackupPath.PATH_SEP);
-        buff.append(clusterName).append(S3BackupPath.PATH_SEP); // Cluster name
-        buff.append(token).append(S3BackupPath.PATH_SEP);
-        buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
-        buff.append(type).append(S3BackupPath.PATH_SEP);
-        if (BackupFileType.isDataFile(type))
-            buff.append(keyspace)
-                    .append(S3BackupPath.PATH_SEP)
-                    .append(columnFamily)
-                    .append(S3BackupPath.PATH_SEP);
-        buff.append(fileName);
+        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
+            buff.append(getV2Location());
+        } else {
+            buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
+            buff.append(region).append(S3BackupPath.PATH_SEP);
+            buff.append(clusterName).append(S3BackupPath.PATH_SEP); // Cluster name
+            buff.append(token).append(S3BackupPath.PATH_SEP);
+            buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
+            buff.append(type).append(S3BackupPath.PATH_SEP);
+            if (BackupFileType.isDataFile(type))
+                buff.append(keyspace)
+                        .append(S3BackupPath.PATH_SEP)
+                        .append(columnFamily)
+                        .append(S3BackupPath.PATH_SEP);
+            buff.append(fileName);
+        }
         return buff.toString();
     }
 
     @Override
     public void parseRemote(String remoteFilePath) {
-        String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
-        // parse out things which are empty
-        List<String> pieces = Lists.newArrayList();
-        for (String ele : elements) {
-            if (ele.equals("")) continue;
-            pieces.add(ele);
+        // Check for all backup file types to ensure how we parse
+        // TODO: We should clean this hack to get backupFileType for parsing when we delete V1 of
+        // backups.
+        for (BackupFileType fileType : BackupFileType.values()) {
+            if (remoteFilePath.contains(PATH_SEP + fileType.toString() + PATH_SEP)) {
+                type = fileType;
+                break;
+            }
         }
-        assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
-        baseDir = pieces.get(0);
-        region = pieces.get(1);
-        clusterName = pieces.get(2);
-        token = pieces.get(3);
-        time = parseDate(pieces.get(4));
-        type = BackupFileType.valueOf(pieces.get(5));
-        if (BackupFileType.isDataFile(type)) {
-            keyspace = pieces.get(6);
-            columnFamily = pieces.get(7);
+
+        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
+            parseV2Location(remoteFilePath);
+        } else {
+            List<String> pieces = parsePrefix(remoteFilePath);
+            assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
+            time = parseDate(pieces.get(4));
+            type = BackupFileType.valueOf(pieces.get(5));
+            if (BackupFileType.isDataFile(type)) {
+                keyspace = pieces.get(6);
+                columnFamily = pieces.get(7);
+            }
+            // append the rest
+            fileName = pieces.get(pieces.size() - 1);
         }
-        // append the rest
-        fileName = pieces.get(pieces.size() - 1);
     }
 
     @Override
     public void parsePartialPrefix(String remoteFilePath) {
+        parsePrefix(remoteFilePath);
+    }
+
+    private List<String> parsePrefix(String remoteFilePath) {
         String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
         // parse out things which are empty
         List<String> pieces = Lists.newArrayList();
@@ -92,6 +180,7 @@ public class S3BackupPath extends AbstractBackupPath {
         region = pieces.get(1);
         clusterName = pieces.get(2);
         token = pieces.get(3);
+        return pieces;
     }
 
     @Override

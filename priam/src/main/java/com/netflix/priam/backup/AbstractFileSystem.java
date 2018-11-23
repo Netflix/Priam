@@ -166,15 +166,31 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {
                 notifyEventStart(new BackupEvent(path));
-                long uploadedFileSize =
-                        new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
-                            @Override
-                            public Long retriableCall() throws Exception {
-                                return uploadFileImpl(localPath, remotePath);
-                            }
-                        }.call();
-                backupMetrics.recordUploadRate(uploadedFileSize);
-                backupMetrics.incrementValidUploads();
+                long uploadedFileSize = 0;
+
+                // Cheap way to check if the object exists on the remote file system.
+                try {
+                    uploadedFileSize = getFileSize(remotePath);
+                } catch (Exception e) {
+                    logger.warn(
+                            "Error while checking if the remote object exists for remotePath: {}, localPath: {}",
+                            remotePath,
+                            localPath);
+                    e.printStackTrace();
+                }
+
+                // Upload file if it not present at remote location.
+                if (uploadedFileSize == 0) {
+                    uploadedFileSize =
+                            new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
+                                @Override
+                                public Long retriableCall() throws Exception {
+                                    return uploadFileImpl(localPath, remotePath);
+                                }
+                            }.call();
+                    backupMetrics.recordUploadRate(uploadedFileSize);
+                    backupMetrics.incrementValidUploads();
+                }
                 path.setCompressedFileSize(uploadedFileSize);
                 notifyEventSuccess(new BackupEvent(path));
                 logger.info(

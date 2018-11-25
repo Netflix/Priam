@@ -38,9 +38,9 @@ public abstract class AbstractBackup extends Task {
     static final String INCREMENTAL_BACKUP_FOLDER = "backups";
     public static final String SNAPSHOT_FOLDER = "snapshots";
 
-    final Provider<AbstractBackupPath> pathFactory;
+    protected final Provider<AbstractBackupPath> pathFactory;
 
-    private IBackupFileSystem fs;
+    protected IBackupFileSystem fs;
 
     @Inject
     public AbstractBackup(
@@ -71,10 +71,13 @@ public abstract class AbstractBackup extends Task {
      * @param parent Parent dir
      * @param type Type of file (META, SST, SNAP etc)
      * @param async Upload the file(s) in async fashion if enabled.
+     * @param waitForCompletion wait for completion for all files to upload if using async API. If
+     *     `false` it will queue the files and return with no guarantee to upload.
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    List<AbstractBackupPath> upload(final File parent, final BackupFileType type, boolean async)
+    protected List<AbstractBackupPath> upload(
+            final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
             throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
         final List<Future<Path>> futures = Lists.newArrayList();
@@ -108,7 +111,7 @@ public abstract class AbstractBackup extends Task {
         }
 
         // Wait for all files to be uploaded.
-        if (async) {
+        if (async && waitForCompletion) {
             for (Future future : futures)
                 future.get(); // This might throw exception if there is any error
         }

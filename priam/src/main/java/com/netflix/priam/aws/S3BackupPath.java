@@ -65,23 +65,24 @@ public class S3BackupPath extends AbstractBackupPath {
 
     /*
      * This method will generate the location for the V2 backups.
-     * Note that we use epochMillis to sort the directory instead of traditional YYYYMMddHHmm. This will allow greater flexibility when doing restores
-     * as the s3 list calls with common prefix will have greater chance of match instead of traditional way (where it fails miserably when month or year changes).
-     * Also, to note that with backup v2 file layout, S3 list calls will be directly proportional to no. of tables in the cassandra clusters.
-     * For shared clusters (or clusters with huge no. of tables) this might be an issue and slowdowns in restore can happen, but the time will be always proportional vs. unpredictable time in V1 backups.
-     * The new way of storage will also allow for greater flexibility where we would be able to provide per table TTL for backups, if we want to in future.
+     * Note that we use epochMillis to sort the directory instead of traditional YYYYMMddHHmm. This will allow greater
+     * flexibility when doing restores as the s3 list calls with common prefix will have greater chance of match instead
+     * of traditional way (where it takes lot of s3 list calls when month or year changes).
+     * Another major difference w.r.t. V1 is having no distinction between SNAP and SST files as we upload SSTables only
+     * once to remote file system.
      */
     private Path getV2Location() {
-        Path prefix = Paths.get(getV2Prefix().toString(), type.toString());
+        Path prefix =
+                Paths.get(
+                        getV2Prefix().toString(),
+                        type.toString(),
+                        getLastModified().toEpochMilli() + "");
 
         if (type == BackupFileType.SST_V2) {
             prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
         }
 
-        return Paths.get(
-                prefix.toString(),
-                getLastModified().toEpochMilli() + "",
-                fileName + "." + getCompression().toString());
+        return Paths.get(prefix.toString(), fileName + "." + getCompression().toString());
     }
 
     private void parseV2Location(String remoteFile) {
@@ -89,13 +90,12 @@ public class S3BackupPath extends AbstractBackupPath {
         parseV2Prefix(remoteFilePath);
         assert remoteFilePath.getNameCount() >= 6;
         type = BackupFileType.valueOf(remoteFilePath.getName(3).toString());
+        setLastModified(Instant.ofEpochMilli(Long.parseLong(remoteFilePath.getName(4).toString())));
+
         if (type == BackupFileType.SST_V2) {
-            keyspace = remoteFilePath.getName(4).toString();
-            columnFamily = remoteFilePath.getName(5).toString();
+            keyspace = remoteFilePath.getName(5).toString();
+            columnFamily = remoteFilePath.getName(6).toString();
         }
-        String lastModifiedTimeString =
-                remoteFilePath.getName(remoteFilePath.getNameCount() - 2).toString();
-        setLastModified(Instant.ofEpochMilli(Long.parseLong(lastModifiedTimeString)));
 
         String fileNameCompression =
                 remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();

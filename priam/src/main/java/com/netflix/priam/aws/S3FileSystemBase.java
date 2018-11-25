@@ -13,6 +13,8 @@
  */
 package com.netflix.priam.aws;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
@@ -172,6 +174,28 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     public long getFileSize(Path remotePath) throws BackupRestoreException {
         return s3Client.getObjectMetadata(getPrefix(config), remotePath.toString())
                 .getContentLength();
+    }
+
+    @Override
+    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+        boolean exists = false;
+        try {
+            exists = s3Client.doesObjectExist(getPrefix(config), remotePath.toString());
+        } catch (AmazonServiceException ase) {
+            // Amazon S3 rejected request
+            throw new BackupRestoreException(
+                    "AmazonServiceException while checking existense of object: "
+                            + remotePath
+                            + ". Error: "
+                            + ase.getMessage());
+        } catch (AmazonClientException ace) {
+            // No point throwing this exception up.
+            logger.error(
+                    "AmazonClientException: client encountered a serious internal problem while trying to communicate with S3",
+                    ace.getMessage());
+        }
+
+        return exists;
     }
 
     @Override

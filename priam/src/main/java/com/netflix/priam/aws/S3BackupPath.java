@@ -42,7 +42,8 @@ public class S3BackupPath extends AbstractBackupPath {
 
     private void parseV2Prefix(Path remoteFilePath) {
         if (remoteFilePath.getNameCount() < 3)
-            throw new RuntimeException("Not enough no. of elements to parseV2Prefix : " + remoteFilePath);
+            throw new RuntimeException(
+                    "Not enough no. of elements to parseV2Prefix : " + remoteFilePath);
         baseDir = remoteFilePath.getName(0).toString();
         clusterName = parseAndValidateAppNameWithHash(remoteFilePath.getName(1).toString());
         token = remoteFilePath.getName(2).toString();

@@ -41,7 +41,8 @@ public class S3BackupPath extends AbstractBackupPath {
     }
 
     private void parseV2Prefix(Path remoteFilePath) {
-        assert remoteFilePath.getNameCount() >= 3;
+        if (remoteFilePath.getNameCount() < 3)
+            throw new RuntimeException("Not enough no. of elements to parseV2Prefix : " + remoteFilePath);
         baseDir = remoteFilePath.getName(0).toString();
         clusterName = parseAndValidateAppNameWithHash(remoteFilePath.getName(1).toString());
         token = remoteFilePath.getName(2).toString();
@@ -51,7 +52,7 @@ public class S3BackupPath extends AbstractBackupPath {
     can hash the contents better when we have lot of clusters backing up at the same remote location.
     */
     private String getAppNameWithHash() {
-        return (config.getAppName().hashCode() % 10000) + "_" + config.getAppName();
+        return String.format("%d_%s", config.getAppName().hashCode() % 10000, config.getAppName());
     }
 
     private String parseAndValidateAppNameWithHash(String appNameWithHash) {

@@ -33,4 +33,14 @@ public interface IBackupRestoreConfig {
     default String getSnapshotMetaServiceCronExpression() {
         return "-1";
     }
+
+    /**
+     * Enable the backup version 2.0 in new format. This will start uploading of backups in new
+     * format. This is to be used for migration from backup version 1.0.
+     *
+     * @return boolean value indicating if backups in version 2.0 should be started.
+     */
+    default boolean enableV2Backups() {
+        return false;
+    }
 }

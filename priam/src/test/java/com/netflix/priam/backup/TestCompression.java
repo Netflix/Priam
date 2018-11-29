@@ -112,10 +112,7 @@ public class TestCompression {
         long chunkSize = 5L * 1024 * 1024;
         try {
             Iterator<byte[]> it =
-                    compress.compress(
-                            new AbstractBackupPath.RafInputStream(
-                                    new RandomAccessFile(randomContentFile, "r")),
-                            chunkSize);
+                    compress.compress(new FileInputStream(randomContentFile), chunkSize);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
                 while (it.hasNext()) {
                     byte[] chunk = it.next();

@@ -221,7 +221,7 @@ public class SnapshotBackup extends AbstractBackup {
 
         // Add files to this dir
         abstractBackupPaths.addAll(
-                upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot()));
+                upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot(), true));
     }
 
     //    private void findForgottenFiles(File snapshotDir) {

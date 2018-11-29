@@ -98,7 +98,7 @@ public class IncrementalBackup extends AbstractBackup {
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
             throws Exception {
         List<AbstractBackupPath> uploadedFiles =
-                upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental());
+                upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental(), true);
 
         if (!uploadedFiles.isEmpty()) {
             // format of yyyymmddhhmm (e.g. 201505060901)

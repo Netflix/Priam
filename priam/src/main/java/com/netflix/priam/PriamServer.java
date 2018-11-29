@@ -53,6 +53,7 @@ public class PriamServer {
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
     private final RestoreContext restoreContext;
+    private final SnapshotMetaService snapshotMetaService;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
@@ -64,7 +65,8 @@ public class PriamServer {
             InstanceIdentity id,
             Sleeper sleeper,
             ICassandraProcess cassProcess,
-            RestoreContext restoreContext) {
+            RestoreContext restoreContext,
+            SnapshotMetaService snapshotMetaService) {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
@@ -72,6 +74,7 @@ public class PriamServer {
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
         this.restoreContext = restoreContext;
+        this.snapshotMetaService = snapshotMetaService;
     }
 
     private void createDirectories() {
@@ -206,6 +209,10 @@ public class PriamServer {
                     SnapshotMetaService.class,
                     snapshotMetaServiceTimer);
             logger.info("Added SnapshotMetaService Task.");
+
+            // Try to upload previous snapshots, if any which might have been interrupted by Priam
+            // restart.
+            snapshotMetaService.uploadFiles();
         }
     }
 

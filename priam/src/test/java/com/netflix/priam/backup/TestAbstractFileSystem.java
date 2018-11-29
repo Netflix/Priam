@@ -117,7 +117,11 @@ public class TestAbstractFileSystem {
         // Dummy upload with compressed size.
         for (File file : files) {
             myFileSystem.uploadFile(
-                    file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+                    file.toPath(),
+                    Paths.get(file.toString() + ".tmp"),
+                    getDummyPath(file.toPath()),
+                    2,
+                    true);
             // Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
 
@@ -142,7 +146,11 @@ public class TestAbstractFileSystem {
         for (File file : files) {
             myFileSystem
                     .asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true)
+                            file.toPath(),
+                            Paths.get(file.toString() + ".tmp"),
+                            getDummyPath(file.toPath()),
+                            2,
+                            true)
                     .get();
             // 1. Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
@@ -161,7 +169,11 @@ public class TestAbstractFileSystem {
         for (File file : files) {
             futures.add(
                     myFileSystem.asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true));
+                            file.toPath(),
+                            Paths.get(file.toString() + ".tmp"),
+                            getDummyPath(file.toPath()),
+                            2,
+                            true));
         }
 
         // Verify all the work is finished.

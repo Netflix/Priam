@@ -18,15 +18,13 @@ package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.RandomAccessFile;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Date;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.DateTime;
 import org.joda.time.format.DateTimeFormat;
@@ -46,7 +44,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         SST,
         CL,
         META,
-        META_V2;
+        META_V2,
+        SST_V2;
 
         public static boolean isDataFile(BackupFileType type) {
             return type != BackupFileType.META
@@ -69,51 +68,29 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
     private File backupFile;
-    private long lastModified = 0;
+    private Instant lastModified;
     private Date uploadedTs;
+    private ICompression.CompressionAlgorithm compression =
+            ICompression.CompressionAlgorithm.SNAPPY;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
         this.config = config;
     }
 
+    // TODO: This is so wrong as it completely depends on the timezone where application is running.
+    // Hopefully everyone running Priam has their clocks set to UTC.
     public static String formatDate(Date d) {
         return new DateTime(d).toString(FMT);
     }
 
+    // TODO: This is so wrong as it completely depends on the timezone where application is running.
+    // Hopefully everyone running Priam has their clocks set to UTC.
     public Date parseDate(String s) {
         return DATE_FORMAT.parseDateTime(s).toDate();
     }
 
-    public InputStream localReader() throws IOException {
-        assert backupFile != null;
-
-        InputStream ret = null;
-
-        while (true) {
-            if (ret != null) {
-                ret.close();
-            }
-
-            lastModified = backupFile.lastModified();
-            ret = new RafInputStream(new RandomAccessFile(backupFile, "r"));
-
-            // Verify that the file hasn't changed since we opened it.
-            // We could avoid this flow by using the fstat() system call,
-            // but I see no way to do that (easily) from the JVM.
-            // The JVM returns the last modified time in milliseconds,
-            // but on Linux systems tested, it appears to be using the
-            // stat.st_mtime result, which is accurate only to seconds.
-            if (backupFile.lastModified() == lastModified) {
-                break;
-            }
-        }
-
-        return ret;
-    }
-
     public void parseLocal(File file, BackupFileType type) throws ParseException {
-        // TODO cleanup.
         this.backupFile = file;
 
         String rpath =
@@ -128,9 +105,17 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             this.keyspace = elements[0];
             this.columnFamily = elements[1];
         }
+
+        time = new Date(file.lastModified());
+
+        /*
+        1. For old style snapshots, make this value to time at which backup was executed.
+        2. This is to ensure that all the files from the snapshot are uploaded under single directory in remote file system.
+        3. For META file we always override the time field via @link{Metadata#decorateMetaJson}
+        */
         if (type == BackupFileType.SNAP) time = parseDate(elements[3]);
-        if (type == BackupFileType.SST || type == BackupFileType.CL)
-            time = new Date(file.lastModified());
+
+        this.lastModified = Instant.ofEpochMilli(file.lastModified());
         this.fileName = file.getName();
         this.size = file.length();
     }
@@ -231,6 +216,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return time;
     }
 
+    public void setTime(Date time) {
+        this.time = time;
+    }
+
     /*
     @return original, uncompressed file size
      */
@@ -270,31 +259,20 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return this.uploadedTs;
     }
 
-    public long getLastModified() {
+    public Instant getLastModified() {
         return lastModified;
     }
 
-    public static class RafInputStream extends InputStream implements AutoCloseable {
-        private final RandomAccessFile raf;
+    public void setLastModified(Instant instant) {
+        this.lastModified = instant;
+    }
 
-        public RafInputStream(RandomAccessFile raf) {
-            this.raf = raf;
-        }
+    public ICompression.CompressionAlgorithm getCompression() {
+        return compression;
+    }
 
-        @Override
-        public synchronized int read(byte[] bytes, int off, int len) throws IOException {
-            return raf.read(bytes, off, len);
-        }
-
-        @Override
-        public void close() {
-            IOUtils.closeQuietly(raf);
-        }
-
-        @Override
-        public int read() throws IOException {
-            return 0;
-        }
+    public void setCompression(ICompression.CompressionAlgorithm compression) {
+        this.compression = compression;
     }
 
     @Override

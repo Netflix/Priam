@@ -166,15 +166,29 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {
                 notifyEventStart(new BackupEvent(path));
-                long uploadedFileSize =
-                        new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
-                            @Override
-                            public Long retriableCall() throws Exception {
-                                return uploadFileImpl(localPath, remotePath);
-                            }
-                        }.call();
-                backupMetrics.recordUploadRate(uploadedFileSize);
-                backupMetrics.incrementValidUploads();
+                long uploadedFileSize;
+
+                // Upload file if it not present at remote location.
+                if (!doesRemoteFileExist(remotePath)) {
+                    uploadedFileSize =
+                            new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
+                                @Override
+                                public Long retriableCall() throws Exception {
+                                    return uploadFileImpl(localPath, remotePath);
+                                }
+                            }.call();
+                    backupMetrics.recordUploadRate(uploadedFileSize);
+                    backupMetrics.incrementValidUploads();
+                } else {
+                    // file is already uploaded to remote file system. get the compressed file size
+                    // to update it for notification message.
+                    uploadedFileSize = getFileSize(remotePath);
+                    logger.info(
+                            "File: {} already present on remoteFileSystem with file size: {}",
+                            remotePath,
+                            uploadedFileSize);
+                }
+
                 path.setCompressedFileSize(uploadedFileSize);
                 notifyEventSuccess(new BackupEvent(path));
                 logger.info(

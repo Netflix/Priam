@@ -112,6 +112,26 @@ public class SnapshotMetaService extends AbstractBackup {
         return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, snapshotInstant);
     }
 
+    /**
+     * Enqueue all the files for upload in the snapshot directory. This will only enqueue the files
+     * and do not give guarantee as when they will be uploaded. It will only try to upload files
+     * which matches backup version 2.0 naming conventions.
+     */
+    public void uploadFiles() {
+        try {
+            // enqueue all the old snapshot folder for upload/delete, if any, as we don't want
+            // our disk to be filled by them.
+            metaStep = MetaStep.UPLOAD_FILES;
+            initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
+            logger.info("Finished queuing the files for upload");
+        } catch (Exception e) {
+            logger.error("Error while trying to upload all the files", e);
+            e.printStackTrace();
+        } finally {
+            metaStep = MetaStep.META_GENERATION;
+        }
+    }
+
     @Override
     public void execute() throws Exception {
         if (!CassandraMonitor.hasCassadraStarted()) {
@@ -146,15 +166,12 @@ public class SnapshotMetaService extends AbstractBackup {
 
             logger.info("Finished processing snapshot meta service");
 
-            // enqueue all the old snapshot folder for upload/delete, if any, as we don't want
-            // our disk to be filled by them.
-            metaStep = MetaStep.UPLOAD_FILES;
-            initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
+            // Upload all the files from snapshot
+            uploadFiles();
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
         } finally {
             lock.unlock();
-            metaStep = MetaStep.META_GENERATION;
         }
     }
 
@@ -216,7 +233,9 @@ public class SnapshotMetaService extends AbstractBackup {
                 }
 
                 // Process each snapshot of SNAPSHOT_PREFIX
-                upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, true);
+                // We do not want to wait for completion and we just want to add them to queue. This
+                // is to ensure that next run happens on time.
+                upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
             }
         }
     }

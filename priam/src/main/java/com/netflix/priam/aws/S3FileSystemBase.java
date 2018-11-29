@@ -184,7 +184,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         } catch (AmazonServiceException ase) {
             // Amazon S3 rejected request
             throw new BackupRestoreException(
-                    "AmazonServiceException while checking existense of object: "
+                    "AmazonServiceException while checking existence of object: "
                             + remotePath
                             + ". Error: "
                             + ase.getMessage());

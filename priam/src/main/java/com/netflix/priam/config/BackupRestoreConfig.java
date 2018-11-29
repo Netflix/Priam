@@ -26,7 +26,13 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
         this.config = config;
     }
 
+    @Override
     public String getSnapshotMetaServiceCronExpression() {
         return config.get("priam.snapshot.meta.cron", "-1");
+    }
+
+    @Override
+    public boolean enableV2Backups() {
+        return config.get("priam.enableV2Backups", false);
     }
 }

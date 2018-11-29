@@ -105,6 +105,29 @@ public class TestCompression {
         }
     }
 
+    public static class RafInputStream extends InputStream implements AutoCloseable {
+        private final RandomAccessFile raf;
+
+        public RafInputStream(RandomAccessFile raf) {
+            this.raf = raf;
+        }
+
+        @Override
+        public synchronized int read(byte[] bytes, int off, int len) throws IOException {
+            return raf.read(bytes, off, len);
+        }
+
+        @Override
+        public void close() {
+            org.apache.cassandra.io.util.FileUtils.closeQuietly(raf);
+        }
+
+        @Override
+        public int read() throws IOException {
+            return 0;
+        }
+    }
+
     @Test
     public void snappyTest() throws IOException {
         SnappyCompression compress = new SnappyCompression();
@@ -114,8 +137,7 @@ public class TestCompression {
         try {
             Iterator<byte[]> it =
                     compress.compress(
-                            new AbstractBackupPath.RafInputStream(
-                                    RandomAccessReader.open(randomContentFile)),
+                            new RafInputStream(RandomAccessReader.open(randomContentFile)),
                             chunkSize);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
                 while (it.hasNext()) {

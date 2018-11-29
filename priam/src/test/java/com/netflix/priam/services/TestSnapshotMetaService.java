@@ -82,12 +82,6 @@ public class TestSnapshotMetaService {
     }
 
     @Test
-    public void testPrefix() throws Exception {
-        Assert.assertTrue(prefixGenerator.getPrefix().endsWith("ppa-ekaf/1808575600"));
-        Assert.assertTrue(prefixGenerator.getMetaPrefix().endsWith("ppa-ekaf/1808575600/META"));
-    }
-
-    @Test
     public void testMetaFileName() throws Exception {
         String fileName = MetaFileInfo.getMetaFileName(DateUtil.getInstant());
         Path path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName);

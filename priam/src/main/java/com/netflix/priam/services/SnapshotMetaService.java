@@ -14,10 +14,7 @@
 package com.netflix.priam.services;
 
 import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackup;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreUtil;
-import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -27,6 +24,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -59,6 +57,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
@@ -67,15 +66,24 @@ public class SnapshotMetaService extends AbstractBackup {
     private String snapshotName = null;
     private static final Lock lock = new ReentrantLock();
 
+    private enum MetaStep {
+        META_GENERATION,
+        UPLOAD_FILES
+    }
+
+    private MetaStep metaStep = MetaStep.META_GENERATION;
+
     @Inject
     SnapshotMetaService(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
             MetaFileWriterBuilder metaFileWriter,
             MetaFileManager metaFileManager,
             CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
+        this.backupRestoreConfig = backupRestoreConfig;
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil =
                 new BackupRestoreUtil(
@@ -104,6 +112,26 @@ public class SnapshotMetaService extends AbstractBackup {
         return SNAPSHOT_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, snapshotInstant);
     }
 
+    /**
+     * Enqueue all the files for upload in the snapshot directory. This will only enqueue the files
+     * and do not give guarantee as when they will be uploaded. It will only try to upload files
+     * which matches backup version 2.0 naming conventions.
+     */
+    public void uploadFiles() {
+        try {
+            // enqueue all the old snapshot folder for upload/delete, if any, as we don't want
+            // our disk to be filled by them.
+            metaStep = MetaStep.UPLOAD_FILES;
+            initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
+            logger.info("Finished queuing the files for upload");
+        } catch (Exception e) {
+            logger.error("Error while trying to upload all the files", e);
+            e.printStackTrace();
+        } finally {
+            metaStep = MetaStep.META_GENERATION;
+        }
+    }
+
     @Override
     public void execute() throws Exception {
         if (!CassandraMonitor.hasCassadraStarted()) {
@@ -130,10 +158,6 @@ public class SnapshotMetaService extends AbstractBackup {
             // 2) No permission to upload to backup file system.
             metaFileManager.cleanupOldMetaFiles();
 
-            // TODO: enqueue all the old backup folder for upload/delete, if any, as we don't want
-            // our disk to be filled by them.
-            // processOldSnapshotV2Folders();
-
             // Take a new snapshot
             cassandraOperations.takeSnapshot(snapshotName);
 
@@ -141,14 +165,12 @@ public class SnapshotMetaService extends AbstractBackup {
             processSnapshot(snapshotInstant).uploadMetaFile(true);
 
             logger.info("Finished processing snapshot meta service");
+
+            // Upload all the files from snapshot
+            uploadFiles();
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
         } finally {
-            try {
-                cassandraOperations.clearSnapshot(snapshotName);
-            } catch (Exception e) {
-                logger.error(e.getMessage(), e);
-            }
             lock.unlock();
         }
     }
@@ -160,10 +182,12 @@ public class SnapshotMetaService extends AbstractBackup {
     }
 
     private File getValidSnapshot(File snapshotDir, String snapshotName) {
-        for (File fileName : snapshotDir.listFiles())
-            if (fileName.exists()
-                    && fileName.isDirectory()
-                    && fileName.getName().matches(snapshotName)) return fileName;
+        File[] snapshotDirectories = snapshotDir.listFiles();
+        if (snapshotDirectories != null)
+            for (File fileName : snapshotDirectories)
+                if (fileName.exists()
+                        && fileName.isDirectory()
+                        && fileName.getName().matches(snapshotName)) return fileName;
         return null;
     }
 
@@ -188,8 +212,51 @@ public class SnapshotMetaService extends AbstractBackup {
         return columnfamilyResult;
     }
 
+    private void uploadAllFiles(
+            final String keyspace, final String columnFamily, final File backupDir)
+            throws Exception {
+        // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
+        // uploads of previous snapshot leftover as Priam restarted or any failure for any reason
+        // (like we exhausted the wait time for upload)
+        File[] snapshotDirectories = backupDir.listFiles();
+        if (snapshotDirectories != null) {
+            for (File snapshotDirectory : snapshotDirectories) {
+                // Is it a valid SNAPSHOT_PREFIX
+                if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
+                        || !snapshotDirectory.isDirectory()) continue;
+
+                if (snapshotDirectory.list().length == 0
+                        || !backupRestoreConfig.enableV2Backups()) {
+                    FileUtils.cleanDirectory(snapshotDirectory);
+                    FileUtils.deleteDirectory(snapshotDirectory);
+                    continue;
+                }
+
+                // Process each snapshot of SNAPSHOT_PREFIX
+                // We do not want to wait for completion and we just want to add them to queue. This
+                // is to ensure that next run happens on time.
+                upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
+            }
+        }
+    }
+
     @Override
     protected void processColumnFamily(
+            final String keyspace, final String columnFamily, final File backupDir)
+            throws Exception {
+        switch (metaStep) {
+            case META_GENERATION:
+                generateMetaFile(keyspace, columnFamily, backupDir);
+                break;
+            case UPLOAD_FILES:
+                uploadAllFiles(keyspace, columnFamily, backupDir);
+                break;
+            default:
+                throw new Exception("Unknown meta file type: " + metaStep);
+        }
+    }
+
+    private void generateMetaFile(
             final String keyspace, final String columnFamily, final File backupDir)
             throws Exception {
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
@@ -223,6 +290,20 @@ public class SnapshotMetaService extends AbstractBackup {
 
                 FileUploadResult fileUploadResult =
                         FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
+                // Add isUploaded and remotePath here.
+                try {
+                    AbstractBackupPath abstractBackupPath = pathFactory.get();
+                    abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
+                    fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
+                    fileUploadResult.setUploaded(
+                            fs.doesRemoteFileExist(Paths.get(fileUploadResult.getBackupPath())));
+                } catch (Exception e) {
+                    logger.error(
+                            "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
+                            e.getMessage());
+                    e.printStackTrace();
+                }
+
                 filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
                 filePrefixToFileMap.get(prefix).add(fileUploadResult);
             } catch (Exception e) {
@@ -255,15 +336,6 @@ public class SnapshotMetaService extends AbstractBackup {
                 columnfamilyResult.getKeyspaceName(),
                 columnfamilyResult.getColumnfamilyName(),
                 columnfamilyResult.getSstables().size());
-
-        // TODO: Future - Ensure that all the files are en-queued for Upload. Use BackupCacheService
-        // (BCS) to find the
-        // location where files are uploaded and BackupUploadDownloadService(BUDS) to enque if they
-        // are not.
-        // Note that BUDS will be responsible for actually deleting the files after they are
-        // processed as they really should not be deleted unless they are successfully uploaded.
-        FileUtils.cleanDirectory(snapshotDir);
-        FileUtils.deleteDirectory(snapshotDir);
 
         dataStep.addColumnfamilyResult(columnfamilyResult);
         logger.debug(

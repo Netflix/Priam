@@ -145,6 +145,18 @@ public interface IBackupFileSystem {
     long getFileSize(Path remotePath) throws BackupRestoreException;
 
     /**
+     * Checks if the file denoted by remotePath exists on the remote file system. It does not need
+     * check if object was completely uploaded to remote file system.
+     *
+     * @param remotePath location on the remote file system.
+     * @return boolean value indicating presence of the file on remote file system.
+     * @throws BackupRestoreException
+     */
+    default boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+        return false;
+    }
+
+    /**
      * Get the number of tasks en-queue in the filesystem for upload.
      *
      * @return the total no. of tasks to be executed.

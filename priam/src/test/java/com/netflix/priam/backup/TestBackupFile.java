@@ -117,8 +117,8 @@ public class TestBackupFile {
         String filestr = "cass/data/1234567.meta";
         File bfile = new File(filestr);
         S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
-        backupfile.time = backupfile.parseDate("201108082320");
         backupfile.parseLocal(bfile, BackupFileType.META);
+        backupfile.setTime(backupfile.parseDate("201108082320"));
         Assert.assertEquals(BackupFileType.META, backupfile.type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);

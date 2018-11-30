@@ -38,22 +38,22 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
     private final Date till;
     private Iterator<AbstractBackupPath> iterator;
     private ObjectListing objectListing;
+    private String bucket;
+    private String prefix;
 
     public S3FileIterator(
             Provider<AbstractBackupPath> pathProvider,
             AmazonS3 s3Client,
+            String bucket,
             String path,
             Date start,
             Date till) {
         this.start = start;
         this.till = till;
         this.pathProvider = pathProvider;
-        ListObjectsRequest listReq = new ListObjectsRequest();
-        String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
-        listReq.setBucketName(paths[0]);
-        listReq.setPrefix(pathProvider.get().remotePrefix(start, till, path));
         this.s3Client = s3Client;
-        objectListing = s3Client.listObjects(listReq);
+        this.bucket = bucket;
+        this.prefix = path;
         iterator = createIterator();
     }
 
@@ -70,7 +70,15 @@ public class S3FileIterator implements Iterator<AbstractBackupPath> {
         return iterator.hasNext();
     }
 
+    private void initListing(String bucket, String path) {
+        ListObjectsRequest listReq = new ListObjectsRequest();
+        listReq.setBucketName(bucket);
+        listReq.setPrefix(pathProvider.get().remotePrefix(start, till, path));
+        objectListing = s3Client.listObjects(listReq);
+    }
+
     private Iterator<AbstractBackupPath> createIterator() {
+        if (objectListing == null) initListing(bucket, prefix);
         List<AbstractBackupPath> temp = Lists.newArrayList();
         for (S3ObjectSummary summary : objectListing.getObjectSummaries()) {
             AbstractBackupPath path = pathProvider.get();

@@ -81,7 +81,7 @@ public class TokenManager implements ITokenManager {
      * Creates a token given the following parameter
      *
      * @param my_slot -- Slot where this instance has to be.
-     * @param rac_count -- Rac count is the numeber of RAC's
+     * @param rac_count -- Rac count is the number of RAC's
      * @param rac_size -- number of memberships in the rac
      * @param region -- name of the DC where it this token is created.
      */

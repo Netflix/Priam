@@ -35,7 +35,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,16 +79,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
      */
     public void setS3Client(AmazonS3 client) {
         s3Client = client;
-    }
-
-    /** Get S3 prefix which will be used to locate S3 files */
-    String getPrefix(IConfiguration config) {
-        String prefix;
-        if (StringUtils.isNotBlank(config.getRestorePrefix())) prefix = config.getRestorePrefix();
-        else prefix = config.getBackupPrefix();
-
-        String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
-        return paths[0];
     }
 
     @Override
@@ -172,15 +161,14 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getPrefix(config), remotePath.toString())
-                .getContentLength();
+        return s3Client.getObjectMetadata(getBucket(), remotePath.toString()).getContentLength();
     }
 
     @Override
     public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
         boolean exists = false;
         try {
-            exists = s3Client.doesObjectExist(getPrefix(config), remotePath.toString());
+            exists = s3Client.doesObjectExist(getBucket(), remotePath.toString());
         } catch (AmazonServiceException ase) {
             // Amazon S3 rejected request
             throw new BackupRestoreException(
@@ -205,12 +193,12 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
     @Override
     public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        return new S3PrefixIterator(config, pathProvider, s3Client, date);
+        return new S3PrefixIterator(config, pathProvider, s3Client, date, getBucket());
     }
 
     @Override
     public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
-        return new S3FileIterator(pathProvider, s3Client, path, start, till);
+        return new S3FileIterator(pathProvider, s3Client, getBucket(), path, start, till);
     }
 
     final long getChunkSize(Path localPath) throws BackupRestoreException {

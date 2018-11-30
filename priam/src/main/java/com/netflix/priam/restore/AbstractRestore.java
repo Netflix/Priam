@@ -183,10 +183,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     /*
      * Fetches meta.json used to store snapshots metadata.
      */
-    private void fetchSnapshotMetaFile(
-            String restorePrefix, List<AbstractBackupPath> out, Date startTime, Date endTime)
-            throws IllegalStateException {
+    private List<AbstractBackupPath> fetchSnapshotMetaFile(
+            String restorePrefix, Date startTime, Date endTime) throws IllegalStateException {
         logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
+        List<AbstractBackupPath> metas = Lists.newArrayList();
 
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
         if (!backupfiles.hasNext()) {
@@ -200,9 +200,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 // Since there are now meta file for incrementals as well as snapshot, we need to
                 // find the correct one (i.e. the snapshot meta file (meta.json))
                 if (path.getFileName().equalsIgnoreCase("meta.json")) {
-                    out.add(path);
+                    metas.add(path);
                 }
         }
+
+        // Sort the meta files in ascending order.
+        Collections.sort(metas);
+
+        return metas;
     }
 
     @Override
@@ -254,9 +259,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
 
             // Try and read the Meta file.
-            List<AbstractBackupPath> metas = Lists.newArrayList();
             String prefix = getRestorePrefix();
-            fetchSnapshotMetaFile(prefix, metas, startTime, endTime);
+            List<AbstractBackupPath> metas = fetchSnapshotMetaFile(prefix, startTime, endTime);
 
             if (metas.size() == 0) {
                 logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
@@ -265,7 +269,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 return;
             }
 
-            Collections.sort(metas);
             AbstractBackupPath meta = Iterators.getLast(metas.iterator());
             logger.info("Snapshot Meta file for restore {}", meta.getRemotePath());
             instanceState.getRestoreStatus().setSnapshotMetaFile(meta.getRemotePath());

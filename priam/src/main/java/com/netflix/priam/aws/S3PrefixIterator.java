@@ -49,14 +49,14 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
     private final SimpleDateFormat datefmt = new SimpleDateFormat("yyyyMMdd");
     private ObjectListing objectListing = null;
     final Date date;
-    @Inject private InstanceInfo instanceInfo;
 
     @Inject
     public S3PrefixIterator(
             IConfiguration config,
             Provider<AbstractBackupPath> pathProvider,
             AmazonS3 s3Client,
-            Date date) {
+            Date date,
+            String bucket) {
         this.config = config;
         this.pathProvider = pathProvider;
         this.s3Client = s3Client;
@@ -65,9 +65,9 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
         if (StringUtils.isNotBlank(config.getRestorePrefix())) path = config.getRestorePrefix();
         else path = config.getBackupPrefix();
 
-        String[] paths = path.split(String.valueOf(S3BackupPath.PATH_SEP));
-        bucket = paths[0];
-        this.clusterPath = remotePrefix(path);
+        this.bucket = bucket;
+        AbstractBackupPath abstractBackupPath = pathProvider.get();
+        this.clusterPath = abstractBackupPath.clusterPrefix(path);
         iterator = createIterator();
     }
 
@@ -114,23 +114,6 @@ public class S3PrefixIterator implements Iterator<AbstractBackupPath> {
 
     @Override
     public void remove() {}
-
-    /** Get remote prefix upto the token */
-    private String remotePrefix(String location) {
-        StringBuilder buff = new StringBuilder();
-        String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
-        if (elements.length <= 1) {
-            buff.append(config.getBackupLocation()).append(S3BackupPath.PATH_SEP);
-            buff.append(instanceInfo.getRegion()).append(S3BackupPath.PATH_SEP);
-            buff.append(config.getAppName()).append(S3BackupPath.PATH_SEP);
-        } else {
-            assert elements.length >= 4 : "Too few elements in path " + location;
-            buff.append(elements[1]).append(S3BackupPath.PATH_SEP);
-            buff.append(elements[2]).append(S3BackupPath.PATH_SEP);
-            buff.append(elements[3]).append(S3BackupPath.PATH_SEP);
-        }
-        return buff.toString();
-    }
 
     /** Check to see if the path exists for the date */
     private boolean pathExistsForDate(String tprefix, String datestr) {

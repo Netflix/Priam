@@ -29,9 +29,11 @@ import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Set;
 import java.util.concurrent.*;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,6 +47,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
     private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers =
             new CopyOnWriteArrayList<>();
+    private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
     private final ThreadPoolExecutor fileUploadExecutor;
@@ -55,6 +58,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             IConfiguration configuration,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr) {
+        this.configuration = configuration;
         this.backupMetrics = backupMetrics;
         // Add notifications.
         this.addObserver(backupNotificationMgr);
@@ -215,6 +219,17 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
             throws BackupRestoreException;
+
+    @Override
+    public String getBucket() {
+        Path prefix = Paths.get(configuration.getBackupPrefix());
+
+        if (StringUtils.isNotBlank(configuration.getRestorePrefix())) {
+            prefix = Paths.get(configuration.getRestorePrefix());
+        }
+
+        return prefix.getName(0).toString();
+    }
 
     @Override
     public final void addObserver(EventObserver<BackupEvent> observer) {

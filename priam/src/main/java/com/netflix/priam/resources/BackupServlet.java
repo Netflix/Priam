@@ -32,7 +32,6 @@ import java.util.stream.Collectors;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -98,17 +97,6 @@ public class BackupServlet {
             @QueryParam(REST_HEADER_RANGE) String daterange,
             @QueryParam(REST_HEADER_FILTER) @DefaultValue("") String filter)
             throws Exception {
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        } else {
-            String[] restore = daterange.split(",");
-            startTime = DateUtil.getDate(restore[0]);
-            endTime = DateUtil.getDate(restore[1]);
-        }
 
         logger.info(
                 "Parameters: {backupPrefix: [{}], daterange: [{}], filter: [{}]}",
@@ -116,8 +104,13 @@ public class BackupServlet {
                 daterange,
                 filter);
 
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+
         Iterator<AbstractBackupPath> it =
-                backupFs.list(config.getBackupPrefix(), startTime, endTime);
+                backupFs.list(
+                        config.getBackupPrefix(),
+                        Date.from(dateRange.getStartTime()),
+                        Date.from(dateRange.getEndTime()));
         JSONObject object = new JSONObject();
         object = constructJsonResponse(object, it, filter);
         return Response.ok(object.toString(2), MediaType.APPLICATION_JSON).build();
@@ -209,7 +202,9 @@ public class BackupServlet {
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 
-    private List<BackupMetadata> getLatestBackupMetadata(Date startTime, Date endTime) {
+    private List<BackupMetadata> getLatestBackupMetadata(DateUtil.DateRange dateRange) {
+        Date startTime = Date.from(dateRange.getStartTime());
+        Date endTime = Date.from(dateRange.getEndTime());
         List<BackupMetadata> backupMetadata = this.completedBkups.locate(endTime);
         if (backupMetadata != null && !backupMetadata.isEmpty()) return backupMetadata;
         if (DateUtil.formatyyyyMMdd(startTime).equals(DateUtil.formatyyyyMMdd(endTime))) {
@@ -245,28 +240,23 @@ public class BackupServlet {
     public Response validateSnapshotByDate(@PathParam("daterange") String daterange)
             throws Exception {
 
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        } else {
-            String[] dates = daterange.split(",");
-            startTime = DateUtil.getDate(dates[0]);
-            endTime = DateUtil.getDate(dates[1]);
-        }
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
 
         JSONObject jsonReply = new JSONObject();
-        jsonReply.put("inputStartDate", DateUtil.formatyyyyMMddHHmm(startTime));
-        jsonReply.put("inputEndDate", DateUtil.formatyyyyMMddHHmm(endTime));
+        jsonReply.put(
+                "inputStartDate",
+                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getStartTime()));
+        jsonReply.put(
+                "inputEndDate",
+                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getEndTime()));
         logger.info(
                 "Will try to validate latest backup during startTime: {}, and endTime: {}",
-                DateUtil.formatyyyyMMddHHmm(startTime),
-                DateUtil.formatyyyyMMddHHmm(endTime));
+                dateRange.getStartTime(),
+                dateRange.getEndTime());
 
-        List<BackupMetadata> metadata = getLatestBackupMetadata(startTime, endTime);
-        BackupVerificationResult result = backupVerification.verifyBackup(metadata, startTime);
+        List<BackupMetadata> metadata = getLatestBackupMetadata(dateRange);
+        BackupVerificationResult result =
+                backupVerification.verifyBackup(metadata, Date.from(dateRange.getStartTime()));
         jsonReply.put("snapshotAvailable", result.snapshotAvailable);
         jsonReply.put("valid", result.valid);
         jsonReply.put("backupFileListAvailable", result.backupFileListAvail);

@@ -72,10 +72,7 @@ public class S3FileSystem extends S3FileSystemBase {
             long remoteFileSize = super.getFileSize(remotePath);
             RangeReadInputStream rris =
                     new RangeReadInputStream(
-                            s3Client,
-                            getPrefix(this.config),
-                            remoteFileSize,
-                            remotePath.toString());
+                            s3Client, getBucket(), remoteFileSize, remotePath.toString());
             final long bufSize =
                     MAX_BUFFERED_IN_STREAM_SIZE > remoteFileSize
                             ? remoteFileSize
@@ -88,7 +85,7 @@ public class S3FileSystem extends S3FileSystemBase {
                     "Exception encountered downloading "
                             + remotePath
                             + " from S3 bucket "
-                            + getPrefix(config)
+                            + getBucket()
                             + ", Msg: "
                             + e.getMessage(),
                     e);

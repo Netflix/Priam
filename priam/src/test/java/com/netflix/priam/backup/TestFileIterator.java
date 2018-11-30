@@ -51,6 +51,7 @@ public class TestFileIterator {
     private static IConfiguration conf;
     private static InstanceIdentity factory;
     private static String region;
+    private static String bucket = "TESTBUCKET";
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
@@ -130,7 +131,7 @@ public class TestFileIterator {
         Date stime = cal.getTime();
         cal.add(Calendar.HOUR, 5);
         Date etime = cal.getTime();
-        MockAmazonS3Client.bucketName = "TESTBUCKET";
+        MockAmazonS3Client.bucketName = bucket;
         MockAmazonS3Client.prefix =
                 conf.getBackupLocation()
                         + "/"
@@ -145,7 +146,8 @@ public class TestFileIterator {
                 new S3FileIterator(
                         injector.getProvider(AbstractBackupPath.class),
                         s3client,
-                        "TESTBUCKET",
+                        bucket,
+                        bucket,
                         stime,
                         etime);
         Set<String> files = new HashSet<>();
@@ -173,7 +175,8 @@ public class TestFileIterator {
                 new S3FileIterator(
                         injector.getProvider(AbstractBackupPath.class),
                         s3client,
-                        "TESTBUCKET",
+                        bucket,
+                        bucket,
                         startTime,
                         endTime);
         Set<String> files = new HashSet<>();
@@ -221,7 +224,8 @@ public class TestFileIterator {
                 new S3FileIterator(
                         injector.getProvider(AbstractBackupPath.class),
                         s3client,
-                        "TESTBUCKET",
+                        bucket,
+                        bucket,
                         startTime,
                         endTime);
         Set<String> files = new HashSet<>();
@@ -270,7 +274,7 @@ public class TestFileIterator {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = true;
-        MockAmazonS3Client.bucketName = "TESTBUCKET";
+        MockAmazonS3Client.bucketName = bucket;
         MockAmazonS3Client.prefix =
                 conf.getBackupLocation()
                         + "/"
@@ -285,7 +289,8 @@ public class TestFileIterator {
                 new S3FileIterator(
                         injector.getProvider(AbstractBackupPath.class),
                         s3client,
-                        "TESTBUCKET",
+                        bucket,
+                        bucket,
                         startTime,
                         endTime);
         Set<String> files = new HashSet<>();
@@ -345,6 +350,7 @@ public class TestFileIterator {
                 new S3FileIterator(
                         injector.getProvider(AbstractBackupPath.class),
                         s3client,
+                        "RESTOREBUCKET",
                         "RESTOREBUCKET/test_restore_backup/fake-restore-region/fakerestorecluster",
                         startTime,
                         endTime);

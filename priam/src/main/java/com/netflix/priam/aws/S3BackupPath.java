@@ -16,7 +16,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.ICompression;
@@ -26,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 
 /** Represents an S3 object key */
 public class S3BackupPath extends AbstractBackupPath {
@@ -107,6 +105,41 @@ public class S3BackupPath extends AbstractBackupPath {
                         fileNameCompression.substring(fileNameCompression.lastIndexOf(".") + 1)));
     }
 
+    private Path getV1Location() {
+        Path path = Paths.get(getV1Prefix().toString(), formatDate(time), type.toString());
+        if (BackupFileType.isDataFile(type))
+            path = Paths.get(path.toString(), keyspace, columnFamily);
+        return Paths.get(path.toString(), fileName);
+    }
+
+    private void parseV1Location(Path remoteFilePath) {
+        parseV1Prefix(remoteFilePath);
+        assert remoteFilePath.getNameCount() >= 7 : "Too few elements in path " + remoteFilePath;
+
+        time = parseDate(remoteFilePath.getName(4).toString());
+        type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
+        if (BackupFileType.isDataFile(type)) {
+            keyspace = remoteFilePath.getName(6).toString();
+            columnFamily = remoteFilePath.getName(7).toString();
+        }
+        // append the rest
+        fileName = remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();
+    }
+
+    private Path getV1Prefix() {
+        return Paths.get(baseDir, region, clusterName, token);
+    }
+
+    private void parseV1Prefix(Path remoteFilePath) {
+        if (remoteFilePath.getNameCount() < 4)
+            throw new RuntimeException(
+                    "Not enough no. of elements to parseV1Prefix : " + remoteFilePath);
+        baseDir = remoteFilePath.getName(0).toString();
+        region = remoteFilePath.getName(1).toString();
+        clusterName = remoteFilePath.getName(2).toString();
+        token = remoteFilePath.getName(3).toString();
+    }
+
     /**
      * Format of backup path: 1. For old style backups:
      * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNAP|META]/KEYSPACE/COLUMNFAMILY/FILE
@@ -116,24 +149,11 @@ public class S3BackupPath extends AbstractBackupPath {
      */
     @Override
     public String getRemotePath() {
-        StringBuilder buff = new StringBuilder();
         if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
-            buff.append(getV2Location());
+            return getV2Location().toString();
         } else {
-            buff.append(baseDir).append(S3BackupPath.PATH_SEP); // Base dir
-            buff.append(region).append(S3BackupPath.PATH_SEP);
-            buff.append(clusterName).append(S3BackupPath.PATH_SEP); // Cluster name
-            buff.append(token).append(S3BackupPath.PATH_SEP);
-            buff.append(formatDate(time)).append(S3BackupPath.PATH_SEP);
-            buff.append(type).append(S3BackupPath.PATH_SEP);
-            if (BackupFileType.isDataFile(type))
-                buff.append(keyspace)
-                        .append(S3BackupPath.PATH_SEP)
-                        .append(columnFamily)
-                        .append(S3BackupPath.PATH_SEP);
-            buff.append(fileName);
+            return getV1Location().toString();
         }
-        return buff.toString();
     }
 
     @Override
@@ -151,38 +171,13 @@ public class S3BackupPath extends AbstractBackupPath {
         if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
             parseV2Location(remoteFilePath);
         } else {
-            List<String> pieces = parsePrefix(remoteFilePath);
-            assert pieces.size() >= 7 : "Too few elements in path " + remoteFilePath;
-            time = parseDate(pieces.get(4));
-            type = BackupFileType.valueOf(pieces.get(5));
-            if (BackupFileType.isDataFile(type)) {
-                keyspace = pieces.get(6);
-                columnFamily = pieces.get(7);
-            }
-            // append the rest
-            fileName = pieces.get(pieces.size() - 1);
+            parseV1Location(Paths.get(remoteFilePath));
         }
     }
 
     @Override
     public void parsePartialPrefix(String remoteFilePath) {
-        parsePrefix(remoteFilePath);
-    }
-
-    private List<String> parsePrefix(String remoteFilePath) {
-        String[] elements = remoteFilePath.split(String.valueOf(S3BackupPath.PATH_SEP));
-        // parse out things which are empty
-        List<String> pieces = Lists.newArrayList();
-        for (String ele : elements) {
-            if (ele.equals("")) continue;
-            pieces.add(ele);
-        }
-        assert pieces.size() >= 4 : "Too few elements in path " + remoteFilePath;
-        baseDir = pieces.get(0);
-        region = pieces.get(1);
-        clusterName = pieces.get(2);
-        token = pieces.get(3);
-        return pieces;
+        parseV1Prefix(Paths.get(remoteFilePath));
     }
 
     @Override

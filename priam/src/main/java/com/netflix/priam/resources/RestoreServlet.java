@@ -24,8 +24,6 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,20 +61,12 @@ public class RestoreServlet {
     @GET
     @Path("/restore")
     public Response restore(@QueryParam("daterange") String daterange) throws Exception {
-        Date startTime;
-        Date endTime;
-
-        if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
-            startTime = new DateTime().minusDays(1).toDate();
-            endTime = new DateTime().toDate();
-        } else {
-            String[] restore = daterange.split(",");
-            startTime = DateUtil.getDate(restore[0]);
-            endTime = DateUtil.getDate(restore[1]);
-        }
-
-        logger.info("Parameters: {startTime: [{}], endTime: [{}]}", startTime, endTime);
-        restoreObj.restore(startTime, endTime);
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+        logger.info(
+                "Parameters: {startTime: [{}], endTime: [{}]}",
+                dateRange.getStartTime().toString(),
+                dateRange.getEndTime().toString());
+        restoreObj.restore(Date.from(dateRange.getStartTime()), Date.from(dateRange.getEndTime()));
         return Response.ok("[\"ok\"]", MediaType.APPLICATION_JSON).build();
     }
 }

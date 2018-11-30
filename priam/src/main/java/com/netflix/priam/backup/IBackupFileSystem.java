@@ -115,6 +115,16 @@ public interface IBackupFileSystem {
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**
+     * Get the bucket where this object should be stored. For local file system this should be empty
+     * or null.
+     *
+     * @return the location of the bucket.
+     */
+    default String getBucket() {
+        return "";
+    }
+
+    /**
      * List all files in the backup location for the specified time range.
      *
      * @param path This is used as the `prefix` for listing files in the filesystem. All the files

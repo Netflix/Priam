@@ -148,12 +148,12 @@ public class CassandraMonitor extends Task {
     private void checkDirectory(File directory) {
         if (!directory.exists())
             throw new IllegalStateException(
-                    String.format("Directory: {} does not exist", directory));
+                    String.format("Directory: %s does not exist", directory));
 
         if (!directory.canRead() || !directory.canWrite())
             throw new IllegalStateException(
                     String.format(
-                            "Directory: {} does not have read/write permissions.", directory));
+                            "Directory: %s does not have read/write permissions.", directory));
     }
 
     public static TaskTimer getTimer() {

@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.json.simple.JSONArray;
 
 @Singleton
@@ -46,15 +47,16 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     public FakeBackupFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr) {
-        super(configuration, backupMetrics, backupNotificationMgr);
+            BackupNotificationMgr backupNotificationMgr,
+            Provider<AbstractBackupPath> pathProvider) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
     }
 
     public void setupTest(List<String> files) {
         clearTest();
         flist = new ArrayList<>();
         for (String file : files) {
-            S3BackupPath path = pathProvider.get();
+            AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
             flist.add(path);
         }
@@ -75,7 +77,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     public void addFile(String file) {
-        S3BackupPath path = pathProvider.get();
+        AbstractBackupPath path = pathProvider.get();
         path.parseRemote(file);
         flist.add(path);
     }
@@ -105,6 +107,11 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
         return tmpList.iterator();
     }
 
+    @Override
+    public Iterator<String> list(String prefix, String delimiter) {
+        return new TransformIterator<>(flist.iterator(), AbstractBackupPath::getRemotePath);
+    }
+
     public void shutdown() {
         // nop
     }
@@ -115,19 +122,12 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    @Override
     public void cleanup() {
         // TODO Auto-generated method stub
     }
 
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-        // if (path.type == BackupFileType.META)
         {
             // List all files and generate the file
             try (FileWriter fr = new FileWriter(localPath.toFile())) {

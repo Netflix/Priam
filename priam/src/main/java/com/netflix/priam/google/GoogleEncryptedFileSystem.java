@@ -24,7 +24,6 @@ import com.google.api.services.storage.StorageScopes;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
-import com.netflix.priam.aws.S3BackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
@@ -37,10 +36,8 @@ import java.io.*;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Date;
 import java.util.Iterator;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,8 +53,6 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     private Credential credential;
     private Storage gcsStorageHandle;
     private Storage.Objects objectsResoruceHandle = null;
-
-    private final Provider<AbstractBackupPath> pathProvider;
     private String srcBucketName;
     private final IConfiguration config;
 
@@ -71,9 +66,8 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
             @Named("gcscredential") ICredentialGeneric credential,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationManager) {
-        super(config, backupMetrics, backupNotificationManager);
+        super(config, backupMetrics, backupNotificationManager, pathProvider);
         this.backupMetrics = backupMetrics;
-        this.pathProvider = pathProvider;
         this.config = config;
         this.gcsCredential = credential;
 
@@ -84,15 +78,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
                     "Unable to create a handle to the Google Http tranport", e);
         }
 
-        this.srcBucketName = getSourcebucket(getPathPrefix());
-    }
-
-    /*
-     * @param pathprefix - the absolute path (including bucket name) to the object.
-     */
-    private String getSourcebucket(String pathPrefix) {
-        String[] paths = pathPrefix.split(String.valueOf(S3BackupPath.PATH_SEP));
-        return paths[0];
+        this.srcBucketName = getBucket();
     }
 
     private Storage.Objects constructObjectResourceHandle() {
@@ -189,7 +175,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
 
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-        String objectName = parseObjectname(getPathPrefix());
+        String objectName = parseObjectname(getPrefix().toString());
         com.google.api.services.storage.Storage.Objects.Get get;
 
         try {
@@ -225,14 +211,8 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
-        return new GoogleFileIterator(pathProvider, constructGcsStorageHandle(), path, start, till);
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        // TODO Auto-generated method stub
-        return null;
+    public Iterator<String> list(String prefix, String delimiter) {
+        return new GoogleFileIterator(constructGcsStorageHandle(), prefix, null);
     }
 
     @Override
@@ -253,15 +233,6 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
         return 0;
-    }
-
-    /** Get restore prefix which will be used to locate GVS files */
-    private String getPathPrefix() {
-        String prefix;
-        if (StringUtils.isNotBlank(config.getRestorePrefix())) prefix = config.getRestorePrefix();
-        else prefix = config.getBackupPrefix();
-
-        return prefix;
     }
 
     /*

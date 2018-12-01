@@ -138,6 +138,15 @@ public interface IBackupFileSystem {
     /** Get a list of prefixes for the cluster available in backup for the specified date */
     Iterator<AbstractBackupPath> listPrefixes(Date date);
 
+    /**
+     * List all the files with the given prefix and delimiter. This should never return null.
+     *
+     * @param prefix Common prefix of the elements to search in the backup file system.
+     * @param delimiter All the object will end with this delimiter.
+     * @return the iterator on the backup file system containing path of the files.
+     */
+    Iterator<String> list(String prefix, String delimiter);
+
     /** Runs cleanup or set retention */
     void cleanup();
 

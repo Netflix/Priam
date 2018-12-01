@@ -31,7 +31,6 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -44,7 +43,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     AmazonS3 s3Client;
     final IConfiguration config;
-    private final Provider<AbstractBackupPath> pathProvider;
     final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
     // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
@@ -56,8 +54,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             final IConfiguration config,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr) {
-        super(config, backupMetrics, backupNotificationMgr);
-        this.pathProvider = pathProvider;
+        super(config, backupMetrics, backupNotificationMgr, pathProvider);
         this.compress = compress;
         this.config = config;
 
@@ -192,13 +189,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        return new S3PrefixIterator(config, pathProvider, s3Client, date, getBucket());
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
-        return new S3FileIterator(pathProvider, s3Client, getBucket(), path, start, till);
+    public Iterator<String> list(String prefix, String delimiter) {
+        return new S3Iterator(s3Client, getBucket(), prefix, delimiter);
     }
 
     final long getChunkSize(Path localPath) throws BackupRestoreException {

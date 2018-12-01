@@ -18,11 +18,12 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.nio.file.Path;
-import java.util.Date;
+import java.util.Collections;
 import java.util.Iterator;
 
 public class NullBackupFileSystem extends AbstractFileSystem {
@@ -31,13 +32,9 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     public NullBackupFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr) {
-        super(configuration, backupMetrics, backupNotificationMgr);
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till) {
-        return null;
+            BackupNotificationMgr backupNotificationMgr,
+            Provider<AbstractBackupPath> pathProvider) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
     }
 
     public void shutdown() {
@@ -50,8 +47,8 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        return null;
+    public Iterator<String> list(String prefix, String delimiter) {
+        return Collections.emptyIterator();
     }
 
     @Override

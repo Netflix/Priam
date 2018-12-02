@@ -19,7 +19,7 @@ package com.netflix.priam.stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
@@ -47,7 +47,7 @@ public class StreamingTest {
 
         FifoQueue<AbstractBackupPath> queue = new FifoQueue<>(10);
         for (int i = 10; i < 30; i++) {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
                     "test_backup/"
                             + region
@@ -61,7 +61,7 @@ public class StreamingTest {
         }
 
         for (int i = 10; i < 30; i++) {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
                     "test_backup/"
                             + region
@@ -75,7 +75,7 @@ public class StreamingTest {
         }
 
         for (int i = 10; i < 30; i++) {
-            S3BackupPath path = new S3BackupPath(conf, factory);
+            RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
                     "test_backup/"
                             + region
@@ -88,7 +88,7 @@ public class StreamingTest {
             queue.adjustAndAdd(path);
         }
 
-        S3BackupPath path = new S3BackupPath(conf, factory);
+        RemoteBackupPath path = new RemoteBackupPath(conf, factory);
         path.parseRemote(
                 "test_backup/"
                         + region

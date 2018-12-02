@@ -20,7 +20,7 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
@@ -85,7 +85,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     @SuppressWarnings("unchecked")
     @Override
     public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till) {
-        String[] paths = bucket.split(String.valueOf(S3BackupPath.PATH_SEP));
+        String[] paths = bucket.split(String.valueOf(RemoteBackupPath.PATH_SEP));
 
         if (paths.length > 1) {
             baseDir = paths[1];

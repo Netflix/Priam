@@ -39,6 +39,7 @@ import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
+import java.io.IOException;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +78,7 @@ public class PriamServer {
         this.snapshotMetaService = snapshotMetaService;
     }
 
-    private void createDirectories() {
+    private void createDirectories() throws IOException {
         SystemUtils.createDirs(config.getBackupCommitLogLocation());
         SystemUtils.createDirs(config.getCommitLogLocation());
         SystemUtils.createDirs(config.getCacheLocation());

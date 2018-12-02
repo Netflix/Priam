@@ -26,11 +26,15 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Date;
 
-/** Represents an S3 object key */
-public class S3BackupPath extends AbstractBackupPath {
+/**
+ * Represents location of an object on the remote file system. All the objects will be keyed with a
+ * common prefix (based on configuration, typically environment), name of the cluster and token of
+ * this instance.
+ */
+public class RemoteBackupPath extends AbstractBackupPath {
 
     @Inject
-    public S3BackupPath(IConfiguration config, InstanceIdentity factory) {
+    public RemoteBackupPath(IConfiguration config, InstanceIdentity factory) {
         super(config, factory);
     }
 
@@ -184,7 +188,7 @@ public class S3BackupPath extends AbstractBackupPath {
     public String remotePrefix(Date start, Date end, String location) {
         StringBuilder buff = new StringBuilder(clusterPrefix(location));
         token = instanceIdentity.getInstance().getToken();
-        buff.append(token).append(S3BackupPath.PATH_SEP);
+        buff.append(token).append(RemoteBackupPath.PATH_SEP);
         // match the common characters to prefix.
         buff.append(match(start, end));
         return buff.toString();
@@ -193,7 +197,7 @@ public class S3BackupPath extends AbstractBackupPath {
     @Override
     public String clusterPrefix(String location) {
         StringBuilder buff = new StringBuilder();
-        String[] elements = location.split(String.valueOf(S3BackupPath.PATH_SEP));
+        String[] elements = location.split(String.valueOf(RemoteBackupPath.PATH_SEP));
         if (elements.length <= 1) {
             baseDir = config.getBackupLocation();
             region = instanceIdentity.getInstanceInfo().getRegion();
@@ -204,9 +208,9 @@ public class S3BackupPath extends AbstractBackupPath {
             region = elements[2];
             clusterName = elements[3];
         }
-        buff.append(baseDir).append(S3BackupPath.PATH_SEP);
-        buff.append(region).append(S3BackupPath.PATH_SEP);
-        buff.append(clusterName).append(S3BackupPath.PATH_SEP);
+        buff.append(baseDir).append(RemoteBackupPath.PATH_SEP);
+        buff.append(region).append(RemoteBackupPath.PATH_SEP);
+        buff.append(clusterName).append(RemoteBackupPath.PATH_SEP);
 
         return buff.toString();
     }

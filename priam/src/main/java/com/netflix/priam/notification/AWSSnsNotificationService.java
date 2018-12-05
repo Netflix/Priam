@@ -85,7 +85,7 @@ public class AWSSnsNotificationService implements INotificationService {
         } catch (Exception e) {
             logger.error(
                     String.format(
-                            "Exhausted retries.  Publishing notification metric for failure and moving on.  Failed msg to publish: {}",
+                            "Exhausted retries.  Publishing notification metric for failure and moving on.  Failed msg to publish: %s",
                             msg),
                     e);
             backupMetrics.incrementSnsNotificationFailure();

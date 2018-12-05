@@ -26,7 +26,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.aws.DataPart;
-import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -87,7 +87,7 @@ public class TestS3FileSystem {
     public void testFileUpload() throws Exception {
         MockS3PartUploader.setup();
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
         fs.uploadFile(
@@ -107,7 +107,7 @@ public class TestS3FileSystem {
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         String snapshotfile =
                 "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
             fs.uploadFile(
@@ -130,7 +130,7 @@ public class TestS3FileSystem {
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         String snapshotfile =
                 "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         try {
             fs.uploadFile(

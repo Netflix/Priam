@@ -18,6 +18,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
@@ -27,11 +28,18 @@ import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Date;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.*;
+import org.apache.commons.collections4.iterators.FilterIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,8 +51,10 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
+    protected final Provider<AbstractBackupPath> pathProvider;
     private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers =
             new CopyOnWriteArrayList<>();
+    private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
     private final ThreadPoolExecutor fileUploadExecutor;
@@ -54,8 +64,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     public AbstractFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr) {
+            BackupNotificationMgr backupNotificationMgr,
+            Provider<AbstractBackupPath> pathProvider) {
+        this.configuration = configuration;
         this.backupMetrics = backupMetrics;
+        this.pathProvider = pathProvider;
         // Add notifications.
         this.addObserver(backupNotificationMgr);
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
@@ -215,6 +228,59 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
             throws BackupRestoreException;
+
+    @Override
+    public String getBucket() {
+        return getPrefix().getName(0).toString();
+    }
+
+    protected Path getPrefix() {
+        Path prefix = Paths.get(configuration.getBackupPrefix());
+
+        if (StringUtils.isNotBlank(configuration.getRestorePrefix())) {
+            prefix = Paths.get(configuration.getRestorePrefix());
+        }
+
+        return prefix;
+    }
+
+    @Override
+    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
+        String prefix = pathProvider.get().clusterPrefix(getPrefix().toString());
+        Iterator<String> fileIterator = list(prefix, File.pathSeparator);
+
+        //noinspection unchecked
+        return new TransformIterator(
+                fileIterator,
+                remotePath -> {
+                    AbstractBackupPath abstractBackupPath = pathProvider.get();
+                    abstractBackupPath.parsePartialPrefix(remotePath.toString());
+                    return abstractBackupPath;
+                });
+    }
+
+    @Override
+    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
+        String prefix = pathProvider.get().remotePrefix(start, till, path);
+        Iterator<String> fileIterator = list(prefix, null);
+
+        @SuppressWarnings("unchecked")
+        TransformIterator<String, AbstractBackupPath> transformIterator =
+                new TransformIterator(
+                        fileIterator,
+                        remotePath -> {
+                            AbstractBackupPath abstractBackupPath = pathProvider.get();
+                            abstractBackupPath.parseRemote(remotePath.toString());
+                            return abstractBackupPath;
+                        });
+
+        return new FilterIterator<>(
+                transformIterator,
+                abstractBackupPath ->
+                        (abstractBackupPath.getTime().after(start)
+                                        && abstractBackupPath.getTime().before(till))
+                                || abstractBackupPath.getTime().equals(start));
+    }
 
     @Override
     public final void addObserver(EventObserver<BackupEvent> observer) {

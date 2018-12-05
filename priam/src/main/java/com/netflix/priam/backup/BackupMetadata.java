@@ -35,9 +35,8 @@ public final class BackupMetadata implements Serializable {
         if (start == null || token == null || StringUtils.isEmpty(token))
             throw new Exception(
                     String.format(
-                            "Invalid Input: Token: {} or start date:{} is null or empty.",
-                            token,
-                            start));
+                            "Invalid Input: Token: %s or start date: %s is null or empty.",
+                            token, start));
 
         this.snapshotDate = DateUtil.formatyyyyMMdd(start);
         this.token = token;

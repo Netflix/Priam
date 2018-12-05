@@ -17,7 +17,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -32,7 +32,7 @@ import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@ImplementedBy(S3BackupPath.class)
+@ImplementedBy(RemoteBackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     private static final String FMT = "yyyyMMddHHmm";

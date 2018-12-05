@@ -77,7 +77,15 @@ public class TestS3BackupPath {
         logger.info(remotePath);
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(abstractBackupPath, abstractBackupPath2);
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+        Assert.assertEquals(abstractBackupPath.getTime(), abstractBackupPath2.getTime());
+    }
+
+    private void validateAbstractBackupPath(AbstractBackupPath abp1, AbstractBackupPath abp2) {
+        Assert.assertEquals(abp1.getKeyspace(), abp2.getKeyspace());
+        Assert.assertEquals(abp1.getColumnFamily(), abp2.getColumnFamily());
+        Assert.assertEquals(abp1.getFileName(), abp2.getFileName());
+        Assert.assertEquals(abp1.getType(), abp2.getType());
     }
 
     @Test
@@ -109,7 +117,8 @@ public class TestS3BackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(abstractBackupPath, abstractBackupPath2);
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+        Assert.assertEquals(abstractBackupPath.getTime(), abstractBackupPath2.getTime());
     }
 
     @Test
@@ -132,7 +141,8 @@ public class TestS3BackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(abstractBackupPath, abstractBackupPath2);
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+        Assert.assertEquals(abstractBackupPath.getTime(), abstractBackupPath2.getTime());
     }
 
     @Test
@@ -166,10 +176,7 @@ public class TestS3BackupPath {
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
         Assert.assertEquals(now, abstractBackupPath2.getLastModified());
-        Assert.assertEquals("mc-1234-Data.db", abstractBackupPath2.getFileName());
-        Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
-        Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
-        Assert.assertEquals(BackupFileType.SST_V2, abstractBackupPath.getType());
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 
     @Test
@@ -197,7 +204,6 @@ public class TestS3BackupPath {
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
         Assert.assertEquals(now, abstractBackupPath2.getLastModified());
-        Assert.assertEquals("meta_v2_201801011201.json", abstractBackupPath2.getFileName());
-        Assert.assertEquals(BackupFileType.META_V2, abstractBackupPath.getType());
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 }

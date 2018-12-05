@@ -115,14 +115,22 @@ public interface IBackupFileSystem {
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**
-     * Get the bucket where this object should be stored. For local file system this should be empty
-     * or null.
+     * Get the shard where this object should be stored. For local file system this should be empty
+     * or null. For S3, it would be the location of the bucket.
      *
-     * @return the location of the bucket.
+     * @return the location of the shard.
      */
-    default String getBucket() {
+    default String getShard() {
         return "";
     }
+
+    /**
+     * Get the prefix path for the backup file system. This will be either the location of the
+     * remote file system for backup or the location from where we should restore.
+     *
+     * @return prefix path to the backup file system.
+     */
+    Path getPrefix();
 
     /**
      * List all files in the backup location for the specified time range.
@@ -139,13 +147,15 @@ public interface IBackupFileSystem {
     Iterator<AbstractBackupPath> listPrefixes(Date date);
 
     /**
-     * List all the files with the given prefix and delimiter. This should never return null.
+     * List all the files with the given prefix, delimiter, and marker. This should never return
+     * null.
      *
      * @param prefix Common prefix of the elements to search in the backup file system.
      * @param delimiter All the object will end with this delimiter.
+     * @param marker Start the fetch with this as the first object.
      * @return the iterator on the backup file system containing path of the files.
      */
-    Iterator<String> list(String prefix, String delimiter);
+    Iterator<String> listFileSystem(String prefix, String delimiter, String marker);
 
     /** Runs cleanup or set retention */
     void cleanup();

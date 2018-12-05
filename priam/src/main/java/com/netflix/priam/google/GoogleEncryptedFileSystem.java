@@ -78,7 +78,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
                     "Unable to create a handle to the Google Http tranport", e);
         }
 
-        this.srcBucketName = getBucket();
+        this.srcBucketName = getShard();
     }
 
     private Storage.Objects constructObjectResourceHandle() {
@@ -211,7 +211,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
         return new GoogleFileIterator(constructGcsStorageHandle(), prefix, null);
     }
 

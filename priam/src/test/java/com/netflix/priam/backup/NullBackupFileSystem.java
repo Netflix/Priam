@@ -47,7 +47,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
         return Collections.emptyIterator();
     }
 

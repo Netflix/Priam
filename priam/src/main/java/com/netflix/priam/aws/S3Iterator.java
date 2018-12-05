@@ -37,12 +37,15 @@ public class S3Iterator implements Iterator<String> {
     private final String bucket;
     private final String prefix;
     private final String delimiter;
+    private final String marker;
 
-    public S3Iterator(AmazonS3 s3Client, String bucket, String prefix, String delimiter) {
+    public S3Iterator(
+            AmazonS3 s3Client, String bucket, String prefix, String delimiter, String marker) {
         this.s3Client = s3Client;
         this.bucket = bucket;
         this.prefix = prefix;
         this.delimiter = delimiter;
+        this.marker = marker;
         iterator = createIterator();
     }
 
@@ -51,6 +54,7 @@ public class S3Iterator implements Iterator<String> {
         listReq.setBucketName(bucket);
         listReq.setPrefix(prefix);
         if (StringUtils.isNotBlank(delimiter)) listReq.setDelimiter(delimiter);
+        if (StringUtils.isNotBlank(marker)) listReq.setMarker(marker);
         objectListing = s3Client.listObjects(listReq);
     }
 

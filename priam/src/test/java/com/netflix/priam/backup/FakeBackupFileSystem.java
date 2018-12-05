@@ -105,7 +105,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
         return new TransformIterator<>(flist.iterator(), AbstractBackupPath::getRemotePath);
     }
 

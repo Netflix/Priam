@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backupv2.BackupValidator;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
@@ -32,6 +33,7 @@ import java.util.stream.Collectors;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.io.FileUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -54,6 +56,7 @@ public class BackupServlet {
     @Inject private PriamScheduler scheduler;
     private final IBackupStatusMgr completedBkups;
     @Inject private MetaData metaData;
+    @Inject private BackupValidator backupValidator;
 
     @Inject
     public BackupServlet(
@@ -269,6 +272,33 @@ public class BackupServlet {
         jsonReply.put("filesInS3Only", result.filesInS3Only);
         jsonReply.put("filesMatched", result.filesMatched);
         return Response.ok(jsonReply.toString()).build();
+    }
+
+    @GET
+    @Path("/validate/snapshot/v2/{daterange}")
+    public Response validateV2SnapshotByDate(@PathParam("daterange") String daterange)
+            throws Exception {
+        try {
+            DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+            AbstractBackupPath validMeta = backupValidator.findLatestValidMetaFile(dateRange);
+            if (validMeta == null) {
+                return Response.noContent()
+                        .entity("No valid meta found for provided timerange")
+                        .build();
+            }
+
+            // Delete the file as we don't need it anymore.
+            FileUtils.deleteQuietly(validMeta.newRestoreFile());
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("daterange", daterange);
+            jsonObject.put("remoteMetaPath", validMeta.getRemotePath());
+            jsonObject.put("valid", true);
+            return Response.ok(jsonObject.toString()).build();
+        } catch (BackupRestoreException ex) {
+            logger.error(
+                    "Error while trying to fetch the latest valid meta file: {}", ex.getMessage());
+            return Response.serverError().build();
+        }
     }
 
     /*

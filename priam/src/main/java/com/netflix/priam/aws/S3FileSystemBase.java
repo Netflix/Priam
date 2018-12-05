@@ -158,14 +158,14 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getBucket(), remotePath.toString()).getContentLength();
+        return s3Client.getObjectMetadata(getShard(), remotePath.toString()).getContentLength();
     }
 
     @Override
     public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
         boolean exists = false;
         try {
-            exists = s3Client.doesObjectExist(getBucket(), remotePath.toString());
+            exists = s3Client.doesObjectExist(getShard(), remotePath.toString());
         } catch (AmazonServiceException ase) {
             // Amazon S3 rejected request
             throw new BackupRestoreException(
@@ -189,8 +189,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
-        return new S3Iterator(s3Client, getBucket(), prefix, delimiter);
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
+        return new S3Iterator(s3Client, getShard(), prefix, delimiter, marker);
     }
 
     final long getChunkSize(Path localPath) throws BackupRestoreException {

@@ -29,7 +29,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.*;
-import org.apache.commons.collections4.iterators.TransformIterator;
 import org.json.simple.JSONArray;
 
 @Singleton
@@ -106,8 +105,15 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
-        return new TransformIterator<>(flist.iterator(), AbstractBackupPath::getRemotePath);
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
+        ArrayList<String> items = new ArrayList<>();
+        flist.stream()
+                .forEach(
+                        abstractBackupPath -> {
+                            if (abstractBackupPath.getRemotePath().startsWith(prefix))
+                                items.add(abstractBackupPath.getRemotePath());
+                        });
+        return items.iterator();
     }
 
     public void shutdown() {
@@ -117,6 +123,15 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
         return 0;
+    }
+
+    @Override
+    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+        for (AbstractBackupPath abstractBackupPath : flist) {
+            if (abstractBackupPath.getRemotePath().equalsIgnoreCase(remotePath.toString()))
+                return true;
+        }
+        return false;
     }
 
     @Override

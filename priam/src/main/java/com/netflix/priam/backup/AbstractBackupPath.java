@@ -22,6 +22,7 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.File;
+import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
@@ -172,6 +173,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      * Provides a common prefix that matches all objects that fall between the start and end time
      */
     public abstract String remotePrefix(Date start, Date end, String location);
+
+    public abstract Path remoteV2Prefix(Path location, BackupFileType fileType);
 
     /** Provides the cluster prefix */
     public abstract String clusterPrefix(String location);

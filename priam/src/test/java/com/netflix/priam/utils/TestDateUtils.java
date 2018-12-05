@@ -20,6 +20,7 @@ package com.netflix.priam.utils;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -71,5 +72,26 @@ public class TestDateUtils {
         DateUtil.DateRange dateRange = new DateUtil.DateRange("some,random,values");
         Assert.assertEquals(null, dateRange.getStartTime());
         Assert.assertEquals(null, dateRange.getEndTime());
+    }
+
+    @Test
+    public void testDateRangeMatch() {
+        Instant dateStart = Instant.ofEpochMilli(1543632497000L);
+        Instant dateEnd = Instant.ofEpochMilli(1543819697000L);
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(dateStart, dateEnd);
+        Assert.assertEquals("1543", dateRange.match());
+
+        dateRange = new DateUtil.DateRange(dateStart, null);
+        Assert.assertEquals(StringUtils.EMPTY, dateRange.match());
+    }
+
+    @Test
+    public void testFutureDateRangeValues() {
+        String start = "202801011201";
+        String end = "202801051201";
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(start + "," + end);
+        Assert.assertEquals(DateUtil.getDate(start).toInstant(), dateRange.getStartTime());
+        Assert.assertEquals(DateUtil.getDate(end).toInstant(), dateRange.getEndTime());
+        Assert.assertEquals("1830", dateRange.match());
     }
 }

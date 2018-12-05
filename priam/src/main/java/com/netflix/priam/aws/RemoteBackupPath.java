@@ -39,7 +39,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     private Path getV2Prefix() {
-        return Paths.get(baseDir, getAppNameWithHash(), instanceIdentity.getInstance().getToken());
+        return Paths.get(baseDir, getAppNameWithHash(clusterName), token);
     }
 
     private void parseV2Prefix(Path remoteFilePath) {
@@ -54,8 +54,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
     /* This will ensure that there is some randomness in the path at the start so that remote file systems
     can hash the contents better when we have lot of clusters backing up at the same remote location.
     */
-    private String getAppNameWithHash() {
-        return String.format("%d_%s", config.getAppName().hashCode() % 10000, config.getAppName());
+    private String getAppNameWithHash(String appName) {
+        return String.format("%d_%s", appName.hashCode() % 10000, appName);
     }
 
     private String parseAndValidateAppNameWithHash(String appNameWithHash) {
@@ -63,7 +63,11 @@ public class RemoteBackupPath extends AbstractBackupPath {
         String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
         // Validate the hash
         int calculatedHash = appName.hashCode() % 10000;
-        assert calculatedHash == hash;
+        if (calculatedHash != hash)
+            throw new RuntimeException(
+                    String.format(
+                            "Hash for the app name: %s was calculated to be: %d but provided was: %d",
+                            appName, calculatedHash, hash));
         return appName;
     }
 
@@ -192,6 +196,19 @@ public class RemoteBackupPath extends AbstractBackupPath {
         // match the common characters to prefix.
         buff.append(match(start, end));
         return buff.toString();
+    }
+
+    @Override
+    public Path remoteV2Prefix(Path location, BackupFileType fileType) {
+        if (location.getNameCount() <= 1) {
+            baseDir = config.getBackupLocation();
+            clusterName = config.getAppName();
+        } else if (location.getNameCount() >= 3) {
+            baseDir = location.getName(1).toString();
+            clusterName = parseAndValidateAppNameWithHash(location.getName(2).toString());
+        }
+        token = instanceIdentity.getInstance().getToken();
+        return Paths.get(getV2Prefix().toString(), fileType.toString());
     }
 
     @Override

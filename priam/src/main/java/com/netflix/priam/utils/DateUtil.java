@@ -184,6 +184,11 @@ public class DateUtil {
         Instant startTime;
         Instant endTime;
 
+        public DateRange(Instant startTime, Instant endTime) {
+            this.startTime = startTime;
+            this.endTime = endTime;
+        }
+
         public DateRange(String daterange) {
             if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
                 endTime = getInstant();
@@ -195,12 +200,25 @@ public class DateUtil {
             }
         }
 
+        public String match() {
+            if (startTime == null || endTime == null) return StringUtils.EMPTY;
+            String sString = startTime.toEpochMilli() + "";
+            String eString = endTime.toEpochMilli() + "";
+            int diff = StringUtils.indexOfDifference(sString, eString);
+            if (diff < 0) return sString;
+            return sString.substring(0, diff);
+        }
+
         public Instant getStartTime() {
             return startTime;
         }
 
         public Instant getEndTime() {
             return endTime;
+        }
+
+        public String toString() {
+            return GsonJsonSerializer.getGson().toJson(this);
         }
     }
 }

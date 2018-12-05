@@ -35,12 +35,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 11/23/18. */
-public class TestS3BackupPath {
-    private static final Logger logger = LoggerFactory.getLogger(TestS3BackupPath.class);
+public class TestRemoteBackupPath {
+    private static final Logger logger = LoggerFactory.getLogger(TestRemoteBackupPath.class);
     private Provider<AbstractBackupPath> pathFactory;
     private IConfiguration configuration;
 
-    public TestS3BackupPath() {
+    public TestRemoteBackupPath() {
         Injector injector = Guice.createInjector(new BRTestModule());
         pathFactory = injector.getProvider(AbstractBackupPath.class);
         configuration = injector.getInstance(IConfiguration.class);
@@ -205,5 +205,19 @@ public class TestS3BackupPath {
         abstractBackupPath2.parseRemote(remotePath);
         Assert.assertEquals(now, abstractBackupPath2.getLastModified());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+    }
+
+    @Test
+    public void testRemoteV2Prefix() throws ParseException {
+        Path path = Paths.get("test_backup");
+        AbstractBackupPath abstractBackupPath = pathFactory.get();
+        Assert.assertEquals(
+                "casstestbackup/1049_fake-app/1808575600/META_V2",
+                abstractBackupPath.remoteV2Prefix(path, BackupFileType.META_V2).toString());
+
+        path = Paths.get("s3-bucket-name", "fake_base_dir", "-6717_random_fake_app");
+        Assert.assertEquals(
+                "fake_base_dir/-6717_random_fake_app/1808575600/META_V2",
+                abstractBackupPath.remoteV2Prefix(path, BackupFileType.META_V2).toString());
     }
 }

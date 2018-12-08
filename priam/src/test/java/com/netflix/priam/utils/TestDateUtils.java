@@ -20,6 +20,7 @@ package com.netflix.priam.utils;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -81,7 +82,7 @@ public class TestDateUtils {
         Assert.assertEquals("1543", dateRange.match());
 
         dateRange = new DateUtil.DateRange(dateStart, null);
-        Assert.assertEquals("1543632497000", dateRange.match());
+        Assert.assertEquals(StringUtils.EMPTY, dateRange.match());
     }
 
     @Test

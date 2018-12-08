@@ -21,7 +21,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -64,7 +63,11 @@ public class RemoteBackupPath extends AbstractBackupPath {
         String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
         // Validate the hash
         int calculatedHash = appName.hashCode() % 10000;
-        assert calculatedHash == hash;
+        if (calculatedHash != hash)
+            throw new RuntimeException(
+                    String.format(
+                            "Hash for the app name: %s was calculated to be: %d but provided was: %d",
+                            appName, calculatedHash, hash));
         return appName;
     }
 
@@ -196,8 +199,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     @Override
-    public Path remoteV2Prefix(
-            Path location, DateUtil.DateRange dateRange, BackupFileType fileType) {
+    public Path remoteV2Prefix(Path location, BackupFileType fileType) {
         if (location.getNameCount() <= 1) {
             baseDir = config.getBackupLocation();
             clusterName = config.getAppName();
@@ -206,8 +208,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
             clusterName = parseAndValidateAppNameWithHash(location.getName(2).toString());
         }
         token = instanceIdentity.getInstance().getToken();
-        String match = dateRange.match();
-        return Paths.get(getV2Prefix().toString(), fileType.toString(), match);
+        return Paths.get(getV2Prefix().toString(), fileType.toString());
     }
 
     @Override

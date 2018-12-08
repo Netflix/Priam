@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.List;
 import javax.inject.Inject;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,11 +121,23 @@ public class BackupValidator {
         return null;
     }
 
-    private String getMetaPrefix(DateUtil.DateRange dateRange) {
+    /**
+     * Get the prefix for the META_V2 file. This will depend on the configuration, if restore prefix
+     * is set.
+     *
+     * @param dateRange date range for which we are trying to find META_V2 files.
+     * @return prefix for the META_V2 files.
+     */
+    public String getMetaPrefix(DateUtil.DateRange dateRange) {
         Path location = fs.getPrefix();
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        return abstractBackupPath
-                .remoteV2Prefix(location, dateRange, AbstractBackupPath.BackupFileType.META_V2)
+        String match = StringUtils.EMPTY;
+        if (dateRange != null) match = dateRange.match();
+        return Paths.get(
+                        abstractBackupPath
+                                .remoteV2Prefix(location, AbstractBackupPath.BackupFileType.META_V2)
+                                .toString(),
+                        match)
                 .toString();
     }
 

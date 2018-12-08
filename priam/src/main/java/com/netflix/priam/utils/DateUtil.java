@@ -201,8 +201,8 @@ public class DateUtil {
         }
 
         public String match() {
+            if (startTime == null || endTime == null) return StringUtils.EMPTY;
             String sString = startTime.toEpochMilli() + "";
-            if (endTime == null) return sString;
             String eString = endTime.toEpochMilli() + "";
             int diff = StringUtils.indexOfDifference(sString, eString);
             if (diff < 0) return sString;

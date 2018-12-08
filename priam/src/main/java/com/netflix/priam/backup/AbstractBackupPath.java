@@ -21,7 +21,6 @@ import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.ParseException;
@@ -175,8 +174,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      */
     public abstract String remotePrefix(Date start, Date end, String location);
 
-    public abstract Path remoteV2Prefix(
-            Path location, DateUtil.DateRange dateRange, BackupFileType fileType);
+    public abstract Path remoteV2Prefix(Path location, BackupFileType fileType);
 
     /** Provides the cluster prefix */
     public abstract String clusterPrefix(String location);

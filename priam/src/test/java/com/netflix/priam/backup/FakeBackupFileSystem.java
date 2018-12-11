@@ -41,8 +41,6 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     private String region;
     private String clusterName;
 
-    @Inject Provider<S3BackupPath> pathProvider;
-
     @Inject
     public FakeBackupFileSystem(
             IConfiguration configuration,

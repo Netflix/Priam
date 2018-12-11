@@ -23,19 +23,27 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.config.FakeConfiguration;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
+import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.IConfiguration;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class RandomTokenManagerTest {
     private TokenManager tokenManager;
+    @Inject private IConfiguration config;
 
     @Before
     public void setUp() {
-        FakeConfiguration config = new FakeConfiguration();
         this.tokenManager = new TokenManager(config);
     }
 

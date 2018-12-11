@@ -20,11 +20,17 @@ package com.netflix.priam.tuner;
 import static org.junit.Assert.assertEquals;
 
 import com.google.common.io.Files;
-import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import java.io.File;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class StandardTunerTest {
     /* note: these are, more or less, arbitrary partitioner class names. as long as the tests exercise the code, all is good */
     private static final String A_PARTITIONER = "com.netflix.priam.utils.NonexistentPartitioner";
@@ -32,11 +38,7 @@ public class StandardTunerTest {
     private static final String MURMUR_PARTITIONER = "org.apache.cassandra.dht.Murmur3Partitioner";
     private static final String BOP_PARTITIONER = "org.apache.cassandra.dht.ByteOrderedPartitioner";
 
-    private final StandardTuner tuner;
-
-    public StandardTunerTest() {
-        this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);
-    }
+    @Inject private StandardTuner tuner;
 
     @Test
     public void derivePartitioner_NullYamlEntry() {

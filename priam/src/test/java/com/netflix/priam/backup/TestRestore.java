@@ -21,7 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
 import com.google.inject.name.Names;
-import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
@@ -38,18 +38,18 @@ public class TestRestore {
     private static FakeBackupFileSystem filesystem;
     private static ArrayList<String> fileList;
     private static Calendar cal;
-    private static FakeConfiguration conf;
+    private static IConfiguration conf;
     private static String region;
     private static Restore restore;
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
-        Injector injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new ArchaiusModule(), new BRTestModule());
         filesystem =
                 (FakeBackupFileSystem)
                         injector.getInstance(
                                 Key.get(IBackupFileSystem.class, Names.named("backup")));
-        conf = (FakeConfiguration) injector.getInstance(IConfiguration.class);
+        conf = injector.getInstance(IConfiguration.class);
         region = injector.getInstance(InstanceInfo.class).getRegion();
         restore = injector.getInstance(Restore.class);
         fileList = new ArrayList<>();
@@ -68,7 +68,6 @@ public class TestRestore {
         fileList.add(baseDir + "/" + region + "/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
         fileList.add(baseDir + "/" + region + "/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
         filesystem.setupTest(fileList);
-        conf.setRestorePrefix("RESTOREBUCKET/" + baseDir + "/" + region + "/fakecluster");
     }
 
     @Test
@@ -130,7 +129,7 @@ public class TestRestore {
 
     @Test
     public void testRestoreFromDiffCluster() throws Exception {
-        populateBackupFileSystem("test_backup_new");
+        populateBackupFileSystem("test_backup");
         cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
         Date startTime = cal.getTime();

@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -26,26 +28,25 @@ import java.util.Date;
 import java.util.List;
 import org.joda.time.DateTime;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 7/11/17. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestSnapshotStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
+    @Inject private IConfiguration configuration;
+    @Inject private IBackupStatusMgr backupStatusMgr;
 
-    private static IBackupStatusMgr backupStatusMgr;
-
-    @BeforeClass
-    public static void setup() {
-        Injector injector = Guice.createInjector(new BRTestModule());
+    @Before
+    public void setup() {
         // cleanup old saved file, if any
-        IConfiguration configuration = injector.getInstance(IConfiguration.class);
         File f = new File(configuration.getBackupStatusFileLoc());
         if (f.exists()) f.delete();
-
-        backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
     }
 
     @Test

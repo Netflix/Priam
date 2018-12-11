@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -31,18 +33,15 @@ import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 11/28/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestMetaFileManager {
 
-    private MetaFileManager metaFileManager;
-    private IConfiguration configuration;
-
-    public TestMetaFileManager() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        metaFileManager = injector.getInstance(MetaFileManager.class);
-        configuration = injector.getInstance(IConfiguration.class);
-    }
+    @Inject private MetaFileManager metaFileManager;
+    @Inject private IConfiguration configuration;
 
     @After
     public void cleanup() throws IOException {

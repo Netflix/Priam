@@ -80,7 +80,8 @@ public class PriamConfigurationPersister extends Task {
             // to be explicit
             Files.setPosixFilePermissions(tempPath, PosixFilePermissions.fromString("rw-------"));
 
-            Map<String, Object> structuredConfiguration = config.getStructuredConfiguration("all");
+            Map<String, Object> structuredConfiguration =
+                    new ObjectMapper().convertValue(config, Map.class);
 
             ObjectMapper mapper = new ObjectMapper();
             ObjectWriter structuredPathTmpWriter = mapper.writer(new MinimalPrettyPrinter());

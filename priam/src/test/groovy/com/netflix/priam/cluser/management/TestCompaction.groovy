@@ -1,9 +1,10 @@
 package com.netflix.priam.cluser.management
 
 import com.google.inject.Guice
+import com.netflix.archaius.guice.ArchaiusModule
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
-import com.netflix.priam.config.FakeConfiguration
+import com.netflix.priam.config.IConfiguration
 import com.netflix.priam.defaultimpl.CassandraOperations
 import com.netflix.priam.utils.CassandraMonitor
 import mockit.Mock
@@ -33,7 +34,7 @@ class TestCompaction extends Specification {
     }
     def setupSpec(){
         if (compaction == null)
-            compaction = Guice.createInjector(new BRTestModule()).getInstance(Compaction.class)
+            compaction = Guice.createInjector(new ArchaiusModule(), new BRTestModule()).getInstance(Compaction.class)
     }
 
     def "Map contains KS #keyspace with configuration #compactionCFIncludeList is #result"() {
@@ -166,7 +167,7 @@ class TestCompaction extends Specification {
 
 
 
-    private class CompactionConfiguration extends FakeConfiguration {
+    private class CompactionConfiguration implements IConfiguration {
         private String compactionCFIncludeList
         private String compactionCFExcludeList
 
@@ -191,7 +192,7 @@ class TestCompaction extends Specification {
     private static class MockCassandraOperations extends MockUp<CassandraOperations> {
         @Mock
         static void forceKeyspaceCompaction(String keyspaceName, String... columnfamily) throws Exception{
-            Thread.sleep(2000)
+            Thread.sleep(20)
         }
 
         @Mock

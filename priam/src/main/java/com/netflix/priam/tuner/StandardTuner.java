@@ -19,6 +19,7 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
@@ -34,9 +35,14 @@ public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
     private final InstanceInfo instanceInfo;
+    private final PriamHelperFunctions priamHelperFunctions;
 
     @Inject
-    public StandardTuner(IConfiguration config, InstanceInfo instanceInfo) {
+    public StandardTuner(
+            PriamHelperFunctions priamHelperFunctions,
+            IConfiguration config,
+            InstanceInfo instanceInfo) {
+        this.priamHelperFunctions = priamHelperFunctions;
         this.config = config;
         this.instanceInfo = instanceInfo;
     }
@@ -233,25 +239,9 @@ public class StandardTuner implements ICassandraTuner {
     }
 
     public void addExtraCassParams(Map map) {
-        String params = config.getExtraConfigParams();
-        if (StringUtils.isEmpty(params)) {
-            logger.info("Updating yaml: no extra cass params");
-            return;
-        }
-
-        String[] pairs = params.split(",");
-        logger.info("Updating yaml: adding extra cass params");
-        for (String pair1 : pairs) {
-            String[] pair = pair1.split("=");
-            String priamKey = pair[0];
-            String cassKey = pair[1];
-            String cassVal = config.getCassYamlVal(priamKey);
-            logger.info(
-                    "Updating yaml: Priamkey[{}], CassKey[{}], Val[{}]",
-                    priamKey,
-                    cassKey,
-                    cassVal);
-            map.put(cassKey, cassVal);
-        }
+        Map<String, String> extraParameters =
+                priamHelperFunctions.parseParams(config.getExtraConfigParams(), true);
+        logger.info("Updating yaml: adding extra cass params: {}", extraParameters);
+        map.putAll(extraParameters);
     }
 }

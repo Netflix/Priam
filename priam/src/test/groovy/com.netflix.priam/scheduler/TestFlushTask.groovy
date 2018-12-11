@@ -1,7 +1,7 @@
 package com.netflix.priam.scheduler
 
 import com.netflix.priam.cluster.management.Flush
-import com.netflix.priam.config.FakeConfiguration
+import com.netflix.priam.config.IConfiguration
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -54,7 +54,7 @@ class TestFlushTask extends Specification {
     }
 
 
-    private class FlushConfiguration extends FakeConfiguration {
+    private class FlushConfiguration implements IConfiguration {
         private String flushSchedulerType, flushCronExpression, flushInterval
 
         FlushConfiguration(String flushSchedulerType, String flushCronExpression, String flushInterval) {

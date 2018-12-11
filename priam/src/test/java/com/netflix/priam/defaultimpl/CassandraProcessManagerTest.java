@@ -17,30 +17,20 @@
 
 package com.netflix.priam.defaultimpl;
 
-import com.google.inject.Guice;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.merics.CassMonitorMetrics;
 import java.io.IOException;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class CassandraProcessManagerTest {
-    private CassandraProcessManager cpm;
-
-    @Before
-    public void setup() {
-        IConfiguration config = new FakeConfiguration("test_cluster");
-        InstanceState instanceState =
-                Guice.createInjector(new BRTestModule()).getInstance(InstanceState.class);
-        CassMonitorMetrics cassMonitorMetrics =
-                Guice.createInjector(new BRTestModule()).getInstance(CassMonitorMetrics.class);
-
-        cpm = new CassandraProcessManager(config, instanceState, cassMonitorMetrics);
-    }
+    @Inject private CassandraProcessManager cpm;
 
     @Test
     public void logProcessOutput_BadApp() throws IOException, InterruptedException {

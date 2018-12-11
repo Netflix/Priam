@@ -23,7 +23,6 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 
 import com.google.common.collect.ImmutableList;
-import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import java.math.BigInteger;
 import java.util.Collections;
@@ -204,7 +203,7 @@ public class Murmur3TokenManagerTest {
         assertEquals(new BigInteger("" + hashDiffrence).abs(), tokendistance);
     }
 
-    private class Murmur3Configuration extends FakeConfiguration {
+    private class Murmur3Configuration implements IConfiguration {
         private final String partitioner = "org.apache.cassandra.dht.Murmur3Partitioner";
 
         @Override

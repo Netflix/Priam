@@ -22,8 +22,11 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.ReplaceWithMock;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -33,40 +36,37 @@ import java.nio.file.Paths;
 import java.util.*;
 import mockit.Mock;
 import mockit.MockUp;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runner.RunWith;
 
 /**
  * Unit test for backup file iterator
  *
  * @author Praveen Sadhu
  */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestFileIterator {
-    private static Injector injector;
     private static Date startTime, endTime;
     private static Calendar cal;
 
-    private static AmazonS3Client s3client;
-    private static S3FileSystem s3FileSystem;
-    private static IConfiguration conf;
-    private static InstanceIdentity factory;
+    @Inject private S3FileSystem s3FileSystem;
+    @Inject private IConfiguration conf;
+    @Inject private InstanceIdentity factory;
+    @ReplaceWithMock private AmazonS3Client amazonS3Client;
+    @ReplaceWithMock private ObjectListing objectListing;
     private static String region;
     private static String bucket = "TESTBUCKET";
 
+    @Before
+    public void before() {
+        region = factory.getInstanceInfo().getRegion();
+    }
+
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
-        s3client = new MockAmazonS3Client().getMockInstance();
+        new MockAmazonS3Client();
         new MockObjectListing();
-
-        injector = Guice.createInjector(new BRTestModule());
-        conf = injector.getInstance(IConfiguration.class);
-        factory = injector.getInstance(InstanceIdentity.class);
-        region = factory.getInstanceInfo().getRegion();
-        s3FileSystem = injector.getInstance(S3FileSystem.class);
-        s3FileSystem.setS3Client(s3client);
-
         cal = Calendar.getInstance();
         cal.set(2011, 7, 11, 0, 30, 0);
         cal.set(Calendar.MILLISECOND, 0);
@@ -161,7 +161,6 @@ public class TestFileIterator {
         MockAmazonS3Client.prefix = getClusterPrefix() + "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, startTime, endTime);
-
         Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         Assert.assertEquals(3, files.size());

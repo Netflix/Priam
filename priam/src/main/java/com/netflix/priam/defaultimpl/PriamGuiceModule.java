@@ -17,7 +17,10 @@
 package com.netflix.priam.defaultimpl;
 
 import com.google.inject.AbstractModule;
+import com.google.inject.Provides;
 import com.google.inject.name.Names;
+import com.netflix.archaius.ConfigProxyFactory;
+import com.netflix.priam.PriamServer;
 import com.netflix.priam.aws.S3CrossAccountFileSystem;
 import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
@@ -25,6 +28,8 @@ import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.cred.ICredentialGeneric;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -68,5 +73,16 @@ public class PriamGuiceModule extends AbstractModule {
                 .annotatedWith(Names.named("pgpcredential"))
                 .to(PgpCredential.class);
         bind(Registry.class).toInstance(new NoopRegistry());
+        bind(PriamServer.class).asEagerSingleton();
+    }
+
+    @Provides
+    IConfiguration getIConfiguration(ConfigProxyFactory proxyFactory) {
+        return proxyFactory.newProxy(IConfiguration.class);
+    }
+
+    @Provides
+    IBackupRestoreConfig getIBackupRestoreConfig(ConfigProxyFactory proxyFactory) {
+        return proxyFactory.newProxy(IBackupRestoreConfig.class);
     }
 }

@@ -16,8 +16,11 @@
  */
 package com.netflix.priam.services;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backupv2.ColumnfamilyResult;
@@ -36,38 +39,24 @@ import java.time.Instant;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 6/20/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({BRTestModule.class, ArchaiusModule.class})
+@TestPropertyOverride({"priam.snapshot.meta.cron=0 0/2 * 1/1 * ? *"})
 public class TestSnapshotMetaService {
     private static final Logger logger =
             LoggerFactory.getLogger(TestSnapshotMetaService.class.getName());
     private static Path dummyDataDirectoryLocation;
-    private static IConfiguration configuration;
-    private static IBackupRestoreConfig backupRestoreConfig;
-    private static SnapshotMetaService snapshotMetaService;
-    private static TestMetaFileReader metaFileReader;
-    private static PrefixGenerator prefixGenerator;
-    private static InstanceInfo instanceInfo;
-
-    public TestSnapshotMetaService() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
-
-        if (backupRestoreConfig == null)
-            backupRestoreConfig = injector.getInstance(IBackupRestoreConfig.class);
-
-        if (snapshotMetaService == null)
-            snapshotMetaService = injector.getInstance(SnapshotMetaService.class);
-
-        if (metaFileReader == null) metaFileReader = new TestMetaFileReader();
-
-        if (prefixGenerator == null) prefixGenerator = injector.getInstance(PrefixGenerator.class);
-
-        if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
-    }
+    @Inject private IConfiguration configuration;
+    @Inject private IBackupRestoreConfig backupRestoreConfig;
+    @Inject private SnapshotMetaService snapshotMetaService;
+    @Inject private TestMetaFileReader metaFileReader;
+    @Inject private PrefixGenerator prefixGenerator;
+    @Inject private InstanceInfo instanceInfo;
 
     @Before
     public void setUp() {

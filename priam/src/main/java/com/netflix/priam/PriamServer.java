@@ -67,7 +67,8 @@ public class PriamServer {
             Sleeper sleeper,
             ICassandraProcess cassProcess,
             RestoreContext restoreContext,
-            SnapshotMetaService snapshotMetaService) {
+            SnapshotMetaService snapshotMetaService)
+            throws Exception {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
@@ -76,6 +77,7 @@ public class PriamServer {
         this.cassProcess = cassProcess;
         this.restoreContext = restoreContext;
         this.snapshotMetaService = snapshotMetaService;
+        initialize();
     }
 
     private void createDirectories() throws IOException {

@@ -25,6 +25,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -40,11 +41,12 @@ import org.junit.runner.RunWith;
 public class CassandraConfigTest {
     private @Mocked PriamServer priamServer;
     private @Mocked DoubleRing doubleRing;
+    private @Mocked PriamHelperFunctions priamHelperFunctions;
     private CassandraConfig resource;
 
     @Before
     public void setUp() {
-        resource = new CassandraConfig(priamServer, doubleRing);
+        resource = new CassandraConfig(priamHelperFunctions, priamServer, doubleRing);
     }
 
     @Test

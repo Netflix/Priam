@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -39,26 +41,22 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 9/4/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestLocalDBReaderWriter {
     private static final Logger logger =
             LoggerFactory.getLogger(TestLocalDBReaderWriter.class.getName());
-    private static IConfiguration configuration;
-    private static LocalDBReaderWriter localDBReaderWriter;
+    @Inject private IConfiguration configuration;
+    @Inject private LocalDBReaderWriter localDBReaderWriter;
     private static Path dummyDataDirectoryLocation;
 
     @Before
     public void setUp() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
-
-        if (localDBReaderWriter == null)
-            localDBReaderWriter = injector.getInstance(LocalDBReaderWriter.class);
-
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
         cleanupDir(dummyDataDirectoryLocation);
     }

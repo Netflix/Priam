@@ -13,6 +13,8 @@
  */
 package com.netflix.priam.aws;
 
+import com.amazonaws.AmazonClientException;
+import com.amazonaws.AmazonServiceException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
@@ -29,11 +31,9 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import java.nio.file.Path;
-import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,7 +43,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     AmazonS3 s3Client;
     final IConfiguration config;
-    private final Provider<AbstractBackupPath> pathProvider;
     final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
     // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
@@ -55,8 +54,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             final IConfiguration config,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr) {
-        super(config, backupMetrics, backupNotificationMgr);
-        this.pathProvider = pathProvider;
+        super(config, backupMetrics, backupNotificationMgr, pathProvider);
         this.compress = compress;
         this.config = config;
 
@@ -78,16 +76,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
      */
     public void setS3Client(AmazonS3 client) {
         s3Client = client;
-    }
-
-    /** Get S3 prefix which will be used to locate S3 files */
-    String getPrefix(IConfiguration config) {
-        String prefix;
-        if (StringUtils.isNotBlank(config.getRestorePrefix())) prefix = config.getRestorePrefix();
-        else prefix = config.getBackupPrefix();
-
-        String[] paths = prefix.split(String.valueOf(S3BackupPath.PATH_SEP));
-        return paths[0];
     }
 
     @Override
@@ -170,8 +158,29 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getPrefix(config), remotePath.toString())
-                .getContentLength();
+        return s3Client.getObjectMetadata(getBucket(), remotePath.toString()).getContentLength();
+    }
+
+    @Override
+    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+        boolean exists = false;
+        try {
+            exists = s3Client.doesObjectExist(getBucket(), remotePath.toString());
+        } catch (AmazonServiceException ase) {
+            // Amazon S3 rejected request
+            throw new BackupRestoreException(
+                    "AmazonServiceException while checking existence of object: "
+                            + remotePath
+                            + ". Error: "
+                            + ase.getMessage());
+        } catch (AmazonClientException ace) {
+            // No point throwing this exception up.
+            logger.error(
+                    "AmazonClientException: client encountered a serious internal problem while trying to communicate with S3",
+                    ace.getMessage());
+        }
+
+        return exists;
     }
 
     @Override
@@ -180,13 +189,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date) {
-        return new S3PrefixIterator(config, pathProvider, s3Client, date);
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
-        return new S3FileIterator(pathProvider, s3Client, path, start, till);
+    public Iterator<String> list(String prefix, String delimiter) {
+        return new S3Iterator(s3Client, getBucket(), prefix, delimiter);
     }
 
     final long getChunkSize(Path localPath) throws BackupRestoreException {

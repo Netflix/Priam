@@ -19,7 +19,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.aws.S3BackupPath;
+import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.BufferedOutputStream;
@@ -72,7 +72,7 @@ public class TestBackupFile {
         // Test snapshot file
         String snapshotfile =
                 "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
@@ -92,7 +92,7 @@ public class TestBackupFile {
     public void testIncBackupFileCreation() throws ParseException {
         // Test incremental file
         File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.SST);
         Assert.assertEquals(BackupFileType.SST, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
@@ -116,9 +116,9 @@ public class TestBackupFile {
         // Test snapshot file
         String filestr = "cass/data/1234567.meta";
         File bfile = new File(filestr);
-        S3BackupPath backupfile = injector.getInstance(S3BackupPath.class);
-        backupfile.time = backupfile.parseDate("201108082320");
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.META);
+        backupfile.setTime(backupfile.parseDate("201108082320"));
         Assert.assertEquals(BackupFileType.META, backupfile.type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);

@@ -115,6 +115,16 @@ public interface IBackupFileSystem {
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**
+     * Get the bucket where this object should be stored. For local file system this should be empty
+     * or null.
+     *
+     * @return the location of the bucket.
+     */
+    default String getBucket() {
+        return "";
+    }
+
+    /**
      * List all files in the backup location for the specified time range.
      *
      * @param path This is used as the `prefix` for listing files in the filesystem. All the files
@@ -127,6 +137,15 @@ public interface IBackupFileSystem {
 
     /** Get a list of prefixes for the cluster available in backup for the specified date */
     Iterator<AbstractBackupPath> listPrefixes(Date date);
+
+    /**
+     * List all the files with the given prefix and delimiter. This should never return null.
+     *
+     * @param prefix Common prefix of the elements to search in the backup file system.
+     * @param delimiter All the object will end with this delimiter.
+     * @return the iterator on the backup file system containing path of the files.
+     */
+    Iterator<String> list(String prefix, String delimiter);
 
     /** Runs cleanup or set retention */
     void cleanup();
@@ -143,6 +162,18 @@ public interface IBackupFileSystem {
      *     other error.
      */
     long getFileSize(Path remotePath) throws BackupRestoreException;
+
+    /**
+     * Checks if the file denoted by remotePath exists on the remote file system. It does not need
+     * check if object was completely uploaded to remote file system.
+     *
+     * @param remotePath location on the remote file system.
+     * @return boolean value indicating presence of the file on remote file system.
+     * @throws BackupRestoreException
+     */
+    default boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+        return false;
+    }
 
     /**
      * Get the number of tasks en-queue in the filesystem for upload.

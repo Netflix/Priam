@@ -20,6 +20,7 @@ package com.netflix.priam.backup;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -48,7 +49,7 @@ public class TestAbstractFileSystem {
     private IConfiguration configuration;
     private BackupMetrics backupMetrics;
     private BackupNotificationMgr backupNotificationMgr;
-    private AbstractFileSystem failureFileSystem;
+    private FailureFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
 
     @Before
@@ -61,13 +62,17 @@ public class TestAbstractFileSystem {
             backupNotificationMgr = injector.getInstance(BackupNotificationMgr.class);
 
         backupMetrics = injector.getInstance(BackupMetrics.class);
+        Provider<AbstractBackupPath> pathProvider = injector.getProvider(AbstractBackupPath.class);
 
         if (failureFileSystem == null)
             failureFileSystem =
-                    new FailureFileSystem(configuration, backupMetrics, backupNotificationMgr);
+                    new FailureFileSystem(
+                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
 
         if (myFileSystem == null)
-            myFileSystem = new MyFileSystem(configuration, backupMetrics, backupNotificationMgr);
+            myFileSystem =
+                    new MyFileSystem(
+                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
 
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
     }
@@ -117,7 +122,11 @@ public class TestAbstractFileSystem {
         // Dummy upload with compressed size.
         for (File file : files) {
             myFileSystem.uploadFile(
-                    file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+                    file.toPath(),
+                    Paths.get(file.toString() + ".tmp"),
+                    getDummyPath(file.toPath()),
+                    2,
+                    true);
             // Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
 
@@ -142,7 +151,11 @@ public class TestAbstractFileSystem {
         for (File file : files) {
             myFileSystem
                     .asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true)
+                            file.toPath(),
+                            Paths.get(file.toString() + ".tmp"),
+                            getDummyPath(file.toPath()),
+                            2,
+                            true)
                     .get();
             // 1. Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
@@ -161,7 +174,11 @@ public class TestAbstractFileSystem {
         for (File file : files) {
             futures.add(
                     myFileSystem.asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true));
+                            file.toPath(),
+                            Paths.get(file.toString() + ".tmp"),
+                            getDummyPath(file.toPath()),
+                            2,
+                            true));
         }
 
         // Verify all the work is finished.
@@ -283,8 +300,9 @@ public class TestAbstractFileSystem {
         public FailureFileSystem(
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
-                BackupNotificationMgr backupNotificationMgr) {
-            super(configuration, backupMetrics, backupNotificationMgr);
+                BackupNotificationMgr backupNotificationMgr,
+                Provider<AbstractBackupPath> pathProvider) {
+            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
         }
 
         @Override
@@ -312,8 +330,9 @@ public class TestAbstractFileSystem {
         public MyFileSystem(
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
-                BackupNotificationMgr backupNotificationMgr) {
-            super(configuration, backupMetrics, backupNotificationMgr);
+                BackupNotificationMgr backupNotificationMgr,
+                Provider<AbstractBackupPath> pathProvider) {
+            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
         }
 
         @Override

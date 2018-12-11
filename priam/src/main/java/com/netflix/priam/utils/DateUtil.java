@@ -22,6 +22,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
@@ -177,5 +178,29 @@ public class DateUtil {
             }
         }
         return null;
+    }
+
+    public static class DateRange {
+        Instant startTime;
+        Instant endTime;
+
+        public DateRange(String daterange) {
+            if (StringUtils.isBlank(daterange) || daterange.equalsIgnoreCase("default")) {
+                endTime = getInstant();
+                startTime = endTime.minus(1, ChronoUnit.DAYS);
+            } else {
+                String[] dates = daterange.split(",");
+                startTime = parseInstant(dates[0]);
+                endTime = parseInstant(dates[1]);
+            }
+        }
+
+        public Instant getStartTime() {
+            return startTime;
+        }
+
+        public Instant getEndTime() {
+            return endTime;
+        }
     }
 }

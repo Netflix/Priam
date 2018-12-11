@@ -38,7 +38,7 @@ public class FileUploadResult {
     // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
     private ICompression.CompressionAlgorithm compression =
             ICompression.CompressionAlgorithm.SNAPPY;
-    private Path backupPath;
+    private String backupPath;
 
     public FileUploadResult(
             Path fileName,
@@ -112,11 +112,11 @@ public class FileUploadResult {
         this.compression = compression;
     }
 
-    public Path getBackupPath() {
+    public String getBackupPath() {
         return backupPath;
     }
 
-    public void setBackupPath(Path backupPath) {
+    public void setBackupPath(String backupPath) {
         this.backupPath = backupPath;
     }
 

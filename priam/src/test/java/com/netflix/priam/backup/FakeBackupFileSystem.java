@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.aws.RemoteBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -33,9 +32,9 @@ import org.json.simple.JSONArray;
 
 @Singleton
 public class FakeBackupFileSystem extends AbstractFileSystem {
-    private List<AbstractBackupPath> flist;
-    public Set<String> downloadedFiles;
-    public Set<String> uploadedFiles;
+    private List<AbstractBackupPath> flist = new ArrayList<>();
+    public Set<String> downloadedFiles = new HashSet<>();
+    public Set<String> uploadedFiles = new HashSet<>();
     private String baseDir;
     private String region;
     private String clusterName;
@@ -50,27 +49,19 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     public void setupTest(List<String> files) {
+        System.out.println("Setting up: " + files);
         clearTest();
-        flist = new ArrayList<>();
         for (String file : files) {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
             flist.add(path);
         }
-        downloadedFiles = new HashSet<>();
-        uploadedFiles = new HashSet<>();
-    }
-
-    public void setupTest() {
-        clearTest();
-        flist = new ArrayList<>();
-        downloadedFiles = new HashSet<>();
-        uploadedFiles = new HashSet<>();
     }
 
     private void clearTest() {
-        if (flist != null) flist.clear();
-        if (downloadedFiles != null) downloadedFiles.clear();
+        flist.clear();
+        downloadedFiles.clear();
+        uploadedFiles.clear();
     }
 
     public void addFile(String file) {
@@ -112,6 +103,8 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
                             if (abstractBackupPath.getRemotePath().startsWith(prefix))
                                 items.add(abstractBackupPath.getRemotePath());
                         });
+        System.out.println(flist);
+        System.out.println(items);
         return items.iterator();
     }
 
@@ -134,18 +127,33 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
+    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        remotePaths
+                .stream()
+                .forEach(
+                        remotePath -> {
+                            AbstractBackupPath path = pathProvider.get();
+                            path.parseRemote(remotePath.toString());
+                            flist.remove(path);
+                        });
+    }
+
+    @Override
     public void cleanup() {
-        // TODO Auto-generated method stub
+        clearTest();
     }
 
     @Override
     protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-        {
+        AbstractBackupPath path = pathProvider.get();
+        path.parseRemote(remotePath.toString());
+
+        if (path.getType() == AbstractBackupPath.BackupFileType.META) {
             // List all files and generate the file
             try (FileWriter fr = new FileWriter(localPath.toFile())) {
                 JSONArray jsonObj = new JSONArray();
                 for (AbstractBackupPath filePath : flist) {
-                    if (filePath.type == BackupFileType.SNAP) {
+                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP) {
                         jsonObj.add(filePath.getRemotePath());
                     }
                 }
@@ -156,12 +164,12 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             }
         }
         downloadedFiles.add(remotePath.toString());
-        System.out.println("Downloading " + remotePath.toString());
     }
 
     @Override
     protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
         uploadedFiles.add(localPath.toFile().getAbsolutePath());
+        addFile(remotePath.toString());
         return localPath.toFile().length();
     }
 }

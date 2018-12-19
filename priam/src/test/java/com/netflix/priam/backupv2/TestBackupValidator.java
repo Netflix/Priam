@@ -19,14 +19,12 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.FakeBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
-import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -40,19 +38,17 @@ import org.junit.Test;
 /** Created by aagrawal on 12/5/18. */
 public class TestBackupValidator {
     private FakeBackupFileSystem fs;
-    private Provider<AbstractBackupPath> pathProvider;
     private IConfiguration configuration;
     private BackupValidator backupValidator;
-    private MetaFileWriterBuilder metaFileWriterBuilder;
+    private TestBackupUtils backupUtils;
 
     public TestBackupValidator() {
         Injector injector = Guice.createInjector(new BRTestModule());
-        pathProvider = injector.getProvider(AbstractBackupPath.class);
         configuration = injector.getInstance(IConfiguration.class);
         fs = injector.getInstance(FakeBackupFileSystem.class);
-        fs.setupTest(getFakeFiles());
+        fs.setupTest(getRemoteFakeFiles());
         backupValidator = injector.getInstance(BackupValidator.class);
-        metaFileWriterBuilder = injector.getInstance(MetaFileWriterBuilder.class);
+        backupUtils = new TestBackupUtils();
     }
 
     @Test
@@ -78,11 +74,11 @@ public class TestBackupValidator {
 
     @Test
     public void testIsMetaFileValid() throws Exception {
-        Path metaPath = createMeta(getFakeFiles());
+        Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), DateUtil.getInstant());
         Assert.assertTrue(backupValidator.isMetaFileValid(metaPath));
         FileUtils.deleteQuietly(metaPath.toFile());
 
-        List<String> fileToAdd = getFakeFiles();
+        List<String> fileToAdd = getRemoteFakeFiles();
         fileToAdd.add(
                 Paths.get(
                                 getPrefix(),
@@ -90,10 +86,12 @@ public class TestBackupValidator {
                                 "1859817645000",
                                 "keyspace1",
                                 "columnfamily1",
-                                "file9.Data.db.SNAPPY")
+                                "SNAPPY",
+                                "PLAINTEXT",
+                                "file9.Data.db")
                         .toString());
 
-        metaPath = createMeta(fileToAdd);
+        metaPath = backupUtils.createMeta(fileToAdd, DateUtil.getInstant());
         Assert.assertFalse(backupValidator.isMetaFileValid(metaPath));
         FileUtils.deleteQuietly(metaPath.toFile());
 
@@ -127,43 +125,7 @@ public class TestBackupValidator {
         return "casstestbackup/1049_fake-app/1808575600";
     }
 
-    private Path createMeta(List<String> filesToAdd) throws IOException {
-        MetaFileWriterBuilder.DataStep dataStep =
-                metaFileWriterBuilder
-                        .newBuilder()
-                        .startMetaFileGeneration(Instant.ofEpochMilli(1859824860000L));
-        ColumnfamilyResult columnfamilyResult =
-                new ColumnfamilyResult("keyspace1", "columnfamily1");
-        for (String file : filesToAdd) {
-            AbstractBackupPath path = pathProvider.get();
-            path.parseRemote(file);
-            if (path.getType() == AbstractBackupPath.BackupFileType.SST_V2) {
-                ColumnfamilyResult.SSTableResult ssTableResult =
-                        new ColumnfamilyResult.SSTableResult();
-
-                ssTableResult.setSstableComponents(new ArrayList<>());
-                ssTableResult.getSstableComponents().add(getFileUploadResult(path));
-                columnfamilyResult.addSstable(ssTableResult);
-            }
-        }
-        dataStep.addColumnfamilyResult(columnfamilyResult);
-        return dataStep.endMetaFileGeneration().getMetaFilePath();
-    }
-
-    private FileUploadResult getFileUploadResult(AbstractBackupPath path) {
-        FileUploadResult fileUploadResult =
-                new FileUploadResult(
-                        Paths.get(path.getFileName()),
-                        "keyspace1",
-                        "columnfamily1",
-                        path.getLastModified(),
-                        path.getLastModified(),
-                        path.getSize());
-        fileUploadResult.setBackupPath(path.getRemotePath());
-        return fileUploadResult;
-    }
-
-    private List<String> getFakeFiles() {
+    private List<String> getRemoteFakeFiles() {
         List<Path> files = new ArrayList<>();
         files.add(
                 Paths.get(
@@ -172,7 +134,9 @@ public class TestBackupValidator {
                         "1859817645000",
                         "keyspace1",
                         "columnfamily1",
-                        "file1.Data.db.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "file1.Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -180,14 +144,18 @@ public class TestBackupValidator {
                         "1859818845000",
                         "keyspace1",
                         "columnfamily1",
-                        "file2.Data.db.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "file2.Data.db"));
 
         files.add(
                 Paths.get(
                         getPrefix(),
                         AbstractBackupPath.BackupFileType.META_V2.toString(),
                         "1859824860000",
-                        "meta_v2_202812071801.json.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "meta_v2_202812071801.json"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -195,7 +163,9 @@ public class TestBackupValidator {
                         "1859826045000",
                         "keyspace1",
                         "columnfamily1",
-                        "manifest.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "manifest"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -203,7 +173,9 @@ public class TestBackupValidator {
                         "1859828410000",
                         "keyspace1",
                         "columnfamily1",
-                        "file3.Data.db.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "file3.Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -211,13 +183,17 @@ public class TestBackupValidator {
                         "1859828420000",
                         "keyspace1",
                         "columnfamily1",
-                        "file4.Data.db.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "file4.Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),
                         AbstractBackupPath.BackupFileType.META_V2.toString(),
                         "1859828460000",
-                        "meta_v2_202812071901.json.SNAPPY"));
+                        "SNAPPY",
+                        "PLAINTEXT",
+                        "meta_v2_202812071901.json"));
         return files.stream().map(Path::toString).collect(Collectors.toList());
     }
 }

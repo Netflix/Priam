@@ -34,6 +34,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.services.BackupTTLService;
 import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.CassandraMonitor;
@@ -172,7 +173,9 @@ public class PriamServer {
         TaskTimer flushTaskTimer = Flush.getTimer(config);
         if (flushTaskTimer != null) {
             scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
-            logger.info("Added nodetool flush task.");
+            logger.info(
+                    "Added nodetool flush task with schedule: [{}]",
+                    flushTaskTimer.getCronExpression());
         }
 
         // Set up compaction task
@@ -180,7 +183,9 @@ public class PriamServer {
         if (compactionTimer != null) {
             scheduler.addTask(
                     IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
-            logger.info("Added compaction task.");
+            logger.info(
+                    "Added compaction task with schedule: [{}]",
+                    compactionTimer.getCronExpression());
         }
 
         // Set up the background configuration dumping thread
@@ -191,7 +196,7 @@ public class PriamServer {
                     PriamConfigurationPersister.class,
                     configurationPersisterTimer);
             logger.info(
-                    "Added configuration persister task with schedule [{}]",
+                    "Added configuration persister task with schedule: [{}]",
                     configurationPersisterTimer.getCronExpression());
         } else {
             logger.warn("Priam configuration persister disabled!");
@@ -208,11 +213,23 @@ public class PriamServer {
                     SnapshotMetaService.JOBNAME,
                     SnapshotMetaService.class,
                     snapshotMetaServiceTimer);
-            logger.info("Added SnapshotMetaService Task.");
+            logger.info(
+                    "Added SnapshotMetaService Task with schedule: [{}]",
+                    snapshotMetaServiceTimer.getCronExpression());
 
             // Try to upload previous snapshots, if any which might have been interrupted by Priam
             // restart.
             snapshotMetaService.uploadFiles();
+
+            // Schedule the TTL service
+            TaskTimer backupTTLTimer = BackupTTLService.getTimer(backupRestoreConfig);
+            if (backupTTLTimer != null) {
+                scheduler.addTask(BackupTTLService.JOBNAME, BackupTTLService.class, backupTTLTimer);
+                logger.info(
+                        "Added {} Task with schedule: [{}]",
+                        BackupTTLService.JOBNAME,
+                        backupTTLTimer.getCronExpression());
+            }
         }
     }
 

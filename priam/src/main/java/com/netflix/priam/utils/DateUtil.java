@@ -18,6 +18,7 @@
 package com.netflix.priam.utils;
 
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -34,8 +35,7 @@ public class DateUtil {
 
     public static final String yyyyMMdd = "yyyyMMdd";
     public static final String yyyyMMddHHmm = "yyyyMMddHHmm";
-    public static final String ddMMyyyyHHmm = "ddMMyyyyHHmm";
-    private static final String[] patterns = {yyyyMMddHHmm, yyyyMMdd, ddMMyyyyHHmm};
+    private static final String[] patterns = {yyyyMMddHHmm, yyyyMMdd};
     private static final ZoneId defaultZoneId = ZoneId.systemDefault();
     private static final ZoneId utcZoneId = ZoneId.of("UTC");
 
@@ -125,11 +125,20 @@ public class DateUtil {
     public static LocalDateTime getLocalDateTime(String date) {
         if (StringUtils.isEmpty(date)) return null;
 
-        for (String pattern : patterns) {
+        try {
             LocalDateTime localDateTime =
-                    LocalDateTime.parse(date, DateTimeFormatter.ofPattern(pattern));
+                    LocalDateTime.parse(date, DateTimeFormatter.ofPattern(yyyyMMddHHmm));
             if (localDateTime != null) return localDateTime;
+        } catch (DateTimeParseException e) {
+            // Try the date only.
+            try {
+                LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern(yyyyMMdd));
+                return localDate.atTime(0, 0);
+            } catch (DateTimeParseException ex) {
+                return null;
+            }
         }
+
         return null;
     }
 
@@ -164,20 +173,9 @@ public class DateUtil {
      * @return Instant object depicting the date/time.
      */
     public static final Instant parseInstant(String dateTime) {
-        if (StringUtils.isEmpty(dateTime)) return null;
-
-        for (String pattern : patterns) {
-            try {
-                Instant instant =
-                        DateTimeFormatter.ofPattern(pattern)
-                                .withZone(utcZoneId)
-                                .parse(dateTime, Instant::from);
-                if (instant != null) return instant;
-            } catch (DateTimeParseException e) {
-                // Do nothing.
-            }
-        }
-        return null;
+        LocalDateTime localDateTime = getLocalDateTime(dateTime);
+        if (localDateTime == null) return null;
+        return localDateTime.atZone(utcZoneId).toInstant();
     }
 
     public static class DateRange {

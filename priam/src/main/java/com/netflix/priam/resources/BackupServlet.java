@@ -283,7 +283,7 @@ public class BackupServlet {
             AbstractBackupPath validMeta = backupValidator.findLatestValidMetaFile(dateRange);
             if (validMeta == null) {
                 return Response.noContent()
-                        .entity("No valid meta found for provided timerange")
+                        .entity("No valid meta found for provided time range")
                         .build();
             }
 

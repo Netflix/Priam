@@ -20,6 +20,7 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.File;
 import java.nio.file.Path;
@@ -73,6 +74,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private Date uploadedTs;
     private ICompression.CompressionAlgorithm compression =
             ICompression.CompressionAlgorithm.SNAPPY;
+    private IFileCryptography.CryptographyAlgorithm encryption =
+            IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
@@ -276,6 +279,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public void setCompression(ICompression.CompressionAlgorithm compression) {
         this.compression = compression;
+    }
+
+    public IFileCryptography.CryptographyAlgorithm getEncryption() {
+        return encryption;
+    }
+
+    public void setEncryption(IFileCryptography.CryptographyAlgorithm encryption) {
+        this.encryption = encryption;
     }
 
     @Override

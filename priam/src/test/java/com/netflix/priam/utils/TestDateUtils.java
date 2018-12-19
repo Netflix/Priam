@@ -63,8 +63,14 @@ public class TestDateUtils {
         String start = "201801011201";
         String end = "201801051201";
         DateUtil.DateRange dateRange = new DateUtil.DateRange(start + "," + end);
-        Assert.assertEquals(DateUtil.getDate(start).toInstant(), dateRange.getStartTime());
-        Assert.assertEquals(DateUtil.getDate(end).toInstant(), dateRange.getEndTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1514808060), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1515153660), dateRange.getEndTime());
+
+        start = "20180101";
+        end = "20180105";
+        dateRange = new DateUtil.DateRange(start + "," + end);
+        Assert.assertEquals(Instant.ofEpochSecond(1514764800), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1515110400), dateRange.getEndTime());
     }
 
     @Test
@@ -90,8 +96,8 @@ public class TestDateUtils {
         String start = "202801011201";
         String end = "202801051201";
         DateUtil.DateRange dateRange = new DateUtil.DateRange(start + "," + end);
-        Assert.assertEquals(DateUtil.getDate(start).toInstant(), dateRange.getStartTime());
-        Assert.assertEquals(DateUtil.getDate(end).toInstant(), dateRange.getEndTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1830340860), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1830686460), dateRange.getEndTime());
         Assert.assertEquals("1830", dateRange.match());
     }
 }

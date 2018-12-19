@@ -20,6 +20,7 @@ import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 
@@ -179,11 +180,24 @@ public interface IBackupFileSystem {
      *
      * @param remotePath location on the remote file system.
      * @return boolean value indicating presence of the file on remote file system.
-     * @throws BackupRestoreException
+     * @throws BackupRestoreException in case of failure to identify if object exists on the remote
+     *     file system.
      */
     default boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
         return false;
     }
+
+    /**
+     * Delete list of remote files from the remote file system. It should throw exception if there
+     * is anything wrong in processing the request. If the remotePath passed do not exist, then it
+     * should just keep quiet.
+     *
+     * @param remotePaths list of files on remote file system to be deleted. This path may or may
+     *     not exist.
+     * @throws BackupRestoreException in case of remote file system not able to process the request
+     *     or unable to reach.
+     */
+    void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException;
 
     /**
      * Get the number of tasks en-queue in the filesystem for upload.

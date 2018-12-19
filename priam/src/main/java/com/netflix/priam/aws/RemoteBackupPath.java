@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -90,27 +91,40 @@ public class RemoteBackupPath extends AbstractBackupPath {
             prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
         }
 
-        return Paths.get(prefix.toString(), fileName + "." + getCompression().toString());
+        return Paths.get(
+                prefix.toString(),
+                getCompression().toString(),
+                getEncryption().toString(),
+                fileName);
     }
 
     private void parseV2Location(String remoteFile) {
         Path remoteFilePath = Paths.get(remoteFile);
         parseV2Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 6;
-        type = BackupFileType.valueOf(remoteFilePath.getName(3).toString());
-        setLastModified(Instant.ofEpochMilli(Long.parseLong(remoteFilePath.getName(4).toString())));
+        if (remoteFilePath.getNameCount() < 8)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 8, remoteFilePath));
+        int name_count_idx = 3;
+
+        type = BackupFileType.valueOf(remoteFilePath.getName(name_count_idx++).toString());
+        setLastModified(
+                Instant.ofEpochMilli(
+                        Long.parseLong(remoteFilePath.getName(name_count_idx++).toString())));
 
         if (type == BackupFileType.SST_V2) {
-            keyspace = remoteFilePath.getName(5).toString();
-            columnFamily = remoteFilePath.getName(6).toString();
+            keyspace = remoteFilePath.getName(name_count_idx++).toString();
+            columnFamily = remoteFilePath.getName(name_count_idx++).toString();
         }
 
-        String fileNameCompression =
-                remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();
-        fileName = fileNameCompression.substring(0, fileNameCompression.lastIndexOf("."));
         setCompression(
                 ICompression.CompressionAlgorithm.valueOf(
-                        fileNameCompression.substring(fileNameCompression.lastIndexOf(".") + 1)));
+                        remoteFilePath.getName(name_count_idx++).toString()));
+
+        setEncryption(
+                IFileCryptography.CryptographyAlgorithm.valueOf(
+                        remoteFilePath.getName(name_count_idx++).toString()));
+        fileName = remoteFilePath.getName(name_count_idx).toString();
     }
 
     private Path getV1Location() {
@@ -122,7 +136,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV1Location(Path remoteFilePath) {
         parseV1Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 7 : "Too few elements in path " + remoteFilePath;
+        if (remoteFilePath.getNameCount() < 7)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
 
         time = parseDate(remoteFilePath.getName(4).toString());
         type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
@@ -220,7 +237,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
             region = instanceIdentity.getInstanceInfo().getRegion();
             clusterName = config.getAppName();
         } else {
-            assert elements.length >= 4 : "Too few elements in path " + location;
+            if (elements.length < 4)
+                throw new IndexOutOfBoundsException(
+                        String.format(
+                                "Too few elements (expected: [%d]) in path: %s", 4, location));
             baseDir = elements[1];
             region = elements[2];
             clusterName = elements[3];

@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -233,6 +234,11 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
         return 0;
+    }
+
+    @Override
+    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        // TODO: Delete implementation
     }
 
     /*

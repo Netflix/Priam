@@ -110,8 +110,7 @@ public class BackupValidator {
         logger.info("Meta files found: {}", metas);
 
         for (AbstractBackupPath meta : metas) {
-            Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath());
-            fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
+            Path localFile = downloadMetaFile(meta);
             boolean isValid = isMetaFileValid(localFile);
             logger.info("Meta: {}, isValid: {}", meta, isValid);
             if (!isValid) FileUtils.deleteQuietly(localFile.toFile());
@@ -119,6 +118,19 @@ public class BackupValidator {
         }
 
         return null;
+    }
+
+    /**
+     * Download the meta file to disk.
+     *
+     * @param meta AbstractBackupPath denoting the meta file on remote file system.
+     * @return the location of the meta file on disk after downloading from remote file system.
+     * @throws BackupRestoreException if unable to download for any reason.
+     */
+    public Path downloadMetaFile(AbstractBackupPath meta) throws BackupRestoreException {
+        Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath());
+        fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
+        return localFile;
     }
 
     /**

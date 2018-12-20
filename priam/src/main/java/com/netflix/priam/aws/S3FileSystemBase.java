@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
@@ -34,6 +35,7 @@ import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -158,14 +160,14 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
     @Override
     public long getFileSize(Path remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getBucket(), remotePath.toString()).getContentLength();
+        return s3Client.getObjectMetadata(getShard(), remotePath.toString()).getContentLength();
     }
 
     @Override
     public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
         boolean exists = false;
         try {
-            exists = s3Client.doesObjectExist(getBucket(), remotePath.toString());
+            exists = s3Client.doesObjectExist(getShard(), remotePath.toString());
         } catch (AmazonServiceException ase) {
             // Amazon S3 rejected request
             throw new BackupRestoreException(
@@ -189,8 +191,30 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
-        return new S3Iterator(s3Client, getBucket(), prefix, delimiter);
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
+        return new S3Iterator(s3Client, getShard(), prefix, delimiter, marker);
+    }
+
+    @Override
+    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        if (remotePaths.isEmpty()) return;
+
+        try {
+            List<DeleteObjectsRequest.KeyVersion> keys =
+                    remotePaths
+                            .stream()
+                            .map(
+                                    remotePath ->
+                                            new DeleteObjectsRequest.KeyVersion(
+                                                    remotePath.toString()))
+                            .collect(Collectors.toList());
+            s3Client.deleteObjects(
+                    new DeleteObjectsRequest(getShard()).withKeys(keys).withQuiet(true));
+            logger.info("Deleted {} objects from S3", remotePaths.size());
+        } catch (Exception e) {
+            logger.error("Error while trying to delete the objects from S3: {}", e.getMessage());
+            throw new BackupRestoreException(e + " while trying to delete the objects");
+        }
     }
 
     final long getChunkSize(Path localPath) throws BackupRestoreException {

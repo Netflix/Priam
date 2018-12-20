@@ -80,11 +80,6 @@ public class InstanceIdentity {
                         return (!instance.getInstanceId().equalsIgnoreCase(DUMMY_INSTANCE_ID));
                     }
                 }
-
-                @Override
-                public boolean test(PriamInstance input) {
-                    return apply(input);
-                }
             };
 
     private PriamInstance myInstance;

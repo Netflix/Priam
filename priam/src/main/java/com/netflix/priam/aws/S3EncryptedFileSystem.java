@@ -74,7 +74,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                 RangeReadInputStream rris =
                         new RangeReadInputStream(
                                 s3Client,
-                                getBucket(),
+                                getShard(),
                                 super.getFileSize(remotePath),
                                 remotePath.toString())) {
             /*
@@ -87,7 +87,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                     "Exception encountered downloading "
                             + remotePath
                             + " from S3 bucket "
-                            + getBucket()
+                            + getShard()
                             + ", Msg: "
                             + e.getMessage(),
                     e);

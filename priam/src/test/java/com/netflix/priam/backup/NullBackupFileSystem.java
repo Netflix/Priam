@@ -25,6 +25,7 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
 public class NullBackupFileSystem extends AbstractFileSystem {
 
@@ -47,7 +48,12 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public Iterator<String> list(String prefix, String delimiter) {
+    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        // Do nothing.
+    }
+
+    @Override
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
         return Collections.emptyIterator();
     }
 

@@ -19,4 +19,9 @@ public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     public String getSnapshotMetaServiceCronExpression() {
         return "0 0/2 * 1/1 * ? *"; // Every 2 minutes for testing purposes
     }
+
+    @Override
+    public boolean enableV2Backups() {
+        return true;
+    }
 }

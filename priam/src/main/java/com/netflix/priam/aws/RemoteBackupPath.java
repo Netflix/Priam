@@ -101,7 +101,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
     private void parseV2Location(String remoteFile) {
         Path remoteFilePath = Paths.get(remoteFile);
         parseV2Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 8;
+        if (remoteFilePath.getNameCount() < 8)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 8, remoteFilePath));
         int name_count_idx = 3;
 
         type = BackupFileType.valueOf(remoteFilePath.getName(name_count_idx++).toString());
@@ -133,7 +136,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV1Location(Path remoteFilePath) {
         parseV1Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 7 : "Too few elements in path " + remoteFilePath;
+        if (remoteFilePath.getNameCount() < 7)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
 
         time = parseDate(remoteFilePath.getName(4).toString());
         type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
@@ -231,7 +237,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
             region = instanceIdentity.getInstanceInfo().getRegion();
             clusterName = config.getAppName();
         } else {
-            assert elements.length >= 4 : "Too few elements in path " + location;
+            if (elements.length < 4)
+                throw new IndexOutOfBoundsException(
+                        String.format(
+                                "Too few elements (expected: [%d]) in path: %s", 4, location));
             baseDir = elements[1];
             region = elements[2];
             clusterName = elements[3];

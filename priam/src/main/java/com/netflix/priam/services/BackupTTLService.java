@@ -43,7 +43,17 @@ import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 11/26/18. */
+/**
+ * This class is used to TTL or delete the SSTable components from the backups after they are not
+ * referenced in the backups for more than {@link IConfiguration#getBackupRetentionDays()}. This
+ * operation is executed on CRON and is configured via {@link
+ * IBackupRestoreConfig#getBackupTTLCronExpression()}.
+ *
+ * <p>To TTL the SSTable components we refer to the first manifest file on the remote file system
+ * after the TTL period. Any sstable components referenced in that manifest file should not be
+ * deleted. Any other sstable components (files) on remote file system before the TTL period can be
+ * safely deleted. Created by aagrawal on 11/26/18.
+ */
 @Singleton
 public class BackupTTLService extends Task {
     private static final Logger logger = LoggerFactory.getLogger(BackupTTLService.class);
@@ -108,9 +118,11 @@ public class BackupTTLService extends Task {
                 return;
             }
 
+            // Get the first file after the TTL time as we get files which are sorted latest to
+            // oldest.
             AbstractBackupPath metaFile = metas.get(metas.size() - 1);
 
-            // Download the meta file and save the files in memory.
+            // Download the meta file to local file system.
             Path localFile = backupValidator.downloadMetaFile(metaFile);
 
             // Walk over the file system iterator and if not in map, it is eligible for delete.

@@ -17,19 +17,16 @@
 
 package com.netflix.priam.backup;
 
-import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.aws.MockAmazonS3Client;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import mockit.Mock;
 import mockit.MockUp;
@@ -75,31 +72,6 @@ public class TestFileIterator {
         endTime = cal.getTime();
     }
 
-    // MockAmazonS3Client class
-    @Ignore
-    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        static String bucketName = "";
-        static String prefix = "";
-
-        @Mock
-        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest)
-                throws AmazonClientException {
-            ObjectListing listing = new ObjectListing();
-            listing.setBucketName(listObjectsRequest.getBucketName());
-            listing.setPrefix(listObjectsRequest.getPrefix());
-            return listing;
-        }
-
-        @Mock
-        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing)
-                throws AmazonClientException {
-            ObjectListing listing = new ObjectListing();
-            listing.setBucketName(previousObjectListing.getBucketName());
-            listing.setPrefix(previousObjectListing.getPrefix());
-            return new ObjectListing();
-        }
-    }
-
     // MockObjectListing class
     @Ignore
     static class MockObjectListing extends MockUp<ObjectListing> {
@@ -128,14 +100,6 @@ public class TestFileIterator {
         }
     }
 
-    private Path getClusterPrefix() {
-        return Paths.get(
-                conf.getBackupLocation(),
-                factory.getInstanceInfo().getRegion(),
-                conf.getAppName(),
-                factory.getInstance().getToken());
-    }
-
     @Test
     public void testIteratorEmptySet() {
         cal.set(2011, 7, 11, 6, 1, 0);
@@ -143,8 +107,6 @@ public class TestFileIterator {
         Date stime = cal.getTime();
         cal.add(Calendar.HOUR, 5);
         Date etime = cal.getTime();
-        MockAmazonS3Client.bucketName = bucket;
-        MockAmazonS3Client.prefix = getClusterPrefix() + "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, stime, etime);
         Set<String> files = new HashSet<>();
@@ -157,8 +119,6 @@ public class TestFileIterator {
         MockObjectListing.truncated = false;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
-        MockAmazonS3Client.bucketName = "TESTBUCKET";
-        MockAmazonS3Client.prefix = getClusterPrefix() + "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, startTime, endTime);
 
@@ -192,8 +152,6 @@ public class TestFileIterator {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
-        MockAmazonS3Client.bucketName = "TESTBUCKET";
-        MockAmazonS3Client.prefix = getClusterPrefix() + "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, startTime, endTime);
 
@@ -243,8 +201,6 @@ public class TestFileIterator {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = true;
-        MockAmazonS3Client.bucketName = bucket;
-        MockAmazonS3Client.prefix = getClusterPrefix() + "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, startTime, endTime);
 
@@ -294,12 +250,6 @@ public class TestFileIterator {
         MockObjectListing.truncated = true;
         MockObjectListing.firstcall = true;
         MockObjectListing.simfilter = false;
-        MockAmazonS3Client.bucketName = "RESTOREBUCKET";
-        MockAmazonS3Client.prefix =
-                "test_restore_backup/fake-restore-region/fakerestorecluster"
-                        + "/"
-                        + factory.getInstance().getToken();
-        MockAmazonS3Client.prefix += "/20110811";
 
         Iterator<AbstractBackupPath> fileIterator =
                 s3FileSystem.list(

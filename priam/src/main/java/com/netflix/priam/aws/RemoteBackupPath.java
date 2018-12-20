@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +40,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     private Path getV2Prefix() {
-        return Paths.get(baseDir, getAppNameWithHash(), instanceIdentity.getInstance().getToken());
+        return Paths.get(baseDir, getAppNameWithHash(clusterName), token);
     }
 
     private void parseV2Prefix(Path remoteFilePath) {
@@ -54,8 +55,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
     /* This will ensure that there is some randomness in the path at the start so that remote file systems
     can hash the contents better when we have lot of clusters backing up at the same remote location.
     */
-    private String getAppNameWithHash() {
-        return String.format("%d_%s", config.getAppName().hashCode() % 10000, config.getAppName());
+    private String getAppNameWithHash(String appName) {
+        return String.format("%d_%s", appName.hashCode() % 10000, appName);
     }
 
     private String parseAndValidateAppNameWithHash(String appNameWithHash) {
@@ -63,7 +64,11 @@ public class RemoteBackupPath extends AbstractBackupPath {
         String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
         // Validate the hash
         int calculatedHash = appName.hashCode() % 10000;
-        assert calculatedHash == hash;
+        if (calculatedHash != hash)
+            throw new RuntimeException(
+                    String.format(
+                            "Hash for the app name: %s was calculated to be: %d but provided was: %d",
+                            appName, calculatedHash, hash));
         return appName;
     }
 
@@ -86,27 +91,40 @@ public class RemoteBackupPath extends AbstractBackupPath {
             prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
         }
 
-        return Paths.get(prefix.toString(), fileName + "." + getCompression().toString());
+        return Paths.get(
+                prefix.toString(),
+                getCompression().toString(),
+                getEncryption().toString(),
+                fileName);
     }
 
     private void parseV2Location(String remoteFile) {
         Path remoteFilePath = Paths.get(remoteFile);
         parseV2Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 6;
-        type = BackupFileType.valueOf(remoteFilePath.getName(3).toString());
-        setLastModified(Instant.ofEpochMilli(Long.parseLong(remoteFilePath.getName(4).toString())));
+        if (remoteFilePath.getNameCount() < 8)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 8, remoteFilePath));
+        int name_count_idx = 3;
+
+        type = BackupFileType.valueOf(remoteFilePath.getName(name_count_idx++).toString());
+        setLastModified(
+                Instant.ofEpochMilli(
+                        Long.parseLong(remoteFilePath.getName(name_count_idx++).toString())));
 
         if (type == BackupFileType.SST_V2) {
-            keyspace = remoteFilePath.getName(5).toString();
-            columnFamily = remoteFilePath.getName(6).toString();
+            keyspace = remoteFilePath.getName(name_count_idx++).toString();
+            columnFamily = remoteFilePath.getName(name_count_idx++).toString();
         }
 
-        String fileNameCompression =
-                remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();
-        fileName = fileNameCompression.substring(0, fileNameCompression.lastIndexOf("."));
         setCompression(
                 ICompression.CompressionAlgorithm.valueOf(
-                        fileNameCompression.substring(fileNameCompression.lastIndexOf(".") + 1)));
+                        remoteFilePath.getName(name_count_idx++).toString()));
+
+        setEncryption(
+                IFileCryptography.CryptographyAlgorithm.valueOf(
+                        remoteFilePath.getName(name_count_idx++).toString()));
+        fileName = remoteFilePath.getName(name_count_idx).toString();
     }
 
     private Path getV1Location() {
@@ -118,7 +136,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV1Location(Path remoteFilePath) {
         parseV1Prefix(remoteFilePath);
-        assert remoteFilePath.getNameCount() >= 7 : "Too few elements in path " + remoteFilePath;
+        if (remoteFilePath.getNameCount() < 7)
+            throw new IndexOutOfBoundsException(
+                    String.format(
+                            "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
 
         time = parseDate(remoteFilePath.getName(4).toString());
         type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
@@ -195,6 +216,19 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     @Override
+    public Path remoteV2Prefix(Path location, BackupFileType fileType) {
+        if (location.getNameCount() <= 1) {
+            baseDir = config.getBackupLocation();
+            clusterName = config.getAppName();
+        } else if (location.getNameCount() >= 3) {
+            baseDir = location.getName(1).toString();
+            clusterName = parseAndValidateAppNameWithHash(location.getName(2).toString());
+        }
+        token = instanceIdentity.getInstance().getToken();
+        return Paths.get(getV2Prefix().toString(), fileType.toString());
+    }
+
+    @Override
     public String clusterPrefix(String location) {
         StringBuilder buff = new StringBuilder();
         String[] elements = location.split(String.valueOf(RemoteBackupPath.PATH_SEP));
@@ -203,7 +237,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
             region = instanceIdentity.getInstanceInfo().getRegion();
             clusterName = config.getAppName();
         } else {
-            assert elements.length >= 4 : "Too few elements in path " + location;
+            if (elements.length < 4)
+                throw new IndexOutOfBoundsException(
+                        String.format(
+                                "Too few elements (expected: [%d]) in path: %s", 4, location));
             baseDir = elements[1];
             region = elements[2];
             clusterName = elements[3];

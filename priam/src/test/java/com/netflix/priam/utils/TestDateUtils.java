@@ -20,6 +20,7 @@ package com.netflix.priam.utils;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -62,8 +63,14 @@ public class TestDateUtils {
         String start = "201801011201";
         String end = "201801051201";
         DateUtil.DateRange dateRange = new DateUtil.DateRange(start + "," + end);
-        Assert.assertEquals(DateUtil.getDate(start).toInstant(), dateRange.getStartTime());
-        Assert.assertEquals(DateUtil.getDate(end).toInstant(), dateRange.getEndTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1514808060), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1515153660), dateRange.getEndTime());
+
+        start = "20180101";
+        end = "20180105";
+        dateRange = new DateUtil.DateRange(start + "," + end);
+        Assert.assertEquals(Instant.ofEpochSecond(1514764800), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1515110400), dateRange.getEndTime());
     }
 
     @Test
@@ -71,5 +78,26 @@ public class TestDateUtils {
         DateUtil.DateRange dateRange = new DateUtil.DateRange("some,random,values");
         Assert.assertEquals(null, dateRange.getStartTime());
         Assert.assertEquals(null, dateRange.getEndTime());
+    }
+
+    @Test
+    public void testDateRangeMatch() {
+        Instant dateStart = Instant.ofEpochMilli(1543632497000L);
+        Instant dateEnd = Instant.ofEpochMilli(1543819697000L);
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(dateStart, dateEnd);
+        Assert.assertEquals("1543", dateRange.match());
+
+        dateRange = new DateUtil.DateRange(dateStart, null);
+        Assert.assertEquals(StringUtils.EMPTY, dateRange.match());
+    }
+
+    @Test
+    public void testFutureDateRangeValues() {
+        String start = "202801011201";
+        String end = "202801051201";
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(start + "," + end);
+        Assert.assertEquals(Instant.ofEpochSecond(1830340860), dateRange.getStartTime());
+        Assert.assertEquals(Instant.ofEpochSecond(1830686460), dateRange.getEndTime());
+        Assert.assertEquals("1830", dateRange.match());
     }
 }

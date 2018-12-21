@@ -35,12 +35,12 @@ import org.junit.Test;
 /** Created by aagrawal on 11/28/18. */
 public class TestMetaFileManager {
 
-    private MetaFileManager metaFileManager;
+    private MetaV2Proxy metaV2Proxy;
     private IConfiguration configuration;
 
     public TestMetaFileManager() {
         Injector injector = Guice.createInjector(new BRTestModule());
-        metaFileManager = injector.getInstance(MetaFileManager.class);
+        metaV2Proxy = injector.getInstance(MetaV2Proxy.class);
         configuration = injector.getInstance(IConfiguration.class);
     }
 
@@ -56,7 +56,7 @@ public class TestMetaFileManager {
         Assert.assertEquals(4, dataDir.toFile().listFiles().length);
 
         // clean the directory
-        metaFileManager.cleanupOldMetaFiles();
+        metaV2Proxy.cleanupOldMetaFiles();
 
         Assert.assertEquals(1, dataDir.toFile().listFiles().length);
         Path dummy = Paths.get(dataDir.toString(), "dummy.tmp");

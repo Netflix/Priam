@@ -31,6 +31,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,8 +77,9 @@ public class MetaFileWriterBuilder {
         private final IBackupFileSystem backupFileSystem;
 
         private final MetaFileInfo metaFileInfo;
-        private final MetaFileManager metaFileManager;
+        private final IMetaProxy metaProxy;
         private JsonWriter jsonWriter;
+        private Instant snapshotInstant;
         private Path metaFilePath;
 
         @Inject
@@ -86,10 +88,10 @@ public class MetaFileWriterBuilder {
                 InstanceIdentity instanceIdentity,
                 Provider<AbstractBackupPath> pathFactory,
                 IFileSystemContext backupFileSystemCtx,
-                MetaFileManager metaFileManager) {
+                @Named("v2") IMetaProxy metaProxy) {
             this.pathFactory = pathFactory;
             this.backupFileSystem = backupFileSystemCtx.getFileStrategy(configuration);
-            this.metaFileManager = metaFileManager;
+            this.metaProxy = metaProxy;
             List<String> backupIdentifier = new ArrayList<>();
             backupIdentifier.add(instanceIdentity.getInstance().getToken());
             metaFileInfo =
@@ -107,10 +109,11 @@ public class MetaFileWriterBuilder {
          */
         public DataStep startMetaFileGeneration(Instant snapshotInstant) throws IOException {
             // Compute meta file name.
+            this.snapshotInstant = snapshotInstant;
             String fileName = MetaFileInfo.getMetaFileName(snapshotInstant);
-            metaFilePath = Paths.get(metaFileManager.getMetaFileDirectory().toString(), fileName);
+            metaFilePath = Paths.get(metaProxy.getLocalMetaFileDirectory().toString(), fileName);
             Path tempMetaFilePath =
-                    Paths.get(metaFileManager.getMetaFileDirectory().toString(), fileName + ".tmp");
+                    Paths.get(metaProxy.getLocalMetaFileDirectory().toString(), fileName + ".tmp");
 
             logger.info("Starting to write a new meta file: {}", metaFilePath);
 
@@ -159,11 +162,16 @@ public class MetaFileWriterBuilder {
 
             Path tempMetaFilePath =
                     Paths.get(
-                            metaFileManager.getMetaFileDirectory().toString(),
+                            metaProxy.getLocalMetaFileDirectory().toString(),
                             metaFilePath.toFile().getName() + ".tmp");
 
             // Rename the tmp file.
             tempMetaFilePath.toFile().renameTo(metaFilePath.toFile());
+
+            // Set the last modified time to snapshot time as generating manifest file may take some
+            // time.
+            metaFilePath.toFile().setLastModified(snapshotInstant.toEpochMilli());
+
             logger.info("Finished writing to meta file: {}", metaFilePath);
 
             return this;

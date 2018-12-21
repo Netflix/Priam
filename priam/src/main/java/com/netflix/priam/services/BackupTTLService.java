@@ -24,8 +24,8 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backupv2.BackupValidator;
 import com.netflix.priam.backupv2.ColumnfamilyResult;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaFileReader;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -40,6 +40,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ import org.slf4j.LoggerFactory;
 public class BackupTTLService extends Task {
     private static final Logger logger = LoggerFactory.getLogger(BackupTTLService.class);
     private IBackupRestoreConfig backupRestoreConfig;
-    private BackupValidator backupValidator;
+    private IMetaProxy metaProxy;
     private IBackupFileSystem fileSystem;
     private Provider<AbstractBackupPath> abstractBackupPathProvider;
     public static final String JOBNAME = "BackupTTLService";
@@ -72,12 +73,12 @@ public class BackupTTLService extends Task {
     public BackupTTLService(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
-            BackupValidator backupValidator,
+            @Named("v2") IMetaProxy metaProxy,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
-        this.backupValidator = backupValidator;
+        this.metaProxy = metaProxy;
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
@@ -110,7 +111,7 @@ public class BackupTTLService extends Task {
 
             // Find the snapshot just after this date.
             List<AbstractBackupPath> metas =
-                    backupValidator.findMetaFiles(
+                    metaProxy.findMetaFiles(
                             new DateUtil.DateRange(dateToTtl, DateUtil.getInstant()));
 
             if (metas.size() == 0) {
@@ -123,7 +124,7 @@ public class BackupTTLService extends Task {
             AbstractBackupPath metaFile = metas.get(metas.size() - 1);
 
             // Download the meta file to local file system.
-            Path localFile = backupValidator.downloadMetaFile(metaFile);
+            Path localFile = metaProxy.downloadMetaFile(metaFile);
 
             // Walk over the file system iterator and if not in map, it is eligible for delete.
             new MetaFileWalker().readMeta(localFile);
@@ -159,7 +160,7 @@ public class BackupTTLService extends Task {
             // all the META files.
             // This feature did not exist in Jan 2018.
             metas =
-                    backupValidator.findMetaFiles(
+                    metaProxy.findMetaFiles(
                             new DateUtil.DateRange(
                                     start_of_feature, dateToTtl.minus(1, ChronoUnit.MINUTES)));
 

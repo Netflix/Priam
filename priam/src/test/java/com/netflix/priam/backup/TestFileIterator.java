@@ -17,15 +17,16 @@
 
 package com.netflix.priam.backup;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.model.ListObjectsRequest;
 import com.amazonaws.services.s3.model.ObjectListing;
 import com.amazonaws.services.s3.model.S3ObjectSummary;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.aws.MockAmazonS3Client;
 import com.netflix.priam.aws.S3FileSystem;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.DateUtil;
 import java.io.IOException;
 import java.util.*;
 import mockit.Mock;
@@ -41,35 +42,46 @@ import org.junit.Test;
  * @author Praveen Sadhu
  */
 public class TestFileIterator {
-    private static Injector injector;
     private static Date startTime, endTime;
-    private static Calendar cal;
 
-    private static AmazonS3Client s3client;
     private static S3FileSystem s3FileSystem;
-    private static IConfiguration conf;
-    private static InstanceIdentity factory;
     private static String region;
     private static String bucket = "TESTBUCKET";
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
-        s3client = new MockAmazonS3Client().getMockInstance();
+        AmazonS3Client s3client = new MockAmazonS3Client().getMockInstance();
         new MockObjectListing();
 
-        injector = Guice.createInjector(new BRTestModule());
-        conf = injector.getInstance(IConfiguration.class);
-        factory = injector.getInstance(InstanceIdentity.class);
+        Injector injector = Guice.createInjector(new BRTestModule());
+        InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
         region = factory.getInstanceInfo().getRegion();
         s3FileSystem = injector.getInstance(S3FileSystem.class);
         s3FileSystem.setS3Client(s3client);
 
-        cal = Calendar.getInstance();
-        cal.set(2011, 7, 11, 0, 30, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        startTime = cal.getTime();
-        cal.add(Calendar.HOUR, 5);
-        endTime = cal.getTime();
+        DateUtil.DateRange dateRange = new DateUtil.DateRange("201108110030,201108110530");
+        startTime = new Date(dateRange.getStartTime().toEpochMilli());
+        endTime = new Date(dateRange.getEndTime().toEpochMilli());
+    }
+
+    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
+        @Mock
+        public ObjectListing listObjects(ListObjectsRequest listObjectsRequest)
+                throws AmazonClientException {
+            ObjectListing listing = new ObjectListing();
+            listing.setBucketName(listObjectsRequest.getBucketName());
+            listing.setPrefix(listObjectsRequest.getPrefix());
+            return listing;
+        }
+
+        @Mock
+        public ObjectListing listNextBatchOfObjects(ObjectListing previousObjectListing)
+                throws AmazonClientException {
+            ObjectListing listing = new ObjectListing();
+            listing.setBucketName(previousObjectListing.getBucketName());
+            listing.setPrefix(previousObjectListing.getPrefix());
+            return new ObjectListing();
+        }
     }
 
     // MockObjectListing class
@@ -102,11 +114,9 @@ public class TestFileIterator {
 
     @Test
     public void testIteratorEmptySet() {
-        cal.set(2011, 7, 11, 6, 1, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date stime = cal.getTime();
-        cal.add(Calendar.HOUR, 5);
-        Date etime = cal.getTime();
+        DateUtil.DateRange dateRange = new DateUtil.DateRange("201107110601,201107111101");
+        Date stime = new Date(dateRange.getStartTime().toEpochMilli());
+        Date etime = new Date(dateRange.getEndTime().toEpochMilli());
 
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, stime, etime);
         Set<String> files = new HashSet<>();

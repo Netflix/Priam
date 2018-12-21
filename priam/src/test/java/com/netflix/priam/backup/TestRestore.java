@@ -19,41 +19,34 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
-import java.io.File;
+import com.netflix.priam.utils.DateUtil;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestRestore {
     private static FakeBackupFileSystem filesystem;
-    private static ArrayList<String> fileList;
-    private static Calendar cal;
+    private static ArrayList<String> fileList = new ArrayList<>();
     private static FakeConfiguration conf;
     private static String region;
     private static Restore restore;
+    private static InstanceState instanceState;
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
         Injector injector = Guice.createInjector(new BRTestModule());
-        filesystem =
-                (FakeBackupFileSystem)
-                        injector.getInstance(
-                                Key.get(IBackupFileSystem.class, Names.named("backup")));
-        conf = (FakeConfiguration) injector.getInstance(IConfiguration.class);
+        if (filesystem == null) filesystem = injector.getInstance(FakeBackupFileSystem.class);
+        if (conf == null) conf = (FakeConfiguration) injector.getInstance(IConfiguration.class);
         region = injector.getInstance(InstanceInfo.class).getRegion();
-        restore = injector.getInstance(Restore.class);
-        fileList = new ArrayList<>();
-        cal = Calendar.getInstance();
+        if (restore == null) restore = injector.getInstance(Restore.class);
+        if (instanceState == null) instanceState = injector.getInstance(InstanceState.class);
     }
 
     private static void populateBackupFileSystem(String baseDir) {
@@ -74,22 +67,15 @@ public class TestRestore {
     @Test
     public void testRestore() throws Exception {
         populateBackupFileSystem("test_backup");
-        File tmpdir = new File(conf.getDataFileLocation() + "/test");
-        tmpdir.mkdir();
-        Assert.assertTrue(tmpdir.exists());
-        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date startTime = cal.getTime();
-        cal.add(Calendar.HOUR, 5);
-        restore.restore(startTime, cal.getTime());
+        String dateRange = "201108110030,201108110530";
+        restore.restore(new DateUtil.DateRange(dateRange));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        tmpdir = new File(conf.getDataFileLocation() + "/test");
-        Assert.assertFalse(tmpdir.exists());
+        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
     }
 
     // Pick latest file
@@ -99,11 +85,8 @@ public class TestRestore {
         String metafile =
                 "test_backup/" + region + "/fakecluster/123456/201108110130/META/meta.json";
         filesystem.addFile(metafile);
-        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date startTime = cal.getTime();
-        cal.add(Calendar.HOUR, 5);
-        restore.restore(startTime, cal.getTime());
+        String dateRange = "201108110030,201108110530";
+        restore.restore(new DateUtil.DateRange(dateRange));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(0)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(metafile));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
@@ -111,36 +94,30 @@ public class TestRestore {
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assert.assertEquals(metafile, instanceState.getRestoreStatus().getSnapshotMetaFile());
     }
 
     @Test
     public void testNoSnapshots() throws Exception {
-        try {
-            filesystem.setupTest(fileList);
-            cal.set(2011, Calendar.SEPTEMBER, 11, 0, 30);
-            Date startTime = cal.getTime();
-            cal.add(Calendar.HOUR, 5);
-            restore.restore(startTime, cal.getTime());
-            Assert.assertFalse(true); // No exception thrown
-        } catch (IllegalStateException e) {
-            // We are ok. No snapshot found.
-            Assert.assertTrue(true);
-        }
+        populateBackupFileSystem("test_backup");
+        filesystem.setupTest(fileList);
+        String dateRange = "201109110030,201109110530";
+        restore.restore(new DateUtil.DateRange(dateRange));
+        Assert.assertEquals(Status.FAILED, instanceState.getRestoreStatus().getStatus());
     }
 
     @Test
     public void testRestoreFromDiffCluster() throws Exception {
         populateBackupFileSystem("test_backup_new");
-        cal.set(2011, Calendar.AUGUST, 11, 0, 30, 0);
-        cal.set(Calendar.MILLISECOND, 0);
-        Date startTime = cal.getTime();
-        cal.add(Calendar.HOUR, 5);
-        restore.restore(startTime, cal.getTime());
+        String dateRange = "201108110030,201108110530";
+        restore.restore(new DateUtil.DateRange(dateRange));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
         Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
     }
 }

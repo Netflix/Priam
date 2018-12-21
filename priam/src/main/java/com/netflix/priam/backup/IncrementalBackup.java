@@ -24,6 +24,7 @@ import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
@@ -103,7 +104,7 @@ public class IncrementalBackup extends AbstractBackup {
         if (!uploadedFiles.isEmpty()) {
             // format of yyyymmddhhmm (e.g. 201505060901)
             String incrementalUploadTime =
-                    AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime());
+                    DateUtil.formatyyyyMMddHHmm(uploadedFiles.get(0).getTime());
             String metaFileName = "meta_" + columnFamily + "_" + incrementalUploadTime;
             logger.info("Uploading meta file for incremental backup: {}", metaFileName);
             this.metaData.setMetaFileName(metaFileName);

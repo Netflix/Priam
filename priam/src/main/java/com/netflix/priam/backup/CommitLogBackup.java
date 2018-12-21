@@ -18,6 +18,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.nio.file.Paths;
 import java.util.List;
@@ -64,7 +65,7 @@ public class CommitLogBackup {
                 AbstractBackupPath bp = pathFactory.get();
                 bp.parseLocal(file, BackupFileType.CL);
 
-                if (snapshotName != null) bp.time = bp.parseDate(snapshotName);
+                if (snapshotName != null) bp.time = DateUtil.getDate(snapshotName);
 
                 fs.uploadFile(
                         Paths.get(bp.getBackupFile().getAbsolutePath()),

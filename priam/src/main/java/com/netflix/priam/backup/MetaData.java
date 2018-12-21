@@ -22,6 +22,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -87,7 +88,7 @@ public class MetaData {
             throws ParseException {
         AbstractBackupPath backupfile = pathFactory.get();
         backupfile.parseLocal(metafile, BackupFileType.META);
-        backupfile.setTime(backupfile.parseDate(snapshotName));
+        backupfile.setTime(DateUtil.getDate(snapshotName));
         return backupfile;
     }
 

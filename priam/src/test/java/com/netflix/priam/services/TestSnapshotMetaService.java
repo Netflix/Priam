@@ -103,6 +103,9 @@ public class TestSnapshotMetaService {
         Assert.assertNotNull(metaFileLocation);
         Assert.assertTrue(metaFileLocation.toFile().exists());
         Assert.assertTrue(metaFileLocation.toFile().isFile());
+        Assert.assertEquals(
+                snapshotInstant.getEpochSecond(),
+                (metaFileLocation.toFile().lastModified() / 1000));
 
         // Try reading meta file.
         metaFileReader.setNoOfSstables(noOfSstables + 1);

@@ -41,6 +41,7 @@ public class TestBackupValidator {
     private IConfiguration configuration;
     private BackupValidator backupValidator;
     private TestBackupUtils backupUtils;
+    private IMetaProxy metaProxy;
 
     public TestBackupValidator() {
         Injector injector = Guice.createInjector(new BRTestModule());
@@ -49,25 +50,26 @@ public class TestBackupValidator {
         fs.setupTest(getRemoteFakeFiles());
         backupValidator = injector.getInstance(BackupValidator.class);
         backupUtils = new TestBackupUtils();
+        metaProxy = injector.getInstance(MetaV2Proxy.class);
     }
 
     @Test
     public void testMetaPrefix() {
         // Null date range
-        Assert.assertEquals(getPrefix() + "/META_V2", backupValidator.getMetaPrefix(null));
+        Assert.assertEquals(getPrefix() + "/META_V2", metaProxy.getMetaPrefix(null));
         // No end date.
         Assert.assertEquals(
                 getPrefix() + "/META_V2",
-                backupValidator.getMetaPrefix(new DateUtil.DateRange(Instant.now(), null)));
+                metaProxy.getMetaPrefix(new DateUtil.DateRange(Instant.now(), null)));
         // No start date
         Assert.assertEquals(
                 getPrefix() + "/META_V2",
-                backupValidator.getMetaPrefix(new DateUtil.DateRange(null, Instant.now())));
+                metaProxy.getMetaPrefix(new DateUtil.DateRange(null, Instant.now())));
         long start = 1834567890L;
         long end = 1834877776L;
         Assert.assertEquals(
                 getPrefix() + "/META_V2/1834",
-                backupValidator.getMetaPrefix(
+                metaProxy.getMetaPrefix(
                         new DateUtil.DateRange(
                                 Instant.ofEpochSecond(start), Instant.ofEpochSecond(end))));
     }
@@ -102,7 +104,7 @@ public class TestBackupValidator {
     @Test
     public void testFindMetaFiles() throws BackupRestoreException {
         List<AbstractBackupPath> metas =
-                backupValidator.findMetaFiles(
+                metaProxy.findMetaFiles(
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828420000L)));
@@ -111,7 +113,7 @@ public class TestBackupValidator {
         Assert.assertTrue(fs.doesRemoteFileExist(Paths.get(metas.get(0).getRemotePath())));
 
         metas =
-                backupValidator.findMetaFiles(
+                metaProxy.findMetaFiles(
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828460000L)));

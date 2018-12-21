@@ -244,32 +244,14 @@ public class BackupServlet {
             throws Exception {
 
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
-
-        JSONObject jsonReply = new JSONObject();
-        jsonReply.put(
-                "inputStartDate",
-                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getStartTime()));
-        jsonReply.put(
-                "inputEndDate",
-                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getEndTime()));
         logger.info(
                 "Will try to validate latest backup during startTime: {}, and endTime: {}",
                 dateRange.getStartTime(),
                 dateRange.getEndTime());
 
         List<BackupMetadata> metadata = getLatestBackupMetadata(dateRange);
-        BackupVerificationResult result =
-                backupVerification.verifyBackup(metadata, Date.from(dateRange.getStartTime()));
-        jsonReply.put("snapshotAvailable", result.snapshotAvailable);
-        jsonReply.put("valid", result.valid);
-        jsonReply.put("backupFileListAvailable", result.backupFileListAvail);
-        jsonReply.put("metaFileFound", result.metaFileFound);
-        jsonReply.put("selectedDate", result.selectedDate);
-        jsonReply.put("snapshotTime", result.snapshotTime);
-        jsonReply.put("filesInMetaOnly", result.filesInMetaOnly);
-        jsonReply.put("filesInS3Only", result.filesInS3Only);
-        jsonReply.put("filesMatched", result.filesMatched);
-        return Response.ok(jsonReply.toString()).build();
+        BackupVerificationResult result = backupVerification.verifyBackup(metadata);
+        return Response.ok(result.toString()).build();
     }
 
     @GET

@@ -16,11 +16,11 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
@@ -33,8 +33,10 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
+import javax.inject.Named;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -48,9 +50,6 @@ import org.slf4j.LoggerFactory;
  * thread pool to execute the restores.
  */
 public abstract class AbstractRestore extends Task implements IRestoreStrategy {
-    // keeps track of the last few download which was executed.
-    // TODO fix the magic number of 1000 => the idea of 80% of 1000 files limit per s3 query
-    protected static final FifoQueue<AbstractBackupPath> tracker = new FifoQueue<>(800);
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String JOBNAME = "AbstractRestore";
     private static final String SYSTEM_KEYSPACE = "system";
@@ -66,7 +65,15 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final MetaData metaData;
     private final IPostRestoreHook postRestoreHook;
 
-    AbstractRestore(
+    @Inject
+    @Named("v1")
+    IMetaProxy metaV1Proxy;
+
+    @Inject
+    @Named("v2")
+    IMetaProxy metaV2Proxy;
+
+    public AbstractRestore(
             IConfiguration config,
             IBackupFileSystem fs,
             String name,
@@ -113,8 +120,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.SST && tracker.contains(temp)) continue;
-
             if (backupRestoreUtil.isFiltered(
                     temp.getKeyspace(), temp.getColumnFamily())) { // is filtered?
                 logger.info(
@@ -158,7 +163,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         BoundedList<AbstractBackupPath> bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.SST && tracker.contains(temp)) continue;
+            if (temp.getType() == BackupFileType.SST) continue;
 
             if (temp.getType() == filter) {
                 bl.add(temp);
@@ -172,57 +177,16 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         cassProcess.stop(true);
     }
 
-    private String getRestorePrefix() {
-        String prefix;
-
-        if (StringUtils.isNotBlank(config.getRestorePrefix())) prefix = config.getRestorePrefix();
-        else prefix = config.getBackupPrefix();
-
-        return prefix;
-    }
-
-    /*
-     * Fetches meta.json used to store snapshots metadata.
-     */
-    private List<AbstractBackupPath> fetchSnapshotMetaFile(
-            String restorePrefix, Date startTime, Date endTime) throws IllegalStateException {
-        logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
-        List<AbstractBackupPath> metas = Lists.newArrayList();
-
-        Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);
-        if (!backupfiles.hasNext()) {
-            throw new IllegalStateException(
-                    "meta.json not found, restore prefix: " + restorePrefix);
-        }
-
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == BackupFileType.META)
-                // Since there are now meta file for incrementals as well as snapshot, we need to
-                // find the correct one (i.e. the snapshot meta file (meta.json))
-                if (path.getFileName().equalsIgnoreCase("meta.json")) {
-                    metas.add(path);
-                }
-        }
-
-        // Sort the meta files in ascending order.
-        Collections.sort(metas);
-
-        return metas;
-    }
-
     @Override
     public void execute() throws Exception {
         if (!isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) return;
 
         logger.info("Starting restore for {}", config.getRestoreSnapshot());
-        String[] restore = config.getRestoreSnapshot().split(",");
-        final Date startTime = DateUtil.getDate(restore[0]);
-        final Date endTime = DateUtil.getDate(restore[1]);
+        final DateUtil.DateRange dateRange = new DateUtil.DateRange(config.getRestoreSnapshot());
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
                 logger.info("Attempting restore");
-                restore(startTime, endTime);
+                restore(dateRange);
                 logger.info("Restore completed");
 
                 // Wait for other server init to complete
@@ -232,15 +196,20 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         }.call();
     }
 
-    public void restore(Date startTime, Date endTime) throws Exception {
+    public void restore(DateUtil.DateRange dateRange) throws Exception {
         // fail early if post restore hook has invalid parameters
         if (!postRestoreHook.hasValidParameters()) {
             throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
         }
 
+        Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
+
         // Set the restore status.
         instanceState.getRestoreStatus().resetStatus();
-        instanceState.getRestoreStatus().setStartDateRange(DateUtil.convert(startTime));
+        instanceState
+                .getRestoreStatus()
+                .setStartDateRange(
+                        LocalDateTime.ofInstant(dateRange.getStartTime(), ZoneId.of("UTC")));
         instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
         instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
         instanceState.setRestoreStatus(Status.STARTED);
@@ -248,7 +217,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
         try {
             if (config.isRestoreClosestToken()) {
-                restoreToken = tokenSelector.getClosestToken(new BigInteger(origToken), startTime);
+                restoreToken =
+                        tokenSelector.getClosestToken(
+                                new BigInteger(origToken),
+                                new Date(dateRange.getStartTime().toEpochMilli()));
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
 
@@ -260,34 +232,33 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
 
             // Try and read the Meta file.
-            String prefix = getRestorePrefix();
-            List<AbstractBackupPath> metas = fetchSnapshotMetaFile(prefix, startTime, endTime);
+            List<AbstractBackupPath> metas = metaV1Proxy.findMetaFiles(dateRange);
 
             if (metas.size() == 0) {
-                logger.info("[cass_backup] No snapshot meta file found, Restore Failed.");
+                logger.info("No snapshot meta file found, Restore Failed.");
                 instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-                instanceState.setRestoreStatus(Status.FINISHED);
+                instanceState.setRestoreStatus(Status.FAILED);
                 return;
             }
 
-            AbstractBackupPath meta = Iterators.getLast(metas.iterator());
+            AbstractBackupPath meta = metas.get(0);
             logger.info("Snapshot Meta file for restore {}", meta.getRemotePath());
             instanceState.getRestoreStatus().setSnapshotMetaFile(meta.getRemotePath());
 
+            // TODO: Validate that manifest file is valid.
             // Download the meta.json file.
-            ArrayList<AbstractBackupPath> metaFile = new ArrayList<>();
-            metaFile.add(meta);
-            download(metaFile.iterator(), BackupFileType.META, true);
+            Path metaFile = metaV1Proxy.downloadMetaFile(meta);
 
             List<Future<Path>> futureList = new ArrayList<>();
             // Parse meta.json file to find the files required to download from this snapshot.
-            List<AbstractBackupPath> snapshots = metaData.toJson(meta.newRestoreFile());
+            List<AbstractBackupPath> snapshots = metaData.toJson(metaFile.toFile());
 
             // Download snapshot which is listed in the meta file.
             futureList.addAll(download(snapshots.iterator(), BackupFileType.SNAP, false));
 
             logger.info("Downloading incrementals");
             // Download incrementals (SST) after the snapshot meta file.
+            String prefix = fs.getPrefix().toString();
             Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.getTime(), endTime);
             futureList.addAll(download(incrementals, BackupFileType.SST, false));
 

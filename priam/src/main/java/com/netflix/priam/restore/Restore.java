@@ -72,7 +72,6 @@ public class Restore extends AbstractRestore {
     @Override
     protected final Future<Path> downloadFile(
             final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        tracker.adjustAndAdd(path);
         return fs.asyncDownloadFile(
                 Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
     }

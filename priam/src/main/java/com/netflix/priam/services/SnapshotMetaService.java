@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -61,7 +62,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
-    private final MetaFileManager metaFileManager;
+    private final IMetaProxy metaProxy;
     private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
     private static final Lock lock = new ReentrantLock();
@@ -80,7 +81,7 @@ public class SnapshotMetaService extends AbstractBackup {
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
             MetaFileWriterBuilder metaFileWriter,
-            MetaFileManager metaFileManager,
+            @Named("v2") IMetaProxy metaProxy,
             CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
         this.backupRestoreConfig = backupRestoreConfig;
@@ -89,7 +90,7 @@ public class SnapshotMetaService extends AbstractBackup {
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
-        this.metaFileManager = metaFileManager;
+        this.metaProxy = metaProxy;
     }
 
     /**
@@ -156,7 +157,7 @@ public class SnapshotMetaService extends AbstractBackup {
             // These files may be leftover
             // 1) when Priam shutdown in middle of this service and may not be full JSON
             // 2) No permission to upload to backup file system.
-            metaFileManager.cleanupOldMetaFiles();
+            metaProxy.cleanupOldMetaFiles();
 
             // Take a new snapshot
             cassandraOperations.takeSnapshot(snapshotName);

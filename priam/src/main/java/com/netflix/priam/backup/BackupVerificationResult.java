@@ -13,6 +13,7 @@
  */
 package com.netflix.priam.backup;
 
+import com.netflix.priam.utils.GsonJsonSerializer;
 import java.util.List;
 
 /**
@@ -29,4 +30,9 @@ public class BackupVerificationResult {
     public List<String> filesInMetaOnly = null;
     public List<String> filesInS3Only = null;
     public List<String> filesMatched = null;
+
+    @Override
+    public String toString() {
+        return GsonJsonSerializer.getGson().toJson(this);
+    }
 }

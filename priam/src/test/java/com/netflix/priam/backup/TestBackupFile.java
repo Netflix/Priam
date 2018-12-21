@@ -22,6 +22,7 @@ import com.google.inject.Injector;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.DateUtil;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -101,7 +102,7 @@ public class TestBackupFile {
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(region, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        String datestr = AbstractBackupPath.formatDate(new Date(bfile.lastModified()));
+        String datestr = DateUtil.formatyyyyMMddHHmm(new Date(bfile.lastModified()));
         Assert.assertEquals(
                 "casstestbackup/"
                         + region
@@ -118,7 +119,7 @@ public class TestBackupFile {
         File bfile = new File(filestr);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.META);
-        backupfile.setTime(backupfile.parseDate("201108082320"));
+        backupfile.setTime(DateUtil.getDate("201108082320"));
         Assert.assertEquals(BackupFileType.META, backupfile.type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);

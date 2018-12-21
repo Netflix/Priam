@@ -119,7 +119,7 @@ public class SnapshotBackup extends AbstractBackup {
 
     private void executeSnapshot() throws Exception {
         Date startTime = Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime();
-        snapshotName = pathFactory.get().formatDate(startTime);
+        snapshotName = DateUtil.formatyyyyMMddHHmm(startTime);
         snapshotInstant = DateUtil.getInstant();
         String token = instanceIdentity.getInstance().getToken();
 

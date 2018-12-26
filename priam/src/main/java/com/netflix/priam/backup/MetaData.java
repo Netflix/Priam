@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -44,7 +43,6 @@ import org.slf4j.LoggerFactory;
 public class MetaData {
     private static final Logger logger = LoggerFactory.getLogger(MetaData.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    private static final List<IMessageObserver> observers = new ArrayList<>();
     private final List<String> metaRemotePaths = new ArrayList<>();
     private final IBackupFileSystem fs;
 
@@ -74,10 +72,6 @@ public class MetaData {
                 10,
                 true);
         addToRemotePath(backupfile.getRemotePath());
-        if (metaRemotePaths.size() > 0) {
-            notifyObservers();
-        }
-
         return backupfile;
     }
 
@@ -118,23 +112,6 @@ public class MetaData {
         if (destFile.exists()) destFile.delete();
         FileUtils.moveFile(metafile, destFile);
         return destFile;
-    }
-
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
-
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
-
-    private void notifyObservers() {
-        for (IMessageObserver observer : observers) {
-            if (observer != null) {
-                logger.debug("Updating snapshot observers now ...");
-                observer.update(BACKUP_MESSAGE_TYPE.META, metaRemotePaths);
-            } else logger.info("Observer is Null, hence can not notify ...");
-        }
     }
 
     private void addToRemotePath(String remotePath) {

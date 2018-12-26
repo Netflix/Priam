@@ -20,7 +20,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -41,7 +40,6 @@ public class IncrementalBackup extends AbstractBackup {
     private final List<String> incrementalRemotePaths = new ArrayList<>();
     private final IncrementalMetaData metaData;
     private final BackupRestoreUtil backupRestoreUtil;
-    private static final List<IMessageObserver> observers = new ArrayList<>();
 
     @Inject
     public IncrementalBackup(
@@ -63,9 +61,6 @@ public class IncrementalBackup extends AbstractBackup {
         // Clearing remotePath List
         incrementalRemotePaths.clear();
         initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
-        if (incrementalRemotePaths.size() > 0) {
-            notifyObservers();
-        }
     }
 
     /** Run every 10 Sec */
@@ -76,23 +71,6 @@ public class IncrementalBackup extends AbstractBackup {
     @Override
     public String getName() {
         return JOBNAME;
-    }
-
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
-
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
-
-    private void notifyObservers() {
-        for (IMessageObserver observer : observers) {
-            if (observer != null) {
-                logger.debug("Updating incremental observers now ...");
-                observer.update(BACKUP_MESSAGE_TYPE.INCREMENTAL, incrementalRemotePaths);
-            } else logger.info("Observer is Null, hence can not notify ...");
-        }
     }
 
     @Override

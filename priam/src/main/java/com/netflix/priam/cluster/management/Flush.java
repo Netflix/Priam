@@ -18,7 +18,6 @@ import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -106,56 +105,12 @@ public class Flush extends IClusterManagement<String> {
      * Timer to be used for flush interval.
      *
      * @param config {@link IConfiguration} to get configuration details from priam.
-     * @return the timer to be used for flush interval.
-     *     <p>If {@link IConfiguration#getFlushSchedulerType()} is {@link
-     *     com.netflix.priam.scheduler.SchedulerType#HOUR} then it expects {@link
-     *     IConfiguration#getFlushInterval()} in the format of hour=x or daily=x
-     *     <p>If {@link IConfiguration#getFlushSchedulerType()} is {@link
-     *     com.netflix.priam.scheduler.SchedulerType#CRON} then it expects a valid CRON expression
-     *     from {@link IConfiguration#getFlushCronExpression()}
-     * @throws Exception if the configurations are wrong. .e.g invalid cron expression.
+     * @return the timer to be used for compaction interval from {@link
+     *     IConfiguration#getFlushCronExpression()}
+     * @throws Exception If the cron expression is invalid.
      */
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
 
-        CronTimer cronTimer = null;
-        switch (config.getFlushSchedulerType()) {
-            case HOUR:
-                String timerVal = config.getFlushInterval(); // e.g. hour=0 or daily=10
-                if (timerVal == null) return null;
-                String s[] = timerVal.split("=");
-                if (s.length != 2) {
-                    throw new IllegalArgumentException(
-                            "Flush interval format is invalid.  Expecting name=value, received: "
-                                    + timerVal);
-                }
-                String name = s[0].toUpperCase();
-                Integer time = new Integer(s[1]);
-                switch (name) {
-                    case "HOUR":
-                        cronTimer =
-                                new CronTimer(
-                                        Task.FLUSH.name(), time, 0); // minute, sec after each hour
-                        break;
-                    case "DAILY":
-                        cronTimer =
-                                new CronTimer(
-                                        Task.FLUSH.name(),
-                                        time,
-                                        0,
-                                        0); // hour, minute, sec to run on a daily basis
-                        break;
-                    default:
-                        throw new UnsupportedTypeException(
-                                "Flush interval type is invalid.  Expecting \"hour, daily\", received: "
-                                        + name);
-                }
-
-                break;
-            case CRON:
-                cronTimer =
-                        CronTimer.getCronTimer(Task.FLUSH.name(), config.getFlushCronExpression());
-                break;
-        }
-        return cronTimer;
+        return CronTimer.getCronTimer(Task.FLUSH.name(), config.getFlushCronExpression());
     }
 }

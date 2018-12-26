@@ -16,7 +16,6 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -33,7 +32,6 @@ public class CommitLogBackupTask extends AbstractBackup {
 
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackupTask.class);
     private final List<String> clRemotePaths = new ArrayList<>();
-    private static final List<IMessageObserver> observers = new ArrayList<>();
     private final CommitLogBackup clBackup;
 
     @Inject
@@ -65,23 +63,6 @@ public class CommitLogBackupTask extends AbstractBackup {
 
     public static TaskTimer getTimer(IConfiguration config) {
         return new SimpleTimer(JOBNAME, 60L * 1000); // every 1 min
-    }
-
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
-
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
-
-    public void notifyObservers() {
-        for (IMessageObserver observer : observers) {
-            if (observer != null) {
-                logger.debug("Updating CL observers now ...");
-                observer.update(BACKUP_MESSAGE_TYPE.COMMITLOG, clRemotePaths);
-            } else logger.info("Observer is Null, hence can not notify ...");
-        }
     }
 
     @Override

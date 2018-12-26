@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.configSource.IConfigSource;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
 import java.io.File;
@@ -214,21 +213,8 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getBackupHour() {
-        return config.get(PRIAM_PRE + ".backup.hour", 12);
-    }
-
-    @Override
     public String getBackupCronExpression() {
         return config.get(PRIAM_PRE + ".backup.cron", "0 0 12 1/1 * ? *"); // Backup daily at 12
-    }
-
-    @Override
-    public SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
-        String schedulerType =
-                config.get(
-                        PRIAM_PRE + ".backup.schedule.type", SchedulerType.HOUR.getSchedulerType());
-        return SchedulerType.lookup(schedulerType);
     }
 
     @Override
@@ -245,14 +231,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getJVMUpsertSet() {
         return config.get(PRIAM_PRE + ".jvm.options.upsert");
-    }
-
-    @Override
-    public SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-        String schedulerType =
-                config.get(
-                        PRIAM_PRE + ".flush.schedule.type", SchedulerType.HOUR.getSchedulerType());
-        return SchedulerType.lookup(schedulerType);
     }
 
     @Override
@@ -692,11 +670,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getFlushKeyspaces() {
         return config.get(PRIAM_PRE + ".flush.keyspaces");
-    }
-
-    @Override
-    public String getFlushInterval() {
-        return config.get(PRIAM_PRE + ".flush.interval");
     }
 
     @Override

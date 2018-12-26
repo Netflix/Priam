@@ -30,7 +30,6 @@ import org.slf4j.LoggerFactory;
 public class CommitLogBackup {
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackup.class);
     private final Provider<AbstractBackupPath> pathFactory;
-    private static final List<IMessageObserver> observers = Lists.newArrayList();
     private final List<String> clRemotePaths = Lists.newArrayList();
     private final IBackupFileSystem fs;
 
@@ -83,24 +82,6 @@ public class CommitLogBackup {
             }
         }
         return bps;
-    }
-
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
-
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
-
-    public void notifyObservers() {
-        for (IMessageObserver observer : observers)
-            if (observer != null) {
-                logger.debug("Updating CommitLog observers now ...");
-                observer.update(IMessageObserver.BACKUP_MESSAGE_TYPE.COMMITLOG, this.clRemotePaths);
-            } else {
-                logger.debug("Observer is Null, hence can not notify ...");
-            }
     }
 
     private void addToRemotePath(String remotePath) {

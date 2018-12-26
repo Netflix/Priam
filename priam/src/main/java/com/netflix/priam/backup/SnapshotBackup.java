@@ -21,7 +21,6 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -54,7 +53,6 @@ public class SnapshotBackup extends AbstractBackup {
     public static final String JOBNAME = "SnapshotBackup";
     private final MetaData metaData;
     private final List<String> snapshotRemotePaths = new ArrayList<>();
-    private static final List<IMessageObserver> observers = new ArrayList<>();
     private final ThreadSleeper sleeper = new ThreadSleeper();
     private static final long WAIT_TIME_MS = 60 * 1000 * 10;
     private final InstanceIdentity instanceIdentity;
@@ -152,11 +150,6 @@ public class SnapshotBackup extends AbstractBackup {
             backupMetadata.setSnapshotLocation(
                     config.getBackupPrefix() + File.separator + metaJson.getRemotePath());
             snapshotStatusMgr.finish(backupMetadata);
-
-            if (snapshotRemotePaths.size() > 0) {
-                notifyObservers();
-            }
-
         } catch (Exception e) {
             logger.error(
                     "Exception occurred while taking snapshot: {}. Exception: {}",
@@ -190,43 +183,7 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-        CronTimer cronTimer = null;
-        switch (config.getBackupSchedulerType()) {
-            case HOUR:
-                if (config.getBackupHour() < 0)
-                    logger.info(
-                            "Skipping {} as it is disabled via backup hour: {}",
-                            JOBNAME,
-                            config.getBackupHour());
-                else {
-                    cronTimer = new CronTimer(JOBNAME, config.getBackupHour(), 1, 0);
-                    logger.info(
-                            "Starting snapshot backup with backup hour: {}",
-                            config.getBackupHour());
-                }
-                break;
-            case CRON:
-                cronTimer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
-                break;
-        }
-        return cronTimer;
-    }
-
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
-
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
-
-    private void notifyObservers() {
-        for (IMessageObserver observer : observers) {
-            if (observer != null) {
-                logger.debug("Updating snapshot observers now ...");
-                observer.update(BACKUP_MESSAGE_TYPE.SNAPSHOT, snapshotRemotePaths);
-            } else logger.info("Observer is Null, hence can not notify ...");
-        }
+        return CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
     }
 
     @Override

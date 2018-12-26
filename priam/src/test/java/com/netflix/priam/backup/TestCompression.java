@@ -20,6 +20,7 @@ package com.netflix.priam.backup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.*;
@@ -28,7 +29,6 @@ import java.util.Iterator;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import org.apache.cassandra.io.util.RandomAccessReader;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -105,45 +105,26 @@ public class TestCompression {
         }
     }
 
-    public static class RafInputStream extends InputStream implements AutoCloseable {
-        private final RandomAccessFile raf;
-
-        public RafInputStream(RandomAccessFile raf) {
-            this.raf = raf;
-        }
-
-        @Override
-        public synchronized int read(byte[] bytes, int off, int len) throws IOException {
-            return raf.read(bytes, off, len);
-        }
-
-        @Override
-        public void close() {
-            org.apache.cassandra.io.util.FileUtils.closeQuietly(raf);
-        }
-
-        @Override
-        public int read() throws IOException {
-            return 0;
-        }
-    }
-
     @Test
     public void snappyTest() throws IOException {
-        SnappyCompression compress = new SnappyCompression();
-        File compressedOutputFile = new File("/tmp/test1.snp");
+        ICompression compress = new SnappyCompression();
+        testCompressor(compress);
+    }
+
+    private void testCompressor(ICompression compress) throws IOException {
+        File compressedOutputFile = new File("/tmp/test1.compress");
         File decompressedTempOutput = new File("/tmp/compress-test-out.txt");
         long chunkSize = 5L * 1024 * 1024;
         try {
+
             Iterator<byte[]> it =
-                    compress.compress(
-                            new RafInputStream(RandomAccessReader.open(randomContentFile)),
-                            chunkSize);
+                    compress.compress(new FileInputStream(randomContentFile), chunkSize);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
                 while (it.hasNext()) {
                     byte[] chunk = it.next();
                     ostream.write(chunk);
                 }
+                ostream.flush();
             }
 
             assertTrue(randomContentFile.length() > compressedOutputFile.length());

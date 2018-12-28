@@ -18,13 +18,12 @@
 package com.netflix.priam.backupv2;
 
 import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -138,5 +137,58 @@ public class MetaV2Proxy implements IMetaProxy {
     @Override
     public List<String> getSSTFilesFromMeta(Path localMetaPath) throws Exception {
         return null;
+    }
+
+    @Override
+    public BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath) {
+        MetaFileBackupValidator metaFileBackupValidator = new MetaFileBackupValidator();
+        BackupVerificationResult result = metaFileBackupValidator.verificationResult;
+        result.remotePath = metaBackupPath.getRemotePath();
+        result.snapshotInstant = metaBackupPath.getLastModified();
+
+        Path metaFile = null;
+        try {
+            metaFile = downloadMetaFile(metaBackupPath);
+            result.manifestAvailable = true;
+
+            metaFileBackupValidator.readMeta(metaFile);
+            result.valid = (result.filesInMetaOnly.isEmpty());
+        } catch (FileNotFoundException fne) {
+            logger.error(fne.getLocalizedMessage());
+        } catch (IOException ioe) {
+            logger.error(
+                    "IO Error while processing meta file: " + metaFile, ioe.getLocalizedMessage());
+            ioe.printStackTrace();
+        } catch (BackupRestoreException bre) {
+            logger.error("Error while trying to download the manifest file: {}", metaBackupPath);
+        } finally {
+            if (metaFile != null) FileUtils.deleteQuietly(metaFile.toFile());
+        }
+        return result;
+    }
+
+    private class MetaFileBackupValidator extends MetaFileReader {
+        private BackupVerificationResult verificationResult = new BackupVerificationResult();
+
+        @Override
+        public void process(ColumnfamilyResult columnfamilyResult) {
+            for (ColumnfamilyResult.SSTableResult ssTableResult :
+                    columnfamilyResult.getSstables()) {
+                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
+                    try {
+                        if (fs.doesRemoteFileExist(Paths.get(fileUploadResult.getBackupPath()))) {
+                            verificationResult.filesMatched++;
+                        } else {
+                            verificationResult.filesInMetaOnly.add(
+                                    fileUploadResult.getBackupPath());
+                        }
+                    } catch (BackupRestoreException e) {
+                        // For any error, mark that file is not available.
+                        verificationResult.valid = false;
+                        break;
+                    }
+                }
+            }
+        }
     }
 }

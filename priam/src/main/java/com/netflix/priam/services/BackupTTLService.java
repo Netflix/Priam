@@ -41,6 +41,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Named;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -128,8 +129,12 @@ public class BackupTTLService extends Task {
 
             // Walk over the file system iterator and if not in map, it is eligible for delete.
             new MetaFileWalker().readMeta(localFile);
+
             if (logger.isDebugEnabled())
                 logger.debug("Files in meta file: {}", filesInMeta.keySet().toString());
+
+            // Delete the meta file downloaded locally
+            FileUtils.deleteQuietly(localFile.toFile());
 
             Iterator<String> remoteFileLocations =
                     fileSystem.listFileSystem(getSSTPrefix(), null, null);

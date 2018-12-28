@@ -20,14 +20,10 @@ package com.netflix.priam.backupv2;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +35,6 @@ public class BackupValidator {
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
     private final IBackupFileSystem fs;
     private IMetaProxy metaProxy;
-    private boolean isBackupValid;
 
     @Inject
     public BackupValidator(
@@ -55,72 +50,22 @@ public class BackupValidator {
      * file via AbstractBackupPath object.
      *
      * @param dateRange the time period to scan in the remote file system for meta files.
-     * @return the AbstractBackupPath denoting the "local" file which is valid or null. Caller needs
-     *     to delete the file.
+     * @return the BackupVerificationResult containing the details of the valid meta file. If none
+     *     is found, null is returned.
      * @throws BackupRestoreException if there is issue contacting remote file system, fetching the
      *     file etc.
      */
-    public AbstractBackupPath findLatestValidMetaFile(DateUtil.DateRange dateRange)
+    public Optional<BackupVerificationResult> findLatestValidMetaFile(DateUtil.DateRange dateRange)
             throws BackupRestoreException {
         List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
         logger.info("Meta files found: {}", metas);
 
         for (AbstractBackupPath meta : metas) {
-            Path localFile = metaProxy.downloadMetaFile(meta);
-            boolean isValid = isMetaFileValid(localFile);
-            logger.info("Meta: {}, isValid: {}", meta, isValid);
-            if (!isValid) FileUtils.deleteQuietly(localFile.toFile());
-            else return meta;
+            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
+            logger.info("BackupVerificationResult: {}", result);
+            if (result.valid) return Optional.of(result);
         }
 
-        return null;
-    }
-
-    /**
-     * Validate that all the files mentioned in the meta file actually exists on remote file system.
-     *
-     * @param metaFile Path to the local uncompressed/unencrypted meta file
-     * @return true if all the files mentioned in meta file are present on remote file system. It
-     *     will return false in case of any error.
-     */
-    public boolean isMetaFileValid(Path metaFile) {
-        try {
-            isBackupValid = true;
-            new MetaFileBackupValidator().readMeta(metaFile);
-        } catch (FileNotFoundException fne) {
-            isBackupValid = false;
-            logger.error(fne.getLocalizedMessage());
-        } catch (IOException ioe) {
-            isBackupValid = false;
-            logger.error(
-                    "IO Error while processing meta file: " + metaFile, ioe.getLocalizedMessage());
-            ioe.printStackTrace();
-        }
-        return isBackupValid;
-    }
-
-    private class MetaFileBackupValidator extends MetaFileReader {
-        @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
-            for (ColumnfamilyResult.SSTableResult ssTableResult :
-                    columnfamilyResult.getSstables()) {
-                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
-                    if (!isBackupValid) {
-                        break;
-                    }
-
-                    try {
-                        isBackupValid =
-                                isBackupValid
-                                        && fs.doesRemoteFileExist(
-                                                Paths.get(fileUploadResult.getBackupPath()));
-                    } catch (BackupRestoreException e) {
-                        // For any error, mark that file is not available.
-                        isBackupValid = false;
-                        break;
-                    }
-                }
-            }
-        }
+        return Optional.empty();
     }
 }

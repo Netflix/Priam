@@ -19,6 +19,7 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
@@ -36,21 +37,21 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 12/5/18. */
-public class TestBackupValidator {
+public class TestMetaV2Proxy {
     private FakeBackupFileSystem fs;
     private IConfiguration configuration;
-    private BackupValidator backupValidator;
     private TestBackupUtils backupUtils;
     private IMetaProxy metaProxy;
+    private Provider<AbstractBackupPath> abstractBackupPathProvider;
 
-    public TestBackupValidator() {
+    public TestMetaV2Proxy() {
         Injector injector = Guice.createInjector(new BRTestModule());
         configuration = injector.getInstance(IConfiguration.class);
         fs = injector.getInstance(FakeBackupFileSystem.class);
         fs.setupTest(getRemoteFakeFiles());
-        backupValidator = injector.getInstance(BackupValidator.class);
         backupUtils = new TestBackupUtils();
         metaProxy = injector.getInstance(MetaV2Proxy.class);
+        abstractBackupPathProvider = injector.getProvider(AbstractBackupPath.class);
     }
 
     @Test
@@ -76,8 +77,12 @@ public class TestBackupValidator {
 
     @Test
     public void testIsMetaFileValid() throws Exception {
-        Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), DateUtil.getInstant());
-        Assert.assertTrue(backupValidator.isMetaFileValid(metaPath));
+        Instant snapshotInstant = DateUtil.getInstant();
+        Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), snapshotInstant);
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseLocal(metaPath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+
+        Assert.assertTrue(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
         List<String> fileToAdd = getRemoteFakeFiles();
@@ -93,12 +98,12 @@ public class TestBackupValidator {
                                 "file9.Data.db")
                         .toString());
 
-        metaPath = backupUtils.createMeta(fileToAdd, DateUtil.getInstant());
-        Assert.assertFalse(backupValidator.isMetaFileValid(metaPath));
+        metaPath = backupUtils.createMeta(fileToAdd, snapshotInstant);
+        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
-        metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201901010000.json");
-        Assert.assertFalse(backupValidator.isMetaFileValid(metaPath));
+        metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201801010000.json");
+        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
     }
 
     @Test

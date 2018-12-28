@@ -24,4 +24,9 @@ public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     public boolean enableV2Backups() {
         return true;
     }
+
+    @Override
+    public boolean enableV2Restore() {
+        return false;
+    }
 }

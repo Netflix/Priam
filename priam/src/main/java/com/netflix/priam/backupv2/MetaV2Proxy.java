@@ -28,6 +28,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import javax.inject.Inject;
+import org.apache.commons.collections4.iterators.FilterIterator;
+import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.apache.commons.io.filefilter.IOFileFilter;
@@ -59,16 +61,59 @@ public class MetaV2Proxy implements IMetaProxy {
 
     @Override
     public String getMetaPrefix(DateUtil.DateRange dateRange) {
+        return getMatch(dateRange, AbstractBackupPath.BackupFileType.META_V2);
+    }
+
+    private String getMatch(
+            DateUtil.DateRange dateRange, AbstractBackupPath.BackupFileType backupFileType) {
         Path location = fs.getPrefix();
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         String match = StringUtils.EMPTY;
         if (dateRange != null) match = dateRange.match();
+        if (dateRange != null && dateRange.getEndTime() == null)
+            match = dateRange.getStartTime().toEpochMilli() + "";
         return Paths.get(
-                        abstractBackupPath
-                                .remoteV2Prefix(location, AbstractBackupPath.BackupFileType.META_V2)
-                                .toString(),
+                        abstractBackupPath.remoteV2Prefix(location, backupFileType).toString(),
                         match)
                 .toString();
+    }
+
+    @Override
+    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
+            throws BackupRestoreException {
+        String incrementalPrefix = getMatch(dateRange, AbstractBackupPath.BackupFileType.SST_V2);
+        String marker =
+                getMatch(
+                        new DateUtil.DateRange(dateRange.getStartTime(), null),
+                        AbstractBackupPath.BackupFileType.SST_V2);
+        logger.info(
+                "Listing filesystem with prefix: {}, marker: {}, daterange: {}",
+                incrementalPrefix,
+                marker,
+                dateRange);
+        Iterator<String> iterator = fs.listFileSystem(incrementalPrefix, null, marker);
+        Iterator<AbstractBackupPath> transformIterator =
+                new TransformIterator<>(
+                        iterator,
+                        s -> {
+                            AbstractBackupPath path = abstractBackupPathProvider.get();
+                            path.parseRemote(s);
+                            return path;
+                        });
+
+        return new FilterIterator<>(
+                transformIterator,
+                abstractBackupPath ->
+                        (abstractBackupPath.getLastModified().isAfter(dateRange.getStartTime())
+                                        && abstractBackupPath
+                                                .getLastModified()
+                                                .isBefore(dateRange.getEndTime()))
+                                || abstractBackupPath
+                                        .getLastModified()
+                                        .equals(dateRange.getStartTime())
+                                || abstractBackupPath
+                                        .getLastModified()
+                                        .equals(dateRange.getEndTime()));
     }
 
     @Override
@@ -95,7 +140,7 @@ public class MetaV2Proxy implements IMetaProxy {
             }
         }
 
-        Collections.sort(metas, Collections.reverseOrder());
+        metas.sort(Collections.reverseOrder());
 
         if (metas.size() == 0) {
             logger.info(
@@ -136,7 +181,9 @@ public class MetaV2Proxy implements IMetaProxy {
 
     @Override
     public List<String> getSSTFilesFromMeta(Path localMetaPath) throws Exception {
-        return null;
+        MetaFileBackupWalker metaFileBackupWalker = new MetaFileBackupWalker();
+        metaFileBackupWalker.readMeta(localMetaPath);
+        return metaFileBackupWalker.backupRemotePaths;
     }
 
     @Override
@@ -187,6 +234,20 @@ public class MetaV2Proxy implements IMetaProxy {
                         verificationResult.valid = false;
                         break;
                     }
+                }
+            }
+        }
+    }
+
+    private class MetaFileBackupWalker extends MetaFileReader {
+        private List<String> backupRemotePaths = new ArrayList<>();
+
+        @Override
+        public void process(ColumnfamilyResult columnfamilyResult) {
+            for (ColumnfamilyResult.SSTableResult ssTableResult :
+                    columnfamilyResult.getSstables()) {
+                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
+                    backupRemotePaths.add(fileUploadResult.getBackupPath());
                 }
             }
         }

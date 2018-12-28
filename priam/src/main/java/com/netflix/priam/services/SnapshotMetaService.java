@@ -58,7 +58,6 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
-    private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
@@ -77,14 +76,12 @@ public class SnapshotMetaService extends AbstractBackup {
     @Inject
     SnapshotMetaService(
             IConfiguration config,
-            IBackupRestoreConfig backupRestoreConfig,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
             MetaFileWriterBuilder metaFileWriter,
             @Named("v2") IMetaProxy metaProxy,
             CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
-        this.backupRestoreConfig = backupRestoreConfig;
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil =
                 new BackupRestoreUtil(
@@ -226,8 +223,7 @@ public class SnapshotMetaService extends AbstractBackup {
                 if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
                         || !snapshotDirectory.isDirectory()) continue;
 
-                if (snapshotDirectory.list().length == 0
-                        || !backupRestoreConfig.enableV2Backups()) {
+                if (snapshotDirectory.list().length == 0) {
                     FileUtils.cleanDirectory(snapshotDirectory);
                     FileUtils.deleteDirectory(snapshotDirectory);
                     continue;
@@ -343,11 +339,6 @@ public class SnapshotMetaService extends AbstractBackup {
                 "Finished processing KS: {}, CF: {}",
                 columnfamilyResult.getKeyspaceName(),
                 columnfamilyResult.getColumnfamilyName());
-    }
-
-    @Override
-    protected void addToRemotePath(String remotePath) {
-        // Do nothing
     }
 
     // For testing purposes only.

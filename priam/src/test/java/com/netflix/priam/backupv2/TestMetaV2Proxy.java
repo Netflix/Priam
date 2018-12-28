@@ -26,13 +26,18 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.FakeBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -58,10 +63,11 @@ public class TestMetaV2Proxy {
     public void testMetaPrefix() {
         // Null date range
         Assert.assertEquals(getPrefix() + "/META_V2", metaProxy.getMetaPrefix(null));
+        Instant now = Instant.now();
         // No end date.
         Assert.assertEquals(
-                getPrefix() + "/META_V2",
-                metaProxy.getMetaPrefix(new DateUtil.DateRange(Instant.now(), null)));
+                getPrefix() + "/META_V2/" + now.toEpochMilli(),
+                metaProxy.getMetaPrefix(new DateUtil.DateRange(now, null)));
         // No start date
         Assert.assertEquals(
                 getPrefix() + "/META_V2",
@@ -104,6 +110,28 @@ public class TestMetaV2Proxy {
 
         metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201801010000.json");
         Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
+    }
+
+    @Test
+    public void testGetSSTFilesFromMeta() throws Exception {
+        Instant snapshotInstant = DateUtil.getInstant();
+        List<String> remoteFiles = getRemoteFakeFiles();
+        Path metaPath = backupUtils.createMeta(remoteFiles, snapshotInstant);
+        List<String> filesFromMeta = metaProxy.getSSTFilesFromMeta(metaPath);
+        filesFromMeta.removeAll(remoteFiles);
+        Assert.assertTrue(filesFromMeta.isEmpty());
+    }
+
+    @Test
+    public void testGetIncrementalFiles() throws Exception {
+        DateUtil.DateRange dateRange = new DateUtil.DateRange("202812071820,20281229");
+        Iterator<AbstractBackupPath> incrementals = metaProxy.getIncrementals(dateRange);
+        int i = 0;
+        while (incrementals.hasNext()) {
+            System.out.println(incrementals.next());
+            i++;
+        }
+        Assert.assertEquals(3, i);
     }
 
     @Test
@@ -202,5 +230,58 @@ public class TestMetaV2Proxy {
                         "PLAINTEXT",
                         "meta_v2_202812071901.json"));
         return files.stream().map(Path::toString).collect(Collectors.toList());
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        FileUtils.cleanDirectory(new File(configuration.getDataFileLocation()));
+    }
+
+    @Test
+    public void testCleanupOldMetaFiles() throws IOException {
+        generateDummyMetaFiles();
+        Path dataDir = Paths.get(configuration.getDataFileLocation());
+        Assert.assertEquals(4, dataDir.toFile().listFiles().length);
+
+        // clean the directory
+        metaProxy.cleanupOldMetaFiles();
+
+        Assert.assertEquals(1, dataDir.toFile().listFiles().length);
+        Path dummy = Paths.get(dataDir.toString(), "dummy.tmp");
+        Assert.assertTrue(dummy.toFile().exists());
+    }
+
+    private void generateDummyMetaFiles() throws IOException {
+        Path dataDir = Paths.get(configuration.getDataFileLocation());
+        FileUtils.cleanDirectory(dataDir.toFile());
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(DateUtil.getInstant()))
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(
+                                        DateUtil.getInstant().minus(10, ChronoUnit.MINUTES)))
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(DateUtil.getInstant()) + ".tmp")
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(configuration.getDataFileLocation(), "dummy.tmp").toFile(),
+                "dummy",
+                "UTF-8");
     }
 }

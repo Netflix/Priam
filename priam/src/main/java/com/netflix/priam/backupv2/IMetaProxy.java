@@ -19,6 +19,7 @@ package com.netflix.priam.backupv2;
 
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.util.List;
@@ -69,6 +70,16 @@ public interface IMetaProxy {
      * @throws Exception if file is not found on local system or is corrupt.
      */
     List<String> getSSTFilesFromMeta(Path localMetaPath) throws Exception;
+
+    /**
+     * Validate that all the files mentioned in the meta file actually exists on remote file system.
+     *
+     * @param metaBackupPath Path to the remote meta file.
+     * @return backupVerificationResult containing the information like valid - if all the files
+     *     mentioned in meta file are present on remote file system. It will return false in case of
+     *     any error.
+     */
+    BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath);
 
     /** Delete the old meta files, if any present in the metaFileDirectory */
     void cleanupOldMetaFiles();

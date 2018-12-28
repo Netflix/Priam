@@ -248,12 +248,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             // TODO: Validate that manifest file is valid.
             // Download the meta.json file.
             Path metaFile = metaV1Proxy.downloadMetaFile(meta);
-
-            List<Future<Path>> futureList = new ArrayList<>();
             // Parse meta.json file to find the files required to download from this snapshot.
             List<AbstractBackupPath> snapshots = metaData.toJson(metaFile.toFile());
+            FileUtils.deleteQuietly(metaFile.toFile());
 
             // Download snapshot which is listed in the meta file.
+            List<Future<Path>> futureList = new ArrayList<>();
             futureList.addAll(download(snapshots.iterator(), BackupFileType.SNAP, false));
 
             logger.info("Downloading incrementals");

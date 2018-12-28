@@ -22,6 +22,7 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
+import java.util.Iterator;
 import java.util.List;
 
 /** Proxy to do management tasks for meta files. Created by aagrawal on 12/18/18. */
@@ -70,6 +71,16 @@ public interface IMetaProxy {
      * @throws Exception if file is not found on local system or is corrupt.
      */
     List<String> getSSTFilesFromMeta(Path localMetaPath) throws Exception;
+
+    /**
+     * Get the list of incremental files given the daterange.
+     *
+     * @param dateRange the time period to scan in the remote file system for incremental files.
+     * @return iterator containing the list of path on the remote file system satisfying criteria.
+     * @throws BackupRestoreException if there is an issue contacting remote file system.
+     */
+    Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
+            throws BackupRestoreException;
 
     /**
      * Validate that all the files mentioned in the meta file actually exists on remote file system.

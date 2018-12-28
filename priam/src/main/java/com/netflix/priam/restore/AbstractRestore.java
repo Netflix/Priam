@@ -21,6 +21,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
@@ -32,10 +33,12 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 import javax.inject.Named;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -72,6 +75,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     @Inject
     @Named("v2")
     IMetaProxy metaV2Proxy;
+
+    @Inject IBackupRestoreConfig backupRestoreConfig;
 
     public AbstractRestore(
             IConfiguration config,
@@ -113,10 +118,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     }
 
     private List<Future<Path>> download(
-            Iterator<AbstractBackupPath> fsIterator,
-            BackupFileType bkupFileType,
-            boolean waitForCompletion)
-            throws Exception {
+            Iterator<AbstractBackupPath> fsIterator, boolean waitForCompletion) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
@@ -130,16 +132,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 continue;
             }
 
-            if (temp.getType() == bkupFileType) {
-                File localFileHandler = temp.newRestoreFile();
-                if (logger.isDebugEnabled())
-                    logger.debug(
-                            "Created local file name: "
-                                    + localFileHandler.getAbsolutePath()
-                                    + File.pathSeparator
-                                    + localFileHandler.getName());
-                futureList.add(downloadFile(temp, localFileHandler));
-            }
+            File localFileHandler = temp.newRestoreFile();
+            if (logger.isDebugEnabled())
+                logger.debug(
+                        "Created local file name: "
+                                + localFileHandler.getAbsolutePath()
+                                + File.pathSeparator
+                                + localFileHandler.getName());
+            futureList.add(downloadFile(temp, localFileHandler));
         }
 
         // Wait for all download to finish that were started from this method.
@@ -153,24 +153,19 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     }
 
     private List<Future<Path>> downloadCommitLogs(
-            Iterator<AbstractBackupPath> fsIterator,
-            BackupFileType filter,
-            int lastN,
-            boolean waitForCompletion)
+            Iterator<AbstractBackupPath> fsIterator, int lastN, boolean waitForCompletion)
             throws Exception {
         if (fsIterator == null) return null;
 
         BoundedList<AbstractBackupPath> bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.SST) continue;
-
-            if (temp.getType() == filter) {
+            if (temp.getType() == BackupFileType.CL) {
                 bl.add(temp);
             }
         }
 
-        return download(bl.iterator(), filter, waitForCompletion);
+        return download(bl.iterator(), waitForCompletion);
     }
 
     private void stopCassProcess() throws IOException {
@@ -196,6 +191,22 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         }.call();
     }
 
+    private Optional<AbstractBackupPath> getLatestValidMetaPath(
+            IMetaProxy metaProxy, DateUtil.DateRange dateRange) {
+        // Get a list of manifest files.
+        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
+
+        // Find a valid manifest file.
+        for (AbstractBackupPath meta : metas) {
+            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
+            if (result.valid) {
+                return Optional.of(meta);
+            }
+        }
+
+        return Optional.empty();
+    }
+
     public void restore(DateUtil.DateRange dateRange) throws Exception {
         // fail early if post restore hook has invalid parameters
         if (!postRestoreHook.hasValidParameters()) {
@@ -203,6 +214,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         }
 
         Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
+        IMetaProxy metaProxy = metaV1Proxy;
+        if (backupRestoreConfig.enableV2Restore()) metaProxy = metaV2Proxy;
 
         // Set the restore status.
         instanceState.getRestoreStatus().resetStatus();
@@ -231,38 +244,60 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             File dataDir = new File(config.getDataFileLocation());
             if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
 
-            // Try and read the Meta file.
-            List<AbstractBackupPath> metas = metaV1Proxy.findMetaFiles(dateRange);
+            // Find latest valid meta file.
+            Optional<AbstractBackupPath> latestValidMetaFile =
+                    getLatestValidMetaPath(metaProxy, dateRange);
 
-            if (metas.size() == 0) {
-                logger.info("No snapshot meta file found, Restore Failed.");
+            if (!latestValidMetaFile.isPresent()) {
+                logger.info("No valid snapshot meta file found, Restore Failed.");
                 instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
                 instanceState.setRestoreStatus(Status.FAILED);
                 return;
             }
 
-            AbstractBackupPath meta = metas.get(0);
-            logger.info("Snapshot Meta file for restore {}", meta.getRemotePath());
-            instanceState.getRestoreStatus().setSnapshotMetaFile(meta.getRemotePath());
+            logger.info(
+                    "Snapshot Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
+            instanceState
+                    .getRestoreStatus()
+                    .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
 
-            // TODO: Validate that manifest file is valid.
             // Download the meta.json file.
-            Path metaFile = metaV1Proxy.downloadMetaFile(meta);
+            Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile.get());
             // Parse meta.json file to find the files required to download from this snapshot.
-            List<AbstractBackupPath> snapshots = metaData.toJson(metaFile.toFile());
+            List<AbstractBackupPath> snapshots =
+                    metaProxy
+                            .getSSTFilesFromMeta(metaFile)
+                            .stream()
+                            .map(
+                                    value -> {
+                                        AbstractBackupPath path = pathProvider.get();
+                                        path.parseRemote(value);
+                                        return path;
+                                    })
+                            .collect(Collectors.toList());
+
             FileUtils.deleteQuietly(metaFile.toFile());
 
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();
-            futureList.addAll(download(snapshots.iterator(), BackupFileType.SNAP, false));
+            futureList.addAll(download(snapshots.iterator(), false));
 
             logger.info("Downloading incrementals");
+
             // Download incrementals (SST) after the snapshot meta file.
-            String prefix = fs.getPrefix().toString();
-            Iterator<AbstractBackupPath> incrementals = fs.list(prefix, meta.getTime(), endTime);
-            futureList.addAll(download(incrementals, BackupFileType.SST, false));
+            Instant snapshotTime;
+            if (backupRestoreConfig.enableV2Restore())
+                snapshotTime = latestValidMetaFile.get().getLastModified();
+            else snapshotTime = latestValidMetaFile.get().getTime().toInstant();
+
+            DateUtil.DateRange incrementalDateRange =
+                    new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
+            Iterator<AbstractBackupPath> incrementals =
+                    metaProxy.getIncrementals(incrementalDateRange);
+            futureList.addAll(download(incrementals, false));
 
             // Downloading CommitLogs
+            // Note for Backup V2.0 we do not backup commit logs, as saving them is cost-expensive.
             if (config.isBackingUpCommitLogs()) {
                 logger.info(
                         "Delete all backuped commitlog files in {}",
@@ -271,15 +306,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
                 logger.info("Delete all commitlog files in {}", config.getCommitLogLocation());
                 SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
-
+                String prefix = fs.getPrefix().toString();
                 Iterator<AbstractBackupPath> commitLogPathIterator =
-                        fs.list(prefix, meta.getTime(), endTime);
+                        fs.list(prefix, latestValidMetaFile.get().getTime(), endTime);
                 futureList.addAll(
                         downloadCommitLogs(
-                                commitLogPathIterator,
-                                BackupFileType.CL,
-                                config.maxCommitLogsRestore(),
-                                false));
+                                commitLogPathIterator, config.maxCommitLogsRestore(), false));
             }
 
             // Wait for all the futures to finish.

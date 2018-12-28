@@ -151,7 +151,8 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             try (FileWriter fr = new FileWriter(localPath.toFile())) {
                 JSONArray jsonObj = new JSONArray();
                 for (AbstractBackupPath filePath : flist) {
-                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP) {
+                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP
+                            && filePath.time.equals(path.time)) {
                         jsonObj.add(filePath.getRemotePath());
                     }
                 }

@@ -16,14 +16,12 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -32,7 +30,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
-import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -116,31 +113,5 @@ public class MetaData {
 
     private void addToRemotePath(String remotePath) {
         metaRemotePaths.add(remotePath);
-    }
-
-    public List<AbstractBackupPath> toJson(File input) {
-        List<AbstractBackupPath> files = Lists.newArrayList();
-        try {
-            JSONArray jsonObj = (JSONArray) new JSONParser().parse(new FileReader(input));
-            for (Object aJsonObj : jsonObj) {
-                AbstractBackupPath p = pathFactory.get();
-                p.parseRemote((String) aJsonObj);
-                files.add(p);
-            }
-
-        } catch (Exception ex) {
-            throw new RuntimeException(
-                    "Error transforming file "
-                            + input.getAbsolutePath()
-                            + " to JSON format.  Msg:"
-                            + ex.getLocalizedMessage(),
-                    ex);
-        }
-
-        logger.debug(
-                "Transformed file {} to JSON.  Number of JSON elements: {}",
-                input.getAbsolutePath(),
-                files.size());
-        return files;
     }
 }

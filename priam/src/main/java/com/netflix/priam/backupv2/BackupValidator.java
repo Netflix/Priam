@@ -18,7 +18,6 @@
 package com.netflix.priam.backupv2;
 
 import com.netflix.priam.backup.*;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.util.List;
 import java.util.Optional;
@@ -33,15 +32,10 @@ import org.slf4j.LoggerFactory;
  */
 public class BackupValidator {
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final IBackupFileSystem fs;
     private IMetaProxy metaProxy;
 
     @Inject
-    public BackupValidator(
-            IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx,
-            @Named("v2") IMetaProxy metaProxy) {
-        fs = backupFileSystemCtx.getFileStrategy(configuration);
+    public BackupValidator(@Named("v2") IMetaProxy metaProxy) {
         this.metaProxy = metaProxy;
     }
 

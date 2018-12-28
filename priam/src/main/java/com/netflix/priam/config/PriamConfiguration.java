@@ -738,4 +738,14 @@ public class PriamConfiguration implements IConfiguration {
         // Every minute on the top of the minute.
         return config.get(PRIAM_PRE + ".configMerge.cron", "0 * * * * ? *");
     }
+
+    @Override
+    public int getForgottenFileGracePeriodDays() {
+        return config.get(PRIAM_PRE + ".forgottenFileGracePeriodDays", 1);
+    }
+
+    @Override
+    public boolean isForgottenFileMoveEnabled() {
+        return config.get(PRIAM_PRE + ".forgottenFileMoveEnabled", false);
+    }
 }

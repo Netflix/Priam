@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
@@ -38,11 +39,9 @@ import org.slf4j.LoggerFactory;
 public class MetaV1Proxy implements IMetaProxy {
     private static final Logger logger = LoggerFactory.getLogger(MetaV1Proxy.class);
     private final IBackupFileSystem fs;
-    private final IConfiguration configuration;
 
     @Inject
     MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
-        this.configuration = configuration;
         fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 
@@ -71,12 +70,12 @@ public class MetaV1Proxy implements IMetaProxy {
             if (path.getType() == AbstractBackupPath.BackupFileType.META)
                 // Since there are now meta file for incrementals as well as snapshot, we need to
                 // find the correct one (i.e. the snapshot meta file (meta.json))
-                if (path.getType() == AbstractBackupPath.BackupFileType.META) {
+                if (path.getFileName().equalsIgnoreCase("meta.json")) {
                     metas.add(path);
                 }
         }
 
-        Collections.sort(metas, Collections.reverseOrder());
+        metas.sort(Collections.reverseOrder());
 
         if (metas.size() == 0) {
             logger.info(
@@ -102,7 +101,7 @@ public class MetaV1Proxy implements IMetaProxy {
             result.manifestAvailable = true;
 
             // List the remote file system to validate the backup.
-            String prefix = configuration.getBackupPrefix();
+            String prefix = fs.getPrefix().toString();
             Date strippedMsSnapshotTime =
                     new Date(result.snapshotInstant.truncatedTo(ChronoUnit.MINUTES).toEpochMilli());
             Iterator<AbstractBackupPath> backupfiles =
@@ -168,6 +167,21 @@ public class MetaV1Proxy implements IMetaProxy {
                         jsonParser.parse(new FileReader(localMetaPath.toFile()));
         fileList.forEach(entry -> result.add(entry.toString()));
         return result;
+    }
+
+    @Override
+    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
+            throws BackupRestoreException {
+        String prefix = fs.getPrefix().toString();
+        Iterator<AbstractBackupPath> iterator =
+                fs.list(
+                        prefix,
+                        new Date(dateRange.getStartTime().toEpochMilli()),
+                        new Date(dateRange.getEndTime().toEpochMilli()));
+        return new FilterIterator<>(
+                iterator,
+                abstractBackupPath ->
+                        abstractBackupPath.getType() == AbstractBackupPath.BackupFileType.SST);
     }
 
     @Override

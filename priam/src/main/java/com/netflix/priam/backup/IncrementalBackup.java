@@ -20,12 +20,12 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,13 +37,14 @@ import org.slf4j.LoggerFactory;
 public class IncrementalBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
-    private final List<String> incrementalRemotePaths = new ArrayList<>();
     private final IncrementalMetaData metaData;
     private final BackupRestoreUtil backupRestoreUtil;
+    private final IBackupRestoreConfig backupRestoreConfig;
 
     @Inject
     public IncrementalBackup(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             Provider<AbstractBackupPath> pathFactory,
             IFileSystemContext backupFileSystemCtx,
             IncrementalMetaData metaData) {
@@ -51,6 +52,7 @@ public class IncrementalBackup extends AbstractBackup {
         // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
         // uploaded)
         this.metaData = metaData;
+        this.backupRestoreConfig = backupRestoreConfig;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
@@ -59,7 +61,6 @@ public class IncrementalBackup extends AbstractBackup {
     @Override
     public void execute() throws Exception {
         // Clearing remotePath List
-        incrementalRemotePaths.clear();
         initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
     }
 
@@ -76,8 +77,11 @@ public class IncrementalBackup extends AbstractBackup {
     @Override
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
             throws Exception {
+        BackupFileType fileType = BackupFileType.SST;
+        if (backupRestoreConfig.enableV2Backups()) fileType = BackupFileType.SST_V2;
+
         List<AbstractBackupPath> uploadedFiles =
-                upload(backupDir, BackupFileType.SST, config.enableAsyncIncremental(), true);
+                upload(backupDir, fileType, config.enableAsyncIncremental(), true);
 
         if (!uploadedFiles.isEmpty()) {
             // format of yyyymmddhhmm (e.g. 201505060901)
@@ -89,10 +93,5 @@ public class IncrementalBackup extends AbstractBackup {
             this.metaData.set(uploadedFiles, incrementalUploadTime);
             logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
         }
-    }
-
-    @Override
-    protected void addToRemotePath(String remotePath) {
-        incrementalRemotePaths.add(remotePath);
     }
 }

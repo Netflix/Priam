@@ -106,7 +106,6 @@ public abstract class AbstractBackup extends Task {
                             true);
 
                 bps.add(bp);
-                addToRemotePath(bp.getRemotePath());
             }
         }
 
@@ -184,7 +183,4 @@ public abstract class AbstractBackup extends Task {
 
         return true;
     }
-
-    /** Adds Remote path to the list of Remote Paths */
-    protected abstract void addToRemotePath(String remotePath);
 }

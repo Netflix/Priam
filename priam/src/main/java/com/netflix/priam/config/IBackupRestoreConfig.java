@@ -35,8 +35,8 @@ public interface IBackupRestoreConfig {
     }
 
     /**
-     * Enable the backup version 2.0 in new format. This will start uploading of backups in new
-     * format. This is to be used for migration from backup version 1.0.
+     * Enable the backup version 2.0 in new format. This will start uploads of "incremental" backups
+     * in new format. This is to be used for migration from backup version 1.0.
      *
      * @return boolean value indicating if backups in version 2.0 should be started.
      */
@@ -58,5 +58,15 @@ public interface IBackupRestoreConfig {
      */
     default String getBackupTTLCronExpression() {
         return "0 0 0/6 1/1 * ? *";
+    }
+
+    /**
+     * If restore is enabled and if this flag is enabled, we will try to restore using Backup V2.0.
+     *
+     * @return if restore should be using backup version 2.0. If this is false we will use backup
+     *     version 1.0.
+     */
+    default boolean enableV2Restore() {
+        return false;
     }
 }

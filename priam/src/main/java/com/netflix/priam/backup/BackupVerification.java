@@ -21,7 +21,6 @@ import com.netflix.priam.backupv2.IMetaProxy;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,22 +45,20 @@ public class BackupVerification {
     }
 
     public Optional<BackupMetadata> getLatestBackupMetaData(List<BackupMetadata> metadata) {
-        metadata =
-                metadata.stream()
-                        .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
-                        .collect(Collectors.toList());
-        metadata.sort((o1, o2) -> o2.getStart().compareTo(o1.getStart()));
-        return metadata.stream().findFirst();
+        return metadata.stream()
+                .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
+                .sorted(Comparator.comparing(BackupMetadata::getStart).reversed())
+                .findFirst();
     }
 
     public Optional<BackupVerificationResult> verifyBackup(List<BackupMetadata> metadata) {
-        if (metadata == null || metadata.isEmpty()) return null;
+        if (metadata == null || metadata.isEmpty()) return Optional.empty();
 
         Optional<BackupMetadata> latestBackupMetaData = getLatestBackupMetaData(metadata);
 
         if (!latestBackupMetaData.isPresent()) {
             logger.error("No backup found which finished during the time provided.");
-            return null;
+            return Optional.empty();
         }
 
         Path metadataLocation = Paths.get(latestBackupMetaData.get().getSnapshotLocation());

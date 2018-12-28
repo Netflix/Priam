@@ -20,8 +20,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,7 +29,6 @@ public class CommitLogBackupTask extends AbstractBackup {
     public static final String JOBNAME = "CommitLogBackup";
 
     private static final Logger logger = LoggerFactory.getLogger(CommitLogBackupTask.class);
-    private final List<String> clRemotePaths = new ArrayList<>();
     private final CommitLogBackup clBackup;
 
     @Inject
@@ -69,10 +66,5 @@ public class CommitLogBackupTask extends AbstractBackup {
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
             throws Exception {
         // Do nothing.
-    }
-
-    @Override
-    protected void addToRemotePath(String remotePath) {
-        clRemotePaths.add(remotePath);
     }
 }

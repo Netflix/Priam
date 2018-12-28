@@ -19,17 +19,17 @@ package com.netflix.priam.backupv2;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.FileReader;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.io.FileUtils;
 import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +38,11 @@ import org.slf4j.LoggerFactory;
 public class MetaV1Proxy implements IMetaProxy {
     private static final Logger logger = LoggerFactory.getLogger(MetaV1Proxy.class);
     private final IBackupFileSystem fs;
+    private final IConfiguration configuration;
 
     @Inject
     MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
+        this.configuration = configuration;
         fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 
@@ -69,7 +71,7 @@ public class MetaV1Proxy implements IMetaProxy {
             if (path.getType() == AbstractBackupPath.BackupFileType.META)
                 // Since there are now meta file for incrementals as well as snapshot, we need to
                 // find the correct one (i.e. the snapshot meta file (meta.json))
-                if (path.getFileName().equalsIgnoreCase("meta.json")) {
+                if (path.getType() == AbstractBackupPath.BackupFileType.META) {
                     metas.add(path);
                 }
         }
@@ -83,6 +85,67 @@ public class MetaV1Proxy implements IMetaProxy {
         }
 
         return metas;
+    }
+
+    @Override
+    public BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath) {
+        BackupVerificationResult result = new BackupVerificationResult();
+        result.remotePath = metaBackupPath.getRemotePath();
+        result.snapshotInstant = metaBackupPath.getTime().toInstant();
+
+        try {
+            // Download the meta file.
+            Path metaFile = downloadMetaFile(metaBackupPath);
+            // Read the local meta file.
+            List<String> metaFileList = getSSTFilesFromMeta(metaFile);
+            FileUtils.deleteQuietly(metaFile.toFile());
+            result.manifestAvailable = true;
+
+            // List the remote file system to validate the backup.
+            String prefix = configuration.getBackupPrefix();
+            Date strippedMsSnapshotTime =
+                    new Date(result.snapshotInstant.truncatedTo(ChronoUnit.MINUTES).toEpochMilli());
+            Iterator<AbstractBackupPath> backupfiles =
+                    fs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
+
+            // Return validation fail if backup filesystem listing failed.
+            if (!backupfiles.hasNext()) {
+                logger.warn(
+                        "ERROR: No files available while doing backup filesystem listing. Declaring the verification failed.");
+                return result;
+            }
+
+            // Convert the remote listing to String.
+            List<String> remoteListing = new ArrayList<>();
+            while (backupfiles.hasNext()) {
+                AbstractBackupPath path = backupfiles.next();
+                if (path.getType() == AbstractBackupPath.BackupFileType.SNAP)
+                    remoteListing.add(path.getRemotePath());
+            }
+
+            if (metaFileList.isEmpty() && remoteListing.isEmpty()) {
+                logger.info(
+                        "Uncommon Scenario: Both meta file and backup filesystem listing is empty. Considering this as success");
+                result.valid = true;
+                return result;
+            }
+
+            ArrayList<String> filesMatched =
+                    (ArrayList<String>) CollectionUtils.intersection(metaFileList, remoteListing);
+            result.filesMatched = filesMatched.size();
+            result.filesInMetaOnly = metaFileList;
+            result.filesInMetaOnly.removeAll(filesMatched);
+
+            // There could be a scenario that backupfilesystem has more files than meta file. e.g.
+            // some leftover objects
+            result.valid = (result.filesInMetaOnly.isEmpty());
+        } catch (Exception e) {
+            logger.error(
+                    "Error while processing meta file: " + metaBackupPath, e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+
+        return result;
     }
 
     @Override

@@ -18,13 +18,10 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,19 +34,13 @@ import org.slf4j.LoggerFactory;
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final IBackupFileSystem bkpStatusFs;
-    private final IConfiguration config;
     private final IMetaProxy metaProxy;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
 
     @Inject
     BackupVerification(
-            @Named("backup") IBackupFileSystem bkpStatusFs,
-            IConfiguration config,
             @Named("v1") IMetaProxy metaProxy,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
-        this.bkpStatusFs = bkpStatusFs;
-        this.config = config;
         this.metaProxy = metaProxy;
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
@@ -63,85 +54,20 @@ public class BackupVerification {
         return metadata.stream().findFirst();
     }
 
-    public BackupVerificationResult verifyBackup(List<BackupMetadata> metadata) throws Exception {
-        BackupVerificationResult result = new BackupVerificationResult();
-
-        if (metadata == null || metadata.isEmpty()) return result;
-
-        result.snapshotAvailable = true;
-        // All the dates should be same.
-        result.selectedDate = metadata.get(0).getSnapshotDate();
+    public Optional<BackupVerificationResult> verifyBackup(List<BackupMetadata> metadata) {
+        if (metadata == null || metadata.isEmpty()) return null;
 
         Optional<BackupMetadata> latestBackupMetaData = getLatestBackupMetaData(metadata);
 
         if (!latestBackupMetaData.isPresent()) {
             logger.error("No backup found which finished during the time provided.");
-            return result;
+            return null;
         }
 
-        result.snapshotTime = DateUtil.formatyyyyMMddHHmm(latestBackupMetaData.get().getStart());
-        logger.info(
-                "Latest/Requested snapshot date found: {}, for selected/provided date: {}",
-                result.snapshotTime,
-                result.selectedDate);
-
-        // Get Backup File Iterator
-        String prefix = config.getBackupPrefix();
-        Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
-        Iterator<AbstractBackupPath> backupfiles =
-                bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
-
-        // Return validation fail if backup filesystem listing failed.
-        if (!backupfiles.hasNext()) {
-            logger.warn(
-                    "ERROR: No files available while doing backup filesystem listing. Declaring the verification failed.");
-            return result;
-        }
-
-        // Do remote file listing
-        result.backupFileListAvail = true;
-        List<AbstractBackupPath> metas = new LinkedList<>();
-        List<String> remoteListing = new ArrayList<>();
-
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == AbstractBackupPath.BackupFileType.META) metas.add(path);
-            else remoteListing.add(path.getRemotePath());
-        }
-
-        if (metas.size() == 0) {
-            logger.error(
-                    "Manifest file not found on remote file system for: {}", result.snapshotTime);
-            return result;
-        }
-
-        result.metaFileFound = true;
-
-        // Download meta.json from backup location.
-        Path localMetaPath = metaProxy.downloadMetaFile(metas.get(0));
-        List<String> metaFileList = metaProxy.getSSTFilesFromMeta(localMetaPath);
-        FileUtils.deleteQuietly(localMetaPath.toFile());
-
-        if (metaFileList.isEmpty() && remoteListing.isEmpty()) {
-            logger.info(
-                    "Uncommon Scenario: Both meta file and backup filesystem listing is empty. Considering this as success");
-            result.valid = true;
-            return result;
-        }
-
-        // Atleast meta file or s3 listing contains some file.
-
-        result.filesMatched =
-                (ArrayList<String>) CollectionUtils.intersection(metaFileList, remoteListing);
-        result.filesInS3Only = remoteListing;
-        result.filesInS3Only.removeAll(result.filesMatched);
-        result.filesInMetaOnly = metaFileList;
-        result.filesInMetaOnly.removeAll(result.filesMatched);
-
-        // There could be a scenario that backupfilesystem has more files than meta file. e.g. some
-        // leftover objects
-        if (result.filesInMetaOnly.size() == 0) result.valid = true;
-
-        return result;
+        Path metadataLocation = Paths.get(latestBackupMetaData.get().getSnapshotLocation());
+        metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseRemote(metadataLocation.toString());
+        return Optional.of((metaProxy.isMetaFileValid(abstractBackupPath)));
     }
 }

@@ -218,5 +218,12 @@ public class DateUtil {
         public String toString() {
             return GsonJsonSerializer.getGson().toJson(this);
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj.getClass().equals(this.getClass())
+                    && (startTime.toEpochMilli() == ((DateRange) obj).startTime.toEpochMilli())
+                    && (endTime.toEpochMilli() == ((DateRange) obj).endTime.toEpochMilli());
+        }
     }
 }

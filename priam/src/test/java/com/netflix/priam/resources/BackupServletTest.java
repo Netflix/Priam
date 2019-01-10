@@ -21,18 +21,13 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
-import com.netflix.priam.tuner.ICassandraTuner;
 import com.netflix.priam.utils.DateUtil;
-import java.util.Date;
+import java.time.Instant;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
@@ -45,19 +40,11 @@ import org.junit.runner.RunWith;
 
 @RunWith(JMockit.class)
 public class BackupServletTest {
-    private @Mocked PriamServer priamServer;
     private IConfiguration config;
-    private @Mocked IBackupFileSystem bkpFs;
     private @Mocked Restore restoreObj;
-    private @Mocked Provider<AbstractBackupPath> pathProvider;
-    private @Mocked ICassandraTuner tuner;
     private @Mocked SnapshotBackup snapshotBackup;
-    private @Mocked IPriamInstanceFactory factory;
-    private @Mocked ICassandraProcess cassProcess;
-    private @Mocked BackupStatusMgr bkupStatusMgr;
     private BackupServlet resource;
     private RestoreServlet restoreResource;
-    private BackupVerification backupVerification;
     private InstanceInfo instanceInfo;
 
     @Before
@@ -66,9 +53,8 @@ public class BackupServletTest {
         config = injector.getInstance(IConfiguration.class);
         InstanceState instanceState = injector.getInstance(InstanceState.class);
         instanceInfo = injector.getInstance(InstanceInfo.class);
-        resource =
-                new BackupServlet(config, bkpFs, snapshotBackup, bkupStatusMgr, backupVerification);
-        restoreResource = new RestoreServlet(restoreObj, instanceState);
+        resource = injector.getInstance(BackupServlet.class);
+        restoreResource = injector.getInstance(RestoreServlet.class);
     }
 
     @Test
@@ -95,7 +81,7 @@ public class BackupServletTest {
                 instanceInfo.getRegion();
                 result = oldRegion;
 
-                restoreObj.restore((Date) any, (Date) any); // TODO: test default value
+                restoreObj.restore(new DateUtil.DateRange((Instant) any, (Instant) any));
             }
         };
 
@@ -121,9 +107,7 @@ public class BackupServletTest {
                 DateUtil.getDate(dateRange.split(",")[1]);
                 result = new DateTime(2011, 12, 31, 23, 59).toDate();
                 times = 1;
-                restoreObj.restore(
-                        DateUtil.getDate(dateRange.split(",")[0]),
-                        DateUtil.getDate(dateRange.split(",")[1]));
+                restoreObj.restore(new DateUtil.DateRange(dateRange));
             }
         };
 

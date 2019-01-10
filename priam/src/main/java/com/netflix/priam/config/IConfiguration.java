@@ -19,8 +19,6 @@ package com.netflix.priam.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.scheduler.SchedulerType;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -263,16 +261,6 @@ public interface IConfiguration {
     }
 
     /**
-     * @return Backup hour for snapshot backups (0 - 23)
-     * @deprecated Use the {{@link #getBackupCronExpression()}} instead. Scheduled for deletion in
-     *     Dec 2018.
-     */
-    @Deprecated
-    default int getBackupHour() {
-        return 12;
-    }
-
-    /**
      * Cron expression to be used for snapshot backups.
      *
      * @return Backup cron expression for snapshots
@@ -282,18 +270,6 @@ public interface IConfiguration {
      */
     default String getBackupCronExpression() {
         return "0 0 12 1/1 * ? *";
-    }
-
-    /**
-     * Backup scheduler type to use for backup.
-     *
-     * @return Type of scheduler to use for backup. Note the default is TIMER based i.e. to use
-     *     {@link #getBackupHour()}. If value of "CRON" is provided it starts using {@link
-     *     #getBackupCronExpression()}.
-     * @throws UnsupportedTypeException if the scheduler type is not CRON/HOUR.
-     */
-    default SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
-        return SchedulerType.HOUR;
     }
 
     /**
@@ -858,31 +834,6 @@ public interface IConfiguration {
      */
     default String getFlushKeyspaces() {
         return StringUtils.EMPTY;
-    }
-
-    /**
-     * Interval to be used for flush.
-     *
-     * @return the interval to run the flush task. Format is name=value where “name” is an enum of
-     *     hour, daily, value is ...
-     * @deprecated Use the {{@link #getFlushCronExpression()} instead. This is set for deletion in
-     *     Dec 2018.
-     */
-    @Deprecated
-    default String getFlushInterval() {
-        return null;
-    }
-
-    /**
-     * Scheduler type to use for flush. Default: HOUR.
-     *
-     * @return Type of scheduler to use for flush. Note the default is TIMER based i.e. to use
-     *     {@link #getFlushInterval()}. If value of "CRON" is provided it starts using {@link
-     *     #getFlushCronExpression()}.
-     * @throws UnsupportedTypeException if the scheduler type is not HOUR/CRON.
-     */
-    default SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-        return SchedulerType.HOUR;
     }
 
     /**

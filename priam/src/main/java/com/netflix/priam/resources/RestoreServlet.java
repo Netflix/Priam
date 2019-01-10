@@ -17,7 +17,6 @@ import com.google.inject.Inject;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.restore.Restore;
 import com.netflix.priam.utils.DateUtil;
-import java.util.Date;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -66,7 +65,7 @@ public class RestoreServlet {
                 "Parameters: {startTime: [{}], endTime: [{}]}",
                 dateRange.getStartTime().toString(),
                 dateRange.getEndTime().toString());
-        restoreObj.restore(Date.from(dateRange.getStartTime()), Date.from(dateRange.getEndTime()));
+        restoreObj.restore(dateRange);
         return Response.ok("[\"ok\"]", MediaType.APPLICATION_JSON).build();
     }
 }

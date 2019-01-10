@@ -112,7 +112,7 @@ public class TestRemoteBackupPath {
         Assert.assertEquals(BackupFileType.SNAP, abstractBackupPath.getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
         Assert.assertEquals(
-                "201801011201", AbstractBackupPath.formatDate(abstractBackupPath.getTime()));
+                "201801011201", DateUtil.formatyyyyMMddHHmm(abstractBackupPath.getTime()));
 
         // Verify toRemote and parseRemote.
         String remotePath = abstractBackupPath.getRemotePath();

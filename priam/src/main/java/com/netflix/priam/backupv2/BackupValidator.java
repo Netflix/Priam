@@ -17,21 +17,12 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
+import javax.inject.Named;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,57 +32,11 @@ import org.slf4j.LoggerFactory;
  */
 public class BackupValidator {
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final IBackupFileSystem fs;
-    private final Provider<AbstractBackupPath> abstractBackupPathProvider;
-    private boolean isBackupValid;
+    private IMetaProxy metaProxy;
 
     @Inject
-    public BackupValidator(
-            IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> abstractBackupPathProvider) {
-        fs = backupFileSystemCtx.getFileStrategy(configuration);
-        this.abstractBackupPathProvider = abstractBackupPathProvider;
-    }
-
-    /**
-     * Fetch the list of all META_V2 files on the remote file system for the provided valid
-     * daterange.
-     *
-     * @param dateRange the time period to scan in the remote file system for meta files.
-     * @return List of all the META_V2 files from the remote file system.
-     */
-    public List<AbstractBackupPath> findMetaFiles(DateUtil.DateRange dateRange) {
-        ArrayList<AbstractBackupPath> metas = new ArrayList<>();
-        String prefix = getMetaPrefix(dateRange);
-        String marker = getMetaPrefix(new DateUtil.DateRange(dateRange.getStartTime(), null));
-        logger.info(
-                "Listing filesystem with prefix: {}, marker: {}, daterange: {}",
-                prefix,
-                marker,
-                dateRange);
-        Iterator<String> iterator = fs.listFileSystem(prefix, null, marker);
-
-        while (iterator.hasNext()) {
-            AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-            abstractBackupPath.parseRemote(iterator.next());
-            logger.debug("Meta file found: {}", abstractBackupPath);
-            if (abstractBackupPath.getLastModified().toEpochMilli()
-                            >= dateRange.getStartTime().toEpochMilli()
-                    && abstractBackupPath.getLastModified().toEpochMilli()
-                            <= dateRange.getEndTime().toEpochMilli()) {
-                metas.add(abstractBackupPath);
-            }
-        }
-
-        Collections.sort(metas, Collections.reverseOrder());
-
-        if (metas.size() == 0) {
-            logger.info(
-                    "No meta file found on remote file system for the time period: {}", dateRange);
-        }
-
-        return metas;
+    public BackupValidator(@Named("v2") IMetaProxy metaProxy) {
+        this.metaProxy = metaProxy;
     }
 
     /**
@@ -99,105 +44,22 @@ public class BackupValidator {
      * file via AbstractBackupPath object.
      *
      * @param dateRange the time period to scan in the remote file system for meta files.
-     * @return the AbstractBackupPath denoting the "local" file which is valid or null. Caller needs
-     *     to delete the file.
+     * @return the BackupVerificationResult containing the details of the valid meta file. If none
+     *     is found, null is returned.
      * @throws BackupRestoreException if there is issue contacting remote file system, fetching the
      *     file etc.
      */
-    public AbstractBackupPath findLatestValidMetaFile(DateUtil.DateRange dateRange)
+    public Optional<BackupVerificationResult> findLatestValidMetaFile(DateUtil.DateRange dateRange)
             throws BackupRestoreException {
-        List<AbstractBackupPath> metas = findMetaFiles(dateRange);
+        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
         logger.info("Meta files found: {}", metas);
 
         for (AbstractBackupPath meta : metas) {
-            Path localFile = downloadMetaFile(meta);
-            boolean isValid = isMetaFileValid(localFile);
-            logger.info("Meta: {}, isValid: {}", meta, isValid);
-            if (!isValid) FileUtils.deleteQuietly(localFile.toFile());
-            else return meta;
+            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
+            logger.info("BackupVerificationResult: {}", result);
+            if (result.valid) return Optional.of(result);
         }
 
-        return null;
-    }
-
-    /**
-     * Download the meta file to disk.
-     *
-     * @param meta AbstractBackupPath denoting the meta file on remote file system.
-     * @return the location of the meta file on disk after downloading from remote file system.
-     * @throws BackupRestoreException if unable to download for any reason.
-     */
-    public Path downloadMetaFile(AbstractBackupPath meta) throws BackupRestoreException {
-        Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath());
-        fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
-        return localFile;
-    }
-
-    /**
-     * Get the prefix for the META_V2 file. This will depend on the configuration, if restore prefix
-     * is set.
-     *
-     * @param dateRange date range for which we are trying to find META_V2 files.
-     * @return prefix for the META_V2 files.
-     */
-    public String getMetaPrefix(DateUtil.DateRange dateRange) {
-        Path location = fs.getPrefix();
-        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        String match = StringUtils.EMPTY;
-        if (dateRange != null) match = dateRange.match();
-        return Paths.get(
-                        abstractBackupPath
-                                .remoteV2Prefix(location, AbstractBackupPath.BackupFileType.META_V2)
-                                .toString(),
-                        match)
-                .toString();
-    }
-
-    /**
-     * Validate that all the files mentioned in the meta file actually exists on remote file system.
-     *
-     * @param metaFile Path to the local uncompressed/unencrypted meta file
-     * @return true if all the files mentioned in meta file are present on remote file system. It
-     *     will return false in case of any error.
-     */
-    public boolean isMetaFileValid(Path metaFile) {
-        try {
-            isBackupValid = true;
-            new MetaFileBackupValidator().readMeta(metaFile);
-        } catch (FileNotFoundException fne) {
-            isBackupValid = false;
-            logger.error(fne.getLocalizedMessage());
-        } catch (IOException ioe) {
-            isBackupValid = false;
-            logger.error(
-                    "IO Error while processing meta file: " + metaFile, ioe.getLocalizedMessage());
-            ioe.printStackTrace();
-        }
-        return isBackupValid;
-    }
-
-    private class MetaFileBackupValidator extends MetaFileReader {
-        @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
-            for (ColumnfamilyResult.SSTableResult ssTableResult :
-                    columnfamilyResult.getSstables()) {
-                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
-                    if (!isBackupValid) {
-                        break;
-                    }
-
-                    try {
-                        isBackupValid =
-                                isBackupValid
-                                        && fs.doesRemoteFileExist(
-                                                Paths.get(fileUploadResult.getBackupPath()));
-                    } catch (BackupRestoreException e) {
-                        // For any error, mark that file is not available.
-                        isBackupValid = false;
-                        break;
-                    }
-                }
-            }
-        }
+        return Optional.empty();
     }
 }

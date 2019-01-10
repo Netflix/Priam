@@ -22,23 +22,19 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.nio.file.Path;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
-import org.joda.time.DateTime;
-import org.joda.time.format.DateTimeFormat;
-import org.joda.time.format.DateTimeFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 @ImplementedBy(RemoteBackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
-    private static final String FMT = "yyyyMMddHHmm";
-    private static final DateTimeFormatter DATE_FORMAT = DateTimeFormat.forPattern(FMT);
     public static final char PATH_SEP = File.separatorChar;
 
     public enum BackupFileType {
@@ -82,18 +78,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.config = config;
     }
 
-    // TODO: This is so wrong as it completely depends on the timezone where application is running.
-    // Hopefully everyone running Priam has their clocks set to UTC.
-    public static String formatDate(Date d) {
-        return new DateTime(d).toString(FMT);
-    }
-
-    // TODO: This is so wrong as it completely depends on the timezone where application is running.
-    // Hopefully everyone running Priam has their clocks set to UTC.
-    public Date parseDate(String s) {
-        return DATE_FORMAT.parseDateTime(s).toDate();
-    }
-
     public void parseLocal(File file, BackupFileType type) throws ParseException {
         this.backupFile = file;
 
@@ -117,7 +101,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         2. This is to ensure that all the files from the snapshot are uploaded under single directory in remote file system.
         3. For META file we always override the time field via @link{Metadata#decorateMetaJson}
         */
-        if (type == BackupFileType.SNAP) time = parseDate(elements[3]);
+        if (type == BackupFileType.SNAP) time = DateUtil.getDate(elements[3]);
 
         this.lastModified = Instant.ofEpochMilli(file.lastModified());
         this.fileName = file.getName();
@@ -126,8 +110,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
     protected String match(Date start, Date end) {
-        String sString = formatDate(start);
-        String eString = formatDate(end);
+        String sString = DateUtil.formatyyyyMMddHHmm(start); // formatDate(start);
+        String eString = DateUtil.formatyyyyMMddHHmm(end); // formatDate(end);
         int diff = StringUtils.indexOfDifference(sString, eString);
         if (diff < 0) return sString;
         return sString.substring(0, diff);

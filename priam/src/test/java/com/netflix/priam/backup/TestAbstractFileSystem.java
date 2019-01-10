@@ -139,7 +139,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testDownload() throws Exception {
         // Dummy download
-        myFileSystem.downloadFile(Paths.get(""), null, 2);
+        myFileSystem.downloadFile(Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
         // Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
     }
@@ -254,7 +254,9 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncDownload() throws Exception {
         // Testing single async download.
-        Future<Path> future = myFileSystem.asyncDownloadFile(Paths.get(""), null, 2);
+        Future<Path> future =
+                myFileSystem.asyncDownloadFile(
+                        Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
         future.get();
         // 1. Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
@@ -269,7 +271,9 @@ public class TestAbstractFileSystem {
         int totalFiles = 1000;
         List<Future<Path>> futureList = new ArrayList<>();
         for (int i = 0; i < totalFiles; i++)
-            futureList.add(myFileSystem.asyncDownloadFile(Paths.get("" + i), null, 2));
+            futureList.add(
+                    myFileSystem.asyncDownloadFile(
+                            Paths.get("" + i), Paths.get(configuration.getDataFileLocation()), 2));
 
         // Ensure processing is finished.
         for (Future future1 : futureList) {

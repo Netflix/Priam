@@ -30,6 +30,7 @@ import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
@@ -57,11 +58,10 @@ public class SnapshotMetaService extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
-    private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
-    private final MetaFileManager metaFileManager;
+    private final IMetaProxy metaProxy;
     private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
     private static final Lock lock = new ReentrantLock();
@@ -76,20 +76,18 @@ public class SnapshotMetaService extends AbstractBackup {
     @Inject
     SnapshotMetaService(
             IConfiguration config,
-            IBackupRestoreConfig backupRestoreConfig,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
             MetaFileWriterBuilder metaFileWriter,
-            MetaFileManager metaFileManager,
+            @Named("v2") IMetaProxy metaProxy,
             CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
-        this.backupRestoreConfig = backupRestoreConfig;
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
-        this.metaFileManager = metaFileManager;
+        this.metaProxy = metaProxy;
     }
 
     /**
@@ -156,7 +154,7 @@ public class SnapshotMetaService extends AbstractBackup {
             // These files may be leftover
             // 1) when Priam shutdown in middle of this service and may not be full JSON
             // 2) No permission to upload to backup file system.
-            metaFileManager.cleanupOldMetaFiles();
+            metaProxy.cleanupOldMetaFiles();
 
             // Take a new snapshot
             cassandraOperations.takeSnapshot(snapshotName);
@@ -225,8 +223,7 @@ public class SnapshotMetaService extends AbstractBackup {
                 if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
                         || !snapshotDirectory.isDirectory()) continue;
 
-                if (snapshotDirectory.list().length == 0
-                        || !backupRestoreConfig.enableV2Backups()) {
+                if (snapshotDirectory.list().length == 0) {
                     FileUtils.cleanDirectory(snapshotDirectory);
                     FileUtils.deleteDirectory(snapshotDirectory);
                     continue;
@@ -342,11 +339,6 @@ public class SnapshotMetaService extends AbstractBackup {
                 "Finished processing KS: {}, CF: {}",
                 columnfamilyResult.getKeyspaceName(),
                 columnfamilyResult.getColumnfamilyName());
-    }
-
-    @Override
-    protected void addToRemotePath(String remotePath) {
-        // Do nothing
     }
 
     // For testing purposes only.

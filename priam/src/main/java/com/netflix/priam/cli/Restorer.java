@@ -16,9 +16,9 @@
  */
 package com.netflix.priam.cli;
 
-import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.restore.Restore;
-import java.util.Date;
+import com.netflix.priam.utils.DateUtil;
+import java.time.Instant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,20 +32,17 @@ public class Restorer {
     public static void main(String[] args) {
         try {
             Application.initialize();
-
-            Date startTime, endTime;
+            Instant startTime, endTime;
             if (args.length < 2) {
                 displayHelp();
                 return;
             }
-            AbstractBackupPath path =
-                    Application.getInjector().getInstance(AbstractBackupPath.class);
-            startTime = path.parseDate(args[0]);
-            endTime = path.parseDate(args[1]);
+            startTime = DateUtil.parseInstant(args[0]);
+            endTime = DateUtil.parseInstant(args[1]);
 
             Restore restorer = Application.getInjector().getInstance(Restore.class);
             try {
-                restorer.restore(startTime, endTime);
+                restorer.restore(new DateUtil.DateRange(startTime, endTime));
             } catch (Exception e) {
                 logger.error("Unable to restore: ", e);
             }

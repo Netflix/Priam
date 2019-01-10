@@ -1,4 +1,15 @@
 # Changelog
+## 2019/01/10 3.1.69 
+* (#762) Backup Verification for Backup 2.0. 
+* (#762) Restore for Backup 2.0 
+* (#762) Some API changes for Snapshot Verification 
+* (#762) Remove deprecated code like flush hour or snapshot hour. 
+
+## 2018/11/29 3.1.68 
+* (#757) Add new file format (SST_V2) and methods to get/parse remote locations.
+* (#757) Upload files from SnapshotMetaService in backup version 2.0, if enabled.
+* (#757) Process older SNAPSHOT_V2 at the restart of Priam.
+
 ## 2018/10/29 3.1.67
 * Bug Fix: SnapshotMetaService can leave snapshots if there is any error. 
 * Bug Fix: SnapshotMetaService should continue building snapshot even if an unexpected file is found in snapshot. 

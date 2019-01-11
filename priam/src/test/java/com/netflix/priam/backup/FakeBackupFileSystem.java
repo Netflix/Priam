@@ -49,7 +49,6 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     public void setupTest(List<String> files) {
-        System.out.println("Setting up: " + files);
         clearTest();
         for (String file : files) {
             AbstractBackupPath path = pathProvider.get();
@@ -104,8 +103,6 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
                             if (abstractBackupPath.getRemotePath().startsWith(prefix))
                                 items.add(abstractBackupPath.getRemotePath());
                         });
-        System.out.println(flist);
-        System.out.println(items);
         return items.iterator();
     }
 
@@ -154,7 +151,8 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             try (FileWriter fr = new FileWriter(localPath.toFile())) {
                 JSONArray jsonObj = new JSONArray();
                 for (AbstractBackupPath filePath : flist) {
-                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP) {
+                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP
+                            && filePath.time.equals(path.time)) {
                         jsonObj.add(filePath.getRemotePath());
                     }
                 }

@@ -35,4 +35,14 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
     public boolean enableV2Backups() {
         return config.get("priam.enableV2Backups", false);
     }
+
+    @Override
+    public boolean enableV2Restore() {
+        return config.get("priam.enableV2Restore", false);
+    }
+
+    @Override
+    public String getBackupTTLCronExpression() {
+        return config.get("priam.backupTTLCronExpression", "0 0 0/6 1/1 * ? *");
+    }
 }

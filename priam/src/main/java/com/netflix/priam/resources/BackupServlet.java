@@ -25,15 +25,11 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.SystemUtils;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import org.apache.commons.io.FileUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -244,59 +240,31 @@ public class BackupServlet {
             throws Exception {
 
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
-
-        JSONObject jsonReply = new JSONObject();
-        jsonReply.put(
-                "inputStartDate",
-                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getStartTime()));
-        jsonReply.put(
-                "inputEndDate",
-                DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, dateRange.getEndTime()));
-        logger.info(
-                "Will try to validate latest backup during startTime: {}, and endTime: {}",
-                dateRange.getStartTime(),
-                dateRange.getEndTime());
-
         List<BackupMetadata> metadata = getLatestBackupMetadata(dateRange);
-        BackupVerificationResult result =
-                backupVerification.verifyBackup(metadata, Date.from(dateRange.getStartTime()));
-        jsonReply.put("snapshotAvailable", result.snapshotAvailable);
-        jsonReply.put("valid", result.valid);
-        jsonReply.put("backupFileListAvailable", result.backupFileListAvail);
-        jsonReply.put("metaFileFound", result.metaFileFound);
-        jsonReply.put("selectedDate", result.selectedDate);
-        jsonReply.put("snapshotTime", result.snapshotTime);
-        jsonReply.put("filesInMetaOnly", result.filesInMetaOnly);
-        jsonReply.put("filesInS3Only", result.filesInS3Only);
-        jsonReply.put("filesMatched", result.filesMatched);
-        return Response.ok(jsonReply.toString()).build();
+        Optional<BackupVerificationResult> result = backupVerification.verifyBackup(metadata);
+        if (!result.isPresent()) {
+            return Response.noContent()
+                    .entity("No valid meta found for provided time range")
+                    .build();
+        }
+
+        return Response.ok(result.get().toString()).build();
     }
 
     @GET
     @Path("/validate/snapshot/v2/{daterange}")
     public Response validateV2SnapshotByDate(@PathParam("daterange") String daterange)
             throws Exception {
-        try {
-            DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
-            AbstractBackupPath validMeta = backupValidator.findLatestValidMetaFile(dateRange);
-            if (validMeta == null) {
-                return Response.noContent()
-                        .entity("No valid meta found for provided time range")
-                        .build();
-            }
-
-            // Delete the file as we don't need it anymore.
-            FileUtils.deleteQuietly(validMeta.newRestoreFile());
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("daterange", daterange);
-            jsonObject.put("remoteMetaPath", validMeta.getRemotePath());
-            jsonObject.put("valid", true);
-            return Response.ok(jsonObject.toString()).build();
-        } catch (BackupRestoreException ex) {
-            logger.error(
-                    "Error while trying to fetch the latest valid meta file: {}", ex.getMessage());
-            return Response.serverError().build();
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+        Optional<BackupVerificationResult> result =
+                backupValidator.findLatestValidMetaFile(dateRange);
+        if (!result.isPresent()) {
+            return Response.noContent()
+                    .entity("No valid meta found for provided time range")
+                    .build();
         }
+
+        return Response.ok(result.get().toString()).build();
     }
 
     /*

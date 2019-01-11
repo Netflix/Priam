@@ -20,6 +20,7 @@ package com.netflix.priam.backup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.*;
@@ -106,11 +107,16 @@ public class TestCompression {
 
     @Test
     public void snappyTest() throws IOException {
-        SnappyCompression compress = new SnappyCompression();
-        File compressedOutputFile = new File("/tmp/test1.snp");
+        ICompression compress = new SnappyCompression();
+        testCompressor(compress);
+    }
+
+    private void testCompressor(ICompression compress) throws IOException {
+        File compressedOutputFile = new File("/tmp/test1.compress");
         File decompressedTempOutput = new File("/tmp/compress-test-out.txt");
         long chunkSize = 5L * 1024 * 1024;
         try {
+
             Iterator<byte[]> it =
                     compress.compress(new FileInputStream(randomContentFile), chunkSize);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
@@ -118,6 +124,7 @@ public class TestCompression {
                     byte[] chunk = it.next();
                     ostream.write(chunk);
                 }
+                ostream.flush();
             }
 
             assertTrue(randomContentFile.length() > compressedOutputFile.length());

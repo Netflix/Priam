@@ -22,6 +22,9 @@ import com.google.inject.Scopes;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backupv2.MetaV1Proxy;
+import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.FakeBackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IBackupRestoreConfig;
@@ -78,5 +81,7 @@ public class BRTestModule extends AbstractModule {
         bind(ICassandraProcess.class).to(FakeCassandraProcess.class);
         bind(IPostRestoreHook.class).to(FakePostRestoreHook.class);
         bind(Registry.class).toInstance(new DefaultRegistry());
+        bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
+        bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
     }
 }

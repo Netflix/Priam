@@ -134,6 +134,7 @@ public class TestS3FileSystem {
         MockS3PartUploader.setup();
         MockS3PartUploader.completionFailure = true;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.setS3Client(new MockAmazonS3Client().getMockInstance());
         String snapshotfile =
                 "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);

@@ -19,63 +19,76 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.FakeBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 12/5/18. */
-public class TestBackupValidator {
+public class TestMetaV2Proxy {
     private FakeBackupFileSystem fs;
     private IConfiguration configuration;
-    private BackupValidator backupValidator;
     private TestBackupUtils backupUtils;
+    private IMetaProxy metaProxy;
+    private Provider<AbstractBackupPath> abstractBackupPathProvider;
 
-    public TestBackupValidator() {
+    public TestMetaV2Proxy() {
         Injector injector = Guice.createInjector(new BRTestModule());
         configuration = injector.getInstance(IConfiguration.class);
         fs = injector.getInstance(FakeBackupFileSystem.class);
         fs.setupTest(getRemoteFakeFiles());
-        backupValidator = injector.getInstance(BackupValidator.class);
         backupUtils = new TestBackupUtils();
+        metaProxy = injector.getInstance(MetaV2Proxy.class);
+        abstractBackupPathProvider = injector.getProvider(AbstractBackupPath.class);
     }
 
     @Test
     public void testMetaPrefix() {
         // Null date range
-        Assert.assertEquals(getPrefix() + "/META_V2", backupValidator.getMetaPrefix(null));
+        Assert.assertEquals(getPrefix() + "/META_V2", metaProxy.getMetaPrefix(null));
+        Instant now = Instant.now();
         // No end date.
         Assert.assertEquals(
-                getPrefix() + "/META_V2",
-                backupValidator.getMetaPrefix(new DateUtil.DateRange(Instant.now(), null)));
+                getPrefix() + "/META_V2/" + now.toEpochMilli(),
+                metaProxy.getMetaPrefix(new DateUtil.DateRange(now, null)));
         // No start date
         Assert.assertEquals(
                 getPrefix() + "/META_V2",
-                backupValidator.getMetaPrefix(new DateUtil.DateRange(null, Instant.now())));
+                metaProxy.getMetaPrefix(new DateUtil.DateRange(null, Instant.now())));
         long start = 1834567890L;
         long end = 1834877776L;
         Assert.assertEquals(
                 getPrefix() + "/META_V2/1834",
-                backupValidator.getMetaPrefix(
+                metaProxy.getMetaPrefix(
                         new DateUtil.DateRange(
                                 Instant.ofEpochSecond(start), Instant.ofEpochSecond(end))));
     }
 
     @Test
     public void testIsMetaFileValid() throws Exception {
-        Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), DateUtil.getInstant());
-        Assert.assertTrue(backupValidator.isMetaFileValid(metaPath));
+        Instant snapshotInstant = DateUtil.getInstant();
+        Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), snapshotInstant);
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseLocal(metaPath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+
+        Assert.assertTrue(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
         List<String> fileToAdd = getRemoteFakeFiles();
@@ -91,18 +104,40 @@ public class TestBackupValidator {
                                 "file9.Data.db")
                         .toString());
 
-        metaPath = backupUtils.createMeta(fileToAdd, DateUtil.getInstant());
-        Assert.assertFalse(backupValidator.isMetaFileValid(metaPath));
+        metaPath = backupUtils.createMeta(fileToAdd, snapshotInstant);
+        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
-        metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201901010000.json");
-        Assert.assertFalse(backupValidator.isMetaFileValid(metaPath));
+        metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201801010000.json");
+        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
+    }
+
+    @Test
+    public void testGetSSTFilesFromMeta() throws Exception {
+        Instant snapshotInstant = DateUtil.getInstant();
+        List<String> remoteFiles = getRemoteFakeFiles();
+        Path metaPath = backupUtils.createMeta(remoteFiles, snapshotInstant);
+        List<String> filesFromMeta = metaProxy.getSSTFilesFromMeta(metaPath);
+        filesFromMeta.removeAll(remoteFiles);
+        Assert.assertTrue(filesFromMeta.isEmpty());
+    }
+
+    @Test
+    public void testGetIncrementalFiles() throws Exception {
+        DateUtil.DateRange dateRange = new DateUtil.DateRange("202812071820,20281229");
+        Iterator<AbstractBackupPath> incrementals = metaProxy.getIncrementals(dateRange);
+        int i = 0;
+        while (incrementals.hasNext()) {
+            System.out.println(incrementals.next());
+            i++;
+        }
+        Assert.assertEquals(3, i);
     }
 
     @Test
     public void testFindMetaFiles() throws BackupRestoreException {
         List<AbstractBackupPath> metas =
-                backupValidator.findMetaFiles(
+                metaProxy.findMetaFiles(
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828420000L)));
@@ -111,7 +146,7 @@ public class TestBackupValidator {
         Assert.assertTrue(fs.doesRemoteFileExist(Paths.get(metas.get(0).getRemotePath())));
 
         metas =
-                backupValidator.findMetaFiles(
+                metaProxy.findMetaFiles(
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828460000L)));
@@ -195,5 +230,58 @@ public class TestBackupValidator {
                         "PLAINTEXT",
                         "meta_v2_202812071901.json"));
         return files.stream().map(Path::toString).collect(Collectors.toList());
+    }
+
+    @After
+    public void cleanup() throws IOException {
+        FileUtils.cleanDirectory(new File(configuration.getDataFileLocation()));
+    }
+
+    @Test
+    public void testCleanupOldMetaFiles() throws IOException {
+        generateDummyMetaFiles();
+        Path dataDir = Paths.get(configuration.getDataFileLocation());
+        Assert.assertEquals(4, dataDir.toFile().listFiles().length);
+
+        // clean the directory
+        metaProxy.cleanupOldMetaFiles();
+
+        Assert.assertEquals(1, dataDir.toFile().listFiles().length);
+        Path dummy = Paths.get(dataDir.toString(), "dummy.tmp");
+        Assert.assertTrue(dummy.toFile().exists());
+    }
+
+    private void generateDummyMetaFiles() throws IOException {
+        Path dataDir = Paths.get(configuration.getDataFileLocation());
+        FileUtils.cleanDirectory(dataDir.toFile());
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(DateUtil.getInstant()))
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(
+                                        DateUtil.getInstant().minus(10, ChronoUnit.MINUTES)))
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(
+                                configuration.getDataFileLocation(),
+                                MetaFileInfo.getMetaFileName(DateUtil.getInstant()) + ".tmp")
+                        .toFile(),
+                "dummy",
+                "UTF-8");
+
+        FileUtils.write(
+                Paths.get(configuration.getDataFileLocation(), "dummy.tmp").toFile(),
+                "dummy",
+                "UTF-8");
     }
 }

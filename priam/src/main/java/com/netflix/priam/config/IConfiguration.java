@@ -19,7 +19,6 @@ package com.netflix.priam.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
-import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
 import java.io.File;
@@ -298,16 +297,6 @@ public interface IConfiguration {
     }
 
     /**
-     * @return Backup hour for snapshot backups (0 - 23)
-     * @deprecated Use the {{@link #getBackupCronExpression()}} instead. Scheduled for deletion in
-     *     Dec 2018.
-     */
-    @Deprecated
-    default int getBackupHour() {
-        return 12;
-    }
-
-    /**
      * Cron expression to be used for snapshot backups.
      *
      * @return Backup cron expression for snapshots
@@ -317,18 +306,6 @@ public interface IConfiguration {
      */
     default String getBackupCronExpression() {
         return "0 0 12 1/1 * ? *";
-    }
-
-    /**
-     * Backup scheduler type to use for backup.
-     *
-     * @return Type of scheduler to use for backup. Note the default is TIMER based i.e. to use
-     *     {@link #getBackupHour()}. If value of "CRON" is provided it starts using {@link
-     *     #getBackupCronExpression()}.
-     * @throws UnsupportedTypeException if the scheduler type is not CRON/HOUR.
-     */
-    default SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
-        return SchedulerType.HOUR;
     }
 
     /**
@@ -896,31 +873,6 @@ public interface IConfiguration {
     }
 
     /**
-     * Interval to be used for flush.
-     *
-     * @return the interval to run the flush task. Format is name=value where “name” is an enum of
-     *     hour, daily, value is ...
-     * @deprecated Use the {{@link #getFlushCronExpression()} instead. This is set for deletion in
-     *     Dec 2018.
-     */
-    @Deprecated
-    default String getFlushInterval() {
-        return null;
-    }
-
-    /**
-     * Scheduler type to use for flush. Default: HOUR.
-     *
-     * @return Type of scheduler to use for flush. Note the default is TIMER based i.e. to use
-     *     {@link #getFlushInterval()}. If value of "CRON" is provided it starts using {@link
-     *     #getFlushCronExpression()}.
-     * @throws UnsupportedTypeException if the scheduler type is not HOUR/CRON.
-     */
-    default SchedulerType getFlushSchedulerType() throws UnsupportedTypeException {
-        return SchedulerType.HOUR;
-    }
-
-    /**
      * Cron expression to be used for flush. Use "-1" to disable the CRON. Default: -1
      *
      * @return Cron expression for flush
@@ -1026,6 +978,19 @@ public interface IConfiguration {
      */
     default int getForgottenFileGracePeriodDays() {
         return 1;
+    }
+
+    /**
+     * If any forgotten file is found in Cassandra, it is usually good practice to move/delete them
+     * so when cassandra restarts, it does not load old data which should be removed else you may
+     * run into data resurrection issues. This behavior is fixed in 3.x. This configuration will
+     * allow Priam to move the forgotten files to a "lost_found" directory for user to review at
+     * later time at the same time ensuring that Cassandra does not resurrect data.
+     *
+     * @return true if Priam should move forgotten file to "lost_found" directory of that CF.
+     */
+    default boolean isForgottenFileMoveEnabled() {
+        return false;
     }
 
     /**

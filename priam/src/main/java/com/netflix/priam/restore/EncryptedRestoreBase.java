@@ -106,7 +106,6 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                     Paths.get(path.getRemotePath()),
                                     Paths.get(tempFile.getAbsolutePath()),
                                     0);
-                            tracker.adjustAndAdd(path);
                         } catch (Exception ex) {
                             // This behavior is retryable; therefore, lets get to a clean state
                             // before each retry.

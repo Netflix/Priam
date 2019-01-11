@@ -22,6 +22,7 @@ import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -128,7 +129,11 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     private Path getV1Location() {
-        Path path = Paths.get(getV1Prefix().toString(), formatDate(time), type.toString());
+        Path path =
+                Paths.get(
+                        getV1Prefix().toString(),
+                        DateUtil.formatyyyyMMddHHmm(time),
+                        type.toString());
         if (BackupFileType.isDataFile(type))
             path = Paths.get(path.toString(), keyspace, columnFamily);
         return Paths.get(path.toString(), fileName);
@@ -141,7 +146,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
                     String.format(
                             "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
 
-        time = parseDate(remoteFilePath.getName(4).toString());
+        time = DateUtil.getDate(remoteFilePath.getName(4).toString());
         type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
         if (BackupFileType.isDataFile(type)) {
             keyspace = remoteFilePath.getName(6).toString();

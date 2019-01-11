@@ -115,8 +115,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     public void downloadFile(final Path remotePath, final Path localPath, final int retry)
             throws BackupRestoreException {
         // TODO: Should we download the file if localPath already exists?
-        if (remotePath == null) return;
-
+        if (remotePath == null || localPath == null) return;
+        localPath.toFile().getParentFile().mkdirs();
         logger.info("Downloading file: {} to location: {}", remotePath, localPath);
         try {
             new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {

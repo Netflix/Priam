@@ -16,6 +16,12 @@
  */
 package com.netflix.priam.resources;
 
+import com.google.inject.Inject;
+import com.netflix.priam.PriamServer;
+import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.merics.Metrics;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -26,18 +32,10 @@ import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-
 import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.identity.DoubleRing;
-import com.netflix.priam.merics.Metrics;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.patterns.PolledMeter;
-import org.json.simple.JSONValue;
 
 /**
  * This servlet will provide the configuration API service as and when Cassandra requests for it.
@@ -55,21 +53,23 @@ public class CassandraConfig {
         this.priamServer = server;
         this.doubleRing = doubleRing;
 
-        getSeedsCnt = PolledMeter.using(registry)
-                                 .withName(Metrics.METRIC_PREFIX + "cass.getSeedCnt")
-                                 .monitorMonotonicCounter(new AtomicLong());
-        getTokenCnt = PolledMeter.using(registry)
-                                 .withName(Metrics.METRIC_PREFIX + "cass.getTokenCnt")
-                                 .monitorMonotonicCounter(new AtomicLong());
-        getReplacedIpCnt = PolledMeter.using(registry)
-                                      .withName(Metrics.METRIC_PREFIX + "cass.getReplacedIpCnt")
-                                      .monitorMonotonicCounter(new AtomicLong());
+        getSeedsCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getSeedCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
+        getTokenCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getTokenCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
+        getReplacedIpCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getReplacedIpCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
 
-        doubleRingCnt = PolledMeter.using(registry)
-                                   .withName(Metrics.METRIC_PREFIX + "cass.doubleRingCnt")
-                                   .monitorMonotonicCounter(new AtomicLong());
-
-
+        doubleRingCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.doubleRingCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
     }
 
     @GET
@@ -77,8 +77,7 @@ public class CassandraConfig {
     public Response getSeeds() {
         try {
             final List<String> seeds = priamServer.getInstanceIdentity().getSeeds();
-            if (!seeds.isEmpty())
-            {
+            if (!seeds.isEmpty()) {
                 getSeedsCnt.incrementAndGet();
                 return Response.ok(StringUtils.join(seeds, ',')).build();
             }
@@ -99,7 +98,7 @@ public class CassandraConfig {
                 logger.info("Returning token value \"{}\" for this instance to caller.", token);
                 getTokenCnt.incrementAndGet();
                 return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken())
-                               .build();
+                        .build();
             }
 
             logger.error("Cannot find token for this instance.");
@@ -116,7 +115,7 @@ public class CassandraConfig {
     public Response isReplaceToken() {
         try {
             return Response.ok(String.valueOf(priamServer.getInstanceIdentity().isReplace()))
-                           .build();
+                    .build();
         } catch (Exception e) {
             // TODO: can this ever happen? if so, what conditions would cause an exception here?
             logger.error("Error while executing is_replace_token", e);
@@ -130,7 +129,7 @@ public class CassandraConfig {
         try {
             getReplacedIpCnt.incrementAndGet();
             return Response.ok(String.valueOf(priamServer.getInstanceIdentity().getReplacedIp()))
-                           .build();
+                    .build();
         } catch (Exception e) {
             logger.error("Error while executing get_replaced_ip", e);
             return Response.serverError().build();
@@ -170,4 +169,3 @@ public class CassandraConfig {
         return Response.status(200).build();
     }
 }
-

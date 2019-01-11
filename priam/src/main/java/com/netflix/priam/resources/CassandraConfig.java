@@ -19,6 +19,7 @@ package com.netflix.priam.resources;
 import com.google.inject.Inject;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.merics.CassMonitorMetrics;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -44,11 +45,13 @@ public class CassandraConfig {
     private static final Logger logger = LoggerFactory.getLogger(CassandraConfig.class);
     private final PriamServer priamServer;
     private final DoubleRing doubleRing;
+    private final CassMonitorMetrics metrics;
 
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing) {
+    public CassandraConfig(PriamServer server, DoubleRing doubleRing, CassMonitorMetrics metrics) {
         this.priamServer = server;
         this.doubleRing = doubleRing;
+        this.metrics = metrics;
     }
 
     @GET
@@ -56,7 +59,10 @@ public class CassandraConfig {
     public Response getSeeds() {
         try {
             final List<String> seeds = priamServer.getInstanceIdentity().getSeeds();
-            if (!seeds.isEmpty()) return Response.ok(StringUtils.join(seeds, ',')).build();
+            if (!seeds.isEmpty()) {
+                metrics.incGetSeeds();
+                return Response.ok(StringUtils.join(seeds, ',')).build();
+            }
             logger.error("Cannot find the Seeds");
         } catch (Exception e) {
             logger.error("Error while executing get_seeds", e);
@@ -72,6 +78,7 @@ public class CassandraConfig {
             String token = priamServer.getInstanceIdentity().getInstance().getToken();
             if (StringUtils.isNotBlank(token)) {
                 logger.info("Returning token value \"{}\" for this instance to caller.", token);
+                metrics.incGetToken();
                 return Response.ok(priamServer.getInstanceIdentity().getInstance().getToken())
                         .build();
             }
@@ -102,6 +109,7 @@ public class CassandraConfig {
     @Path("/get_replaced_ip")
     public Response getReplacedIp() {
         try {
+            metrics.incGetReplacedIp();
             return Response.ok(String.valueOf(priamServer.getInstanceIdentity().getReplacedIp()))
                     .build();
         } catch (Exception e) {
@@ -114,7 +122,6 @@ public class CassandraConfig {
     @Path("/set_replaced_ip")
     public Response setReplacedIp(@QueryParam("ip") String ip) {
         try {
-            priamServer.getInstanceIdentity().setReplacedIp(ip);
             return Response.ok().build();
         } catch (Exception e) {
             logger.error("Error while overriding replacement ip", e);
@@ -143,6 +150,7 @@ public class CassandraConfig {
     @Path("/double_ring")
     public Response doubleRing() throws IOException, ClassNotFoundException {
         try {
+            metrics.incDoubleRing();
             doubleRing.backup();
             doubleRing.doubleSlots();
         } catch (Throwable th) {

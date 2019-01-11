@@ -17,17 +17,38 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.spectator.api.Gauge;
 import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.patterns.PolledMeter;
+import java.util.concurrent.atomic.AtomicLong;
 
 /** @author vchella */
 @Singleton
 public class CassMonitorMetrics {
     private final Gauge cassStop, cassAutoStart, cassStart;
+    private final AtomicLong getSeedsCnt, getTokenCnt, getReplacedIpCnt, doubleRingCnt;
 
     @Inject
     public CassMonitorMetrics(Registry registry) {
         cassStop = registry.gauge(Metrics.METRIC_PREFIX + "cass.stop");
         cassStart = registry.gauge(Metrics.METRIC_PREFIX + "cass.start");
         cassAutoStart = registry.gauge(Metrics.METRIC_PREFIX + "cass.auto.start");
+
+        getSeedsCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getSeedCnt")
+                        .monitorMonotonicCounter(new AtomicLong(0));
+        getTokenCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getTokenCnt")
+                        .monitorMonotonicCounter(new AtomicLong(0));
+        getReplacedIpCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getReplacedIpCnt")
+                        .monitorMonotonicCounter(new AtomicLong(0));
+
+        doubleRingCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.doubleRingCnt")
+                        .monitorMonotonicCounter(new AtomicLong(0));
     }
 
     public void incCassStop() {
@@ -40,5 +61,21 @@ public class CassMonitorMetrics {
 
     public void incCassStart() {
         cassStart.set(cassStart.value() + 1);
+    }
+
+    public void incGetSeeds() {
+        getSeedsCnt.incrementAndGet();
+    }
+
+    public void incGetToken() {
+        getTokenCnt.incrementAndGet();
+    }
+
+    public void incGetReplacedIp() {
+        getReplacedIpCnt.incrementAndGet();
+    }
+
+    public void incDoubleRing() {
+        doubleRingCnt.incrementAndGet();
     }
 }

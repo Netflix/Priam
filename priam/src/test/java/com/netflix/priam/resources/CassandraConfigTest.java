@@ -21,10 +21,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
+import com.google.inject.Guice;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.merics.CassMonitorMetrics;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -44,7 +47,9 @@ public class CassandraConfigTest {
 
     @Before
     public void setUp() {
-        resource = new CassandraConfig(priamServer, doubleRing);
+        CassMonitorMetrics cassMonitorMetrics =
+                Guice.createInjector(new BRTestModule()).getInstance(CassMonitorMetrics.class);
+        resource = new CassandraConfig(priamServer, doubleRing, cassMonitorMetrics);
     }
 
     @Test

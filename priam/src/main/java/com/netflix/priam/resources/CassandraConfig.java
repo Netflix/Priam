@@ -19,6 +19,9 @@ package com.netflix.priam.resources;
 import com.google.inject.Inject;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
+import com.netflix.priam.merics.Metrics;
+import com.netflix.spectator.api.Registry;
+import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
@@ -32,10 +35,6 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.apache.commons.lang3.StringUtils;
-
-import com.netflix.priam.merics.Metrics;
-import com.netflix.spectator.api.Registry;
-import com.netflix.spectator.api.patterns.PolledMeter;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,19 +55,23 @@ public class CassandraConfig {
         this.priamServer = server;
         this.doubleRing = doubleRing;
 
-        getSeedsCnt = PolledMeter.using(registry)
-                                 .withName(Metrics.METRIC_PREFIX + "cass.getSeedCnt")
-                                 .monitorMonotonicCounter(new AtomicLong());
-        getTokenCnt = PolledMeter.using(registry)
-                                 .withName(Metrics.METRIC_PREFIX + "cass.getTokenCnt")
-                                 .monitorMonotonicCounter(new AtomicLong());
-        getReplacedIpCnt = PolledMeter.using(registry)
-                                      .withName(Metrics.METRIC_PREFIX + "cass.getReplacedIpCnt")
-                                      .monitorMonotonicCounter(new AtomicLong());
+        getSeedsCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getSeedCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
+        getTokenCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getTokenCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
+        getReplacedIpCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.getReplacedIpCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
 
-        doubleRingCnt = PolledMeter.using(registry)
-                                   .withName(Metrics.METRIC_PREFIX + "cass.doubleRingCnt")
-                                   .monitorMonotonicCounter(new AtomicLong());
+        doubleRingCnt =
+                PolledMeter.using(registry)
+                        .withName(Metrics.METRIC_PREFIX + "cass.doubleRingCnt")
+                        .monitorMonotonicCounter(new AtomicLong());
     }
 
     @GET
@@ -76,8 +79,7 @@ public class CassandraConfig {
     public Response getSeeds() {
         try {
             final List<String> seeds = priamServer.getInstanceIdentity().getSeeds();
-            if (!seeds.isEmpty())
-            {
+            if (!seeds.isEmpty()) {
                 getSeedsCnt.incrementAndGet();
                 return Response.ok(StringUtils.join(seeds, ',')).build();
             }

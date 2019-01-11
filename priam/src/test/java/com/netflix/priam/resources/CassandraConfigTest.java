@@ -25,6 +25,7 @@ import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.spectator.api.DefaultRegistry;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -44,7 +45,7 @@ public class CassandraConfigTest {
 
     @Before
     public void setUp() {
-        resource = new CassandraConfig(priamServer, doubleRing);
+        resource = new CassandraConfig(priamServer, doubleRing, new DefaultRegistry());
     }
 
     @Test

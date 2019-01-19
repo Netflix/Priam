@@ -21,31 +21,83 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.DateUtil.DateRange;
 import java.io.File;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Optional;
+import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 7/11/17. */
-public class TestSnapshotStatusMgr {
-    private static final Logger logger = LoggerFactory.getLogger(TestSnapshotStatusMgr.class);
-
+public class TestBackupStatusMgr {
+    private static final Logger logger = LoggerFactory.getLogger(TestBackupStatusMgr.class);
+    private static IConfiguration configuration;
     private static IBackupStatusMgr backupStatusMgr;
+    private final String backupDate = "201812011000";
 
     @BeforeClass
     public static void setup() {
         Injector injector = Guice.createInjector(new BRTestModule());
         // cleanup old saved file, if any
-        IConfiguration configuration = injector.getInstance(IConfiguration.class);
-        File f = new File(configuration.getBackupStatusFileLoc());
-        if (f.exists()) f.delete();
-
+        configuration = injector.getInstance(IConfiguration.class);
         backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
+    }
+
+    @Before
+    @After
+    public void cleanup() {
+        FileUtils.deleteQuietly(new File(configuration.getBackupStatusFileLoc()));
+    }
+
+    private void prepare() throws Exception {
+        cleanup();
+        Instant start = DateUtil.parseInstant(backupDate);
+        backupStatusMgr.finish(getBackupMetaData(start, Status.FINISHED));
+        backupStatusMgr.failed(getBackupMetaData(start.plus(2, ChronoUnit.HOURS), Status.FAILED));
+        backupStatusMgr.finish(getBackupMetaData(start.plus(4, ChronoUnit.HOURS), Status.FINISHED));
+        backupStatusMgr.failed(getBackupMetaData(start.plus(6, ChronoUnit.HOURS), Status.FAILED));
+        backupStatusMgr.failed(getBackupMetaData(start.plus(8, ChronoUnit.HOURS), Status.FAILED));
+        backupStatusMgr.finish(getBackupMetaData(start.plus(1, ChronoUnit.DAYS), Status.FINISHED));
+        backupStatusMgr.finish(getBackupMetaData(start.plus(2, ChronoUnit.DAYS), Status.FINISHED));
+    }
+
+    private BackupMetadata getBackupMetaData(Instant startTime, Status status) throws Exception {
+        BackupMetadata backupMetadata =
+                new BackupMetadata("123", new Date(startTime.toEpochMilli()));
+        backupMetadata.setCompleted(
+                new Date(startTime.plus(30, ChronoUnit.MINUTES).toEpochMilli()));
+        backupMetadata.setStatus(status);
+        backupMetadata.setSnapshotLocation("file.txt");
+        return backupMetadata;
+    }
+
+    @Test
+    public void testSnapshotUpdateMethod() throws Exception {
+        Date startTime = DateUtil.getDate("198407110720");
+        BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
+        backupStatusMgr.start(backupMetadata);
+        Optional<BackupMetadata> backupMetadata1 =
+                backupStatusMgr.locate(startTime).stream().findFirst();
+        Assert.assertNull(backupMetadata1.get().getLastValidated());
+        backupMetadata.setLastValidated(Calendar.getInstance().getTime());
+        backupMetadata.setCassandraSnapshotSuccess(true);
+        backupMetadata.setSnapshotLocation("random");
+        backupStatusMgr.update(backupMetadata);
+        backupMetadata1 = backupStatusMgr.locate(startTime).stream().findFirst();
+        Assert.assertNotNull(backupMetadata1.get().getLastValidated());
+        Assert.assertTrue(backupMetadata1.get().isCassandraSnapshotSuccess());
+        Assert.assertEquals("random", backupMetadata1.get().getSnapshotLocation());
     }
 
     @Test
@@ -138,5 +190,57 @@ public class TestSnapshotStatusMgr {
         // Verify there is only capacity entries
         Assert.assertEquals(
                 backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
+    }
+
+    @Test
+    public void getLatestBackup() throws Exception {
+        prepare();
+        Instant start = DateUtil.parseInstant(backupDate);
+        List<BackupMetadata> list =
+                backupStatusMgr.getLatestBackupMetadata(
+                        SnapshotBackup.BACKUP_VERSION,
+                        new DateRange(
+                                backupDate
+                                        + ","
+                                        + DateUtil.formatInstant(
+                                                DateUtil.yyyyMMddHHmm,
+                                                start.plus(12, ChronoUnit.HOURS))));
+
+        Optional<BackupMetadata> backupMetadata = list.stream().findFirst();
+        Assert.assertEquals(
+                start.plus(4, ChronoUnit.HOURS), backupMetadata.get().getStart().toInstant());
+    }
+
+    @Test
+    public void getLatestBackupFailure() throws Exception {
+        Optional<BackupMetadata> backupMetadata =
+                backupStatusMgr
+                        .getLatestBackupMetadata(
+                                SnapshotBackup.BACKUP_VERSION,
+                                new DateRange(backupDate + "," + backupDate))
+                        .stream()
+                        .findFirst();
+
+        Assert.assertFalse(backupMetadata.isPresent());
+
+        backupStatusMgr.failed(getBackupMetaData(DateUtil.parseInstant(backupDate), Status.FAILED));
+        backupMetadata =
+                backupStatusMgr
+                        .getLatestBackupMetadata(
+                                SnapshotBackup.BACKUP_VERSION,
+                                new DateRange(backupDate + "," + backupDate))
+                        .stream()
+                        .findFirst();
+        Assert.assertFalse(backupMetadata.isPresent());
+    }
+
+    @Test
+    public void getLatestBackupMetadata() throws Exception {
+        prepare();
+        List<BackupMetadata> list =
+                backupStatusMgr.getLatestBackupMetadata(
+                        SnapshotBackup.BACKUP_VERSION,
+                        new DateRange(backupDate + "," + "201812031000"));
+        list.forEach(backupMetadata -> System.out.println(backupMetadata));
     }
 }

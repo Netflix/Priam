@@ -859,6 +859,17 @@ public interface IConfiguration {
     }
 
     /**
+     * This flag is an easy way to enable/disable notifications as notification topics may be
+     * different per region. A notification is only sent when this flag is enabled and {@link
+     * #getBackupNotificationTopicArn()} is not empty.
+     *
+     * @return true if backup notification is enabled, false otherwise.
+     */
+    default boolean enableBackupNotification() {
+        return true;
+    }
+
+    /**
      * SNS Notification topic to be used for sending backup event notifications. One start event is
      * sent before uploading any file and one complete/failure event is sent after the file is
      * uploaded/failed. This applies to both incremental and snapshot. Default: no notifications

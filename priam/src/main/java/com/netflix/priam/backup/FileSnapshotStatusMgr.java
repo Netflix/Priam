@@ -58,8 +58,10 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
         // Retrieve entire file and re-populate the list.
         File snapshotFile = new File(filename);
         if (!snapshotFile.exists()) {
+            snapshotFile.getParentFile().mkdirs();
             logger.info(
                     "Snapshot status file do not exist on system. Bypassing initilization phase.");
+            backupMetadataMap = new MaxSizeHashMap<>(capacity);
             return;
         }
 
@@ -90,7 +92,7 @@ public class FileSnapshotStatusMgr extends BackupStatusMgr {
     @Override
     public void save(BackupMetadata backupMetadata) {
         File snapshotFile = new File(filename);
-        if (!snapshotFile.exists()) snapshotFile.mkdirs();
+        if (!snapshotFile.exists()) snapshotFile.getParentFile().mkdirs();
 
         // Will save entire list to file.
         try (final ObjectOutputStream out =

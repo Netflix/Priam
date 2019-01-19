@@ -42,7 +42,7 @@ allprojects {
       compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
       compile 'com.google.guava:guava:21.0'
       compile 'com.google.code.findbugs:jsr305:3.0.2'
-      compile 'com.amazonaws:aws-java-sdk:1.11.475'
+      compile 'com.amazonaws:aws-java-sdk:1.11.487'
       compile 'com.google.inject:guice:4.2.2'
       compile 'com.google.inject.extensions:guice-servlet:4.2.2'
       compile 'org.quartz-scheduler:quartz:2.3.0'
@@ -56,19 +56,19 @@ allprojects {
       compile 'xerces:xercesImpl:2.12.0'
       compile 'net.java.dev.jna:jna:5.2.0'
       compile 'org.apache.httpcomponents:httpclient:4.5.6'
-      compile 'org.apache.httpcomponents:httpcore:4.4.10'
+      compile 'org.apache.httpcomponents:httpcore:4.4.11'
       compile 'com.ning:compress-lzf:1.0.4'
       compile 'com.google.code.gson:gson:2.8.5'
       compile 'org.slf4j:slf4j-api:1.7.25'
       compile 'org.slf4j:slf4j-log4j12:1.7.25'
       compile 'org.bouncycastle:bcprov-jdk16:1.46'
       compile 'org.bouncycastle:bcpg-jdk16:1.46'
-      compile ('com.google.appengine.tools:appengine-gcs-client:0.7') {
+      compile ('com.google.appengine.tools:appengine-gcs-client:0.8') {
           exclude module: 'guava'
       }
       compile 'com.google.apis:google-api-services-storage:v1-rev141-1.25.0'
-      compile 'com.google.http-client:google-http-client-jackson2:1.22.0'
-      compile 'com.netflix.spectator:spectator-api:0.82.0'
+      compile 'com.google.http-client:google-http-client-jackson2:1.28.0'
+      compile 'com.netflix.spectator:spectator-api:0.83.0'
       compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
       testCompile 'org.jmockit:jmockit:1.31'
       testCompile "org.spockframework:spock-core:1.1-groovy-2.4"

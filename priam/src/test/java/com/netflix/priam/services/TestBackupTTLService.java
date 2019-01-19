@@ -23,7 +23,6 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
-import com.netflix.priam.backupv2.BackupValidator;
 import com.netflix.priam.backupv2.TestBackupUtils;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.BackupFileUtils;
@@ -50,7 +49,6 @@ public class TestBackupTTLService {
     private static BackupTTLService backupTTLService;
     private static FakeBackupFileSystem backupFileSystem;
     private Provider<AbstractBackupPath> pathProvider;
-    private static BackupValidator backupValidator;
     private Path[] metas;
     private Map<String, String> allFilesMap = new HashMap<>();
 
@@ -62,7 +60,6 @@ public class TestBackupTTLService {
         if (backupFileSystem == null)
             backupFileSystem = injector.getInstance(FakeBackupFileSystem.class);
         pathProvider = injector.getProvider(AbstractBackupPath.class);
-        if (backupValidator == null) backupValidator = injector.getInstance(BackupValidator.class);
     }
 
     public void prepTest(int daysForSnapshot) throws Exception {

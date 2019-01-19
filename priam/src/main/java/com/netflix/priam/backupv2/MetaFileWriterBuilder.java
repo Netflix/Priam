@@ -70,6 +70,8 @@ public class MetaFileWriterBuilder {
         void uploadMetaFile(boolean deleteOnSuccess) throws Exception;
 
         Path getMetaFilePath();
+
+        String getRemoteMetaFilePath() throws Exception;
     }
 
     public static class MetaFileWriter implements StartStep, DataStep, UploadStep {
@@ -190,7 +192,7 @@ public class MetaFileWriterBuilder {
                     metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
             backupFileSystem.uploadFile(
                     metaFilePath,
-                    Paths.get(abstractBackupPath.getRemotePath()),
+                    Paths.get(getRemoteMetaFilePath()),
                     abstractBackupPath,
                     10,
                     deleteOnSuccess);
@@ -198,6 +200,13 @@ public class MetaFileWriterBuilder {
 
         public Path getMetaFilePath() {
             return metaFilePath;
+        }
+
+        public String getRemoteMetaFilePath() throws Exception {
+            AbstractBackupPath abstractBackupPath = pathFactory.get();
+            abstractBackupPath.parseLocal(
+                    metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+            return abstractBackupPath.getRemotePath();
         }
     }
 }

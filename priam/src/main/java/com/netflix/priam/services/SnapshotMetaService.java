@@ -19,6 +19,7 @@ import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.CassandraOperations;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.CassandraMonitor;
@@ -65,6 +66,9 @@ public class SnapshotMetaService extends AbstractBackup {
     private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
     private static final Lock lock = new ReentrantLock();
+    public static final int BACKUP_VERSION = 2;
+    private final IBackupStatusMgr snapshotStatusMgr;
+    private final InstanceIdentity instanceIdentity;
 
     private enum MetaStep {
         META_GENERATION,
@@ -80,8 +84,12 @@ public class SnapshotMetaService extends AbstractBackup {
             Provider<AbstractBackupPath> pathFactory,
             MetaFileWriterBuilder metaFileWriter,
             @Named("v2") IMetaProxy metaProxy,
+            InstanceIdentity instanceIdentity,
+            IBackupStatusMgr snapshotStatusMgr,
             CassandraOperations cassandraOperations) {
         super(config, backupFileSystemCtx, pathFactory);
+        this.instanceIdentity = instanceIdentity;
+        this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
         backupRestoreUtil =
                 new BackupRestoreUtil(
@@ -144,8 +152,14 @@ public class SnapshotMetaService extends AbstractBackup {
             throw new Exception("SnapshotMetaService already running");
         }
 
+        // Save start snapshot status
+        Instant snapshotInstant = DateUtil.getInstant();
+        String token = instanceIdentity.getInstance().getToken();
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BACKUP_VERSION, token, new Date(snapshotInstant.toEpochMilli()));
+        snapshotStatusMgr.start(backupMetadata);
+
         try {
-            Instant snapshotInstant = DateUtil.getInstant();
             snapshotName = generateSnapshotName(snapshotInstant);
             logger.info("Initializing SnapshotMetaService for taking a snapshot {}", snapshotName);
 
@@ -158,16 +172,22 @@ public class SnapshotMetaService extends AbstractBackup {
 
             // Take a new snapshot
             cassandraOperations.takeSnapshot(snapshotName);
+            backupMetadata.setCassandraSnapshotSuccess(true);
 
             // Process the snapshot and upload the meta file.
-            processSnapshot(snapshotInstant).uploadMetaFile(true);
+            MetaFileWriterBuilder.UploadStep uploadStep = processSnapshot(snapshotInstant);
+            backupMetadata.setSnapshotLocation(
+                    config.getBackupPrefix() + File.separator + uploadStep.getRemoteMetaFilePath());
+            uploadStep.uploadMetaFile(true);
 
             logger.info("Finished processing snapshot meta service");
 
             // Upload all the files from snapshot
             uploadFiles();
+            snapshotStatusMgr.finish(backupMetadata);
         } catch (Exception e) {
             logger.error("Error while executing SnapshotMetaService", e);
+            snapshotStatusMgr.failed(backupMetadata);
         } finally {
             lock.unlock();
         }

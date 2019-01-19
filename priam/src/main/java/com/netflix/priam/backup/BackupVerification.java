@@ -18,6 +18,10 @@ import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
+import com.netflix.priam.services.SnapshotMetaService;
+import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.DateUtil.DateRange;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -33,38 +37,72 @@ import org.slf4j.LoggerFactory;
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final IMetaProxy metaProxy;
+    private final IMetaProxy metaV1Proxy;
+    private final IMetaProxy metaV2Proxy;
+    private final IBackupStatusMgr backupStatusMgr;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
 
     @Inject
     BackupVerification(
-            @Named("v1") IMetaProxy metaProxy,
+            @Named("v1") IMetaProxy metaV1Proxy,
+            @Named("v2") IMetaProxy metaV2Proxy,
+            IBackupStatusMgr backupStatusMgr,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
-        this.metaProxy = metaProxy;
+        this.metaV1Proxy = metaV1Proxy;
+        this.metaV2Proxy = metaV2Proxy;
+        this.backupStatusMgr = backupStatusMgr;
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    public Optional<BackupMetadata> getLatestBackupMetaData(List<BackupMetadata> metadata) {
-        return metadata.stream()
-                .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
-                .sorted(Comparator.comparing(BackupMetadata::getStart).reversed())
-                .findFirst();
-    }
-
-    public Optional<BackupVerificationResult> verifyBackup(List<BackupMetadata> metadata) {
-        if (metadata == null || metadata.isEmpty()) return Optional.empty();
-
-        Optional<BackupMetadata> latestBackupMetaData = getLatestBackupMetaData(metadata);
-
-        if (!latestBackupMetaData.isPresent()) {
-            logger.error("No backup found which finished during the time provided.");
-            return Optional.empty();
+    private IMetaProxy getMetaProxy(int backupVersion) {
+        switch (backupVersion) {
+            case SnapshotBackup.BACKUP_VERSION:
+                return metaV1Proxy;
+            case SnapshotMetaService.BACKUP_VERSION:
+                return metaV2Proxy;
         }
 
-        Path metadataLocation = Paths.get(latestBackupMetaData.get().getSnapshotLocation());
+        return null;
+    }
+
+    public Optional<BackupVerificationResult> verifyBackup(int backupVersion, DateRange dateRange)
+            throws UnsupportedTypeException, IllegalArgumentException {
+        IMetaProxy metaProxy = getMetaProxy(backupVersion);
+        if (metaProxy == null) {
+            throw new UnsupportedTypeException(
+                    "BackupVersion type: " + backupVersion + " is not supported");
+        }
+
+        if (dateRange == null) {
+            throw new IllegalArgumentException("dateRange provided is null");
+        }
+
+        List<BackupMetadata> metadata =
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
+        if (metadata == null || metadata.isEmpty()) return Optional.empty();
+        for (BackupMetadata backupMetadata : metadata) {
+            BackupVerificationResult backupVerificationResult =
+                    verifyBackup(metaProxy, backupMetadata);
+            if (logger.isDebugEnabled())
+                logger.debug(
+                        "BackupVerification: metadata: {}, result: {}",
+                        backupMetadata,
+                        backupVerificationResult);
+            if (backupVerificationResult.valid) {
+                backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+                backupStatusMgr.update(backupMetadata);
+                return Optional.of(backupVerificationResult);
+            }
+        }
+        return Optional.empty();
+    }
+
+    private BackupVerificationResult verifyBackup(
+            IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
+        Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());
         metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseRemote(metadataLocation.toString());
-        return Optional.of((metaProxy.isMetaFileValid(abstractBackupPath)));
+        return metaProxy.isMetaFileValid(abstractBackupPath);
     }
 }

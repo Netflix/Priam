@@ -20,6 +20,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
 import java.io.*;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -245,12 +246,30 @@ public class StandardTuner implements ICassandraTuner {
             String priamKey = pair[0];
             String cassKey = pair[1];
             String cassVal = config.getCassYamlVal(priamKey);
-            logger.info(
-                    "Updating yaml: Priamkey[{}], CassKey[{}], Val[{}]",
-                    priamKey,
-                    cassKey,
-                    cassVal);
-            map.put(cassKey, cassVal);
+
+            if (!StringUtils.isBlank(cassKey) && !StringUtils.isBlank(cassVal)) {
+                if (!cassKey.contains(".")) {
+                    logger.info(
+                            "Updating yaml: PriamKey: [{}], Key: [{}], OldValue: [{}], NewValue: [{}]",
+                            priamKey,
+                            cassKey,
+                            map.get(cassKey),
+                            cassVal);
+                    map.put(cassKey, cassVal);
+                } else {
+                    // split the cassandra key. We will get the group and get the key name.
+                    String[] cassKeySplit = cassKey.split("\\.");
+                    Map cassKeyMap = ((Map) map.getOrDefault(cassKeySplit[0], new HashMap()));
+                    map.putIfAbsent(cassKeySplit[0], cassKeyMap);
+                    logger.info(
+                            "Updating yaml: PriamKey: [{}], Key: [{}], OldValue: [{}], NewValue: [{}]",
+                            priamKey,
+                            cassKey,
+                            cassKeyMap.get(cassKeySplit[1]),
+                            cassVal);
+                    cassKeyMap.put(cassKeySplit[1], cassVal);
+                }
+            }
         }
     }
 }

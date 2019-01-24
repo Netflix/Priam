@@ -1,5 +1,5 @@
 plugins {
-    id 'nebula.netflixoss' version '5.1.1'
+    id 'nebula.netflixoss' version '7.0.0'
     id 'com.github.sherter.google-java-format' version '0.7.1'
 }
 
@@ -47,7 +47,6 @@ subprojects {
         compile 'org.apache.commons:commons-collections4:4.2'
         compile 'commons-io:commons-io:2.6'
         compile 'commons-cli:commons-cli:1.4'
-        compile 'commons-httpclient:commons-httpclient:4.5.6'
         compile 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
         compile 'com.sun.jersey:jersey-json:1.19.4'
         compile 'com.sun.jersey:jersey-bundle:1.19.4'
@@ -85,7 +84,6 @@ subprojects {
         testCompile 'org.jmockit:jmockit:1.31'
         testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
         testCompile 'junit:junit:4.12'
-        //testCompile 'mockit:mockit:0.999'
 
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

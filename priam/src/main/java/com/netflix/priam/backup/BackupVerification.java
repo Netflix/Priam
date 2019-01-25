@@ -65,7 +65,8 @@ public class BackupVerification {
         return null;
     }
 
-    public Optional<BackupVerificationResult> verifyBackup(int backupVersion, DateRange dateRange)
+    public Optional<BackupVerificationResult> verifyBackup(
+            int backupVersion, boolean force, DateRange dateRange)
             throws UnsupportedTypeException, IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         if (metaProxy == null) {
@@ -81,6 +82,17 @@ public class BackupVerification {
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
         if (metadata == null || metadata.isEmpty()) return Optional.empty();
         for (BackupMetadata backupMetadata : metadata) {
+            if (backupMetadata.getLastValidated() != null && !force) {
+                // Backup is already validated. Nothing to do.
+                BackupVerificationResult result = new BackupVerificationResult();
+                result.valid = true;
+                result.manifestAvailable = true;
+                result.snapshotInstant = backupMetadata.getStart().toInstant();
+                Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
+                result.remotePath =
+                        snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
+                return Optional.of(result);
+            }
             BackupVerificationResult backupVerificationResult =
                     verifyBackup(metaProxy, backupMetadata);
             if (logger.isDebugEnabled())

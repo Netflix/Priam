@@ -49,6 +49,14 @@ public class TestBackupVerification {
     private final IConfiguration configuration;
     private final IBackupStatusMgr backupStatusMgr;
     private final String backupDate = "201812011000";
+    private final Path location =
+            Paths.get(
+                    "some_bucket/casstestbackup/1049_fake-app/1808575600",
+                    BackupFileType.META_V2.toString(),
+                    "1859817645000",
+                    "SNAPPY",
+                    "PLAINTEXT",
+                    "meta_v2_201812011000.json");
 
     public TestBackupVerification() {
         Injector injector = Guice.createInjector(new BRTestModule());
@@ -83,7 +91,7 @@ public class TestBackupVerification {
     @Test
     public void illegalBackupVersion() {
         try {
-            backupVerification.verifyBackup(3, null);
+            backupVerification.verifyBackup(3, false, null);
             Assert.assertTrue(false);
         } catch (UnsupportedTypeException e) {
             Assert.assertTrue(true);
@@ -93,7 +101,7 @@ public class TestBackupVerification {
     @Test
     public void illegalDateRange() throws UnsupportedTypeException {
         try {
-            backupVerification.verifyBackup(1, null);
+            backupVerification.verifyBackup(1, false, null);
             Assert.assertTrue(false);
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(true);
@@ -104,12 +112,15 @@ public class TestBackupVerification {
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotBackup.BACKUP_VERSION, new DateRange(Instant.now(), Instant.now()));
+                        SnapshotBackup.BACKUP_VERSION,
+                        false,
+                        new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
                         SnapshotMetaService.BACKUP_VERSION,
+                        false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
     }
@@ -134,6 +145,7 @@ public class TestBackupVerification {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
                         SnapshotBackup.BACKUP_VERSION,
+                        false,
                         new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
         Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
@@ -165,9 +177,12 @@ public class TestBackupVerification {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
                         SnapshotMetaService.BACKUP_VERSION,
+                        false,
                         new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
         Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
+        Assert.assertEquals("some_random", backupVerificationResultOptinal.get().remotePath);
+
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
@@ -177,6 +192,21 @@ public class TestBackupVerification {
                         .findFirst();
         Assert.assertTrue(backupMetadata.isPresent());
         Assert.assertNotNull(backupMetadata.get().getLastValidated());
+
+        // Retry the verification, it should not try and re-verify
+        backupVerificationResultOptinal =
+                backupVerification.verifyBackup(
+                        SnapshotMetaService.BACKUP_VERSION,
+                        false,
+                        new DateRange(backupDate + "," + backupDate));
+        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
+        Assert.assertEquals(
+                DateUtil.parseInstant(backupDate),
+                backupVerificationResultOptinal.get().snapshotInstant);
+        Assert.assertNotEquals("some_random", backupVerificationResultOptinal.get().remotePath);
+        Assert.assertEquals(
+                location.subpath(1, location.getNameCount()).toString(),
+                backupVerificationResultOptinal.get().remotePath);
 
         backupMetadata =
                 backupStatusMgr
@@ -196,14 +226,6 @@ public class TestBackupVerification {
         backupMetadata.setCompleted(
                 new Date(startTime.plus(30, ChronoUnit.MINUTES).toEpochMilli()));
         backupMetadata.setStatus(status);
-        Path location =
-                Paths.get(
-                        "some_bucket/casstestbackup/1049_fake-app/1808575600",
-                        BackupFileType.META_V2.toString(),
-                        "1859817645000",
-                        "SNAPPY",
-                        "PLAINTEXT",
-                        "meta_v2_201812011000.json");
         backupMetadata.setSnapshotLocation(location.toString());
         return backupMetadata;
     }

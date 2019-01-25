@@ -18,16 +18,24 @@
 package com.netflix.priam.resources;
 
 import com.google.inject.Inject;
+import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.IBackupStatusMgr;
+import com.netflix.priam.services.BackupTTLService;
 import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.DateUtil.DateRange;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;
@@ -41,16 +49,19 @@ public class BackupServletV2 {
     private final BackupVerification backupVerification;
     private final IBackupStatusMgr backupStatusMgr;
     private final SnapshotMetaService snapshotMetaService;
+    private final BackupTTLService backupTTLService;
     private static final String REST_SUCCESS = "[\"ok\"]";
 
     @Inject
     public BackupServletV2(
             IBackupStatusMgr backupStatusMgr,
             BackupVerification backupVerification,
-            SnapshotMetaService snapshotMetaService) {
+            SnapshotMetaService snapshotMetaService,
+            BackupTTLService backupTTLService) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
+        this.backupTTLService = backupTTLService;
     }
 
     @GET
@@ -61,12 +72,36 @@ public class BackupServletV2 {
     }
 
     @GET
+    @Path("/ttl")
+    public Response ttl() throws Exception {
+        backupTTLService.execute();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/info/{date}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response info(@PathParam("date") String date) throws Exception {
+        Instant instant = DateUtil.parseInstant(date);
+        List<BackupMetadata> metadataList =
+                backupStatusMgr.getLatestBackupMetadata(
+                        SnapshotMetaService.BACKUP_VERSION,
+                        new DateRange(
+                                instant,
+                                instant.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)));
+        return Response.ok(metadataList.toString(), MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
     @Path("/validate/{daterange}")
-    public Response validateV2SnapshotByDate(@PathParam("daterange") String daterange)
+    public Response validateV2SnapshotByDate(
+            @PathParam("daterange") String daterange,
+            @DefaultValue("false") @QueryParam("force") boolean force)
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyBackup(SnapshotMetaService.BACKUP_VERSION, dateRange);
+                backupVerification.verifyBackup(
+                        SnapshotMetaService.BACKUP_VERSION, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

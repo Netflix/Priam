@@ -147,7 +147,7 @@ public class BackupServlet {
         } else {
 
             object.put("Snapshotstatus", true);
-            object.put("Details", backupMetadataOptional.get());
+            object.put("Details", backupMetadataOptional.get().toString());
         }
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
@@ -191,11 +191,13 @@ public class BackupServlet {
     @GET
     @Path("/validate/snapshot/{daterange}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validateSnapshotByDate(@PathParam("daterange") String daterange)
+    public Response validateSnapshotByDate(
+            @PathParam("daterange") String daterange,
+            @DefaultValue("false") @QueryParam("force") boolean force)
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyBackup(SnapshotBackup.BACKUP_VERSION, dateRange);
+                backupVerification.verifyBackup(SnapshotBackup.BACKUP_VERSION, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

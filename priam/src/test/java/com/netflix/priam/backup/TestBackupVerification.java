@@ -24,7 +24,6 @@ import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.io.File;
@@ -89,19 +88,9 @@ public class TestBackupVerification {
     }
 
     @Test
-    public void illegalBackupVersion() {
-        try {
-            backupVerification.verifyBackup(3, false, null);
-            Assert.assertTrue(false);
-        } catch (UnsupportedTypeException e) {
-            Assert.assertTrue(true);
-        }
-    }
-
-    @Test
     public void illegalDateRange() throws UnsupportedTypeException {
         try {
-            backupVerification.verifyBackup(1, false, null);
+            backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, false, null);
             Assert.assertTrue(false);
         } catch (IllegalArgumentException e) {
             Assert.assertTrue(true);
@@ -112,14 +101,14 @@ public class TestBackupVerification {
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotBackup.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotMetaService.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
@@ -128,14 +117,14 @@ public class TestBackupVerification {
     private void setUp() throws Exception {
         Instant start = DateUtil.parseInstant(backupDate);
         backupStatusMgr.finish(
-                getBackupMetaData(SnapshotBackup.BACKUP_VERSION, start, Status.FINISHED));
+                getBackupMetaData(BackupVersion.SNAPSHOT_BACKUP, start, Status.FINISHED));
         backupStatusMgr.failed(
                 getBackupMetaData(
-                        SnapshotBackup.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_BACKUP,
                         start.plus(20, ChronoUnit.MINUTES),
                         Status.FAILED));
         backupStatusMgr.finish(
-                getBackupMetaData(SnapshotMetaService.BACKUP_VERSION, start, Status.FINISHED));
+                getBackupMetaData(BackupVersion.SNAPSHOT_META_SERVICE, start, Status.FINISHED));
     }
 
     @Test
@@ -144,7 +133,7 @@ public class TestBackupVerification {
         // Verify for backup version 1.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotBackup.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
@@ -152,7 +141,7 @@ public class TestBackupVerification {
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotBackup.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_BACKUP,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -162,7 +151,7 @@ public class TestBackupVerification {
         backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotMetaService.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_META_SERVICE,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -176,7 +165,7 @@ public class TestBackupVerification {
         // Verify for backup version 2.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotMetaService.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
@@ -186,7 +175,7 @@ public class TestBackupVerification {
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotMetaService.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_META_SERVICE,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -196,7 +185,7 @@ public class TestBackupVerification {
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
-                        SnapshotMetaService.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
@@ -211,7 +200,7 @@ public class TestBackupVerification {
         backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotBackup.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_BACKUP,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -219,8 +208,8 @@ public class TestBackupVerification {
         Assert.assertNull(backupMetadata.get().getLastValidated());
     }
 
-    private BackupMetadata getBackupMetaData(int backupVersion, Instant startTime, Status status)
-            throws Exception {
+    private BackupMetadata getBackupMetaData(
+            BackupVersion backupVersion, Instant startTime, Status status) throws Exception {
         BackupMetadata backupMetadata =
                 new BackupMetadata(backupVersion, "123", new Date(startTime.toEpochMilli()));
         backupMetadata.setCompleted(

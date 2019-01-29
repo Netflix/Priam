@@ -31,10 +31,10 @@ public final class BackupMetadata implements Serializable {
     private Status status;
     private boolean cassandraSnapshotSuccess;
     private Date lastValidated;
-    private int backupVersion;
+    private BackupVersion backupVersion;
     private String snapshotLocation;
 
-    public BackupMetadata(int backupVersion, String token, Date start) throws Exception {
+    public BackupMetadata(BackupVersion backupVersion, String token, Date start) throws Exception {
         if (start == null || token == null || StringUtils.isEmpty(token))
             throw new Exception(
                     String.format(
@@ -48,10 +48,6 @@ public final class BackupMetadata implements Serializable {
         this.cassandraSnapshotSuccess = false;
     }
 
-    public BackupMetadata(String token, Date start) throws Exception {
-        this(1, token, start);
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -62,7 +58,7 @@ public final class BackupMetadata implements Serializable {
         return this.snapshotDate.equals(that.snapshotDate)
                 && this.token.equals(that.token)
                 && this.start.equals(that.start)
-                && this.backupVersion == that.backupVersion;
+                && this.backupVersion.equals(that.backupVersion);
     }
 
     @Override
@@ -70,6 +66,7 @@ public final class BackupMetadata implements Serializable {
         int result = this.snapshotDate.hashCode();
         result = 31 * result + this.token.hashCode();
         result = 31 * result + this.start.hashCode();
+        result = 31 * result + this.backupVersion.hashCode();
         return result;
     }
 
@@ -179,7 +176,7 @@ public final class BackupMetadata implements Serializable {
      *
      * @return backup version of the snapshot.
      */
-    public int getBackupVersion() {
+    public BackupVersion getBackupVersion() {
         return backupVersion;
     }
 

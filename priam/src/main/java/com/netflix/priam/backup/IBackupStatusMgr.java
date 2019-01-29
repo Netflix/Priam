@@ -93,10 +93,11 @@ public interface IBackupStatusMgr {
      * Get the list of backup metadata which are finished and have started in the daterange
      * provided, in reverse chronological order of start date.
      *
-     * @param snapshotVersion snapshot version of the backups to search.
+     * @param backupVersion backup version of the backups to search.
      * @param dateRange time period in which snapshot should have started. Finish time may be after
      *     the endTime in input.
      * @return list of backup metadata which satisfies the input criteria
      */
-    List<BackupMetadata> getLatestBackupMetadata(int snapshotVersion, DateUtil.DateRange dateRange);
+    List<BackupMetadata> getLatestBackupMetadata(
+            BackupVersion backupVersion, DateUtil.DateRange dateRange);
 }

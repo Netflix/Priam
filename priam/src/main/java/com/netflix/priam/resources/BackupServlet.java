@@ -20,6 +20,7 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
@@ -135,12 +136,13 @@ public class BackupServlet {
                 this.completedBkups
                         .locate(date)
                         .stream()
-                        .filter(backupMetadata -> backupMetadata != null)
+                        .filter(Objects::nonNull)
                         .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
                         .filter(
                                 backupMetadata ->
-                                        backupMetadata.getBackupVersion()
-                                                == SnapshotBackup.BACKUP_VERSION)
+                                        backupMetadata
+                                                .getBackupVersion()
+                                                .equals(BackupVersion.SNAPSHOT_BACKUP))
                         .findFirst();
         if (!backupMetadataOptional.isPresent()) {
             object.put("Snapshotstatus", false);
@@ -171,8 +173,9 @@ public class BackupServlet {
                     metadata.stream()
                             .filter(
                                     backupMetadata ->
-                                            backupMetadata.getBackupVersion()
-                                                    == SnapshotBackup.BACKUP_VERSION)
+                                            backupMetadata
+                                                    .getBackupVersion()
+                                                    .equals(BackupVersion.SNAPSHOT_BACKUP))
                             .map(
                                     backupMetadata ->
                                             DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart()))
@@ -197,7 +200,7 @@ public class BackupServlet {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyBackup(SnapshotBackup.BACKUP_VERSION, force, dateRange);
+                backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

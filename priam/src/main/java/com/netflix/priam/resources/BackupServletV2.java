@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
+import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.backup.IBackupStatusMgr;
 import com.netflix.priam.services.BackupTTLService;
 import com.netflix.priam.services.SnapshotMetaService;
@@ -80,16 +81,15 @@ public class BackupServletV2 {
 
     @GET
     @Path("/info/{date}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public Response info(@PathParam("date") String date) throws Exception {
+    public Response info(@PathParam("date") String date) {
         Instant instant = DateUtil.parseInstant(date);
         List<BackupMetadata> metadataList =
                 backupStatusMgr.getLatestBackupMetadata(
-                        SnapshotMetaService.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(
                                 instant,
                                 instant.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)));
-        return Response.ok(metadataList.toString(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(metadataList).build();
     }
 
     @GET
@@ -101,13 +101,13 @@ public class BackupServletV2 {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
                 backupVerification.verifyBackup(
-                        SnapshotMetaService.BACKUP_VERSION, force, dateRange);
+                        BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")
                     .build();
         }
 
-        return Response.ok(result.get().toString()).build();
+        return Response.ok(result.get()).build();
     }
 }

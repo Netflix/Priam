@@ -74,7 +74,8 @@ public class TestBackupStatusMgr {
 
     private BackupMetadata getBackupMetaData(Instant startTime, Status status) throws Exception {
         BackupMetadata backupMetadata =
-                new BackupMetadata("123", new Date(startTime.toEpochMilli()));
+                new BackupMetadata(
+                        BackupVersion.SNAPSHOT_BACKUP, "123", new Date(startTime.toEpochMilli()));
         backupMetadata.setCompleted(
                 new Date(startTime.plus(30, ChronoUnit.MINUTES).toEpochMilli()));
         backupMetadata.setStatus(status);
@@ -85,7 +86,8 @@ public class TestBackupStatusMgr {
     @Test
     public void testSnapshotUpdateMethod() throws Exception {
         Date startTime = DateUtil.getDate("198407110720");
-        BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", startTime);
         backupStatusMgr.start(backupMetadata);
         Optional<BackupMetadata> backupMetadata1 =
                 backupStatusMgr.locate(startTime).stream().findFirst();
@@ -104,7 +106,8 @@ public class TestBackupStatusMgr {
     public void testSnapshotStatusAddFinish() throws Exception {
         Date startTime = DateUtil.getDate("198407110720");
 
-        BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", startTime);
         backupStatusMgr.start(backupMetadata);
         List<BackupMetadata> metadataList = backupStatusMgr.locate(startTime);
         Assert.assertNotNull(metadataList);
@@ -127,7 +130,8 @@ public class TestBackupStatusMgr {
     public void testSnapshotStatusAddFailed() throws Exception {
         Date startTime = DateUtil.getDate("198407120720");
 
-        BackupMetadata backupMetadata = new BackupMetadata("123", startTime);
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", startTime);
         backupStatusMgr.start(backupMetadata);
         List<BackupMetadata> metadataList = backupStatusMgr.locate(startTime);
         Assert.assertNotNull(metadataList);
@@ -154,7 +158,8 @@ public class TestBackupStatusMgr {
         for (int i = 0; i < noOfEntries; i++) {
             assert startTime != null;
             Date time = new DateTime(startTime.getTime()).plusHours(i).toDate();
-            BackupMetadata backupMetadata = new BackupMetadata("123", time);
+            BackupMetadata backupMetadata =
+                    new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", time);
             backupStatusMgr.start(backupMetadata);
             backupStatusMgr.finish(backupMetadata);
         }
@@ -182,7 +187,8 @@ public class TestBackupStatusMgr {
         for (int i = 0; i < noOfEntries; i++) {
             assert startTime != null;
             Date time = new DateTime(startTime.getTime()).plusDays(i).toDate();
-            BackupMetadata backupMetadata = new BackupMetadata("123", time);
+            BackupMetadata backupMetadata =
+                    new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", time);
             backupStatusMgr.start(backupMetadata);
             backupStatusMgr.finish(backupMetadata);
         }
@@ -198,7 +204,7 @@ public class TestBackupStatusMgr {
         Instant start = DateUtil.parseInstant(backupDate);
         List<BackupMetadata> list =
                 backupStatusMgr.getLatestBackupMetadata(
-                        SnapshotBackup.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(
                                 backupDate
                                         + ","
@@ -216,7 +222,7 @@ public class TestBackupStatusMgr {
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotBackup.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_BACKUP,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -227,7 +233,7 @@ public class TestBackupStatusMgr {
         backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
-                                SnapshotBackup.BACKUP_VERSION,
+                                BackupVersion.SNAPSHOT_BACKUP,
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
@@ -239,7 +245,7 @@ public class TestBackupStatusMgr {
         prepare();
         List<BackupMetadata> list =
                 backupStatusMgr.getLatestBackupMetadata(
-                        SnapshotBackup.BACKUP_VERSION,
+                        BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + "201812031000"));
         list.forEach(backupMetadata -> System.out.println(backupMetadata));
     }

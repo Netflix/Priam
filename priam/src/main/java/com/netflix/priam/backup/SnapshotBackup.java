@@ -55,7 +55,6 @@ public class SnapshotBackup extends AbstractBackup {
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private final CassandraOperations cassandraOperations;
     private static final Lock lock = new ReentrantLock();
-    public static final int BACKUP_VERSION = 1;
 
     @Inject
     public SnapshotBackup(
@@ -110,7 +109,8 @@ public class SnapshotBackup extends AbstractBackup {
         String token = instanceIdentity.getInstance().getToken();
 
         // Save start snapshot status
-        BackupMetadata backupMetadata = new BackupMetadata(BACKUP_VERSION, token, startTime);
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, token, startTime);
         snapshotStatusMgr.start(backupMetadata);
 
         try {

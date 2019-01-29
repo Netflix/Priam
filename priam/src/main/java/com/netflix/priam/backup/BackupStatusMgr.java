@@ -187,12 +187,12 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
     protected abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
 
     public List<BackupMetadata> getLatestBackupMetadata(
-            int snapshotVersion, DateUtil.DateRange dateRange) {
-        Instant startTime = dateRange.getStartTime().truncatedTo(ChronoUnit.DAYS);
-        Instant endTime = dateRange.getEndTime().truncatedTo(ChronoUnit.DAYS);
+            BackupVersion backupVersion, DateUtil.DateRange dateRange) {
+        Instant startDay = dateRange.getStartTime().truncatedTo(ChronoUnit.DAYS);
+        Instant endDay = dateRange.getEndTime().truncatedTo(ChronoUnit.DAYS);
 
         List<BackupMetadata> allBackups = new ArrayList<>();
-        Instant previousDay = endTime;
+        Instant previousDay = endDay;
         do {
             // We need to find the latest backupmetadata in this date range.
             logger.info(
@@ -201,36 +201,28 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
             List<BackupMetadata> backupsForDate = locate(new Date(previousDay.toEpochMilli()));
             if (backupsForDate != null) allBackups.addAll(backupsForDate);
             previousDay = previousDay.minus(1, ChronoUnit.DAYS);
-        } while (!previousDay.isBefore(startTime));
+        } while (!previousDay.isBefore(startDay));
 
         // Return all the backups which are FINISHED and were "started" in the dateRange provided.
         // Do not compare the end time of snapshot as it may take random amount of time to finish
         // the snapshot.
         return allBackups
                 .stream()
-                .filter(backupMetadata -> backupMetadata != null)
+                .filter(Objects::nonNull)
                 .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
-                .filter(backupMetadata -> backupMetadata.getBackupVersion() == snapshotVersion)
+                .filter(backupMetadata -> backupMetadata.getBackupVersion().equals(backupVersion))
                 .filter(
                         backupMetadata ->
                                 backupMetadata
-                                                .getStart()
-                                                .toInstant()
-                                                .isAfter(dateRange.getStartTime())
-                                        || backupMetadata
-                                                .getStart()
-                                                .toInstant()
-                                                .equals(dateRange.getStartTime()))
-                .filter(
-                        backupMetadata ->
-                                backupMetadata
-                                                .getStart()
-                                                .toInstant()
-                                                .isBefore(dateRange.getEndTime())
-                                        || backupMetadata
-                                                .getStart()
-                                                .toInstant()
-                                                .equals(dateRange.getEndTime()))
+                                                        .getStart()
+                                                        .toInstant()
+                                                        .compareTo(dateRange.getStartTime())
+                                                >= 0
+                                        && backupMetadata
+                                                        .getStart()
+                                                        .toInstant()
+                                                        .compareTo(dateRange.getEndTime())
+                                                <= 0)
                 .sorted(Comparator.comparing(BackupMetadata::getStart).reversed())
                 .collect(Collectors.toList());
     }

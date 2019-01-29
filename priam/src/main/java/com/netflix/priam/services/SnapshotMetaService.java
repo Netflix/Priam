@@ -15,6 +15,7 @@ package com.netflix.priam.services;
 
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -69,7 +70,6 @@ public class SnapshotMetaService extends AbstractBackup {
     private final CassandraOperations cassandraOperations;
     private String snapshotName = null;
     private static final Lock lock = new ReentrantLock();
-    public static final int BACKUP_VERSION = 2;
     private final IBackupStatusMgr snapshotStatusMgr;
     private final InstanceIdentity instanceIdentity;
 
@@ -177,7 +177,10 @@ public class SnapshotMetaService extends AbstractBackup {
         Instant snapshotInstant = DateUtil.getInstant();
         String token = instanceIdentity.getInstance().getToken();
         BackupMetadata backupMetadata =
-                new BackupMetadata(BACKUP_VERSION, token, new Date(snapshotInstant.toEpochMilli()));
+                new BackupMetadata(
+                        BackupVersion.SNAPSHOT_META_SERVICE,
+                        token,
+                        new Date(snapshotInstant.toEpochMilli()));
         snapshotStatusMgr.start(backupMetadata);
 
         try {

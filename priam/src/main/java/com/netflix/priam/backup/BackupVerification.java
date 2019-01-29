@@ -19,7 +19,6 @@ import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
-import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.nio.file.Path;
@@ -54,11 +53,11 @@ public class BackupVerification {
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    private IMetaProxy getMetaProxy(int backupVersion) {
+    private IMetaProxy getMetaProxy(BackupVersion backupVersion) {
         switch (backupVersion) {
-            case SnapshotBackup.BACKUP_VERSION:
+            case SNAPSHOT_BACKUP:
                 return metaV1Proxy;
-            case SnapshotMetaService.BACKUP_VERSION:
+            case SNAPSHOT_META_SERVICE:
                 return metaV2Proxy;
         }
 
@@ -66,7 +65,7 @@ public class BackupVerification {
     }
 
     public Optional<BackupVerificationResult> verifyBackup(
-            int backupVersion, boolean force, DateRange dateRange)
+            BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws UnsupportedTypeException, IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         if (metaProxy == null) {

@@ -14,6 +14,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.ImplementedBy;
+import com.netflix.priam.utils.DateUtil;
 import java.util.Date;
 import java.util.LinkedList;
 import java.util.List;
@@ -66,6 +67,13 @@ public interface IBackupStatusMgr {
     void failed(BackupMetadata backupMetadata);
 
     /**
+     * Update the backup information of backupmetadata in-memory and other implementations, if any.
+     *
+     * @param backupMetadata backupmetadata to be updated.
+     */
+    void update(BackupMetadata backupMetadata);
+
+    /**
      * Get the capacity of in-memory status map holding the snapshot status.
      *
      * @return capacity of in-memory snapshot status map.
@@ -80,4 +88,16 @@ public interface IBackupStatusMgr {
      *     snapshot start time.
      */
     Map<String, LinkedList<BackupMetadata>> getAllSnapshotStatus();
+
+    /**
+     * Get the list of backup metadata which are finished and have started in the daterange
+     * provided, in reverse chronological order of start date.
+     *
+     * @param backupVersion backup version of the backups to search.
+     * @param dateRange time period in which snapshot should have started. Finish time may be after
+     *     the endTime in input.
+     * @return list of backup metadata which satisfies the input criteria
+     */
+    List<BackupMetadata> getLatestBackupMetadata(
+            BackupVersion backupVersion, DateUtil.DateRange dateRange);
 }

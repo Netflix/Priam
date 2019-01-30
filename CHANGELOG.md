@@ -1,6 +1,11 @@
 # Changelog
 
-## 2018/01/11 3.11.38
+## 2019/01/30 3.11.39
+(#765) Add metrics on CassandraConfig resource calls
+(#768) Support configure/tune complex parameters in cassandra.yaml 
+(#770) Add Cass SNAPSHOT JMX status, snapshot version, last validated timestamp. Changes to Servlet API and new APIs. 
+
+## 2019/01/11 3.11.38
 (#761) Add new file format (SST_V2) and methods to get/parse remote locations.
 (#761) Upload files from SnapshotMetaService in backup version 2.0, if enabled.
 (#761) Process older SNAPSHOT_V2 at the restart of Priam.

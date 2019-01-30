@@ -109,12 +109,14 @@ public class SnapshotBackup extends AbstractBackup {
         String token = instanceIdentity.getInstance().getToken();
 
         // Save start snapshot status
-        BackupMetadata backupMetadata = new BackupMetadata(token, startTime);
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, token, startTime);
         snapshotStatusMgr.start(backupMetadata);
 
         try {
             logger.info("Starting snapshot {}", snapshotName);
             cassandraOperations.takeSnapshot(snapshotName);
+            backupMetadata.setCassandraSnapshotSuccess(true);
 
             // Collect all snapshot dir's under keyspace dir's
             abstractBackupPaths = Lists.newArrayList();

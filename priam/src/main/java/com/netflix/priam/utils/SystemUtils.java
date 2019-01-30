@@ -123,7 +123,7 @@ public class SystemUtils {
         try {
             tool.close();
         } catch (Exception e) {
-            logger.warn("failed to close jxm node tool", e);
+            logger.warn("failed to close jmx node tool", e);
         }
     }
 

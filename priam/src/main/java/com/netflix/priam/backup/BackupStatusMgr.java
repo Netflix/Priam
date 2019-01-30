@@ -18,7 +18,10 @@ import com.google.inject.Singleton;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.MaxSizeHashMap;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -111,7 +114,11 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
                     Calendar.getInstance(TimeZone.getTimeZone("GMT")).getTime());
 
         instanceState.setBackupStatus(backupMetadata);
+        update(backupMetadata);
+    }
 
+    @Override
+    public void update(BackupMetadata backupMetadata) {
         // Retrieve the snapshot metadata and then update the finish date/status.
         retrieveAndUpdate(backupMetadata);
 
@@ -123,19 +130,29 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
         // Retrieve the snapshot metadata and then update the date/status.
         LinkedList<BackupMetadata> metadataLinkedList = locate(backupMetadata.getSnapshotDate());
 
-        if (metadataLinkedList == null || metadataLinkedList.isEmpty()) {
+        if (metadataLinkedList == null) {
             logger.error(
                     "No previous backupMetaData found. This should not happen. Creating new to ensure app keeps running.");
             metadataLinkedList = new LinkedList<>();
-            metadataLinkedList.addFirst(backupMetadata);
+            backupMetadataMap.put(backupMetadata.getSnapshotDate(), metadataLinkedList);
         }
 
-        metadataLinkedList.forEach(
+        Optional<BackupMetadata> searchedData =
+                metadataLinkedList
+                        .stream()
+                        .filter(backupMetadata1 -> backupMetadata.equals(backupMetadata1))
+                        .findFirst();
+        if (!searchedData.isPresent()) {
+            metadataLinkedList.addFirst(backupMetadata);
+        }
+        searchedData.ifPresent(
                 backupMetadata1 -> {
-                    if (backupMetadata1.equals(backupMetadata)) {
-                        backupMetadata1.setCompleted(backupMetadata.getCompleted());
-                        backupMetadata1.setStatus(backupMetadata.getStatus());
-                    }
+                    backupMetadata1.setCompleted(backupMetadata.getCompleted());
+                    backupMetadata1.setStatus(backupMetadata.getStatus());
+                    backupMetadata1.setCassandraSnapshotSuccess(
+                            backupMetadata.isCassandraSnapshotSuccess());
+                    backupMetadata1.setSnapshotLocation(backupMetadata.getSnapshotLocation());
+                    backupMetadata1.setLastValidated(backupMetadata.getLastValidated());
                 });
     }
 
@@ -150,12 +167,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
         if (backupMetadata.getStatus() != Status.FAILED) backupMetadata.setStatus(Status.FAILED);
 
         instanceState.setBackupStatus(backupMetadata);
-
-        // Retrieve the snapshot metadata and then update the failure date/status.
-        retrieveAndUpdate(backupMetadata);
-
-        // Save the backupMetaDataMap
-        save(backupMetadata);
+        update(backupMetadata);
     }
 
     /**
@@ -173,6 +185,47 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      *     start time.
      */
     protected abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
+
+    public List<BackupMetadata> getLatestBackupMetadata(
+            BackupVersion backupVersion, DateUtil.DateRange dateRange) {
+        Instant startDay = dateRange.getStartTime().truncatedTo(ChronoUnit.DAYS);
+        Instant endDay = dateRange.getEndTime().truncatedTo(ChronoUnit.DAYS);
+
+        List<BackupMetadata> allBackups = new ArrayList<>();
+        Instant previousDay = endDay;
+        do {
+            // We need to find the latest backupmetadata in this date range.
+            logger.info(
+                    "Will try to find snapshot for : {}",
+                    DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, previousDay));
+            List<BackupMetadata> backupsForDate = locate(new Date(previousDay.toEpochMilli()));
+            if (backupsForDate != null) allBackups.addAll(backupsForDate);
+            previousDay = previousDay.minus(1, ChronoUnit.DAYS);
+        } while (!previousDay.isBefore(startDay));
+
+        // Return all the backups which are FINISHED and were "started" in the dateRange provided.
+        // Do not compare the end time of snapshot as it may take random amount of time to finish
+        // the snapshot.
+        return allBackups
+                .stream()
+                .filter(Objects::nonNull)
+                .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
+                .filter(backupMetadata -> backupMetadata.getBackupVersion().equals(backupVersion))
+                .filter(
+                        backupMetadata ->
+                                backupMetadata
+                                                        .getStart()
+                                                        .toInstant()
+                                                        .compareTo(dateRange.getStartTime())
+                                                >= 0
+                                        && backupMetadata
+                                                        .getStart()
+                                                        .toInstant()
+                                                        .compareTo(dateRange.getEndTime())
+                                                <= 0)
+                .sorted(Comparator.comparing(BackupMetadata::getStart).reversed())
+                .collect(Collectors.toList());
+    }
 
     @Override
     public String toString() {

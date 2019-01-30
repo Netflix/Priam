@@ -65,7 +65,7 @@ public class AWSSnsNotificationService implements INotificationService {
             final String msg, final Map<String, MessageAttributeValue> messageAttributes) {
         // e.g. arn:aws:sns:eu-west-1:1234:eu-west-1-cass-sample-backup
         final String topic_arn = this.configuration.getBackupNotificationTopicArn();
-        if (StringUtils.isEmpty(topic_arn)) {
+        if (!configuration.enableBackupNotification() || StringUtils.isEmpty(topic_arn)) {
             return;
         }
 

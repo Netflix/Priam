@@ -20,11 +20,10 @@ import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backupv2.BackupValidator;
+import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
-import com.netflix.priam.utils.SystemUtils;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.*;
@@ -33,7 +32,6 @@ import javax.ws.rs.core.Response;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
-import org.joda.time.DateTime;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +50,6 @@ public class BackupServlet {
     @Inject private PriamScheduler scheduler;
     private final IBackupStatusMgr completedBkups;
     @Inject private MetaData metaData;
-    @Inject private BackupValidator backupValidator;
 
     @Inject
     public BackupServlet(
@@ -135,45 +132,25 @@ public class BackupServlet {
     @Produces(MediaType.APPLICATION_JSON)
     public Response statusByDate(@PathParam("date") String date) throws Exception {
         JSONObject object = new JSONObject();
-        List<BackupMetadata> metadataLinkedList = this.completedBkups.locate(date);
-
-        if (metadataLinkedList != null && !metadataLinkedList.isEmpty()) {
-
-            // backup exist base on requested date, lets fetch more of its metadata
-            BackupMetadata bkupMetadata = metadataLinkedList.get(0);
-            object.put("Snapshotstatus", bkupMetadata.getStatus().equals(Status.FINISHED));
-
-            String token = bkupMetadata.getToken();
-            if (token != null && !token.isEmpty()) {
-                object.put("token", bkupMetadata.getToken());
-            } else {
-                object.put("token", "not available");
-            }
-            if (bkupMetadata.getStart() != null) {
-                object.put("starttime", DateUtil.formatyyyyMMddHHmm(bkupMetadata.getStart()));
-            } else {
-                object.put("starttime", "not available");
-            }
-
-            if (bkupMetadata.getCompleted() != null) {
-                object.put(
-                        "completetime", DateUtil.formatyyyyMMddHHmm(bkupMetadata.getCompleted()));
-            } else {
-                object.put("completetime", "not_available");
-            }
-
-        } else { // Backup do not exist for that date.
+        Optional<BackupMetadata> backupMetadataOptional =
+                this.completedBkups
+                        .locate(date)
+                        .stream()
+                        .filter(Objects::nonNull)
+                        .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
+                        .filter(
+                                backupMetadata ->
+                                        backupMetadata
+                                                .getBackupVersion()
+                                                .equals(BackupVersion.SNAPSHOT_BACKUP))
+                        .findFirst();
+        if (!backupMetadataOptional.isPresent()) {
             object.put("Snapshotstatus", false);
-            String token =
-                    SystemUtils.getDataFromUrl(
-                            "http://localhost:8080/Priam/REST/v1/cassconfig/get_token");
-            if (token != null && !token.isEmpty()) {
-                object.put("token", token);
-            } else {
-                object.put("token", "not available");
-            }
-        }
+        } else {
 
+            object.put("Snapshotstatus", true);
+            object.put("Details", backupMetadataOptional.get().toString());
+        }
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 
@@ -194,6 +171,11 @@ public class BackupServlet {
         if (metadata != null && !metadata.isEmpty())
             snapshots.addAll(
                     metadata.stream()
+                            .filter(
+                                    backupMetadata ->
+                                            backupMetadata
+                                                    .getBackupVersion()
+                                                    .equals(BackupVersion.SNAPSHOT_BACKUP))
                             .map(
                                     backupMetadata ->
                                             DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart()))
@@ -201,32 +183,6 @@ public class BackupServlet {
 
         object.put("Snapshots", snapshots);
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
-    }
-
-    private List<BackupMetadata> getLatestBackupMetadata(DateUtil.DateRange dateRange) {
-        Date startTime = Date.from(dateRange.getStartTime());
-        Date endTime = Date.from(dateRange.getEndTime());
-        List<BackupMetadata> backupMetadata = this.completedBkups.locate(endTime);
-        if (backupMetadata != null && !backupMetadata.isEmpty()) return backupMetadata;
-        if (DateUtil.formatyyyyMMdd(startTime).equals(DateUtil.formatyyyyMMdd(endTime))) {
-            logger.info(
-                    "Start & end date are same. No SNAPSHOT found for date: {}",
-                    DateUtil.formatyyyyMMdd(endTime));
-            return null;
-        } else {
-            Date previousDay = new Date(endTime.getTime());
-            do {
-                // We need to find the latest backupmetadata in this date range.
-                previousDay = new DateTime(previousDay.getTime()).minusDays(1).toDate();
-                logger.info(
-                        "Will try to find snapshot for previous day: {}",
-                        DateUtil.formatyyyyMMdd(previousDay));
-                backupMetadata = completedBkups.locate(previousDay);
-                if (backupMetadata != null && !backupMetadata.isEmpty()) return backupMetadata;
-            } while (!DateUtil.formatyyyyMMdd(startTime)
-                    .equals(DateUtil.formatyyyyMMdd(previousDay)));
-        }
-        return null;
     }
 
     /*
@@ -238,28 +194,13 @@ public class BackupServlet {
     @GET
     @Path("/validate/snapshot/{daterange}")
     @Produces(MediaType.APPLICATION_JSON)
-    public Response validateSnapshotByDate(@PathParam("daterange") String daterange)
-            throws Exception {
-
-        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
-        List<BackupMetadata> metadata = getLatestBackupMetadata(dateRange);
-        Optional<BackupVerificationResult> result = backupVerification.verifyBackup(metadata);
-        if (!result.isPresent()) {
-            return Response.noContent()
-                    .entity("No valid meta found for provided time range")
-                    .build();
-        }
-
-        return Response.ok(result.get().toString()).build();
-    }
-
-    @GET
-    @Path("/validate/snapshot/v2/{daterange}")
-    public Response validateV2SnapshotByDate(@PathParam("daterange") String daterange)
+    public Response validateSnapshotByDate(
+            @PathParam("daterange") String daterange,
+            @DefaultValue("false") @QueryParam("force") boolean force)
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupValidator.findLatestValidMetaFile(dateRange);
+                backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

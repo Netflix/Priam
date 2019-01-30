@@ -657,6 +657,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public boolean enableBackupNotification() {
+        return config.get(PRIAM_PRE + ".enableBackupNotification", true);
+    }
+
+    @Override
     public String getBackupNotificationTopicArn() {
         return config.get(PRIAM_PRE + ".backup.notification.topic.arn", "");
     }

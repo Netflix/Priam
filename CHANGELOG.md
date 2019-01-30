@@ -1,4 +1,10 @@
 # Changelog
+
+## 2019/01/30 3.1.70
+(#765) Add metrics on CassandraConfig resource calls
+(#768) Support configure/tune complex parameters in cassandra.yaml 
+(#771) Add Cass SNAPSHOT JMX status, snapshot version, last validated timestamp. Changes to Servlet API and new APIs. 
+
 ## 2019/01/10 3.1.69 
 * (#762) Backup Verification for Backup 2.0. 
 * (#762) Restore for Backup 2.0 

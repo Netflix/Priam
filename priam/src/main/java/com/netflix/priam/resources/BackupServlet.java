@@ -24,6 +24,9 @@ import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.DateUtil.DateRange;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
 import javax.ws.rs.*;
@@ -131,25 +134,26 @@ public class BackupServlet {
     @Path("/status/{date}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response statusByDate(@PathParam("date") String date) throws Exception {
-        JSONObject object = new JSONObject();
+        Instant startTime = DateUtil.parseInstant(date);
         Optional<BackupMetadata> backupMetadataOptional =
                 this.completedBkups
-                        .locate(date)
+                        .getLatestBackupMetadata(
+                                BackupVersion.SNAPSHOT_BACKUP,
+                                new DateRange(
+                                        startTime.truncatedTo(ChronoUnit.DAYS),
+                                        startTime
+                                                .plus(1, ChronoUnit.DAYS)
+                                                .truncatedTo(ChronoUnit.DAYS)))
                         .stream()
-                        .filter(Objects::nonNull)
-                        .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
-                        .filter(
-                                backupMetadata ->
-                                        backupMetadata
-                                                .getBackupVersion()
-                                                .equals(BackupVersion.SNAPSHOT_BACKUP))
                         .findFirst();
+
+        JSONObject object = new JSONObject();
         if (!backupMetadataOptional.isPresent()) {
             object.put("Snapshotstatus", false);
         } else {
 
             object.put("Snapshotstatus", true);
-            object.put("Details", backupMetadataOptional.get().toString());
+            object.put("Details", backupMetadataOptional.get());
         }
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }

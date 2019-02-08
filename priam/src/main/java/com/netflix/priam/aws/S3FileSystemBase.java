@@ -13,6 +13,7 @@
  */
 package com.netflix.priam.aws;
 
+import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
@@ -166,7 +167,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         boolean exists = false;
         try {
             exists = s3Client.doesObjectExist(getShard(), remotePath.toString());
-        } catch (Exception ex) {
+        } catch (AmazonClientException ex) {
             // No point throwing this exception up.
             logger.error(
                     "Exception while checking existence of object: {}. Error: {}",

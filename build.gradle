@@ -1,5 +1,5 @@
 plugins {
-    id 'nebula.netflixoss' version '5.2.0'
+    id 'nebula.netflixoss' version '7.0.0'
     id 'com.github.sherter.google-java-format' version '0.7.1'
 }
 
@@ -35,14 +35,13 @@ allprojects {
       compile 'org.apache.commons:commons-collections4:4.2'
       compile 'commons-io:commons-io:2.6'
       compile 'commons-cli:commons-cli:1.4'
-      compile 'commons-httpclient:commons-httpclient:3.1'
       compile 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
       compile 'com.sun.jersey:jersey-json:1.19.4'
       compile 'com.sun.jersey:jersey-bundle:1.19.4'
       compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
       compile 'com.google.guava:guava:21.0'
       compile 'com.google.code.findbugs:jsr305:3.0.2'
-      compile 'com.amazonaws:aws-java-sdk:1.11.487'
+      compile 'com.amazonaws:aws-java-sdk:1.11.488'
       compile 'com.google.inject:guice:4.2.2'
       compile 'com.google.inject.extensions:guice-servlet:4.2.2'
       compile 'org.quartz-scheduler:quartz:2.3.0'

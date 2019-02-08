@@ -19,6 +19,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
@@ -182,7 +183,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 long uploadedFileSize;
 
                 // Upload file if it not present at remote location.
-                if (!doesRemoteFileExist(remotePath)) {
+                if (path.getType() != BackupFileType.SST_V2 || !doesRemoteFileExist(remotePath)) {
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override

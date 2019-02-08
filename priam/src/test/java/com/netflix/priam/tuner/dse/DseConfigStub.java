@@ -1,4 +1,3 @@
-package com.netflix.priam.tuner.dse;
 /*
  * Copyright 2017 Netflix, Inc.
  *
@@ -15,6 +14,7 @@ package com.netflix.priam.tuner.dse;
  * limitations under the License.
  *
  */
+package com.netflix.priam.tuner.dse;
 
 import com.netflix.priam.config.FakeConfiguration;
 import java.util.HashSet;

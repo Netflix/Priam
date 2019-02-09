@@ -17,6 +17,8 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -60,6 +62,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private final Set<Path> tasksQueued;
     private final ThreadPoolExecutor fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
+    private final Cache<Path, Boolean> objectCache;
 
     @Inject
     public AbstractFileSystem(
@@ -72,6 +75,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         this.pathProvider = pathProvider;
         // Add notifications.
         this.addObserver(backupNotificationMgr);
+        this.objectCache =
+                CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
         /*
         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
@@ -183,7 +188,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 long uploadedFileSize;
 
                 // Upload file if it not present at remote location.
-                if (path.getType() != BackupFileType.SST_V2 || !doesRemoteFileExist(remotePath)) {
+                if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
@@ -191,6 +196,12 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                                     return uploadFileImpl(localPath, remotePath);
                                 }
                             }.call();
+
+                    // Add to cache after successful upload.
+                    // We only add SST_V2 as other file types are usually not checked, so no point
+                    // evicting our SST_V2 results.
+                    if (path.getType() == BackupFileType.SST_V2) addObjectCache(remotePath);
+
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
                 } else {
@@ -226,6 +237,28 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             }
         } else logger.info("Already in queue, no-op.  File: {}", localPath);
     }
+
+    private void addObjectCache(Path remotePath) {
+        objectCache.put(remotePath, Boolean.TRUE);
+    }
+
+    @Override
+    public boolean checkObjectExists(Path remotePath) {
+        // Check in cache, if remote file exists.
+        Boolean cacheResult = objectCache.getIfPresent(remotePath);
+
+        // Cache hit. Return the value.
+        if (cacheResult != null) return cacheResult;
+
+        // Cache miss - Check remote file system if object exist.
+        boolean remoteFileExist = doesRemoteFileExist(remotePath);
+
+        if (remoteFileExist) addObjectCache(remotePath);
+
+        return remoteFileExist;
+    }
+
+    protected abstract boolean doesRemoteFileExist(Path remotePath);
 
     protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
             throws BackupRestoreException;

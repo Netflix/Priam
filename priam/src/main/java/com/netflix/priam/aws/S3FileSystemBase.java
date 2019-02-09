@@ -48,6 +48,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     final BlockingSubmitThreadPoolExecutor executor;
     // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
     final RateLimiter rateLimiter;
+    private final RateLimiter objectExistLimiter;
 
     S3FileSystemBase(
             Provider<AbstractBackupPath> pathProvider,
@@ -66,6 +67,10 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
 
         double throttleLimit = config.getUploadThrottle();
         this.rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
+
+        int objectExistLimit = config.getRemoteFileSystemObjectThrottle();
+        this.objectExistLimiter =
+                RateLimiter.create(objectExistLimit < 1 ? Double.MAX_VALUE : objectExistLimit);
     }
 
     private AmazonS3 getS3Client() {
@@ -163,7 +168,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+    protected boolean doesRemoteFileExist(Path remotePath) {
+        objectExistLimiter.acquire();
         boolean exists = false;
         try {
             exists = s3Client.doesObjectExist(getShard(), remotePath.toString());

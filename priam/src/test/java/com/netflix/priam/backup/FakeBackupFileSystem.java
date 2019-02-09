@@ -116,7 +116,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+    public boolean doesRemoteFileExist(Path remotePath) {
         for (AbstractBackupPath abstractBackupPath : flist) {
             if (abstractBackupPath.getRemotePath().equalsIgnoreCase(remotePath.toString()))
                 return true;

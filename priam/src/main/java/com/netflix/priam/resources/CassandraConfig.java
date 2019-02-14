@@ -122,6 +122,7 @@ public class CassandraConfig {
     @Path("/set_replaced_ip")
     public Response setReplacedIp(@QueryParam("ip") String ip) {
         try {
+            priamServer.getInstanceIdentity().setReplacedIp(ip);
             return Response.ok().build();
         } catch (Exception e) {
             logger.error("Error while overriding replacement ip", e);

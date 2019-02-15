@@ -316,6 +316,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public int getRemoteFileSystemObjectExistsThrottle() {
+        return config.get(PRIAM_PRE + ".remoteFileSystemObjectExistThrottle", -1);
+    }
+
+    @Override
     public boolean isLocalBootstrapEnabled() {
         return config.get(PRIAM_PRE + ".localbootstrap.enable", false);
     }

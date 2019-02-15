@@ -180,10 +180,8 @@ public interface IBackupFileSystem {
      *
      * @param remotePath location on the remote file system.
      * @return boolean value indicating presence of the file on remote file system.
-     * @throws BackupRestoreException in case of failure to identify if object exists on the remote
-     *     file system.
      */
-    default boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+    default boolean checkObjectExists(Path remotePath) {
         return false;
     }
 

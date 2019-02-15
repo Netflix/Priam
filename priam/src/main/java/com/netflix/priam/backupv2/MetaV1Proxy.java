@@ -60,7 +60,7 @@ public class MetaV1Proxy implements IMetaProxy {
         Date startTime = new Date(dateRange.getStartTime().toEpochMilli());
         Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
         String restorePrefix = fs.getPrefix().toString();
-        logger.debug("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
+        logger.info("Looking for snapshot meta file within restore prefix: {}", restorePrefix);
         List<AbstractBackupPath> metas = Lists.newArrayList();
 
         Iterator<AbstractBackupPath> backupfiles = fs.list(restorePrefix, startTime, endTime);

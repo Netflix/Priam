@@ -77,7 +77,7 @@ public class InstanceIdentity {
     private final INewTokenRetriever newTokenRetriever;
 
     @Inject
-    // Note: do not parameterized the generic type variable to an implementation as it confuses
+    // Note: do not parameterize the generic type variable to an implementation as it confuses
     // Guice in the binding.
     public InstanceIdentity(
             IPriamInstanceFactory factory,

@@ -81,9 +81,14 @@ subprojects {
         compile 'com.google.http-client:google-http-client-jackson2:1.28.0'
         compile 'com.netflix.spectator:spectator-api:0.83.0'
         compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
+        //Dynamic configuration management - https://github.com/Netflix/archaius/tree/2.x
+        compile 'com.netflix.archaius:archaius2-core:2.3.13'
+        compile group: 'com.netflix.archaius', name: 'archaius2-guice', version: '2.3.13'
+
         testCompile 'org.jmockit:jmockit:1.31'
         testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
         testCompile 'junit:junit:4.12'
+        testCompile 'com.netflix.governator:governator-test-junit:[1.15.3,)'
 
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

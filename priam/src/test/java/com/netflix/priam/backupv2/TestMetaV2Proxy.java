@@ -17,9 +17,12 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
@@ -39,24 +42,24 @@ import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 12/5/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
+@TestPropertyOverride({"priam.restore.prefix="})
 public class TestMetaV2Proxy {
-    private FakeBackupFileSystem fs;
-    private IConfiguration configuration;
-    private TestBackupUtils backupUtils;
-    private IMetaProxy metaProxy;
-    private Provider<AbstractBackupPath> abstractBackupPathProvider;
+    @Inject private FakeBackupFileSystem fs;
+    @Inject private IConfiguration configuration;
+    @Inject private TestBackupUtils backupUtils;
+    @Inject private MetaV2Proxy metaProxy;
+    @Inject private Provider<AbstractBackupPath> abstractBackupPathProvider;
 
-    public TestMetaV2Proxy() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        configuration = injector.getInstance(IConfiguration.class);
-        fs = injector.getInstance(FakeBackupFileSystem.class);
+    @Before
+    public void setup() {
         fs.setupTest(getRemoteFakeFiles());
-        backupUtils = new TestBackupUtils();
-        metaProxy = injector.getInstance(MetaV2Proxy.class);
-        abstractBackupPathProvider = injector.getProvider(AbstractBackupPath.class);
     }
 
     @Test

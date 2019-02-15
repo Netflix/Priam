@@ -19,8 +19,8 @@ import com.netflix.priam.backup.SnapshotBackup;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.io.*;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -35,9 +35,14 @@ public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
     private final InstanceInfo instanceInfo;
+    private final PriamHelperFunctions priamHelperFunctions;
 
     @Inject
-    public StandardTuner(IConfiguration config, InstanceInfo instanceInfo) {
+    public StandardTuner(
+            PriamHelperFunctions priamHelperFunctions,
+            IConfiguration config,
+            InstanceInfo instanceInfo) {
+        this.priamHelperFunctions = priamHelperFunctions;
         this.config = config;
         this.instanceInfo = instanceInfo;
     }
@@ -234,43 +239,6 @@ public class StandardTuner implements ICassandraTuner {
     }
 
     public void addExtraCassParams(Map map) {
-        String params = config.getExtraConfigParams();
-        if (StringUtils.isEmpty(params)) {
-            logger.info("Updating yaml: no extra cass params");
-            return;
-        }
-
-        String[] pairs = params.split(",");
-        logger.info("Updating yaml: adding extra cass params");
-        for (String pair1 : pairs) {
-            String[] pair = pair1.split("=");
-            String priamKey = pair[0];
-            String cassKey = pair[1];
-            String cassVal = config.getCassYamlVal(priamKey);
-
-            if (!StringUtils.isBlank(cassKey) && !StringUtils.isBlank(cassVal)) {
-                if (!cassKey.contains(".")) {
-                    logger.info(
-                            "Updating yaml: PriamKey: [{}], Key: [{}], OldValue: [{}], NewValue: [{}]",
-                            priamKey,
-                            cassKey,
-                            map.get(cassKey),
-                            cassVal);
-                    map.put(cassKey, cassVal);
-                } else {
-                    // split the cassandra key. We will get the group and get the key name.
-                    String[] cassKeySplit = cassKey.split("\\.");
-                    Map cassKeyMap = ((Map) map.getOrDefault(cassKeySplit[0], new HashMap()));
-                    map.putIfAbsent(cassKeySplit[0], cassKeyMap);
-                    logger.info(
-                            "Updating yaml: PriamKey: [{}], Key: [{}], OldValue: [{}], NewValue: [{}]",
-                            priamKey,
-                            cassKey,
-                            cassKeyMap.get(cassKeySplit[1]),
-                            cassVal);
-                    cassKeyMap.put(cassKeySplit[1], cassVal);
-                }
-            }
-        }
+        priamHelperFunctions.parseParams(map, config.getExtraConfigParams());
     }
 }

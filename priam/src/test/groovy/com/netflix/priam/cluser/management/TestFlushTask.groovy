@@ -17,15 +17,8 @@
 
 package com.netflix.priam.cluser.management
 
-import com.google.inject.Guice
-import com.netflix.priam.backup.BRTestModule
-import com.netflix.priam.cluster.management.Compaction
 import com.netflix.priam.cluster.management.Flush
-import com.netflix.priam.config.FakeConfiguration
-import com.netflix.priam.defaultimpl.CassandraOperations
-import mockit.Mock
-import mockit.MockUp
-import spock.lang.Shared
+import com.netflix.priam.config.IConfiguration
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -65,7 +58,7 @@ class TestFlushTask extends Specification {
         "0 0 0/1 1/1 * ? *" || "0 0 0/1 1/1 * ? *"
     }
 
-    private class FlushConfiguration extends FakeConfiguration {
+    private class FlushConfiguration implements IConfiguration {
         private String flushCronExpression
 
         FlushConfiguration(String flushCronExpression) {

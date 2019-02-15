@@ -17,14 +17,16 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
 import com.google.inject.Inject;
-import com.google.inject.Injector;
 import com.google.inject.Provider;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BackupFileUtils;
+import com.netflix.spectator.api.DefaultRegistry;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,42 +40,33 @@ import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * The goal of this class is to test common functionality which are encapsulated in
  * AbstractFileSystem. The actual upload/download of a file to remote file system is beyond the
  * scope of this class. Created by aagrawal on 9/22/18.
  */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestAbstractFileSystem {
-    private Injector injector;
-    private IConfiguration configuration;
+    @Inject private IConfiguration configuration;
     private BackupMetrics backupMetrics;
-    private BackupNotificationMgr backupNotificationMgr;
-    private FailureFileSystem failureFileSystem;
+    @Inject private BackupNotificationMgr backupNotificationMgr;
+    @Inject private AbstractBackupPath path;
+    @Inject private com.netflix.spectator.api.Registry registry;
+    @Inject private Provider<AbstractBackupPath> pathProvider;
+    private AbstractFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
 
     @Before
     public void setBackupMetrics() {
-        if (injector == null) injector = Guice.createInjector(new BRTestModule());
-
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
-
-        if (backupNotificationMgr == null)
-            backupNotificationMgr = injector.getInstance(BackupNotificationMgr.class);
-
-        backupMetrics = injector.getInstance(BackupMetrics.class);
-        Provider<AbstractBackupPath> pathProvider = injector.getProvider(AbstractBackupPath.class);
-
-        if (failureFileSystem == null)
-            failureFileSystem =
-                    new FailureFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
-
-        if (myFileSystem == null)
-            myFileSystem =
-                    new MyFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
-
+        backupMetrics = new BackupMetrics(new DefaultRegistry());
+        failureFileSystem =
+                new FailureFileSystem(
+                        configuration, backupMetrics, backupNotificationMgr, pathProvider);
+        myFileSystem =
+                new MyFileSystem(configuration, backupMetrics, backupNotificationMgr, pathProvider);
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
     }
 
@@ -92,7 +85,6 @@ public class TestAbstractFileSystem {
     }
 
     private AbstractBackupPath getDummyPath(Path localPath) throws ParseException {
-        AbstractBackupPath path = injector.getInstance(AbstractBackupPath.class);
         path.parseLocal(localPath.toFile(), AbstractBackupPath.BackupFileType.SNAP);
         return path;
     }
@@ -269,6 +261,7 @@ public class TestAbstractFileSystem {
         // Testing the queue feature works.
         // 1. Give 1000 dummy files to download. File download takes some random time to download.
         int totalFiles = 1000;
+        double totalFilesBefore = backupMetrics.getValidDownloads().actualCount();
         List<Future<Path>> futureList = new ArrayList<>();
         for (int i = 0; i < totalFiles; i++)
             futureList.add(
@@ -281,7 +274,9 @@ public class TestAbstractFileSystem {
         }
 
         // 2. Success metric is incremented correctly -> exactly 1000 times.
-        Assert.assertEquals(totalFiles, (int) backupMetrics.getValidDownloads().actualCount());
+        Assert.assertEquals(
+                totalFiles,
+                (int) (backupMetrics.getValidDownloads().actualCount() - totalFilesBefore));
 
         // 3. The task queue is empty after download is finished.
         Assert.assertEquals(0, myFileSystem.getDownloadTasksQueued());

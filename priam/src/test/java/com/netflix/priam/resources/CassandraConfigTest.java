@@ -18,17 +18,15 @@
 package com.netflix.priam.resources;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
-import com.google.inject.Guice;
 import com.netflix.priam.PriamServer;
-import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.merics.CassMonitorMetrics;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.io.IOException;
 import java.net.UnknownHostException;
 import java.util.List;
@@ -44,16 +42,15 @@ import org.junit.runner.RunWith;
 public class CassandraConfigTest {
     private @Mocked PriamServer priamServer;
     private @Mocked DoubleRing doubleRing;
+    private @Mocked PriamHelperFunctions priamHelperFunctions;
+    private @Mocked CassMonitorMetrics cassMonitorMetrics;
     private CassandraConfig resource;
-    private InstanceIdentity instanceIdentity;
 
     @Before
     public void setUp() {
-        CassMonitorMetrics cassMonitorMetrics =
-                Guice.createInjector(new BRTestModule()).getInstance(CassMonitorMetrics.class);
-        instanceIdentity =
-                Guice.createInjector(new BRTestModule()).getInstance(InstanceIdentity.class);
-        resource = new CassandraConfig(priamServer, doubleRing, cassMonitorMetrics);
+        resource =
+                new CassandraConfig(
+                        priamHelperFunctions, priamServer, doubleRing, cassMonitorMetrics);
     }
 
     @Test
@@ -218,7 +215,7 @@ public class CassandraConfigTest {
     }
 
     @Test
-    public void setReplacedIp() {
+    public void setReplacedIp(@Mocked final InstanceIdentity instanceIdentity) {
         new Expectations() {
             {
                 priamServer.getInstanceIdentity();
@@ -228,8 +225,6 @@ public class CassandraConfigTest {
 
         Response response = resource.setReplacedIp("127.0.0.1");
         assertEquals(200, response.getStatus());
-        assertEquals("127.0.0.1", instanceIdentity.getReplacedIp());
-        assertTrue(instanceIdentity.isReplace());
 
         response = resource.setReplacedIp(null);
         assertEquals(400, response.getStatus());

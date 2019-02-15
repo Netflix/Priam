@@ -19,6 +19,7 @@ package com.netflix.priam.stream;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
@@ -40,7 +41,7 @@ public class StreamingTest {
 
     @Test
     public void testAbstractPath() {
-        Injector injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new ArchaiusModule(), new BRTestModule());
         IConfiguration conf = injector.getInstance(IConfiguration.class);
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
         String region = factory.getInstanceInfo().getRegion();

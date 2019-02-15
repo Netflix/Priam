@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
@@ -34,25 +36,19 @@ import org.joda.time.DateTime;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 7/11/17. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestBackupStatusMgr {
     private static final Logger logger = LoggerFactory.getLogger(TestBackupStatusMgr.class);
-    private static IConfiguration configuration;
-    private static IBackupStatusMgr backupStatusMgr;
+    @Inject private IConfiguration configuration;
+    @Inject private IBackupStatusMgr backupStatusMgr;
     private final String backupDate = "201812011000";
-
-    @BeforeClass
-    public static void setup() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        // cleanup old saved file, if any
-        configuration = injector.getInstance(IConfiguration.class);
-        backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
-    }
 
     @Before
     @After

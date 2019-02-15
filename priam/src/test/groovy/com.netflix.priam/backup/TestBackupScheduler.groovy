@@ -16,7 +16,8 @@
  */
 package com.netflix.priam.backup
 
-import com.netflix.priam.config.FakeConfiguration
+
+import com.netflix.priam.config.IConfiguration
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -57,7 +58,7 @@ class TestBackupScheduler extends Specification {
         "0 0 9 1/1 * ? *" ||  "0 0 9 1/1 * ? *"
     }
 
-    private class BackupConfiguration extends FakeConfiguration {
+    private class BackupConfiguration implements IConfiguration {
         private String backupCronExpression
 
         BackupConfiguration(String backupCronExpression) {

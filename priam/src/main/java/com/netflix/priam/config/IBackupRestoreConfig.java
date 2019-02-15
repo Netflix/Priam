@@ -13,13 +13,15 @@
  */
 package com.netflix.priam.config;
 
-import com.google.inject.ImplementedBy;
+import com.netflix.archaius.api.annotations.Configuration;
+import com.netflix.archaius.api.annotations.PropertyName;
+import com.netflix.priam.utils.PriamConstants;
 
 /**
  * This interface is to abstract out the backup and restore configuration used by Priam. Goal is to
  * eventually have each module/functionality to have its own Config. Created by aagrawal on 6/26/18.
  */
-@ImplementedBy(BackupRestoreConfig.class)
+@Configuration(prefix = PriamConstants.PROP_NAMESPACE)
 public interface IBackupRestoreConfig {
 
     /**
@@ -30,6 +32,7 @@ public interface IBackupRestoreConfig {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
      */
+    @PropertyName(name = "snapshot.meta.cron")
     default String getSnapshotMetaServiceCronExpression() {
         return "-1";
     }
@@ -40,6 +43,7 @@ public interface IBackupRestoreConfig {
      *
      * @return boolean value indicating if backups in version 2.0 should be started.
      */
+    @PropertyName(name = "enableV2Backups")
     default boolean enableV2Backups() {
         return false;
     }
@@ -56,6 +60,7 @@ public interface IBackupRestoreConfig {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
      */
+    @PropertyName(name = "backupTTLCronExpression")
     default String getBackupTTLCronExpression() {
         return "0 0 0/6 1/1 * ? *";
     }
@@ -70,6 +75,7 @@ public interface IBackupRestoreConfig {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
      */
+    @PropertyName(name = "backupVerificationCronExpression")
     default String getBackupVerificationCronExpression() {
         return "0 30 0/1 1/1 * ? *";
     }
@@ -81,6 +87,7 @@ public interface IBackupRestoreConfig {
      *
      * @return the backup SLO in hours. Default: 24 hours.
      */
+    @PropertyName(name = "backupVerificationSLOInHours")
     default int getBackupVerificationSLOInHours() {
         return 24;
     }
@@ -91,6 +98,7 @@ public interface IBackupRestoreConfig {
      * @return if restore should be using backup version 2.0. If this is false we will use backup
      *     version 1.0.
      */
+    @PropertyName(name = "enableV2Restore")
     default boolean enableV2Restore() {
         return false;
     }

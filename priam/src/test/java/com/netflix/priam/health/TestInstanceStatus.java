@@ -16,22 +16,26 @@
  */
 package com.netflix.priam.health;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.Status;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Test InstanceState Created by aagrawal on 9/22/17. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestInstanceStatus {
+    @Inject InstanceState instanceState;
     private TestInstanceState testInstanceState;
 
     @Before
     public void setUp() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        InstanceState instanceState = injector.getInstance(InstanceState.class);
         testInstanceState = new TestInstanceState(instanceState);
     }
 

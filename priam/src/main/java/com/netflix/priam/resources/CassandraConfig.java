@@ -20,10 +20,9 @@ import com.google.inject.Inject;
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.merics.CassMonitorMetrics;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
@@ -47,9 +46,15 @@ public class CassandraConfig {
     private final PriamServer priamServer;
     private final DoubleRing doubleRing;
     private final CassMonitorMetrics metrics;
+    private final PriamHelperFunctions priamHelperFunctions;
 
     @Inject
-    public CassandraConfig(PriamServer server, DoubleRing doubleRing, CassMonitorMetrics metrics) {
+    public CassandraConfig(
+            PriamHelperFunctions priamHelperFunctions,
+            PriamServer server,
+            DoubleRing doubleRing,
+            CassMonitorMetrics metrics) {
+        this.priamHelperFunctions = priamHelperFunctions;
         this.priamServer = server;
         this.doubleRing = doubleRing;
         this.metrics = metrics;
@@ -137,12 +142,10 @@ public class CassandraConfig {
     @Path("/get_extra_env_params")
     public Response getExtraEnvParams() {
         try {
-            Map<String, String> returnMap;
-            returnMap = priamServer.getConfiguration().getExtraEnvParams();
-            if (returnMap == null) {
-                returnMap = new HashMap<>();
-            }
-            String extraEnvParamsJson = JSONValue.toJSONString(returnMap);
+            Map map = new HashMap();
+            priamHelperFunctions.parseParams(
+                    map, priamServer.getConfiguration().getExtraEnvParams());
+            String extraEnvParamsJson = JSONValue.toJSONString(map);
             return Response.ok(extraEnvParamsJson).build();
         } catch (Exception e) {
             logger.error("Error while executing get_extra_env_params", e);

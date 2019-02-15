@@ -321,8 +321,7 @@ public class InstanceIdentity {
 
     public void setReplacedIp(String replacedIp) {
         this.replacedIp = replacedIp;
-        if (!replacedIp.isEmpty())
-            this.isReplace = true;
+        if (!replacedIp.isEmpty()) this.isReplace = true;
     }
 
     private static boolean isInstanceDummy(PriamInstance instance) {

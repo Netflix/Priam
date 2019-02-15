@@ -316,7 +316,7 @@ public class SnapshotMetaService extends AbstractBackup {
                     abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
                     fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
                     fileUploadResult.setUploaded(
-                            fs.doesRemoteFileExist(Paths.get(fileUploadResult.getBackupPath())));
+                            fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
                 } catch (Exception e) {
                     logger.error(
                             "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",

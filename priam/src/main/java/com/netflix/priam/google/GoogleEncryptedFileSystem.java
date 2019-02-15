@@ -212,6 +212,12 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
+    protected boolean doesRemoteFileExist(Path remotePath) {
+        // TODO: Implement based on GCS. Since this is only used for upload, leaving it empty
+        return false;
+    }
+
+    @Override
     public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
         return new GoogleFileIterator(constructGcsStorageHandle(), prefix, null);
     }

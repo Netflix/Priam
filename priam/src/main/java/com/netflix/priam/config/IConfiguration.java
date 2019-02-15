@@ -421,12 +421,13 @@ public interface IConfiguration {
     }
 
     /**
-     * Get the throttle limit for API call of remote file system - get object exist.
+     * Get the throttle limit for API call of remote file system - get object exist. Default: 10.
+     * Use value of -1 to disable this.
      *
      * @return throttle limit for get object exist API call.
      */
-    default int getRemoteFileSystemObjectThrottle() {
-        return 10;
+    default int getRemoteFileSystemObjectExistsThrottle() {
+        return -1;
     }
 
     /** @return true if Priam should local config file for tokens and seeds */

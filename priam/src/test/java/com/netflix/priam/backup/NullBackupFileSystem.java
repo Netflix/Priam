@@ -67,6 +67,11 @@ public class NullBackupFileSystem extends AbstractFileSystem {
             throws BackupRestoreException {}
 
     @Override
+    protected boolean doesRemoteFileExist(Path remotePath) {
+        return false;
+    }
+
+    @Override
     protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
         return 0;
     }

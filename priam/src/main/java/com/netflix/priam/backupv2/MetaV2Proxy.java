@@ -222,17 +222,10 @@ public class MetaV2Proxy implements IMetaProxy {
             for (ColumnfamilyResult.SSTableResult ssTableResult :
                     columnfamilyResult.getSstables()) {
                 for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
-                    try {
-                        if (fs.doesRemoteFileExist(Paths.get(fileUploadResult.getBackupPath()))) {
-                            verificationResult.filesMatched++;
-                        } else {
-                            verificationResult.filesInMetaOnly.add(
-                                    fileUploadResult.getBackupPath());
-                        }
-                    } catch (BackupRestoreException e) {
-                        // For any error, mark that file is not available.
-                        verificationResult.valid = false;
-                        break;
+                    if (fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath()))) {
+                        verificationResult.filesMatched++;
+                    } else {
+                        verificationResult.filesInMetaOnly.add(fileUploadResult.getBackupPath());
                     }
                 }
             }

@@ -46,8 +46,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     final IConfiguration config;
     final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
-    // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
     final RateLimiter rateLimiter;
+    private final RateLimiter objectExistLimiter;
 
     S3FileSystemBase(
             Provider<AbstractBackupPath> pathProvider,
@@ -64,8 +64,27 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         this.executor =
                 new BlockingSubmitThreadPoolExecutor(threads, queue, config.getUploadTimeout());
 
+        // a throttling mechanism, we can limit the amount of bytes uploaded to endpoint per second.
+        this.rateLimiter = RateLimiter.create(1);
+        // a throttling mechanism, we can limit the amount of S3 API calls endpoint per second.
+        this.objectExistLimiter = RateLimiter.create(1);
+        configChangeListener();
+    }
+
+    /*
+       Call this method to change the configuration in runtime via callback.
+    */
+    public void configChangeListener() {
+        int objectExistLimit = config.getRemoteFileSystemObjectExistsThrottle();
+        objectExistLimiter.setRate(objectExistLimit < 1 ? Double.MAX_VALUE : objectExistLimit);
+
         double throttleLimit = config.getUploadThrottle();
-        this.rateLimiter = RateLimiter.create(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
+        rateLimiter.setRate(throttleLimit < 1 ? Double.MAX_VALUE : throttleLimit);
+
+        logger.info(
+                "Updating rateLimiters: s3UploadThrottle: {}, objectExistLimiter: {}",
+                rateLimiter.getRate(),
+                objectExistLimiter.getRate());
     }
 
     private AmazonS3 getS3Client() {
@@ -163,7 +182,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public boolean doesRemoteFileExist(Path remotePath) throws BackupRestoreException {
+    protected boolean doesRemoteFileExist(Path remotePath) {
+        objectExistLimiter.acquire();
         boolean exists = false;
         try {
             exists = s3Client.doesObjectExist(getShard(), remotePath.toString());

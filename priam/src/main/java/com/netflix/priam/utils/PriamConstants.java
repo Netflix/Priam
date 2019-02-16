@@ -14,26 +14,11 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.configSource;
 
-import com.google.common.collect.Maps;
-import java.util.Map;
+package com.netflix.priam.utils;
 
-public final class MemoryConfigSource extends AbstractConfigSource {
-    private final Map<String, String> data = Maps.newConcurrentMap();
-
-    @Override
-    public int size() {
-        return data.size();
-    }
-
-    @Override
-    public String get(final String key) {
-        return data.get(key);
-    }
-
-    @Override
-    public void set(final String key, final String value) {
-        data.put(key, value);
-    }
+/** Created by aagrawal on 10/28/18. */
+public interface PriamConstants {
+    String PROP_NAMESPACE = "priam.";
+    String PROP_NAMESPACE_BACKUP = "priam.backup.";
 }

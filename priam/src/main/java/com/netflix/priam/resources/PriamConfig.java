@@ -16,8 +16,10 @@
  */
 package com.netflix.priam.resources;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Inject;
-import com.netflix.priam.PriamServer;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.utils.PriamHelperFunctions;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.GET;
@@ -27,6 +29,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,18 +40,20 @@ import org.slf4j.LoggerFactory;
 @Produces(MediaType.APPLICATION_JSON)
 public class PriamConfig {
     private static final Logger logger = LoggerFactory.getLogger(PriamConfig.class);
-    private final PriamServer priamServer;
+    private final IConfiguration configuration;
+    private final PriamHelperFunctions priamHelperFunctions;
 
     @Inject
-    public PriamConfig(PriamServer server) {
-        this.priamServer = server;
+    public PriamConfig(PriamHelperFunctions priamHelperFunctions, IConfiguration configuration) {
+        this.priamHelperFunctions = priamHelperFunctions;
+        this.configuration = configuration;
     }
 
     private Response doGetPriamConfig(String group, String name) {
         try {
             final Map<String, Object> result = new HashMap<>();
             final Map<String, Object> value =
-                    priamServer.getConfiguration().getStructuredConfiguration(group);
+                    new ObjectMapper().convertValue(configuration, Map.class);
             if (name != null && value.containsKey(name)) {
                 result.put(name, value.get(name));
                 return Response.ok(result, MediaType.APPLICATION_JSON).build();
@@ -86,7 +91,9 @@ public class PriamConfig {
             @PathParam("name") String name, @QueryParam("default") String defaultValue) {
         Map<String, Object> result = new HashMap<>();
         try {
-            String value = priamServer.getConfiguration().getProperty(name, defaultValue);
+            String value = priamHelperFunctions.getProperty(name, String.class);
+            if (StringUtils.isEmpty(value)) value = defaultValue;
+
             if (value != null) {
                 result.put(name, value);
                 return Response.ok(result, MediaType.APPLICATION_JSON).build();

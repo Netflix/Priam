@@ -16,9 +16,11 @@
 
 package com.netflix.priam.restore;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.netflix.priam.TestModule;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
+import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
@@ -26,15 +28,17 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestPostRestoreHook {
+    @Inject IConfiguration configuration;
+    @Inject IPostRestoreHook postRestoreHook;
 
     @Before
     @After
     public void setup() {
-        Injector inject = Guice.createInjector(new TestModule());
-        IConfiguration configuration = inject.getInstance(IConfiguration.class);
-
         // ensure heartbeat and done files are not present
         File heartBeatFile = new File(configuration.getPostRestoreHookHeartbeatFileName());
         if (heartBeatFile.exists()) {
@@ -53,8 +57,6 @@ public class TestPostRestoreHook {
      FakeConfiguration are blank
     */
     public void testPostRestoreHookValidParameters() {
-        Injector inject = Guice.createInjector(new TestModule());
-        IPostRestoreHook postRestoreHook = inject.getInstance(IPostRestoreHook.class);
         Assert.assertTrue(postRestoreHook.hasValidParameters());
     }
 
@@ -65,9 +67,6 @@ public class TestPostRestoreHook {
      execution. Test fails in case of any exception.
     */
     public void testPostRestoreHookExecuteHappyPath() throws Exception {
-        Injector inject = Guice.createInjector(new TestModule());
-        IPostRestoreHook postRestoreHook = inject.getInstance(IPostRestoreHook.class);
-        IConfiguration configuration = inject.getInstance(IConfiguration.class);
         startHeartBeatThreadWithDelay(
                 0,
                 configuration.getPostRestoreHookHeartbeatFileName(),
@@ -84,9 +83,6 @@ public class TestPostRestoreHook {
      exception.
     */
     public void testPostRestoreHookExecuteHeartBeatDelay() throws Exception {
-        Injector inject = Guice.createInjector(new TestModule());
-        IPostRestoreHook postRestoreHook = inject.getInstance(IPostRestoreHook.class);
-        IConfiguration configuration = inject.getInstance(IConfiguration.class);
         startHeartBeatThreadWithDelay(
                 1000,
                 configuration.getPostRestoreHookHeartbeatFileName(),

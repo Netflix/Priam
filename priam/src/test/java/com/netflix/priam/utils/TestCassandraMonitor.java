@@ -19,6 +19,7 @@ package com.netflix.priam.utils;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -46,7 +47,7 @@ public class TestCassandraMonitor {
 
     @Before
     public void setUp() {
-        Injector injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new ArchaiusModule(), new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
         if (instanceState == null) instanceState = injector.getInstance(InstanceState.class);
         if (cassMonitorMetrics == null)

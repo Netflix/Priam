@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.archaius.guice.ArchaiusModule;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
@@ -49,7 +50,7 @@ public class BackupServletTest {
 
     @Before
     public void setUp() {
-        Injector injector = Guice.createInjector(new BRTestModule());
+        Injector injector = Guice.createInjector(new ArchaiusModule(), new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
         InstanceState instanceState = injector.getInstance(InstanceState.class);
         instanceInfo = injector.getInstance(InstanceInfo.class);

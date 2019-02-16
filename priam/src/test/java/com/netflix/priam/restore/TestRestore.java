@@ -17,41 +17,41 @@
 
 package com.netflix.priam.restore;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
 import com.netflix.priam.backup.Status;
-import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.DateUtil;
-import java.io.IOException;
 import java.util.ArrayList;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestRestore {
-    private static FakeBackupFileSystem filesystem;
+    @Inject private FakeBackupFileSystem filesystem;
     private static ArrayList<String> fileList = new ArrayList<>();
-    private static FakeConfiguration conf;
+    @Inject private IConfiguration conf;
     private static String region;
-    private static Restore restore;
-    private static InstanceState instanceState;
+    @Inject private Restore restore;
+    @Inject private InstanceState instanceState;
+    @Inject private InstanceInfo instanceInfo;
 
-    @BeforeClass
-    public static void setup() throws InterruptedException, IOException {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        if (filesystem == null) filesystem = injector.getInstance(FakeBackupFileSystem.class);
-        if (conf == null) conf = (FakeConfiguration) injector.getInstance(IConfiguration.class);
-        region = injector.getInstance(InstanceInfo.class).getRegion();
-        if (restore == null) restore = injector.getInstance(Restore.class);
-        if (instanceState == null) instanceState = injector.getInstance(InstanceState.class);
+    @Before
+    public void setup() {
+        region = instanceInfo.getRegion();
     }
 
-    private static void populateBackupFileSystem(String baseDir) {
+    private void populateBackupFileSystem(String baseDir) {
         fileList.clear();
         fileList.add(baseDir + "/" + region + "/fakecluster/123456/201108110030/META/meta.json");
         fileList.add(
@@ -63,7 +63,6 @@ public class TestRestore {
         fileList.add(baseDir + "/" + region + "/fakecluster/123456/201108110530/SST/ks2/cf1/f3.db");
         fileList.add(baseDir + "/" + region + "/fakecluster/123456/201108110600/SST/ks2/cf1/f4.db");
         filesystem.setupTest(fileList);
-        conf.setRestorePrefix("RESTOREBUCKET/" + baseDir + "/" + region + "/fakecluster");
     }
 
     @Test
@@ -146,6 +145,9 @@ public class TestRestore {
     }
 
     @Test
+    @TestPropertyOverride({
+        "priam.restore.prefix=RESTOREBUCKET/test_backup_new/us-east-1/fakecluster"
+    })
     public void testRestoreFromDiffCluster() throws Exception {
         populateBackupFileSystem("test_backup_new");
         String dateRange = "201108110030,201108110530";

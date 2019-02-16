@@ -17,9 +17,12 @@
 
 package com.netflix.priam.services;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
@@ -40,27 +43,25 @@ import java.util.Map;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 12/17/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
+@TestPropertyOverride({
+    "priam.backup.retention=5",
+    "priam.snapshot.meta.cron=0 0 0/1 1/1 * ? *",
+    "priam.restore.prefix="
+})
 public class TestBackupTTLService {
 
-    private TestBackupUtils testBackupUtils = new TestBackupUtils();
-    private IConfiguration configuration;
-    private static BackupTTLService backupTTLService;
-    private static FakeBackupFileSystem backupFileSystem;
-    private Provider<AbstractBackupPath> pathProvider;
+    @Inject private TestBackupUtils testBackupUtils;
+    @Inject private IConfiguration configuration;
+    @Inject private BackupTTLService backupTTLService;
+    @Inject private FakeBackupFileSystem backupFileSystem;
+    @Inject private Provider<AbstractBackupPath> pathProvider;
     private Path[] metas;
     private Map<String, String> allFilesMap = new HashMap<>();
-
-    public TestBackupTTLService() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        configuration = injector.getInstance(IConfiguration.class);
-        if (backupTTLService == null)
-            backupTTLService = injector.getInstance(BackupTTLService.class);
-        if (backupFileSystem == null)
-            backupFileSystem = injector.getInstance(FakeBackupFileSystem.class);
-        pathProvider = injector.getProvider(AbstractBackupPath.class);
-    }
 
     public void prepTest(int daysForSnapshot) throws Exception {
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));

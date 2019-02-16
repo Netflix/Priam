@@ -17,9 +17,11 @@
 
 package com.netflix.priam.aws;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
 import com.google.inject.Provider;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
@@ -32,20 +34,17 @@ import java.text.ParseException;
 import java.time.Instant;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 11/23/18. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestRemoteBackupPath {
     private static final Logger logger = LoggerFactory.getLogger(TestRemoteBackupPath.class);
-    private Provider<AbstractBackupPath> pathFactory;
-    private IConfiguration configuration;
-
-    public TestRemoteBackupPath() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        pathFactory = injector.getProvider(AbstractBackupPath.class);
-        configuration = injector.getInstance(IConfiguration.class);
-    }
+    @Inject private Provider<AbstractBackupPath> pathFactory;
+    @Inject private IConfiguration configuration;
 
     @Test
     public void testV1BackupPathsSST() throws ParseException {

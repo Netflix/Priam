@@ -17,14 +17,18 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.google.inject.Key;
-import com.google.inject.name.Names;
+import com.google.inject.Inject;
+import com.google.inject.name.Named;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
+import com.netflix.priam.config.IConfiguration;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashSet;
 import java.util.Set;
 import mockit.Mock;
@@ -32,6 +36,7 @@ import mockit.MockUp;
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
+import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,60 +45,40 @@ import org.slf4j.LoggerFactory;
  *
  * @author Praveen Sadhu
  */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestBackup {
-    private static Injector injector;
-    private static FakeBackupFileSystem filesystem;
+    @Inject
+    @Named("backup")
+    private IBackupFileSystem filesystem;
+
+    @Inject private IConfiguration config;
+    private FakeBackupFileSystem fakeBackupFileSystem;
+
+    @Inject private IncrementalBackup backup;
     private static final Logger logger = LoggerFactory.getLogger(TestBackup.class);
     private static final Set<String> expectedFiles = new HashSet<>();
 
-    @BeforeClass
-    public static void setup() throws InterruptedException, IOException {
+    @Before
+    public void setup() throws InterruptedException, IOException {
         new MockNodeProbe();
-        injector = Guice.createInjector(new BRTestModule());
-        filesystem =
-                (FakeBackupFileSystem)
-                        injector.getInstance(
-                                Key.get(IBackupFileSystem.class, Names.named("backup")));
+        fakeBackupFileSystem = (FakeBackupFileSystem) filesystem;
     }
 
-    @AfterClass
-    public static void cleanup() throws IOException {
-        File file = new File("target/data");
+    @After
+    public void cleanup() throws IOException {
+        File file = new File(config.getDataFileLocation());
         FileUtils.deleteQuietly(file);
-    }
-
-    @Test
-    public void testSnapshotBackup() throws Exception {
-        filesystem.cleanup();
-        SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
-
-        //
-        //        backup.execute();
-        //        Assert.assertEquals(3, filesystem.uploadedFiles.size());
-        //        System.out.println("***** "+filesystem.uploadedFiles.size());
-        //        boolean metafile = false;
-        //        for (String filePath : expectedFiles)
-        //            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
-        //
-        //        for(String filepath : filesystem.uploadedFiles){
-        //            if( filepath.endsWith("meta.json")){
-        //                metafile = true;
-        //                break;
-        //            }
-        //        }
-        //        Assert.assertTrue(metafile);
-
+        fakeBackupFileSystem.uploadedFiles.clear();
     }
 
     @Test
     public void testIncrementalBackup() throws Exception {
-        filesystem.cleanup();
         generateIncrementalFiles();
-        IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(5, filesystem.uploadedFiles.size());
+        Assert.assertEquals(5, fakeBackupFileSystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
-            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+            Assert.assertTrue(fakeBackupFileSystem.uploadedFiles.contains(filePath));
     }
 
     @Test
@@ -115,8 +100,7 @@ public class TestBackup {
 
     private void testClusterSpecificColumnFamiliesSkipped(String[] columnFamilyDirs)
             throws Exception {
-        filesystem.cleanup();
-        File tmp = new File("target/data/");
+        File tmp = new File(config.getDataFileLocation());
         if (tmp.exists()) cleanup(tmp);
         // Generate "data"
         generateIncrementalFiles();
@@ -126,12 +110,16 @@ public class TestBackup {
             String columnFamily = columnFamilyDir.split("-")[0];
             systemfiles.add(
                     String.format(
-                            "target/data/system/%s/backups/system-%s-ka-1-Data.db",
-                            columnFamilyDir, columnFamily));
+                            config.getDataFileLocation()
+                                    + "/system/%s/backups/system-%s-ka-1-Data.db",
+                            columnFamilyDir,
+                            columnFamily));
             systemfiles.add(
                     String.format(
-                            "target/data/system/%s/backups/system-%s-ka-1-Index.db",
-                            columnFamilyDir, columnFamily));
+                            config.getDataFileLocation()
+                                    + "/system/%s/backups/system-%s-ka-1-Index.db",
+                            columnFamilyDir,
+                            columnFamily));
         }
         for (String systemFilePath : systemfiles) {
             File file = new File(systemFilePath);
@@ -140,22 +128,23 @@ public class TestBackup {
             if (systemFilePath.contains("schema_columns"))
                 expectedFiles.add(file.getAbsolutePath());
         }
-        IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(8, filesystem.uploadedFiles.size());
+        Assert.assertEquals(8, fakeBackupFileSystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
-            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+            Assert.assertTrue(fakeBackupFileSystem.uploadedFiles.contains(filePath));
     }
 
-    private static void generateIncrementalFiles() {
-        File tmp = new File("target/data/");
+    private void generateIncrementalFiles() {
+        File tmp = new File(config.getDataFileLocation());
         if (tmp.exists()) cleanup(tmp);
         // Setup
+        Path backupPath =
+                Paths.get(config.getDataFileLocation(), "Keyspace1", "Standard1", "backups");
         Set<String> files = new HashSet<>();
-        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Data.db");
-        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
-        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
-        files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
+        files.add(Paths.get(backupPath.toString(), "Keyspace1-Standard1-ia-1-Data.db").toString());
+        files.add(Paths.get(backupPath.toString(), "Keyspace1-Standard1-ia-1-Index.db").toString());
+        files.add(Paths.get(backupPath.toString(), "Keyspace1-Standard1-ia-2-Data.db").toString());
+        files.add(Paths.get(backupPath.toString(), "Keyspace1-Standard1-ia-3-Data.db").toString());
 
         expectedFiles.clear();
         for (String filePath : files) {
@@ -184,24 +173,24 @@ public class TestBackup {
 
     // Mock Nodeprobe class
     @Ignore
-    static class MockNodeProbe extends MockUp<NodeProbe> {
+    class MockNodeProbe extends MockUp<NodeProbe> {
 
         @Mock
         public void takeSnapshot(String snapshotName, String columnFamily, String... keyspaces) {
-            File tmp = new File("target/data/");
+            File tmp = new File(config.getDataFileLocation());
             if (tmp.exists()) cleanup(tmp);
             // Setup
             Set<String> files = new HashSet<>();
-            files.add(
-                    "target/data/Keyspace1/Standard1/snapshots/"
-                            + snapshotName
-                            + "/Keyspace1-Standard1-ia-5-Data.db");
-            files.add(
-                    "target/data/Keyspace1/Standard1/snapshots/201101081230/Keyspace1-Standard1-ia-6-Data.db");
-            files.add(
-                    "target/data/Keyspace1/Standard1/snapshots/"
-                            + snapshotName
-                            + "/Keyspace1-Standard1-ia-7-Data.db");
+            Path snapshotPath =
+                    Paths.get(
+                            config.getDataFileLocation(),
+                            "Keyspace1",
+                            "Standard1",
+                            "snapshots",
+                            snapshotName);
+            files.add(snapshotPath.toString() + "/Keyspace1-Standard1-ia-5-Data.db");
+            files.add(snapshotPath.toString() + "/Keyspace1-Standard1-ia-6-Data.db");
+            files.add(snapshotPath.toString() + "/Keyspace1-Standard1-ia-7-Data.db");
 
             expectedFiles.clear();
             for (String filePath : files) {
@@ -214,7 +203,7 @@ public class TestBackup {
 
         @Mock
         public void clearSnapshot(String tag, String... keyspaces) {
-            cleanup(new File("target/data"));
+            cleanup(new File(config.getDataFileLocation()));
         }
     }
 }

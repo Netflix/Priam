@@ -16,37 +16,37 @@
  */
 package com.netflix.priam.config;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.inject.ImplementedBy;
+import com.netflix.archaius.api.annotations.Configuration;
+import com.netflix.archaius.api.annotations.PropertyName;
+import com.netflix.priam.utils.PriamConstants;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 
 /** Interface for Priam's configuration */
-@ImplementedBy(PriamConfiguration.class)
+@Configuration(prefix = PriamConstants.PROP_NAMESPACE)
 public interface IConfiguration {
-
-    void initialize();
-
     /** @return Path to the home dir of Cassandra */
+    @PropertyName(name = "cass.home")
     default String getCassHome() {
         return "/etc/cassandra";
     }
 
     /** @return Location to `cassandra.yaml`. */
+    @PropertyName(name = "yamlLocation")
     default String getYamlLocation() {
         return getCassHome() + "/conf/cassandra.yaml";
     }
 
     /** @return Path to Cassandra startup script */
+    @PropertyName(name = "cass.startscript")
     default String getCassStartupScript() {
         return "/etc/init.d/cassandra start";
     }
 
     /** @return Path to Cassandra stop sript */
+    @PropertyName(name = "cass.stopscript")
     default String getCassStopScript() {
         return "/etc/init.d/cassandra stop";
     }
@@ -70,6 +70,7 @@ public interface IConfiguration {
      *     seconds. For example a value of 60 means that Priam will only restart Cassandra once per
      *     60 seconds If a negative number, Priam will not restart Cassandra due to crash at all
      */
+    @PropertyName(name = "remediate.dead.cassandra.rate")
     default int getRemediateDeadCassandraRate() {
         return 3600;
     }
@@ -79,16 +80,19 @@ public interface IConfiguration {
      *
      * @return Prefix that will be added to remote backup location
      */
+    @PropertyName(name = "s3.base_dir")
     default String getBackupLocation() {
         return "backup";
     }
 
     /** @return Get Backup retention in days */
+    @PropertyName(name = "backup.retention")
     default int getBackupRetentionDays() {
         return 0;
     }
 
     /** @return Get list of racs to backup. Backup all racs if empty */
+    @PropertyName(name = "backup.racs")
     default List<String> getBackupRacs() {
         return Collections.EMPTY_LIST;
     }
@@ -99,6 +103,7 @@ public interface IConfiguration {
      *
      * @return Bucket name used for backups
      */
+    @PropertyName(name = "s3.bucket")
     default String getBackupPrefix() {
         return "cassandra-archive";
     }
@@ -107,6 +112,7 @@ public interface IConfiguration {
      * @return Location containing backup files. Typically bucket name followed by path to the
      *     clusters backup
      */
+    @PropertyName(name = "restore.prefix")
     default String getRestorePrefix() {
         return StringUtils.EMPTY;
     }
@@ -121,97 +127,119 @@ public interface IConfiguration {
      *
      * @return Location where all the data/logs/hints for the cassandra will sit.
      */
+    @PropertyName(name = "cassandraBaseDirectory")
     default String getCassandraBaseDirectory() {
         return "/var/lib/cassandra";
     }
 
     /** @return Location of the local data dir */
+    @PropertyName(name = "data.location")
     default String getDataFileLocation() {
         return getCassandraBaseDirectory() + "/data";
     }
 
+    @PropertyName(name = "logs.location")
     default String getLogDirLocation() {
         return getCassandraBaseDirectory() + "/logs";
     }
 
     /** @return Location of local cache */
+    @PropertyName(name = "cache.location")
     default String getCacheLocation() {
         return getCassandraBaseDirectory() + "/saved_caches";
     }
 
     /** @return Location of local commit log dir */
+    @PropertyName(name = "commitlog.location")
     default String getCommitLogLocation() {
         return getCassandraBaseDirectory() + "/commitlog";
     }
 
     /** @return Remote commit log location for backups */
+    @PropertyName(name = "backup.commitlog.location")
     default String getBackupCommitLogLocation() {
-        return StringUtils.EMPTY;
+        return getCassandraBaseDirectory() + "/backup/commitlog";
     }
 
     /** @return Preferred data part size for multi part uploads */
+    @PropertyName(name = "backup.chunksizemb")
     default long getBackupChunkSize() {
         return 10 * 1024 * 1024L;
     }
 
     /** @return Cassandra's JMX port */
+    @PropertyName(name = "jmx.port")
     default int getJmxPort() {
         return 7199;
     }
 
     /** @return Cassandra's JMX username */
+    @PropertyName(name = "jmx.username")
     default String getJmxUsername() {
         return null;
     }
 
     /** @return Cassandra's JMX password */
+    @PropertyName(name = "jmx.password")
     default String getJmxPassword() {
         return null;
     }
 
     /** @return Enables Remote JMX connections n C* */
+    @PropertyName(name = "jmx.remote.enable")
     default boolean enableRemoteJMX() {
         return false;
     }
 
     /** @return Cassandra storage/cluster communication port */
+    @PropertyName(name = "storage.port")
     default int getStoragePort() {
         return 7000;
     }
 
+    @PropertyName(name = "ssl.storage.port")
     default int getSSLStoragePort() {
         return 7001;
     }
 
     /** @return Cassandra's thrift port */
+    @PropertyName(name = "thrift.port")
     default int getThriftPort() {
         return 9160;
     }
 
     /** @return Port for CQL binary transport. */
+    @PropertyName(name = "nativeTransport.port")
     default int getNativeTransportPort() {
         return 9042;
     }
 
     /** @return Snitch to be used in cassandra.yaml */
+    @PropertyName(name = "endpoint_snitch")
     default String getSnitch() {
         return "org.apache.cassandra.locator.Ec2Snitch";
     }
 
     /** @return Cluster name */
+    @PropertyName(name = "clustername")
     default String getAppName() {
         return "cass_cluster";
     }
 
     /** @return List of all RAC used for the cluster */
-    List<String> getRacs();
+    @PropertyName(name = "zones.available")
+    default List<String> getRacs() {
+        return Collections.EMPTY_LIST;
+    }
 
     /** @return Max heap size be used for Cassandra */
+    @PropertyName(name = "heap.size")
     default String getHeapSize() {
         return "8G";
     }
 
     /** @return New heap size for Cassandra */
+    @PropertyName(name = "heap.newgen.size")
     default String getHeapNewSize() {
         return "2G";
     }
@@ -225,6 +253,7 @@ public interface IConfiguration {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
+    @PropertyName(name = "compaction.cron")
     default String getCompactionCronExpression() {
         return "-1";
     }
@@ -240,6 +269,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to start compactions. If no filter is applied,
      *     returns null.
      */
+    @PropertyName(name = "compaction.cf.include")
     default String getCompactionIncludeCFList() {
         return null;
     }
@@ -256,6 +286,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to exclude from compactions. If no filter is
      *     applied, returns null.
      */
+    @PropertyName(name = "compaction.cf.exclude")
     default String getCompactionExcludeCFList() {
         return null;
     }
@@ -268,6 +299,7 @@ public interface IConfiguration {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
+    @PropertyName(name = "backup.cron")
     default String getBackupCronExpression() {
         return "0 0 12 1/1 * ? *";
     }
@@ -283,6 +315,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to include in snapshot backup. If no filter is
      *     applied, returns null.
      */
+    @PropertyName(name = "snapshot.cf.include")
     default String getSnapshotIncludeCFList() {
         return null;
     }
@@ -298,6 +331,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to exclude from snapshot backup. If no filter is
      *     applied, returns null.
      */
+    @PropertyName(name = "snapshot.cf.exclude")
     default String getSnapshotExcludeCFList() {
         return null;
     }
@@ -313,6 +347,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to include in incremental backup. If no filter
      *     is applied, returns null.
      */
+    @PropertyName(name = "incremental.cf.include")
     default String getIncrementalIncludeCFList() {
         return null;
     }
@@ -328,6 +363,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to exclude from incremental backup. If no filter
      *     is applied, returns null.
      */
+    @PropertyName(name = "incremental.cf.exclude")
     default String getIncrementalExcludeCFList() {
         return null;
     }
@@ -343,6 +379,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to include in restore. If no filter is applied,
      *     returns null.
      */
+    @PropertyName(name = "restore.cf.include")
     default String getRestoreIncludeCFList() {
         return null;
     }
@@ -358,6 +395,7 @@ public interface IConfiguration {
      * @return Column Family(ies), comma delimited, to exclude from restore. If no filter is
      *     applied, returns null.
      */
+    @PropertyName(name = "restore.cf.exclude")
     default String getRestoreExcludeCFList() {
         return null;
     }
@@ -368,31 +406,37 @@ public interface IConfiguration {
      *
      * @return Snapshot to be searched and restored
      */
+    @PropertyName(name = "restore.snapshot")
     default String getRestoreSnapshot() {
         return StringUtils.EMPTY;
     }
 
     /** @return Get the region to connect to SDB for instance identity */
+    @PropertyName(name = "sdb.instanceIdentity.region")
     default String getSDBInstanceIdentityRegion() {
         return "us-east-1";
     }
 
     /** @return true if it is a multi regional cluster */
+    @PropertyName(name = "multiregion.enable")
     default boolean isMultiDC() {
         return false;
     }
 
     /** @return Number of backup threads for uploading files when using async feature */
+    @PropertyName(name = "backup.threads")
     default int getBackupThreads() {
         return 2;
     }
 
     /** @return Number of download threads for downloading files when using async feature */
+    @PropertyName(name = "restore.threads")
     default int getRestoreThreads() {
-        return 8;
+        return Runtime.getRuntime().availableProcessors() * 2;
     }
 
     /** @return true if restore should search for nearest token if current token is not found */
+    @PropertyName(name = "restore.closesttoken")
     default boolean isRestoreClosestToken() {
         return false;
     }
@@ -401,21 +445,25 @@ public interface IConfiguration {
      * Amazon specific setting to query Additional/ Sibling ASG Memberships in csv format to
      * consider while calculating RAC membership
      */
+    @PropertyName(name = "az.sibling.asgnames")
     default String getSiblingASGNames() {
         return ",";
     }
 
     /** Get the security group associated with nodes in this cluster */
+    @PropertyName(name = "acl.groupname")
     default String getACLGroupName() {
         return getAppName();
     }
 
     /** @return true if incremental backups are enabled */
+    @PropertyName(name = "backup.incremental.enable")
     default boolean isIncrementalBackupEnabled() {
         return true;
     }
 
     /** @return Bytes per second to throttle for backups */
+    @PropertyName(name = "upload.throttle")
     default int getUploadThrottle() {
         return -1;
     }
@@ -431,36 +479,43 @@ public interface IConfiguration {
     }
 
     /** @return true if Priam should local config file for tokens and seeds */
+    @PropertyName(name = "localbootstrap.enable")
     default boolean isLocalBootstrapEnabled() {
         return false;
     }
 
     /** @return Compaction throughput */
+    @PropertyName(name = "compaction.throughput")
     default int getCompactionThroughput() {
-        return 8;
+        return 128;
     }
 
     /** @return compaction_throughput_mb_per_sec */
+    @PropertyName(name = "hint.window")
     default int getMaxHintWindowInMS() {
         return 10800000;
     }
 
     /** @return hinted_handoff_throttle_in_kb */
+    @PropertyName(name = "hints.throttleKb")
     default int getHintedHandoffThrottleKb() {
         return 1024;
     }
 
     /** @return Size of Cassandra max direct memory */
+    @PropertyName(name = "direct.memory.size")
     default String getMaxDirectMemory() {
         return "50G";
     }
 
     /** @return Bootstrap cluster name (depends on another cass cluster) */
+    @PropertyName(name = "bootcluster")
     default String getBootClusterName() {
         return StringUtils.EMPTY;
     }
 
     /** @return Get the name of seed provider */
+    @PropertyName(name = "seed.provider")
     default String getSeedProviderName() {
         return "com.netflix.priam.cassandra.extensions.NFSeedProvider";
     }
@@ -470,11 +525,13 @@ public interface IConfiguration {
      *
      * @return memtable_cleanup_threshold in C* yaml
      */
+    @PropertyName(name = "memtable.cleanup.threshold")
     default double getMemtableCleanupThreshold() {
         return 0.11;
     }
 
     /** @return stream_throughput_outbound_megabits_per_sec in yaml */
+    @PropertyName(name = "streaming.throughput.mb")
     default int getStreamingThroughputMB() {
         return 400;
     }
@@ -484,51 +541,61 @@ public interface IConfiguration {
      *
      * @return the fully-qualified name of the partitioner class
      */
+    @PropertyName(name = "partitioner")
     default String getPartitioner() {
         return "org.apache.cassandra.dht.RandomPartitioner";
     }
 
     /** Support for c* 1.1 global key cache size */
+    @PropertyName(name = "keyCache.size")
     default String getKeyCacheSizeInMB() {
         return StringUtils.EMPTY;
     }
 
     /** Support for limiting the total number of keys in c* 1.1 global key cache. */
+    @PropertyName(name = "keyCache.count")
     default String getKeyCacheKeysToSave() {
         return StringUtils.EMPTY;
     }
 
     /** Support for c* 1.1 global row cache size */
+    @PropertyName(name = "rowCache.size")
     default String getRowCacheSizeInMB() {
         return StringUtils.EMPTY;
     }
 
     /** Support for limiting the total number of rows in c* 1.1 global row cache. */
+    @PropertyName(name = "rowCache.count")
     default String getRowCacheKeysToSave() {
         return StringUtils.EMPTY;
     }
 
     /** @return C* Process Name */
+    @PropertyName(name = "cass.process")
     default String getCassProcessName() {
         return "CassandraDaemon";
     }
 
     /** Defaults to 'allow all'. */
+    @PropertyName(name = "authenticator")
     default String getAuthenticator() {
         return "org.apache.cassandra.auth.AllowAllAuthenticator";
     }
 
     /** Defaults to 'allow all'. */
+    @PropertyName(name = "authorizer")
     default String getAuthorizer() {
         return "org.apache.cassandra.auth.AllowAllAuthorizer";
     }
 
     /** @return true/false, if Cassandra needs to be started manually */
+    @PropertyName(name = "cass.manual.start.enable")
     default boolean doesCassandraStartManually() {
         return false;
     }
 
     /** @return possible values: all, dc, none */
+    @PropertyName(name = "internodeCompression")
     default String getInternodeCompression() {
         return "all";
     }
@@ -539,103 +606,122 @@ public interface IConfiguration {
      * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default:
      *     false.
      */
+    @PropertyName(name = "clbackup.enabled")
     default boolean isBackingUpCommitLogs() {
         return false;
     }
 
+    @PropertyName(name = "clbackup.propsfile")
     default String getCommitLogBackupPropsFile() {
         return getCassHome() + "/conf/commitlog_archiving.properties";
     }
 
+    @PropertyName(name = "clbackup.archiveCmd")
     default String getCommitLogBackupArchiveCmd() {
         return "/bin/ln %path /mnt/data/backup/%name";
     }
 
+    @PropertyName(name = "clbackup.restoreCmd")
     default String getCommitLogBackupRestoreCmd() {
         return "/bin/mv %from %to";
     }
 
+    @PropertyName(name = "clbackup.restoreDirs")
     default String getCommitLogBackupRestoreFromDirs() {
         return "/mnt/data/backup/commitlog/";
     }
 
+    @PropertyName(name = "clbackup.restoreTime")
     default String getCommitLogBackupRestorePointInTime() {
         return StringUtils.EMPTY;
     }
 
+    @PropertyName(name = "clrestore.max")
     default int maxCommitLogsRestore() {
         return 10;
     }
 
+    @PropertyName(name = "client.sslEnabled")
     default boolean isClientSslEnabled() {
         return false;
     }
 
+    @PropertyName(name = "internodeEncryption")
     default String getInternodeEncryption() {
         return "none";
     }
 
+    @PropertyName(name = "dsnitchEnabled")
     default boolean isDynamicSnitchEnabled() {
         return true;
     }
 
+    @PropertyName(name = "thrift.enabled")
     default boolean isThriftEnabled() {
         return true;
     }
 
+    @PropertyName(name = "nativeTransport.enabled")
     default boolean isNativeTransportEnabled() {
         return true;
     }
 
+    @PropertyName(name = "concurrentReads")
     default int getConcurrentReadsCnt() {
         return 32;
     }
 
+    @PropertyName(name = "concurrentWrites")
     default int getConcurrentWritesCnt() {
         return 32;
     }
 
+    @PropertyName(name = "concurrentCompactors")
     default int getConcurrentCompactorsCnt() {
-        return Runtime.getRuntime().availableProcessors();
+        return Math.min(Math.max(2, Runtime.getRuntime().availableProcessors() / 2), 8);
     }
 
+    @PropertyName(name = "rpc.server.type")
     default String getRpcServerType() {
         return "hsha";
     }
 
+    @PropertyName(name = "rpc.min.threads")
     default int getRpcMinThreads() {
         return 16;
     }
 
+    @PropertyName(name = "rpc.max.threads")
     default int getRpcMaxThreads() {
         return 2048;
     }
 
-    /*
+    /**
      * @return the warning threshold in MB's for large partitions encountered during compaction.
-     * Default value of 100 is used (default from cassandra.yaml)
+     *     Default value of 100 is used (default from cassandra.yaml)
      */
+    @PropertyName(name = "compaction.large.partition.warn.threshold")
     default int getCompactionLargePartitionWarnThresholdInMB() {
         return 100;
     }
 
+    @PropertyName(name = "extra.params")
     default String getExtraConfigParams() {
         return StringUtils.EMPTY;
     }
 
-    String getCassYamlVal(String priamKey);
-
+    @PropertyName(name = "auto.bootstrap")
     default boolean getAutoBoostrap() {
         return true;
     }
 
+    @PropertyName(name = "create.new.token.enable")
     default boolean isCreateNewTokenEnable() {
         return true;
     }
 
-    /*
-     * @return the location on disk of the private key used by the cryptography algorithm
-     */
+    /** @return the location on disk of the private key used by the cryptography algorithm */
+    @PropertyName(name = "private.key.location")
     default String getPrivateKeyLocation() {
         return StringUtils.EMPTY;
     }
@@ -649,6 +735,7 @@ public interface IConfiguration {
      *     a different account.
      *     <p>GOOGLE - You are restoring from Google Cloud Storage
      */
+    @PropertyName(name = "restore.source.type")
     default String getRestoreSourceType() {
         return StringUtils.EMPTY;
     }
@@ -661,6 +748,7 @@ public interface IConfiguration {
      *     backward compatibility, this property should be optional. Specifically, if it does not
      *     exist, it should not cause an adverse impact on current functionality.
      */
+    @PropertyName(name = "encrypted.backup.enabled")
     default boolean isEncryptBackupEnabled() {
         return false;
     }
@@ -671,6 +759,7 @@ public interface IConfiguration {
      * @return true if data that needs to be restored is encrypted. Note that setting this value
      *     does not play any role until {@link #getRestoreSnapshot()} is set to a non-null value.
      */
+    @PropertyName(name = "encrypted.restore.enabled")
     default boolean isRestoreEncrypted() {
         return false;
     }
@@ -681,6 +770,7 @@ public interface IConfiguration {
      *     should be optional. Specifically, if it does not exist, it should not cause an adverse
      *     impact on current functionality.
      */
+    @PropertyName(name = "roleassumption.arn")
     default String getAWSRoleAssumptionArn() {
         return StringUtils.EMPTY;
     }
@@ -690,6 +780,7 @@ public interface IConfiguration {
      *     Note: for backward compatibility, this property should be optional. Specifically, if it
      *     does not exist, it should not cause an adverse impact on current functionality.
      */
+    @PropertyName(name = "gcs.service.acct.id")
     default String getGcsServiceAccountId() {
         return StringUtils.EMPTY;
     }
@@ -701,6 +792,7 @@ public interface IConfiguration {
      *     optional. Specifically, if it does not exist, it should not cause an adverse impact on
      *     current functionality.
      */
+    @PropertyName(name = "gcs.service.acct.private.key.loc")
     default String getGcsServiceAccountPrivateKeyLoc() {
         return StringUtils.EMPTY;
     }
@@ -711,6 +803,7 @@ public interface IConfiguration {
      *     compatibility, this property should be optional. Specifically, if it does not exist, it
      *     should not cause an adverse impact on current functionality.
      */
+    @PropertyName(name = "pgp.password.phrase")
     default String getPgpPasswordPhrase() {
         return StringUtils.EMPTY;
     }
@@ -721,6 +814,7 @@ public interface IConfiguration {
      *     this property should be optional. Specifically, if it does not exist, it should not cause
      *     an adverse impact on current functionality.
      */
+    @PropertyName(name = "pgp.pubkey.file.location")
     default String getPgpPublicKeyLoc() {
         return StringUtils.EMPTY;
     }
@@ -730,20 +824,19 @@ public interface IConfiguration {
      *
      * @return A map of extra paramaters.
      */
-    default Map<String, String> getExtraEnvParams() {
-        return Collections.EMPTY_MAP;
+    @PropertyName(name = "extra.env.params")
+    default String getExtraEnvParams() {
+        return StringUtils.EMPTY;
     }
 
-    /*
-     * @return the Amazon Resource Name (ARN) for EC2 classic.
-     */
+    /** @return the Amazon Resource Name (ARN) for EC2 classic. */
+    @PropertyName(name = "ec2.roleassumption.arn")
     default String getClassicEC2RoleAssumptionArn() {
         return StringUtils.EMPTY;
     }
 
-    /*
-     * @return the Amazon Resource Name (ARN) for VPC.
-     */
+    /** @return the Amazon Resource Name (ARN) for VPC. */
+    @PropertyName(name = "vpc.roleassumption.arn")
     default String getVpcEC2RoleAssumptionArn() {
         return StringUtils.EMPTY;
     }
@@ -754,6 +847,7 @@ public interface IConfiguration {
      *
      * @return if the dual account support
      */
+    @PropertyName(name = "roleassumption.dualaccount")
     default boolean isDualAccount() {
         return false;
     }
@@ -764,6 +858,7 @@ public interface IConfiguration {
      *
      * @return enable async incrementals for backup
      */
+    @PropertyName(name = "async.incremental")
     default boolean enableAsyncIncremental() {
         return false;
     }
@@ -774,6 +869,7 @@ public interface IConfiguration {
      *
      * @return enable async snapshot for backup
      */
+    @PropertyName(name = "async.snapshot")
     default boolean enableAsyncSnapshot() {
         return false;
     }
@@ -785,6 +881,7 @@ public interface IConfiguration {
      *
      * @return size of the queue for uploads.
      */
+    @PropertyName(name = "backup.queue.size")
     default int getBackupQueueSize() {
         return 100000;
     }
@@ -796,6 +893,7 @@ public interface IConfiguration {
      *
      * @return size of the queue for downloads.
      */
+    @PropertyName(name = "download.queue.size")
     default int getDownloadQueueSize() {
         return 100000;
     }
@@ -807,8 +905,9 @@ public interface IConfiguration {
      *
      * @return timeout for uploads to wait to blocking queue
      */
+    @PropertyName(name = "upload.timeout")
     default long getUploadTimeout() {
-        return (2 * 60 * 60 * 1000L); // 2 minutes.
+        return (10 * 60 * 60 * 1000L); // 10 minutes.
     }
 
     /**
@@ -818,21 +917,25 @@ public interface IConfiguration {
      *
      * @return timeout for downloads to wait to blocking queue
      */
+    @PropertyName(name = "download.timeout")
     default long getDownloadTimeout() {
         return (10 * 60 * 60 * 1000L); // 10 minutes.
     }
 
     /** @return tombstone_warn_threshold in C* yaml */
+    @PropertyName(name = "tombstone.warning.threshold")
     default int getTombstoneWarnThreshold() {
         return 1000;
     }
 
     /** @return tombstone_failure_threshold in C* yaml */
+    @PropertyName(name = "tombstone.failure.threshold")
     default int getTombstoneFailureThreshold() {
         return 100000;
     }
 
     /** @return streaming_socket_timeout_in_ms in C* yaml */
+    @PropertyName(name = "streaming.socket.timeout.ms")
     default int getStreamingSocketTimeoutInMS() {
         return 86400000;
     }
@@ -842,6 +945,7 @@ public interface IConfiguration {
      *
      * @return a comma delimited list of keyspaces to flush
      */
+    @PropertyName(name = "flush.keyspaces")
     default String getFlushKeyspaces() {
         return StringUtils.EMPTY;
     }
@@ -854,16 +958,19 @@ public interface IConfiguration {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
+    @PropertyName(name = "flush.cron")
     default String getFlushCronExpression() {
         return "-1";
     }
 
     /** @return the absolute path to store the backup status on disk */
+    @PropertyName(name = "backup.status.location")
     default String getBackupStatusFileLoc() {
         return getDataFileLocation() + File.separator + "backup.status";
     }
 
     /** @return Decides whether to use sudo to start C* or not */
+    @PropertyName(name = "cass.usesudo")
     default boolean useSudo() {
         return true;
     }
@@ -875,6 +982,7 @@ public interface IConfiguration {
      *
      * @return true if backup notification is enabled, false otherwise.
      */
+    @PropertyName(name = "enableBackupNotification")
     default boolean enableBackupNotification() {
         return true;
     }
@@ -887,6 +995,7 @@ public interface IConfiguration {
      *
      * @return SNS Topic ARN to be used to send notification.
      */
+    @PropertyName(name = "backup.notification.topic.arn")
     default String getBackupNotificationTopicArn() {
         return StringUtils.EMPTY;
     }
@@ -897,6 +1006,7 @@ public interface IConfiguration {
      *
      * @return if post restore hook is enabled
      */
+    @PropertyName(name = "postrestorehook.enabled")
     default boolean isPostRestoreHookEnabled() {
         return false;
     }
@@ -906,6 +1016,7 @@ public interface IConfiguration {
      *
      * @return post restore hook to be executed once restore is complete
      */
+    @PropertyName(name = "postrestorehook")
     default String getPostRestoreHook() {
         return StringUtils.EMPTY;
     }
@@ -915,8 +1026,9 @@ public interface IConfiguration {
      *
      * @return file that indicates heartbeat of post restore hook
      */
+    @PropertyName(name = "postrestorehook.heartbeat.filename")
     default String getPostRestoreHookHeartbeatFileName() {
-        return "postrestorehook_heartbeat";
+        return getDataFileLocation() + File.separator + "postrestorehook_heartbeat";
     }
 
     /**
@@ -924,8 +1036,9 @@ public interface IConfiguration {
      *
      * @return file that indicates completion of post restore hook
      */
+    @PropertyName(name = "postrestorehook.done.filename")
     default String getPostRestoreHookDoneFileName() {
-        return "postrestorehook_done";
+        return getDataFileLocation() + File.separator + "postrestorehook_done";
     }
 
     /**
@@ -933,6 +1046,7 @@ public interface IConfiguration {
      *
      * @return time out for post restore hook in days
      */
+    @PropertyName(name = "postrestorehook.timeout.in.days")
     default int getPostRestoreHookTimeOutInDays() {
         return 2;
     }
@@ -942,6 +1056,7 @@ public interface IConfiguration {
      *
      * @return heartbeat timeout for post restore hook
      */
+    @PropertyName(name = "postrestorehook.heartbeat.timeout")
     default int getPostRestoreHookHeartBeatTimeoutInMs() {
         return 120000;
     }
@@ -951,6 +1066,7 @@ public interface IConfiguration {
      *
      * @return heart beat check frequency for post restore hook
      */
+    @PropertyName(name = "postrestorehook.heartbeat.check.frequency")
     default int getPostRestoreHookHeartbeatCheckFrequencyInMs() {
         return 120000;
     }
@@ -961,6 +1077,7 @@ public interface IConfiguration {
      *
      * @return grace period for the forgotten files.
      */
+    @PropertyName(name = "forgottenFileGracePeriodDays")
     default int getForgottenFileGracePeriodDays() {
         return 1;
     }
@@ -974,23 +1091,9 @@ public interface IConfiguration {
      *
      * @return true if Priam should move forgotten file to "lost_found" directory of that CF.
      */
+    @PropertyName(name = "forgottenFileMoveEnabled")
     default boolean isForgottenFileMoveEnabled() {
         return false;
-    }
-
-    /**
-     * A method for allowing access to outside programs to Priam configuration when paired with the
-     * Priam configuration HTTP endpoint at /v1/config/structured/all/property
-     *
-     * @param group The group of configuration options to return, currently just returns everything
-     *     no matter what
-     * @return A Map representation of this configuration, or null if the method doesn't exist
-     */
-    @SuppressWarnings("unchecked")
-    @JsonIgnore
-    default Map<String, Object> getStructuredConfiguration(String group) {
-        ObjectMapper objectMapper = new ObjectMapper();
-        return objectMapper.convertValue(this, Map.class);
     }
 
     /**
@@ -1008,6 +1111,7 @@ public interface IConfiguration {
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
      */
+    @PropertyName(name = "configMerge.cron")
     default String getMergedConfigurationCronExpression() {
         // Every minute on the top of the minute.
         return "0 * * * * ? *";
@@ -1023,15 +1127,4 @@ public interface IConfiguration {
     default String getMergedConfigurationDirectory() {
         return "/tmp/priam_configuration";
     }
-
-    /**
-     * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
-     * keep adding methods to this interface for every single configuration option ever. Also
-     * exposed via HTTP at v1/config/unstructured/X
-     *
-     * @param key The arbitrary configuration property to look up
-     * @param defaultValue The default value to return if the key is not found.
-     * @return The result for the property, or the defaultValue if provided (null otherwise)
-     */
-    String getProperty(String key, String defaultValue);
 }

@@ -19,7 +19,6 @@ package com.netflix.priam.cli;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.config.IConfiguration;
 
 public class Application {
     private static Injector injector;
@@ -29,10 +28,7 @@ public class Application {
         return injector;
     }
 
-    static void initialize() {
-        IConfiguration conf = getInjector().getInstance(IConfiguration.class);
-        conf.initialize();
-    }
+    static void initialize() {}
 
     static void shutdownAdditionalThreads() {
         IBackupFileSystem fs = getInjector().getInstance(IBackupFileSystem.class);

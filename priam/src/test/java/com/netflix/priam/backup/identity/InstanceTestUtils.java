@@ -17,7 +17,12 @@
 
 package com.netflix.priam.backup.identity;
 
-import com.netflix.priam.config.FakeConfiguration;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
+import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.*;
 import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -30,13 +35,16 @@ import java.util.ArrayList;
 import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.runner.RunWith;
 
 @Ignore
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 abstract class InstanceTestUtils {
 
     private final List<String> instances = new ArrayList<>();
     private IMembership membership;
-    FakeConfiguration config;
+    @Inject IConfiguration config;
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
     private Sleeper sleeper;
@@ -57,7 +65,6 @@ abstract class InstanceTestUtils {
         instances.add("fakeinstance9");
 
         membership = new FakeMembership(instances);
-        config = new FakeConfiguration("fake-app");
         instanceInfo = new FakeInstanceInfo("fakeinstance1", "az1", region);
         tokenManager = new TokenManager(config);
         factory = new FakePriamInstanceFactory(instanceInfo);

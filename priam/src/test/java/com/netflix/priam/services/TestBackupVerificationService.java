@@ -17,32 +17,37 @@
 
 package com.netflix.priam.services;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.util.Optional;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 2/1/19. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
+@TestPropertyOverride({
+    "priam.snapshot.meta.cron=0 0 0/1 1/1 * ? *",
+})
 public class TestBackupVerificationService {
-    private static BackupVerificationService backupVerificationService;
-    private static IConfiguration configuration;
+    @Inject private BackupVerificationService backupVerificationService;
 
-    public TestBackupVerificationService() {
+    @Before
+    public void setup() {
         new MockBackupVerification();
-        Injector injector = Guice.createInjector(new BRTestModule());
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
-        if (backupVerificationService == null)
-            backupVerificationService = injector.getInstance(BackupVerificationService.class);
     }
 
     static class MockBackupVerification extends MockUp<BackupVerification> {

@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
@@ -40,13 +42,16 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 1/23/19. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestBackupVerification {
 
-    private final BackupVerification backupVerification;
-    private final IConfiguration configuration;
-    private final IBackupStatusMgr backupStatusMgr;
+    @Inject private BackupVerification backupVerification;
+    @Inject private IConfiguration configuration;
+    @Inject private IBackupStatusMgr backupStatusMgr;
     private final String backupDate = "201812011000";
     private final Path location =
             Paths.get(
@@ -56,14 +61,6 @@ public class TestBackupVerification {
                     "SNAPPY",
                     "PLAINTEXT",
                     "meta_v2_201812011000.json");
-
-    public TestBackupVerification() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-
-        backupVerification = injector.getInstance(BackupVerification.class);
-        configuration = injector.getInstance(IConfiguration.class);
-        backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
-    }
 
     static class MockMetaV1Proxy extends MockUp<MetaV1Proxy> {
         @Mock

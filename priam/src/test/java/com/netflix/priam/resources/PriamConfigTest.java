@@ -18,44 +18,29 @@ package com.netflix.priam.resources;
 
 import static org.junit.Assert.*;
 
-import com.netflix.priam.PriamServer;
-import com.netflix.priam.config.FakeConfiguration;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
+import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.IConfiguration;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.Response;
-import mockit.Expectations;
-import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-@RunWith(JMockit.class)
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class PriamConfigTest {
-    private @Mocked PriamServer priamServer;
-
-    private PriamConfig resource;
-
-    private FakeConfiguration fakeConfiguration;
-
-    @Before
-    public void setUp() {
-        resource = new PriamConfig(priamServer);
-        fakeConfiguration = new FakeConfiguration("cass_test");
-        fakeConfiguration.fakeProperties.put("test.prop", "test_value");
-    }
+    @Inject private static IConfiguration fakeConfiguration;
+    @Inject private PriamConfig resource;
 
     @Test
     public void getPriamConfig() {
         final Map<String, String> expected = new HashMap<>();
         expected.put("backupLocation", "casstestbackup");
-        new Expectations() {
-            {
-                priamServer.getConfiguration();
-                result = fakeConfiguration;
-                times = 2;
-            }
-        };
 
         Response response = resource.getPriamConfigByName("all", "backupLocation");
         assertEquals(200, response.getStatus());
@@ -66,16 +51,10 @@ public class PriamConfigTest {
     }
 
     @Test
+    @TestPropertyOverride({"test.prop=test_value"})
     public void getProperty() {
         final Map<String, String> expected = new HashMap<>();
         expected.put("test.prop", "test_value");
-        new Expectations() {
-            {
-                priamServer.getConfiguration();
-                result = fakeConfiguration;
-                times = 3;
-            }
-        };
 
         Response response = resource.getProperty("test.prop", null);
         assertEquals(200, response.getStatus());

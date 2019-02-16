@@ -17,12 +17,13 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.archaius.test.TestPropertyOverride;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.nio.file.Files;
@@ -39,23 +40,19 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Created by aagrawal on 1/1/19. */
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
+@TestPropertyOverride({"priam.forgottenFileMoveEnabled=true"})
 public class TestForgottenFileManager {
-    private ForgottenFilesManager forgottenFilesManager;
-    private TestBackupUtils testBackupUtils;
-    private IConfiguration configuration;
+    @Inject private ForgottenFilesManager forgottenFilesManager;
+    @Inject private IConfiguration configuration;
+    @Inject private TestBackupUtils testBackupUtils;
     private List<Path> allFiles = new ArrayList<>();
     private Instant snapshotInstant;
     private Path snapshotDir;
-
-    public TestForgottenFileManager() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        BackupMetrics backupMetrics = injector.getInstance(BackupMetrics.class);
-        configuration = new ForgottenFilesConfiguration();
-        forgottenFilesManager = new ForgottenFilesManager(configuration, backupMetrics);
-        testBackupUtils = injector.getInstance(TestBackupUtils.class);
-    }
 
     @Before
     public void prep() throws Exception {
@@ -158,12 +155,5 @@ public class TestForgottenFileManager {
         // Snapshot is untouched.
         Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
         Assert.assertEquals(3, snapshotFiles.size());
-    }
-
-    private class ForgottenFilesConfiguration extends FakeConfiguration {
-        @Override
-        public boolean isForgottenFileMoveEnabled() {
-            return true;
-        }
     }
 }

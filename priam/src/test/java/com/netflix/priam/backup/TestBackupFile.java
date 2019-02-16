@@ -17,8 +17,10 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
+import com.google.inject.Inject;
+import com.netflix.archaius.guice.ArchaiusModule;
+import com.netflix.governator.guice.test.ModulesForTesting;
+import com.netflix.governator.guice.test.junit4.GovernatorJunit4ClassRunner;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -30,23 +32,24 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
+import org.junit.runner.RunWith;
 
+@RunWith(GovernatorJunit4ClassRunner.class)
+@ModulesForTesting({ArchaiusModule.class, BRTestModule.class})
 public class TestBackupFile {
-    private static Injector injector;
+    @Inject private InstanceIdentity factory;
+    @Inject private RemoteBackupPath backupfile;
     private static String region;
 
-    @BeforeClass
-    public static void setup() throws IOException {
-        injector = Guice.createInjector(new BRTestModule());
+    @Before
+    public void setup() throws IOException {
         File file =
-                new File("target/data/Keyspace1/Standard1/", "Keyspace1-Standard1-ia-5-Data.db");
+                new File(
+                        "target/cass/data/Keyspace1/Standard1/",
+                        "Keyspace1-Standard1-ia-5-Data.db");
         if (!file.exists()) {
-            File dir1 = new File("target/data/Keyspace1/Standard1/");
-            if (!dir1.exists()) dir1.mkdirs();
+            if (!file.getParentFile().exists()) file.getParentFile().mkdirs();
             byte b = 8;
             long oneKB = (1024L);
             System.out.println(oneKB);
@@ -57,7 +60,6 @@ public class TestBackupFile {
             bos1.flush();
             bos1.close();
         }
-        InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
         factory.getInstance().setToken("1234567"); // Token
         region = factory.getInstanceInfo().getRegion();
     }
@@ -72,8 +74,7 @@ public class TestBackupFile {
     public void testBackupFileCreation() throws ParseException {
         // Test snapshot file
         String snapshotfile =
-                "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
-        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
+                "target/cass/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
         Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
@@ -92,8 +93,8 @@ public class TestBackupFile {
     @Test
     public void testIncBackupFileCreation() throws ParseException {
         // Test incremental file
-        File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
-        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
+        File bfile =
+                new File("target/cass/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
         backupfile.parseLocal(bfile, BackupFileType.SST);
         Assert.assertEquals(BackupFileType.SST, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
@@ -117,7 +118,7 @@ public class TestBackupFile {
         // Test snapshot file
         String filestr = "cass/data/1234567.meta";
         File bfile = new File(filestr);
-        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
+        backupfile.time = DateUtil.getDate("201108082320");
         backupfile.parseLocal(bfile, BackupFileType.META);
         backupfile.setTime(DateUtil.getDate("201108082320"));
         Assert.assertEquals(BackupFileType.META, backupfile.type);

@@ -25,10 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.ws.rs.core.Response.Status;
 import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -112,6 +115,20 @@ public class CassandraConfig {
                     .build();
         } catch (Exception e) {
             logger.error("Error while executing get_replaced_ip", e);
+            return Response.serverError().build();
+        }
+    }
+
+    @POST
+    @Path("/set_replaced_ip")
+    public Response setReplacedIp(@QueryParam("ip") String ip) {
+        if (StringUtils.isEmpty(ip)) return Response.status(Status.BAD_REQUEST).build();
+
+        try {
+            priamServer.getInstanceIdentity().setReplacedIp(ip);
+            return Response.ok().build();
+        } catch (Exception e) {
+            logger.error("Error while overriding replacement ip", e);
             return Response.serverError().build();
         }
     }

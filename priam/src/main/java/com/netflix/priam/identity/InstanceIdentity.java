@@ -319,6 +319,11 @@ public class InstanceIdentity {
         return replacedIp;
     }
 
+    public void setReplacedIp(String replacedIp) {
+        this.replacedIp = replacedIp;
+        if (!replacedIp.isEmpty()) this.isReplace = true;
+    }
+
     private static boolean isInstanceDummy(PriamInstance instance) {
         return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
     }

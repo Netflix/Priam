@@ -231,6 +231,19 @@ public class PriamServer {
                         BackupTTLService.JOBNAME,
                         backupTTLTimer.getCronExpression());
             }
+
+            // Start the Incremental backup schedule if enabled
+            if (config.isIncrementalBackupEnabled() && backupRestoreConfig.enableV2Backups()) {
+                // Delete the old task, if scheduled. This is required, as we stop taking backup
+                // 1.0, we still want to take incremental backups
+                // Once backup 1.0 is gone, we should not check for enableV2Backups..
+                scheduler.deleteTask(IncrementalBackup.JOBNAME);
+                scheduler.addTask(
+                        IncrementalBackup.JOBNAME,
+                        IncrementalBackup.class,
+                        IncrementalBackup.getTimer());
+                logger.info("Added incremental backup job");
+            }
         }
     }
 

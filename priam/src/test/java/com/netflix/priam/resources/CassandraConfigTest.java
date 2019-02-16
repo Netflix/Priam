@@ -18,6 +18,7 @@
 package com.netflix.priam.resources;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import com.google.common.collect.ImmutableList;
@@ -44,11 +45,14 @@ public class CassandraConfigTest {
     private @Mocked PriamServer priamServer;
     private @Mocked DoubleRing doubleRing;
     private CassandraConfig resource;
+    private InstanceIdentity instanceIdentity;
 
     @Before
     public void setUp() {
         CassMonitorMetrics cassMonitorMetrics =
                 Guice.createInjector(new BRTestModule()).getInstance(CassMonitorMetrics.class);
+        instanceIdentity =
+                Guice.createInjector(new BRTestModule()).getInstance(InstanceIdentity.class);
         resource = new CassandraConfig(priamServer, doubleRing, cassMonitorMetrics);
     }
 
@@ -211,6 +215,24 @@ public class CassandraConfigTest {
         Response response = resource.getReplacedIp();
         assertEquals(200, response.getStatus());
         assertEquals(replacedIp, response.getEntity());
+    }
+
+    @Test
+    public void setReplacedIp() {
+        new Expectations() {
+            {
+                priamServer.getInstanceIdentity();
+                result = instanceIdentity;
+            }
+        };
+
+        Response response = resource.setReplacedIp("127.0.0.1");
+        assertEquals(200, response.getStatus());
+        assertEquals("127.0.0.1", instanceIdentity.getReplacedIp());
+        assertTrue(instanceIdentity.isReplace());
+
+        response = resource.setReplacedIp(null);
+        assertEquals(400, response.getStatus());
     }
 
     @Test

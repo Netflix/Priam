@@ -45,4 +45,14 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
     public String getBackupTTLCronExpression() {
         return config.get("priam.backupTTLCronExpression", "0 0 0/6 1/1 * ? *");
     }
+
+    @Override
+    public int getBackupVerificationSLOInHours() {
+        return config.get("priam.backupVerificationSLOInHours", 24);
+    }
+
+    @Override
+    public String getBackupVerificationCronExpression() {
+        return config.get("priam.backupVerificationCronExpression", "0 30 0/1 1/1 * ? *");
+    }
 }

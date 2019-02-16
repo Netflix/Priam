@@ -87,10 +87,7 @@ public class BackupTTLService extends Task {
     @Override
     public void execute() throws Exception {
         // Ensure that backup version 2.0 is actually enabled.
-        if (!backupRestoreConfig.enableV2Backups()
-                && backupRestoreConfig
-                        .getSnapshotMetaServiceCronExpression()
-                        .equalsIgnoreCase("-1")) {
+        if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
             logger.info("Not executing the TTL Service for backups as V2 backups are not enabled.");
             return;
         }
@@ -211,10 +208,9 @@ public class BackupTTLService extends Task {
     /**
      * Interval between trying to TTL data on Remote file system.
      *
-     * @param backupRestoreConfig {@link
-     *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details
-     *     from priam. Use "-1" to disable the service.
-     * @return the timer to be used for snapshot meta service.
+     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLCronExpression()} to get
+     *     configuration details from priam. Use "-1" to disable the service.
+     * @return the timer to be used for backup ttl service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */

@@ -61,6 +61,31 @@ public interface IBackupRestoreConfig {
     }
 
     /**
+     * Cron expression to be used for the service which does verification of the backups. This
+     * service will run only if v2 backups are enabled.
+     *
+     * @return Backup Verification Service cron expression for trying to verify backups. Default:
+     *     run every hour at 30 minutes.
+     * @see <a
+     *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
+     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
+     */
+    default String getBackupVerificationCronExpression() {
+        return "0 30 0/1 1/1 * ? *";
+    }
+
+    /**
+     * The default backup SLO for any cluster. This will ensure that we upload and validate a backup
+     * in that SLO window. If no valid backup is found, we log ERROR message. This service will run
+     * only if v2 backups are enabled.
+     *
+     * @return the backup SLO in hours. Default: 24 hours.
+     */
+    default int getBackupVerificationSLOInHours() {
+        return 24;
+    }
+
+    /**
      * If restore is enabled and if this flag is enabled, we will try to restore using Backup V2.0.
      *
      * @return if restore should be using backup version 2.0. If this is false we will use backup

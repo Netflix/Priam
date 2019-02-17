@@ -14,8 +14,7 @@
 package com.netflix.priam.defaultimpl;
 
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.utils.JMXConnectionException;
-import com.netflix.priam.utils.JMXNodeTool;
+import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import java.util.*;
 import javax.inject.Inject;

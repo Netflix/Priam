@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,12 +14,13 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.utils;
+package com.netflix.priam.connection;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.services.CassandraMonitor;
+import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
@@ -121,13 +122,21 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
                 return false;
             }
         } catch (Throwable ex) {
-            SystemUtils.closeQuietly(tool);
+            closeQuietly(tool);
             logger.error(
                     "Exception while checking JMX connection to C*, msg: {}",
                     ex.getLocalizedMessage());
             return false;
         }
         return true;
+    }
+
+    private static void closeQuietly(JMXNodeTool tool) {
+        try {
+            tool.close();
+        } catch (Exception e) {
+            logger.warn("failed to close jmx node tool", e);
+        }
     }
 
     /**

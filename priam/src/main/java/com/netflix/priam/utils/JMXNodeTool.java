@@ -19,6 +19,7 @@ package com.netflix.priam.utils;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.services.CassandraMonitor;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.lang.management.ManagementFactory;
@@ -256,6 +257,7 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         JSONObject object = new JSONObject();
         object.put("gossip_active", isInitialized());
         object.put("thrift_active", isThriftServerRunning());
+        object.put("native_active", isNativeTransportRunning());
         object.put("token", getTokens().toString());
         object.put("load", getLoadString());
         object.put("generation_no", getCurrentGenerationNumber());

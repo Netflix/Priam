@@ -14,6 +14,7 @@
 package com.netflix.priam.defaultimpl;
 
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.utils.JMXConnectionException;
 import com.netflix.priam.utils.JMXNodeTool;
 import com.netflix.priam.utils.RetryableCallable;
 import java.util.*;
@@ -23,7 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** This class encapsulates interactions with Cassandra. Created by aagrawal on 6/19/18. */
-public class CassandraOperations {
+public class CassandraOperations implements ICassandraOperations {
     private static final Logger logger = LoggerFactory.getLogger(CassandraOperations.class);
     private final IConfiguration configuration;
 
@@ -32,27 +33,14 @@ public class CassandraOperations {
         this.configuration = configuration;
     }
 
-    /**
-     * This method neds to be synchronized. Context: During the transition phase to backup version
-     * 2.0, we might be executing multiple snapshots at the same time. To avoid, unknown behavior by
-     * Cassanddra, it is wise to keep this method sync. Also, with backups being on CRON, we don't
-     * know how often operator is taking snapshot.
-     *
-     * @param snapshotName Name of the snapshot on disk. This snapshotName should be UNIQUE among
-     *     all the snapshots. Try to append UUID to snapshotName to ensure uniqueness. This is to
-     *     ensure a) Snapshot fails if name are not unique. b) You might take snapshots which are
-     *     not "part" of same snapshot. e.g. Any leftovers from previous operation. c) Once snapshot
-     *     fails, this will clean the failed snapshot.
-     * @throws Exception in case of error while taking a snapshot by Cassandra.
-     */
+    @Override
     public synchronized void takeSnapshot(final String snapshotName) throws Exception {
         // Retry max of 6 times with 10 second in between (for one minute). This is to ensure that
         // we overcome any temporary glitch.
         // Note that operation MAY fail if cassandra successfully took the snapshot of certain
         // columnfamily(ies) and we try to create snapshot with
         // same name. It is a good practice to call clearSnapshot after this operation fails, to
-        // ensure we don't leave
-        // any left overs.
+        // ensure we don't leave any left overs.
         // Example scenario: Change of file permissions by manual intervention and C* unable to take
         // snapshot of one CF.
         try {
@@ -72,12 +60,7 @@ public class CassandraOperations {
         }
     }
 
-    /**
-     * Clear the snapshot tag from disk.
-     *
-     * @param snapshotTag Name of the snapshot to be removed.
-     * @throws Exception in case of error while clearing a snapshot.
-     */
+    @Override
     public void clearSnapshot(final String snapshotTag) throws Exception {
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
@@ -88,6 +71,7 @@ public class CassandraOperations {
         }.call();
     }
 
+    @Override
     public List<String> getKeyspaces() throws Exception {
         return new RetryableCallable<List<String>>() {
             public List<String> retriableCall() throws Exception {
@@ -98,6 +82,7 @@ public class CassandraOperations {
         }.call();
     }
 
+    @Override
     public Map<String, List<String>> getColumnfamilies() throws Exception {
         return new RetryableCallable<Map<String, List<String>>>() {
             public Map<String, List<String>> retriableCall() throws Exception {
@@ -118,6 +103,7 @@ public class CassandraOperations {
         }.call();
     }
 
+    @Override
     public void forceKeyspaceCompaction(String keyspaceName, String... columnfamilies)
             throws Exception {
         new RetryableCallable<Void>() {
@@ -130,6 +116,7 @@ public class CassandraOperations {
         }.call();
     }
 
+    @Override
     public void forceKeyspaceFlush(String keyspaceName) throws Exception {
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {

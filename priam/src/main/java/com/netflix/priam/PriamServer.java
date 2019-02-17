@@ -37,7 +37,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.services.BackupTTLService;
 import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.tuner.TuneCassandra;
-import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.services.CassandraMonitor;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.IOException;

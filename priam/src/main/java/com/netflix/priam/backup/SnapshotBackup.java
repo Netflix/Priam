@@ -27,7 +27,7 @@ import com.netflix.priam.defaultimpl.CassandraOperations;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.CassandraMonitor;
+import com.netflix.priam.services.CassandraMonitor;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.ThreadSleeper;
 import java.io.File;

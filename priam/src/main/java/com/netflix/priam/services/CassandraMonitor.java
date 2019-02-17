@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,11 +14,12 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.utils;
+package com.netflix.priam.services;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;

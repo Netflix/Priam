@@ -25,7 +25,6 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.security.MessageDigest;
 import java.util.List;
-import javax.management.remote.JMXConnector;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -117,21 +116,5 @@ public class SystemUtils {
     public static String toBase64(byte[] md5) {
         byte encoded[] = Base64.encodeBase64(md5, false);
         return new String(encoded);
-    }
-
-    public static void closeQuietly(JMXNodeTool tool) {
-        try {
-            tool.close();
-        } catch (Exception e) {
-            logger.warn("failed to close jmx node tool", e);
-        }
-    }
-
-    public static void closeQuietly(JMXConnector jmc) {
-        try {
-            jmc.close();
-        } catch (Exception e) {
-            logger.warn("failed to close JMXConnectorMgr", e);
-        }
     }
 }

@@ -41,7 +41,7 @@ allprojects {
       compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
       compile 'com.google.guava:guava:21.0'
       compile 'com.google.code.findbugs:jsr305:3.0.2'
-      compile 'com.amazonaws:aws-java-sdk:1.11.488'
+      compile 'com.amazonaws:aws-java-sdk:1.11.501'
       compile 'com.google.inject:guice:4.2.2'
       compile 'com.google.inject.extensions:guice-servlet:4.2.2'
       compile 'org.quartz-scheduler:quartz:2.3.0'

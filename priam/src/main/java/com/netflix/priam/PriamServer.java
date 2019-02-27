@@ -35,6 +35,7 @@ import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.services.BackupTTLService;
+import com.netflix.priam.services.BackupVerificationService;
 import com.netflix.priam.services.CassandraMonitor;
 import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.tuner.TuneCassandra;
@@ -230,6 +231,20 @@ public class PriamServer {
                         "Added {} Task with schedule: [{}]",
                         BackupTTLService.JOBNAME,
                         backupTTLTimer.getCronExpression());
+            }
+
+            // Schedule the backup verification service
+            TaskTimer backupVerificationTimer =
+                    BackupVerificationService.getTimer(backupRestoreConfig);
+            if (backupVerificationTimer != null) {
+                scheduler.addTask(
+                        BackupVerificationService.JOBNAME,
+                        BackupVerificationService.class,
+                        backupVerificationTimer);
+                logger.info(
+                        "Added {} Task with schedule: [{}]",
+                        BackupVerificationService.JOBNAME,
+                        backupVerificationTimer.getCronExpression());
             }
 
             // Start the Incremental backup schedule if enabled

@@ -153,7 +153,7 @@ public class BackupServlet {
         } else {
 
             object.put("Snapshotstatus", true);
-            object.put("Details", backupMetadataOptional.get());
+            object.put("Details", new JSONObject(backupMetadataOptional.get().toString()));
         }
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }

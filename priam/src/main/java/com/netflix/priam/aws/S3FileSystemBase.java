@@ -19,6 +19,11 @@ import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
+import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
+import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
@@ -33,6 +38,7 @@ import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.stream.Collectors;
 import org.slf4j.Logger;
@@ -112,7 +118,9 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             List<Rule> rules = Lists.newArrayList();
             lifeConfig.setRules(rules);
         }
+
         List<Rule> rules = lifeConfig.getRules();
+
         if (updateLifecycleRule(config, rules, clusterPath)) {
             if (rules.size() > 0) {
                 lifeConfig.setRules(rules);
@@ -121,42 +129,77 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         }
     }
 
-    private boolean updateLifecycleRule(IConfiguration config, List<Rule> rules, String prefix) {
-        Rule rule = null;
-        for (BucketLifecycleConfiguration.Rule lcRule : rules) {
-            if (lcRule.getPrefix().equals(prefix)) {
-                rule = lcRule;
-                break;
+    // Dummy class to get Prefix. - Why oh why AWS you can't give the details!!
+    private class PrefixVisitor implements LifecyclePredicateVisitor {
+        String prefix;
+
+        @Override
+        public void visit(LifecyclePrefixPredicate lifecyclePrefixPredicate) {
+            prefix = lifecyclePrefixPredicate.getPrefix();
+        }
+
+        @Override
+        public void visit(LifecycleTagPredicate lifecycleTagPredicate) {}
+
+        @Override
+        public void visit(LifecycleAndOperator lifecycleAndOperator) {}
+    }
+
+    private Optional<Rule> getBucketLifecycleRule(List<Rule> rules, String prefix) {
+        if (rules == null || rules.isEmpty()) return Optional.empty();
+
+        for (Rule rule : rules) {
+            PrefixVisitor prefixVisitor = new PrefixVisitor();
+            rule.getFilter().getPredicate().accept(prefixVisitor);
+            String rulePrefix = prefixVisitor.prefix;
+            if (prefix.equalsIgnoreCase(rulePrefix)) {
+                return Optional.of(rule);
             }
         }
-        if (rule == null && config.getBackupRetentionDays() <= 0) return false;
-        if (rule != null && rule.getExpirationInDays() == config.getBackupRetentionDays()) {
-            logger.info("Cleanup rule already set");
+
+        return Optional.empty();
+    }
+
+    private boolean updateLifecycleRule(IConfiguration config, List<Rule> rules, String prefix) {
+        Optional<Rule> rule = getBucketLifecycleRule(rules, prefix);
+        // No need to update the rule as it never existed and retention is not set.
+        if (!rule.isPresent() && config.getBackupRetentionDays() <= 0) return false;
+
+        // Rule not required as retention days is zero or negative.
+        if (rule.isPresent() && config.getBackupRetentionDays() <= 0) {
+            logger.warn(
+                    "Removing the rule for backup retention on prefix: {} as retention is set to [{}] days. Only positive values are supported by S3!!",
+                    prefix,
+                    config.getBackupRetentionDays());
+            rules.remove(rule.get());
+            return true;
+        }
+
+        // Rule present and is current.
+        if (rule.isPresent()
+                && rule.get().getExpirationInDays() == config.getBackupRetentionDays()
+                && rule.get().getStatus().equalsIgnoreCase(BucketLifecycleConfiguration.ENABLED)) {
+            logger.info(
+                    "Cleanup rule already set on prefix: {} with retention period: [{}] days",
+                    prefix,
+                    config.getBackupRetentionDays());
             return false;
         }
-        if (rule == null) {
+
+        if (!rule.isPresent()) {
             // Create a new rule
-            rule =
-                    new BucketLifecycleConfiguration.Rule()
-                            .withExpirationInDays(config.getBackupRetentionDays())
-                            .withPrefix(prefix);
-            rule.setStatus(BucketLifecycleConfiguration.ENABLED);
-            rule.setId(prefix);
-            rules.add(rule);
-            logger.info(
-                    "Setting cleanup for {} to {} days",
-                    rule.getPrefix(),
-                    rule.getExpirationInDays());
-        } else if (config.getBackupRetentionDays() > 0) {
-            logger.info(
-                    "Setting cleanup for {} to {} days",
-                    rule.getPrefix(),
-                    config.getBackupRetentionDays());
-            rule.setExpirationInDays(config.getBackupRetentionDays());
-        } else {
-            logger.info("Removing cleanup rule for {}", rule.getPrefix());
-            rules.remove(rule);
+            rule = Optional.of(new BucketLifecycleConfiguration.Rule());
+            rules.add(rule.get());
         }
+
+        rule.get().setStatus(BucketLifecycleConfiguration.ENABLED);
+        rule.get().setExpirationInDays(config.getBackupRetentionDays());
+        rule.get().setFilter(new LifecycleFilter(new LifecyclePrefixPredicate(prefix)));
+        rule.get().setId(prefix);
+        logger.info(
+                "Setting cleanup rule for prefix: {} with retention period: [{}] days",
+                prefix,
+                config.getBackupRetentionDays());
         return true;
     }
 

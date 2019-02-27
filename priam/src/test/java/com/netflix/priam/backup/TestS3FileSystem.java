@@ -23,6 +23,8 @@ import com.amazonaws.SdkClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
+import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
+import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -31,6 +33,7 @@ import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import java.io.BufferedOutputStream;
@@ -41,6 +44,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import mockit.Mock;
 import mockit.MockUp;
 import org.junit.*;
@@ -54,11 +59,15 @@ public class TestS3FileSystem {
             "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
     private static BackupMetrics backupMetrics;
     private static String region;
+    private static IConfiguration configuration;
 
     public TestS3FileSystem() {
         if (injector == null) injector = Guice.createInjector(new BRTestModule());
 
         if (backupMetrics == null) backupMetrics = injector.getInstance(BackupMetrics.class);
+
+        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
+
         InstanceInfo instanceInfo = injector.getInstance(InstanceInfo.class);
         region = instanceInfo.getRegion();
     }
@@ -150,26 +159,38 @@ public class TestS3FileSystem {
 
     @Test
     public void testCleanupAdd() throws Exception {
-        MockAmazonS3Client.ruleAvailable = false;
+        MockAmazonS3Client.setRuleAvailable(false);
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.cleanup();
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getPrefix());
-        Assert.assertEquals(5, rule.getExpirationInDays());
+        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
     }
 
     @Test
     public void testCleanupIgnore() throws Exception {
-        MockAmazonS3Client.ruleAvailable = true;
+        MockAmazonS3Client.setRuleAvailable(true);
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.cleanup();
         Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        logger.info(rule.getPrefix());
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getPrefix());
-        Assert.assertEquals(5, rule.getExpirationInDays());
+        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
+    }
+
+    @Test
+    public void testCleanupUpdate() throws Exception {
+        MockAmazonS3Client.setRuleAvailable(true);
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        String clusterPrefix = "casstestbackup/" + region + "/fake-app/";
+        MockAmazonS3Client.updateRule(
+                MockAmazonS3Client.getBucketLifecycleConfig(clusterPrefix, 2));
+        fs.cleanup();
+        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
+        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
     }
 
     @Test
@@ -237,8 +258,8 @@ public class TestS3FileSystem {
     }
 
     static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        static boolean ruleAvailable = false;
-        static BucketLifecycleConfiguration bconf = new BucketLifecycleConfiguration();
+        private boolean ruleAvailable = false;
+        static BucketLifecycleConfiguration bconf;
         static boolean emulateError = false;
 
         @Mock
@@ -257,18 +278,6 @@ public class TestS3FileSystem {
 
         @Mock
         public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
-            List<BucketLifecycleConfiguration.Rule> rules = Lists.newArrayList();
-            if (ruleAvailable) {
-                String clusterPath = "casstestbackup/" + region + "/fake-app/";
-                BucketLifecycleConfiguration.Rule rule =
-                        new BucketLifecycleConfiguration.Rule()
-                                .withExpirationInDays(5)
-                                .withPrefix(clusterPath);
-                rule.setStatus(BucketLifecycleConfiguration.ENABLED);
-                rule.setId(clusterPath);
-                rules.add(rule);
-            }
-            bconf.setRules(rules);
             return bconf;
         }
 
@@ -283,6 +292,49 @@ public class TestS3FileSystem {
                 throws SdkClientException, AmazonServiceException {
             if (emulateError) throw new AmazonServiceException("Unable to reach AWS");
             return null;
+        }
+
+        static BucketLifecycleConfiguration.Rule getBucketLifecycleConfig(
+                String prefix, int expirationDays) {
+            return new BucketLifecycleConfiguration.Rule()
+                    .withExpirationInDays(expirationDays)
+                    .withFilter(new LifecycleFilter(new LifecyclePrefixPredicate(prefix)))
+                    .withStatus(BucketLifecycleConfiguration.ENABLED)
+                    .withId(prefix);
+        }
+
+        static void setRuleAvailable(boolean ruleAvailable) {
+            if (ruleAvailable) {
+                bconf = new BucketLifecycleConfiguration();
+                if (bconf.getRules() == null) bconf.setRules(Lists.newArrayList());
+
+                List<BucketLifecycleConfiguration.Rule> rules = bconf.getRules();
+                String clusterPath = "casstestbackup/" + region + "/fake-app/";
+
+                List<BucketLifecycleConfiguration.Rule> potentialRules =
+                        rules.stream()
+                                .filter(rule -> rule.getId().equalsIgnoreCase(clusterPath))
+                                .collect(Collectors.toList());
+                if (potentialRules == null || potentialRules.isEmpty())
+                    rules.add(
+                            getBucketLifecycleConfig(
+                                    clusterPath, configuration.getBackupRetentionDays()));
+            }
+        }
+
+        static void updateRule(BucketLifecycleConfiguration.Rule updatedRule) {
+            List<BucketLifecycleConfiguration.Rule> rules = bconf.getRules();
+            Optional<BucketLifecycleConfiguration.Rule> updateRule =
+                    rules.stream()
+                            .filter(rule -> rule.getId().equalsIgnoreCase(updatedRule.getId()))
+                            .findFirst();
+            if (updateRule.isPresent()) {
+                rules.remove(updateRule.get());
+                rules.add(updatedRule);
+            } else {
+                rules.add(updatedRule);
+            }
+            bconf.setRules(rules);
         }
     }
 }

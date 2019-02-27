@@ -165,8 +165,8 @@ public class ForgottenFilesManager {
                                             config.getForgottenFileGracePeriodDaysForRead(),
                                             ChronoUnit.DAYS))) {
                         // Eligible for move.
-                        logger.warn(
-                                "Forgotten file: {} found for CF: {}",
+                        logger.info(
+                                "Eligible for move: Forgotten file: {} found for CF: {}",
                                 file,
                                 columnfamilyDir.getName());
                         backupMetrics.incrementForgottenFiles(1);
@@ -177,6 +177,10 @@ public class ForgottenFilesManager {
                                 Files.delete(symbolic_link);
                                 FileUtils.moveFileToDirectory(
                                         file.toFile(), destDir.toFile(), true);
+                                logger.warn(
+                                        "Successfully moved forgotten file: {} found for CF: {}",
+                                        file,
+                                        columnfamilyDir.getName());
                             } catch (IOException e) {
                                 logger.error(
                                         "Exception occurred while trying to move forgottenFile: {}. Ignoring the error and continuing with remaining backup/forgotten files.",
@@ -189,6 +193,7 @@ public class ForgottenFilesManager {
 
             } catch (IOException e) {
                 logger.error("Forgotten file: Error while trying to process the file: {}", file);
+                e.printStackTrace();
             }
         }
 
@@ -198,7 +203,12 @@ public class ForgottenFilesManager {
             Path filePath = Paths.get(file.getAbsolutePath());
             if (Files.isSymbolicLink(filePath)) {
                 Path originalFile = Files.readSymbolicLink(filePath);
-                if (!columnfamilyPaths.contains(originalFile)) Files.delete(filePath);
+                if (!columnfamilyPaths.contains(originalFile)) {
+                    Files.delete(filePath);
+                    logger.info(
+                            "Deleting the symbolic link as it is not considered as lost anymore. filePath: {}",
+                            filePath);
+                }
             }
         }
     }

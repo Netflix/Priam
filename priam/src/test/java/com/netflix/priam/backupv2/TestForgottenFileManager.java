@@ -21,10 +21,10 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -44,7 +44,7 @@ import org.junit.Test;
 public class TestForgottenFileManager {
     private ForgottenFilesManager forgottenFilesManager;
     private TestBackupUtils testBackupUtils;
-    private IConfiguration configuration;
+    private ForgottenFilesConfiguration configuration;
     private List<Path> allFiles = new ArrayList<>();
     private Instant snapshotInstant;
     private Path snapshotDir;
@@ -62,12 +62,11 @@ public class TestForgottenFileManager {
         cleanup();
         Instant now = DateUtil.getInstant();
         snapshotInstant = now;
-        Path file1 = Paths.get(testBackupUtils.createFile("file1", now.minus(5, ChronoUnit.DAYS)));
-        Path file2 = Paths.get(testBackupUtils.createFile("file2", now.minus(3, ChronoUnit.DAYS)));
-        Path file3 = Paths.get(testBackupUtils.createFile("file3", now.minus(2, ChronoUnit.DAYS)));
-        Path file4 = Paths.get(testBackupUtils.createFile("file4", now.minus(6, ChronoUnit.HOURS)));
-        Path file5 =
-                Paths.get(testBackupUtils.createFile("file5", now.minus(1, ChronoUnit.MINUTES)));
+        Path file1 = Paths.get(testBackupUtils.createFile("file1", now.minus(10, ChronoUnit.DAYS)));
+        Path file2 = Paths.get(testBackupUtils.createFile("file2", now.minus(8, ChronoUnit.DAYS)));
+        Path file3 = Paths.get(testBackupUtils.createFile("file3", now.minus(6, ChronoUnit.DAYS)));
+        Path file4 = Paths.get(testBackupUtils.createFile("file4", now.minus(4, ChronoUnit.DAYS)));
+        Path file5 = Paths.get(testBackupUtils.createFile("file5", now.minus(1, ChronoUnit.DAYS)));
         Path file6 =
                 Paths.get(
                         testBackupUtils.createFile(
@@ -103,23 +102,58 @@ public class TestForgottenFileManager {
     }
 
     @Test
-    public void testMoveForgottenFiles() {
+    public void testMoveForgottenFiles() throws IOException, InterruptedException {
         Collection<File> files = allFiles.stream().map(Path::toFile).collect(Collectors.toList());
-        forgottenFilesManager.moveForgottenFiles(
-                new File(configuration.getDataFileLocation()), files);
         Path lostFoundDir =
                 Paths.get(configuration.getDataFileLocation(), forgottenFilesManager.LOST_FOUND);
+
+        // Lets create some extra symlinks in the LOST_FOUND folder. They should not exist anymore
+        Path randomSymlink = Paths.get(lostFoundDir.toFile().getAbsolutePath(), "random");
+        Files.createDirectory(lostFoundDir);
+        Files.createSymbolicLink(randomSymlink, lostFoundDir);
+
+        forgottenFilesManager.moveForgottenFiles(
+                new File(configuration.getDataFileLocation()), files);
+
+        // Extra symlinks are deleted.
+        Assert.assertFalse(Files.exists(randomSymlink));
+
+        // Symlinks are created for all the files. They are not moved yet.
+        Collection<File> symlinkFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
+        Assert.assertEquals(allFiles.size(), symlinkFiles.size());
+        for (Path file : allFiles) {
+            Path symlink = Paths.get(lostFoundDir.toString(), file.getFileName().toString());
+            Assert.assertTrue(symlinkFiles.contains(symlink.toFile()));
+            Assert.assertTrue(Files.isSymbolicLink(symlink));
+            Assert.assertTrue(Files.exists(file));
+        }
+
+        // Lets change the configuration and try again!!
+        configuration.setGracePeriodForgottenFileInDaysForRead(0);
+        forgottenFilesManager.moveForgottenFiles(
+                new File(configuration.getDataFileLocation()), files);
         Collection<File> movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
         Assert.assertEquals(allFiles.size(), movedFiles.size());
-        for (Path file : allFiles)
-            Assert.assertTrue(
-                    movedFiles.contains(
-                            Paths.get(lostFoundDir.toString(), file.getFileName().toString())
-                                    .toFile()));
+        movedFiles
+                .stream()
+                .forEach(
+                        file -> {
+                            Assert.assertTrue(
+                                    Files.isRegularFile(Paths.get(file.getAbsolutePath())));
+                        });
+        allFiles.stream()
+                .forEach(
+                        file -> {
+                            Assert.assertFalse(file.toFile().exists());
+                        });
+
+        configuration.setGracePeriodForgottenFileInDaysForRead(
+                ForgottenFilesConfiguration.DEFAULT_GRACE_PERIOD);
     }
 
     @Test
     public void getColumnfamilyFiles() {
+
         Path columnfamilyDir = allFiles.get(0).getParent();
         Collection<File> columnfamilyFiles =
                 forgottenFilesManager.getColumnfamilyFiles(
@@ -136,7 +170,7 @@ public class TestForgottenFileManager {
                 Paths.get(allFiles.get(0).getParent().toString(), forgottenFilesManager.LOST_FOUND);
         forgottenFilesManager.findAndMoveForgottenFiles(snapshotInstant, snapshotDir.toFile());
 
-        // Only one forgotten file - file1.
+        // Only one potential forgotten file - file1. It will be symlink here.
         Collection<File> movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
         Assert.assertEquals(1, movedFiles.size());
         Assert.assertTrue(
@@ -145,9 +179,28 @@ public class TestForgottenFileManager {
                         .next()
                         .getName()
                         .equals(allFiles.get(0).getFileName().toString()));
+        Assert.assertTrue(
+                Files.isSymbolicLink(Paths.get(movedFiles.iterator().next().getAbsolutePath())));
 
-        // All other files still remain in columnfamily dir.
+        // All files still remain in columnfamily dir.
         Collection<File> cfFiles =
+                FileUtils.listFiles(new File(allFiles.get(0).getParent().toString()), null, false);
+        Assert.assertEquals(allFiles.size(), cfFiles.size());
+
+        // Snapshot is untouched.
+        Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
+        Assert.assertEquals(3, snapshotFiles.size());
+
+        // Lets change the configuration and try again!!
+        configuration.setGracePeriodForgottenFileInDaysForRead(0);
+        forgottenFilesManager.findAndMoveForgottenFiles(snapshotInstant, snapshotDir.toFile());
+        configuration.setGracePeriodForgottenFileInDaysForRead(
+                ForgottenFilesConfiguration.DEFAULT_GRACE_PERIOD);
+        movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
+        Assert.assertEquals(1, movedFiles.size());
+        Assert.assertTrue(
+                Files.isRegularFile(Paths.get(movedFiles.iterator().next().getAbsolutePath())));
+        cfFiles =
                 FileUtils.listFiles(new File(allFiles.get(0).getParent().toString()), null, false);
         Assert.assertEquals(6, cfFiles.size());
         int temp_file_name = 1;
@@ -156,14 +209,27 @@ public class TestForgottenFileManager {
         }
 
         // Snapshot is untouched.
-        Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
+        snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
         Assert.assertEquals(3, snapshotFiles.size());
     }
 
     private class ForgottenFilesConfiguration extends FakeConfiguration {
+        protected static final int DEFAULT_GRACE_PERIOD = 3;
+        private int gracePeriodForgottenFileInDaysForRead = DEFAULT_GRACE_PERIOD;
+
         @Override
         public boolean isForgottenFileMoveEnabled() {
             return true;
+        }
+
+        @Override
+        public int getForgottenFileGracePeriodDaysForRead() {
+            return gracePeriodForgottenFileInDaysForRead;
+        }
+
+        public void setGracePeriodForgottenFileInDaysForRead(
+                int gracePeriodForgottenFileInDaysForRead) {
+            this.gracePeriodForgottenFileInDaysForRead = gracePeriodForgottenFileInDaysForRead;
         }
     }
 }

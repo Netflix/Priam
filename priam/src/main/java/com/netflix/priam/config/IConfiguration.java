@@ -956,13 +956,29 @@ public interface IConfiguration {
     }
 
     /**
-     * Grace period for the file(that should have been deleted by cassandra) that are considered to
-     * be forgotten. Only required for cassandra 2.x.
+     * Grace period in days for the file that 'could' be considered to be forgotten by cassandra,
+     * but actually may be output of a long-running compaction job. Note that cassandra creates
+     * output of the compaction as non-tmp-link files (whole SSTable) but are still not part of the
+     * final "view" and thus not part of a snapshot. Only required for cassandra 2.x. Default: 5
      *
-     * @return grace period for the forgotten files.
+     * @return grace period for the compaction output forgotten files.
      */
-    default int getForgottenFileGracePeriodDays() {
-        return 1;
+    default int getForgottenFileGracePeriodDaysForCompaction() {
+        return 5;
+    }
+
+    /**
+     * Grace period in days for which a file is not considered forgotten by cassandra (that would be
+     * deleted by cassandra) as file could be used in the read path of the cassandra. Note that read
+     * path could imply streaming to a joining neighbor or for repair. When cassandra is done with a
+     * compaction, the input files to compaction, are removed from the "view" and thus not part of
+     * snapshot, but these files may very well be used for streaming, repair etc and thus cannot be
+     * removed.
+     *
+     * @return grace period in days for read path forgotten files.
+     */
+    default int getForgottenFileGracePeriodDaysForRead() {
+        return 3;
     }
 
     /**

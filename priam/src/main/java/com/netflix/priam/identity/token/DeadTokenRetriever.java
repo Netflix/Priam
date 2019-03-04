@@ -26,7 +26,6 @@ import com.sun.jersey.api.client.ClientResponse;
 import com.sun.jersey.api.client.WebResource;
 import com.sun.jersey.api.client.config.ClientConfig;
 import com.sun.jersey.api.client.config.DefaultClientConfig;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import javax.ws.rs.core.MediaType;
@@ -43,8 +42,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     private final IMembership membership;
     private final IConfiguration config;
     private final Sleeper sleeper;
-    private String
-            replacedIp; // The IP address of the dead instance to which we will acquire its token
+    // The IP address of the dead instance to which we will acquire its token
+    private String replacedIp;
     private ListMultimap<String, PriamInstance> locMap;
     private final InstanceInfo instanceInfo;
 
@@ -66,22 +65,6 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         logger.info("Dual Account cluster");
 
         List<String> crossAccountAsgInstances = membership.getCrossAccountRacMembership();
-
-        if (logger.isInfoEnabled()) {
-            if (instanceInfo.getInstanceEnvironment() == InstanceInfo.InstanceEnvironment.CLASSIC) {
-                logger.info(
-                        "EC2 classic instances (local ASG): "
-                                + Arrays.toString(asgInstances.toArray()));
-                logger.info(
-                        "VPC Account (cross-account ASG): "
-                                + Arrays.toString(crossAccountAsgInstances.toArray()));
-            } else {
-                logger.info("VPC Account (local ASG): " + Arrays.toString(asgInstances.toArray()));
-                logger.info(
-                        "EC2 classic instances (cross-account ASG): "
-                                + Arrays.toString(crossAccountAsgInstances.toArray()));
-            }
-        }
 
         // Remove duplicates (probably there are not)
         asgInstances.removeAll(crossAccountAsgInstances);

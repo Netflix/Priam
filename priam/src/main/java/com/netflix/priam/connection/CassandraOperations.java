@@ -138,9 +138,7 @@ public class CassandraOperations implements ICassandraOperations {
                 nodeTool = JMXNodeTool.instance(configuration);
             } catch (JMXConnectionException e) {
                 logger.error(
-                        "Exception in fetching c* jmx tool .  Msgl: {}",
-                        e.getLocalizedMessage(),
-                        e);
+                        "Exception in fetching c* jmx tool .  Msg: {}", e.getLocalizedMessage(), e);
                 throw e;
             }
             String gossipInfoLines[] = nodeTool.getGossipInfo().split("/");

@@ -127,7 +127,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             if (replacedIp == null) return null;
 
             logger.info(
-                    "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from DB: {}",
+                    "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
                     priamInstance.getToken(),
                     replacedIp,
                     priamInstance.getHostIP());
@@ -187,6 +187,11 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         // single instance.
         // Good idea to shuffle so we are not talking to same instances every time.
         Collections.shuffle(eligibleInstances);
+        // Potential issue could be when you have about 50% of your cluster C* DOWN or trying to be
+        // replaced.
+        // Think of a major disaster hitting your cluster. In that scenario chances of instance
+        // hitting DOWN C* are much much higher.
+        // In such a case you should rely on @link{CassandraConfig#setReplacedIp}.
         int noOfInstancesGossipShouldMatch = Math.max(1, Math.min(3, eligibleInstances.size()));
         int noOfInstancesWithGossipMatch = 0;
         String replace_ip = null, ip = null;
@@ -221,7 +226,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     private String getIp(String host, String token) {
         String response = null;
         try {
-            response = SystemUtils.getDataFromUrl(getURI(host));
+            response = SystemUtils.getDataFromUrl(getGossipInfoURL(host));
 
             String inputToken = String.format("[%s]", token);
             JSONParser parser = new JSONParser();
@@ -256,7 +261,7 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         return null;
     }
 
-    private String getURI(String host) {
+    private String getGossipInfoURL(String host) {
         return "http://" + host + ":8080/Priam/REST/v1/cassadmin/gossipinfo";
     }
 

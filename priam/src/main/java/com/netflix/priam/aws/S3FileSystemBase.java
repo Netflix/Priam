@@ -149,9 +149,15 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         if (rules == null || rules.isEmpty()) return Optional.empty();
 
         for (Rule rule : rules) {
-            PrefixVisitor prefixVisitor = new PrefixVisitor();
-            rule.getFilter().getPredicate().accept(prefixVisitor);
-            String rulePrefix = prefixVisitor.prefix;
+            String rulePrefix = "";
+            if (rule.getFilter() != null) {
+                PrefixVisitor prefixVisitor = new PrefixVisitor();
+                rule.getFilter().getPredicate().accept(prefixVisitor);
+                rulePrefix = prefixVisitor.prefix;
+            } else if (rule.getPrefix() != null) {
+                // Being backwards compatible, here.
+                rulePrefix = rule.getPrefix();
+            }
             if (prefix.equalsIgnoreCase(rulePrefix)) {
                 return Optional.of(rule);
             }

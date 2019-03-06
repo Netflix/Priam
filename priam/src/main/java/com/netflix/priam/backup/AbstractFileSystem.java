@@ -184,11 +184,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {
-                notifyEventStart(new BackupEvent(path));
                 long uploadedFileSize;
 
                 // Upload file if it not present at remote location.
                 if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
+                    notifyEventStart(new BackupEvent(path));
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
@@ -204,18 +204,13 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
+                    path.setCompressedFileSize(uploadedFileSize);
+                    notifyEventSuccess(new BackupEvent(path));
                 } else {
-                    // file is already uploaded to remote file system. get the compressed file size
-                    // to update it for notification message.
-                    uploadedFileSize = getFileSize(remotePath);
-                    logger.info(
-                            "File: {} already present on remoteFileSystem with file size: {}",
-                            remotePath,
-                            uploadedFileSize);
+                    // file is already uploaded to remote file system.
+                    logger.info("File: {} already present on remoteFileSystem.", remotePath);
                 }
 
-                path.setCompressedFileSize(uploadedFileSize);
-                notifyEventSuccess(new BackupEvent(path));
                 logger.info(
                         "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
@@ -229,7 +224,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 backupMetrics.incrementInvalidUploads();
                 notifyEventFailure(new BackupEvent(path));
                 logger.error(
-                        "Error while uploading file: {} to location: {}", localPath, remotePath);
+                        "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
+                        localPath,
+                        remotePath,
+                        e.getMessage(),
+                        e.getStackTrace());
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.

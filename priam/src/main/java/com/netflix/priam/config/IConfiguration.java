@@ -956,14 +956,18 @@ public interface IConfiguration {
     }
 
     /**
-     * Grace period in days for the file that 'could' be considered to be forgotten by cassandra,
-     * but actually may be output of a long-running compaction job. Note that cassandra creates
-     * output of the compaction as non-tmp-link files (whole SSTable) but are still not part of the
-     * final "view" and thus not part of a snapshot. Only required for cassandra 2.x. Default: 5
+     * Grace period in days for the file that 'could' be output of a long-running compaction job.
+     * Note that cassandra creates output of the compaction as non-tmp-link files (whole SSTable)
+     * but are still not part of the final "view" and thus not part of a snapshot. Another common
+     * issue is "index.db" published "way" before other component files. Thus index file has
+     * modification time before other files .
+     *
+     * <p>This value is used to TTL the backups and to consider file which are forgotten by
+     * Cassandra. Default: 5
      *
      * @return grace period for the compaction output forgotten files.
      */
-    default int getForgottenFileGracePeriodDaysForCompaction() {
+    default int getGracePeriodDaysForCompaction() {
         return 5;
     }
 

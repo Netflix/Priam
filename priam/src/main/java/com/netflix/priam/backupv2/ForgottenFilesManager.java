@@ -109,7 +109,7 @@ public class ForgottenFilesManager {
         IOFileFilter tmpFileFilter = FileFilterUtils.or(tmpFileFilter1, tmpFileFilter2);
         /*
         Here we are allowing files which were more than
-        @link{IConfiguration#getForgottenFileGracePeriodDaysForCompaction}. We do this to allow cassandra
+        @link{IConfiguration#getGracePeriodDaysForCompaction}. We do this to allow cassandra
         to have files which were generated as part of long running compaction.
         Refer to https://issues.apache.org/jira/browse/CASSANDRA-6756 and
         https://issues.apache.org/jira/browse/CASSANDRA-7066
@@ -118,9 +118,7 @@ public class ForgottenFilesManager {
         IOFileFilter ageFilter =
                 FileFilterUtils.ageFileFilter(
                         snapshotInstant
-                                .minus(
-                                        config.getForgottenFileGracePeriodDaysForCompaction(),
-                                        ChronoUnit.DAYS)
+                                .minus(config.getGracePeriodDaysForCompaction(), ChronoUnit.DAYS)
                                 .toEpochMilli());
         IOFileFilter fileFilter =
                 FileFilterUtils.and(

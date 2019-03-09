@@ -750,7 +750,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getForgottenFileGracePeriodDaysForCompaction() {
+    public int getGracePeriodDaysForCompaction() {
         return config.get(PRIAM_PRE + ".forgottenFileGracePeriodDaysForCompaction", 5);
     }
 

@@ -124,7 +124,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+    public void deleteFiles(List<Path> remotePaths) throws BackupRestoreException {
         remotePaths
                 .stream()
                 .forEach(

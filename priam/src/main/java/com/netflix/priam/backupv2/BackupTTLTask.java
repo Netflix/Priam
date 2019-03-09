@@ -155,6 +155,14 @@ public class BackupTTLTask extends Task {
             Iterator<String> remoteFileLocations =
                     fileSystem.listFileSystem(getSSTPrefix(), null, null);
 
+            /*
+            We really cannot delete the files until the TTL period.
+            Cassandra can flush files on file system like Index.db first and other component files later (like 30 mins). If there is a snapshot in between, then this "single" component file would not be part of the snapshot as SSTable is still not part of Cassandra's "view". Only if Cassandra could provide strong guarantees on the file system such that -
+
+            1. All component will be flushed to disk as real SSTables only if they are part of the view. Until that happens all the files will be "tmp" files.
+            2. All component flushed will have the same "last modified" file. i.e. on the first flush. Stats.db can change over time and that is OK.
+            Since this is not the case, the TTL may end up deleting this file even though the file is part of the next snapshot. To avoid, this we add grace period (based on how long compaction can run) when we delete the files.
+            */
             dateToTtl = dateToTtl.minus(config.getGracePeriodDaysForCompaction(), ChronoUnit.DAYS);
             logger.info(
                     "Will delete(TTL) SST_V2 files which are before this time: {}. Input: [TTL: {} days, Grace Period: {} days]",

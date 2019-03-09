@@ -48,7 +48,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+    public void deleteFiles(List<Path> remotePaths) throws BackupRestoreException {
         // Do nothing.
     }
 

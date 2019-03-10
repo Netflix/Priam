@@ -20,7 +20,7 @@ import com.google.inject.Guice
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
 import com.netflix.priam.config.FakeConfiguration
-import com.netflix.priam.defaultimpl.CassandraOperations
+import com.netflix.priam.connection.CassandraOperations
 import com.netflix.priam.health.CassandraMonitor
 import mockit.Mock
 import mockit.MockUp

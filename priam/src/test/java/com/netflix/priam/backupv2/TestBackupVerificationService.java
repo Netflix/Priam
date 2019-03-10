@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;

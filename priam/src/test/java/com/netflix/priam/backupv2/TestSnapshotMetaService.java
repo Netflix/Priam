@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,12 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;

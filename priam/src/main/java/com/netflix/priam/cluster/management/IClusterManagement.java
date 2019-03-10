@@ -14,9 +14,9 @@
 package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.merics.IMeasurement;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.services.CassandraMonitor;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.slf4j.Logger;

@@ -14,7 +14,7 @@
 package com.netflix.priam.cluster.management;
 
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.defaultimpl.CassandraOperations;
+import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.merics.NodeToolFlushMeasurement;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;

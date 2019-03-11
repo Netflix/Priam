@@ -18,66 +18,58 @@ package com.netflix.priam;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.aws.UpdateSecuritySettings;
-import com.netflix.priam.backup.CommitLogBackupTask;
-import com.netflix.priam.backup.IncrementalBackup;
-import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.BackupService;
+import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
-import com.netflix.priam.cluster.management.IClusterManagement;
-import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.defaultimpl.IService;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.services.BackupTTLService;
-import com.netflix.priam.services.BackupVerificationService;
-import com.netflix.priam.services.CassandraMonitor;
-import com.netflix.priam.services.SnapshotMetaService;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.IOException;
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Start all tasks here - Property update task - Backup task - Restore task - Incremental backup */
 @Singleton
-public class PriamServer {
+public class PriamServer implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
-    private final IBackupRestoreConfig backupRestoreConfig;
     private final InstanceIdentity instanceIdentity;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
     private final RestoreContext restoreContext;
-    private final SnapshotMetaService snapshotMetaService;
+    private final IService backupV2Service;
+    private final IService backupService;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
     @Inject
     public PriamServer(
             IConfiguration config,
-            IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler scheduler,
             InstanceIdentity id,
             Sleeper sleeper,
             ICassandraProcess cassProcess,
             RestoreContext restoreContext,
-            SnapshotMetaService snapshotMetaService) {
+            BackupService backupService,
+            BackupV2Service backupV2Service) {
         this.config = config;
-        this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.instanceIdentity = id;
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
         this.restoreContext = restoreContext;
-        this.snapshotMetaService = snapshotMetaService;
+        this.backupService = backupService;
+        this.backupV2Service = backupV2Service;
     }
 
     private void createDirectories() throws IOException {
@@ -88,7 +80,8 @@ public class PriamServer {
         SystemUtils.createDirs(config.getLogDirLocation());
     }
 
-    public void initialize() throws Exception {
+    @Override
+    public void scheduleService() throws Exception {
         // Create all the required directories for priam and Cassandra.
         createDirectories();
 
@@ -116,32 +109,6 @@ public class PriamServer {
         // Run the task to tune Cassandra
         scheduler.runTaskNow(TuneCassandra.class);
 
-        // Start the snapshot backup schedule - Always run this. (If you want to
-        // set it off, set backup hour to -1) or set backup cron to "-1"
-        if (SnapshotBackup.getTimer(config) != null
-                && (CollectionUtils.isEmpty(config.getBackupRacs())
-                        || config.getBackupRacs()
-                                .contains(instanceIdentity.getInstanceInfo().getRac()))) {
-            scheduler.addTask(
-                    SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
-
-            // Start the Incremental backup schedule if enabled
-            if (config.isIncrementalBackupEnabled()) {
-                scheduler.addTask(
-                        IncrementalBackup.JOBNAME,
-                        IncrementalBackup.class,
-                        IncrementalBackup.getTimer());
-                logger.info("Added incremental backup job");
-            }
-        }
-
-        if (config.isBackingUpCommitLogs()) {
-            scheduler.addTask(
-                    CommitLogBackupTask.JOBNAME,
-                    CommitLogBackupTask.class,
-                    CommitLogBackupTask.getTimer(config));
-        }
-
         // Determine if we need to restore from backup else start cassandra.
         if (restoreContext.isRestoreEnabled()) {
             restoreContext.restore();
@@ -164,101 +131,23 @@ public class PriamServer {
                 CassandraMonitor.getTimer(),
                 CASSANDRA_MONITORING_INITIAL_DELAY);
 
-        // Set cleanup
-        scheduler.addTask(
-                UpdateCleanupPolicy.JOBNAME,
-                UpdateCleanupPolicy.class,
-                UpdateCleanupPolicy.getTimer());
-
         // Set up nodetool flush task
-        TaskTimer flushTaskTimer = Flush.getTimer(config);
-        if (flushTaskTimer != null) {
-            scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
-            logger.info(
-                    "Added nodetool flush task with schedule: [{}]",
-                    flushTaskTimer.getCronExpression());
-        }
+        scheduleTask(scheduler, Flush.class, Flush.getTimer(config));
 
         // Set up compaction task
-        TaskTimer compactionTimer = Compaction.getTimer(config);
-        if (compactionTimer != null) {
-            scheduler.addTask(
-                    IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
-            logger.info(
-                    "Added compaction task with schedule: [{}]",
-                    compactionTimer.getCronExpression());
-        }
+        scheduleTask(scheduler, Compaction.class, Compaction.getTimer(config));
 
         // Set up the background configuration dumping thread
-        TaskTimer configurationPersisterTimer = PriamConfigurationPersister.getTimer(config);
-        if (configurationPersisterTimer != null) {
-            scheduler.addTask(
-                    PriamConfigurationPersister.NAME,
-                    PriamConfigurationPersister.class,
-                    configurationPersisterTimer);
-            logger.info(
-                    "Added configuration persister task with schedule: [{}]",
-                    configurationPersisterTimer.getCronExpression());
-        } else {
-            logger.warn("Priam configuration persister disabled!");
-        }
+        scheduleTask(
+                scheduler,
+                PriamConfigurationPersister.class,
+                PriamConfigurationPersister.getTimer(config));
 
-        // Set up the SnapshotService
-        setUpSnapshotService();
-    }
+        // Set up V1 Snapshot Service
+        backupService.scheduleService();
 
-    private void setUpSnapshotService() throws Exception {
-        TaskTimer snapshotMetaServiceTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
-        if (snapshotMetaServiceTimer != null) {
-            scheduler.addTask(
-                    SnapshotMetaService.JOBNAME,
-                    SnapshotMetaService.class,
-                    snapshotMetaServiceTimer);
-            logger.info(
-                    "Added SnapshotMetaService Task with schedule: [{}]",
-                    snapshotMetaServiceTimer.getCronExpression());
-
-            // Try to upload previous snapshots, if any which might have been interrupted by Priam
-            // restart.
-            snapshotMetaService.uploadFiles();
-
-            // Schedule the TTL service
-            TaskTimer backupTTLTimer = BackupTTLService.getTimer(backupRestoreConfig);
-            if (backupTTLTimer != null) {
-                scheduler.addTask(BackupTTLService.JOBNAME, BackupTTLService.class, backupTTLTimer);
-                logger.info(
-                        "Added {} Task with schedule: [{}]",
-                        BackupTTLService.JOBNAME,
-                        backupTTLTimer.getCronExpression());
-            }
-
-            // Schedule the backup verification service
-            TaskTimer backupVerificationTimer =
-                    BackupVerificationService.getTimer(backupRestoreConfig);
-            if (backupVerificationTimer != null) {
-                scheduler.addTask(
-                        BackupVerificationService.JOBNAME,
-                        BackupVerificationService.class,
-                        backupVerificationTimer);
-                logger.info(
-                        "Added {} Task with schedule: [{}]",
-                        BackupVerificationService.JOBNAME,
-                        backupVerificationTimer.getCronExpression());
-            }
-
-            // Start the Incremental backup schedule if enabled
-            if (config.isIncrementalBackupEnabled() && backupRestoreConfig.enableV2Backups()) {
-                // Delete the old task, if scheduled. This is required, as we stop taking backup
-                // 1.0, we still want to take incremental backups
-                // Once backup 1.0 is gone, we should not check for enableV2Backups..
-                scheduler.deleteTask(IncrementalBackup.JOBNAME);
-                scheduler.addTask(
-                        IncrementalBackup.JOBNAME,
-                        IncrementalBackup.class,
-                        IncrementalBackup.getTimer());
-                logger.info("Added incremental backup job");
-            }
-        }
+        // Set up V2 Snapshot Service
+        backupV2Service.scheduleService();
     }
 
     public InstanceIdentity getInstanceIdentity() {

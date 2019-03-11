@@ -65,8 +65,9 @@ public class IncrementalBackup extends AbstractBackup {
     }
 
     /** Run every 10 Sec */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME, 10L * 1000);
+    public static TaskTimer getTimer(IConfiguration config) {
+        if (config.isIncrementalBackupEnabled()) return new SimpleTimer(JOBNAME, 10L * 1000);
+        return null;
     }
 
     @Override

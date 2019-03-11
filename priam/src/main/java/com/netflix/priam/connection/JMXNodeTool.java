@@ -19,7 +19,7 @@ package com.netflix.priam.connection;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.services.CassandraMonitor;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import java.io.IOException;
 import java.io.PrintStream;

@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.services;
+package com.netflix.priam.health;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -23,7 +23,6 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
-import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;

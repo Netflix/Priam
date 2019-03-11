@@ -1,25 +1,28 @@
-/**
- * Copyright 2018 Netflix, Inc.
+/*
+ * Copyright 2019 Netflix, Inc.
  *
- * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
- * except in compliance with the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * <p>http://www.apache.org/licenses/LICENSE-2.0
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * <p>Unless required by applicable law or agreed to in writing, software distributed under the
- * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
- * express or implied. See the License for the specific language governing permissions and
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
  * limitations under the License.
+ *
  */
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.BackupVersion;
-import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.defaultimpl.CassandraOperations;
+import com.netflix.priam.connection.CassandraOperations;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -55,10 +58,10 @@ import org.slf4j.LoggerFactory;
  * us in "resuming" any failed backup for any reason). Created by aagrawal on 6/18/18.
  */
 @Singleton
-public class SnapshotMetaService extends AbstractBackup {
+public class SnapshotMetaTask extends AbstractBackup {
     public static final String JOBNAME = "SnapshotMetaService";
 
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaTask.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private static final String CASSANDRA_SCHEMA_FILE = "schema.cql";
@@ -80,7 +83,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private MetaStep metaStep = MetaStep.META_GENERATION;
 
     @Inject
-    SnapshotMetaService(
+    SnapshotMetaTask(
             IConfiguration config,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
@@ -101,8 +104,7 @@ public class SnapshotMetaService extends AbstractBackup {
     }
 
     /**
-     * Interval between generating snapshot meta file using {@link
-     * com.netflix.priam.services.SnapshotMetaService}.
+     * Interval between generating snapshot meta file using {@link SnapshotMetaTask}.
      *
      * @param backupRestoreConfig {@link
      *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details

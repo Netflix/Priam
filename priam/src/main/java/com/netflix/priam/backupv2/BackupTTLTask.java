@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -24,9 +24,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backupv2.ColumnfamilyResult;
-import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.backupv2.MetaFileReader;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.CronTimer;
@@ -57,8 +54,8 @@ import org.slf4j.LoggerFactory;
  * safely deleted. Created by aagrawal on 11/26/18.
  */
 @Singleton
-public class BackupTTLService extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(BackupTTLService.class);
+public class BackupTTLTask extends Task {
+    private static final Logger logger = LoggerFactory.getLogger(BackupTTLTask.class);
     private IBackupRestoreConfig backupRestoreConfig;
     private IMetaProxy metaProxy;
     private IBackupFileSystem fileSystem;
@@ -71,7 +68,7 @@ public class BackupTTLService extends Task {
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
 
     @Inject
-    public BackupTTLService(
+    public BackupTTLTask(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             @Named("v2") IMetaProxy metaProxy,

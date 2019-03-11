@@ -25,7 +25,6 @@ import com.netflix.priam.TestModule;
 import com.netflix.priam.config.IConfiguration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import javax.management.MBeanServerFactory;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -67,7 +66,7 @@ public class TestScheduler {
         public TestTask(IConfiguration config) {
             // todo: mock the MBeanServer instead, but this will prevent exceptions due to duplicate
             // registrations
-            super(config, MBeanServerFactory.newMBeanServer());
+            super(config);
         }
 
         @Override
@@ -86,7 +85,7 @@ public class TestScheduler {
     public static class SingleTestTask extends Task {
         @Inject
         public SingleTestTask(IConfiguration config) {
-            super(config, MBeanServerFactory.newMBeanServer());
+            super(config);
         }
 
         public static int count = 0;

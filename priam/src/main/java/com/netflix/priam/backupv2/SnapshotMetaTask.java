@@ -58,10 +58,10 @@ import org.slf4j.LoggerFactory;
  * us in "resuming" any failed backup for any reason). Created by aagrawal on 6/18/18.
  */
 @Singleton
-public class SnapshotMetaService extends AbstractBackup {
+public class SnapshotMetaTask extends AbstractBackup {
     public static final String JOBNAME = "SnapshotMetaService";
 
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaService.class);
+    private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaTask.class);
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private static final String CASSANDRA_SCHEMA_FILE = "schema.cql";
@@ -83,7 +83,7 @@ public class SnapshotMetaService extends AbstractBackup {
     private MetaStep metaStep = MetaStep.META_GENERATION;
 
     @Inject
-    SnapshotMetaService(
+    SnapshotMetaTask(
             IConfiguration config,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> pathFactory,
@@ -104,7 +104,7 @@ public class SnapshotMetaService extends AbstractBackup {
     }
 
     /**
-     * Interval between generating snapshot meta file using {@link SnapshotMetaService}.
+     * Interval between generating snapshot meta file using {@link SnapshotMetaTask}.
      *
      * @param backupRestoreConfig {@link
      *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details

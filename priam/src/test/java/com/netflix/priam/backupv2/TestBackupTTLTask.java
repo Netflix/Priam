@@ -41,21 +41,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 12/17/18. */
-public class TestBackupTTLService {
+public class TestBackupTTLTask {
 
     private TestBackupUtils testBackupUtils = new TestBackupUtils();
     private IConfiguration configuration;
-    private static BackupTTLService backupTTLService;
+    private static BackupTTLTask backupTTLService;
     private static FakeBackupFileSystem backupFileSystem;
     private Provider<AbstractBackupPath> pathProvider;
     private Path[] metas;
     private Map<String, String> allFilesMap = new HashMap<>();
 
-    public TestBackupTTLService() {
+    public TestBackupTTLTask() {
         Injector injector = Guice.createInjector(new BRTestModule());
         configuration = injector.getInstance(IConfiguration.class);
-        if (backupTTLService == null)
-            backupTTLService = injector.getInstance(BackupTTLService.class);
+        if (backupTTLService == null) backupTTLService = injector.getInstance(BackupTTLTask.class);
         if (backupFileSystem == null)
             backupFileSystem = injector.getInstance(FakeBackupFileSystem.class);
         pathProvider = injector.getProvider(AbstractBackupPath.class);

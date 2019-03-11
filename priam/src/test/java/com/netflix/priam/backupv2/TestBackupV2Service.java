@@ -103,8 +103,6 @@ public class TestBackupV2Service {
                 result = "0 0 0/1 1/1 * ? *";
                 backupRestoreConfig.enableV2Backups();
                 result = false;
-                configuration.isIncrementalBackupEnabled();
-                result = true;
             }
         };
         IService backupService =

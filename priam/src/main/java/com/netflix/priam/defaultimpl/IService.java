@@ -17,7 +17,21 @@
 
 package com.netflix.priam.defaultimpl;
 
+import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.scheduler.Task;
+import com.netflix.priam.scheduler.TaskTimer;
+import java.text.ParseException;
+import org.quartz.SchedulerException;
+
 /** Created by aagrawal on 3/9/19. */
 public interface IService {
     void scheduleService() throws Exception;
+
+    default void scheduleTask(
+            PriamScheduler priamScheduler, Class<? extends Task> task, TaskTimer taskTimer)
+            throws SchedulerException, ParseException {
+        if (taskTimer == null) return;
+
+        priamScheduler.addTask(task.getName(), task, taskTimer);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2013 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,13 +14,10 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.scheduler;
 
-/** MBean to monitor Task executions. */
-public interface TaskMBean {
-    int getErrorCount();
+package com.netflix.priam.defaultimpl;
 
-    int getExecutionCount();
-
-    String getName();
+/** Created by aagrawal on 3/9/19. */
+public interface IService {
+    void scheduleService() throws Exception;
 }

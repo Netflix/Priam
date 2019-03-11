@@ -23,8 +23,8 @@ import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.backup.IBackupStatusMgr;
-import com.netflix.priam.backupv2.BackupTTLService;
-import com.netflix.priam.backupv2.SnapshotMetaService;
+import com.netflix.priam.backupv2.BackupTTLTask;
+import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
@@ -49,16 +49,16 @@ public class BackupServletV2 {
     private static final Logger logger = LoggerFactory.getLogger(BackupServletV2.class);
     private final BackupVerification backupVerification;
     private final IBackupStatusMgr backupStatusMgr;
-    private final SnapshotMetaService snapshotMetaService;
-    private final BackupTTLService backupTTLService;
+    private final SnapshotMetaTask snapshotMetaService;
+    private final BackupTTLTask backupTTLService;
     private static final String REST_SUCCESS = "[\"ok\"]";
 
     @Inject
     public BackupServletV2(
             IBackupStatusMgr backupStatusMgr,
             BackupVerification backupVerification,
-            SnapshotMetaService snapshotMetaService,
-            BackupTTLService backupTTLService) {
+            SnapshotMetaTask snapshotMetaService,
+            BackupTTLTask backupTTLService) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;

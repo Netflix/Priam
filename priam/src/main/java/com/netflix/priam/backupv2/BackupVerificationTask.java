@@ -36,15 +36,15 @@ import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 1/28/19. */
 @Singleton
-public class BackupVerificationService extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(BackupVerificationService.class);
+public class BackupVerificationTask extends Task {
+    private static final Logger logger = LoggerFactory.getLogger(BackupVerificationTask.class);
     public static final String JOBNAME = "BackupVerificationService";
 
     private IBackupRestoreConfig backupRestoreConfig;
     private BackupVerification backupVerification;
 
     @Inject
-    public BackupVerificationService(
+    public BackupVerificationTask(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             BackupVerification backupVerification) {

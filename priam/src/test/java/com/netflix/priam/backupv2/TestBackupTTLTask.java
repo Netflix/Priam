@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -23,7 +23,6 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
-import com.netflix.priam.backupv2.TestBackupUtils;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
@@ -42,21 +41,20 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 12/17/18. */
-public class TestBackupTTLService {
+public class TestBackupTTLTask {
 
     private TestBackupUtils testBackupUtils = new TestBackupUtils();
     private IConfiguration configuration;
-    private static BackupTTLService backupTTLService;
+    private static BackupTTLTask backupTTLService;
     private static FakeBackupFileSystem backupFileSystem;
     private Provider<AbstractBackupPath> pathProvider;
     private Path[] metas;
     private Map<String, String> allFilesMap = new HashMap<>();
 
-    public TestBackupTTLService() {
+    public TestBackupTTLTask() {
         Injector injector = Guice.createInjector(new BRTestModule());
         configuration = injector.getInstance(IConfiguration.class);
-        if (backupTTLService == null)
-            backupTTLService = injector.getInstance(BackupTTLService.class);
+        if (backupTTLService == null) backupTTLService = injector.getInstance(BackupTTLTask.class);
         if (backupFileSystem == null)
             backupFileSystem = injector.getInstance(FakeBackupFileSystem.class);
         pathProvider = injector.getProvider(AbstractBackupPath.class);

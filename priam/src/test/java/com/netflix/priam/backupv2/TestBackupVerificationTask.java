@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -33,16 +33,16 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 2/1/19. */
-public class TestBackupVerificationService {
-    private static BackupVerificationService backupVerificationService;
+public class TestBackupVerificationTask {
+    private static BackupVerificationTask backupVerificationService;
     private static IConfiguration configuration;
 
-    public TestBackupVerificationService() {
+    public TestBackupVerificationTask() {
         new MockBackupVerification();
         Injector injector = Guice.createInjector(new BRTestModule());
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
         if (backupVerificationService == null)
-            backupVerificationService = injector.getInstance(BackupVerificationService.class);
+            backupVerificationService = injector.getInstance(BackupVerificationTask.class);
     }
 
     static class MockBackupVerification extends MockUp<BackupVerification> {

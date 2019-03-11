@@ -15,7 +15,7 @@
  *
  */
 
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.connection;
 
 import java.util.List;
 import java.util.Map;

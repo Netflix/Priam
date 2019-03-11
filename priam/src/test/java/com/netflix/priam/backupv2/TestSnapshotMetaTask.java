@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,12 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.services;
+package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backupv2.ColumnfamilyResult;
-import com.netflix.priam.backupv2.MetaFileInfo;
-import com.netflix.priam.backupv2.MetaFileReader;
-import com.netflix.priam.backupv2.PrefixGenerator;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -40,33 +36,26 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 6/20/18. */
-public class TestSnapshotMetaService {
+public class TestSnapshotMetaTask {
     private static final Logger logger =
-            LoggerFactory.getLogger(TestSnapshotMetaService.class.getName());
+            LoggerFactory.getLogger(TestSnapshotMetaTask.class.getName());
     private static Path dummyDataDirectoryLocation;
-    private static IConfiguration configuration;
-    private static IBackupRestoreConfig backupRestoreConfig;
-    private static SnapshotMetaService snapshotMetaService;
-    private static TestMetaFileReader metaFileReader;
-    private static PrefixGenerator prefixGenerator;
-    private static InstanceInfo instanceInfo;
+    private final IConfiguration configuration;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final SnapshotMetaTask snapshotMetaService;
+    private final TestMetaFileReader metaFileReader;
+    private final PrefixGenerator prefixGenerator;
+    private final InstanceInfo instanceInfo;
 
-    public TestSnapshotMetaService() {
+    public TestSnapshotMetaTask() {
         Injector injector = Guice.createInjector(new BRTestModule());
 
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
-
-        if (backupRestoreConfig == null)
-            backupRestoreConfig = injector.getInstance(IBackupRestoreConfig.class);
-
-        if (snapshotMetaService == null)
-            snapshotMetaService = injector.getInstance(SnapshotMetaService.class);
-
-        if (metaFileReader == null) metaFileReader = new TestMetaFileReader();
-
-        if (prefixGenerator == null) prefixGenerator = injector.getInstance(PrefixGenerator.class);
-
-        if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
+        configuration = injector.getInstance(IConfiguration.class);
+        backupRestoreConfig = injector.getInstance(IBackupRestoreConfig.class);
+        snapshotMetaService = injector.getInstance(SnapshotMetaTask.class);
+        metaFileReader = new TestMetaFileReader();
+        prefixGenerator = injector.getInstance(PrefixGenerator.class);
+        instanceInfo = injector.getInstance(InstanceInfo.class);
     }
 
     @Before
@@ -77,7 +66,7 @@ public class TestSnapshotMetaService {
 
     @Test
     public void testSnapshotMetaServiceEnabled() throws Exception {
-        TaskTimer taskTimer = SnapshotMetaService.getTimer(backupRestoreConfig);
+        TaskTimer taskTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
         Assert.assertNotNull(taskTimer);
     }
 

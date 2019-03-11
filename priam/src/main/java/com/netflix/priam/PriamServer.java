@@ -23,7 +23,6 @@ import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
-import com.netflix.priam.cluster.management.IClusterManagement;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -32,7 +31,6 @@ import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
@@ -42,7 +40,7 @@ import org.slf4j.LoggerFactory;
 
 /** Start all tasks here - Property update task - Backup task - Restore task - Incremental backup */
 @Singleton
-public class PriamServer {
+public class PriamServer implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
     private final InstanceIdentity instanceIdentity;
@@ -83,7 +81,8 @@ public class PriamServer {
         SystemUtils.createDirs(config.getHintsLocation());
     }
 
-    public void initialize() throws Exception {
+    @Override
+    public void scheduleService() throws Exception {
         // Create all the required directories for priam and Cassandra.
         createDirectories();
 
@@ -134,37 +133,16 @@ public class PriamServer {
                 CASSANDRA_MONITORING_INITIAL_DELAY);
 
         // Set up nodetool flush task
-        TaskTimer flushTaskTimer = Flush.getTimer(config);
-        if (flushTaskTimer != null) {
-            scheduler.addTask(IClusterManagement.Task.FLUSH.name(), Flush.class, flushTaskTimer);
-            logger.info(
-                    "Added nodetool flush task with schedule: [{}]",
-                    flushTaskTimer.getCronExpression());
-        }
+        scheduleTask(scheduler, Flush.class, Flush.getTimer(config));
 
         // Set up compaction task
-        TaskTimer compactionTimer = Compaction.getTimer(config);
-        if (compactionTimer != null) {
-            scheduler.addTask(
-                    IClusterManagement.Task.COMPACTION.name(), Compaction.class, compactionTimer);
-            logger.info(
-                    "Added compaction task with schedule: [{}]",
-                    compactionTimer.getCronExpression());
-        }
+        scheduleTask(scheduler, Compaction.class, Compaction.getTimer(config));
 
         // Set up the background configuration dumping thread
-        TaskTimer configurationPersisterTimer = PriamConfigurationPersister.getTimer(config);
-        if (configurationPersisterTimer != null) {
-            scheduler.addTask(
-                    PriamConfigurationPersister.NAME,
-                    PriamConfigurationPersister.class,
-                    configurationPersisterTimer);
-            logger.info(
-                    "Added configuration persister task with schedule: [{}]",
-                    configurationPersisterTimer.getCronExpression());
-        } else {
-            logger.warn("Priam configuration persister disabled!");
-        }
+        scheduleTask(
+                scheduler,
+                PriamConfigurationPersister.class,
+                PriamConfigurationPersister.getTimer(config));
 
         // Set up V1 Snapshot Service
         backupService.scheduleService();

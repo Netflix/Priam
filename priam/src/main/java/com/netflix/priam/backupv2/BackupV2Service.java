@@ -49,55 +49,34 @@ public class BackupV2Service implements IService {
 
     @Override
     public void scheduleService() throws Exception {
-        TaskTimer snapshotMetaServiceTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
-        if (snapshotMetaServiceTimer != null) {
-            scheduler.addTask(
-                    SnapshotMetaTask.JOBNAME, SnapshotMetaTask.class, snapshotMetaServiceTimer);
-            logger.info(
-                    "Added {} Task with schedule: [{}]",
-                    SnapshotMetaTask.JOBNAME,
-                    snapshotMetaServiceTimer.getCronExpression());
+        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
+        if (snapshotMetaTimer != null) {
+            scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
 
             // Try to upload previous snapshots, if any which might have been interrupted by Priam
             // restart.
             snapshotMetaTask.uploadFiles();
 
             // Schedule the TTL service
-            TaskTimer backupTTLTimer = BackupTTLTask.getTimer(backupRestoreConfig);
-            if (backupTTLTimer != null) {
-                scheduler.addTask(BackupTTLTask.JOBNAME, BackupTTLTask.class, backupTTLTimer);
-                logger.info(
-                        "Added {} Task with schedule: [{}]",
-                        BackupTTLTask.JOBNAME,
-                        backupTTLTimer.getCronExpression());
-            }
+            scheduleTask(
+                    scheduler, BackupTTLTask.class, BackupTTLTask.getTimer(backupRestoreConfig));
 
             // Schedule the backup verification service
-            TaskTimer backupVerificationTimer =
-                    BackupVerificationTask.getTimer(backupRestoreConfig);
-            if (backupVerificationTimer != null) {
-                scheduler.addTask(
-                        BackupVerificationTask.JOBNAME,
-                        BackupVerificationTask.class,
-                        backupVerificationTimer);
-                logger.info(
-                        "Added {} Task with schedule: [{}]",
-                        BackupVerificationTask.JOBNAME,
-                        backupVerificationTimer.getCronExpression());
-            }
+            scheduleTask(
+                    scheduler,
+                    BackupVerificationTask.class,
+                    BackupVerificationTask.getTimer(backupRestoreConfig));
 
             // Start the Incremental backup schedule if enabled
-            if (configuration.isIncrementalBackupEnabled()
-                    && backupRestoreConfig.enableV2Backups()) {
+            if (backupRestoreConfig.enableV2Backups()) {
                 // Delete the old task, if scheduled. This is required, as we stop taking backup
                 // 1.0, we still want to take incremental backups
-                // Once backup 1.0 is gone, we should not check for enableV2Backups..
+                // Once backup 1.0 is gone, we should not check for enableV2Backups.
                 scheduler.deleteTask(IncrementalBackup.JOBNAME);
-                scheduler.addTask(
-                        IncrementalBackup.JOBNAME,
+                scheduleTask(
+                        scheduler,
                         IncrementalBackup.class,
-                        IncrementalBackup.getTimer());
-                logger.info("Added incremental backup job");
+                        IncrementalBackup.getTimer(configuration));
             }
         }
     }

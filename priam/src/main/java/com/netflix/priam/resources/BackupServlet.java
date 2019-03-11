@@ -79,7 +79,7 @@ public class BackupServlet {
     @Path("/incremental_backup")
     public Response backupIncrementals() throws Exception {
         scheduler.addTask(
-                "IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer());
+                "IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer(config));
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

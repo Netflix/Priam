@@ -52,30 +52,16 @@ public class BackupService implements IService {
                 && (CollectionUtils.isEmpty(config.getBackupRacs())
                         || config.getBackupRacs()
                                 .contains(instanceIdentity.getInstanceInfo().getRac()))) {
-            scheduler.addTask(
-                    SnapshotBackup.JOBNAME, SnapshotBackup.class, SnapshotBackup.getTimer(config));
+            scheduleTask(scheduler, SnapshotBackup.class, SnapshotBackup.getTimer(config));
 
-            // Start the Incremental backup schedule if enabled
-            if (config.isIncrementalBackupEnabled()) {
-                scheduler.addTask(
-                        IncrementalBackup.JOBNAME,
-                        IncrementalBackup.class,
-                        IncrementalBackup.getTimer());
-                logger.info("Added incremental backup job");
-            }
+            // Start the Incremental backup schedule
+            scheduleTask(scheduler, IncrementalBackup.class, IncrementalBackup.getTimer(config));
         }
 
-        if (config.isBackingUpCommitLogs()) {
-            scheduler.addTask(
-                    CommitLogBackupTask.JOBNAME,
-                    CommitLogBackupTask.class,
-                    CommitLogBackupTask.getTimer(config));
-        }
+        // Schedule commit log task
+        scheduleTask(scheduler, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
 
         // Set cleanup
-        scheduler.addTask(
-                UpdateCleanupPolicy.JOBNAME,
-                UpdateCleanupPolicy.class,
-                UpdateCleanupPolicy.getTimer());
+        scheduleTask(scheduler, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
 }

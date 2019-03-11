@@ -54,8 +54,8 @@ import org.slf4j.LoggerFactory;
  * safely deleted. Created by aagrawal on 11/26/18.
  */
 @Singleton
-public class BackupTTLService extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(BackupTTLService.class);
+public class BackupTTLTask extends Task {
+    private static final Logger logger = LoggerFactory.getLogger(BackupTTLTask.class);
     private IBackupRestoreConfig backupRestoreConfig;
     private IMetaProxy metaProxy;
     private IBackupFileSystem fileSystem;
@@ -68,7 +68,7 @@ public class BackupTTLService extends Task {
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
 
     @Inject
-    public BackupTTLService(
+    public BackupTTLTask(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             @Named("v2") IMetaProxy metaProxy,

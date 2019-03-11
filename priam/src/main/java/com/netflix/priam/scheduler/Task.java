@@ -17,10 +17,7 @@
 package com.netflix.priam.scheduler;
 
 import com.netflix.priam.config.IConfiguration;
-import java.lang.management.ManagementFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
@@ -34,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * <p>NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to
  * failure
  */
-public abstract class Task implements Job, TaskMBean {
+public abstract class Task implements Job {
     public STATE status = STATE.DONE;
 
     public enum STATE {
@@ -51,19 +48,7 @@ public abstract class Task implements Job, TaskMBean {
     private final AtomicInteger executions = new AtomicInteger();
 
     protected Task(IConfiguration config) {
-        this(config, ManagementFactory.getPlatformMBeanServer());
-    }
-
-    protected Task(IConfiguration config, MBeanServer mBeanServer) {
         this.config = config;
-        // TODO: don't do mbean registration here
-        String mbeanName = "com.priam.scheduler:type=" + this.getClass().getName();
-        try {
-            mBeanServer.registerMBean(this, new ObjectName(mbeanName));
-            initialize();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
     }
 
     /** This method has to be implemented and cannot throw any exception. */

@@ -59,7 +59,9 @@ public class CommitLogBackupTask extends AbstractBackup {
     }
 
     public static TaskTimer getTimer(IConfiguration config) {
-        return new SimpleTimer(JOBNAME, 60L * 1000); // every 1 min
+        if (config.isBackingUpCommitLogs())
+            return new SimpleTimer(JOBNAME, 60L * 1000); // every 1 min
+        else return null;
     }
 
     @Override

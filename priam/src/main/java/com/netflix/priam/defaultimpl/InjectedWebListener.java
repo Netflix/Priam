@@ -49,7 +49,7 @@ public class InjectedWebListener extends GuiceServletContextListener {
         injector = Guice.createInjector(moduleList);
         try {
             injector.getInstance(IConfiguration.class).initialize();
-            injector.getInstance(PriamServer.class).initialize();
+            injector.getInstance(PriamServer.class).scheduleService();
         } catch (Exception e) {
             logger.error(e.getMessage(), e);
             throw new RuntimeException(e.getMessage(), e);

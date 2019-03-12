@@ -258,7 +258,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+    public void deleteFiles(List<Path> remotePaths) throws BackupRestoreException {
         if (remotePaths.isEmpty()) return;
 
         try {
@@ -274,7 +274,10 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
                     new DeleteObjectsRequest(getShard()).withKeys(keys).withQuiet(true));
             logger.info("Deleted {} objects from S3", remotePaths.size());
         } catch (Exception e) {
-            logger.error("Error while trying to delete the objects from S3: {}", e.getMessage());
+            logger.error(
+                    "Error while trying to delete [{}]  the objects from S3: {}",
+                    remotePaths.size(),
+                    e.getMessage());
             throw new BackupRestoreException(e + " while trying to delete the objects");
         }
     }

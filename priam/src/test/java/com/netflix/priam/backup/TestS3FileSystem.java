@@ -115,6 +115,26 @@ public class TestS3FileSystem {
     }
 
     @Test
+    public void testFileUploadDeleteExists() throws Exception {
+        MockS3PartUploader.setup();
+        IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
+        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
+        backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SST_V2);
+        fs.uploadFile(
+                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
+                Paths.get(backupfile.getRemotePath()),
+                backupfile,
+                0,
+                false);
+        Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
+        // Lets delete the file now.
+        List<Path> deleteFiles = Lists.newArrayList();
+        deleteFiles.add(Paths.get(backupfile.getRemotePath()));
+        fs.deleteRemoteFiles(deleteFiles);
+        Assert.assertFalse(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
+    }
+
+    @Test
     public void testFileUploadFailures() throws Exception {
         MockS3PartUploader.setup();
         MockS3PartUploader.partFailure = true;

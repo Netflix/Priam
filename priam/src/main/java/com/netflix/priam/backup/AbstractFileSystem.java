@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
 import org.apache.commons.collections4.iterators.FilterIterator;
@@ -62,6 +63,9 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private final Set<Path> tasksQueued;
     private final ThreadPoolExecutor fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
+
+    // This is going to be a write-thru cache containing the most frequently used items from remote
+    // file system. This is to ensure that we don't make too many API calls to remote file system.
     private final Cache<Path, Boolean> objectCache;
 
     @Inject
@@ -256,6 +260,21 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
         return remoteFileExist;
     }
+
+    @Override
+    public void deleteRemoteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        if (remotePaths == null) return;
+
+        // Note that we are trying to implement write-thru cache here so it is good idea to
+        // invalidate the cache first. This is important so that if there is any issue (because file
+        // was deleted), it is caught by our snapshot job we can re-upload the file. This will also
+        // help in ensuring that our validation job fails if there are any error caused due to TTL
+        // of a file.
+        objectCache.invalidateAll(remotePaths);
+        deleteFiles(remotePaths);
+    }
+
+    protected abstract void deleteFiles(List<Path> remotePaths) throws BackupRestoreException;
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 

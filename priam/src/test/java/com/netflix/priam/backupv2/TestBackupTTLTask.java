@@ -68,7 +68,10 @@ public class TestBackupTTLTask {
         List<String> allFiles = new ArrayList<>();
         metas = new Path[3];
 
-        Instant time = current.minus(daysForSnapshot + 1, ChronoUnit.DAYS);
+        Instant time =
+                current.minus(
+                        daysForSnapshot + configuration.getGracePeriodDaysForCompaction() + 1,
+                        ChronoUnit.DAYS);
         String file1 = testBackupUtils.createFile("mc-1-Data.db", time);
         String file2 =
                 testBackupUtils.createFile("mc-2-Data.db", time.plus(10, ChronoUnit.MINUTES));
@@ -152,7 +155,7 @@ public class TestBackupTTLTask {
         List<String> remoteFiles = getAllFiles();
 
         // Confirm the files.
-        Assert.assertEquals(7, remoteFiles.size());
+        Assert.assertEquals(8, remoteFiles.size());
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
@@ -160,9 +163,10 @@ public class TestBackupTTLTask {
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META1")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
+        // Remains because of GRACE PERIOD.
+        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
 
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
     }
 
@@ -174,18 +178,18 @@ public class TestBackupTTLTask {
         backupTTLService.execute();
 
         List<String> remoteFiles = getAllFiles();
-        System.out.println(remoteFiles);
         // Confirm the files.
-        Assert.assertEquals(4, remoteFiles.size());
+        Assert.assertEquals(6, remoteFiles.size());
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-7-Data.db")));
         Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
+        // GRACE PERIOD files.
+        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
+        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
 
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META1")));
     }

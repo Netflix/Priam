@@ -24,6 +24,7 @@ import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -42,15 +43,18 @@ public class BackupVerificationTask extends Task {
 
     private IBackupRestoreConfig backupRestoreConfig;
     private BackupVerification backupVerification;
+    private BackupMetrics backupMetrics;
 
     @Inject
     public BackupVerificationTask(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
-            BackupVerification backupVerification) {
+            BackupVerification backupVerification,
+            BackupMetrics backupMetrics) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupVerification = backupVerification;
+        this.backupMetrics = backupMetrics;
     }
 
     @Override
@@ -77,6 +81,7 @@ public class BackupVerificationTask extends Task {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
+            backupMetrics.incrementBackupVerificationFailure();
         }
     }
 

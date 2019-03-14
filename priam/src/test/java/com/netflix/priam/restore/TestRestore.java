@@ -150,6 +150,7 @@ public class TestRestore {
         populateBackupFileSystem("test_backup_new");
         String dateRange = "201108110030,201108110530";
         restore.restore(new DateUtil.DateRange(dateRange));
+        System.out.println("Downloaded files: " + filesystem.downloadedFiles);
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
         Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));

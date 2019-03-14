@@ -35,7 +35,8 @@ public class BackupMetrics {
             invalidDownloads,
             snsNotificationSuccess,
             snsNotificationFailure,
-            forgottenFiles;
+            forgottenFiles,
+            backupVerificationFailure;
     public static final String uploadQueueSize = Metrics.METRIC_PREFIX + "upload.queue.size";
     public static final String downloadQueueSize = Metrics.METRIC_PREFIX + "download.queue.size";
 
@@ -53,6 +54,8 @@ public class BackupMetrics {
         snsNotificationFailure =
                 registry.counter(Metrics.METRIC_PREFIX + "sns.notification.failure");
         forgottenFiles = registry.counter(Metrics.METRIC_PREFIX + "forgotten.files");
+        backupVerificationFailure =
+                registry.counter(Metrics.METRIC_PREFIX + "backup.verification.failure");
     }
 
     public DistributionSummary getUploadRate() {
@@ -89,6 +92,10 @@ public class BackupMetrics {
 
     public void incrementSnsNotificationFailure() {
         snsNotificationFailure.increment();
+    }
+
+    public void incrementBackupVerificationFailure() {
+        backupVerificationFailure.increment();
     }
 
     public void recordUploadRate(long sizeInBytes) {

@@ -21,18 +21,15 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.Sleeper;
-import com.sun.jersey.api.client.Client;
-import com.sun.jersey.api.client.ClientResponse;
-import com.sun.jersey.api.client.WebResource;
-import com.sun.jersey.api.client.config.ClientConfig;
-import com.sun.jersey.api.client.config.DefaultClientConfig;
+import com.netflix.priam.utils.SystemUtils;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import javax.ws.rs.core.MediaType;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +77,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
     public PriamInstance get() throws Exception {
 
         logger.info("Looking for a token from any dead node");
-        final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+        final List<PriamInstance> allInstancesWithinCluster =
+                factory.getAllIds(config.getAppName());
         List<String> asgInstances = membership.getRacMembership();
         if (config.isDualAccount()) {
             asgInstances = getDualAccountRacMembership(asgInstances);
@@ -90,45 +88,84 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 
         // Sleep random interval - upto 15 sec
         sleeper.sleep(new Random().nextInt(5000) + 10000);
-        for (PriamInstance dead : allIds) {
-            // test same zone and is it is alive.
-            if (!dead.getRac().equals(instanceInfo.getRac())
-                    || asgInstances.contains(dead.getInstanceId())
-                    || super.isInstanceDummy(dead)) continue;
-            logger.info("Found dead instances: {}", dead.getInstanceId());
+        logger.info(
+                "About to iterate through all instances within cluster "
+                        + config.getAppName()
+                        + " to find an available token to acquire.");
+
+        for (PriamInstance priamInstance : allInstancesWithinCluster) {
+            // test same zone and is it alive.
+            if (!priamInstance.getRac().equals(instanceInfo.getRac())
+                    || asgInstances.contains(priamInstance.getInstanceId())
+                    || super.isInstanceDummy(priamInstance)) continue;
+            // TODO: If instance is in SHUTTING_DOWN mode, it might not show up in asg instances (if
+            // cloud control plane is having issues), thus, we should not try to replace the
+            // instance as it will lead to "Cannot replace a live node" issue.
+
+            logger.info("Found dead instance: {}", priamInstance.toString());
+
             PriamInstance markAsDead =
                     factory.create(
-                            dead.getApp() + "-dead",
-                            dead.getId(),
-                            dead.getInstanceId(),
-                            dead.getHostName(),
-                            dead.getHostIP(),
-                            dead.getRac(),
-                            dead.getVolumes(),
-                            dead.getToken());
+                            priamInstance.getApp() + "-dead",
+                            priamInstance.getId(),
+                            priamInstance.getInstanceId(),
+                            priamInstance.getHostName(),
+                            priamInstance.getHostIP(),
+                            priamInstance.getRac(),
+                            priamInstance.getVolumes(),
+                            priamInstance.getToken());
             // remove it as we marked it down...
-            factory.delete(dead);
+            factory.delete(priamInstance);
 
             // find the replaced IP
-            this.replacedIp = findReplaceIp(allIds, markAsDead.getToken(), markAsDead.getDC());
-            if (this.replacedIp == null) this.replacedIp = markAsDead.getHostIP();
+            this.replacedIp =
+                    findReplaceIp(
+                            allInstancesWithinCluster,
+                            priamInstance.getToken(),
+                            priamInstance.getDC());
+            // Lets not replace the instance if gossip info is not merging!!
+            if (replacedIp == null) return null;
 
-            String payLoad = markAsDead.getToken();
             logger.info(
-                    "Trying to grab slot {} with availability zone {}",
-                    markAsDead.getId(),
-                    markAsDead.getRac());
-            return factory.create(
-                    config.getAppName(),
-                    markAsDead.getId(),
-                    instanceInfo.getInstanceId(),
-                    instanceInfo.getHostname(),
-                    instanceInfo.getHostIP(),
-                    instanceInfo.getRac(),
-                    markAsDead.getVolumes(),
-                    payLoad);
+                    "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
+                    priamInstance.getToken(),
+                    replacedIp,
+                    priamInstance.getHostIP());
+
+            PriamInstance result;
+            try {
+                result =
+                        factory.create(
+                                config.getAppName(),
+                                markAsDead.getId(),
+                                instanceInfo.getInstanceId(),
+                                instanceInfo.getHostname(),
+                                instanceInfo.getHostIP(),
+                                instanceInfo.getRac(),
+                                markAsDead.getVolumes(),
+                                markAsDead.getToken());
+            } catch (Exception ex) {
+                long sleepTime = super.getSleepTime();
+                logger.warn(
+                        "Exception when acquiring dead token: "
+                                + priamInstance.getToken()
+                                + " , will sleep for "
+                                + sleepTime
+                                + " millisecs before we retry.");
+                Thread.currentThread().sleep(sleepTime);
+                throw ex;
+            }
+
+            logger.info(
+                    "Acquired token: "
+                            + priamInstance.getToken()
+                            + " and we will replace with replacedIp: "
+                            + replacedIp);
+
+            return result;
         }
 
+        logger.info("This node was NOT able to acquire any dead token");
         return null;
     }
 
@@ -137,87 +174,95 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
         return this.replacedIp;
     }
 
-    private String findReplaceIp(List<PriamInstance> allIds, String token, String location) {
-        String ip;
-        for (PriamInstance ins : allIds) {
+    private String findReplaceIp(List<PriamInstance> allIds, String token, String dc)
+            throws Exception {
+        // Avoid using dead instance who we are trying to replace (duh!!)
+        // Avoid other regions instances to avoid communication over public ip address.
+        List<PriamInstance> eligibleInstances =
+                allIds.parallelStream()
+                        .filter(priamInstance -> !priamInstance.getToken().equalsIgnoreCase(token))
+                        .filter(priamInstance -> priamInstance.getDC().equalsIgnoreCase(dc))
+                        .collect(Collectors.toList());
+        // We want to get IP from min 1, max 3 instances to ensure we are not relying on gossip of a
+        // single instance.
+        // Good idea to shuffle so we are not talking to same instances every time.
+        Collections.shuffle(eligibleInstances);
+        // Potential issue could be when you have about 50% of your cluster C* DOWN or trying to be
+        // replaced.
+        // Think of a major disaster hitting your cluster. In that scenario chances of instance
+        // hitting DOWN C* are much much higher.
+        // In such a case you should rely on @link{CassandraConfig#setReplacedIp}.
+        int noOfInstancesGossipShouldMatch = Math.max(1, Math.min(3, eligibleInstances.size()));
+        int noOfInstancesWithGossipMatch = 0;
+        String replace_ip = null, ip = null;
+        for (PriamInstance ins : eligibleInstances) {
             logger.info("Calling getIp on hostname[{}] and token[{}]", ins.getHostName(), token);
-            if (ins.getToken().equals(token) || !ins.getDC().equals(location)) {
-                // avoid using dead instance and other regions instances
-                continue;
-            }
-
-            try {
-                ip = getIp(ins.getHostName(), token);
-            } catch (ParseException e) {
-                ip = null;
-            }
-
-            if (ip != null) {
-                logger.info("Found the IP: {}", ip);
-                return ip;
+            ip = getIp(ins.getHostName(), token);
+            if (StringUtils.isEmpty(replace_ip)) replace_ip = ip;
+            if (!StringUtils.isEmpty(replace_ip) && !StringUtils.isEmpty(ip)) {
+                if (replace_ip.equalsIgnoreCase(ip)) {
+                    noOfInstancesWithGossipMatch++;
+                    if (noOfInstancesWithGossipMatch >= noOfInstancesGossipShouldMatch) {
+                        logger.info(
+                                "Using replace_ip: {} as # of required gossip info match: {}",
+                                replace_ip,
+                                noOfInstancesGossipShouldMatch);
+                        return replace_ip;
+                    }
+                } else
+                    throw new Exception(
+                            String.format(
+                                    "Unexpected Exception: Gossip info from hosts are not matching: found {} and {}",
+                                    replace_ip,
+                                    ip));
             }
         }
-
+        logger.warn(
+                "Return null: Unable to find enough instances where gossip match. Required: {}",
+                noOfInstancesGossipShouldMatch);
         return null;
     }
 
-    private String getIp(String host, String token) throws ParseException {
-        ClientConfig config = new DefaultClientConfig();
-        Client client = Client.create(config);
-        String baseURI = getBaseURI(host);
-        WebResource service = client.resource(baseURI);
-
-        ClientResponse clientResp;
-        String textEntity;
-
+    private String getIp(String host, String token) {
+        String response = null;
         try {
-            clientResp =
-                    service.path("Priam/REST/v1/cassadmin/gossipinfo")
-                            .accept(MediaType.APPLICATION_JSON)
-                            .get(ClientResponse.class);
+            response = SystemUtils.getDataFromUrl(getGossipInfoURL(host));
 
-            if (clientResp.getStatus() != 200) return null;
+            String inputToken = String.format("[%s]", token);
+            JSONParser parser = new JSONParser();
+            JSONArray jsonObject = (JSONArray) parser.parse(response);
 
-            textEntity = clientResp.getEntity(String.class);
+            for (Object key : jsonObject) {
+                JSONObject msg = (JSONObject) key;
 
-            logger.info(
-                    "Respond from calling gossipinfo on host[{}] and token[{}] : {}",
-                    host,
-                    token,
-                    textEntity);
+                // Ensure that we are not trying to replace a NORMAL token and token of that
+                // instance matches what we want to replace.
+                if (msg.get("STATUS") == null
+                        || msg.get("STATUS").toString().equalsIgnoreCase("NORMAL")
+                        || msg.get("TOKENS") == null
+                        || msg.get("PUBLIC_IP") == null
+                        || !msg.get("TOKENS").toString().equals(inputToken)) {
+                    continue;
+                }
 
-            if (StringUtils.isEmpty(textEntity)) return null;
-        } catch (Exception e) {
-            logger.info("Error in reaching out to host: {}", baseURI);
-            return null;
-        }
-
-        JSONParser parser = new JSONParser();
-        Object obj = parser.parse(textEntity);
-
-        JSONObject jsonObject = (JSONObject) obj;
-
-        for (Object key : jsonObject.keySet()) {
-            JSONObject msg = (JSONObject) jsonObject.get(key);
-            if (msg.get("Token") == null) {
-                continue;
-            }
-            String tokenVal = (String) msg.get("Token");
-
-            if (token.equals(tokenVal)) {
                 logger.info(
-                        "Using gossipinfo from host[{}] and token[{}], the replaced address is : {}",
+                        "Using gossip info from host[{}] and token[{}], the replaced address is : [{}]",
                         host,
                         token,
-                        key);
-                return (String) key;
+                        msg.get("PUBLIC_IP"));
+                return (String) msg.get("PUBLIC_IP");
             }
+        } catch (Exception e) {
+            logger.info(
+                    "Error in reaching out to host: [{}} or parsing response from host: {}",
+                    host,
+                    response);
         }
         return null;
     }
 
-    private String getBaseURI(String host) {
-        return "http://" + host + ":8080/";
+    private String getGossipInfoURL(String host) {
+        return "http://" + host + ":8080/Priam/REST/v1/cassadmin/gossipinfo";
     }
 
     @Override

@@ -22,12 +22,15 @@ import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.connection.JMXConnectionException;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -54,17 +57,20 @@ public class CassandraAdmin {
     private final ICassandraProcess cassProcess;
     private final Flush flush;
     private final Compaction compaction;
+    private final CassandraOperations cassandraOperations;
 
     @Inject
     public CassandraAdmin(
             IConfiguration config,
             ICassandraProcess cassProcess,
             Flush flush,
-            Compaction compaction) {
+            Compaction compaction,
+            CassandraOperations cassandraOperations) {
         this.config = config;
         this.cassProcess = cassProcess;
         this.flush = flush;
         this.compaction = compaction;
+        this.cassandraOperations = cassandraOperations;
     }
 
     @GET
@@ -326,48 +332,9 @@ public class CassandraAdmin {
 
     @GET
     @Path("/gossipinfo")
-    public Response gossipinfo()
-            throws IOException, ExecutionException, InterruptedException, JSONException {
-        JMXNodeTool nodeTool;
-        try {
-            nodeTool = JMXNodeTool.instance(config);
-        } catch (JMXConnectionException e) {
-            logger.error(
-                    "Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
-            return Response.status(503).entity("JMXConnectionException").build();
-        }
-        JSONObject rootObj = parseGossipInfo(nodeTool.getGossipInfo());
-        return Response.ok(rootObj, MediaType.APPLICATION_JSON).build();
-    }
-
-    // helper method for parsing, to be tested easily
-    private static JSONObject parseGossipInfo(String gossipinfo) throws JSONException {
-        String[] ginfo = gossipinfo.split("\n");
-        JSONObject rootObj = new JSONObject();
-        JSONObject obj = new JSONObject();
-        String key = "";
-        for (String line : ginfo) {
-            if (line.matches("^.*/.*$")) {
-                String[] data = line.split("/");
-                if (StringUtils.isNotBlank(key)) {
-                    rootObj.put(key, obj);
-                    obj = new JSONObject();
-                }
-                key = data[1];
-            } else if (line.matches("^  .*:.*$")) {
-                String[] kv = line.split(":");
-                kv[0] = kv[0].trim();
-                if (kv[0].equals("STATUS")) {
-                    obj.put(kv[0], kv[1]);
-                    String[] vv = kv[1].split(",");
-                    obj.put("Token", vv[1]);
-                } else {
-                    obj.put(kv[0], kv[1]);
-                }
-            }
-        }
-        if (StringUtils.isNotBlank(key)) rootObj.put(key, obj);
-        return rootObj;
+    public Response gossipinfo() throws Exception {
+        List<Map<String, String>> parsedInfo = cassandraOperations.gossipInfo();
+        return Response.ok(parsedInfo, MediaType.APPLICATION_JSON).build();
     }
 
     @GET

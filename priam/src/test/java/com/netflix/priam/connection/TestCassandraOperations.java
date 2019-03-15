@@ -15,14 +15,13 @@
  *
  */
 
-package com.netflix.priam.defaultimpl;
+package com.netflix.priam.connection;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.mchange.io.FileUtils;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.connection.JMXNodeTool;
 import java.io.File;
 import java.util.List;
 import java.util.Map;

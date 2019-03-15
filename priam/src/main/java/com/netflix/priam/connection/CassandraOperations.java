@@ -128,4 +128,73 @@ public class CassandraOperations implements ICassandraOperations {
             }
         }.call();
     }
+
+    @Override
+    public List<Map<String, String>> gossipInfo() throws Exception {
+        List<Map<String, String>> returnPublicIpSourceIpMap = new ArrayList();
+        try {
+            JMXNodeTool nodeTool;
+            try {
+                nodeTool = JMXNodeTool.instance(configuration);
+            } catch (JMXConnectionException e) {
+                logger.error(
+                        "Exception in fetching c* jmx tool .  Msgl: {}",
+                        e.getLocalizedMessage(),
+                        e);
+                throw e;
+            }
+            String gossipInfoLines[] = nodeTool.getGossipInfo().split("/");
+            Arrays.stream(gossipInfoLines)
+                    .forEach(
+                            gossipInfoLine -> {
+                                Map<String, String> gossipMap = new HashMap<>();
+                                String gossipInfoSubLines[] = gossipInfoLine.split("\\r?\\n");
+                                if (gossipInfoSubLines.length
+                                        > 2) // Random check for existence of some lines
+                                {
+                                    gossipMap.put("PUBLIC_IP", gossipInfoSubLines[0].trim());
+                                    if (gossipMap.get("PUBLIC_IP") != null) {
+                                        returnPublicIpSourceIpMap.add(gossipMap);
+                                    }
+
+                                    for (String gossipInfoSubLine : gossipInfoSubLines) {
+                                        String gossipLineEntry[] = gossipInfoSubLine.split(":");
+                                        if (gossipLineEntry.length == 2) {
+                                            gossipMap.put(
+                                                    gossipLineEntry[0].trim().toUpperCase(),
+                                                    gossipLineEntry[1].trim());
+                                        } else if (gossipLineEntry.length == 3) {
+                                            if (gossipLineEntry[0]
+                                                    .trim()
+                                                    .equalsIgnoreCase("STATUS")) {
+                                                // Special handling for STATUS as C* puts first
+                                                // token in STATUS or "true".
+                                                gossipMap.put(
+                                                        gossipLineEntry[0].trim().toUpperCase(),
+                                                        gossipLineEntry[2].split(",")[0].trim());
+                                            } else if (gossipLineEntry[0]
+                                                    .trim()
+                                                    .equalsIgnoreCase("TOKENS")) {
+                                                // Special handling for tokens as it is always
+                                                // "hidden".
+                                                gossipMap.put(
+                                                        gossipLineEntry[0].trim().toUpperCase(),
+                                                        nodeTool.getTokens(
+                                                                        gossipMap.get("PUBLIC_IP"))
+                                                                .toString());
+                                            } else {
+                                                gossipMap.put(
+                                                        gossipLineEntry[0].trim().toUpperCase(),
+                                                        gossipLineEntry[2].trim());
+                                            }
+                                        }
+                                    }
+                                }
+                            });
+
+        } catch (Exception e) {
+            logger.error("Unable to parse nodetool gossipinfo output from Cassandra.", e);
+        }
+        return returnPublicIpSourceIpMap;
+    }
 }

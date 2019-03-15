@@ -59,4 +59,6 @@ public interface ICassandraOperations {
     void forceKeyspaceCompaction(String keyspaceName, String... columnfamilies) throws Exception;
 
     void forceKeyspaceFlush(String keyspaceName) throws Exception;
+
+    List<Map<String, String>> gossipInfo() throws Exception;
 }

@@ -72,8 +72,8 @@ public class TestBackupV2Service {
             {
                 backupRestoreConfig.getSnapshotMetaServiceCronExpression();
                 result = "0 0 0/1 1/1 * ? *";
-                backupRestoreConfig.getBackupTTLCronExpression();
-                result = "0 0 0/1 1/1 * ? *";
+                backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
+                result = 600;
                 backupRestoreConfig.getBackupVerificationCronExpression();
                 result = "0 0 0/1 1/1 * ? *";
                 backupRestoreConfig.enableV2Backups();
@@ -97,8 +97,8 @@ public class TestBackupV2Service {
             {
                 backupRestoreConfig.getSnapshotMetaServiceCronExpression();
                 result = "0 0 0/1 1/1 * ? *";
-                backupRestoreConfig.getBackupTTLCronExpression();
-                result = "0 0 0/1 1/1 * ? *";
+                backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
+                result = 600;
                 backupRestoreConfig.getBackupVerificationCronExpression();
                 result = "0 0 0/1 1/1 * ? *";
                 backupRestoreConfig.enableV2Backups();

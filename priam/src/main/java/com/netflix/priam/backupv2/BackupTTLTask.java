@@ -26,7 +26,7 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.scheduler.CronTimer;
+import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
@@ -227,15 +227,15 @@ public class BackupTTLTask extends Task {
     /**
      * Interval between trying to TTL data on Remote file system.
      *
-     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLCronExpression()} to get
-     *     configuration details from priam. Use "-1" to disable the service.
+     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLMonitorPeriodInSec()} to
+     *     get configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for backup ttl service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        String cronExpression = backupRestoreConfig.getBackupTTLCronExpression();
-        return CronTimer.getCronTimer(JOBNAME, cronExpression);
+        return SimpleTimer.getSimpleTimer(
+                JOBNAME, backupRestoreConfig.getBackupTTLMonitorPeriodInSec());
     }
 
     private class MetaFileWalker extends MetaFileReader {

@@ -45,19 +45,22 @@ public interface IBackupRestoreConfig {
     }
 
     /**
-     * Cron expression to be used for the service which does TTL of the backups. This service will
-     * run only if v2 backups are enabled. The idea is to run this service at least once a day to
-     * ensure we are marking backup files for TTL as configured via {@link
-     * IConfiguration#getBackupRetentionDays()}
+     * Monitoring period for the service which does TTL of the backups. This service will run only
+     * if v2 backups are enabled. The idea is to run this service at least once a day to ensure we
+     * are marking backup files for TTL as configured via {@link
+     * IConfiguration#getBackupRetentionDays()}. Use -1 to disable this service.
      *
-     * @return Backup TTL Service cron expression for trying to delete backups. Note that this CRON
-     *     is only the job trying to delete backups and is not the TTL of the backups.
+     * <p>NOTE: This should be scheduled on interval rather than CRON as this results in entire
+     * fleet to start deletion of files at the same time and remote file system may get overwhelmed.
+     *
+     * @return Backup TTL Service execution duration for trying to delete backups. Note that this
+     *     denotes duration of the job trying to delete backups and is not the TTL of the backups.
      * @see <a
      *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
      * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a>
      */
-    default String getBackupTTLCronExpression() {
-        return "0 0 0/6 1/1 * ? *";
+    default int getBackupTTLMonitorPeriodInSec() {
+        return 21600;
     }
 
     /**

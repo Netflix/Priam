@@ -22,9 +22,12 @@ import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
+import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IBackupStatusMgr;
+import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
@@ -51,6 +54,7 @@ public class BackupServletV2 {
     private final IBackupStatusMgr backupStatusMgr;
     private final SnapshotMetaTask snapshotMetaService;
     private final BackupTTLTask backupTTLService;
+    private final IBackupFileSystem fs;
     private static final String REST_SUCCESS = "[\"ok\"]";
 
     @Inject
@@ -58,11 +62,14 @@ public class BackupServletV2 {
             IBackupStatusMgr backupStatusMgr,
             BackupVerification backupVerification,
             SnapshotMetaTask snapshotMetaService,
-            BackupTTLTask backupTTLService) {
+            BackupTTLTask backupTTLService,
+            IConfiguration configuration,
+            IFileSystemContext backupFileSystemCtx) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
         this.backupTTLService = backupTTLService;
+        this.fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 
     @GET
@@ -76,6 +83,13 @@ public class BackupServletV2 {
     @Path("/ttl")
     public Response ttl() throws Exception {
         backupTTLService.execute();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/clearCache")
+    public Response clearCache() throws Exception {
+        fs.clearCache();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

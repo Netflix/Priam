@@ -378,4 +378,9 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     public int getDownloadTasksQueued() {
         return fileDownloadExecutor.getQueue().size();
     }
+
+    @Override
+    public void clearCache() {
+        objectCache.invalidateAll();
+    }
 }

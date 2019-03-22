@@ -23,12 +23,16 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.util.Optional;
+import mockit.Expectations;
 import mockit.Mock;
 import mockit.MockUp;
+import mockit.Mocked;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -36,6 +40,7 @@ import org.junit.Test;
 public class TestBackupVerificationTask {
     private static BackupVerificationTask backupVerificationService;
     private static IConfiguration configuration;
+    private static BackupVerification backupVerification;
 
     public TestBackupVerificationTask() {
         new MockBackupVerification();
@@ -43,6 +48,8 @@ public class TestBackupVerificationTask {
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
         if (backupVerificationService == null)
             backupVerificationService = injector.getInstance(BackupVerificationTask.class);
+        if (backupVerification == null)
+            backupVerification = injector.getInstance(BackupVerification.class);
     }
 
     static class MockBackupVerification extends MockUp<BackupVerification> {
@@ -86,6 +93,17 @@ public class TestBackupVerificationTask {
     public void normalOperation() throws Exception {
         MockBackupVerification.throwError = false;
         MockBackupVerification.failCall = false;
+        backupVerificationService.execute();
+    }
+
+    @Test
+    public void testRestoreMode(@Mocked InstanceState state) throws Exception {
+        new Expectations() {
+            {
+                state.getRestoreStatus().getStatus();
+                result = Status.STARTED;
+            }
+        };
         backupVerificationService.execute();
     }
 }

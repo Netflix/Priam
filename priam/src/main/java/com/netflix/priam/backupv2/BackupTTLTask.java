@@ -88,12 +88,6 @@ public class BackupTTLTask extends Task {
 
     @Override
     public void execute() throws Exception {
-        // Ensure that backup version 2.0 is actually enabled.
-        if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
-            logger.info("Not executing the TTL Task for backups as V2 backups are not enabled.");
-            return;
-        }
-
         if (instanceState.getRestoreStatus() != null
                 && instanceState.getRestoreStatus().getStatus() != null
                 && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {

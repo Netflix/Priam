@@ -23,7 +23,9 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -36,6 +38,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import mockit.Expectations;
+import mockit.Mocked;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -192,5 +196,16 @@ public class TestBackupTTLTask {
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
         Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META1")));
+    }
+
+    @Test
+    public void testRestoreMode(@Mocked InstanceState state) throws Exception {
+        new Expectations() {
+            {
+                state.getRestoreStatus().getStatus();
+                result = Status.STARTED;
+            }
+        };
+        backupTTLService.execute();
     }
 }

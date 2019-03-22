@@ -24,8 +24,10 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -60,6 +62,7 @@ public class BackupTTLTask extends Task {
     private IMetaProxy metaProxy;
     private IBackupFileSystem fileSystem;
     private Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private InstanceState instanceState;
     public static final String JOBNAME = "BackupTTLService";
     private Map<String, Boolean> filesInMeta = new HashMap<>();
     private List<Path> filesToDelete = new ArrayList<>();
@@ -73,19 +76,28 @@ public class BackupTTLTask extends Task {
             IBackupRestoreConfig backupRestoreConfig,
             @Named("v2") IMetaProxy metaProxy,
             IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> abstractBackupPathProvider) {
+            Provider<AbstractBackupPath> abstractBackupPathProvider,
+            InstanceState instanceState) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.metaProxy = metaProxy;
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
+        this.instanceState = instanceState;
     }
 
     @Override
     public void execute() throws Exception {
         // Ensure that backup version 2.0 is actually enabled.
         if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
-            logger.info("Not executing the TTL Service for backups as V2 backups are not enabled.");
+            logger.info("Not executing the TTL Task for backups as V2 backups are not enabled.");
+            return;
+        }
+
+        if (instanceState.getRestoreStatus() != null
+                && instanceState.getRestoreStatus().getStatus() != null
+                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
+            logger.info("Not executing the TTL Task for backups as Priam is in restore mode.");
             return;
         }
 

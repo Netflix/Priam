@@ -21,9 +21,12 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.tuner.TuneCassandra;
+import com.netflix.priam.utils.RetryableCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +52,7 @@ public class BackupV2Service implements IService {
 
     @Override
     public void scheduleService() throws Exception {
-        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
+        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
         if (snapshotMetaTimer != null) {
             scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
 
@@ -66,18 +69,29 @@ public class BackupV2Service implements IService {
                     scheduler,
                     BackupVerificationTask.class,
                     BackupVerificationTask.getTimer(backupRestoreConfig));
-
-            // Start the Incremental backup schedule if enabled
-            if (backupRestoreConfig.enableV2Backups()) {
-                // Delete the old task, if scheduled. This is required, as we stop taking backup
-                // 1.0, we still want to take incremental backups
-                // Once backup 1.0 is gone, we should not check for enableV2Backups.
-                scheduler.deleteTask(IncrementalBackup.JOBNAME);
-                scheduleTask(
-                        scheduler,
-                        IncrementalBackup.class,
-                        IncrementalBackup.getTimer(configuration));
-            }
         }
+
+        // Start the Incremental backup schedule if enabled
+        scheduleTask(
+                scheduler,
+                IncrementalBackup.class,
+                IncrementalBackup.getTimer(configuration, backupRestoreConfig));
+    }
+
+    public void updateService() throws Exception {
+        // Update the cassandra to stop writing new incremental files, if any.
+        new RetryableCallable<Void>(6, 10000) {
+            public Void retriableCall() throws Exception {
+                JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
+                nodetool.setIncrementalBackupsEnabled(
+                        IncrementalBackup.isEnabled(configuration, backupRestoreConfig));
+                return null;
+            }
+        }.call();
+        // Re-schedule services.
+        scheduleService();
+        // Re-write the cassandra.yaml so if cassandra restarts it is a NO-OP
+        // Run the task to tune Cassandra
+        scheduler.runTaskNow(TuneCassandra.class);
     }
 }

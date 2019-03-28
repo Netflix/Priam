@@ -22,7 +22,9 @@ import static org.junit.Assert.assertEquals;
 import com.google.common.io.Files;
 import com.google.inject.Guice;
 import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.BackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,12 +47,15 @@ public class StandardTunerTest {
 
     private final StandardTuner tuner;
     private final InstanceInfo instanceInfo;
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final File target = new File("/tmp/priam_test.yaml");
 
     public StandardTunerTest() {
         this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);
         this.instanceInfo =
                 Guice.createInjector(new BRTestModule()).getInstance(InstanceInfo.class);
+        this.backupRestoreConfig =
+                Guice.createInjector(new BRTestModule()).getInstance(BackupRestoreConfig.class);
     }
 
     @Test
@@ -130,7 +135,9 @@ public class StandardTunerTest {
         extraParamValues.put(priamKeyName4, "randomGroupValue");
         StandardTuner tuner =
                 new StandardTuner(
-                        new TunerConfiguration(extraConfigParam, extraParamValues), instanceInfo);
+                        new TunerConfiguration(extraConfigParam, extraParamValues),
+                        backupRestoreConfig,
+                        instanceInfo);
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), target);
         tuner.writeAllProperties(target.getAbsolutePath(), "your_host", "YourSeedProvider");
 

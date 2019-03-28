@@ -19,6 +19,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -47,20 +48,27 @@ public class TestBackupService {
     }
 
     @Test
-    public void testBackupDisabled(@Mocked IConfiguration configuration) throws Exception {
+    public void testBackupDisabled(
+            @Mocked IConfiguration configuration, @Mocked IBackupRestoreConfig backupRestoreConfig)
+            throws Exception {
         new Expectations() {
             {
                 configuration.getBackupCronExpression();
                 result = "-1";
+                configuration.getDataFileLocation();
+                result = "data";
             }
         };
-        IService backupService = new BackupService(configuration, scheduler, instanceIdentity);
+        IService backupService =
+                new BackupService(configuration, backupRestoreConfig, scheduler, instanceIdentity);
         backupService.scheduleService();
         Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
     }
 
     @Test
-    public void testBackupEnabled(@Mocked IConfiguration configuration) throws Exception {
+    public void testBackupEnabled(
+            @Mocked IConfiguration configuration, @Mocked IBackupRestoreConfig backupRestoreConfig)
+            throws Exception {
         new Expectations() {
             {
                 configuration.getBackupCronExpression();
@@ -69,13 +77,15 @@ public class TestBackupService {
                 result = false;
             }
         };
-        IService backupService = new BackupService(configuration, scheduler, instanceIdentity);
+        IService backupService =
+                new BackupService(configuration, backupRestoreConfig, scheduler, instanceIdentity);
         backupService.scheduleService();
         Assert.assertEquals(2, scheduler.getScheduler().getJobKeys(null).size());
     }
 
     @Test
-    public void testBackupEnabledWithIncremental(@Mocked IConfiguration configuration)
+    public void testBackupEnabledWithIncremental(
+            @Mocked IConfiguration configuration, @Mocked IBackupRestoreConfig backupRestoreConfig)
             throws Exception {
         new Expectations() {
             {
@@ -85,8 +95,19 @@ public class TestBackupService {
                 result = true;
             }
         };
-        IService backupService = new BackupService(configuration, scheduler, instanceIdentity);
+        IService backupService =
+                new BackupService(configuration, backupRestoreConfig, scheduler, instanceIdentity);
         backupService.scheduleService();
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
     }
+
+    // TEST CASES
+    /*
+    1. Disabling backup 1.0 only. Incremental might still be ON because of backup v2.
+    2. Disabling backups all together.
+    3. Disabling incremental backup only.
+    4. Enabling backup 1.0
+    5. Enabling incremental backups with 1.0
+    6. Update Service - Write new config file and enable/disable via JMX.
+     */
 }

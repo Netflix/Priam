@@ -32,6 +32,7 @@ public interface IService {
             throws SchedulerException, ParseException {
         if (taskTimer == null) return;
 
+        priamScheduler.deleteTask(task.getName());
         priamScheduler.addTask(task.getName(), task, taskTimer);
     }
 }

@@ -80,6 +80,8 @@ public class TestBackupV2Service {
                 result = true;
                 configuration.isIncrementalBackupEnabled();
                 result = true;
+                configuration.getBackupCronExpression();
+                result = "-1";
             }
         };
         IService backupService =
@@ -101,7 +103,7 @@ public class TestBackupV2Service {
                 result = 600;
                 backupRestoreConfig.getBackupVerificationCronExpression();
                 result = "0 0 0/1 1/1 * ? *";
-                backupRestoreConfig.enableV2Backups();
+                configuration.isIncrementalBackupEnabled();
                 result = false;
             }
         };

@@ -15,7 +15,8 @@ package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.netflix.priam.backup.SnapshotBackup;
+import com.netflix.priam.backup.IncrementalBackup;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.Restore;
@@ -24,7 +25,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,11 +38,16 @@ import org.yaml.snakeyaml.Yaml;
 public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
+    protected final IBackupRestoreConfig backupRestoreConfig;
     private final InstanceInfo instanceInfo;
 
     @Inject
-    public StandardTuner(IConfiguration config, InstanceInfo instanceInfo) {
+    public StandardTuner(
+            IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
+            InstanceInfo instanceInfo) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.instanceInfo = instanceInfo;
     }
 
@@ -74,10 +79,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("hints_directory", config.getHintsLocation());
         map.put("data_file_directories", Lists.newArrayList(config.getDataFileLocation()));
 
-        boolean enableIncremental =
-                (SnapshotBackup.isBackupEnabled(config) && config.isIncrementalBackupEnabled())
-                        && (CollectionUtils.isEmpty(config.getBackupRacs())
-                                || config.getBackupRacs().contains(instanceInfo.getRac()));
+        boolean enableIncremental = IncrementalBackup.isEnabled(config, backupRestoreConfig);
         map.put("incremental_backups", enableIncremental);
 
         map.put("endpoint_snitch", config.getSnitch());

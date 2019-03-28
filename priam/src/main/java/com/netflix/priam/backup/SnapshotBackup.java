@@ -31,10 +31,14 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.ThreadSleeper;
 import java.io.File;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +100,8 @@ public class SnapshotBackup extends AbstractBackup {
         }
 
         try {
+            // Clean up all the backup directories, if any.
+            cleanOldBackups(config);
             executeSnapshot();
         } finally {
             lock.unlock();
@@ -169,7 +175,25 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     public static TaskTimer getTimer(IConfiguration config) throws Exception {
-        return CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
+        TaskTimer timer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
+        if (timer == null) {
+            // Clean up all the backup directories, if any.
+            cleanOldBackups(config);
+        }
+        return timer;
+    }
+
+    private static void cleanOldBackups(IConfiguration configuration) throws Exception {
+        Set<Path> backupPaths = AbstractBackup.getBackupDirectories(configuration, SNAPSHOT_FOLDER);
+        for (Path backupDirPath : backupPaths)
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                for (Path backupDir : directoryStream) {
+                    if (isValidBackupDir(backupDir)) {
+                        FileUtils.deleteDirectory(backupDir.toFile());
+                    }
+                }
+            }
     }
 
     @Override
@@ -187,5 +211,11 @@ public class SnapshotBackup extends AbstractBackup {
         // Add files to this dir
         abstractBackupPaths.addAll(
                 upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot(), true));
+    }
+
+    private static boolean isValidBackupDir(Path backupDir) {
+        String backupDirName = backupDir.toFile().getName();
+        // Check if it of format yyyyMMddHHmm
+        return (DateUtil.getDate(backupDirName) != null);
     }
 }

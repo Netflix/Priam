@@ -104,7 +104,22 @@ public class PriamScheduler {
     }
 
     public void deleteTask(String name) throws SchedulerException {
-        scheduler.unscheduleJob(new TriggerKey(name, Scheduler.DEFAULT_GROUP));
+        TriggerKey triggerKey = TriggerKey.triggerKey(name, Scheduler.DEFAULT_GROUP);
+
+        // Check if trigger exists for the job. If there is a trigger, we want to remove those
+        // trigger.
+        if (scheduler.checkExists(triggerKey)) {
+            logger.info("Removing triggers for the job: {}", name);
+            scheduler.pauseTrigger(triggerKey);
+            scheduler.unscheduleJob(triggerKey);
+        }
+
+        // Check if any job exists for the key provided. If yes, we want to delete the job.
+        JobKey jobKey = JobKey.jobKey(name, Scheduler.DEFAULT_GROUP);
+        if (scheduler.checkExists(jobKey)) {
+            logger.info("Removing job from scheduler: {}", name);
+            scheduler.deleteJob(jobKey);
+        }
     }
 
     public final Scheduler getScheduler() {

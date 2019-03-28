@@ -28,6 +28,9 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
@@ -38,8 +41,6 @@ import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.FileFilterUtils;
-import org.apache.commons.lang3.StringUtils;
-import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -109,31 +110,40 @@ public class SnapshotMetaTask extends AbstractBackup {
      * @param backupRestoreConfig {@link
      *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details
      *     from priam. Use "-1" to disable the service.
+     * @param config configuration to get the data folder.
      * @return the timer to be used for snapshot meta service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */
-    public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        CronTimer cronTimer = null;
-        String cronExpression = backupRestoreConfig.getSnapshotMetaServiceCronExpression();
-
-        if (!StringUtils.isEmpty(cronExpression) && cronExpression.equalsIgnoreCase("-1")) {
-            logger.info(
-                    "Skipping SnapshotMetaService as SnapshotMetaService cron is disabled via -1.");
-        } else {
-            if (StringUtils.isEmpty(cronExpression)
-                    || !CronExpression.isValidExpression(cronExpression))
-                throw new Exception(
-                        "Invalid CRON expression: "
-                                + cronExpression
-                                + ". Please use -1, if you wish to disable SnapshotMetaService else fix the CRON expression and try again!");
-
-            cronTimer = new CronTimer(JOBNAME, cronExpression);
-            logger.info(
-                    "Starting SnapshotMetaService with CRON expression {}",
-                    cronTimer.getCronExpression());
+    public static TaskTimer getTimer(
+            IConfiguration config, IBackupRestoreConfig backupRestoreConfig) throws Exception {
+        TaskTimer timer =
+                CronTimer.getCronTimer(
+                        JOBNAME, backupRestoreConfig.getSnapshotMetaServiceCronExpression());
+        if (timer == null) {
+            cleanOldBackups(config);
         }
-        return cronTimer;
+        return timer;
+    }
+
+    private static void cleanOldBackups(IConfiguration config) throws Exception {
+        // Clean up all the backup directories, if any.
+        Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
+        for (Path backupDirPath : backupPaths)
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                for (Path backupDir : directoryStream) {
+                    if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
+                        FileUtils.deleteDirectory(backupDir.toFile());
+                    }
+                }
+            }
+    }
+
+    public static boolean isBackupEnabled(
+            IConfiguration configuration, IBackupRestoreConfig backupRestoreConfig)
+            throws Exception {
+        return (getTimer(configuration, backupRestoreConfig) != null);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {

@@ -42,10 +42,11 @@ public class BackupFileUtils {
             int noOfCf,
             int noOfSstables,
             String backupDir,
-            String snapshotName)
+            String snapshotName,
+            boolean cleanup)
             throws Exception {
         // Clean the dummy directory
-        cleanupDir(dummyDir);
+        if (cleanup) cleanupDir(dummyDir);
 
         for (int i = 1; i <= noOfKeyspaces; i++) {
             String keyspaceName = "sample" + i;

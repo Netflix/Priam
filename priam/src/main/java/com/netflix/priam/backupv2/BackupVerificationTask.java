@@ -22,8 +22,10 @@ import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupVerification;
 import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.backup.BackupVersion;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
@@ -44,17 +46,20 @@ public class BackupVerificationTask extends Task {
     private IBackupRestoreConfig backupRestoreConfig;
     private BackupVerification backupVerification;
     private BackupMetrics backupMetrics;
+    private InstanceState instanceState;
 
     @Inject
     public BackupVerificationTask(
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             BackupVerification backupVerification,
-            BackupMetrics backupMetrics) {
+            BackupMetrics backupMetrics,
+            InstanceState instanceState) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupVerification = backupVerification;
         this.backupMetrics = backupMetrics;
+        this.instanceState = instanceState;
     }
 
     @Override
@@ -63,6 +68,14 @@ public class BackupVerificationTask extends Task {
         if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
             logger.info(
                     "Not executing the Verification Service for backups as V2 backups are not enabled.");
+            return;
+        }
+
+        if (instanceState.getRestoreStatus() != null
+                && instanceState.getRestoreStatus().getStatus() != null
+                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
+            logger.info(
+                    "Not executing the Verification Service for backups as Priam is in restore mode.");
             return;
         }
 

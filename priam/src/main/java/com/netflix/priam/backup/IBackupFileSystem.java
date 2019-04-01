@@ -210,4 +210,7 @@ public interface IBackupFileSystem {
      * @return the total no. of tasks to be executed.
      */
     int getDownloadTasksQueued();
+
+    /** Clear the cache for the backup file system, if any. */
+    void clearCache();
 }

@@ -22,12 +22,15 @@ import org.quartz.Scheduler;
 import org.quartz.SimpleScheduleBuilder;
 import org.quartz.Trigger;
 import org.quartz.TriggerBuilder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SimpleTimer allows jobs to run starting from specified time occurring at regular frequency's.
  * Frequency of the execution timestamp since epoch.
  */
 public class SimpleTimer implements TaskTimer {
+    private static final Logger logger = LoggerFactory.getLogger(SimpleTimer.class);
     private final Trigger trigger;
 
     public SimpleTimer(String name, long interval) {
@@ -40,7 +43,6 @@ public class SimpleTimer implements TaskTimer {
                                         .repeatForever()
                                         .withMisfireHandlingInstructionFireNow())
                         .build();
-        // .new SimpleTrigger(name, SimpleTrigger.REPEAT_INDEFINITELY, interval);
     }
 
     /** Run once at given time... */
@@ -53,7 +55,6 @@ public class SimpleTimer implements TaskTimer {
                                         .withMisfireHandlingInstructionFireNow())
                         .startAt(new Date(startTime))
                         .build();
-        // new SimpleTrigger(name, group, new Date(startTime));
     }
 
     /** Run immediatly and dont do that again. */
@@ -66,7 +67,23 @@ public class SimpleTimer implements TaskTimer {
                                         .withMisfireHandlingInstructionFireNow())
                         .startNow()
                         .build();
-        // new SimpleTrigger(name, Scheduler.DEFAULT_GROUP);
+    }
+
+    public static SimpleTimer getSimpleTimer(final String jobName, final long interval)
+            throws IllegalArgumentException {
+        SimpleTimer simpleTimer = null;
+
+        if (interval <= 0) {
+            logger.info(
+                    "Skipping {} as it is disabled via setting {} to {}.",
+                    jobName,
+                    jobName,
+                    interval);
+        } else {
+            simpleTimer = new SimpleTimer(jobName, interval);
+            logger.info("Starting {} with interval of {}", jobName, interval);
+        }
+        return simpleTimer;
     }
 
     public Trigger getTrigger() throws ParseException {

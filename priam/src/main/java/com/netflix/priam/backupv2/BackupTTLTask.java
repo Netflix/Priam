@@ -24,9 +24,11 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.scheduler.CronTimer;
+import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
@@ -60,6 +62,7 @@ public class BackupTTLTask extends Task {
     private IMetaProxy metaProxy;
     private IBackupFileSystem fileSystem;
     private Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private InstanceState instanceState;
     public static final String JOBNAME = "BackupTTLService";
     private Map<String, Boolean> filesInMeta = new HashMap<>();
     private List<Path> filesToDelete = new ArrayList<>();
@@ -73,19 +76,22 @@ public class BackupTTLTask extends Task {
             IBackupRestoreConfig backupRestoreConfig,
             @Named("v2") IMetaProxy metaProxy,
             IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> abstractBackupPathProvider) {
+            Provider<AbstractBackupPath> abstractBackupPathProvider,
+            InstanceState instanceState) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.metaProxy = metaProxy;
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
+        this.instanceState = instanceState;
     }
 
     @Override
     public void execute() throws Exception {
-        // Ensure that backup version 2.0 is actually enabled.
-        if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
-            logger.info("Not executing the TTL Service for backups as V2 backups are not enabled.");
+        if (instanceState.getRestoreStatus() != null
+                && instanceState.getRestoreStatus().getStatus() != null
+                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
+            logger.info("Not executing the TTL Task for backups as Priam is in restore mode.");
             return;
         }
 
@@ -227,15 +233,15 @@ public class BackupTTLTask extends Task {
     /**
      * Interval between trying to TTL data on Remote file system.
      *
-     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLCronExpression()} to get
-     *     configuration details from priam. Use "-1" to disable the service.
+     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLMonitorPeriodInSec()} to
+     *     get configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for backup ttl service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        String cronExpression = backupRestoreConfig.getBackupTTLCronExpression();
-        return CronTimer.getCronTimer(JOBNAME, cronExpression);
+        return SimpleTimer.getSimpleTimer(
+                JOBNAME, backupRestoreConfig.getBackupTTLMonitorPeriodInSec());
     }
 
     private class MetaFileWalker extends MetaFileReader {

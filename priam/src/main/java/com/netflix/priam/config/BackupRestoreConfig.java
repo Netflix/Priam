@@ -42,8 +42,8 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
     }
 
     @Override
-    public String getBackupTTLCronExpression() {
-        return config.get("priam.backupTTLCronExpression", "0 0 0/6 1/1 * ? *");
+    public int getBackupTTLMonitorPeriodInSec() {
+        return config.get("priam.backupTTLMonitorPeriodInSec", 21600);
     }
 
     @Override

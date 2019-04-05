@@ -247,6 +247,6 @@ public class TestBackupStatusMgr {
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + "201812031000"));
-        list.forEach(backupMetadata -> System.out.println(backupMetadata));
+        list.forEach(System.out::println);
     }
 }

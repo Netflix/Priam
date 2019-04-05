@@ -18,14 +18,10 @@
 package com.netflix.priam.resources;
 
 import com.google.inject.Inject;
-import com.netflix.priam.backup.BackupMetadata;
-import com.netflix.priam.backup.BackupVerification;
-import com.netflix.priam.backup.BackupVerificationResult;
-import com.netflix.priam.backup.BackupVersion;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IBackupStatusMgr;
-import com.netflix.priam.backup.IFileSystemContext;
+import com.google.inject.Provider;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -34,6 +30,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Named;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
@@ -55,6 +52,8 @@ public class BackupServletV2 {
     private final SnapshotMetaTask snapshotMetaService;
     private final BackupTTLTask backupTTLService;
     private final IBackupFileSystem fs;
+    private final IMetaProxy metaProxy;
+    private final Provider<AbstractBackupPath> pathProvider;
     private static final String REST_SUCCESS = "[\"ok\"]";
 
     @Inject
@@ -64,12 +63,16 @@ public class BackupServletV2 {
             SnapshotMetaTask snapshotMetaService,
             BackupTTLTask backupTTLService,
             IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx) {
+            IFileSystemContext backupFileSystemCtx,
+            @Named("v2") IMetaProxy metaV2Proxy,
+            Provider<AbstractBackupPath> pathProvider) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
         this.backupTTLService = backupTTLService;
         this.fs = backupFileSystemCtx.getFileStrategy(configuration);
+        this.metaProxy = metaV2Proxy;
+        this.pathProvider = pathProvider;
     }
 
     @GET
@@ -123,5 +126,21 @@ public class BackupServletV2 {
         }
 
         return Response.ok(result.get()).build();
+    }
+
+    @GET
+    @Path("/list/{daterange}")
+    public Response list(@PathParam("daterange") String daterange) throws Exception {
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+        // Find latest valid meta file.
+        Optional<AbstractBackupPath> latestValidMetaFile =
+                BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
+        if (!latestValidMetaFile.isPresent()) {
+            return Response.ok("No valid meta found!").build();
+        }
+        List<AbstractBackupPath> allFiles =
+                BackupRestoreUtil.getAllFiles(
+                        latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
+        return Response.ok(allFiles).build();
     }
 }

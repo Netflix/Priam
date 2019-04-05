@@ -54,6 +54,7 @@ public class BackupServlet {
     private final BackupVerification backupVerification;
     @Inject private PriamScheduler scheduler;
     private final IBackupStatusMgr completedBkups;
+    private final BackupService backupService;
     @Inject private MetaData metaData;
 
     @Inject
@@ -63,13 +64,15 @@ public class BackupServlet {
             @Named("backup") IBackupFileSystem backupFs,
             SnapshotBackup snapshotBackup,
             IBackupStatusMgr completedBkups,
-            BackupVerification backupVerification) {
+            BackupVerification backupVerification,
+            BackupService backupService) {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupFs = backupFs;
         this.snapshotBackup = snapshotBackup;
         this.completedBkups = completedBkups;
         this.backupVerification = backupVerification;
+        this.backupService = backupService;
     }
 
     @GET
@@ -86,6 +89,13 @@ public class BackupServlet {
                 "IncrementalBackup",
                 IncrementalBackup.class,
                 IncrementalBackup.getTimer(config, backupRestoreConfig));
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/updateService")
+    public Response updateService() throws Exception {
+        backupService.updateService();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

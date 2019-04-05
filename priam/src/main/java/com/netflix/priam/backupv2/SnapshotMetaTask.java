@@ -127,7 +127,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                         Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
                     for (Path backupDir : directoryStream) {
                         if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
-                            FileUtils.cleanDirectory(backupDir.toFile());
+                            FileUtils.deleteDirectory(backupDir.toFile());
                         }
                     }
                 }

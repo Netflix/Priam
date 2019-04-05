@@ -100,6 +100,8 @@ public class SnapshotBackup extends AbstractBackup {
         }
 
         try {
+            // Clean up all the backup directories, if any.
+            cleanOldBackups(config);
             executeSnapshot();
         } finally {
             lock.unlock();
@@ -177,18 +179,22 @@ public class SnapshotBackup extends AbstractBackup {
         TaskTimer timer = CronTimer.getCronTimer(JOBNAME, config.getBackupCronExpression());
         if (timer == null) {
             // Clean up all the backup directories, if any.
-            Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
-            for (Path backupDirPath : backupPaths)
-                try (DirectoryStream<Path> directoryStream =
-                        Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
-                    for (Path backupDir : directoryStream) {
-                        if (isValidBackupDir(backupDir)) {
-                            FileUtils.cleanDirectory(backupDir.toFile());
-                        }
-                    }
-                }
+            cleanOldBackups(config);
         }
         return timer;
+    }
+
+    private static void cleanOldBackups(IConfiguration configuration) throws Exception {
+        Set<Path> backupPaths = AbstractBackup.getBackupDirectories(configuration, SNAPSHOT_FOLDER);
+        for (Path backupDirPath : backupPaths)
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                for (Path backupDir : directoryStream) {
+                    if (isValidBackupDir(backupDir)) {
+                        FileUtils.deleteDirectory(backupDir.toFile());
+                    }
+                }
+            }
     }
 
     @Override
@@ -211,11 +217,6 @@ public class SnapshotBackup extends AbstractBackup {
     private static boolean isValidBackupDir(Path backupDir) {
         String backupDirName = backupDir.toFile().getName();
         // Check if it of format yyyyMMddHHmm
-        try {
-            DateUtil.getDate(backupDirName);
-            return true;
-        } catch (Exception e) {
-            return false;
-        }
+        return (DateUtil.getDate(backupDirName) != null);
     }
 }

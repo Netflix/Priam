@@ -21,9 +21,18 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.tuner.TuneCassandra;
+import com.netflix.priam.utils.BackupFileUtils;
+import com.netflix.priam.utils.DateUtil;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Set;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.Assert;
@@ -56,13 +65,47 @@ public class TestBackupService {
                 configuration.getBackupCronExpression();
                 result = "-1";
                 configuration.getDataFileLocation();
-                result = "data";
+                result = "target/data";
             }
         };
+
+        Path dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
+        Instant snapshotInstant = DateUtil.getInstant();
+
+        // Create one V1 snapshot.
+        String snapshotV1Name = DateUtil.formatInstant(DateUtil.yyyyMMdd, snapshotInstant);
+        BackupFileUtils.generateDummyFiles(
+                dummyDataDirectoryLocation,
+                2,
+                3,
+                3,
+                AbstractBackup.SNAPSHOT_FOLDER,
+                snapshotV1Name,
+                true);
+
+        String snapshotName = "meta_v2_" + snapshotV1Name;
+        // Create one V2 snapshot.
+        BackupFileUtils.generateDummyFiles(
+                dummyDataDirectoryLocation,
+                2,
+                3,
+                3,
+                AbstractBackup.SNAPSHOT_FOLDER,
+                snapshotName,
+                false);
+
         IService backupService =
                 new BackupService(configuration, backupRestoreConfig, scheduler, instanceIdentity);
         backupService.scheduleService();
         Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
+
+        // snapshot V1 name should not be there.
+        Set<Path> backupPaths =
+                AbstractBackup.getBackupDirectories(configuration, AbstractBackup.SNAPSHOT_FOLDER);
+        for (Path backupPath : backupPaths) {
+            Assert.assertTrue(Files.exists(Paths.get(backupPath.toString(), snapshotName)));
+            Assert.assertFalse(Files.exists(Paths.get(backupPath.toString(), snapshotV1Name)));
+        }
     }
 
     @Test
@@ -101,13 +144,36 @@ public class TestBackupService {
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
     }
 
-    // TEST CASES
-    /*
-    1. Disabling backup 1.0 only. Incremental might still be ON because of backup v2.
-    2. Disabling backups all together.
-    3. Disabling incremental backup only.
-    4. Enabling backup 1.0
-    5. Enabling incremental backups with 1.0
-    6. Update Service - Write new config file and enable/disable via JMX.
-     */
+    @Test
+    public void updateService(
+            @Mocked IConfiguration configuration,
+            @Mocked IBackupRestoreConfig backupRestoreConfig,
+            @Mocked JMXNodeTool nodeTool,
+            @Mocked TuneCassandra tuneCassandra)
+            throws Exception {
+        new Expectations() {
+            {
+                configuration.getBackupCronExpression();
+                result = "0 0/1 * 1/1 * ? *";
+                result = "0 0/1 * 1/1 * ? *";
+                result = "-1";
+                result = "-1";
+                configuration.isIncrementalBackupEnabled();
+                result = true;
+                backupRestoreConfig.enableV2Backups();
+                result = false;
+                JMXNodeTool.instance(configuration);
+                result = nodeTool;
+                nodeTool.setIncrementalBackupsEnabled(false);
+                times = 1;
+            }
+        };
+        IService backupService =
+                new BackupService(configuration, backupRestoreConfig, scheduler, instanceIdentity);
+        backupService.scheduleService();
+        Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
+
+        ((BackupService) backupService).updateService();
+        Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
+    }
 }

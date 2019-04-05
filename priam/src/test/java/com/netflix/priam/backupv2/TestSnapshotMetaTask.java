@@ -86,7 +86,8 @@ public class TestSnapshotMetaTask {
                 noOfCf,
                 noOfSstables,
                 AbstractBackup.SNAPSHOT_FOLDER,
-                snapshotName);
+                snapshotName,
+                true);
         snapshotMetaService.setSnapshotName(snapshotName);
         Path metaFileLocation =
                 snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();

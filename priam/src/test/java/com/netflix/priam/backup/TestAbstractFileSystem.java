@@ -101,7 +101,7 @@ public class TestAbstractFileSystem {
             throws Exception {
         Path dataDir = Paths.get(configuration.getDataFileLocation());
         BackupFileUtils.generateDummyFiles(
-                dataDir, noOfKeyspaces, noOfCf, noOfSstables, "snapshot", "201812310000");
+                dataDir, noOfKeyspaces, noOfCf, noOfSstables, "snapshot", "201812310000", true);
         String[] ext = {"db"};
         return FileUtils.listFiles(dataDir.toFile(), ext, true);
     }

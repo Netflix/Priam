@@ -25,9 +25,9 @@ import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.RetryableCallable;
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,13 +55,10 @@ public class BackupService implements IService {
     public void scheduleService() throws Exception {
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1) or set backup cron to "-1"
+        TaskTimer snapshotTimer = SnapshotBackup.getTimer(config);
+        scheduleTask(scheduler, SnapshotBackup.class, snapshotTimer);
 
-        if (SnapshotBackup.getTimer(config) != null
-                && (CollectionUtils.isEmpty(config.getBackupRacs())
-                        || config.getBackupRacs()
-                                .contains(instanceIdentity.getInstanceInfo().getRac()))) {
-            scheduleTask(scheduler, SnapshotBackup.class, SnapshotBackup.getTimer(config));
-
+        if (snapshotTimer != null) {
             // Schedule commit log task
             scheduleTask(
                     scheduler, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));

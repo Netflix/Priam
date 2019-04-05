@@ -29,7 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
-import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
@@ -184,7 +184,7 @@ public abstract class AbstractBackup extends Task {
      */
     public static Set<Path> getBackupDirectories(IConfiguration config, String monitoringFolder)
             throws Exception {
-        Set<Path> backupPaths = Collections.EMPTY_SET;
+        HashSet<Path> backupPaths = new HashSet<>();
         if (config.getDataFileLocation() == null) return backupPaths;
         Path dataPath = Paths.get(config.getDataFileLocation());
         if (Files.exists(dataPath) && Files.isDirectory(dataPath))

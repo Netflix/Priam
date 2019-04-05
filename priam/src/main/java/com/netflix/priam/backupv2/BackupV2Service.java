@@ -53,9 +53,9 @@ public class BackupV2Service implements IService {
     @Override
     public void scheduleService() throws Exception {
         TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
-        if (snapshotMetaTimer != null) {
-            scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
+        scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
 
+        if (snapshotMetaTimer != null) {
             // Try to upload previous snapshots, if any which might have been interrupted by Priam
             // restart.
             snapshotMetaTask.uploadFiles();
@@ -69,6 +69,9 @@ public class BackupV2Service implements IService {
                     scheduler,
                     BackupVerificationTask.class,
                     BackupVerificationTask.getTimer(backupRestoreConfig));
+        } else {
+            scheduler.deleteTask(BackupTTLTask.JOBNAME);
+            scheduler.deleteTask(BackupVerificationTask.JOBNAME);
         }
 
         // Start the Incremental backup schedule if enabled

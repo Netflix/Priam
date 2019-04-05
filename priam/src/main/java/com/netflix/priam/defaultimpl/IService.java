@@ -30,9 +30,8 @@ public interface IService {
     default void scheduleTask(
             PriamScheduler priamScheduler, Class<? extends Task> task, TaskTimer taskTimer)
             throws SchedulerException, ParseException {
-        if (taskTimer == null) return;
-
         priamScheduler.deleteTask(task.getName());
+        if (taskTimer == null) return;
         priamScheduler.addTask(task.getName(), task, taskTimer);
     }
 }

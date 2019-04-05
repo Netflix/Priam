@@ -59,11 +59,9 @@ public class PostRestoreHook implements IPostRestoreHook {
      */
     public boolean hasValidParameters() {
         if (config.isPostRestoreHookEnabled()) {
-            if (StringUtils.isBlank(config.getPostRestoreHook())
-                    || StringUtils.isBlank(config.getPostRestoreHookHeartbeatFileName())
-                    || StringUtils.isBlank(config.getPostRestoreHookDoneFileName())) {
-                return false;
-            }
+            return !StringUtils.isBlank(config.getPostRestoreHook())
+                    && !StringUtils.isBlank(config.getPostRestoreHookHeartbeatFileName())
+                    && !StringUtils.isBlank(config.getPostRestoreHookDoneFileName());
         }
         return true;
     }

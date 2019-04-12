@@ -30,6 +30,7 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import javax.inject.Named;
 import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
@@ -141,6 +142,11 @@ public class BackupServletV2 {
         List<AbstractBackupPath> allFiles =
                 BackupRestoreUtil.getAllFiles(
                         latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
-        return Response.ok(allFiles).build();
+
+        return Response.ok(
+                        allFiles.stream()
+                                .map(AbstractBackupPath::getRemotePath)
+                                .collect(Collectors.toList()))
+                .build();
     }
 }

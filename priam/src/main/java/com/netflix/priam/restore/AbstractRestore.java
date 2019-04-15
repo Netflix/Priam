@@ -33,12 +33,10 @@ import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 import javax.inject.Named;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
@@ -191,22 +189,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         }.call();
     }
 
-    private Optional<AbstractBackupPath> getLatestValidMetaPath(
-            IMetaProxy metaProxy, DateUtil.DateRange dateRange) {
-        // Get a list of manifest files.
-        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
-
-        // Find a valid manifest file.
-        for (AbstractBackupPath meta : metas) {
-            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
-            if (result.valid) {
-                return Optional.of(meta);
-            }
-        }
-
-        return Optional.empty();
-    }
-
     public void restore(DateUtil.DateRange dateRange) throws Exception {
         // fail early if post restore hook has invalid parameters
         if (!postRestoreHook.hasValidParameters()) {
@@ -246,7 +228,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
             // Find latest valid meta file.
             Optional<AbstractBackupPath> latestValidMetaFile =
-                    getLatestValidMetaPath(metaProxy, dateRange);
+                    BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
 
             if (!latestValidMetaFile.isPresent()) {
                 logger.info("No valid snapshot meta file found, Restore Failed.");
@@ -261,40 +243,13 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                     .getRestoreStatus()
                     .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
 
-            // Download the meta.json file.
-            Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile.get());
-            // Parse meta.json file to find the files required to download from this snapshot.
-            List<AbstractBackupPath> snapshots =
-                    metaProxy
-                            .getSSTFilesFromMeta(metaFile)
-                            .stream()
-                            .map(
-                                    value -> {
-                                        AbstractBackupPath path = pathProvider.get();
-                                        path.parseRemote(value);
-                                        return path;
-                                    })
-                            .collect(Collectors.toList());
-
-            FileUtils.deleteQuietly(metaFile.toFile());
+            List<AbstractBackupPath> allFiles =
+                    BackupRestoreUtil.getAllFiles(
+                            latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
 
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();
-            futureList.addAll(download(snapshots.iterator(), false));
-
-            logger.info("Downloading incrementals");
-
-            // Download incrementals (SST) after the snapshot meta file.
-            Instant snapshotTime;
-            if (backupRestoreConfig.enableV2Restore())
-                snapshotTime = latestValidMetaFile.get().getLastModified();
-            else snapshotTime = latestValidMetaFile.get().getTime().toInstant();
-
-            DateUtil.DateRange incrementalDateRange =
-                    new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
-            Iterator<AbstractBackupPath> incrementals =
-                    metaProxy.getIncrementals(incrementalDateRange);
-            futureList.addAll(download(incrementals, false));
+            futureList.addAll(download(allFiles.iterator(), false));
 
             // Downloading CommitLogs
             // Note for Backup V2.0 we do not backup commit logs, as saving them is cost-expensive.

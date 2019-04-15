@@ -258,7 +258,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
      * You must do the compaction before running this to remove the duplicate tokens out of the
      * server. TODO code it.
      */
-    @SuppressWarnings("unchecked")
     public JSONObject estimateKeys() throws JSONException {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it =
                 super.getColumnFamilyStoreMBeanProxies();
@@ -272,7 +271,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return object;
     }
 
-    @SuppressWarnings("unchecked")
     public JSONObject info() throws JSONException {
         JSONObject object = new JSONObject();
         object.put("gossip_active", isInitialized());
@@ -291,7 +289,6 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return object;
     }
 
-    @SuppressWarnings("unchecked")
     public JSONArray ring(String keyspace) throws JSONException {
         JSONArray ring = new JSONArray();
         Map<String, String> tokenToEndpoint = getTokenToEndpointMap();

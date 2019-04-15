@@ -32,7 +32,6 @@ import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.net.UnknownHostException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -49,8 +48,7 @@ public class InstanceIdentity {
     public static final String DUMMY_INSTANCE_ID = "new_slot";
 
     private final ListMultimap<String, PriamInstance> locMap =
-            Multimaps.newListMultimap(
-                    new HashMap<String, Collection<PriamInstance>>(), Lists::newArrayList);
+            Multimaps.newListMultimap(new HashMap<>(), Lists::newArrayList);
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;

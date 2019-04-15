@@ -46,7 +46,6 @@ public class ForgottenFilesManager {
     private IConfiguration config;
     private static final String TMP_EXT = ".tmp";
 
-    @SuppressWarnings("Annotator")
     private static final Pattern tmpFilePattern =
             Pattern.compile("^((.*)\\-(.*)\\-)?tmp(link)?\\-((?:l|k).)\\-(\\d)*\\-(.*)$");
 

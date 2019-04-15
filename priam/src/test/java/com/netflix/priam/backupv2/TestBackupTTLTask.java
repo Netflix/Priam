@@ -143,9 +143,7 @@ public class TestBackupTTLTask {
 
     private List<String> getAllFiles() {
         List<String> remoteFiles = new ArrayList<>();
-        backupFileSystem
-                .listFileSystem("", null, null)
-                .forEachRemaining(file -> remoteFiles.add(file));
+        backupFileSystem.listFileSystem("", null, null).forEachRemaining(remoteFiles::add);
         return remoteFiles;
     }
 

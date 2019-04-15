@@ -76,6 +76,14 @@ public class IncrementalBackup extends AbstractBackup {
         return null;
     }
 
+    private static void cleanOldBackups(IConfiguration configuration) throws Exception {
+        Set<Path> backupPaths =
+                AbstractBackup.getBackupDirectories(configuration, INCREMENTAL_BACKUP_FOLDER);
+        for (Path backupDirPath : backupPaths) {
+            FileUtils.cleanDirectory(backupDirPath.toFile());
+        }
+    }
+
     public static boolean isEnabled(
             IConfiguration configuration, IBackupRestoreConfig backupRestoreConfig) {
         boolean enabled = false;
@@ -87,20 +95,16 @@ public class IncrementalBackup extends AbstractBackup {
                                     || (backupRestoreConfig.enableV2Backups()
                                             && SnapshotMetaTask.isBackupEnabled(
                                                     configuration, backupRestoreConfig))));
+            logger.info("Incremental backups are enabled: {}", enabled);
+
             if (!enabled) {
                 // Clean up the incremental backup folder.
-                Set<Path> backupPaths =
-                        AbstractBackup.getBackupDirectories(
-                                configuration, INCREMENTAL_BACKUP_FOLDER);
-                for (Path backupDirPath : backupPaths) {
-                    FileUtils.cleanDirectory(backupDirPath.toFile());
-                }
+                cleanOldBackups(configuration);
             }
         } catch (Exception e) {
-            logger.warn(
+            logger.error(
                     "Error while trying to find if incremental backup is enabled: "
                             + e.getMessage());
-            e.printStackTrace();
         }
         return enabled;
     }

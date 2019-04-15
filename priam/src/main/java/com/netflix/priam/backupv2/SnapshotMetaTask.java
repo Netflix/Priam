@@ -120,19 +120,23 @@ public class SnapshotMetaTask extends AbstractBackup {
                 CronTimer.getCronTimer(
                         JOBNAME, backupRestoreConfig.getSnapshotMetaServiceCronExpression());
         if (timer == null) {
-            // Clean up all the backup directories, if any.
-            Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
-            for (Path backupDirPath : backupPaths)
-                try (DirectoryStream<Path> directoryStream =
-                        Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
-                    for (Path backupDir : directoryStream) {
-                        if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
-                            FileUtils.deleteDirectory(backupDir.toFile());
-                        }
-                    }
-                }
+            cleanOldBackups(config);
         }
         return timer;
+    }
+
+    private static void cleanOldBackups(IConfiguration config) throws Exception {
+        // Clean up all the backup directories, if any.
+        Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
+        for (Path backupDirPath : backupPaths)
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                for (Path backupDir : directoryStream) {
+                    if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
+                        FileUtils.deleteDirectory(backupDir.toFile());
+                    }
+                }
+            }
     }
 
     public static boolean isBackupEnabled(

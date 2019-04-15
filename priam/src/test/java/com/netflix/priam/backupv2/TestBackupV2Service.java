@@ -26,6 +26,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.tuner.CassandraTunerService;
 import com.netflix.priam.tuner.TuneCassandra;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
@@ -45,11 +46,13 @@ import org.quartz.SchedulerException;
 public class TestBackupV2Service {
     private final PriamScheduler scheduler;
     private final SnapshotMetaTask snapshotMetaTask;
+    private final CassandraTunerService cassandraTunerService;
 
     public TestBackupV2Service() {
         Injector injector = Guice.createInjector(new BRTestModule());
         scheduler = injector.getInstance(PriamScheduler.class);
         snapshotMetaTask = injector.getInstance(SnapshotMetaTask.class);
+        cassandraTunerService = injector.getInstance(CassandraTunerService.class);
     }
 
     @Before
@@ -96,7 +99,11 @@ public class TestBackupV2Service {
 
         IService backupService =
                 new BackupV2Service(
-                        configuration, backupRestoreConfig, scheduler, snapshotMetaTask);
+                        configuration,
+                        backupRestoreConfig,
+                        scheduler,
+                        snapshotMetaTask,
+                        cassandraTunerService);
         backupService.scheduleService();
         Assert.assertTrue(scheduler.getScheduler().getJobGroupNames().isEmpty());
 
@@ -131,7 +138,11 @@ public class TestBackupV2Service {
         };
         IService backupService =
                 new BackupV2Service(
-                        configuration, backupRestoreConfig, scheduler, snapshotMetaTask);
+                        configuration,
+                        backupRestoreConfig,
+                        scheduler,
+                        snapshotMetaTask,
+                        cassandraTunerService);
         backupService.scheduleService();
         Assert.assertEquals(4, scheduler.getScheduler().getJobKeys(null).size());
     }
@@ -156,7 +167,11 @@ public class TestBackupV2Service {
         };
         IService backupService =
                 new BackupV2Service(
-                        configuration, backupRestoreConfig, scheduler, snapshotMetaTask);
+                        configuration,
+                        backupRestoreConfig,
+                        scheduler,
+                        snapshotMetaTask,
+                        cassandraTunerService);
         backupService.scheduleService();
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
     }
@@ -179,26 +194,25 @@ public class TestBackupV2Service {
                 result = true;
                 backupRestoreConfig.enableV2Backups();
                 result = true;
-                result = false;
                 backupRestoreConfig.getBackupVerificationCronExpression();
                 result = "-1";
                 backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
                 result = 600;
                 configuration.getBackupCronExpression();
                 result = "-1";
-                JMXNodeTool.instance(configuration);
-                result = nodeTool;
-                nodeTool.setIncrementalBackupsEnabled(false);
-                times = 1;
             }
         };
         IService backupService =
                 new BackupV2Service(
-                        configuration, backupRestoreConfig, scheduler, snapshotMetaTask);
+                        configuration,
+                        backupRestoreConfig,
+                        scheduler,
+                        snapshotMetaTask,
+                        cassandraTunerService);
         backupService.scheduleService();
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
 
-        ((BackupV2Service) backupService).updateService();
-        Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
+        backupService.onChangeUpdateService();
+        Assert.assertEquals(0, scheduler.getScheduler().getJobKeys(null).size());
     }
 }

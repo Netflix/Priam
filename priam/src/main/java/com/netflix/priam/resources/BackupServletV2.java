@@ -21,8 +21,8 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
-import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.BackupV2Service;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -104,7 +104,7 @@ public class BackupServletV2 {
     @GET
     @Path("/updateService")
     public Response updateService() throws Exception {
-        backupService.updateService();
+        backupService.onChangeUpdateService();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

@@ -21,22 +21,23 @@ import com.google.inject.Inject;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
-import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.tuner.TuneCassandra;
-import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.tuner.CassandraTunerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 3/9/19. */
+/**
+ * Encapsulate the backup service 1.0 - Execute all the tasks required to run backup service.
+ *
+ * <p>Created by aagrawal on 3/9/19.
+ */
 public class BackupService implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
     private final IBackupRestoreConfig backupRestoreConfig;
-    private final InstanceIdentity instanceIdentity;
+    private final CassandraTunerService cassandraTunerService;
     private static final Logger logger = LoggerFactory.getLogger(BackupService.class);
 
     @Inject
@@ -44,11 +45,11 @@ public class BackupService implements IService {
             IConfiguration config,
             IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler priamScheduler,
-            InstanceIdentity instanceIdentity) {
+            CassandraTunerService cassandraTunerService) {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = priamScheduler;
-        this.instanceIdentity = instanceIdentity;
+        this.cassandraTunerService = cassandraTunerService;
     }
 
     @Override
@@ -74,20 +75,12 @@ public class BackupService implements IService {
         scheduleTask(scheduler, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
 
-    public void updateService() throws Exception {
-        // Update the cassandra to stop writing new incremental files, if any.
-        new RetryableCallable<Void>(6, 10000) {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(config);
-                nodetool.setIncrementalBackupsEnabled(
-                        IncrementalBackup.isEnabled(config, backupRestoreConfig));
-                return null;
-            }
-        }.call();
-        // Re-schedule services.
-        scheduleService();
-        // Re-write the cassandra.yaml so if cassandra restarts it is a NO-OP
+    @Override
+    public void updateServicePre() throws Exception {
         // Run the task to tune Cassandra
-        scheduler.runTaskNow(TuneCassandra.class);
+        cassandraTunerService.onChangeUpdateService();
     }
+
+    @Override
+    public void updateServicePost() throws Exception {}
 }

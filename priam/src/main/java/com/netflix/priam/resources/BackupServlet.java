@@ -95,7 +95,7 @@ public class BackupServlet {
     @GET
     @Path("/updateService")
     public Response updateService() throws Exception {
-        backupService.updateService();
+        backupService.onChangeUpdateService();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

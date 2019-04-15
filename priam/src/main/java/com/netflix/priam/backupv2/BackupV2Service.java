@@ -21,21 +21,23 @@ import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.tuner.TuneCassandra;
-import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.tuner.CassandraTunerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 3/9/19. */
+/**
+ * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.
+ * Created by aagrawal on 3/9/19.
+ */
 public class BackupV2Service implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration configuration;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final SnapshotMetaTask snapshotMetaTask;
+    private final CassandraTunerService cassandraTunerService;
     private static final Logger logger = LoggerFactory.getLogger(BackupV2Service.class);
 
     @Inject
@@ -43,11 +45,13 @@ public class BackupV2Service implements IService {
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler scheduler,
-            SnapshotMetaTask snapshotMetaService) {
+            SnapshotMetaTask snapshotMetaService,
+            CassandraTunerService cassandraTunerService) {
         this.configuration = configuration;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.snapshotMetaTask = snapshotMetaService;
+        this.cassandraTunerService = cassandraTunerService;
     }
 
     @Override
@@ -81,20 +85,12 @@ public class BackupV2Service implements IService {
                 IncrementalBackup.getTimer(configuration, backupRestoreConfig));
     }
 
-    public void updateService() throws Exception {
-        // Update the cassandra to stop writing new incremental files, if any.
-        new RetryableCallable<Void>(6, 10000) {
-            public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
-                nodetool.setIncrementalBackupsEnabled(
-                        IncrementalBackup.isEnabled(configuration, backupRestoreConfig));
-                return null;
-            }
-        }.call();
-        // Re-schedule services.
-        scheduleService();
-        // Re-write the cassandra.yaml so if cassandra restarts it is a NO-OP
-        // Run the task to tune Cassandra
-        scheduler.runTaskNow(TuneCassandra.class);
+    @Override
+    public void updateServicePre() throws Exception {
+        // Update the cassandra to enable/disable new incremental files.
+        cassandraTunerService.onChangeUpdateService();
     }
+
+    @Override
+    public void updateServicePost() throws Exception {}
 }

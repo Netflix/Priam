@@ -19,8 +19,16 @@ package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backupv2.MetaV2Proxy;
+import com.netflix.priam.utils.DateUtil;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +58,58 @@ public class BackupRestoreUtil {
         logger.info("Exclude filter set: {}", configExcludeFilter);
         logger.info("Include filter set: {}", configIncludeFilter);
         return this;
+    }
+
+    public static Optional<AbstractBackupPath> getLatestValidMetaPath(
+            IMetaProxy metaProxy, DateUtil.DateRange dateRange) {
+        // Get a list of manifest files.
+        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
+
+        // Find a valid manifest file.
+        for (AbstractBackupPath meta : metas) {
+            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
+            if (result.valid) {
+                return Optional.of(meta);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    public static List<AbstractBackupPath> getAllFiles(
+            AbstractBackupPath latestValidMetaFile,
+            DateUtil.DateRange dateRange,
+            IMetaProxy metaProxy,
+            Provider<AbstractBackupPath> pathProvider)
+            throws Exception {
+        // Download the meta.json file.
+        Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile);
+        // Parse meta.json file to find the files required to download from this snapshot.
+        List<AbstractBackupPath> allFiles =
+                metaProxy
+                        .getSSTFilesFromMeta(metaFile)
+                        .stream()
+                        .map(
+                                value -> {
+                                    AbstractBackupPath path = pathProvider.get();
+                                    path.parseRemote(value);
+                                    return path;
+                                })
+                        .collect(Collectors.toList());
+
+        FileUtils.deleteQuietly(metaFile.toFile());
+
+        // Download incremental SSTables after the snapshot meta file.
+        Instant snapshotTime;
+        if (metaProxy instanceof MetaV2Proxy) snapshotTime = latestValidMetaFile.getLastModified();
+        else snapshotTime = latestValidMetaFile.getTime().toInstant();
+
+        DateUtil.DateRange incrementalDateRange =
+                new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
+        Iterator<AbstractBackupPath> incremental = metaProxy.getIncrementals(incrementalDateRange);
+        while (incremental.hasNext()) allFiles.add(incremental.next());
+
+        return allFiles;
     }
 
     public static final Map<String, List<String>> getFilter(String inputFilter)

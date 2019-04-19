@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
  * This class is used to TTL or delete the SSTable components from the backups after they are not
  * referenced in the backups for more than {@link IConfiguration#getBackupRetentionDays()}. This
  * operation is executed on CRON and is configured via {@link
- * IBackupRestoreConfig#getBackupTTLCronExpression()}.
+ * IBackupRestoreConfig#getBackupTTLMonitorPeriodInSec()}.
  *
  * <p>To TTL the SSTable components we refer to the first manifest file on the remote file system
  * after the TTL period. Any sstable components referenced in that manifest file should not be
@@ -148,7 +148,7 @@ public class BackupTTLTask extends Task {
                             new DateUtil.DateRange(
                                     start_of_feature, dateToTtl.minus(1, ChronoUnit.HOURS)));
 
-            if (metas != null) {
+            if (metas != null || metas.size() != 0) {
                 logger.info(
                         "Will delete(TTL) {} META files starting from: [{}]",
                         metas.size(),
@@ -241,7 +241,7 @@ public class BackupTTLTask extends Task {
      */
     public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
         return SimpleTimer.getSimpleTimer(
-                JOBNAME, backupRestoreConfig.getBackupTTLMonitorPeriodInSec());
+                JOBNAME, backupRestoreConfig.getBackupTTLMonitorPeriodInSec() * 1000);
     }
 
     private class MetaFileWalker extends MetaFileReader {

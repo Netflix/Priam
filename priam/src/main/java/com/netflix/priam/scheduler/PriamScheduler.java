@@ -52,7 +52,7 @@ public class PriamScheduler {
                 JobBuilder.newJob()
                         .withIdentity(name, Scheduler.DEFAULT_GROUP)
                         .ofType(taskclass)
-                        .build(); // new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
+                        .build();
         if (timer.getCronExpression() != null && !timer.getCronExpression().isEmpty()) {
             logger.info(
                     "Scheduled task metadata.  Task name: {}" + ", cron expression: {}",
@@ -70,14 +70,13 @@ public class PriamScheduler {
             final String name,
             Class<? extends Task> taskclass,
             final TaskTimer timer,
-            final int delayInSeconds)
-            throws SchedulerException, ParseException {
+            final int delayInSeconds) {
         assert timer != null : "Cannot add scheduler task " + name + " as no timer is set";
         final JobDetail job =
                 JobBuilder.newJob()
                         .withIdentity(name, Scheduler.DEFAULT_GROUP)
                         .ofType(taskclass)
-                        .build(); // new JobDetail(name, Scheduler.DEFAULT_GROUP, taskclass);
+                        .build();
 
         // we know Priam doesn't do too many new tasks, so this is probably easy/safe/simple
         new Thread(
@@ -104,8 +103,8 @@ public class PriamScheduler {
         jobFactory.guice.getInstance(taskclass).execute(null);
     }
 
-    public void deleteTask(String name) throws SchedulerException, ParseException {
-        scheduler.deleteJob(new JobKey(name, Scheduler.DEFAULT_GROUP));
+    public void deleteTask(String name) throws SchedulerException {
+        scheduler.unscheduleJob(new TriggerKey(name, Scheduler.DEFAULT_GROUP));
     }
 
     public final Scheduler getScheduler() {

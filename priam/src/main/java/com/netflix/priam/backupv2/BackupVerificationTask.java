@@ -90,7 +90,7 @@ public class BackupVerificationTask extends Task {
         Optional<BackupVerificationResult> verificationResult =
                 backupVerification.verifyBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE, false, dateRange);
-        if (verificationResult.isPresent() && !verificationResult.get().valid) {
+        if (!verificationResult.isPresent() || !verificationResult.get().valid) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());

@@ -44,7 +44,6 @@ public class TestSnapshotMetaTask {
     private final IBackupRestoreConfig backupRestoreConfig;
     private final SnapshotMetaTask snapshotMetaService;
     private final TestMetaFileReader metaFileReader;
-    private final PrefixGenerator prefixGenerator;
     private final InstanceInfo instanceInfo;
 
     public TestSnapshotMetaTask() {
@@ -54,7 +53,6 @@ public class TestSnapshotMetaTask {
         backupRestoreConfig = injector.getInstance(IBackupRestoreConfig.class);
         snapshotMetaService = injector.getInstance(SnapshotMetaTask.class);
         metaFileReader = new TestMetaFileReader();
-        prefixGenerator = injector.getInstance(PrefixGenerator.class);
         instanceInfo = injector.getInstance(InstanceInfo.class);
     }
 

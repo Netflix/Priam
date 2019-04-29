@@ -52,14 +52,14 @@ public class TuneCassandra extends Task {
                 isDone = true;
                 instanceState.setYmlWritten(true);
             } catch (IOException e) {
-                LOGGER.error("Fail wrting cassandra.yml file. Retry again!", e);
+                LOGGER.error("Fail writing cassandra.yml file. Retry again!", e);
             }
         }
     }
 
     @Override
     public String getName() {
-        return "Tune-Cassandra";
+        return JOBNAME;
     }
 
     public static TaskTimer getTimer() {

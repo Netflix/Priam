@@ -64,7 +64,7 @@ public class TestSnapshotMetaTask {
 
     @Test
     public void testSnapshotMetaServiceEnabled() throws Exception {
-        TaskTimer taskTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
+        TaskTimer taskTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
         Assert.assertNotNull(taskTimer);
     }
 
@@ -86,7 +86,8 @@ public class TestSnapshotMetaTask {
                 noOfCf,
                 noOfSstables,
                 AbstractBackup.SNAPSHOT_FOLDER,
-                snapshotName);
+                snapshotName,
+                true);
         snapshotMetaService.setSnapshotName(snapshotName);
         Path metaFileLocation =
                 snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();

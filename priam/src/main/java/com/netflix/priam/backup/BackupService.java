@@ -19,49 +19,68 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.IService;
-import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.PriamScheduler;
-import org.apache.commons.collections4.CollectionUtils;
+import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.tuner.CassandraTunerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 3/9/19. */
+/**
+ * Encapsulate the backup service 1.0 - Execute all the tasks required to run backup service.
+ *
+ * <p>Created by aagrawal on 3/9/19.
+ */
 public class BackupService implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
-    private final InstanceIdentity instanceIdentity;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final CassandraTunerService cassandraTunerService;
     private static final Logger logger = LoggerFactory.getLogger(BackupService.class);
 
     @Inject
     public BackupService(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler priamScheduler,
-            InstanceIdentity instanceIdentity) {
+            CassandraTunerService cassandraTunerService) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = priamScheduler;
-        this.instanceIdentity = instanceIdentity;
+        this.cassandraTunerService = cassandraTunerService;
     }
 
     @Override
     public void scheduleService() throws Exception {
         // Start the snapshot backup schedule - Always run this. (If you want to
         // set it off, set backup hour to -1) or set backup cron to "-1"
-        if (SnapshotBackup.getTimer(config) != null
-                && (CollectionUtils.isEmpty(config.getBackupRacs())
-                        || config.getBackupRacs()
-                                .contains(instanceIdentity.getInstanceInfo().getRac()))) {
-            scheduleTask(scheduler, SnapshotBackup.class, SnapshotBackup.getTimer(config));
+        TaskTimer snapshotTimer = SnapshotBackup.getTimer(config);
+        scheduleTask(scheduler, SnapshotBackup.class, snapshotTimer);
 
-            // Start the Incremental backup schedule
-            scheduleTask(scheduler, IncrementalBackup.class, IncrementalBackup.getTimer(config));
+        if (snapshotTimer != null) {
+            // Schedule commit log task
+            scheduleTask(
+                    scheduler, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
         }
 
-        // Schedule commit log task
-        scheduleTask(scheduler, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
+        // Start the Incremental backup schedule if enabled
+        scheduleTask(
+                scheduler,
+                IncrementalBackup.class,
+                IncrementalBackup.getTimer(config, backupRestoreConfig));
 
         // Set cleanup
         scheduleTask(scheduler, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
+
+    @Override
+    public void updateServicePre() throws Exception {
+        // Run the task to tune Cassandra
+        cassandraTunerService.onChangeUpdateService();
+    }
+
+    @Override
+    public void updateServicePost() throws Exception {}
 }

@@ -21,6 +21,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BackupVersion;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.utils.DateUtil;
@@ -47,25 +48,31 @@ public class BackupServlet {
     private static final String REST_HEADER_RANGE = "daterange";
     private static final String REST_HEADER_FILTER = "filter";
     private final IConfiguration config;
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final IBackupFileSystem backupFs;
     private final SnapshotBackup snapshotBackup;
     private final BackupVerification backupVerification;
     @Inject private PriamScheduler scheduler;
     private final IBackupStatusMgr completedBkups;
+    private final BackupService backupService;
     @Inject private MetaData metaData;
 
     @Inject
     public BackupServlet(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             @Named("backup") IBackupFileSystem backupFs,
             SnapshotBackup snapshotBackup,
             IBackupStatusMgr completedBkups,
-            BackupVerification backupVerification) {
+            BackupVerification backupVerification,
+            BackupService backupService) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.backupFs = backupFs;
         this.snapshotBackup = snapshotBackup;
         this.completedBkups = completedBkups;
         this.backupVerification = backupVerification;
+        this.backupService = backupService;
     }
 
     @GET
@@ -79,7 +86,16 @@ public class BackupServlet {
     @Path("/incremental_backup")
     public Response backupIncrementals() throws Exception {
         scheduler.addTask(
-                "IncrementalBackup", IncrementalBackup.class, IncrementalBackup.getTimer(config));
+                "IncrementalBackup",
+                IncrementalBackup.class,
+                IncrementalBackup.getTimer(config, backupRestoreConfig));
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/updateService")
+    public Response updateService() throws Exception {
+        backupService.onChangeUpdateService();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

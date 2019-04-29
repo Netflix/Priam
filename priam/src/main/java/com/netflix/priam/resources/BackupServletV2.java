@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
+import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IConfiguration;
@@ -55,6 +56,7 @@ public class BackupServletV2 {
     private final IBackupFileSystem fs;
     private final IMetaProxy metaProxy;
     private final Provider<AbstractBackupPath> pathProvider;
+    private final BackupV2Service backupService;
     private static final String REST_SUCCESS = "[\"ok\"]";
 
     @Inject
@@ -66,7 +68,8 @@ public class BackupServletV2 {
             IConfiguration configuration,
             IFileSystemContext backupFileSystemCtx,
             @Named("v2") IMetaProxy metaV2Proxy,
-            Provider<AbstractBackupPath> pathProvider) {
+            Provider<AbstractBackupPath> pathProvider,
+            BackupV2Service backupService) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
@@ -74,6 +77,7 @@ public class BackupServletV2 {
         this.fs = backupFileSystemCtx.getFileStrategy(configuration);
         this.metaProxy = metaV2Proxy;
         this.pathProvider = pathProvider;
+        this.backupService = backupService;
     }
 
     @GET
@@ -94,6 +98,13 @@ public class BackupServletV2 {
     @Path("/clearCache")
     public Response clearCache() throws Exception {
         fs.clearCache();
+        return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/updateService")
+    public Response updateService() throws Exception {
+        backupService.onChangeUpdateService();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
 

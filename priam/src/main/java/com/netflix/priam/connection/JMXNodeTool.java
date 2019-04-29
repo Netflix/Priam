@@ -406,11 +406,11 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
     }
 
     public void setIncrementalBackupsEnabled(boolean enabled) {
-        setIncrementalBackupsEnabled(enabled);
+        super.setIncrementalBackupsEnabled(enabled);
     }
 
     public boolean isIncrementalBackupsEnabled() {
-        return isIncrementalBackupsEnabled();
+        return super.isIncrementalBackupsEnabled();
     }
 
     public void refresh(List<String> keyspaces)

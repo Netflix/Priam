@@ -405,6 +405,14 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         // forceKeyspaceCleanup(keyspace, new String[0]);
     }
 
+    public void setIncrementalBackupsEnabled(boolean enabled) {
+        super.setIncrementalBackupsEnabled(enabled);
+    }
+
+    public boolean isIncrementalBackupsEnabled() {
+        return super.isIncrementalBackupsEnabled();
+    }
+
     public void refresh(List<String> keyspaces)
             throws IOException, ExecutionException, InterruptedException {
         Iterator<Entry<String, ColumnFamilyStoreMBean>> it =

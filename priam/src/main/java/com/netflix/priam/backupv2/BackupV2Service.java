@@ -24,15 +24,20 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
+import com.netflix.priam.tuner.CassandraTunerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 3/9/19. */
+/**
+ * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.
+ * Created by aagrawal on 3/9/19.
+ */
 public class BackupV2Service implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration configuration;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final SnapshotMetaTask snapshotMetaTask;
+    private final CassandraTunerService cassandraTunerService;
     private static final Logger logger = LoggerFactory.getLogger(BackupV2Service.class);
 
     @Inject
@@ -40,19 +45,21 @@ public class BackupV2Service implements IService {
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler scheduler,
-            SnapshotMetaTask snapshotMetaService) {
+            SnapshotMetaTask snapshotMetaService,
+            CassandraTunerService cassandraTunerService) {
         this.configuration = configuration;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.snapshotMetaTask = snapshotMetaService;
+        this.cassandraTunerService = cassandraTunerService;
     }
 
     @Override
     public void scheduleService() throws Exception {
-        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
-        if (snapshotMetaTimer != null) {
-            scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
+        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
+        scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
 
+        if (snapshotMetaTimer != null) {
             // Try to upload previous snapshots, if any which might have been interrupted by Priam
             // restart.
             snapshotMetaTask.uploadFiles();
@@ -66,18 +73,24 @@ public class BackupV2Service implements IService {
                     scheduler,
                     BackupVerificationTask.class,
                     BackupVerificationTask.getTimer(backupRestoreConfig));
-
-            // Start the Incremental backup schedule if enabled
-            if (backupRestoreConfig.enableV2Backups()) {
-                // Delete the old task, if scheduled. This is required, as we stop taking backup
-                // 1.0, we still want to take incremental backups
-                // Once backup 1.0 is gone, we should not check for enableV2Backups.
-                scheduler.deleteTask(IncrementalBackup.JOBNAME);
-                scheduleTask(
-                        scheduler,
-                        IncrementalBackup.class,
-                        IncrementalBackup.getTimer(configuration));
-            }
+        } else {
+            scheduler.deleteTask(BackupTTLTask.JOBNAME);
+            scheduler.deleteTask(BackupVerificationTask.JOBNAME);
         }
+
+        // Start the Incremental backup schedule if enabled
+        scheduleTask(
+                scheduler,
+                IncrementalBackup.class,
+                IncrementalBackup.getTimer(configuration, backupRestoreConfig));
     }
+
+    @Override
+    public void updateServicePre() throws Exception {
+        // Update the cassandra to enable/disable new incremental files.
+        cassandraTunerService.onChangeUpdateService();
+    }
+
+    @Override
+    public void updateServicePost() throws Exception {}
 }

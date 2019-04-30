@@ -31,7 +31,7 @@ import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.restore.RestoreContext;
 import com.netflix.priam.scheduler.PriamScheduler;
-import com.netflix.priam.tuner.TuneCassandra;
+import com.netflix.priam.tuner.CassandraTunerService;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.IOException;
@@ -49,6 +49,7 @@ public class PriamServer implements IService {
     private final RestoreContext restoreContext;
     private final IService backupV2Service;
     private final IService backupService;
+    private final IService cassandraTunerService;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
@@ -61,7 +62,8 @@ public class PriamServer implements IService {
             ICassandraProcess cassProcess,
             RestoreContext restoreContext,
             BackupService backupService,
-            BackupV2Service backupV2Service) {
+            BackupV2Service backupV2Service,
+            CassandraTunerService cassandraTunerService) {
         this.config = config;
         this.scheduler = scheduler;
         this.instanceIdentity = id;
@@ -70,6 +72,7 @@ public class PriamServer implements IService {
         this.restoreContext = restoreContext;
         this.backupService = backupService;
         this.backupV2Service = backupV2Service;
+        this.cassandraTunerService = cassandraTunerService;
     }
 
     private void createDirectories() throws IOException {
@@ -107,8 +110,8 @@ public class PriamServer implements IService {
                     UpdateSecuritySettings.getTimer(instanceIdentity));
         }
 
-        // Run the task to tune Cassandra
-        scheduler.runTaskNow(TuneCassandra.class);
+        // Set up cassandra tuning.
+        cassandraTunerService.scheduleService();
 
         // Determine if we need to restore from backup else start cassandra.
         if (restoreContext.isRestoreEnabled()) {
@@ -150,6 +153,12 @@ public class PriamServer implements IService {
         // Set up V2 Snapshot Service
         backupV2Service.scheduleService();
     }
+
+    @Override
+    public void updateServicePre() throws Exception {}
+
+    @Override
+    public void updateServicePost() throws Exception {}
 
     public InstanceIdentity getInstanceIdentity() {
         return instanceIdentity;

@@ -17,6 +17,7 @@ import static com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
 import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 
 import com.google.inject.Inject;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.tuner.StandardTuner;
@@ -42,10 +43,11 @@ public class DseTuner extends StandardTuner {
     @Inject
     public DseTuner(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             IDseConfiguration dseConfig,
             IAuditLogTuner auditLogTuner,
             InstanceInfo instanceInfo) {
-        super(config, instanceInfo);
+        super(config, backupRestoreConfig, instanceInfo);
         this.dseConfig = dseConfig;
         this.auditLogTuner = auditLogTuner;
     }

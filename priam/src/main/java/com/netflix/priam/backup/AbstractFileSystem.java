@@ -80,7 +80,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         // Add notifications.
         this.addObserver(backupNotificationMgr);
         this.objectCache =
-                CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
+                CacheBuilder.newBuilder()
+                        .maximumSize(configuration.getBackupQueueSize())
+                        .expireAfterAccess(configuration.getBackupCacheTTLInDays(), TimeUnit.DAYS)
+                        .build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
         /*
         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta

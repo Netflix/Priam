@@ -36,14 +36,14 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 3/1/19. */
-public class TestDeadTokenRetriever {
-    @Mocked private IPriamInstanceFactory factory;
+public class DeadTokenRetrieverTest {
+    @Mocked private IPriamInstanceFactory<PriamInstance> factory;
     @Mocked private IMembership membership;
     private IDeadTokenRetriever deadTokenRetriever;
     private InstanceInfo instanceInfo;
     private IConfiguration configuration;
 
-    public TestDeadTokenRetriever() {
+    public DeadTokenRetrieverTest() {
         Injector injector = Guice.createInjector(new BRTestModule());
         if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
@@ -108,8 +108,9 @@ public class TestDeadTokenRetriever {
                 result = allInstances;
                 membership.getRacMembership();
                 result = racMembership;
-                systemUtils.getDataFromUrl(anyString);
-                result = null;
+                SystemUtils.getDataFromUrl(anyString);
+                result =
+                        "[{\"TOKENS\":\"[1]\",\"PUBLIC_IP\":\"\",\"RACK\":\"az1\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[2]\",\"PUBLIC_IP\":\"\",\"RACK\":\"az1\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"}]";
                 times = 1;
             }
         };
@@ -134,7 +135,7 @@ public class TestDeadTokenRetriever {
                 result = allInstances;
                 membership.getRacMembership();
                 result = racMembership;
-                systemUtils.getDataFromUrl(anyString);
+                SystemUtils.getDataFromUrl(anyString);
                 result = gossipInfo;
                 times = 1;
             }
@@ -156,14 +157,13 @@ public class TestDeadTokenRetriever {
         racMembership.add(instanceInfo.getInstanceId());
         String gossipResponse =
                 "[{\"TOKENS\":\"[1]\",\"PUBLIC_IP\":\"127.0.0.1\",\"RACK\":\"az1\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[2]\",\"PUBLIC_IP\":\"127.0.0.2\",\"RACK\":\"az1\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[3]\",\"PUBLIC_IP\":\"127.0.0.3\",\"RACK\":\"az1\",\"STATUS\":\"shutdown\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[4]\",\"PUBLIC_IP\":\"127.0.0.4\",\"RACK\":\"az2\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[5]\",\"PUBLIC_IP\":\"127.0.0.5\",\"RACK\":\"az2\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"},{\"TOKENS\":\"[6]\",\"PUBLIC_IP\":\"127.0.0.6\",\"RACK\":\"az2\",\"STATUS\":\"NORMAL\",\"DC\":\"us-east-1\"}]";
-        PriamInstance instance = null;
         new Expectations() {
             {
                 factory.getAllIds(anyString);
                 result = allInstances;
                 membership.getRacMembership();
                 result = racMembership;
-                systemUtils.getDataFromUrl(anyString);
+                SystemUtils.getDataFromUrl(anyString);
                 returns(gossipResponse, gossipResponse, null, gossipResponse);
             }
         };

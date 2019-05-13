@@ -28,13 +28,18 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
 import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
+import com.netflix.priam.identity.token.TokenRetrieverUtils;
+import com.netflix.priam.identity.token.TokenRetrieverUtils.GossipParseException;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.net.UnknownHostException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +79,12 @@ public class InstanceIdentity {
     private final IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
     private final INewTokenRetriever newTokenRetriever;
 
+    private final java.util.function.Predicate<PriamInstance> sameHostPredicate =
+            (i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId());
+
     @Inject
-    // Note: do not parameterized the generic type variable to an implementation as it confuses
+    // Note: do not parameterized the generic type variable to an implementation as
+    // it confuses
     // Guice in the binding.
     public InstanceIdentity(
             IPriamInstanceFactory factory,
@@ -109,154 +118,167 @@ public class InstanceIdentity {
     }
 
     public void init() throws Exception {
-        // try to grab the token which was already assigned
-        myInstance =
-                new RetryableCallable<PriamInstance>() {
-                    @Override
-                    public PriamInstance retriableCall() throws Exception {
-                        // Check if this node is decommissioned
-                        List<PriamInstance> deadInstances =
-                                factory.getAllIds(config.getAppName() + "-dead");
-                        for (PriamInstance ins : deadInstances) {
-                            logger.info(
-                                    "[Dead] Iterating though the hosts: {}", ins.getInstanceId());
-                            if (ins.getInstanceId().equals(myInstanceInfo.getInstanceId())) {
-                                ins.setOutOfService(true);
-                                logger.info(
-                                        "[Dead]  found that this node is dead."
-                                                + " application: {}"
-                                                + ", id: {}"
-                                                + ", instance: {}"
-                                                + ", region: {}"
-                                                + ", host ip: {}"
-                                                + ", host name: {}"
-                                                + ", token: {}",
-                                        ins.getApp(),
-                                        ins.getId(),
-                                        ins.getInstanceId(),
-                                        ins.getDC(),
-                                        ins.getHostIP(),
-                                        ins.getHostName(),
-                                        ins.getToken());
-                                return ins;
-                            }
-                        }
-                        List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
-                        for (PriamInstance ins : aliveInstances) {
-                            logger.info(
-                                    "[Alive] Iterating though the hosts: {} My id = [{}]",
-                                    ins.getInstanceId(),
-                                    ins.getId());
-                            if (ins.getInstanceId().equals(myInstanceInfo.getInstanceId())) {
-                                logger.info(
-                                        "[Alive]  found that this node is alive."
-                                                + " application: {}"
-                                                + ", id: {}"
-                                                + ", instance: {}"
-                                                + ", region: {}"
-                                                + ", host ip: {}"
-                                                + ", host name: {}"
-                                                + ", token: {}",
-                                        ins.getApp(),
-                                        ins.getId(),
-                                        ins.getInstanceId(),
-                                        ins.getDC(),
-                                        ins.getHostIP(),
-                                        ins.getHostName(),
-                                        ins.getToken());
-                                return ins;
-                            }
-                        }
-                        return null;
-                    }
-                }.call();
+        // Grab the token which was preassigned.
+        logger.info("trying to grab preassigned token.");
+        myInstance = grabPreAssignedToken();
 
-        // Grab a dead token
-        if (null == myInstance) {
-            myInstance =
-                    new RetryableCallable<PriamInstance>() {
-
-                        @Override
-                        public PriamInstance retriableCall() throws Exception {
-                            PriamInstance result;
-                            result = deadTokenRetriever.get();
-                            if (result != null) {
-
-                                isReplace =
-                                        true; // indicate that we are acquiring a dead instance's
-                                // token
-
-                                if (deadTokenRetriever.getReplaceIp()
-                                        != null) { // The IP address of the dead instance to which
-                                    // we will acquire its token
-                                    replacedIp = deadTokenRetriever.getReplaceIp();
-                                }
-                            }
-
-                            return result;
-                        }
-
-                        @Override
-                        public void forEachExecution() {
-                            populateRacMap();
-                            deadTokenRetriever.setLocMap(locMap);
-                        }
-                    }.call();
+        // Grab a dead token.
+        if (myInstance == null) {
+            logger.info("unable to grab preassigned token. trying to grab a dead token.");
+            myInstance = grabDeadToken();
         }
 
-        // Grab a pre-generated token if there is such one
-        if (null == myInstance) {
-
-            myInstance =
-                    new RetryableCallable<PriamInstance>() {
-
-                        @Override
-                        public PriamInstance retriableCall() throws Exception {
-                            PriamInstance result;
-                            result = preGeneratedTokenRetriever.get();
-                            if (result != null) {
-                                isTokenPregenerated = true;
-                            }
-                            return result;
-                        }
-
-                        @Override
-                        public void forEachExecution() {
-                            populateRacMap();
-                            preGeneratedTokenRetriever.setLocMap(locMap);
-                        }
-                    }.call();
+        // Grab a pre-generated token if there is such one.
+        if (myInstance == null) {
+            logger.info("unable to grab a dead token. trying to grab a pregenerated token.");
+            myInstance = grabPreGeneratedToken();
         }
 
         // Grab a new token
-        if (null == myInstance) {
-
-            if (this.config.isCreateNewTokenEnable()) {
-
-                myInstance =
-                        new RetryableCallable<PriamInstance>() {
-
-                            @Override
-                            public PriamInstance retriableCall() throws Exception {
-                                super.set(100, 100);
-                                newTokenRetriever.setLocMap(locMap);
-                                return newTokenRetriever.get();
-                            }
-
-                            @Override
-                            public void forEachExecution() {
-                                populateRacMap();
-                                newTokenRetriever.setLocMap(locMap);
-                            }
-                        }.call();
-
-            } else {
-                throw new IllegalStateException(
-                        "Node attempted to erroneously create a new token when we should be grabbing an existing token.");
-            }
+        if (myInstance == null) {
+            logger.info("unable to grab a pregenerated token. trying to grab a new token.");
+            myInstance = grabNewToken();
         }
 
         logger.info("My token: {}", myInstance.getToken());
+    }
+
+    private PriamInstance grabPreAssignedToken() throws Exception {
+        return new RetryableCallable<PriamInstance>() {
+            @Override
+            public PriamInstance retriableCall() throws Exception {
+                // Check if this node is decommissioned.
+                List<PriamInstance> deadInstances =
+                        factory.getAllIds(config.getAppName() + "-dead");
+                PriamInstance instance =
+                        findInstance(deadInstances, sameHostPredicate).orElse(null);
+                if (instance != null) {
+                    instance.setOutOfService(true);
+                }
+
+                if (instance == null) {
+                    List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
+                    instance = findInstance(aliveInstances, sameHostPredicate).orElse(null);
+
+                    if (instance != null) {
+                        instance.setOutOfService(false);
+
+                        // Priam might have crashed before bootstrapping Cassandra in replace mode.
+                        // So, it is premature to use the assigned token without checking Cassandra
+                        // gossip.
+                        try {
+                            String replaceIp =
+                                    TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                                            aliveInstances, instance.getToken(), instance.getDC());
+                            if (!StringUtils.isEmpty(replaceIp)
+                                    && !replaceIp.equals(instance.getHostIP())) {
+                                setReplacedIp(replaceIp);
+                            }
+                        } catch (GossipParseException e) {
+                        }
+                    }
+                }
+
+                if (instance != null) {
+                    logger.info(
+                            "{} found that this node is {}."
+                                    + " application: {},"
+                                    + " id: {},"
+                                    + " instance: {},"
+                                    + " region: {},"
+                                    + " host ip: {},"
+                                    + " host name: {},"
+                                    + " token: {}",
+                            instance.isOutOfService() ? "[Dead]" : "[Alive]",
+                            instance.isOutOfService() ? "dead" : "alive",
+                            instance.getApp(),
+                            instance.getId(),
+                            instance.getInstanceId(),
+                            instance.getDC(),
+                            instance.getHostIP(),
+                            instance.getHostName(),
+                            instance.getToken());
+                }
+
+                return instance;
+            }
+        }.call();
+    }
+
+    private PriamInstance grabDeadToken() throws Exception {
+        return new RetryableCallable<PriamInstance>() {
+            @Override
+            public PriamInstance retriableCall() throws Exception {
+                PriamInstance result = deadTokenRetriever.get();
+                if (result != null) {
+                    isReplace = true; // indicate that we are acquiring a dead instance's token.
+
+                    if (deadTokenRetriever.getReplaceIp()
+                            != null) { // The IP address of the dead instance to which
+                        // we will acquire its token
+                        replacedIp = deadTokenRetriever.getReplaceIp();
+                    }
+                }
+
+                return result;
+            }
+
+            @Override
+            public void forEachExecution() {
+                populateRacMap();
+                deadTokenRetriever.setLocMap(locMap);
+            }
+        }.call();
+    }
+
+    private PriamInstance grabPreGeneratedToken() throws Exception {
+        return new RetryableCallable<PriamInstance>() {
+            @Override
+            public PriamInstance retriableCall() throws Exception {
+                PriamInstance result = preGeneratedTokenRetriever.get();
+                if (result != null) {
+                    isTokenPregenerated = true;
+                }
+                return result;
+            }
+
+            @Override
+            public void forEachExecution() {
+                populateRacMap();
+                preGeneratedTokenRetriever.setLocMap(locMap);
+            }
+        }.call();
+    }
+
+    private PriamInstance grabNewToken() throws Exception {
+        if (!this.config.isCreateNewTokenEnable()) {
+            throw new IllegalStateException(
+                    "Node attempted to erroneously create a new token when we should be grabbing an existing token.");
+        }
+
+        return new RetryableCallable<PriamInstance>() {
+            @Override
+            public PriamInstance retriableCall() throws Exception {
+                set(100, 100);
+                newTokenRetriever.setLocMap(locMap);
+                return newTokenRetriever.get();
+            }
+
+            @Override
+            public void forEachExecution() {
+                populateRacMap();
+                newTokenRetriever.setLocMap(locMap);
+            }
+        }.call();
+    }
+
+    private Optional<PriamInstance> findInstance(
+            List<PriamInstance> instances, java.util.function.Predicate<PriamInstance> predicate) {
+        return Optional.ofNullable(instances)
+                .orElse(Collections.emptyList())
+                .stream()
+                .filter(predicate)
+                .findFirst();
     }
 
     private void populateRacMap() {

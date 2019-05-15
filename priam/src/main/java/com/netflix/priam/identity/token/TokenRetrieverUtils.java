@@ -34,10 +34,11 @@ public class TokenRetrieverUtils {
      *     gossip info.
      */
     public static String inferTokenOwnerFromGossip(
-            List<PriamInstance> allIds, String token, String dc) throws GossipParseException {
+            List<? extends PriamInstance> allIds, String token, String dc)
+            throws GossipParseException {
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
-        List<PriamInstance> eligibleInstances =
+        List<? extends PriamInstance> eligibleInstances =
                 allIds.stream()
                         .filter(priamInstance -> !priamInstance.getToken().equalsIgnoreCase(token))
                         .filter(priamInstance -> priamInstance.getDC().equalsIgnoreCase(dc))

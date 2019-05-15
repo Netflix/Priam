@@ -94,8 +94,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
                     || super.isInstanceDummy(priamInstance)) continue;
             // TODO: If instance is in SHUTTING_DOWN mode, it might not show up in asg
             // instances (if cloud control plane is having issues), thus, we should not try
-            // to
-            // replace the instance as it will lead to "Cannot replace a live node" issue.
+            // to replace the instance as it will lead to "Cannot replace a live node"
+            // issue.
 
             logger.info("Found dead instance: {}", priamInstance.toString());
 
@@ -122,7 +122,6 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
 
                 // Lets not replace the instance if gossip info is not merging!!
                 if (replacedIp == null) return null;
-
                 logger.info(
                         "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
                         priamInstance.getToken(),
@@ -131,6 +130,10 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             } catch (GossipParseException e) {
                 // In case of gossip exception, fallback to IP in token database.
                 this.replacedIp = priamInstance.getHostIP();
+                logger.info(
+                        "Will try to replace token: {} with replacedIp from Token database: {}",
+                        priamInstance.getToken(),
+                        priamInstance.getHostIP());
             }
 
             PriamInstance result;
@@ -153,7 +156,8 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
                                 + " , will sleep for "
                                 + sleepTime
                                 + " millisecs before we retry.");
-                Thread.currentThread().sleep(sleepTime);
+                Thread.sleep(sleepTime);
+
                 throw ex;
             }
 

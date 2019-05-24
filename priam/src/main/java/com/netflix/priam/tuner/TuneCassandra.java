@@ -49,6 +49,7 @@ public class TuneCassandra extends Task {
             try {
                 tuner.writeAllProperties(
                         config.getYamlLocation(), null, config.getSeedProviderName());
+                tuner.updateJVMOptions();
                 isDone = true;
                 instanceState.setYmlWritten(true);
             } catch (IOException e) {

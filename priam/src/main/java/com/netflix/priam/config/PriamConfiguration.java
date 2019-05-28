@@ -21,6 +21,8 @@ import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.configSource.IConfigSource;
 import com.netflix.priam.identity.config.InstanceInfo;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
+import com.netflix.priam.tuner.GCType;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
@@ -211,6 +213,22 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public GCType getGCType() throws UnsupportedTypeException {
+        String gcType = config.get(PRIAM_PRE + ".gc.type", GCType.CMS.getGcType());
+        return GCType.lookup(gcType);
+    }
+
+    @Override
+    public String getJVMExcludeSet() {
+        return config.get(PRIAM_PRE + ".jvm.options.exclude");
+    }
+
+    @Override
+    public String getJVMUpsertSet() {
+        return config.get(PRIAM_PRE + ".jvm.options.upsert");
+    }
+
+    @Override
     public String getFlushCronExpression() {
         return config.get(PRIAM_PRE + ".flush.cron", "-1");
     }
@@ -387,6 +405,16 @@ public class PriamConfiguration implements IConfiguration {
 
     public String getYamlLocation() {
         return config.get(PRIAM_PRE + ".yamlLocation", getCassHome() + "/conf/cassandra.yaml");
+    }
+
+    @Override
+    public boolean supportsTuningJVMOptionsFile() {
+        return config.get(PRIAM_PRE + ".jvm.options.supported", false);
+    }
+
+    @Override
+    public String getJVMOptionsFileLocation() {
+        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm.options");
     }
 
     public String getAuthenticator() {

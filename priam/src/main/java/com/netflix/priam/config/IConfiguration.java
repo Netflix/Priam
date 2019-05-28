@@ -19,6 +19,8 @@ package com.netflix.priam.config;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.ImplementedBy;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
+import com.netflix.priam.tuner.GCType;
 import java.io.File;
 import java.util.Collections;
 import java.util.List;
@@ -39,6 +41,41 @@ public interface IConfiguration {
     /** @return Location to `cassandra.yaml`. */
     default String getYamlLocation() {
         return getCassHome() + "/conf/cassandra.yaml";
+    }
+
+    /**
+     * @return if Priam should tune the jvm.options file Note that Cassandra 2.1 OSS doesn't have
+     *     this file by default, but if someone has added it we can tune it.
+     */
+    default boolean supportsTuningJVMOptionsFile() {
+        return false;
+    }
+
+    /**
+     * @return Path to jvm.options file. This is used to pass JVM options to Cassandra. Note that
+     *     Cassandra 2.1 doesn't by default have this file, but if you add it We will allow you to
+     *     tune it.
+     */
+    default String getJVMOptionsFileLocation() {
+        return getCassHome() + "/conf/jvm.options";
+    }
+
+    /**
+     * @return Type of garbage collection mechanism to use for Cassandra. Supported values are
+     *     CMS,G1GC
+     */
+    default GCType getGCType() throws UnsupportedTypeException {
+        return GCType.CMS;
+    }
+
+    /** @return Set of JVM options to exclude/comment. */
+    default String getJVMExcludeSet() {
+        return StringUtils.EMPTY;
+    }
+
+    /** @return Set of JMV options to add/upsert */
+    default String getJVMUpsertSet() {
+        return StringUtils.EMPTY;
     }
 
     /** @return Path to Cassandra startup script */

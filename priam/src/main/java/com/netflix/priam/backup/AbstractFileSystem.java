@@ -30,11 +30,13 @@ import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -66,7 +68,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
-    private final Cache<Path, Boolean> objectCache;
+    private final Cache<Path, Instant> objectCache;
 
     @Inject
     public AbstractFileSystem(
@@ -245,16 +247,16 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     private void addObjectCache(Path remotePath) {
-        objectCache.put(remotePath, Boolean.TRUE);
+        objectCache.put(remotePath, DateUtil.getInstant());
     }
 
     @Override
     public boolean checkObjectExists(Path remotePath) {
         // Check in cache, if remote file exists.
-        Boolean cacheResult = objectCache.getIfPresent(remotePath);
+        Instant lastUpdatedTimestamp = objectCache.getIfPresent(remotePath);
 
         // Cache hit. Return the value.
-        if (cacheResult != null) return cacheResult;
+        if (lastUpdatedTimestamp != null) return true;
 
         // Cache miss - Check remote file system if object exist.
         boolean remoteFileExist = doesRemoteFileExist(remotePath);

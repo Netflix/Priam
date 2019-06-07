@@ -20,7 +20,6 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.identity.token.TokenRetrieverUtils.GossipParseException;
 import com.netflix.priam.utils.Sleeper;
 import java.util.List;
 import java.util.Random;
@@ -112,29 +111,9 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             // remove it as we marked it down...
             factory.delete(priamInstance);
 
-            // find the replaced IP
-            try {
-                replacedIp =
-                        TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                                allInstancesWithinCluster,
-                                priamInstance.getToken(),
-                                priamInstance.getDC());
-
-                // Lets not replace the instance if gossip info is not merging!!
-                if (replacedIp == null) return null;
-                logger.info(
-                        "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
-                        priamInstance.getToken(),
-                        replacedIp,
-                        priamInstance.getHostIP());
-            } catch (GossipParseException e) {
-                // In case of gossip exception, fallback to IP in token database.
-                this.replacedIp = priamInstance.getHostIP();
-                logger.info(
-                        "Will try to replace token: {} with replacedIp from Token database: {}",
-                        priamInstance.getToken(),
-                        priamInstance.getHostIP());
-            }
+            // use entry in the token database always.
+            // this can cause "can't replace live token errors.
+            this.replacedIp = priamInstance.getHostIP();
 
             PriamInstance result;
             try {

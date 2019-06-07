@@ -36,6 +36,12 @@ public class TokenRetrieverUtils {
     public static String inferTokenOwnerFromGossip(
             List<? extends PriamInstance> allIds, String token, String dc)
             throws GossipParseException {
+        // TODO: Gossip info in some cases doesn't reflect the real C* state.
+        // Not using gossip info for now.
+        if (!useGossipInfo()) {
+            return null;
+        }
+
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
         List<? extends PriamInstance> eligibleInstances =
@@ -98,6 +104,12 @@ public class TokenRetrieverUtils {
                 "Return null: Unable to find enough instances where gossip match. Required: {}",
                 noOfInstancesGossipShouldMatch);
         return null;
+    }
+
+    // TODO: Gossip info in some cases doesn't reflect the real C* state.
+    // Not using gossip info for now.
+    private static boolean useGossipInfo() {
+        return false;
     }
 
     // helper method to get the token owner IP from a Cassandra node.

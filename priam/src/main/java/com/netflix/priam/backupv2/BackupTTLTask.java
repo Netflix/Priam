@@ -148,7 +148,7 @@ public class BackupTTLTask extends Task {
                             new DateUtil.DateRange(
                                     start_of_feature, dateToTtl.minus(1, ChronoUnit.HOURS)));
 
-            if (metas != null || metas.size() != 0) {
+            if (metas != null && metas.size() != 0) {
                 logger.info(
                         "Will delete(TTL) {} META files starting from: [{}]",
                         metas.size(),

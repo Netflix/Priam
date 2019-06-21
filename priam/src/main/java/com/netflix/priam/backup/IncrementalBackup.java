@@ -41,7 +41,6 @@ import org.slf4j.LoggerFactory;
 public class IncrementalBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
-    private final IncrementalMetaData metaData;
     private final BackupRestoreUtil backupRestoreUtil;
     private final IBackupRestoreConfig backupRestoreConfig;
 
@@ -50,12 +49,10 @@ public class IncrementalBackup extends AbstractBackup {
             IConfiguration config,
             IBackupRestoreConfig backupRestoreConfig,
             Provider<AbstractBackupPath> pathFactory,
-            IFileSystemContext backupFileSystemCtx,
-            IncrementalMetaData metaData) {
+            IFileSystemContext backupFileSystemCtx) {
         super(config, backupFileSystemCtx, pathFactory);
         // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
         // uploaded)
-        this.metaData = metaData;
         this.backupRestoreConfig = backupRestoreConfig;
         backupRestoreUtil =
                 new BackupRestoreUtil(
@@ -120,18 +117,6 @@ public class IncrementalBackup extends AbstractBackup {
         BackupFileType fileType = BackupFileType.SST;
         if (backupRestoreConfig.enableV2Backups()) fileType = BackupFileType.SST_V2;
 
-        List<AbstractBackupPath> uploadedFiles =
-                upload(backupDir, fileType, config.enableAsyncIncremental(), true);
-
-        if (!uploadedFiles.isEmpty()) {
-            // format of yyyymmddhhmm (e.g. 201505060901)
-            String incrementalUploadTime =
-                    DateUtil.formatyyyyMMddHHmm(uploadedFiles.get(0).getTime());
-            String metaFileName = "meta_" + columnFamily + "_" + incrementalUploadTime;
-            logger.info("Uploading meta file for incremental backup: {}", metaFileName);
-            this.metaData.setMetaFileName(metaFileName);
-            this.metaData.set(uploadedFiles, incrementalUploadTime);
-            logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
-        }
+        upload(backupDir, fileType, config.enableAsyncIncremental(), true);
     }
 }

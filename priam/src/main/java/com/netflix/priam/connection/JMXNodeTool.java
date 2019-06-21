@@ -278,6 +278,17 @@ public class JMXNodeTool extends NodeProbe implements INodeToolObservable {
         return object;
     }
 
+    public JSONObject statusInformation() throws JSONException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("live", getLiveNodes());
+        jsonObject.put("unreachable", getUnreachableNodes());
+        jsonObject.put("joining", getJoiningNodes());
+        jsonObject.put("leaving", getLeavingNodes());
+        jsonObject.put("moving", getMovingNodes());
+        jsonObject.put("tokenToEndpointMap", getTokenToEndpointMap());
+        return jsonObject;
+    }
+
     public JSONArray ring(String keyspace) throws JSONException {
         JSONArray ring = new JSONArray();
         Map<String, String> tokenToEndpoint = getTokenToEndpointMap();

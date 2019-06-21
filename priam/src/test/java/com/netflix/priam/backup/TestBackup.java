@@ -91,7 +91,7 @@ public class TestBackup {
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(5, filesystem.uploadedFiles.size());
+        Assert.assertEquals(4, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
@@ -142,7 +142,7 @@ public class TestBackup {
         }
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(8, filesystem.uploadedFiles.size());
+        Assert.assertEquals(6, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }

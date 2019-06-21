@@ -131,7 +131,7 @@ public class CassandraAdmin {
             nodeTool = JMXNodeTool.instance(config);
         } catch (JMXConnectionException e) {
             logger.error(
-                    "Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
+                    "Exception in fetching c* jmx tool .  Msg: {}", e.getLocalizedMessage(), e);
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool getPartitioner being called");
@@ -147,11 +147,26 @@ public class CassandraAdmin {
             nodeTool = JMXNodeTool.instance(config);
         } catch (JMXConnectionException e) {
             logger.error(
-                    "Exception in fetching c* jmx tool .  Msgl: {}", e.getLocalizedMessage(), e);
+                    "Exception in fetching c* jmx tool .  Msg: {}", e.getLocalizedMessage(), e);
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool ring being called");
         return Response.ok(nodeTool.ring(keyspace), MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/status")
+    public Response statusInfo() throws JSONException {
+        JMXNodeTool nodeTool;
+        try {
+            nodeTool = JMXNodeTool.instance(config);
+        } catch (JMXConnectionException e) {
+            logger.error(
+                    "Exception in fetching c* jmx tool .  Msg: {}", e.getLocalizedMessage(), e);
+            return Response.status(503).entity("JMXConnectionException").build();
+        }
+        logger.debug("node tool status being called");
+        return Response.ok(nodeTool.statusInformation(), MediaType.APPLICATION_JSON).build();
     }
 
     @GET

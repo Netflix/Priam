@@ -189,6 +189,9 @@ public class InstanceIdentity {
                             if (!StringUtils.isEmpty(replaceIp)
                                     && !replaceIp.equals(instance.getHostIP())) {
                                 setReplacedIp(replaceIp);
+                                logger.info(
+                                        "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
+                                                + replaceIp);
                             }
                         } catch (GossipParseException e) {
                         }

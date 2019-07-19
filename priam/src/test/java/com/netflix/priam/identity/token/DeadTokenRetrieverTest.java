@@ -94,7 +94,7 @@ public class DeadTokenRetrieverTest {
         };
     }
 
-    // @Test
+    @Test
     // There is a potential slot for dead token but we are unable to replace.
     public void testNoReplacementNoGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
         List<PriamInstance> allInstances = getInstances(2);
@@ -150,7 +150,7 @@ public class DeadTokenRetrieverTest {
         };
     }
 
-    // @Test
+    @Test
     public void testReplacementGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
         List<PriamInstance> allInstances = getInstances(6);
         List<String> racMembership = getRacMembership(2);

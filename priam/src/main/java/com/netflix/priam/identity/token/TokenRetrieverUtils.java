@@ -16,8 +16,7 @@ import org.slf4j.LoggerFactory;
 /** Common utilities for token retrieval. */
 public class TokenRetrieverUtils {
     private static final Logger logger = LoggerFactory.getLogger(TokenRetrieverBase.class);
-    private static final String GOSSIP_INFO_URL_FORMAT =
-            "http://%s:8080/Priam/REST/v1/cassadmin/gossipinfo";
+    private static final String STATUS_URL_FORMAT = "http://%s:8080/Priam/REST/v1/cassadmin/status";
 
     /**
      * Utility method to infer the IP of the owner of a token in a given datacenter. This method
@@ -36,11 +35,6 @@ public class TokenRetrieverUtils {
     public static String inferTokenOwnerFromGossip(
             List<? extends PriamInstance> allIds, String token, String dc)
             throws GossipParseException {
-        // TODO: Gossip info in some cases doesn't reflect the real C* state.
-        // Not using gossip info for now.
-        if (!useGossipInfo()) {
-            return null;
-        }
 
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
@@ -106,44 +100,21 @@ public class TokenRetrieverUtils {
         return null;
     }
 
-    // TODO: Gossip info in some cases doesn't reflect the real C* state.
-    // Not using gossip info for now.
-    private static boolean useGossipInfo() {
-        return false;
-    }
-
     // helper method to get the token owner IP from a Cassandra node.
     private static String getIp(String host, String token) throws GossipParseException {
         String response = null;
         try {
-            response = SystemUtils.getDataFromUrl(String.format(GOSSIP_INFO_URL_FORMAT, host));
+            response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, host));
+            JSONObject jsonObject = (JSONObject) new JSONParser().parse(response);
+            JSONArray liveNodes = (JSONArray) jsonObject.get("live");
+            JSONObject tokenToEndpointMap = (JSONObject) jsonObject.get("tokenToEndpointMap");
+            String endpointInfo = tokenToEndpointMap.get(token).toString();
+            // We intentionally do not use the "unreachable" nodes as it may or may not be the best
+            // place to start.
+            // We just verify that the endpoint we provide is not "live".
+            if (liveNodes.contains(endpointInfo)) return null;
 
-            String inputToken = String.format("[%s]", token);
-            JSONParser parser = new JSONParser();
-            JSONArray jsonObject = (JSONArray) parser.parse(response);
-
-            for (Object key : jsonObject) {
-                JSONObject msg = (JSONObject) key;
-
-                // Ensure that we are not trying to replace a NORMAL token and token of that
-                // instance matches what we want to replace.
-                if (msg.get("STATUS") == null
-                        || msg.get("STATUS").toString().equalsIgnoreCase("NORMAL")
-                        || msg.get("TOKENS") == null
-                        || msg.get("PUBLIC_IP") == null
-                        || !msg.get("TOKENS").toString().equals(inputToken)) {
-                    continue;
-                }
-
-                logger.info(
-                        "Using gossip info from host[{}] and token[{}], the replaced address is : [{}]",
-                        host,
-                        token,
-                        msg.get("PUBLIC_IP"));
-                return (String) msg.get("PUBLIC_IP");
-            }
-
-            return null;
+            return endpointInfo;
         } catch (RuntimeException e) {
             throw new GossipParseException(
                     String.format("Error in reaching out to host: [{}]", host), e);

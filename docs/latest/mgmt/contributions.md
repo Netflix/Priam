@@ -29,7 +29,7 @@ Before creating bug reports, please check [this list](#before-submitting-a-bug-r
 
 #### Before Submitting A Bug Report
 
-* Check if you can reproduce the problem [in the latest version of Priam. 
+* Check if you can reproduce the problem in the latest version of Priam. 
 * **Check the [FAQs on the forum](../faq/faq.md)** for a list of common questions and problems.
 * Perform a search to see if the problem has already been reported. If it has **and the issue is still open**, add a comment to the existing issue instead of opening a new one.
 

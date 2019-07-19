@@ -3,13 +3,14 @@
 
 It will depend on how you deploy your application.
 
-In our case, we use it with following prefix: "http://127.0.0.1:8080/Priam/REST"
+In our case, we use it with following prefix: ```http://127.0.0.1:8080/Priam/REST```
 
-E.g. to invoke get_token, which is under "/v1/cassconfig", the call is "http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_token"
+E.g. to invoke get_token, which is under ```/v1/cassconfig```, the call is ```http://127.0.0.1:8080/Priam/REST/v1/cassconfig/get_token```
 
 # Cassandra Config related
 
 |**API** |**Description**|**Query params**|
+|--------|:-------|:--------|
 |/v1/cassconfig/get_seeds |Gets a list of seeds. One per zone/Rack |  |
 |/v1/cassconfig/get_token |Get token for the node | |
 |/v1/cassconfig/is_replace_token |Returns _true_ if this node is replace another node with the same token | |
@@ -18,12 +19,14 @@ E.g. to invoke get_token, which is under "/v1/cassconfig", the call is "http://1
 # Cassandra admin
 
 |**API** |**Description**|**Query params**|
+|--------|:-------|:--------|
 |/v1/cassadmin/start |Starts Cassandra process||
 |/v1/cassadmin/stop |Stop Cassandra process |  |
 
 # Nodetool commands
 
 |**API** |**Description**|**Query params**|
+|--------|:-------|:--------|
 |/v1/cassadmin/info | Get info (nodetool info) in json format |  |
 |/v1/cassadmin/partitioner | Get partitioner name |  |
 |/v1/cassadmin/ring/KEYSPACE | Get ring (nodetool ring) in json format. | Provide a Keyspace parameter |

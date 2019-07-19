@@ -7,5 +7,12 @@ copyright: Copyright 2018 Netflix, Inc.
 extra:
   feature:
     tabs: false
+markdown_extensions: 
+  - codehilite    
 nav:
-  - "Getting started.": "latest/index.md"
+  - "Home": "index.md"
+  - "Installation": "latest/mgmt/installation.md"
+  - "Management Tasks": "latest/management.md"
+  - "Contributions": "latest/mgmt/contributions.md"
+  - "Presentations": "latest/mgmt/presentations.md"
+  - "FAQ": "latest/faq/faq.md"

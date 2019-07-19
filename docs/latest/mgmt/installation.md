@@ -47,9 +47,9 @@ Using IAM Credentials allows you to provide access to the AWS api without storin
 
 1. Create a new IAM Role in the AWS console or using the API and make sure it can access EC2, S3, and SimpleDB resources.
 2. Assign that role to the auto scaling group.
-3. Modify `priam/src/main/java/com/netflix/priam/defaultimpl/PriamGuiceModule.java`
+3. Modify ```priam/src/main/java/com/netflix/priam/defaultimpl/PriamGuiceModule.java```
 
-```java
+``` java
    // Add this line
    import com.netflix.priam.aws.IAMCredential;
    
@@ -61,7 +61,7 @@ Using IAM Credentials allows you to provide access to the AWS api without storin
            // Add this line
            bind(ICredential.class).to(IAMCredential.class);
        }
- ```
+```
 
    
 ## S3 Buckets
@@ -99,6 +99,6 @@ To see if Priam has started successfully, you can lookup SimpleDB InstanceIdenti
 
 You can also verify REST API by running:
 
-```$curl http://localhost:8080/Priam/REST/v1/cassconfig/get_token```
+```curl http://localhost:8080/Priam/REST/v1/cassconfig/get_token```
 
 This should return the token used by node. Kudos if you reached so far! Ensure your Cassandra process is up and is using the same token found by running the above command.

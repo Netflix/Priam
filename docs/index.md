@@ -1,46 +1,7 @@
 ![alt text](../images/priam.png "Priam Logo")
 
-# Table Of Contents
 
-## [TL;DR;](#tldr)
-
-1. [Requirements](#requirements)
-
-2. [Compatibility](#compatibility)
-
-## [Installation](mgmt/installation.md)
-
-## Management Tasks
-1. [Token Management](mgmt/tokenmanagement.md)
-
-1. [Cassandra Tuning](mgmt/cassandratuning.md)
-
-1. [Cassandra REST API](mgmt/cassandrarestapi.md)
-
-1. [Backups](mgmt/backups.md)
-
-1. [Restore](mgmt/restore.md)
-
-1. [Compaction](mgmt/compaction.md)
-
-1. [Flush](mgmt/flush.md)
-
-1. [Health](mgmt/health.md)
-
-1. [Configuration](mgmt/configuration.md)
-
-1. [Metrics](mgmt/metrics.md)
-
-## [Contributions](mgmt/contributions.md)
-
-## [Presentations](mgmt/presentations.md)
-
-## [FAQ](faq/faq.md)
-
-## [Authors](#authors)
-
-
-# TL;DR;
+# About
 
 
 Priam is a process/tool that runs alongside [Apache Cassandra] (http://cassandra.apache.org), a highly available, column-oriented database. Priam automates following tasks:
@@ -71,18 +32,19 @@ The name 'Priam' refers to the King of Troy in Greek mythology, who was the fath
 
 ## Compatibility
 
-|Priam Branch|Cassandra Version |Description| Javadoc
-| :-----------:| :-----------------: | :---------  |
+
+|Priam Branch|Cassandra Version|Description|Javadoc|
+|--------|:-------|:--------|:--------|
 |[4.x](https://github.com/Netflix/Priam/tree/4.x)       |C* 4.x                      | Alpha: Currently it supports Apache C* 4.x|[link](https://www.javadoc.io/doc/com.netflix.priam/priam/4.0.0-alpha7)
 |[3.11](https://github.com/Netflix/Priam/tree/3.11)                 | C* 3.x                     | Currently it supports Apache C* 3.x |[link](https://www.javadoc.io/doc/com.netflix.priam/priam/3.11.35)
 |[3.x](https://github.com/Netflix/Priam/tree/3.x)                  | C* 2.1.x                  | Any minor version of Apache C* 2.1.x and DSE |[link](https://www.javadoc.io/doc/com.netflix.priam/priam/3.1.65)
 
-# Authors 
+## Authors 
 1. Arun Agrawal @arunagrawal84
 2. Joseph Lynch @jolynch
 3. Vinay Chella @vinaykumarchella
 
-# License
+## License
 Copyright 2011-2018 Netflix, Inc.
 
 Licensed under the Apache License, Version 2.0 (the “License”); you may not use this file except in compliance with the License. You may obtain a copy of the License at

@@ -93,7 +93,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     /*
-     * Get a handle to the GCS api to manage our data within their storage.  Code derive from
+     * Get a handle to the GCS api to manage our data within their storage. Code derive from
      * https://code.google.com/p/google-api-java-client/source/browse/storage-cmdline-sample/src/main/java/com/google/api/services/samples/storage/cmdline/StorageSample.java?repo=samples
      *
      * Note: GCS storage will use our credential to do auto-refresh of expired tokens
@@ -119,7 +119,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     /**
      * Authorizes the installed application to access user's protected data, code from
      * https://developers.google.com/maps-engine/documentation/oauth/serviceaccount and
-     * http://javadoc.google-api-java-client.googlecode.com/hg/1.8.0-beta/com/google/api/client/googleapis/auth/oauth2/GoogleCredential.html
+     * https://googleapis.github.io/google-api-java-client/releases/1.23.0/javadoc/com/google/api/client/googleapis/auth/oauth2/GoogleCredential.html
      */
     private Credential constructGcsCredential() throws Exception {
 

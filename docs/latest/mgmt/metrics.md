@@ -3,6 +3,7 @@
 Priam uses [spectator](https://github.com/Netflix/spectator) to collect Metrics. The default binding is no operation. 
 
 |Name|Type|Purpose|
+|------------------|-------------------------------------|-------------------------|
 |`priam.upload.rate`|DistributionSummary|Rate at which Priam is uploading the files to remote file system (during backup).|
 |`priam.upload.valid`|Counter|No of successful uploads to the remote file system.|
 |`priam.upload.invalid`|Counter|No. of uploads to the remote file system which failed after exhausting all the retries.|

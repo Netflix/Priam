@@ -4,7 +4,7 @@
 
 <div align="center">
 
-[Releases][release]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Wiki Documentation][wiki]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+[Releases][release]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;[Documentation][wiki]&nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
 
 [![Build Status][img-travis-ci]][travis-ci]
 
@@ -53,15 +53,15 @@ Priam is actively developed and used at Netflix.
 - REST APIs for backup/restore and other operations
 
 ## Compatibility
-See [Compatibility](https://github.com/Netflix/Priam/wiki/Compatibility) for details.
+See [Compatibility](http://netflix.github.io/Priam/#compatibility) for details.
 
 
 ## Installation
-See [Setup](https://github.com/Netflix/Priam/wiki/Setup) for details. 
+See [Setup](http://netflix.github.io/Priam/latest/mgmt/installation/) for details. 
 
 
 ## Cluster Management
-Basic configuration/REST API's to manage cassandra cluster. See [Cluster Management](https://github.com/Netflix/Priam/wiki/Cluster-Management) for details. 
+Basic configuration/REST API's to manage cassandra cluster. See [Cluster Management](http://netflix.github.io/Priam/latest/management/) for details. 
 ## Changelog
 See [CHANGELOG.md](CHANGELOG.md)
 
@@ -69,7 +69,7 @@ See [CHANGELOG.md](CHANGELOG.md)
 References
 -->
 [release]:https://github.com/Netflix/Priam/releases/latest "Latest Release (external link) ➶"
-[wiki]:https://github.com/Netflix/Priam/wiki
+[wiki]:http://netflix.github.io/Priam/
 [repo]:https://github.com/Netflix/Priam
 [img-travis-ci]:https://travis-ci.org/Netflix/Priam.svg?branch=3.x
 [travis-ci]:https://travis-ci.org/Netflix/Priam

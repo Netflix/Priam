@@ -1,0 +1,635 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+        <meta name="author" content="Netflix">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+    
+    
+      
+        <title>Backups - Priam</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.0284f74d.css">
+      
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#backups" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Priam" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Priam
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Backups
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/Netflix/priam/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Netflix/priam
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Priam" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Priam
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/Netflix/priam/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Netflix/priam
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../management/" title="Management Tasks" class="md-nav__link">
+      Management Tasks
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../contributions/" title="Contributions" class="md-nav__link">
+      Contributions
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../presentations/" title="Presentations" class="md-nav__link">
+      Presentations
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../faq/faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#backup-file-path" title="Backup file path" class="md-nav__link">
+    Backup file path
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#multipart-upload" title="Multipart upload" class="md-nav__link">
+    Multipart upload
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compression" title="Compression" class="md-nav__link">
+    Compression
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#throttling" title="Throttling" class="md-nav__link">
+    Throttling
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#sns-notifications" title="SNS Notifications" class="md-nav__link">
+    SNS Notifications
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#async-uploads" title="Async Uploads" class="md-nav__link">
+    Async Uploads
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/Netflix/priam/edit/master/docs/latest/mgmt/backups.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="backups">Backups</h1>
+<p>Priam supports both snapshot and incremental backups for Cassandra SSTable files and uses S3 to save these files.</p>
+<h2 id="backup-file-path">Backup file path</h2>
+<p>To identify backup files and to avoid collision, Priam organizes the files in S3 by including time, keyspace name, token, date, DC/region and cluster name. Here is the general format:</p>
+<div class="codehilite"><pre><span></span>&lt;App Prefix&gt;/&lt;Region or DC&gt;/&lt;Cluster name&gt;/&lt;Token&gt;/&lt;Date &amp; Time&gt;/&lt;File type&gt;/&lt;Keyspace&gt;/&lt;FileName&gt;
+</pre></div>
+
+
+<p>Here are valid file types (refer <em>AbstractBackupPath.BackupFileType</em>):</p>
+<div class="codehilite"><pre><span></span>SNAP - Snapshot file
+META - Meta file for all snapshot files 
+SST - Incremental SSTable file
+</pre></div>
+
+
+<p>Here is a sample snapshot file in S3:</p>
+<div class="codehilite"><pre><span></span>test_backup/eu-west-1/cass_test/37809151880104273718152734159458104939/201202142346/SNAP/MyKeyspace/MyCF-g-265-Data.db
+</pre></div>
+
+
+<h2 id="multipart-upload">Multipart upload</h2>
+<p>Priam leverages the multipart upload feature of S3.  This helps in uploading large files in parallel.  Each file is chunked into several parts and each part is uploaded in parallel. </p>
+<h2 id="compression">Compression</h2>
+<p>Priam uses snappy compression to compress data files.  Each file is chunked and compressed on the fly. </p>
+<h2 id="throttling">Throttling</h2>
+<p>Throttling of uploads helps reduce disk IO and network IO as well. With Priam properties, you can set the Mb/s which are read from the disk. </p>
+<h2 id="sns-notifications">SNS Notifications</h2>
+<p>Priam can send SNS Notifications, pre and post upload of any file to S3. This allows a cleaner integration with external service depending on backups which are about to be uploaded. </p>
+<h2 id="async-uploads">Async Uploads</h2>
+<p>Priam allows user to configure if they wish to do parallel uploads to remote file system for snapshots and incrementals. Doing parallel uploads makes your backup faster but may use the bandwidth of the instance and thus starve Cassandra. Bandwidth used by backups can be controlled by <code>throttling</code> them. This should be carefully reviewed based on your instance capabilities. </p>
+<p>Priam by default does NOT allow async uploads, though our suggestion is to enable them on few instances and see the performance and then tune. In our internal testing, we have hardly found Cassandra to be starved by bandwidth usage (even during peak).  </p>
+<h2 id="configuration">Configuration</h2>
+<ol>
+<li><strong><em>priam.s3.bucket</em></strong>: This is the default S3 location where all backup files will be uploaded to. E.g. <code>s3_bucket_region</code>. Default: <code>cassandra-archive</code></li>
+<li><strong><em>priam.upload.throttle</em></strong>: This allows backup/incremental's to be throttled so they don't end up taking all the bandwidth from Cassandra. Note: try to schedule full snapshot during off-peak time. Tweak this only if required else your snapshot would starve. Default: <code>MAX_INT_VALUE</code>. </li>
+<li><strong><em>priam.backup.notification.topic.arn</em></strong>: Amazon Resource Name for the SNS service where notifications need to be sent. This assumes that all the topics are created and the instance has permission to send SNS messages. Disabled if the value is null or empty. Default: <code>None</code>. </li>
+<li><strong><em>priam.backup.chunksizemb</em></strong>: Size of the file in MB above which Priam will try to use multi-part uploads. Note that chunk size of the file being uploaded is as defined by user only if total parts to be uploaded (based on file size) will not exceed 10000 (max limit from AWS). If file is bigger than 10000 * configured chunk size, Priam will adjust the chunk size to ensure it can upload the file. Default: <em>10 MB</em> </li>
+<li><strong><em>priam.backup.queue.size</em></strong>: Queue size to be used for backup uploads. Note that once queue is full, we would wait for <code>priam.upload.timeout</code> to add any new item before declining the request and throwing exception. Default: 100,000. </li>
+<li><strong><em>priam.backup.threads</em></strong>: The number of backup threads to be used to upload files to S3. Default: <code>2</code></li>
+<li><strong><em>priam.upload.timeout</em></strong>: Uploads are scheduled in <code>priam.backup.queue.size</code>. If queue is full then we wait for this time for the queue to have an entry available for queueing the current task. Default: 2 minutes. </li>
+</ol>
+<h1 id="snapshot-or-complete-backup">Snapshot or complete backup</h1>
+<p>Priam leverages Cassandra's snapshot feature to have an eventually consistent backup.  Cassandra's snapshot feature flushes data to disk and hard links all SSTable files into a snapshot directory. These files are then picked up by Priam and uploaded to S3.  Although snapshotting across the cluster is not guaranteed to produce a consistent backup of the cluster, consistency is resumed upon restore by Cassandra and running repairs. 
+Priam uses Quartz to schedule all tasks.  Snapshot backups are run as a recurring task.  They can also be triggered via REST API (refer API section), which is useful during upgrades or maintenance operations.<br />
+Snapshots are run on a CRON for the entire cluster, at a specific time, ideally during non-peak hours. Priam's <em>backup.hour</em> or <em>backup.cron</em> property allows you to set daily snapshot time (refer properties). The snapshot backup orchestrates invoking of Cassandra <strong><em>snapshot</em></strong> JMX command, uploading files to S3 and cleaning up the directory.  </p>
+<h2 id="metajson">meta.json</h2>
+<p>All SSTable files are uploaded individually to S3 with built-in retries on failure.  Upon completion, the meta file (<em>meta.json</em>) is uploaded which contains a reference to all files that belong to the snapshot.   This is then used for validation during restore.   </p>
+<h2 id="backup-status-management">Backup Status Management</h2>
+<p>Priam by default stores the status of all the snapshot. This is useful to determine if the snapshot at a given Instant was successful. It has support to store status of multiple snapshots for a given date. </p>
+<p>The default binding is to store these details to a local file configured via <code>priam.backup.status.location</code>. </p>
+<h2 id="validation-of-snapshot">Validation of Snapshot</h2>
+<p>Priam can download the <code>meta.json</code> for a given snapshot, parse it and then validate the backup by ensuring that all the files listed in file are available on remote file system. This can be used to verify that no file was missed during snapshot. </p>
+<h3 id="snapshot-configuration">Snapshot Configuration</h3>
+<ol>
+<li><strong><em>priam.backup.schedule.type</em></strong>: This allows you to choose between 2 supported schedule types (CRON or HOUR) for backup. The default value is <code>HOUR</code>. </li>
+<li><code>CRON</code>: This allows backup to run on CRON and it expects a valid value of <strong><em>priam.backup.cron</em></strong> to be there. If not, priam will not start and fail fast. </li>
+<li><strong>Deprecated</strong>: <code>HOUR</code>: This allows backup to run on a daily basis at a given hour. It expects a valid value of <strong><em>priam.backup.hour</em></strong> to be there. If not, priam will not start and fail fast. </li>
+<li><strong>Deprecated</strong>: <strong><em>priam.backup.hour</em></strong>: This allows backup to run on a daily basis at a given hour. If the value is <code>-1</code>, it means snapshot backups and incremental are disabled. Default value: <code>12</code></li>
+<li><strong><em>priam.backup.cron</em></strong>: This allows backups to be run on CRON. Example: you want to run a backup once a week. Value needs to be a valid CRON expression. To disable backup, use the value of <code>-1</code>. The default value is to backup at <code>12</code>. </li>
+<li><strong><em>priam.snapshot.cf.include</em></strong>: Column Family(ies), comma delimited, to include for snapshot. If no override exists, all keyspaces/cf's will be backed up to remote file system. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Snapshot exclude list is applied first to exclude CF/keyspace and then snapshot include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.snapshot.cf.exclude</em></strong>: Column Family(ies), comma delimited, to ignore while doing snapshot. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Snapshot exclude list is applied first to exclude CF/keyspace and then snapshot include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.backup.status.location</em></strong>: The absolute path to store the backup status on disk. Default: <code>&lt;data file location&gt;/backup.status</code>. </li>
+<li><strong><em>priam.async.snapshot</em></strong>: This decides if snapshot files should be uploaded to the remote file system in async fashion. This will allow snapshot to use the <code>priam.backup.threads</code> to do parallel uploads. Default: <code>false</code>. </li>
+</ol>
+<h2 id="api">API</h2>
+<h3 id="execute-snapshot">Execute Snapshot</h3>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/do_snapshot</code></p>
+</blockquote>
+<p>This executes a one time snapshot on this instance and starts uploading the files to remote file system. </p>
+<p><strong>Output:</strong> </p>
+<div class="codehilite"><pre><span></span><span class="p">{</span><span class="nt">&quot;ok&quot;</span><span class="p">}</span>
+ <span class="err">```</span>
+
+<span class="err">###</span> <span class="err">Backup</span> <span class="err">Status</span>
+<span class="err">&gt;</span> <span class="err">```http://localhost:</span><span class="mi">8080</span><span class="err">/Priam/REST/v</span><span class="mi">1</span><span class="err">/backup/status```</span>
+
+<span class="err">Get</span> <span class="err">the</span> <span class="err">status</span> <span class="err">of</span> <span class="err">the</span> <span class="err">last</span> <span class="err">known</span> <span class="err">backup.</span> <span class="err">If</span> <span class="err">priam</span> <span class="err">is</span> <span class="err">restarted,</span> <span class="err">it</span> <span class="err">will</span> <span class="err">always</span> <span class="err">show</span> <span class="err">`DONE`.</span> 
+
+<span class="err">**Output:**</span> 
+<span class="err">```json</span>
+<span class="p">{</span><span class="nt">&quot;SnapshotStatus&quot;</span><span class="p">:</span><span class="s2">&quot;[DONE|ERROR|RUNNING|NOT_APPLICABLE]&quot;</span><span class="p">}</span>
+</pre></div>
+
+
+<h3 id="backup-status-for-a-date">Backup Status for a date</h3>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/status/{date}</code></p>
+</blockquote>
+<p>Determines the status of a snapshot for a date.  If there was at least one successful snapshot for the date, snapshot for the date is considered completed.</p>
+<p><strong>Parameters:</strong> 
+* {date}: Required: Date of the snapshot to check in the format of <code>yyyyMMdd</code>. </p>
+<p><strong>Output:</strong></p>
+<p>For success: </p>
+<div class="codehilite"><pre><span></span><span class="p">{</span><span class="nt">&quot;Snapshotstatus&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;token_value&gt;&quot;</span><span class="p">,</span>
+<span class="nt">&quot;starttime&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">,</span>
+<span class="nt">&quot;completetime&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">}</span>
+</pre></div>
+
+
+<p>For failure: </p>
+<div class="codehilite"><pre><span></span><span class="p">{</span><span class="nt">&quot;Snapshotstatus&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+<span class="nt">&quot;token&quot;</span><span class="p">:</span><span class="s2">&quot;&lt;token_value&gt;&quot;</span><span class="p">}</span>
+</pre></div>
+
+
+<h3 id="list-all-snapshots">List all snapshots</h3>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/status/{date}/snapshots</code></p>
+</blockquote>
+<p>List all the snapshot executed for a date. </p>
+<p><strong>Parameters:</strong> 
+* {date}: Required: Date of the snapshot to check in the format of <code>yyyyMMdd</code>. </p>
+<p><strong>Output:</strong></p>
+<div class="codehilite"><pre><span></span><span class="p">{</span><span class="nt">&quot;Snapshots&quot;</span><span class="p">:[</span><span class="s2">&quot;yyyyMMddHHmm&quot;</span><span class="p">,</span><span class="s2">&quot;yyyyMMddHHmm&quot;</span><span class="p">]}</span>
+</pre></div>
+
+
+<h3 id="validate-snapshot">Validate snapshot</h3>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/validate/snapshot/{daterange}</code></p>
+</blockquote>
+<p>Determines the validity of the backup by </p>
+<ol>
+<li>Downloading meta.json file </li>
+<li>Listing of the backup directory  </li>
+<li>Find the missing or extra files in backup location.</li>
+</ol>
+<p>This by default takes the latest snapshot of the application. One can provide exact hour and min to check specific backup. <strong>Note</strong>: This is an expensive call (money and time) as it calls list on the remote file system, thus should be used with caution.</p>
+<p><strong>Parameters:</strong></p>
+<p>*<code>daterange</code>: Optional: This is a comma separated start time and end time for the snapshot in the format of <code>yyyyMMddHHmm</code> or <code>yyyyMMdd</code>. 
+  If no value is provided or a value of <code>default</code> is provided then it takes start time as (current time - 1 day) and end time as current time.</p>
+<p><strong>Output:</strong></p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>  
+  <span class="nt">&quot;inputStartDate&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;inputEndDate&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;snapshotAvailable&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&quot;valid&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&quot;backupFileListAvailable&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&quot;metaFileFound&quot;</span><span class="p">:</span><span class="kc">true</span><span class="p">,</span>
+  <span class="nt">&quot;selectedDate&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMdd]&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;snapshotTime&quot;</span><span class="p">:</span><span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">,</span>
+  <span class="nt">&quot;filesInMetaOnly&quot;</span><span class="p">:[</span>  
+
+  <span class="p">],</span>
+  <span class="nt">&quot;filesInS3Only&quot;</span><span class="p">:[</span>  
+    <span class="s2">&quot;file1&quot;</span>
+  <span class="p">],</span>
+  <span class="nt">&quot;filesMatched&quot;</span><span class="p">:[</span>  
+    <span class="s2">&quot;file1&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;file2&quot;</span>
+  <span class="p">]</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h3 id="list-the-backup-files">List the backup files</h3>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/list/{daterange}</code></p>
+</blockquote>
+<p>List all the files in the remote file system for the given daterange. <strong>Note</strong>: This is an expensive call (money and time) as it calls list on the remote file system, thus should be used with caution.</p>
+<p><strong>Parameters:</strong></p>
+<p>*<code>daterange</code>: Optional: This is a comma separated start time and end time for the snapshot in the format of <code>yyyyMMddHHmm</code> or <code>yyyyMMdd</code>. 
+  If no value is provided or a value of <code>default</code> is provided then it takes start time as (current time - 1 day) and end time as current time.</p>
+<p><strong>Output:</strong></p>
+<div class="codehilite"><pre><span></span><span class="p">{</span>
+  <span class="nt">&quot;files&quot;</span><span class="p">:</span> <span class="p">[</span>
+    <span class="p">{</span>
+      <span class="nt">&quot;bucket&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;remote_file_system&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;filename&quot;</span><span class="p">:</span> <span class="s2">&quot;file&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;app&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;app_name&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;region&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;region&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;token&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;token&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;ts&quot;</span><span class="p">:</span> <span class="s2">&quot;[yyyyMMddHHmm]&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;instance_id&quot;</span><span class="p">:</span> <span class="s2">&quot;&lt;instance_id&gt;&quot;</span><span class="p">,</span>
+      <span class="nt">&quot;uploaded_ts&quot;</span><span class="p">:</span> <span class="s2">&quot;[yyyyMMddHHmm]&quot;</span>
+    <span class="p">}</span>
+<span class="p">],</span>
+  <span class="nt">&quot;num_files&quot;</span><span class="p">:</span> <span class="err">&lt;no_of_files&gt;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h1 id="incremental-backup">Incremental backup</h1>
+<p>When incremental backups are enabled in Cassandra, hard links are created for all new SSTables created in the incremental backup directory. Since SSTables are immutable files they can be safely copied to an external source. Priam scans this directory frequently for incremental SSTable files and uploads to S3. </p>
+<h2 id="incremental-configuration">Incremental Configuration</h2>
+<ol>
+<li><strong><em>priam.backup.incremental.enable</em></strong>: This allows the incremental backups to be uploaded to S3. By default every 10 seconds, Priam will try to upload any new files flushed/compacted by Cassandra to disk. Default: <code>true</code></li>
+<li><strong><em>priam.incremental.cf.include</em></strong>: Column Family(ies), comma delimited, to include for incremental backups. If no override exists, all keyspaces/cf's will be backed up to remote file system. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Incremental exclude list is applied first to exclude CF/keyspace and then incremental include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.incremental.cf.exclude</em></strong>: Column Family(ies), comma delimited, to ignore while doing incremental backup. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Incremental exclude list is applied first to exclude CF/keyspace and then incremental include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.async.incremental</em></strong>: Allow upload of incremental's in parallel using multiple threads. Note that this will take more bandwidth of your cluster and thus should be used with caution. It may be required when you do repair your instance primary token range using subrange repair creating a lot of small files during the process. Default: <code>false</code></li>
+</ol>
+<h2 id="api_1">API</h2>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/backup/incremental_backup</code></p>
+</blockquote>
+<p>Enable the incremental backup on this instance. <strong>Note</strong>: This call does not change the value of the property <code>priam.backup.incremental.enable</code></p>
+<p><strong>Output:</strong> </p>
+<div class="codehilite"><pre><span></span><span class="p">{</span><span class="nt">&quot;ok&quot;</span><span class="p">}</span>
+</pre></div>
+
+
+<h1 id="commit-log-configuration">Commit log Configuration</h1>
+<ol>
+<li><strong><em>priam.clbackup.enabled</em></strong>: This allows the backup of the commit logs from Cassandra to the backup location. The default value to check for new commit log is 1 min. Default: <code>false</code></li>
+</ol>
+<h1 id="encryption-of-backuprestore">Encryption of Backup/Restore</h1>
+<p>Backups can be encrypted by Priam. Priam can also restore from the encrypted backups for disaster recovery. Note that encryption/decryption is generally CPU and time-intensive process. While uploading the file, it would be first compressed and then encrypted. The reverse of that happens when downloading the file i.e. decrypt and then decompress. </p>
+<p>Priam uses PGP as the encryption / decryption cryptography algorithm. Other algorithm can be implemented via interface IFileCryptography.</p>
+<p>*Note: Pgp uses a passphrase to encrypt your private key on your node. See (http://www.pgpi.org/doc/pgpintro/), section “what is a passphrase” for details.</p>
+<h2 id="configuration_1">Configuration</h2>
+<ol>
+<li><strong><em>priam.encrypted.backup.enabled</em></strong>: Allow encryption while uploading of the snapshot, incremental and commit logs. Default: <code>false</code></li>
+<li><strong><em>priam.pgp.password.phrase</em></strong>: The passphrase used by the cryptography algorithm to encrypt/decrypt. By default, it is expected that this value will be encrypted using open encrypt. Default: <code>None</code>.  </li>
+<li><strong><em>priam.private.key.location</em></strong>: The location on disk of the private key used by the cryptography algorithm. </li>
+<li><strong><em>priam.pgp.pubkey.file.location</em></strong>: The location on disk of the public key used by the cryptography algorithm. </li>
+</ol>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright 2018 Netflix, Inc.
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.245445c6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      
+    
+  </body>
+</html>

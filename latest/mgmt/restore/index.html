@@ -1,0 +1,458 @@
+
+
+
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      <meta http-equiv="x-ua-compatible" content="ie=edge">
+      
+      
+      
+        <meta name="author" content="Netflix">
+      
+      
+        <meta name="lang:clipboard.copy" content="Copy to clipboard">
+      
+        <meta name="lang:clipboard.copied" content="Copied to clipboard">
+      
+        <meta name="lang:search.language" content="en">
+      
+        <meta name="lang:search.pipeline.stopwords" content="True">
+      
+        <meta name="lang:search.pipeline.trimmer" content="True">
+      
+        <meta name="lang:search.result.none" content="No matching documents">
+      
+        <meta name="lang:search.result.one" content="1 matching document">
+      
+        <meta name="lang:search.result.other" content="# matching documents">
+      
+        <meta name="lang:search.tokenizer" content="[\s\-]+">
+      
+      <link rel="shortcut icon" href="../../../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.0.4, mkdocs-material-4.4.0">
+    
+    
+      
+        <title>Restore - Priam</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/application.0284f74d.css">
+      
+      
+    
+    
+      <script src="../../../assets/javascripts/modernizr.74668098.js"></script>
+    
+    
+      
+        <link href="https://fonts.gstatic.com" rel="preconnect" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700|Roboto+Mono&display=fallback">
+        <style>body,input{font-family:"Roboto","Helvetica Neue",Helvetica,Arial,sans-serif}code,kbd,pre{font-family:"Roboto Mono","Courier New",Courier,monospace}</style>
+      
+    
+    <link rel="stylesheet" href="../../../assets/fonts/material-icons.css">
+    
+    
+    
+      
+    
+    
+  </head>
+  
+    <body dir="ltr">
+  
+    <svg class="md-svg">
+      <defs>
+        
+        
+          <svg xmlns="http://www.w3.org/2000/svg" width="416" height="448" viewBox="0 0 416 448" id="__github"><path fill="currentColor" d="M160 304q0 10-3.125 20.5t-10.75 19T128 352t-18.125-8.5-10.75-19T96 304t3.125-20.5 10.75-19T128 256t18.125 8.5 10.75 19T160 304zm160 0q0 10-3.125 20.5t-10.75 19T288 352t-18.125-8.5-10.75-19T256 304t3.125-20.5 10.75-19T288 256t18.125 8.5 10.75 19T320 304zm40 0q0-30-17.25-51T296 232q-10.25 0-48.75 5.25Q229.5 240 208 240t-39.25-2.75Q130.75 232 120 232q-29.5 0-46.75 21T56 304q0 22 8 38.375t20.25 25.75 30.5 15 35 7.375 37.25 1.75h42q20.5 0 37.25-1.75t35-7.375 30.5-15 20.25-25.75T360 304zm56-44q0 51.75-15.25 82.75-9.5 19.25-26.375 33.25t-35.25 21.5-42.5 11.875-42.875 5.5T212 416q-19.5 0-35.5-.75t-36.875-3.125-38.125-7.5-34.25-12.875T37 371.5t-21.5-28.75Q0 312 0 260q0-59.25 34-99-6.75-20.5-6.75-42.5 0-29 12.75-54.5 27 0 47.5 9.875t47.25 30.875Q171.5 96 212 96q37 0 70 8 26.25-20.5 46.75-30.25T376 64q12.75 25.5 12.75 54.5 0 21.75-6.75 42 34 40 34 99.5z"/></svg>
+        
+      </defs>
+    </svg>
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" data-md-component="overlay" for="__drawer"></label>
+    
+      <a href="#restore" tabindex="1" class="md-skip">
+        Skip to content
+      </a>
+    
+    
+      <header class="md-header" data-md-component="header">
+  <nav class="md-header-nav md-grid">
+    <div class="md-flex">
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <a href="../../.." title="Priam" class="md-header-nav__button md-logo">
+          
+            <i class="md-icon"></i>
+          
+        </a>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        <label class="md-icon md-icon--menu md-header-nav__button" for="__drawer"></label>
+      </div>
+      <div class="md-flex__cell md-flex__cell--stretch">
+        <div class="md-flex__ellipsis md-header-nav__title" data-md-component="title">
+          
+            <span class="md-header-nav__topic">
+              Priam
+            </span>
+            <span class="md-header-nav__topic">
+              
+                Restore
+              
+            </span>
+          
+        </div>
+      </div>
+      <div class="md-flex__cell md-flex__cell--shrink">
+        
+          <label class="md-icon md-icon--search md-header-nav__button" for="__search"></label>
+          
+<div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="query" data-md-state="active">
+      <label class="md-icon md-search__icon" for="__search"></label>
+      <button type="reset" class="md-icon md-search__icon" data-md-component="reset" tabindex="-1">
+        &#xE5CD;
+      </button>
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="result">
+          <div class="md-search-result__meta">
+            Type to start searching
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+        
+      </div>
+      
+        <div class="md-flex__cell md-flex__cell--shrink">
+          <div class="md-header-nav__source">
+            
+
+
+  
+
+<a href="https://github.com/Netflix/priam/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Netflix/priam
+  </div>
+</a>
+          </div>
+        </div>
+      
+    </div>
+  </nav>
+</header>
+    
+    <div class="md-container">
+      
+        
+      
+      
+      <main class="md-main">
+        <div class="md-main__inner md-grid" data-md-component="container">
+          
+            
+              <div class="md-sidebar md-sidebar--primary" data-md-component="navigation">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    <nav class="md-nav md-nav--primary" data-md-level="0">
+  <label class="md-nav__title md-nav__title--site" for="__drawer">
+    <a href="../../.." title="Priam" class="md-nav__button md-logo">
+      
+        <i class="md-icon"></i>
+      
+    </a>
+    Priam
+  </label>
+  
+    <div class="md-nav__source">
+      
+
+
+  
+
+<a href="https://github.com/Netflix/priam/" title="Go to repository" class="md-source" data-md-source="github">
+  
+    <div class="md-source__icon">
+      <svg viewBox="0 0 24 24" width="24" height="24">
+        <use xlink:href="#__github" width="24" height="24"></use>
+      </svg>
+    </div>
+  
+  <div class="md-source__repository">
+    Netflix/priam
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../.." title="Home" class="md-nav__link">
+      Home
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../installation/" title="Installation" class="md-nav__link">
+      Installation
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../management/" title="Management Tasks" class="md-nav__link">
+      Management Tasks
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../contributions/" title="Contributions" class="md-nav__link">
+      Contributions
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../presentations/" title="Presentations" class="md-nav__link">
+      Presentations
+    </a>
+  </li>
+
+    
+      
+      
+      
+
+
+  <li class="md-nav__item">
+    <a href="../../faq/faq/" title="FAQ" class="md-nav__link">
+      FAQ
+    </a>
+  </li>
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="toc">
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+<nav class="md-nav md-nav--secondary">
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">Table of contents</label>
+    <ul class="md-nav__list" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#async-downloads" title="Async Downloads" class="md-nav__link">
+    Async Downloads
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#configuration" title="Configuration" class="md-nav__link">
+    Configuration
+  </a>
+  
+</li>
+      
+      
+      
+      
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content">
+            <article class="md-content__inner md-typeset">
+              
+                
+                  <a href="https://github.com/Netflix/priam/edit/master/docs/latest/mgmt/restore.md" title="Edit this page" class="md-icon md-content__icon">&#xE3C9;</a>
+                
+                
+                <h1 id="restore">Restore</h1>
+<p>Data from a snapshot can be restored to the same cluster or a different cluster.  To restore a cluster, the user specifies a start and end time for which the backup data is available.  Priam executes the following sequence of steps for restoring:</p>
+<ul>
+<li>Search for the latest snapshot within the time range </li>
+<li>Download meta file for the snapshot</li>
+<li>Download snapshot files specified in the meta file</li>
+<li>Download all available incremental files up to the end time</li>
+<li>Execute a post restore hook if available, and wait for completion of the hook execution</li>
+<li>Start the cluster and join the ring
+The <em>LocationInfo</em> files are ignored and not backed up.  This forces Cassandra to rediscover other nodes in the cluster upon restore and refresh the ring nodes. </li>
+</ul>
+<p><strong>Important</strong>: Restores should only be performed on the same size cluster. </p>
+<h2 id="async-downloads">Async Downloads</h2>
+<p>During restore, the instance is <strong><em>not in service</em></strong> and thus Priam tries its best to utilize available bandwidth to download the SSTables from remote file system. We use <code>8</code> threads by default to download the files. </p>
+<h2 id="configuration">Configuration</h2>
+<ol>
+<li><strong><em>priam.restore.prefix</em></strong>: This is the location from where the backup will be restored. This has to be the fully qualified location where cluster backup is stored (till cluster name). E.g. <code>bucket_name/test_backup/test/us-east-1/cass_appname</code>. Default: <code>None</code></li>
+<li><strong><em>priam.restore.snapshot</em></strong>: This is the start dateTime and end dateTime from which cluster will be restored. Priam will start finding the latest full snapshot from the end dateTime and will keep going till start dateTime. After the full snapshot is found, Priam downloads all the incremental's. E.g. <code>2017040500,201704092359</code>. Default: <code>None</code></li>
+<li><strong><em>priam.restore.threads</em></strong>: The number of threads to use for restore. Default: <code>8</code></li>
+<li><strong><em>priam.restore.cf.include</em></strong>: Column Family(ies), comma delimited, to include for restore. If no override exists, all keyspaces/cf's will be restored. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Restore exclude list is applied first to exclude CF/keyspace and then restore include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.restore.cf.exclude</em></strong>: Column Family(ies), comma delimited, to ignore while doing restore. The expected format is keyspace.cfname. CF name allows special character <strong>"<em>*</em>"</strong> to denote all the columnfamilies in a given keyspace. e.g. keyspace1.* denotes all the CFs in keyspace1. Restore exclude list is applied first to exclude CF/keyspace and then restore include list is applied to include the CF's/keyspaces. Default: <code>None</code></li>
+<li><strong><em>priam.clrestore.max</em></strong>: Max number of commit logs to restore. This will by default take last N number of commit logs to restore if commit log backup is enabled. Default: <code>10</code>. </li>
+<li><strong><em>priam.postrestorehook.enabled</em></strong>: indicates if postrestorehook is enabled.</li>
+<li><strong><em>priam.postrestorehook</em></strong>: contains the command with arguments to be executed as part of postrestorehook. Priam would wait for completion of this hook before proceeding to starting C*.</li>
+<li><strong><em>priam.postrestorehook.heartbeat.filename</em></strong>: heartbeat file that postrestorehook emits. Priam keeps a tab on this file to make sure postrestorehook is making progress. Otherwise, a new process of postrestorehook would be spawned (upon killing existing process if still exists)</li>
+<li><strong><em>priam.postrestorehook.done.filename</em></strong>:'done' file that postrestorehook creates upon completion of execution.</li>
+<li><strong><em>priam.postrestorehook.timeout.in.days</em></strong>:maximum time that Priam should wait before killing the postrestorehook process (if not already complete)</li>
+<li><strong><em>priam.download.queue.size</em></strong>: Queue size to be used for restore downloads. Note that once queue is full, we would wait for <code>priam.download.timeout</code> to add any new item before declining the request and throwing exception. Default: 100,000. </li>
+<li><strong><em>priam.download.timeout</em></strong>: Downloads are scheduled in <code>priam.download.queue.size</code>. If queue is full then we wait for this time for the queue to have an entry available for queueing the current task. Default: 10 minutes. </li>
+</ol>
+<h1 id="support-for-encrypted-backups">Support for Encrypted Backups</h1>
+<p>Priam restore will handle decryption of the encrypted files. Any file downloaded from remote file system will be first decrypted and then decompressed to ephemeral disk. 
+As part of the restore, Priam will decrypt the ciphertext to plaintext if property (<em>priam.encrypted.restore.enabled</em>) is set to true.</p>
+<p>Priam uses PGP as the encryption / decryption cryptography algorithm. Other algorithm can be implemented via interface IFileCryptography.</p>
+<p>*Note: Pgp uses a passphrase to encrypt your private key on your node. See (http://www.pgpi.org/doc/pgpintro/), section “what is a passphrase” for details.</p>
+<p>Priam restore from AWS bucket using “role assumption”:
+The use case is you are trying to restore objects created by different AWS accounts. See AWS documentation for “cross account access using roles” for detail information.</p>
+<p>Currently, Google cloud and secondary/cross AWS accounts are supported for restoring the encrypted backups. </p>
+<h2 id="configuration_1">Configuration</h2>
+<ol>
+<li><strong><em>priam.encrypted.restore.enabled</em></strong>: Enable the restore where the backups are encrypted using PGP. </li>
+<li><strong><em>priam.pgp.password.phrase</em></strong>: The passphrase used by the cryptography algorithm to encrypt/decrypt. By default, it is expected that this value will be encrypted using open encrypt. Default: <code>None</code>.  </li>
+<li><strong><em>priam.private.key.location</em></strong>: The location on disk of the private key used by the cryptography algorithm. </li>
+<li><strong><em>priam.pgp.pubkey.file.location</em></strong>: The location on disk of the public key used by the cryptography algorithm. </li>
+<li><strong><em>priam.restore.source.type</em></strong>: The type of source for the restore.  Valid values: AWSCROSSACCT or GOOGLE. Default: <code>None</code></li>
+<li><strong><em>priam.gcs.service.acct.id</em></strong>: Google Cloud Storage service account id. This value is supposed to be encrypted using open encrypt. Default: <code>None</code></li>
+<li><strong><em>priam.gcs.service.acct.private.key</em></strong>: The absolute path on disk for the Google Cloud Storage PFX file (i.e. the combined format of the private key and certificate). This value is supposed to be encrypted using open encrypt. Default: <code>None</code></li>
+<li><strong><em>priam.roleassumption.arn</em></strong>: Amazon Resource Name to assume while restoring the backups from an AWS account which requires cross-account assumption. Default: <code>None</code></li>
+</ol>
+<h1 id="api">API</h1>
+<h4 id="restore-status">Restore Status</h4>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/restore/status</code></p>
+</blockquote>
+<p>This gives the status of the current or last restore. Note that the restore status is not persisted on ephemeral disk and thus this status may be lost at restart of Priam. </p>
+<p><strong>Output</strong>: 
+  <code>json
+    {
+      "startDateRange": "[yyyyMMddHHmm]",
+      "endDateRange": "[yyyyMMddHHmm]",
+      "executionStartTime": "[yyyyMMddHHmm]",
+      "executionEndTime": "[yyyyMMddHHmm]",
+      "snapshotMetaFile": "&lt;remote_file_system_location_of_meta.json_used_for_restore&gt;",
+      "status": "[STARTED|FINISHED|FAILED]"
+    }</code></p>
+<h4 id="manual-restore">Manual Restore</h4>
+<blockquote>
+<p><code>http://localhost:8080/Priam/REST/v1/restore/{daterange}</code></p>
+</blockquote>
+<p>This starts a user-triggered restore for a given daterange. <strong>Note</strong>: It expects that other restore configurations are already configured. It requires a minimum of <code>priam.restore.prefix</code> to be already configured. </p>
+<p><strong>Parameters</strong>: 
+  1. <code>daterange</code>: Optional: This is a comma separated start time and end time for the restore in the format of <code>yyyyMMddHHmm</code> or <code>yyyyMMdd</code>. 
+  If no value is provided or a value of <code>default</code> is provided then it takes start time as (current time - 1 day) and end time as current time.</p>
+<p><strong>Output</strong>: 
+  <code>json
+  {"ok"}</code></p>
+                
+                  
+                
+              
+              
+                
+
+
+              
+            </article>
+          </div>
+        </div>
+      </main>
+      
+        
+<footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-footer-copyright">
+        
+          <div class="md-footer-copyright__highlight">
+            Copyright 2018 Netflix, Inc.
+          </div>
+        
+        powered by
+        <a href="https://www.mkdocs.org">MkDocs</a>
+        and
+        <a href="https://squidfunk.github.io/mkdocs-material/">
+          Material for MkDocs</a>
+      </div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    
+      <script src="../../../assets/javascripts/application.245445c6.js"></script>
+      
+      <script>app.initialize({version:"1.0.4",url:{base:"../../.."}})</script>
+      
+    
+  </body>
+</html>

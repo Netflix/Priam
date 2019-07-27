@@ -20,7 +20,7 @@ public class TokenRetrieverUtils {
 
     /**
      * Utility method to infer the IP of the owner of a token in a given datacenter. This method
-     * uses Cassandra gossip information to find the owner. While it is ideal to check all the nodes
+     * uses Cassandra status information to find the owner. While it is ideal to check all the nodes
      * in the ring to see if they agree on the IP to be replaced, in large clusters it may affect
      * the startup performance. This method picks at most 3 random hosts from the ring and see if
      * they all agree on the IP to be replaced. If not, it returns null.
@@ -28,7 +28,8 @@ public class TokenRetrieverUtils {
      * @param allIds
      * @param token
      * @param dc
-     * @return IP of the token owner based on gossip information or null if gossip doesn't converge.
+     * @return IP of the token owner based on gossip information or null if C* status doesn't
+     *     converge.
      * @throws GossipParseException when required number of instances are not available to fetch the
      *     gossip info.
      */
@@ -68,14 +69,20 @@ public class TokenRetrieverUtils {
                 String ip = getIp(instance.getHostName(), token);
                 reachableInstances++;
 
-                if (StringUtils.isEmpty(ip)) {
-                    continue;
-                }
-
                 if (replaceIp == null) {
                     replaceIp = ip;
-                } else if (!replaceIp.equals(ip)) {
-                    break;
+                }
+
+                if (StringUtils.isEmpty(ip) || !replaceIp.equals(ip)) {
+                    // If the IP address produced by getIp call is empty it means it was able to
+                    // parse the status information and that token was still alive!!
+                    // We do not want to do anything if token is considered as alive by Cassandra.
+                    logger.info(
+                            "Not producing anything in replaceIp as according to C* that token is still alive or "
+                                    + "there is a mismatch in status information per Cassandra. ip: [{}], replaceIp: [{}]",
+                            ip,
+                            replaceIp);
+                    return null;
                 }
 
                 matchedGossipInstances++;
@@ -91,12 +98,11 @@ public class TokenRetrieverUtils {
         // instances.
         if (reachableInstances < noOfInstancesGossipShouldMatch) {
             throw new GossipParseException(
-                    "Unable to reach minimum required instances to fetch gossip information.");
+                    String.format(
+                            "Unable to find enough instances where gossip match. Required: [%d]",
+                            noOfInstancesGossipShouldMatch));
         }
 
-        logger.warn(
-                "Return null: Unable to find enough instances where gossip match. Required: {}",
-                noOfInstancesGossipShouldMatch);
         return null;
     }
 
@@ -112,18 +118,20 @@ public class TokenRetrieverUtils {
             // We intentionally do not use the "unreachable" nodes as it may or may not be the best
             // place to start.
             // We just verify that the endpoint we provide is not "live".
-            if (liveNodes.contains(endpointInfo)) return null;
+            if (liveNodes.contains(endpointInfo)) {
+                logger.warn("The token [{}] is considered as alive by [{}].", token, host);
+                return null;
+            }
 
             return endpointInfo;
         } catch (RuntimeException e) {
             throw new GossipParseException(
-                    String.format("Error in reaching out to host: [{}]", host), e);
+                    String.format("Error in reaching out to host: [%s]", host), e);
         } catch (ParseException e) {
             throw new GossipParseException(
                     String.format(
-                            "Error in parsing gossip response [{}] from host: [{}]",
-                            response,
-                            host),
+                            "Error in parsing gossip response [%s] from host: [%s]",
+                            response, host),
                     e);
         }
     }

@@ -26,6 +26,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
@@ -121,7 +122,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         try (InputStream in = new FileInputStream(localPath.toFile());
                 BufferedOutputStream compressedBos =
                         new BufferedOutputStream(new FileOutputStream(compressedDstFile))) {
-            Iterator<byte[]> compressedChunks = this.compress.compress(in, chunkSize);
+            Iterator<byte[]> compressedChunks = new ChunkedStream(ICompression.DEFAULT_COMPRESSION, in, chunkSize);
             while (compressedChunks.hasNext()) {
                 byte[] compressedChunk = compressedChunks.next();
                 compressedBos.write(compressedChunk);

@@ -27,6 +27,8 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.compress.ChunkedStream;
+import com.netflix.priam.compress.Decompressor;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -77,7 +79,7 @@ public class S3FileSystem extends S3FileSystemBase {
                     MAX_BUFFERED_IN_STREAM_SIZE > remoteFileSize
                             ? remoteFileSize
                             : MAX_BUFFERED_IN_STREAM_SIZE;
-            compress.decompressAndClose(
+            Decompressor.decompress(ICompression.DEFAULT_COMPRESSION,
                     new BufferedInputStream(rris, (int) bufSize),
                     new BufferedOutputStream(new FileOutputStream(localPath.toFile())));
         } catch (Exception e) {
@@ -127,7 +129,7 @@ public class S3FileSystem extends S3FileSystemBase {
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
 
         try (InputStream in = new FileInputStream(localPath.toFile())) {
-            Iterator<byte[]> chunks = compress.compress(in, chunkSize);
+            Iterator<byte[]> chunks = new ChunkedStream(ICompression.DEFAULT_COMPRESSION, in, chunkSize);
             // Upload parts.
             int partNum = 0;
             AtomicInteger partsUploaded = new AtomicInteger(0);
@@ -207,7 +209,7 @@ public class S3FileSystem extends S3FileSystemBase {
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     InputStream in =
                             new BufferedInputStream(new FileInputStream(localPath.toFile()))) {
-                Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);
+                Iterator<byte[]> chunkedStream = new ChunkedStream(ICompression.DEFAULT_COMPRESSION, in, chunkSize);
                 while (chunkedStream.hasNext()) {
                     byteArrayOutputStream.write(chunkedStream.next());
                 }

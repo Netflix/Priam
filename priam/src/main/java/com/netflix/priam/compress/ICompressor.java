@@ -1,5 +1,6 @@
+package com.netflix.priam.compress;
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2019 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +15,14 @@
  * limitations under the License.
  *
  */
-package com.netflix.priam.compress;
 
-public interface ICompression {
+import java.io.IOException;
 
-    enum CompressionAlgorithm {
-        SNAPPY,
-        LZ4,
-        NONE
-    }
+public interface ICompressor {
 
-    CompressionAlgorithm DEFAULT_COMPRESSION = CompressionAlgorithm.SNAPPY;
+    void write(byte[] b, int byteOffset, int byteLength) throws IOException;
+
+    void finish() throws IOException;
+
+    void closeQuietly();
 }

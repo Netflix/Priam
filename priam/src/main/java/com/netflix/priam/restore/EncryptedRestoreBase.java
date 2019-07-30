@@ -17,6 +17,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
+import com.netflix.priam.compress.Decompressor;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -170,7 +171,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                 BufferedOutputStream finalDestination =
                                         new BufferedOutputStream(
                                                 new FileOutputStream(restoreLocation))) {
-                            compress.decompressAndClose(is, finalDestination);
+                            Decompressor.decompress(ICompression.DEFAULT_COMPRESSION, is, finalDestination);
                         } catch (Exception ex) {
                             throw new Exception(
                                     "Exception uncompressing file: "

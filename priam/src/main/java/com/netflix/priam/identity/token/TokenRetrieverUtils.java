@@ -16,12 +16,11 @@ import org.slf4j.LoggerFactory;
 /** Common utilities for token retrieval. */
 public class TokenRetrieverUtils {
     private static final Logger logger = LoggerFactory.getLogger(TokenRetrieverBase.class);
-    private static final String GOSSIP_INFO_URL_FORMAT =
-            "http://%s:8080/Priam/REST/v1/cassadmin/gossipinfo";
+    private static final String STATUS_URL_FORMAT = "http://%s:8080/Priam/REST/v1/cassadmin/status";
 
     /**
      * Utility method to infer the IP of the owner of a token in a given datacenter. This method
-     * uses Cassandra gossip information to find the owner. While it is ideal to check all the nodes
+     * uses Cassandra status information to find the owner. While it is ideal to check all the nodes
      * in the ring to see if they agree on the IP to be replaced, in large clusters it may affect
      * the startup performance. This method picks at most 3 random hosts from the ring and see if
      * they all agree on the IP to be replaced. If not, it returns null.
@@ -29,18 +28,14 @@ public class TokenRetrieverUtils {
      * @param allIds
      * @param token
      * @param dc
-     * @return IP of the token owner based on gossip information or null if gossip doesn't converge.
+     * @return IP of the token owner based on gossip information or null if C* status doesn't
+     *     converge.
      * @throws GossipParseException when required number of instances are not available to fetch the
      *     gossip info.
      */
     public static String inferTokenOwnerFromGossip(
             List<? extends PriamInstance> allIds, String token, String dc)
             throws GossipParseException {
-        // TODO: Gossip info in some cases doesn't reflect the real C* state.
-        // Not using gossip info for now.
-        if (!useGossipInfo()) {
-            return null;
-        }
 
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
@@ -74,14 +69,20 @@ public class TokenRetrieverUtils {
                 String ip = getIp(instance.getHostName(), token);
                 reachableInstances++;
 
-                if (StringUtils.isEmpty(ip)) {
-                    continue;
-                }
-
                 if (replaceIp == null) {
                     replaceIp = ip;
-                } else if (!replaceIp.equals(ip)) {
-                    break;
+                }
+
+                if (StringUtils.isEmpty(ip) || !replaceIp.equals(ip)) {
+                    // If the IP address produced by getIp call is empty it means it was able to
+                    // parse the status information and that token was still alive!!
+                    // We do not want to do anything if token is considered as alive by Cassandra.
+                    logger.info(
+                            "Not producing anything in replaceIp as according to C* that token is still alive or "
+                                    + "there is a mismatch in status information per Cassandra. ip: [{}], replaceIp: [{}]",
+                            ip,
+                            replaceIp);
+                    return null;
                 }
 
                 matchedGossipInstances++;
@@ -97,62 +98,40 @@ public class TokenRetrieverUtils {
         // instances.
         if (reachableInstances < noOfInstancesGossipShouldMatch) {
             throw new GossipParseException(
-                    "Unable to reach minimum required instances to fetch gossip information.");
+                    String.format(
+                            "Unable to find enough instances where gossip match. Required: [%d]",
+                            noOfInstancesGossipShouldMatch));
         }
 
-        logger.warn(
-                "Return null: Unable to find enough instances where gossip match. Required: {}",
-                noOfInstancesGossipShouldMatch);
         return null;
-    }
-
-    // TODO: Gossip info in some cases doesn't reflect the real C* state.
-    // Not using gossip info for now.
-    private static boolean useGossipInfo() {
-        return false;
     }
 
     // helper method to get the token owner IP from a Cassandra node.
     private static String getIp(String host, String token) throws GossipParseException {
         String response = null;
         try {
-            response = SystemUtils.getDataFromUrl(String.format(GOSSIP_INFO_URL_FORMAT, host));
-
-            String inputToken = String.format("[%s]", token);
-            JSONParser parser = new JSONParser();
-            JSONArray jsonObject = (JSONArray) parser.parse(response);
-
-            for (Object key : jsonObject) {
-                JSONObject msg = (JSONObject) key;
-
-                // Ensure that we are not trying to replace a NORMAL token and token of that
-                // instance matches what we want to replace.
-                if (msg.get("STATUS") == null
-                        || msg.get("STATUS").toString().equalsIgnoreCase("NORMAL")
-                        || msg.get("TOKENS") == null
-                        || msg.get("PUBLIC_IP") == null
-                        || !msg.get("TOKENS").toString().equals(inputToken)) {
-                    continue;
-                }
-
-                logger.info(
-                        "Using gossip info from host[{}] and token[{}], the replaced address is : [{}]",
-                        host,
-                        token,
-                        msg.get("PUBLIC_IP"));
-                return (String) msg.get("PUBLIC_IP");
+            response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, host));
+            JSONObject jsonObject = (JSONObject) new JSONParser().parse(response);
+            JSONArray liveNodes = (JSONArray) jsonObject.get("live");
+            JSONObject tokenToEndpointMap = (JSONObject) jsonObject.get("tokenToEndpointMap");
+            String endpointInfo = tokenToEndpointMap.get(token).toString();
+            // We intentionally do not use the "unreachable" nodes as it may or may not be the best
+            // place to start.
+            // We just verify that the endpoint we provide is not "live".
+            if (liveNodes.contains(endpointInfo)) {
+                logger.warn("The token [{}] is considered as alive by [{}].", token, host);
+                return null;
             }
 
-            return null;
+            return endpointInfo;
         } catch (RuntimeException e) {
             throw new GossipParseException(
-                    String.format("Error in reaching out to host: [{}]", host), e);
+                    String.format("Error in reaching out to host: [%s]", host), e);
         } catch (ParseException e) {
             throw new GossipParseException(
                     String.format(
-                            "Error in parsing gossip response [{}] from host: [{}]",
-                            response,
-                            host),
+                            "Error in parsing gossip response [%s] from host: [%s]",
+                            response, host),
                     e);
         }
     }

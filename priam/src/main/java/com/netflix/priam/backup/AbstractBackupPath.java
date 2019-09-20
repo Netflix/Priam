@@ -37,22 +37,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     public static final char PATH_SEP = File.separatorChar;
 
-    public enum BackupFileType {
-        SNAP,
-        SST,
-        CL,
-        META,
-        META_V2,
-        SST_V2;
-
-        public static boolean isDataFile(BackupFileType type) {
-            return type != BackupFileType.META
-                    && type != BackupFileType.META_V2
-                    && type != BackupFileType.CL;
-        }
-    }
-
-    protected BackupFileType type;
     protected String clusterName;
     protected String keyspace;
     protected String columnFamily;
@@ -61,24 +45,20 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String token;
     protected String region;
     protected Date time;
-    private long size; // uncompressed file size
-    private long compressedFileSize = 0;
+    protected UploadDownloadDirectives directives = new UploadDownloadDirectives();
     protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
     private File backupFile;
     private Instant lastModified;
     private Date uploadedTs;
-    private ICompression.CompressionAlgorithm compression =
-            ICompression.CompressionAlgorithm.SNAPPY;
-    private IFileCryptography.CryptographyAlgorithm encryption =
-            IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
         this.config = config;
     }
 
-    public void parseLocal(File file, BackupFileType type) throws ParseException {
+    public void parseLocal(File file, UploadDownloadDirectives.BackupFileType type)
+            throws ParseException {
         this.backupFile = file;
 
         String rpath =
@@ -88,8 +68,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.baseDir = config.getBackupLocation();
         this.region = instanceIdentity.getInstanceInfo().getRegion();
         this.token = instanceIdentity.getInstance().getToken();
-        this.type = type;
-        if (BackupFileType.isDataFile(type)) {
+        if (UploadDownloadDirectives.BackupFileType.isDataFile(type)) {
             this.keyspace = elements[0];
             this.columnFamily = elements[1];
         }
@@ -101,11 +80,12 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         2. This is to ensure that all the files from the snapshot are uploaded under single directory in remote file system.
         3. For META file we always override the time field via @link{Metadata#decorateMetaJson}
         */
-        if (type == BackupFileType.SNAP) time = DateUtil.getDate(elements[3]);
+        if (type == UploadDownloadDirectives.BackupFileType.SNAP)
+            time = DateUtil.getDate(elements[3]);
 
         this.lastModified = Instant.ofEpochMilli(file.lastModified());
         this.fileName = file.getName();
-        this.size = file.length();
+        directives.withSize(file.length()).withType(type).withLocalPath(file.toPath());
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
@@ -120,11 +100,12 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     /** Local restore file */
     public File newRestoreFile() {
         StringBuilder buff = new StringBuilder();
-        if (type == BackupFileType.CL) {
+        if (directives.getType() == UploadDownloadDirectives.BackupFileType.CL) {
             buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
         } else {
             buff.append(config.getDataFileLocation()).append(PATH_SEP);
-            if (type != BackupFileType.META && type != BackupFileType.META_V2)
+            if (directives.getType() != UploadDownloadDirectives.BackupFileType.META
+                    && directives.getType() != UploadDownloadDirectives.BackupFileType.META_V2)
                 buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
         }
 
@@ -161,18 +142,19 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
      */
     public abstract String remotePrefix(Date start, Date end, String location);
 
-    public abstract Path remoteV2Prefix(Path location, BackupFileType fileType);
+    public abstract Path remoteV2Prefix(
+            Path location, UploadDownloadDirectives.BackupFileType fileType);
+
+    public UploadDownloadDirectives getDirectives() {
+        return directives;
+    }
+
+    public void setDirectives(UploadDownloadDirectives directives) {
+        this.directives = directives;
+    }
 
     /** Provides the cluster prefix */
     public abstract String clusterPrefix(String location);
-
-    public BackupFileType getType() {
-        return type;
-    }
-
-    public void setType(BackupFileType type) {
-        this.type = type;
-    }
 
     public String getClusterName() {
         return clusterName;
@@ -210,25 +192,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.time = time;
     }
 
-    /*
-    @return original, uncompressed file size
-     */
-    public long getSize() {
-        return size;
-    }
-
-    public void setSize(long size) {
-        this.size = size;
-    }
-
-    public long getCompressedFileSize() {
-        return this.compressedFileSize;
-    }
-
-    public void setCompressedFileSize(long val) {
-        this.compressedFileSize = val;
-    }
-
     public File getBackupFile() {
         return backupFile;
     }
@@ -257,24 +220,132 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.lastModified = instant;
     }
 
-    public ICompression.CompressionAlgorithm getCompression() {
-        return compression;
-    }
-
-    public void setCompression(ICompression.CompressionAlgorithm compression) {
-        this.compression = compression;
-    }
-
-    public IFileCryptography.CryptographyAlgorithm getEncryption() {
-        return encryption;
-    }
-
-    public void setEncryption(IFileCryptography.CryptographyAlgorithm encryption) {
-        this.encryption = encryption;
-    }
-
     @Override
     public String toString() {
         return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();
+    }
+
+    public static class UploadDownloadDirectives {
+        // Remote file system path denoting the location of the file.
+        private Path remotePath;
+        // Path to the local file system
+        private Path localPath;
+        // No of times to retry to upload/download a file from remote file system. If &lt;1, it will
+        // perform operation exactly once.
+        private int retry;
+        // If true, delete the file denoted by localPath after it is successfully uploaded to the
+        // filesystem. If there is any failure, file will not be deleted.
+        private boolean deleteAfterSuccessfulUpload = false;
+        // Compression technique  to be used for upload/download.
+        private ICompression.CompressionAlgorithm compression =
+                ICompression.CompressionAlgorithm.SNAPPY;
+        // Encryption technique to be used for upload/download
+        private IFileCryptography.CryptographyAlgorithm encryption =
+                IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
+        // uncompressed and unencrypted file size in original form.
+        private long size;
+        // file size on the remote file system.
+        private long compressedFileSize = 0;
+
+        public enum BackupFileType {
+            SNAP,
+            SST,
+            CL,
+            META,
+            META_V2,
+            SST_V2;
+
+            public static boolean isDataFile(BackupFileType type) {
+                return type != BackupFileType.META
+                        && type != BackupFileType.META_V2
+                        && type != BackupFileType.CL;
+            }
+        }
+
+        protected BackupFileType type;
+
+        public Path getRemotePath() {
+            return remotePath;
+        }
+
+        public UploadDownloadDirectives withRemotePath(Path remotePath) {
+            this.remotePath = remotePath;
+            return this;
+        }
+
+        public Path getLocalPath() {
+            return localPath;
+        }
+
+        public UploadDownloadDirectives withLocalPath(Path localPath) {
+            this.localPath = localPath;
+            return this;
+        }
+
+        public int getRetry() {
+            return retry;
+        }
+
+        public UploadDownloadDirectives withRetry(int retry) {
+            this.retry = retry;
+            return this;
+        }
+
+        public boolean isDeleteAfterSuccessfulUpload() {
+            return deleteAfterSuccessfulUpload;
+        }
+
+        public UploadDownloadDirectives withDeleteAfterSuccessfulUpload(
+                boolean deleteAfterSuccessfulUpload) {
+            this.deleteAfterSuccessfulUpload = deleteAfterSuccessfulUpload;
+            return this;
+        }
+
+        public ICompression.CompressionAlgorithm getCompression() {
+            return compression;
+        }
+
+        public UploadDownloadDirectives withCompression(
+                ICompression.CompressionAlgorithm compression) {
+            this.compression = compression;
+            return this;
+        }
+
+        public IFileCryptography.CryptographyAlgorithm getEncryption() {
+            return encryption;
+        }
+
+        public UploadDownloadDirectives withEncryption(
+                IFileCryptography.CryptographyAlgorithm encryption) {
+            this.encryption = encryption;
+            return this;
+        }
+
+        public long getSize() {
+            return size;
+        }
+
+        public UploadDownloadDirectives withSize(long size) {
+            this.size = size;
+            return this;
+        }
+
+        public long getCompressedFileSize() {
+            return this.compressedFileSize;
+        }
+
+        public UploadDownloadDirectives setCompressedFileSize(long val) {
+            this.compressedFileSize = val;
+            return this;
+        }
+
+        public BackupFileType getType() {
+            return type;
+        }
+
+        public UploadDownloadDirectives withType(BackupFileType type) {
+            this.type = type;
+            return this;
+        }
     }
 }

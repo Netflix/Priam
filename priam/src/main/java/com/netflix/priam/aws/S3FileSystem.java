@@ -27,7 +27,8 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
-import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.compress.ChunkedStream;
+import com.netflix.priam.compress.Decompressor;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
@@ -53,12 +54,11 @@ public class S3FileSystem extends S3FileSystemBase {
     public S3FileSystem(
             @Named("awss3roleassumption") IS3Credential cred,
             Provider<AbstractBackupPath> pathProvider,
-            ICompression compress,
             final IConfiguration config,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
             InstanceInfo instanceInfo) {
-        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
+        super(pathProvider, config, backupMetrics, backupNotificationMgr);
         s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
@@ -67,23 +67,29 @@ public class S3FileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+    protected void downloadFileImpl(final AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         try {
-            long remoteFileSize = super.getFileSize(remotePath);
+            long remoteFileSize = super.getFileSize(directives.getRemotePath());
             RangeReadInputStream rris =
                     new RangeReadInputStream(
-                            s3Client, getShard(), remoteFileSize, remotePath.toString());
+                            s3Client,
+                            getShard(),
+                            remoteFileSize,
+                            directives.getRemotePath().toString());
             final long bufSize =
                     MAX_BUFFERED_IN_STREAM_SIZE > remoteFileSize
                             ? remoteFileSize
                             : MAX_BUFFERED_IN_STREAM_SIZE;
-            compress.decompressAndClose(
+            Decompressor.decompress(
+                    directives.getCompression(),
                     new BufferedInputStream(rris, (int) bufSize),
-                    new BufferedOutputStream(new FileOutputStream(localPath.toFile())));
+                    new BufferedOutputStream(
+                            new FileOutputStream(directives.getLocalPath().toFile())));
         } catch (Exception e) {
             throw new BackupRestoreException(
                     "Exception encountered downloading "
-                            + remotePath
+                            + directives.getRemotePath()
                             + " from S3 bucket "
                             + getShard()
                             + ", Msg: "
@@ -107,27 +113,29 @@ public class S3FileSystem extends S3FileSystemBase {
         return ret;
     }
 
-    private long uploadMultipart(Path localPath, Path remotePath) throws BackupRestoreException {
-        long chunkSize = getChunkSize(localPath);
+    private long uploadMultipart(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
+        long chunkSize = getChunkSize(directives.getLocalPath());
         if (logger.isDebugEnabled())
             logger.debug(
                     "Uploading to {}/{} with chunk size {}",
                     config.getBackupPrefix(),
-                    remotePath,
+                    directives.getRemotePath(),
                     chunkSize);
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
-        initRequest.withObjectMetadata(getObjectMetadata(localPath));
+                new InitiateMultipartUploadRequest(
+                        config.getBackupPrefix(), directives.getRemotePath().toString());
+        initRequest.withObjectMetadata(getObjectMetadata(directives.getLocalPath()));
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part =
                 new DataPart(
                         config.getBackupPrefix(),
-                        remotePath.toString(),
+                        directives.getRemotePath().toString(),
                         initResponse.getUploadId());
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
 
-        try (InputStream in = new FileInputStream(localPath.toFile())) {
-            Iterator<byte[]> chunks = compress.compress(in, chunkSize);
+        try (InputStream in = new FileInputStream(directives.getLocalPath().toFile())) {
+            Iterator<byte[]> chunks = new ChunkedStream(directives.getCompression(), in, chunkSize);
             // Upload parts.
             int partNum = 0;
             AtomicInteger partsUploaded = new AtomicInteger(0);
@@ -141,7 +149,7 @@ public class S3FileSystem extends S3FileSystemBase {
                                 ++partNum,
                                 chunk,
                                 config.getBackupPrefix(),
-                                remotePath.toString(),
+                                directives.getRemotePath().toString(),
                                 initResponse.getUploadId());
                 S3PartUploader partUploader =
                         new S3PartUploader(s3Client, dp, partETags, partsUploaded);
@@ -155,7 +163,7 @@ public class S3FileSystem extends S3FileSystemBase {
             executor.sleepTillEmpty();
             logger.info(
                     "All chunks uploaded for file {}, num of expected parts:{}, num of actual uploaded parts: {}",
-                    localPath.toFile().getName(),
+                    directives.getLocalPath().toFile().getName(),
                     partNum,
                     partsUploaded.get());
 
@@ -169,7 +177,7 @@ public class S3FileSystem extends S3FileSystemBase {
 
             CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
                     new S3PartUploader(s3Client, part, partETags).completeUpload();
-            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
+            checkSuccessfulUpload(resultS3MultiPartUploadComplete, directives.getLocalPath());
 
             if (logger.isDebugEnabled()) {
                 final S3ResponseMetadata responseMetadata =
@@ -188,13 +196,15 @@ public class S3FileSystem extends S3FileSystemBase {
             return compressedFileSize;
         } catch (Exception e) {
             new S3PartUploader(s3Client, part, partETags).abortUpload();
-            throw new BackupRestoreException("Error uploading file: " + localPath.toString(), e);
+            throw new BackupRestoreException(
+                    "Error uploading file: " + directives.getLocalPath().toString(), e);
         }
     }
 
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         long chunkSize = config.getBackupChunkSize();
-        long fileSize = localPath.toFile().length();
+        long fileSize = directives.getSize();
 
         if (fileSize < chunkSize) {
             // Upload file without using multipart upload as it will be more efficient.
@@ -202,24 +212,33 @@ public class S3FileSystem extends S3FileSystemBase {
                 logger.debug(
                         "Uploading to {}/{} using PUT operation",
                         config.getBackupPrefix(),
-                        remotePath);
+                        directives.getRemotePath());
 
             try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                     InputStream in =
-                            new BufferedInputStream(new FileInputStream(localPath.toFile()))) {
-                Iterator<byte[]> chunkedStream = compress.compress(in, chunkSize);
+                            new BufferedInputStream(
+                                    new FileInputStream(directives.getLocalPath().toFile()))) {
+                Iterator<byte[]> chunkedStream =
+                        new ChunkedStream(directives.getCompression(), in, chunkSize);
                 while (chunkedStream.hasNext()) {
                     byteArrayOutputStream.write(chunkedStream.next());
                 }
                 byte[] chunk = byteArrayOutputStream.toByteArray();
                 long compressedFileSize = chunk.length;
-                rateLimiter.acquire(chunk.length);
-                ObjectMetadata objectMetadata = getObjectMetadata(localPath);
+
+                /**
+                 * Weird, right that we are checking for length which is positive. You can thanks
+                 * this to sometimes C* creating files which are zero bytes, and giving that in
+                 * snapshot for some unknown reason.
+                 */
+                if (chunk.length > 0) rateLimiter.acquire(chunk.length);
+
+                ObjectMetadata objectMetadata = getObjectMetadata(directives.getLocalPath());
                 objectMetadata.setContentLength(chunk.length);
                 PutObjectRequest putObjectRequest =
                         new PutObjectRequest(
                                 config.getBackupPrefix(),
-                                remotePath.toString(),
+                                directives.getRemotePath().toString(),
                                 new ByteArrayInputStream(chunk),
                                 objectMetadata);
                 // Retry if failed.
@@ -234,14 +253,14 @@ public class S3FileSystem extends S3FileSystemBase {
                 if (logger.isDebugEnabled())
                     logger.debug(
                             "Successfully uploaded file with putObject: {} and etag: {}",
-                            remotePath,
+                            directives.getRemotePath(),
                             upload.getETag());
 
                 return compressedFileSize;
             } catch (Exception e) {
                 throw new BackupRestoreException(
-                        "Error uploading file: " + localPath.toFile().getName(), e);
+                        "Error uploading file: " + directives.getLocalPath().toFile().getName(), e);
             }
-        } else return uploadMultipart(localPath, remotePath);
+        } else return uploadMultipart(directives);
     }
 }

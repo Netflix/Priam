@@ -19,6 +19,7 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -61,11 +62,10 @@ public class MetaV2Proxy implements IMetaProxy {
 
     @Override
     public String getMetaPrefix(DateUtil.DateRange dateRange) {
-        return getMatch(dateRange, AbstractBackupPath.BackupFileType.META_V2);
+        return getMatch(dateRange, BackupFileType.META_V2);
     }
 
-    private String getMatch(
-            DateUtil.DateRange dateRange, AbstractBackupPath.BackupFileType backupFileType) {
+    private String getMatch(DateUtil.DateRange dateRange, BackupFileType backupFileType) {
         Path location = fs.getPrefix();
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         String match = StringUtils.EMPTY;
@@ -81,11 +81,11 @@ public class MetaV2Proxy implements IMetaProxy {
     @Override
     public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
             throws BackupRestoreException {
-        String incrementalPrefix = getMatch(dateRange, AbstractBackupPath.BackupFileType.SST_V2);
+        String incrementalPrefix = getMatch(dateRange, BackupFileType.SST_V2);
         String marker =
                 getMatch(
                         new DateUtil.DateRange(dateRange.getStartTime(), null),
-                        AbstractBackupPath.BackupFileType.SST_V2);
+                        BackupFileType.SST_V2);
         logger.info(
                 "Listing filesystem with prefix: {}, marker: {}, daterange: {}",
                 incrementalPrefix,
@@ -153,7 +153,8 @@ public class MetaV2Proxy implements IMetaProxy {
     @Override
     public Path downloadMetaFile(AbstractBackupPath meta) throws BackupRestoreException {
         Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath());
-        fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
+        meta.getDirectives().withRetry(10).withLocalPath(localFile);
+        fs.downloadFile(meta);
         return localFile;
     }
 

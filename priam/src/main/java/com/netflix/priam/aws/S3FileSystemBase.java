@@ -30,7 +30,6 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -50,19 +49,16 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     AmazonS3 s3Client;
     final IConfiguration config;
-    final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
     final RateLimiter rateLimiter;
     private final RateLimiter objectExistLimiter;
 
     S3FileSystemBase(
             Provider<AbstractBackupPath> pathProvider,
-            ICompression compress,
             final IConfiguration config,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr) {
         super(config, backupMetrics, backupNotificationMgr, pathProvider);
-        this.compress = compress;
         this.config = config;
 
         int threads = config.getBackupThreads();

@@ -1,4 +1,0 @@
-dependencies {
-    compile project(':priam')
-    testCompile project(path: ':priam')
-}

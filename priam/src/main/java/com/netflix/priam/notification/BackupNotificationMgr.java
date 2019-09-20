@@ -60,12 +60,12 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", abp.getToken());
             jsonObject.put("filename", abp.getFileName());
-            jsonObject.put("uncompressfilesize", abp.getSize());
-            jsonObject.put("compressfilesize", abp.getCompressedFileSize());
-            jsonObject.put("backuptype", abp.getType().name());
+            jsonObject.put("uncompressfilesize", abp.getDirectives().getSize());
+            jsonObject.put("compressfilesize", abp.getDirectives().getCompressedFileSize());
+            jsonObject.put("backuptype", abp.getDirectives().getType().name());
             jsonObject.put("uploadstatus", uploadStatus);
-            jsonObject.put("compression", abp.getCompression().name());
-            jsonObject.put("encryption", abp.getEncryption().name());
+            jsonObject.put("compression", abp.getDirectives().getCompression().name());
+            jsonObject.put("encryption", abp.getDirectives().getEncryption().name());
 
             // SNS Attributes for filtering messages. Cluster name and backup file type.
             Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
@@ -78,7 +78,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                     "backuptype",
                     new MessageAttributeValue()
                             .withDataType("String")
-                            .withStringValue(abp.getType().name()));
+                            .withStringValue(abp.getDirectives().getType().name()));
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {

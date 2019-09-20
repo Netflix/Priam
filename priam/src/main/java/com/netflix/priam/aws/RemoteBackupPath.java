@@ -85,17 +85,17 @@ public class RemoteBackupPath extends AbstractBackupPath {
         Path prefix =
                 Paths.get(
                         getV2Prefix().toString(),
-                        type.toString(),
+                        directives.getType().toString(),
                         getLastModified().toEpochMilli() + "");
 
-        if (type == BackupFileType.SST_V2) {
+        if (directives.getType() == UploadDownloadDirectives.BackupFileType.SST_V2) {
             prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
         }
 
         return Paths.get(
                 prefix.toString(),
-                getCompression().toString(),
-                getEncryption().toString(),
+                directives.getCompression().toString(),
+                directives.getEncryption().toString(),
                 fileName);
     }
 
@@ -108,23 +108,25 @@ public class RemoteBackupPath extends AbstractBackupPath {
                             "Too few elements (expected: [%d]) in path: %s", 8, remoteFilePath));
         int name_count_idx = 3;
 
-        type = BackupFileType.valueOf(remoteFilePath.getName(name_count_idx++).toString());
+        directives.withType(
+                UploadDownloadDirectives.BackupFileType.valueOf(
+                        remoteFilePath.getName(name_count_idx++).toString()));
         setLastModified(
                 Instant.ofEpochMilli(
                         Long.parseLong(remoteFilePath.getName(name_count_idx++).toString())));
 
-        if (type == BackupFileType.SST_V2) {
+        if (directives.getType() == UploadDownloadDirectives.BackupFileType.SST_V2) {
             keyspace = remoteFilePath.getName(name_count_idx++).toString();
             columnFamily = remoteFilePath.getName(name_count_idx++).toString();
         }
 
-        setCompression(
-                ICompression.CompressionAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
-
-        setEncryption(
-                IFileCryptography.CryptographyAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
+        directives
+                .withCompression(
+                        ICompression.CompressionAlgorithm.valueOf(
+                                remoteFilePath.getName(name_count_idx++).toString()))
+                .withEncryption(
+                        IFileCryptography.CryptographyAlgorithm.valueOf(
+                                remoteFilePath.getName(name_count_idx++).toString()));
         fileName = remoteFilePath.getName(name_count_idx).toString();
     }
 
@@ -133,8 +135,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
                 Paths.get(
                         getV1Prefix().toString(),
                         DateUtil.formatyyyyMMddHHmm(time),
-                        type.toString());
-        if (BackupFileType.isDataFile(type))
+                        directives.getType().toString());
+        if (UploadDownloadDirectives.BackupFileType.isDataFile(directives.getType()))
             path = Paths.get(path.toString(), keyspace, columnFamily);
         return Paths.get(path.toString(), fileName);
     }
@@ -147,8 +149,15 @@ public class RemoteBackupPath extends AbstractBackupPath {
                             "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
 
         time = DateUtil.getDate(remoteFilePath.getName(4).toString());
-        type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
-        if (BackupFileType.isDataFile(type)) {
+        /*
+           We put this as hard-coded value as Backup V1 will always remain snappy compressed to keep backwards compatibility
+        */
+        directives
+                .withCompression(ICompression.CompressionAlgorithm.SNAPPY)
+                .withType(
+                        UploadDownloadDirectives.BackupFileType.valueOf(
+                                remoteFilePath.getName(5).toString()));
+        if (UploadDownloadDirectives.BackupFileType.isDataFile(directives.getType())) {
             keyspace = remoteFilePath.getName(6).toString();
             columnFamily = remoteFilePath.getName(7).toString();
         }
@@ -179,7 +188,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
      */
     @Override
     public String getRemotePath() {
-        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
+        if (directives.getType() == UploadDownloadDirectives.BackupFileType.SST_V2
+                || directives.getType() == UploadDownloadDirectives.BackupFileType.META_V2) {
             return getV2Location().toString();
         } else {
             return getV1Location().toString();
@@ -191,14 +201,18 @@ public class RemoteBackupPath extends AbstractBackupPath {
         // Check for all backup file types to ensure how we parse
         // TODO: We should clean this hack to get backupFileType for parsing when we delete V1 of
         // backups.
-        for (BackupFileType fileType : BackupFileType.values()) {
+        directives.withRemotePath(Paths.get(remoteFilePath));
+
+        for (UploadDownloadDirectives.BackupFileType fileType :
+                UploadDownloadDirectives.BackupFileType.values()) {
             if (remoteFilePath.contains(PATH_SEP + fileType.toString() + PATH_SEP)) {
-                type = fileType;
+                directives.withType(fileType);
                 break;
             }
         }
 
-        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
+        if (directives.getType() == UploadDownloadDirectives.BackupFileType.SST_V2
+                || directives.getType() == UploadDownloadDirectives.BackupFileType.META_V2) {
             parseV2Location(remoteFilePath);
         } else {
             parseV1Location(Paths.get(remoteFilePath));
@@ -221,7 +235,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
     }
 
     @Override
-    public Path remoteV2Prefix(Path location, BackupFileType fileType) {
+    public Path remoteV2Prefix(Path location, UploadDownloadDirectives.BackupFileType fileType) {
         if (location.getNameCount() <= 1) {
             baseDir = config.getBackupLocation();
             clusterName = config.getAppName();

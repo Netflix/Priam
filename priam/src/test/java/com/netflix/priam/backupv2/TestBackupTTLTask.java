@@ -21,6 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
 import com.netflix.priam.backup.Status;
@@ -121,7 +122,7 @@ public class TestBackupTTLTask {
 
         for (int i = 0; i < metas.length; i++) {
             AbstractBackupPath path = pathProvider.get();
-            path.parseLocal(metas[i].toFile(), AbstractBackupPath.BackupFileType.META_V2);
+            path.parseLocal(metas[i].toFile(), BackupFileType.META_V2);
             allFiles.add(path.getRemotePath());
             allFilesMap.put("META" + i, path.getRemotePath());
         }
@@ -131,7 +132,7 @@ public class TestBackupTTLTask {
 
     private String getRemoteFromLocal(String localPath) throws ParseException {
         AbstractBackupPath path = pathProvider.get();
-        path.parseLocal(new File(localPath), AbstractBackupPath.BackupFileType.SST_V2);
+        path.parseLocal(new File(localPath), BackupFileType.SST_V2);
         return path.getRemotePath();
     }
 

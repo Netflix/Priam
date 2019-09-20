@@ -10,6 +10,5 @@ apply plugin: 'war'
 
 dependencies {
     compile project(':priam')
-    compile project(':priam-dse-extensions')
     compile project(':priam-cass-extensions')
 }

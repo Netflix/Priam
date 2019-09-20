@@ -19,6 +19,7 @@ package com.netflix.priam.backupv2;
 import com.google.gson.stream.JsonWriter;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.config.IConfiguration;
@@ -188,14 +189,15 @@ public class MetaFileWriterBuilder {
          */
         public void uploadMetaFile(boolean deleteOnSuccess) throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
-            abstractBackupPath.parseLocal(
-                    metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            backupFileSystem.uploadFile(
-                    metaFilePath,
-                    Paths.get(getRemoteMetaFilePath()),
-                    abstractBackupPath,
-                    10,
-                    deleteOnSuccess);
+            abstractBackupPath.parseLocal(metaFilePath.toFile(), BackupFileType.META_V2);
+
+            abstractBackupPath
+                    .getDirectives()
+                    .withRetry(10)
+                    .withDeleteAfterSuccessfulUpload(deleteOnSuccess)
+                    .withRemotePath(Paths.get(abstractBackupPath.getRemotePath()));
+
+            backupFileSystem.uploadFile(abstractBackupPath);
         }
 
         public Path getMetaFilePath() {
@@ -204,8 +206,7 @@ public class MetaFileWriterBuilder {
 
         public String getRemoteMetaFilePath() throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
-            abstractBackupPath.parseLocal(
-                    metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+            abstractBackupPath.parseLocal(metaFilePath.toFile(), BackupFileType.META_V2);
             return abstractBackupPath.getRemotePath();
         }
     }

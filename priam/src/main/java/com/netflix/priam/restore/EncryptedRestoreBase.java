@@ -17,6 +17,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
+import com.netflix.priam.compress.Decompressor;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -104,10 +105,8 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                         // == download object from source bucket
                         try {
                             // Not retrying to download file here as it is already in RetryCallable.
-                            fs.downloadFile(
-                                    Paths.get(path.getRemotePath()),
-                                    Paths.get(tempFile.getAbsolutePath()),
-                                    0);
+                            path.getDirectives().withRetry(0).withLocalPath(tempFile.toPath());
+                            fs.downloadFile(path);
                         } catch (Exception ex) {
                             // This behavior is retryable; therefore, lets get to a clean state
                             // before each retry.
@@ -170,7 +169,8 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                 BufferedOutputStream finalDestination =
                                         new BufferedOutputStream(
                                                 new FileOutputStream(restoreLocation))) {
-                            compress.decompressAndClose(is, finalDestination);
+                            Decompressor.decompress(
+                                    ICompression.DEFAULT_COMPRESSION, is, finalDestination);
                         } catch (Exception ex) {
                             throw new Exception(
                                     "Exception uncompressing file: "

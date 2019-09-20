@@ -827,6 +827,17 @@ public interface IConfiguration {
     }
 
     /**
+     * TTL (in days) for the entries - filenames which will be cached internally when successfully
+     * uploaded to remote file system. This cache is used to avoid bombarding the remote file system
+     * to check if object exists.
+     *
+     * @return
+     */
+    default int getBackupCacheTTLInDays() {
+        return 2;
+    }
+
+    /**
      * Queue size to be used for file downloads. Note that once queue is full, we would wait for
      * {@link #getDownloadTimeout()} to add any new item before declining the request and throwing
      * exception.

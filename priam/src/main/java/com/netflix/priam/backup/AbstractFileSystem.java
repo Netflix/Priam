@@ -21,7 +21,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
@@ -30,11 +30,13 @@ import com.netflix.priam.notification.EventGenerator;
 import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -66,7 +68,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
-    private final Cache<Path, Boolean> objectCache;
+    private final Cache<Path, Instant> objectCache;
 
     @Inject
     public AbstractFileSystem(
@@ -80,7 +82,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         // Add notifications.
         this.addObserver(backupNotificationMgr);
         this.objectCache =
-                CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
+                CacheBuilder.newBuilder()
+                        .maximumSize(configuration.getBackupQueueSize())
+                        .expireAfterAccess(configuration.getBackupCacheTTLInDays(), TimeUnit.DAYS)
+                        .build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
         /*
         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
@@ -111,147 +116,159 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     @Override
-    public Future<Path> asyncDownloadFile(
-            final Path remotePath, final Path localPath, final int retry)
+    public Future<Path> asyncDownloadFile(final AbstractBackupPath path)
             throws BackupRestoreException, RejectedExecutionException {
         return fileDownloadExecutor.submit(
                 () -> {
-                    downloadFile(remotePath, localPath, retry);
-                    return remotePath;
+                    downloadFile(path);
+                    return path.getDirectives().getRemotePath();
                 });
     }
 
     @Override
-    public void downloadFile(final Path remotePath, final Path localPath, final int retry)
-            throws BackupRestoreException {
+    public void downloadFile(final AbstractBackupPath path) throws BackupRestoreException {
         // TODO: Should we download the file if localPath already exists?
-        if (remotePath == null || localPath == null) return;
-        localPath.toFile().getParentFile().mkdirs();
-        logger.info("Downloading file: {} to location: {}", remotePath, localPath);
+        AbstractBackupPath.UploadDownloadDirectives directives = path.getDirectives();
+        if (directives.getRemotePath() == null || directives.getLocalPath() == null) return;
+        directives.getLocalPath().toFile().getParentFile().mkdirs();
+        logger.info(
+                "Downloading file: {} to location: {}",
+                directives.getRemotePath(),
+                directives.getLocalPath());
         try {
-            new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {
+            new BoundedExponentialRetryCallable<Void>(500, 10000, directives.getRetry()) {
                 @Override
                 public Void retriableCall() throws Exception {
-                    downloadFileImpl(remotePath, localPath);
+                    downloadFileImpl(directives);
                     return null;
                 }
             }.call();
             // Note we only downloaded the bytes which are represented on file system (they are
             // compressed and maybe encrypted).
             // File size after decompression or decryption might be more/less.
-            backupMetrics.recordDownloadRate(getFileSize(remotePath));
+            backupMetrics.recordDownloadRate(getFileSize(directives.getRemotePath()));
             backupMetrics.incrementValidDownloads();
-            logger.info("Successfully downloaded file: {} to location: {}", remotePath, localPath);
+            logger.info(
+                    "Successfully downloaded file: {} to location: {}",
+                    directives.getRemotePath(),
+                    directives.getLocalPath());
         } catch (Exception e) {
             backupMetrics.incrementInvalidDownloads();
-            logger.error("Error while downloading file: {} to location: {}", remotePath, localPath);
+            logger.error(
+                    "Error while downloading file: {} to location: {}",
+                    directives.getRemotePath(),
+                    directives.getLocalPath());
             throw new BackupRestoreException(e.getMessage());
         }
     }
 
-    protected abstract void downloadFileImpl(final Path remotePath, final Path localPath)
+    protected abstract void downloadFileImpl(
+            final AbstractBackupPath.UploadDownloadDirectives directives)
             throws BackupRestoreException;
 
     @Override
-    public Future<Path> asyncUploadFile(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
+    public Future<Path> asyncUploadFile(final AbstractBackupPath path)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);
-                    return localPath;
+                    uploadFile(path);
+                    return path.getDirectives().getLocalPath();
                 });
     }
 
     @Override
-    public void uploadFile(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
+    public void uploadFile(final AbstractBackupPath path)
             throws FileNotFoundException, BackupRestoreException {
-        if (localPath == null
-                || remotePath == null
-                || !localPath.toFile().exists()
-                || localPath.toFile().isDirectory())
+        AbstractBackupPath.UploadDownloadDirectives directives = path.getDirectives();
+        if (directives == null
+                || directives.getLocalPath() == null
+                || directives.getRemotePath() == null
+                || !directives.getLocalPath().toFile().exists()
+                || directives.getLocalPath().toFile().isDirectory())
             throw new FileNotFoundException(
                     "File do not exist or is a directory. localPath: "
-                            + localPath
+                            + directives.getLocalPath()
                             + ", remotePath: "
-                            + remotePath);
+                            + directives.getRemotePath());
 
-        if (tasksQueued.add(localPath)) {
-            logger.info("Uploading file: {} to location: {}", localPath, remotePath);
+        if (tasksQueued.add(directives.getLocalPath())) {
+            logger.info(
+                    "Uploading file: {} to location: {}",
+                    directives.getLocalPath(),
+                    directives.getRemotePath());
             try {
                 long uploadedFileSize;
 
                 // Upload file if it not present at remote location.
-                if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
+                if (path.getDirectives().getType() != BackupFileType.SST_V2
+                        || !checkObjectExists(directives.getRemotePath())) {
                     notifyEventStart(new BackupEvent(path));
                     uploadedFileSize =
-                            new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
+                            new BoundedExponentialRetryCallable<Long>(
+                                    500, 10000, directives.getRetry()) {
                                 @Override
                                 public Long retriableCall() throws Exception {
-                                    return uploadFileImpl(localPath, remotePath);
+                                    return uploadFileImpl(directives);
                                 }
                             }.call();
 
                     // Add to cache after successful upload.
                     // We only add SST_V2 as other file types are usually not checked, so no point
                     // evicting our SST_V2 results.
-                    if (path.getType() == BackupFileType.SST_V2) addObjectCache(remotePath);
+                    if (path.getDirectives().getType() == BackupFileType.SST_V2)
+                        addObjectCache(directives.getRemotePath());
 
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
-                    path.setCompressedFileSize(uploadedFileSize);
+                    path.getDirectives().setCompressedFileSize(uploadedFileSize);
                     notifyEventSuccess(new BackupEvent(path));
                 } else {
                     // file is already uploaded to remote file system.
-                    logger.info("File: {} already present on remoteFileSystem.", remotePath);
+                    logger.info(
+                            "File: {} already present on remoteFileSystem.",
+                            directives.getRemotePath());
                 }
 
                 logger.info(
-                        "Successfully uploaded file: {} to location: {}", localPath, remotePath);
+                        "Successfully uploaded file: {} to location: {}",
+                        directives.getLocalPath(),
+                        directives.getRemotePath());
 
-                if (deleteAfterSuccessfulUpload && !FileUtils.deleteQuietly(localPath.toFile()))
+                if (directives.isDeleteAfterSuccessfulUpload()
+                        && !FileUtils.deleteQuietly(directives.getLocalPath().toFile()))
                     logger.warn(
                             String.format(
                                     "Failed to delete local file %s.",
-                                    localPath.toFile().getAbsolutePath()));
+                                    directives.getLocalPath().toFile().getAbsolutePath()));
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
                 notifyEventFailure(new BackupEvent(path));
                 logger.error(
                         "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
-                        localPath,
-                        remotePath,
+                        directives.getLocalPath(),
+                        directives.getRemotePath(),
                         e.getMessage(),
                         e.getStackTrace());
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.
-                tasksQueued.remove(localPath);
+                tasksQueued.remove(directives.getLocalPath());
             }
-        } else logger.info("Already in queue, no-op.  File: {}", localPath);
+        } else logger.info("Already in queue, no-op.  File: {}", directives.getLocalPath());
     }
 
     private void addObjectCache(Path remotePath) {
-        objectCache.put(remotePath, Boolean.TRUE);
+        objectCache.put(remotePath, DateUtil.getInstant());
     }
 
     @Override
     public boolean checkObjectExists(Path remotePath) {
         // Check in cache, if remote file exists.
-        Boolean cacheResult = objectCache.getIfPresent(remotePath);
+        Instant lastUpdatedTimestamp = objectCache.getIfPresent(remotePath);
 
         // Cache hit. Return the value.
-        if (cacheResult != null) return cacheResult;
+        if (lastUpdatedTimestamp != null) return true;
 
         // Cache miss - Check remote file system if object exist.
         boolean remoteFileExist = doesRemoteFileExist(remotePath);
@@ -278,7 +295,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 
-    protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
+    protected abstract long uploadFileImpl(
+            final AbstractBackupPath.UploadDownloadDirectives directives)
             throws BackupRestoreException;
 
     @Override

@@ -20,6 +20,7 @@ package com.netflix.priam.backupv2;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.FileReader;
@@ -67,7 +68,7 @@ public class MetaV1Proxy implements IMetaProxy {
 
         while (backupfiles.hasNext()) {
             AbstractBackupPath path = backupfiles.next();
-            if (path.getType() == AbstractBackupPath.BackupFileType.META)
+            if (path.getDirectives().getType() == BackupFileType.META)
                 // Since there are now meta file for incrementals as well as snapshot, we need to
                 // find the correct one (i.e. the snapshot meta file (meta.json))
                 if (path.getFileName().equalsIgnoreCase("meta.json")) {
@@ -118,7 +119,7 @@ public class MetaV1Proxy implements IMetaProxy {
             List<String> remoteListing = new ArrayList<>();
             while (backupfiles.hasNext()) {
                 AbstractBackupPath path = backupfiles.next();
-                if (path.getType() == AbstractBackupPath.BackupFileType.SNAP)
+                if (path.getDirectives().getType() == BackupFileType.SNAP)
                     remoteListing.add(path.getRemotePath());
             }
 
@@ -150,7 +151,8 @@ public class MetaV1Proxy implements IMetaProxy {
     @Override
     public Path downloadMetaFile(AbstractBackupPath meta) throws BackupRestoreException {
         Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath() + ".download");
-        fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
+        meta.getDirectives().withLocalPath(localFile).withRetry(10);
+        fs.downloadFile(meta);
         return localFile;
     }
 
@@ -181,7 +183,7 @@ public class MetaV1Proxy implements IMetaProxy {
         return new FilterIterator<>(
                 iterator,
                 abstractBackupPath ->
-                        abstractBackupPath.getType() == AbstractBackupPath.BackupFileType.SST);
+                        abstractBackupPath.getDirectives().getType() == BackupFileType.SST);
     }
 
     @Override

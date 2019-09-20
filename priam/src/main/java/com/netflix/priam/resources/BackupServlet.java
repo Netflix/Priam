@@ -19,7 +19,7 @@ package com.netflix.priam.resources;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -249,7 +249,8 @@ public class BackupServlet {
             JSONArray jArray = new JSONArray();
             while (it.hasNext()) {
                 AbstractBackupPath p = it.next();
-                if (!filter.isEmpty() && BackupFileType.valueOf(filter) != p.getType()) continue;
+                if (!filter.isEmpty()
+                        && BackupFileType.valueOf(filter) != p.getDirectives().getType()) continue;
                 JSONObject backupJSON = new JSONObject();
                 backupJSON.put("bucket", config.getBackupPrefix());
                 backupJSON.put("filename", p.getRemotePath());

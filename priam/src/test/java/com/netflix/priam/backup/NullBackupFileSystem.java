@@ -63,7 +63,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath)
+    protected void downloadFileImpl(final AbstractBackupPath.UploadDownloadDirectives directives)
             throws BackupRestoreException {}
 
     @Override
@@ -72,7 +72,8 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         return 0;
     }
 }

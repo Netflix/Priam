@@ -21,7 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -64,7 +64,7 @@ public class TestRemoteBackupPath {
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
         Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
         Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
-        Assert.assertEquals(BackupFileType.SST, abstractBackupPath.getType());
+        Assert.assertEquals(BackupFileType.SST, abstractBackupPath.getDirectives().getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
         Assert.assertEquals(
                 0,
@@ -86,9 +86,11 @@ public class TestRemoteBackupPath {
         Assert.assertEquals(abp1.getKeyspace(), abp2.getKeyspace());
         Assert.assertEquals(abp1.getColumnFamily(), abp2.getColumnFamily());
         Assert.assertEquals(abp1.getFileName(), abp2.getFileName());
-        Assert.assertEquals(abp1.getType(), abp2.getType());
-        Assert.assertEquals(abp1.getCompression(), abp2.getCompression());
-        Assert.assertEquals(abp1.getEncryption(), abp2.getEncryption());
+        Assert.assertEquals(abp1.getDirectives().getType(), abp2.getDirectives().getType());
+        Assert.assertEquals(
+                abp1.getDirectives().getCompression(), abp2.getDirectives().getCompression());
+        Assert.assertEquals(
+                abp1.getDirectives().getEncryption(), abp2.getDirectives().getEncryption());
     }
 
     @Test
@@ -109,7 +111,7 @@ public class TestRemoteBackupPath {
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
         Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
         Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
-        Assert.assertEquals(BackupFileType.SNAP, abstractBackupPath.getType());
+        Assert.assertEquals(BackupFileType.SNAP, abstractBackupPath.getDirectives().getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
         Assert.assertEquals(
                 "201801011201", DateUtil.formatyyyyMMddHHmm(abstractBackupPath.getTime()));
@@ -135,7 +137,7 @@ public class TestRemoteBackupPath {
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
         Assert.assertEquals(null, abstractBackupPath.getKeyspace());
         Assert.assertEquals(null, abstractBackupPath.getColumnFamily());
-        Assert.assertEquals(BackupFileType.META, abstractBackupPath.getType());
+        Assert.assertEquals(BackupFileType.META, abstractBackupPath.getDirectives().getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
 
         // Verify toRemote and parseRemote.
@@ -165,8 +167,8 @@ public class TestRemoteBackupPath {
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
         Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
         Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
-        Assert.assertEquals("SNAPPY", abstractBackupPath.getCompression().name());
-        Assert.assertEquals(BackupFileType.SST_V2, abstractBackupPath.getType());
+        Assert.assertEquals("SNAPPY", abstractBackupPath.getDirectives().getCompression().name());
+        Assert.assertEquals(BackupFileType.SST_V2, abstractBackupPath.getDirectives().getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
 
         // Verify toRemote and parseRemote.
@@ -192,11 +194,11 @@ public class TestRemoteBackupPath {
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
         Assert.assertEquals(null, abstractBackupPath.getKeyspace());
         Assert.assertEquals(null, abstractBackupPath.getColumnFamily());
-        Assert.assertEquals(BackupFileType.META_V2, abstractBackupPath.getType());
+        Assert.assertEquals(BackupFileType.META_V2, abstractBackupPath.getDirectives().getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
         Assert.assertEquals(
                 IFileCryptography.CryptographyAlgorithm.PLAINTEXT,
-                abstractBackupPath.getEncryption());
+                abstractBackupPath.getDirectives().getEncryption());
 
         // Verify toRemote and parseRemote.
         Instant now = DateUtil.getInstant();
@@ -204,7 +206,7 @@ public class TestRemoteBackupPath {
         String remotePath = abstractBackupPath.getRemotePath();
         logger.info(remotePath);
 
-        Assert.assertEquals("SNAPPY", abstractBackupPath.getCompression().name());
+        Assert.assertEquals("SNAPPY", abstractBackupPath.getDirectives().getCompression().name());
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);

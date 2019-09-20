@@ -15,13 +15,11 @@
  *
  */
 
-package com.netflix.priam.backup;
+package com.netflix.priam.compress;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.*;
 import java.util.Enumeration;
@@ -107,18 +105,22 @@ public class TestCompression {
 
     @Test
     public void snappyTest() throws IOException {
-        ICompression compress = new SnappyCompression();
-        testCompressor(compress);
+        testCompressor(ICompression.CompressionAlgorithm.SNAPPY);
+        testCompressor(ICompression.DEFAULT_COMPRESSION);
     }
 
-    private void testCompressor(ICompression compress) throws IOException {
+    private void testCompressor(ICompression.CompressionAlgorithm compressionAlgorithm)
+            throws IOException {
         File compressedOutputFile = new File("/tmp/test1.compress");
         File decompressedTempOutput = new File("/tmp/compress-test-out.txt");
         long chunkSize = 5L * 1024 * 1024;
         try {
 
             Iterator<byte[]> it =
-                    compress.compress(new FileInputStream(randomContentFile), chunkSize);
+                    new ChunkedStream(
+                            compressionAlgorithm,
+                            new FileInputStream(randomContentFile),
+                            chunkSize);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
                 while (it.hasNext()) {
                     byte[] chunk = it.next();
@@ -127,9 +129,14 @@ public class TestCompression {
                 ostream.flush();
             }
 
-            assertTrue(randomContentFile.length() > compressedOutputFile.length());
+            assertTrue(randomContentFile.length() >= compressedOutputFile.length());
+            System.out.println(
+                    String.format(
+                            "Compressed size: %d, Original size: %d",
+                            compressedOutputFile.length(), randomContentFile.length()));
 
-            compress.decompressAndClose(
+            Decompressor.decompress(
+                    compressionAlgorithm,
                     new FileInputStream(compressedOutputFile),
                     new FileOutputStream(decompressedTempOutput));
             String md1 = SystemUtils.md5(randomContentFile);
@@ -139,5 +146,15 @@ public class TestCompression {
             FileUtils.deleteQuietly(compressedOutputFile);
             FileUtils.deleteQuietly(decompressedTempOutput);
         }
+    }
+
+    @Test
+    public void testlz4() throws Exception {
+        testCompressor(ICompression.CompressionAlgorithm.LZ4);
+    }
+
+    @Test
+    public void noCompression() throws Exception {
+        testCompressor(ICompression.CompressionAlgorithm.NONE);
     }
 }

@@ -19,7 +19,6 @@ package com.netflix.priam.restore;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -158,7 +157,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         BoundedList<AbstractBackupPath> bl = new BoundedList(lastN);
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.CL) {
+            if (temp.getDirectives().getType()
+                    == AbstractBackupPath.UploadDownloadDirectives.BackupFileType.CL) {
                 bl.add(temp);
             }
         }

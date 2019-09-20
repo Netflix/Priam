@@ -20,7 +20,8 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
-import com.netflix.priam.compress.SnappyCompression;
+import com.netflix.priam.compress.Decompressor;
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.connection.JMXConnectionException;
@@ -532,8 +533,10 @@ public class CassandraAdmin {
     @Path("/decompress")
     public Response decompress(@QueryParam("in") String in, @QueryParam("out") String out)
             throws Exception {
-        SnappyCompression compress = new SnappyCompression();
-        compress.decompressAndClose(new FileInputStream(in), new FileOutputStream(out));
+        Decompressor.decompress(
+                ICompression.DEFAULT_COMPRESSION,
+                new FileInputStream(in),
+                new FileOutputStream(out));
         JSONObject object = new JSONObject();
         object.put("Input compressed file", in);
         object.put("Output decompress file", out);

@@ -20,7 +20,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backupv2.ForgottenFilesManager;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.CassandraOperations;

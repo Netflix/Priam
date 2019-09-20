@@ -175,12 +175,15 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+    protected void downloadFileImpl(final AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         String objectName = parseObjectname(getPrefix().toString());
         com.google.api.services.storage.Storage.Objects.Get get;
 
         try {
-            get = constructObjectResourceHandle().get(this.srcBucketName, remotePath.toString());
+            get =
+                    constructObjectResourceHandle()
+                            .get(this.srcBucketName, directives.getRemotePath().toString());
         } catch (IOException e) {
             throw new BackupRestoreException(
                     "IO error retrieving metadata for: "
@@ -193,7 +196,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
         // If you're not using GCS' AppEngine, download the whole thing (instead of chunks) in one
         // request, if possible.
         get.getMediaHttpDownloader().setDirectDownloadEnabled(true);
-        try (OutputStream os = new FileOutputStream(localPath.toFile());
+        try (OutputStream os = new FileOutputStream(directives.getLocalPath().toFile());
                 InputStream is = get.executeMediaAsInputStream()) {
             IOUtils.copyLarge(is, os);
         } catch (IOException e) {
@@ -233,7 +236,8 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         throw new UnsupportedOperationException();
     }
 

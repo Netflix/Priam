@@ -19,7 +19,8 @@ package com.netflix.priam.backup;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
+import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
@@ -92,22 +93,16 @@ public abstract class AbstractBackup extends Task {
         for (File file : files) {
             if (file.isFile() && file.exists()) {
                 AbstractBackupPath bp = getAbstractBackupPath(file, type);
+                bp.getDirectives()
+                        .withRetry(10)
+                        .withDeleteAfterSuccessfulUpload(true)
+                        .withRemotePath(Paths.get(bp.getRemotePath()));
 
-                if (async)
-                    futures.add(
-                            fs.asyncUploadFile(
-                                    Paths.get(bp.getBackupFile().getAbsolutePath()),
-                                    Paths.get(bp.getRemotePath()),
-                                    bp,
-                                    10,
-                                    true));
-                else
-                    fs.uploadFile(
-                            Paths.get(bp.getBackupFile().getAbsolutePath()),
-                            Paths.get(bp.getRemotePath()),
-                            bp,
-                            10,
-                            true);
+                if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2)
+                    bp.getDirectives().withCompression(ICompression.CompressionAlgorithm.LZ4);
+
+                if (async) futures.add(fs.asyncUploadFile(bp));
+                else fs.uploadFile(bp);
 
                 bps.add(bp);
             }

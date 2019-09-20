@@ -21,6 +21,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.FakeBackupFileSystem;
@@ -86,7 +87,7 @@ public class TestMetaV2Proxy {
         Instant snapshotInstant = DateUtil.getInstant();
         Path metaPath = backupUtils.createMeta(getRemoteFakeFiles(), snapshotInstant);
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        abstractBackupPath.parseLocal(metaPath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+        abstractBackupPath.parseLocal(metaPath.toFile(), BackupFileType.META_V2);
 
         Assert.assertTrue(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
@@ -95,7 +96,7 @@ public class TestMetaV2Proxy {
         fileToAdd.add(
                 Paths.get(
                                 getPrefix(),
-                                AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                                BackupFileType.SST_V2.toString(),
                                 "1859817645000",
                                 "keyspace1",
                                 "columnfamily1",
@@ -165,7 +166,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                        BackupFileType.SST_V2.toString(),
                         "1859817645000",
                         "keyspace1",
                         "columnfamily1",
@@ -175,7 +176,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                        BackupFileType.SST_V2.toString(),
                         "1859818845000",
                         "keyspace1",
                         "columnfamily1",
@@ -186,7 +187,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.META_V2.toString(),
+                        BackupFileType.META_V2.toString(),
                         "1859824860000",
                         "SNAPPY",
                         "PLAINTEXT",
@@ -194,7 +195,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                        BackupFileType.SST_V2.toString(),
                         "1859826045000",
                         "keyspace1",
                         "columnfamily1",
@@ -204,7 +205,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                        BackupFileType.SST_V2.toString(),
                         "1859828410000",
                         "keyspace1",
                         "columnfamily1",
@@ -214,7 +215,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.SST_V2.toString(),
+                        BackupFileType.SST_V2.toString(),
                         "1859828420000",
                         "keyspace1",
                         "columnfamily1",
@@ -224,7 +225,7 @@ public class TestMetaV2Proxy {
         files.add(
                 Paths.get(
                         getPrefix(),
-                        AbstractBackupPath.BackupFileType.META_V2.toString(),
+                        BackupFileType.META_V2.toString(),
                         "1859828460000",
                         "SNAPPY",
                         "PLAINTEXT",

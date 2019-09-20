@@ -32,7 +32,7 @@ import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
@@ -101,13 +101,14 @@ public class TestS3FileSystem {
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
+        backupfile
+                .getDirectives()
+                .withRetry(0)
+                .withDeleteAfterSuccessfulUpload(false)
+                .withRemotePath(Paths.get(backupfile.getRemotePath()));
+
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0,
-                false);
+        fs.uploadFile(backupfile);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -117,12 +118,13 @@ public class TestS3FileSystem {
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SST_V2);
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0,
-                false);
+        backupfile
+                .getDirectives()
+                .withRetry(0)
+                .withDeleteAfterSuccessfulUpload(false)
+                .withRemotePath(Paths.get(backupfile.getRemotePath()));
+
+        fs.uploadFile(backupfile);
         Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
         // Lets delete the file now.
         List<Path> deleteFiles = Lists.newArrayList();
@@ -141,13 +143,14 @@ public class TestS3FileSystem {
                 "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
+        backupfile
+                .getDirectives()
+                .withRetry(0)
+                .withDeleteAfterSuccessfulUpload(false)
+                .withRemotePath(Paths.get(backupfile.getRemotePath()));
+
         try {
-            fs.uploadFile(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0,
-                    false);
+            fs.uploadFile(backupfile);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -165,13 +168,14 @@ public class TestS3FileSystem {
                 "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
+        backupfile
+                .getDirectives()
+                .withRetry(0)
+                .withDeleteAfterSuccessfulUpload(false)
+                .withRemotePath(Paths.get(backupfile.getRemotePath()));
+
         try {
-            fs.uploadFile(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0,
-                    false);
+            fs.uploadFile(backupfile);
         } catch (BackupRestoreException e) {
             // ignore
         }

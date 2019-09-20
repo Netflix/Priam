@@ -21,6 +21,7 @@ import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
@@ -220,9 +221,7 @@ public class BackupTTLTask extends Task {
     private String getSSTPrefix() {
         Path location = fileSystem.getPrefix();
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        return abstractBackupPath
-                .remoteV2Prefix(location, AbstractBackupPath.BackupFileType.SST_V2)
-                .toString();
+        return abstractBackupPath.remoteV2Prefix(location, BackupFileType.SST_V2).toString();
     }
 
     @Override

@@ -56,7 +56,8 @@ public class TestBackupUtils {
         for (String file : filesToAdd) {
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
-            if (path.getType() == AbstractBackupPath.BackupFileType.SST_V2) {
+            if (path.getDirectives().getType()
+                    == AbstractBackupPath.UploadDownloadDirectives.BackupFileType.SST_V2) {
                 ColumnfamilyResult.SSTableResult ssTableResult =
                         new ColumnfamilyResult.SSTableResult();
 
@@ -89,7 +90,7 @@ public class TestBackupUtils {
                         path.getColumnFamily(),
                         path.getLastModified(),
                         path.getLastModified(),
-                        path.getSize());
+                        path.getDirectives().getSize());
         fileUploadResult.setBackupPath(path.getRemotePath());
         return fileUploadResult;
     }

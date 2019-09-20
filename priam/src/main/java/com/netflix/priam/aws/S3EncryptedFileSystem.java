@@ -27,7 +27,6 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ChunkedStream;
-import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.cryptography.IFileCryptography;
@@ -35,7 +34,6 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.*;
-import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -52,7 +50,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     @Inject
     public S3EncryptedFileSystem(
             Provider<AbstractBackupPath> pathProvider,
-            ICompression compress,
             final IConfiguration config,
             ICredential cred,
             @Named("filecryptoalgorithm") IFileCryptography fileCryptography,
@@ -60,7 +57,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             BackupNotificationMgr backupNotificationMgr,
             InstanceInfo instanceInfo) {
 
-        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
+        super(pathProvider, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
         super.s3Client =
                 AmazonS3Client.builder()
@@ -70,14 +67,15 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-        try (OutputStream os = new FileOutputStream(localPath.toFile());
+    protected void downloadFileImpl(final AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
+        try (OutputStream os = new FileOutputStream(directives.getLocalPath().toFile());
                 RangeReadInputStream rris =
                         new RangeReadInputStream(
                                 s3Client,
                                 getShard(),
-                                super.getFileSize(remotePath),
-                                remotePath.toString())) {
+                                super.getFileSize(directives.getRemotePath()),
+                                directives.getRemotePath().toString())) {
             /*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.
              * Hence, decompressing it here would compromise the decryption.
@@ -86,7 +84,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         } catch (Exception e) {
             throw new BackupRestoreException(
                     "Exception encountered downloading "
-                            + remotePath
+                            + directives.getRemotePath()
                             + " from S3 bucket "
                             + getShard()
                             + ", Msg: "
@@ -96,33 +94,36 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
-        long chunkSize = getChunkSize(localPath);
+    protected long uploadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
+        long chunkSize = getChunkSize(directives.getLocalPath());
         // initialize chunking request to aws
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
+                new InitiateMultipartUploadRequest(
+                        config.getBackupPrefix(), directives.getRemotePath().toString());
         // Fetch the aws generated upload id for this chunking request
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part =
                 new DataPart(
                         config.getBackupPrefix(),
-                        remotePath.toString(),
+                        directives.getRemotePath().toString(),
                         initResponse.getUploadId());
         // Metadata on number of parts to be uploaded
         List<PartETag> partETags = Lists.newArrayList();
 
         // Read chunks from src, compress it, and write to temp file
-        File compressedDstFile = new File(localPath.toString() + ".compressed");
+        File compressedDstFile = new File(directives.getLocalPath().toString() + ".compressed");
         if (logger.isDebugEnabled())
             logger.debug(
                     "Compressing {} with chunk size {}",
                     compressedDstFile.getAbsolutePath(),
                     chunkSize);
 
-        try (InputStream in = new FileInputStream(localPath.toFile());
+        try (InputStream in = new FileInputStream(directives.getLocalPath().toFile());
                 BufferedOutputStream compressedBos =
                         new BufferedOutputStream(new FileOutputStream(compressedDstFile))) {
-            Iterator<byte[]> compressedChunks = new ChunkedStream(ICompression.DEFAULT_COMPRESSION, in, chunkSize);
+            Iterator<byte[]> compressedChunks =
+                    new ChunkedStream(directives.getCompression(), in, chunkSize);
             while (compressedChunks.hasNext()) {
                 byte[] compressedChunk = compressedChunks.next();
                 compressedBos.write(compressedChunk);
@@ -139,7 +140,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         try (BufferedInputStream compressedBis =
                 new BufferedInputStream(new FileInputStream(compressedDstFile))) {
             Iterator<byte[]> chunks =
-                    this.encryptor.encryptStream(compressedBis, remotePath.toString());
+                    this.encryptor.encryptStream(
+                            compressedBis, directives.getRemotePath().toString());
 
             // identifies this part position in the object we are uploading
             int partNum = 0;
@@ -155,7 +157,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                                 ++partNum,
                                 chunk,
                                 config.getBackupPrefix(),
-                                remotePath.toString(),
+                                directives.getRemotePath().toString(),
                                 initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 encryptedFileSize += chunk.length;
@@ -176,11 +178,12 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             // identifies the combined object datav
             CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
                     new S3PartUploader(s3Client, part, partETags).completeUpload();
-            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
+            checkSuccessfulUpload(resultS3MultiPartUploadComplete, directives.getLocalPath());
             return encryptedFileSize;
         } catch (Exception e) {
             new S3PartUploader(s3Client, part, partETags).abortUpload();
-            throw new BackupRestoreException("Error uploading file: " + localPath, e);
+            throw new BackupRestoreException(
+                    "Error uploading file: " + directives.getLocalPath(), e);
         } finally {
             if (compressedDstFile.exists()) compressedDstFile.delete();
         }

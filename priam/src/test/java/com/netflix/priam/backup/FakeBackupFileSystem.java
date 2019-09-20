@@ -141,16 +141,20 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+    protected void downloadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
         AbstractBackupPath path = pathProvider.get();
-        path.parseRemote(remotePath.toString());
+        path.parseRemote(directives.getRemotePath().toString());
 
-        if (path.getType() == AbstractBackupPath.BackupFileType.META) {
+        if (directives.getType()
+                == AbstractBackupPath.UploadDownloadDirectives.BackupFileType.META) {
             // List all files and generate the file
-            try (FileWriter fr = new FileWriter(localPath.toFile())) {
+            try (FileWriter fr = new FileWriter(directives.getLocalPath().toFile())) {
                 JSONArray jsonObj = new JSONArray();
                 for (AbstractBackupPath filePath : flist) {
-                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP
+                    if (filePath.getDirectives().type
+                                    == AbstractBackupPath.UploadDownloadDirectives.BackupFileType
+                                            .SNAP
                             && filePath.time.equals(path.time)) {
                         jsonObj.add(filePath.getRemotePath());
                     }
@@ -161,13 +165,14 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
                 throw new BackupRestoreException(io.getMessage(), io);
             }
         }
-        downloadedFiles.add(remotePath.toString());
+        downloadedFiles.add(directives.getRemotePath().toString());
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
-        uploadedFiles.add(localPath.toFile().getAbsolutePath());
-        addFile(remotePath.toString());
-        return localPath.toFile().length();
+    protected long uploadFileImpl(AbstractBackupPath.UploadDownloadDirectives directives)
+            throws BackupRestoreException {
+        uploadedFiles.add(directives.getLocalPath().toFile().getAbsolutePath());
+        addFile(directives.getRemotePath().toString());
+        return directives.getLocalPath().toFile().length();
     }
 }

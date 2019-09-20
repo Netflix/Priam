@@ -18,6 +18,7 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -286,7 +287,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
-                upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
+                upload(snapshotDirectory, BackupFileType.SST_V2, true, false);
             }
         }
     }
@@ -344,7 +345,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // Add isUploaded and remotePath here.
                 try {
                     AbstractBackupPath abstractBackupPath = pathFactory.get();
-                    abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
+                    abstractBackupPath.parseLocal(file, BackupFileType.SST_V2);
                     fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
                     fileUploadResult.setUploaded(
                             fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));

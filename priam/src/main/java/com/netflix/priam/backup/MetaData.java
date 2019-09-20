@@ -18,7 +18,7 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
 import com.google.inject.Provider;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -62,12 +62,12 @@ public class MetaData {
             fr.write(jsonObj.toJSONString());
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                10,
-                true);
+        backupfile
+                .getDirectives()
+                .withRetry(10)
+                .withDeleteAfterSuccessfulUpload(true)
+                .withRemotePath(Paths.get(backupfile.getRemotePath()));
+        fs.uploadFile(backupfile);
         addToRemotePath(backupfile.getRemotePath());
         return backupfile;
     }
@@ -92,10 +92,8 @@ public class MetaData {
      */
     public Boolean doesExist(final AbstractBackupPath meta) {
         try {
-            fs.downloadFile(
-                    Paths.get(meta.getRemotePath()),
-                    Paths.get(meta.newRestoreFile().getAbsolutePath()),
-                    5); // download actual file to disk
+            meta.getDirectives().withRetry(5).withLocalPath(meta.newRestoreFile().toPath());
+            fs.downloadFile(meta); // download actual file to disk
         } catch (Exception e) {
             logger.error("Error downloading the Meta data try with a different date...", e);
         }

@@ -20,7 +20,7 @@ package com.netflix.priam.backup;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.aws.RemoteBackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath.UploadDownloadDirectives.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.io.BufferedOutputStream;
@@ -75,7 +75,7 @@ public class TestBackupFile {
                 "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
-        Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
+        Assert.assertEquals(BackupFileType.SNAP, backupfile.getDirectives().type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
@@ -95,7 +95,7 @@ public class TestBackupFile {
         File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.SST);
-        Assert.assertEquals(BackupFileType.SST, backupfile.type);
+        Assert.assertEquals(BackupFileType.SST, backupfile.getDirectives().type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
@@ -120,7 +120,7 @@ public class TestBackupFile {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.META);
         backupfile.setTime(DateUtil.getDate("201108082320"));
-        Assert.assertEquals(BackupFileType.META, backupfile.type);
+        Assert.assertEquals(BackupFileType.META, backupfile.getDirectives().type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(region, backupfile.region);

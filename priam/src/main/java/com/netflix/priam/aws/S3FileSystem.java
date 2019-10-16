@@ -213,7 +213,12 @@ public class S3FileSystem extends S3FileSystemBase {
                 }
                 byte[] chunk = byteArrayOutputStream.toByteArray();
                 long compressedFileSize = chunk.length;
-                rateLimiter.acquire(chunk.length);
+                /**
+                 * Weird, right that we are checking for length which is positive. You can thanks
+                 * this to sometimes C* creating files which are zero bytes, and giving that in
+                 * snapshot for some unknown reason.
+                 */
+                if (chunk.length > 0) rateLimiter.acquire(chunk.length);
                 ObjectMetadata objectMetadata = getObjectMetadata(localPath);
                 objectMetadata.setContentLength(chunk.length);
                 PutObjectRequest putObjectRequest =

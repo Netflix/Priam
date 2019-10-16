@@ -135,7 +135,7 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool getPartitioner being called");
-        return Response.ok(nodeTool.getPartitioner(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(nodeTool.getPartitioner(), MediaType.TEXT_PLAIN).build();
     }
 
     @GET

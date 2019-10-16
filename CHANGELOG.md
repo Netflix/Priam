@@ -1,4 +1,61 @@
 # Changelog
+## 2019/10/16 3.11.54
+(#834) Removing functionality of creating incremental manifest file in backup V1 as it is not used. 
+(#834) Bug fix: When meta file do not exist for TTL in backup v2 we should not be throwing NPE. 
+(#834) Bug fix: Fix X-Y-Z issue using gossip status information instead of gossip state. Note that gossip status is (JOINING/LEAVING/NORMAL) while gossip state is (UP/DOWN). Gossip state is calculated individually by all the Cassandra instances using gossip status. 
+
+## 2019/06/07 3.11.53
+(#826): Rollback the fixes to use Gossip info while grabbing dead and pre-assigned tokens. Gossip info doesn't not reflect the correct cluster state always. A node marked with status as NORMAL in the Gossip info could actually be down. This can be checked using nt ring. This change will unblock the nodes from joining the ring.
+
+## 2019/05/28 3.11.52
+(#824): Use replace_address instead of replace_address_first_boot. replace_address always try to bootstrap Cassandra in replace mode even when the previous bootstrap is successful. replace_address_first_boot tries to bootstrap normally if the node already bootstrapped successfully.
+
+## 2019/05/14 3.11.51
+(#818) Changing the list in TokenRetrievalUtils to use wildcards.
+
+## 2019/05/13 3.11.50
+(#816) Priam will check Cassandra gossip information while grabbing pre-assigned token to decide if it should start Cassandra in bootstrap mode or in replace mode.
+(#816) At most 3 random nodes are used to get the gossip information.
+(#816) Moved token owner inferring logic based on Cassandra gossip into a util class.
+(#816) Refactored InstanceIdentity.init() method.
+
+## 2019/04/29 3.11.49
+(#815) Update the backup service based on configuration changes.
+(#812) Expose the list of files from backups as API call.
+(#809) Run TTL for backup based on a simple timer to avoid S3 delete API call throttle.
+(#815) API to clear the local filesystem cache.
+(#815) Bug fix: Increment backup failure metric when no backup is found.
+(#809) Bug fix: No backup verification job during restore.
+
+## 2019/03/19 3.11.48
+(#807) Fix X->Y->Z issue. Replace nodes when gossip actually converges.
+
+## 2019/03/13 3.11.47
+(#804) Write-thru cache in AbstractFileSystem.
+(#803) Take care of issue - C* snapshot w.r.t. filesystem is not "sync" in nature.
+
+## 2019/03/05 3.11.46
+(#794) Fix for forgotten file
+(#798) Use older API for prefix filtering (backup TTL), if prefix is available.
+(#800) Send notifications only when we upload a file.
+
+## 2019/02/27 3.11.45
+(#793) S3 - BucketLifecycleConfiguration has `prefix` method removed from latest library.
+
+## 2019/02/27 3.11.44
+(#791) BackupServlet had an API call of backup status which was producing output which was not JSON.
+
+## 2019/02/15 3.11.43
+(#784): BackupVerificationService
+(#781): Put a cache for the getObjectExist API call to S3. This will help keep the cost of this call at bay.
+(#781): Put a rate limiter for getObjectExist API call to S3 so we can limit the no. of calls.
+(#784): Provide an override method to force Priam to replace a particular IP.
+
+## 2019/02/08 3.11.42
+(#777)Do not check existence of file if it is not SST_V2. S3 may decide to slow down and throw an error. Best not to do s3 object check (API) if it is not required.
+
+## 2019/02/07 3.11.41
+(#775) Do not throw NPE when no backup is found for the requested date.
 
 ## 2019/01/30 3.11.39
 (#765) Add metrics on CassandraConfig resource calls

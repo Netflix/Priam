@@ -175,11 +175,18 @@ public class CassandraOperations implements ICassandraOperations {
                                                     .equalsIgnoreCase("TOKENS")) {
                                                 // Special handling for tokens as it is always
                                                 // "hidden".
-                                                gossipMap.put(
-                                                        gossipLineEntry[0].trim().toUpperCase(),
-                                                        nodeTool.getTokens(
-                                                                        gossipMap.get("PUBLIC_IP"))
-                                                                .toString());
+                                                try {
+                                                    gossipMap.put(
+                                                            gossipLineEntry[0].trim().toUpperCase(),
+                                                            nodeTool.getTokens(
+                                                                            gossipMap.get(
+                                                                                    "PUBLIC_IP"))
+                                                                    .toString());
+                                                } catch (Exception e) {
+                                                    logger.warn(
+                                                            "Unable to find TOKEN(s) for the IP: {}",
+                                                            gossipMap.get("PUBLIC_IP"));
+                                                }
                                             } else {
                                                 gossipMap.put(
                                                         gossipLineEntry[0].trim().toUpperCase(),

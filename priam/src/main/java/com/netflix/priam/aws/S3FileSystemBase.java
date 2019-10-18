@@ -282,17 +282,10 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         }
     }
 
-    final long getChunkSize(Path localPath) throws BackupRestoreException {
+    final long getChunkSize(Path localPath) {
         long chunkSize = config.getBackupChunkSize();
-        long fileSize = localPath.toFile().length();
-
-        // compute the size of each block we will upload to endpoint
-        if (fileSize > 0)
-            chunkSize =
-                    (fileSize / chunkSize >= MAX_CHUNKS)
-                            ? (fileSize / (MAX_CHUNKS - 1))
-                            : chunkSize;
-
+        long proposedChunkSize = localPath.toFile().length() / (MAX_CHUNKS - 5);
+        if (proposedChunkSize > chunkSize) return proposedChunkSize;
         return chunkSize;
     }
 }

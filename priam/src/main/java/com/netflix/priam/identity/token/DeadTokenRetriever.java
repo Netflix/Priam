@@ -111,9 +111,29 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             // remove it as we marked it down...
             factory.delete(priamInstance);
 
-            // use entry in the token database always.
-            // this can cause "can't replace live token errors.
-            this.replacedIp = priamInstance.getHostIP();
+            // find the replaced IP
+            try {
+                replacedIp =
+                        TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                                allInstancesWithinCluster,
+                                priamInstance.getToken(),
+                                priamInstance.getDC());
+
+                // Lets not replace the instance if gossip info is not merging!!
+                if (replacedIp == null) return null;
+                logger.info(
+                        "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
+                        priamInstance.getToken(),
+                        replacedIp,
+                        priamInstance.getHostIP());
+            } catch (TokenRetrieverUtils.GossipParseException e) {
+                // In case of gossip exception, fallback to IP in token database.
+                this.replacedIp = priamInstance.getHostIP();
+                logger.info(
+                        "Will try to replace token: {} with replacedIp from Token database: {}",
+                        priamInstance.getToken(),
+                        priamInstance.getHostIP());
+            }
 
             PriamInstance result;
             try {

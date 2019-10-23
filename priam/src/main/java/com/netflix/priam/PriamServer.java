@@ -21,8 +21,7 @@ import com.google.inject.Singleton;
 import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
-import com.netflix.priam.cluster.management.Compaction;
-import com.netflix.priam.cluster.management.Flush;
+import com.netflix.priam.cluster.management.ClusterManagementService;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -50,6 +49,7 @@ public class PriamServer implements IService {
     private final IService backupV2Service;
     private final IService backupService;
     private final IService cassandraTunerService;
+    private final IService clusterManagementService;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
     private static final Logger logger = LoggerFactory.getLogger(PriamServer.class);
 
@@ -63,7 +63,8 @@ public class PriamServer implements IService {
             RestoreContext restoreContext,
             BackupService backupService,
             BackupV2Service backupV2Service,
-            CassandraTunerService cassandraTunerService) {
+            CassandraTunerService cassandraTunerService,
+            ClusterManagementService clusterManagementService) {
         this.config = config;
         this.scheduler = scheduler;
         this.instanceIdentity = id;
@@ -73,6 +74,7 @@ public class PriamServer implements IService {
         this.backupService = backupService;
         this.backupV2Service = backupV2Service;
         this.cassandraTunerService = cassandraTunerService;
+        this.clusterManagementService = clusterManagementService;
     }
 
     private void createDirectories() throws IOException {
@@ -134,11 +136,8 @@ public class PriamServer implements IService {
                 CassandraMonitor.getTimer(),
                 CASSANDRA_MONITORING_INITIAL_DELAY);
 
-        // Set up nodetool flush task
-        scheduleTask(scheduler, Flush.class, Flush.getTimer(config));
-
-        // Set up compaction task
-        scheduleTask(scheduler, Compaction.class, Compaction.getTimer(config));
+        // Set up management services like flush, compactions etc.
+        clusterManagementService.scheduleService();
 
         // Set up the background configuration dumping thread
         scheduleTask(

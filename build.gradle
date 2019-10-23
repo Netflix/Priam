@@ -53,7 +53,15 @@ subprojects {
         compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
         compile 'com.google.guava:guava:21.0'
         compile 'com.google.code.findbugs:jsr305:3.0.2'
-        compile 'com.amazonaws:aws-java-sdk:1.11.501'
+
+        // AWS Services
+        compile 'com.amazonaws:aws-java-sdk-s3:latest.release'
+        compile 'com.amazonaws:aws-java-sdk-sns:latest.release'
+        compile 'com.amazonaws:aws-java-sdk-ec2:latest.release'
+        compile 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
+        compile 'com.amazonaws:aws-java-sdk-sts:latest.release'
+        compile 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
+        
         compile 'com.google.inject:guice:4.2.2'
         compile 'com.google.inject.extensions:guice-servlet:4.2.2'
         compile 'org.quartz-scheduler:quartz:2.3.0'

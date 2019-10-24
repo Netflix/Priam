@@ -16,7 +16,9 @@ package com.netflix.priam.notification;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,15 +41,59 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private final IConfiguration config;
     private final INotificationService notificationService;
     private final InstanceInfo instanceInfo;
+    private final InstanceIdentity instanceIdentity;
 
     @Inject
     public BackupNotificationMgr(
             IConfiguration config,
             INotificationService notificationService,
-            InstanceInfo instanceInfo) {
+            InstanceInfo instanceInfo,
+            InstanceIdentity instanceIdentity) {
         this.config = config;
         this.notificationService = notificationService;
         this.instanceInfo = instanceInfo;
+        this.instanceIdentity = instanceIdentity;
+    }
+
+    public void notify(BackupVerificationResult backupVerificationResult) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("s3bucketname", this.config.getBackupPrefix());
+            jsonObject.put("s3clustername", config.getAppName());
+            jsonObject.put("s3namespace", backupVerificationResult.remotePath);
+            jsonObject.put("region", instanceInfo.getRegion());
+            jsonObject.put("rack", instanceInfo.getRac());
+            jsonObject.put("token", instanceIdentity.getInstance().getToken());
+            jsonObject.put("backuptype", "SNAPSHOT_VERIFIED");
+            jsonObject.put("snapshotInstant", backupVerificationResult.snapshotInstant);
+            // SNS Attributes for filtering messages. Cluster name and backup file type.
+            Map<String, MessageAttributeValue> messageAttributes =
+                    getMessageAttributes(AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED);
+
+            this.notificationService.notify(jsonObject.toString(), messageAttributes);
+        } catch (JSONException exception) {
+            logger.error(
+                    "JSON exception during generation of notification for snapshot verification: {}. Msg: {}",
+                    backupVerificationResult,
+                    exception.getLocalizedMessage());
+        }
+    }
+
+    private Map<String, MessageAttributeValue> getMessageAttributes(
+            AbstractBackupPath.BackupFileType backupFileType) {
+        // SNS Attributes for filtering messages. Cluster name and backup file type.
+        Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
+        messageAttributes.putIfAbsent(
+                "s3clustername",
+                new MessageAttributeValue()
+                        .withDataType("String")
+                        .withStringValue(config.getAppName()));
+        messageAttributes.putIfAbsent(
+                "backuptype",
+                new MessageAttributeValue()
+                        .withDataType("String")
+                        .withStringValue(backupFileType.name()));
+        return messageAttributes;
     }
 
     private void notify(AbstractBackupPath abp, String uploadStatus) {
@@ -70,17 +116,8 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("encryption", abp.getEncryption().name());
 
             // SNS Attributes for filtering messages. Cluster name and backup file type.
-            Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-            messageAttributes.putIfAbsent(
-                    "s3clustername",
-                    new MessageAttributeValue()
-                            .withDataType("String")
-                            .withStringValue(abp.getClusterName()));
-            messageAttributes.putIfAbsent(
-                    "backuptype",
-                    new MessageAttributeValue()
-                            .withDataType("String")
-                            .withStringValue(abp.getType().name()));
+            Map<String, MessageAttributeValue> messageAttributes =
+                    getMessageAttributes(abp.getType());
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {

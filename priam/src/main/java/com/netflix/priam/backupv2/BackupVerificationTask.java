@@ -19,14 +19,12 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.backup.BackupVerification;
-import com.netflix.priam.backup.BackupVerificationResult;
-import com.netflix.priam.backup.BackupVersion;
-import com.netflix.priam.backup.Status;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -47,6 +45,7 @@ public class BackupVerificationTask extends Task {
     private BackupVerification backupVerification;
     private BackupMetrics backupMetrics;
     private InstanceState instanceState;
+    private BackupNotificationMgr backupNotificationMgr;
 
     @Inject
     public BackupVerificationTask(
@@ -54,12 +53,14 @@ public class BackupVerificationTask extends Task {
             IBackupRestoreConfig backupRestoreConfig,
             BackupVerification backupVerification,
             BackupMetrics backupMetrics,
-            InstanceState instanceState) {
+            InstanceState instanceState,
+            BackupNotificationMgr backupNotificationMgr) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupVerification = backupVerification;
         this.backupMetrics = backupMetrics;
         this.instanceState = instanceState;
+        this.backupNotificationMgr = backupNotificationMgr;
     }
 
     @Override
@@ -95,6 +96,14 @@ public class BackupVerificationTask extends Task {
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
+        } else {
+            // verification result is available and is valid.
+            // send notification that backup is uploaded.
+            logger.info(
+                    "Sending {} message for backup: {}",
+                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                    verificationResult.get().snapshotInstant);
+            backupNotificationMgr.notify(verificationResult.get());
         }
     }
 

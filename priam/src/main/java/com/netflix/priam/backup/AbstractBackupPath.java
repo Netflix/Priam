@@ -43,12 +43,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         CL,
         META,
         META_V2,
-        SST_V2;
+        SST_V2,
+        SNAPSHOT_VERIFIED;
 
         public static boolean isDataFile(BackupFileType type) {
             return type != BackupFileType.META
                     && type != BackupFileType.META_V2
-                    && type != BackupFileType.CL;
+                    && type != BackupFileType.CL
+                    && type != SNAPSHOT_VERIFIED;
         }
     }
 

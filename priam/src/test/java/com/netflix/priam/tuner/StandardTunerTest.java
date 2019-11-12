@@ -21,10 +21,12 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.io.Files;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.BackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,15 +49,16 @@ public class StandardTunerTest {
 
     private final StandardTuner tuner;
     private final InstanceInfo instanceInfo;
+    private final InstanceState instanceState;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final File target = new File("/tmp/priam_test.yaml");
 
     public StandardTunerTest() {
-        this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);
-        this.instanceInfo =
-                Guice.createInjector(new BRTestModule()).getInstance(InstanceInfo.class);
-        this.backupRestoreConfig =
-                Guice.createInjector(new BRTestModule()).getInstance(BackupRestoreConfig.class);
+        Injector injector = Guice.createInjector(new BRTestModule());
+        this.tuner = injector.getInstance(StandardTuner.class);
+        this.instanceInfo = injector.getInstance(InstanceInfo.class);
+        this.backupRestoreConfig = injector.getInstance(BackupRestoreConfig.class);
+        this.instanceState = injector.getInstance(InstanceState.class);
     }
 
     @Test
@@ -137,7 +140,8 @@ public class StandardTunerTest {
                 new StandardTuner(
                         new TunerConfiguration(extraConfigParam, extraParamValues),
                         backupRestoreConfig,
-                        instanceInfo);
+                        instanceInfo,
+                        instanceState);
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), target);
         tuner.writeAllProperties(target.getAbsolutePath(), "your_host", "YourSeedProvider");
 

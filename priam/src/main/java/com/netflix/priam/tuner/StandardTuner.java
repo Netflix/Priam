@@ -16,10 +16,11 @@ package com.netflix.priam.tuner;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.restore.Restore;
 import java.io.*;
 import java.util.HashMap;
 import java.util.List;
@@ -36,15 +37,18 @@ public class StandardTuner implements ICassandraTuner {
     protected final IConfiguration config;
     protected final IBackupRestoreConfig backupRestoreConfig;
     private final InstanceInfo instanceInfo;
+    private final InstanceState instanceState;
 
     @Inject
     public StandardTuner(
             IConfiguration config,
             IBackupRestoreConfig backupRestoreConfig,
-            InstanceInfo instanceInfo) {
+            InstanceInfo instanceInfo,
+            InstanceState instanceState) {
         this.config = config;
         this.backupRestoreConfig = backupRestoreConfig;
         this.instanceInfo = instanceInfo;
+        this.instanceState = instanceState;
     }
 
     public void writeAllProperties(String yamlLocation, String hostname, String seedProvider)
@@ -63,11 +67,13 @@ public class StandardTuner implements ICassandraTuner {
         map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
+
         // Dont bootstrap in restore mode
-        if (!Restore.isRestoreEnabled(config, instanceInfo)) {
-            map.put("auto_bootstrap", config.getAutoBoostrap());
-        } else {
+        if (instanceState.getRestoreStatus() != null
+                && instanceState.getRestoreStatus().getStatus() == Status.FINISHED) {
             map.put("auto_bootstrap", false);
+        } else {
+            map.put("auto_bootstrap", config.getAutoBoostrap());
         }
 
         map.put("saved_caches_directory", config.getCacheLocation());

@@ -26,8 +26,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.*;
 import java.io.File;
 import java.io.IOException;
@@ -38,19 +36,16 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
 import javax.inject.Named;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * A means to perform a restore. This class contains the following characteristics: - It is agnostic
- * to the source type of the restore, this is determine by the injected IBackupFileSystem. - This
- * class can be scheduled, i.e. it is a "Task". - When this class is executed, it uses its own
- * thread pool to execute the restores.
+ * to the source type of the restore, this is determine by the injected IBackupFileSystem. When this
+ * class is executed, it uses its own thread pool to restore the restores.
  */
-public abstract class AbstractRestore extends Task implements IRestoreStrategy {
+public abstract class AbstractRestore implements IRestoreStrategy {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
     private static final String JOBNAME = "AbstractRestore";
     private static final String SYSTEM_KEYSPACE = "system";
@@ -65,6 +60,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final InstanceState instanceState;
     private final MetaData metaData;
     private final IPostRestoreHook postRestoreHook;
+    private final IConfiguration config;
 
     @Inject
     @Named("v1")
@@ -88,7 +84,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             MetaData metaData,
             InstanceState instanceState,
             IPostRestoreHook postRestoreHook) {
-        super(config);
+        this.config = config;
         this.fs = fs;
         this.sleeper = sleeper;
         this.pathProvider = pathProvider;
@@ -101,14 +97,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 new BackupRestoreUtil(
                         config.getRestoreIncludeCFList(), config.getRestoreExcludeCFList());
         this.postRestoreHook = postRestoreHook;
-    }
-
-    public static final boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac =
-                (CollectionUtils.isEmpty(conf.getBackupRacs())
-                        || conf.getBackupRacs().contains(instanceInfo.getRac()));
-        return (isRestoreMode && isBackedupRac);
     }
 
     public void setRestoreConfiguration(String restoreIncludeCFList, String restoreExcludeCFList) {
@@ -171,9 +159,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     }
 
     @Override
-    public void execute() throws Exception {
-        if (!isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) return;
-
+    public void restore() throws Exception {
         logger.info("Starting restore for {}", config.getRestoreSnapshot());
         final DateUtil.DateRange dateRange = new DateUtil.DateRange(config.getRestoreSnapshot());
         new RetryableCallable<Void>() {
@@ -280,12 +266,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             // Declare restore as finished.
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
-
-            // Start cassandra if restore is successful.
-            if (!config.doesCassandraStartManually()) cassProcess.start(true);
-            else
-                logger.info(
-                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());

@@ -27,8 +27,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
 import java.io.File;
 import java.nio.file.Path;
@@ -74,10 +72,6 @@ public class Restore extends AbstractRestore {
             final AbstractBackupPath path, final File restoreLocation) throws Exception {
         return fs.asyncDownloadFile(
                 Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
-    }
-
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
     }
 
     @Override

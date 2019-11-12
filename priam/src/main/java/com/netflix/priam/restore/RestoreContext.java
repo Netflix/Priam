@@ -15,8 +15,9 @@ package com.netflix.priam.restore;
 
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.scheduler.PriamScheduler;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,62 +26,77 @@ import org.slf4j.LoggerFactory;
  * At run-time, determine the source type to restore from.
  */
 public class RestoreContext {
-    private final PriamScheduler scheduler;
     private final IConfiguration config;
+    private final IRestoreStrategy restore;
+    private final IRestoreStrategy encryptedRestoreStrategy;
+    private final IRestoreStrategy awsCrossAccountCryptographyRestoreStrategy;
+    private final IRestoreStrategy googleCryptographyRestoreStrategy;
     private static final Logger logger = LoggerFactory.getLogger(RestoreContext.class);
 
     @Inject
-    public RestoreContext(IConfiguration config, PriamScheduler scheduler) {
+    public RestoreContext(
+            IConfiguration config,
+            Restore restore,
+            EncryptedRestoreStrategy encryptedRestoreStrategy,
+            AwsCrossAccountCryptographyRestoreStrategy awsCrossAccountCryptographyRestoreStrategy,
+            GoogleCryptographyRestoreStrategy googleCryptographyRestoreStrategy) {
         this.config = config;
-        this.scheduler = scheduler;
+        this.restore = restore;
+        this.awsCrossAccountCryptographyRestoreStrategy =
+                awsCrossAccountCryptographyRestoreStrategy;
+        this.encryptedRestoreStrategy = encryptedRestoreStrategy;
+        this.googleCryptographyRestoreStrategy = googleCryptographyRestoreStrategy;
     }
 
-    public boolean isRestoreEnabled() {
-        return !StringUtils.isEmpty(config.getRestoreSnapshot());
+    /**
+     * Find if restore is required based on input set.
+     *
+     * @param conf configuration parameters.
+     * @param instanceInfo InstanceInfo to find if backup was enabled on this rac.
+     * @return boolean value indicating if restore is feasible/enabled.
+     */
+    public static boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
+        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
+        boolean isBackedupRac =
+                (CollectionUtils.isEmpty(conf.getBackupRacs())
+                        || conf.getBackupRacs().contains(instanceInfo.getRac()));
+        return (isRestoreMode && isBackedupRac);
     }
 
+    /**
+     * Perform the restore based on the configuration provided. Note that this method do not check
+     * if restore is required or not. We leave that decision to the caller.
+     *
+     * @throws Exception
+     */
     public void restore() throws Exception {
-        if (!isRestoreEnabled()) return;
+        IRestoreStrategy restoreStrategy = getRestoreStrategy();
+        if (restoreStrategy != null) {
+            logger.info("Restore using {}", restoreStrategy.getClass());
+            restoreStrategy.restore();
+        }
+    }
 
-        // Restore is required.
+    private IRestoreStrategy getRestoreStrategy() throws Exception {
         if (StringUtils.isEmpty(config.getRestoreSourceType()) && !config.isRestoreEncrypted()) {
             // Restore is needed and it will be done from the primary AWS account
-            scheduler.addTask(
-                    Restore.JOBNAME,
-                    Restore.class,
-                    Restore.getTimer()); // restore from the AWS primary acct
-            logger.info("Scheduled task " + Restore.JOBNAME);
+            return restore;
         } else if (config.isRestoreEncrypted()) {
             SourceType sourceType = SourceType.lookup(config.getRestoreSourceType(), true, false);
 
             if (sourceType == null) {
-                scheduler.addTask(
-                        EncryptedRestoreStrategy.JOBNAME,
-                        EncryptedRestoreStrategy.class,
-                        EncryptedRestoreStrategy.getTimer());
-                logger.info("Scheduled task " + Restore.JOBNAME);
-                return;
+                return encryptedRestoreStrategy;
             }
 
             switch (sourceType) {
                 case AWSCROSSACCT:
-                    scheduler.addTask(
-                            AwsCrossAccountCryptographyRestoreStrategy.JOBNAME,
-                            AwsCrossAccountCryptographyRestoreStrategy.class,
-                            AwsCrossAccountCryptographyRestoreStrategy.getTimer());
-                    logger.info(
-                            "Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
-                    break;
+                    return awsCrossAccountCryptographyRestoreStrategy;
 
                 case GOOGLE:
-                    scheduler.addTask(
-                            GoogleCryptographyRestoreStrategy.JOBNAME,
-                            GoogleCryptographyRestoreStrategy.class,
-                            GoogleCryptographyRestoreStrategy.getTimer());
-                    logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
-                    break;
+                    return googleCryptographyRestoreStrategy;
             }
         }
+        return null;
     }
 
     enum SourceType {

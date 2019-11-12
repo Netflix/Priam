@@ -22,6 +22,7 @@ import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.ClusterManagementService;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.config.PriamConfigurationPersister;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -42,6 +43,7 @@ import org.slf4j.LoggerFactory;
 public class PriamServer implements IService {
     private final PriamScheduler scheduler;
     private final IConfiguration config;
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final InstanceIdentity instanceIdentity;
     private final Sleeper sleeper;
     private final ICassandraProcess cassProcess;
@@ -56,6 +58,7 @@ public class PriamServer implements IService {
     @Inject
     public PriamServer(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler scheduler,
             InstanceIdentity id,
             Sleeper sleeper,
@@ -66,6 +69,7 @@ public class PriamServer implements IService {
             CassandraTunerService cassandraTunerService,
             ClusterManagementService clusterManagementService) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.instanceIdentity = id;
         this.sleeper = sleeper;
@@ -111,25 +115,48 @@ public class PriamServer implements IService {
                     UpdateSecuritySettings.getTimer(instanceIdentity));
         }
 
-        // Set up cassandra tuning.
-        cassandraTunerService.scheduleService();
+        // Set up the background configuration dumping thread
+        scheduleTask(
+                scheduler,
+                PriamConfigurationPersister.class,
+                PriamConfigurationPersister.getTimer(config));
 
-        // Determine if we need to restore from backup else start cassandra.
-        if (restoreContext.isRestoreEnabled()) {
+        boolean shouldStartCassandra = false;
+
+        // Determine if we need to restore from backup.
+        if (restoreContext.isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) {
             restoreContext.restore();
-        } else { // no restores needed
-            logger.info("No restore needed, task not scheduled");
-            if (!config.doesCassandraStartManually()) cassProcess.start(true); // Start cassandra.
-            else
-                logger.info(
-                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+            // Start cassandra only if restore is successful.
+            shouldStartCassandra = true;
+        } else {
+            if (instanceIdentity.isReplace()
+                    && backupRestoreConfig.enableBypassCassandraStreaming()) {
+                logger.info("Trying to download data instead of streaming from Cassandra.");
+                try {
+                    restoreContext.restore();
+                    instanceIdentity.setReplacedIp("");
+                } catch (Exception e) {
+                    logger.error(
+                            "Error while trying to rebuild the node from backup. Maybe backup not available or disk full? Trying normal path of cassandra streaming");
+                    // Clean the data folder.
+                    SystemUtils.cleanupDir(config.getDataFileLocation(), null);
+                } finally {
+                    shouldStartCassandra = true;
+                }
+            } else {
+                // no restores needed
+                logger.info("No restore needed, task not scheduled");
+                shouldStartCassandra = true;
+            }
         }
 
-        /*
-         *  Run the delayed task (after 10 seconds) to Monitor Cassandra
-         *  If Restore option is chosen, then Running Cassandra instance is stopped
-         *  Hence waiting for Cassandra to stop
-         */
+        // Tune Cassandra.
+        cassandraTunerService.scheduleService();
+
+        // Start Cassandra.
+        if (shouldStartCassandra) startCassandra();
+
+        // Run the delayed task (after 10 seconds) to Monitor Cassandra
         scheduler.addTaskWithDelay(
                 CassandraMonitor.JOBNAME,
                 CassandraMonitor.class,
@@ -139,17 +166,18 @@ public class PriamServer implements IService {
         // Set up management services like flush, compactions etc.
         clusterManagementService.scheduleService();
 
-        // Set up the background configuration dumping thread
-        scheduleTask(
-                scheduler,
-                PriamConfigurationPersister.class,
-                PriamConfigurationPersister.getTimer(config));
-
         // Set up V1 Snapshot Service
         backupService.scheduleService();
 
         // Set up V2 Snapshot Service
         backupV2Service.scheduleService();
+    }
+
+    private void startCassandra() throws IOException {
+        if (!config.doesCassandraStartManually()) cassProcess.start(true); // Start cassandra.
+        else
+            logger.info(
+                    "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
     }
 
     @Override

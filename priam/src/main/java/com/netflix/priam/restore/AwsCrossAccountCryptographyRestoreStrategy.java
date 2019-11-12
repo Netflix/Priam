@@ -27,8 +27,6 @@ import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,10 +75,5 @@ public class AwsCrossAccountCryptographyRestoreStrategy extends EncryptedRestore
                 metaData,
                 instanceState,
                 postRestoreHook);
-    }
-
-    /** @return a timer used by the scheduler to determine when "this" should be run. */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME);
     }
 }

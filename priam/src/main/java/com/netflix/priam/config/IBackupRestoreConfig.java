@@ -97,4 +97,18 @@ public interface IBackupRestoreConfig {
     default boolean enableV2Restore() {
         return false;
     }
+
+    /**
+     * Build the instance from backups by using restore process in case of an instance replacements.
+     * Note that we prefer this when data size is HUGE. C* streaming is super slow and for instances
+     * with big data size can lead to C* streaming for multiple days. Note that this is a little bit
+     * dangerous as you "will" some of the writes accepted by old instance but not uploaded to
+     * backup file system. Also we do not plan to run local repair on the replaced instance, so data
+     * will be stale. We hope that repair will take care of the inconsistency.
+     *
+     * @return use restore for replacements (bypassing cassandra streaming), if backup is available.
+     */
+    default boolean enableBypassCassandraStreaming() {
+        return true;
+    }
 }

@@ -52,6 +52,27 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
                     && type != BackupFileType.CL
                     && type != SNAPSHOT_VERIFIED;
         }
+
+        public static BackupFileType fromString(String s) {
+            switch (s) {
+                case "SNAP":
+                    return SNAP;
+                case "SST":
+                    return SST;
+                case "CL":
+                    return CL;
+                case "META":
+                    return META;
+                case "META_V2":
+                    return META_V2;
+                case "SST_V2":
+                    return SST_V2;
+                case "SNAPSHOT_VERIFIED":
+                    return SNAPSHOT_VERIFIED;
+                default:
+                    throw new RuntimeException(String.format("Unknown BackupFileType : %s", s));
+            }
+        }
     }
 
     protected BackupFileType type;

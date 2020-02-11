@@ -1091,4 +1091,14 @@ public interface IConfiguration {
      * @return The result for the property, or the defaultValue if provided (null otherwise)
      */
     String getProperty(String key, String defaultValue);
+
+    /**
+     * Returns a csv of backup component file types {@link
+     * com.netflix.priam.backup.AbstractBackupPath.BackupFileType} on which to send notifications.
+     *
+     * @return A csv string that can be parsed to infer the component file types
+     */
+    default String getBackupNotifyComponentIncludeList() {
+        return StringUtils.EMPTY;
+    }
 }

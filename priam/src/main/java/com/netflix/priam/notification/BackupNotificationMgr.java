@@ -41,6 +41,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private final INotificationService notificationService;
     private final InstanceInfo instanceInfo;
     private final InstanceIdentity instanceIdentity;
+    private final Set<AbstractBackupPath.BackupFileType> notifiedBackupFileTypesSet;
 
     @Inject
     public BackupNotificationMgr(
@@ -52,6 +53,13 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         this.notificationService = notificationService;
         this.instanceInfo = instanceInfo;
         this.instanceIdentity = instanceIdentity;
+        this.notifiedBackupFileTypesSet = new HashSet<>();
+        if (!StringUtils.isBlank(this.config.getBackupNotifyComponentIncludeList())) {
+            notifiedBackupFileTypesSet.addAll(
+                    Arrays.stream(this.config.getBackupNotifyComponentIncludeList().split(","))
+                            .map(AbstractBackupPath.BackupFileType::fromString)
+                            .collect(Collectors.toSet()));
+        }
     }
 
     public void notify(BackupVerificationResult backupVerificationResult) {
@@ -98,14 +106,8 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private void notify(AbstractBackupPath abp, String uploadStatus) {
         JSONObject jsonObject = new JSONObject();
         try {
-            Set<AbstractBackupPath.BackupFileType> backupFileTypeSet = new HashSet<>();
-            if (!StringUtils.isBlank(this.config.getBackupNotifyComponentIncludeList())) {
-                backupFileTypeSet.addAll(
-                        Arrays.stream(this.config.getBackupNotifyComponentIncludeList().split(","))
-                                .map(AbstractBackupPath.BackupFileType::fromString)
-                                .collect(Collectors.toSet()));
-            }
-            if (backupFileTypeSet.isEmpty() || backupFileTypeSet.contains(abp.getType())) {
+            if (notifiedBackupFileTypesSet.isEmpty()
+                    || notifiedBackupFileTypesSet.contains(abp.getType())) {
                 jsonObject.put("s3bucketname", this.config.getBackupPrefix());
                 jsonObject.put("s3clustername", abp.getClusterName());
                 jsonObject.put("s3namespace", abp.getRemotePath());
@@ -131,7 +133,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 logger.info(
                         "BackupFileType {} is not in the list of notified component types {}",
                         abp.getType().name(),
-                        StringUtils.join(backupFileTypeSet, ", "));
+                        StringUtils.join(notifiedBackupFileTypesSet, ", "));
             }
         } catch (JSONException exception) {
             logger.error(

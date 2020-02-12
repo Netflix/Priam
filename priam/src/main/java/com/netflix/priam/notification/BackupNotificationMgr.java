@@ -147,14 +147,15 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         }
     }
 
-    private Set<AbstractBackupPath.BackupFileType> getUpdatedNotifiedBackupFileTypesSet(String notifiedBackupFileTypes){
-        if(!notifiedBackupFileTypes.equals(this.backupRestoreConfig.getBackupNotifyComponentIncludeList())) {
+    private Set<AbstractBackupPath.BackupFileType> getUpdatedNotifiedBackupFileTypesSet(
+            String notifiedBackupFileTypes) {
+        if (!notifiedBackupFileTypes.equals(
+                this.backupRestoreConfig.getBackupNotifyComponentIncludeList())) {
             this.notifiedBackupFileTypesSet.clear();
             this.notifiedBackupFileTypes =
                     this.backupRestoreConfig.getBackupNotifyComponentIncludeList();
             if (!StringUtils.isBlank(this.notifiedBackupFileTypes)) {
-                for (String s :
-                        this.notifiedBackupFileTypes.split(",")) {
+                for (String s : this.notifiedBackupFileTypes.split(",")) {
                     try {
                         AbstractBackupPath.BackupFileType backupFileType =
                                 AbstractBackupPath.BackupFileType.fromString(s);

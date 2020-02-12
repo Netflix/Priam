@@ -763,9 +763,4 @@ public class PriamConfiguration implements IConfiguration {
     public boolean isForgottenFileMoveEnabled() {
         return config.get(PRIAM_PRE + ".forgottenFileMoveEnabled", false);
     }
-
-    @Override
-    public String getBackupNotifyComponentIncludeList() {
-        return config.get(PRIAM_PRE + ".backup.notify.component.include");
-    }
 }

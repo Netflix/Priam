@@ -53,24 +53,20 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
                     && type != SNAPSHOT_VERIFIED;
         }
 
-        public static BackupFileType fromString(String s) {
-            switch (s) {
-                case "SNAP":
-                    return SNAP;
-                case "SST":
-                    return SST;
-                case "CL":
-                    return CL;
-                case "META":
-                    return META;
-                case "META_V2":
-                    return META_V2;
-                case "SST_V2":
-                    return SST_V2;
-                case "SNAPSHOT_VERIFIED":
-                    return SNAPSHOT_VERIFIED;
-                default:
-                    throw new RuntimeException(String.format("Unknown BackupFileType : %s", s));
+        public static BackupFileType fromString(String s) throws BackupRestoreException {
+            if (isValidBackupFileType(s)) {
+                return BackupFileType.valueOf(s);
+            } else {
+                throw new BackupRestoreException(String.format("Unknown BackupFileType %s", s));
+            }
+        }
+
+        private static boolean isValidBackupFileType(String s) {
+            try {
+                BackupFileType.valueOf(s);
+                return true;
+            } catch (IllegalArgumentException e) {
+                return false;
             }
         }
     }

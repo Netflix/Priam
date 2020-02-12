@@ -16,12 +16,13 @@ package com.netflix.priam.notification;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.BackupVerificationResult;
+import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
-import java.util.stream.Collectors;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -38,28 +39,28 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     public static final String SUCCESS_VAL = "success", FAILED_VAL = "failed", STARTED = "started";
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
+    private final IBackupRestoreConfig backupRestoreConfig;
     private final INotificationService notificationService;
     private final InstanceInfo instanceInfo;
     private final InstanceIdentity instanceIdentity;
     private final Set<AbstractBackupPath.BackupFileType> notifiedBackupFileTypesSet;
+    private String notifiedBackupFileTypes;
 
     @Inject
     public BackupNotificationMgr(
             IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
             INotificationService notificationService,
             InstanceInfo instanceInfo,
             InstanceIdentity instanceIdentity) {
         this.config = config;
+        this.backupRestoreConfig = backupRestoreConfig;
         this.notificationService = notificationService;
         this.instanceInfo = instanceInfo;
         this.instanceIdentity = instanceIdentity;
         this.notifiedBackupFileTypesSet = new HashSet<>();
-        if (!StringUtils.isBlank(this.config.getBackupNotifyComponentIncludeList())) {
-            notifiedBackupFileTypesSet.addAll(
-                    Arrays.stream(this.config.getBackupNotifyComponentIncludeList().split(","))
-                            .map(AbstractBackupPath.BackupFileType::fromString)
-                            .collect(Collectors.toSet()));
-        }
+        this.notifiedBackupFileTypes =
+                this.backupRestoreConfig.getBackupNotifyComponentIncludeList();
     }
 
     public void notify(BackupVerificationResult backupVerificationResult) {
@@ -106,8 +107,10 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
     private void notify(AbstractBackupPath abp, String uploadStatus) {
         JSONObject jsonObject = new JSONObject();
         try {
-            if (notifiedBackupFileTypesSet.isEmpty()
-                    || notifiedBackupFileTypesSet.contains(abp.getType())) {
+            Set<AbstractBackupPath.BackupFileType> updatedNotifiedBackupFileTypeSet =
+                    getUpdatedNotifiedBackupFileTypesSet(this.notifiedBackupFileTypes);
+            if (updatedNotifiedBackupFileTypeSet.isEmpty()
+                    || updatedNotifiedBackupFileTypeSet.contains(abp.getType())) {
                 jsonObject.put("s3bucketname", this.config.getBackupPrefix());
                 jsonObject.put("s3clustername", abp.getClusterName());
                 jsonObject.put("s3namespace", abp.getRemotePath());
@@ -130,7 +133,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
 
                 this.notificationService.notify(jsonObject.toString(), messageAttributes);
             } else {
-                logger.info(
+                logger.debug(
                         "BackupFileType {} is not in the list of notified component types {}",
                         abp.getType().name(),
                         StringUtils.join(notifiedBackupFileTypesSet, ", "));
@@ -142,6 +145,26 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                     abp.getFileName(),
                     exception.getLocalizedMessage());
         }
+    }
+
+    private Set<AbstractBackupPath.BackupFileType> getUpdatedNotifiedBackupFileTypesSet(String notifiedBackupFileTypes){
+        if(!notifiedBackupFileTypes.equals(this.backupRestoreConfig.getBackupNotifyComponentIncludeList())) {
+            this.notifiedBackupFileTypesSet.clear();
+            this.notifiedBackupFileTypes =
+                    this.backupRestoreConfig.getBackupNotifyComponentIncludeList();
+            if (!StringUtils.isBlank(this.notifiedBackupFileTypes)) {
+                for (String s :
+                        this.notifiedBackupFileTypes.split(",")) {
+                    try {
+                        AbstractBackupPath.BackupFileType backupFileType =
+                                AbstractBackupPath.BackupFileType.fromString(s);
+                        notifiedBackupFileTypesSet.add(backupFileType);
+                    } catch (BackupRestoreException ignored) {
+                    }
+                }
+            }
+        }
+        return Collections.unmodifiableSet(this.notifiedBackupFileTypesSet);
     }
 
     @Override

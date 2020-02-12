@@ -14,6 +14,7 @@
 package com.netflix.priam.config;
 
 import com.google.inject.ImplementedBy;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * This interface is to abstract out the backup and restore configuration used by Priam. Goal is to
@@ -96,5 +97,17 @@ public interface IBackupRestoreConfig {
      */
     default boolean enableV2Restore() {
         return false;
+    }
+
+    /**
+     * Returns a csv of backup component file types {@link
+     * com.netflix.priam.backup.AbstractBackupPath.BackupFileType} on which to send notifications.
+     * Default value of this filter is an empty string.
+     * Sample filter : "SNAPSHOT_VERIFIED, META_V2"
+     * @return A csv string that can be parsed to infer the component file types on which to send
+     * backup related notifications
+     */
+    default String getBackupNotifyComponentIncludeList() {
+        return StringUtils.EMPTY;
     }
 }

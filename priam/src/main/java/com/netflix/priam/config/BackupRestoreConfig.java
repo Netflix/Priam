@@ -15,6 +15,7 @@ package com.netflix.priam.config;
 
 import com.netflix.priam.configSource.IConfigSource;
 import javax.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 
 /** Implementation of IBackupRestoreConfig. Created by aagrawal on 6/26/18. */
 public class BackupRestoreConfig implements IBackupRestoreConfig {
@@ -54,5 +55,10 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
     @Override
     public String getBackupVerificationCronExpression() {
         return config.get("priam.backupVerificationCronExpression", "0 30 0/1 1/1 * ? *");
+    }
+
+    @Override
+    public String getBackupNotifyComponentIncludeList() {
+        return config.get("priam.backup.notify.component.include", StringUtils.EMPTY);
     }
 }

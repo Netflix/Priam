@@ -77,7 +77,6 @@ public class InstanceIdentity {
             }
         }
 
-        @Override
         public boolean test(PriamInstance input) {
             return apply(input);
         }

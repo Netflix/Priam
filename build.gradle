@@ -12,6 +12,7 @@ allprojects {
 
     repositories {
         jcenter()
+        google()
     }
 
     configurations {

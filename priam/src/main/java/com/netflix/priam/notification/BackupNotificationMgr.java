@@ -158,7 +158,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 for (String s : this.notifiedBackupFileTypes.split(",")) {
                     try {
                         AbstractBackupPath.BackupFileType backupFileType =
-                                AbstractBackupPath.BackupFileType.fromString(s);
+                                AbstractBackupPath.BackupFileType.fromString(s.trim());
                         notifiedBackupFileTypesSet.add(backupFileType);
                     } catch (BackupRestoreException ignored) {
                     }

@@ -125,7 +125,7 @@ public class TestBackupNotificationMgr {
     }
 
     @Test
-    public void testNoNotificationsEmptyFilter(
+    public void testNotificationsEmptyFilter(
             @Mocked IBackupRestoreConfig backupRestoreConfig,
             @Capturing INotificationService notificationService)
             throws ParseException {
@@ -162,6 +162,132 @@ public class TestBackupNotificationMgr {
             {
                 notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
                 maxTimes = 1;
+            }
+        };
+    }
+
+    @Test
+    public void testNotificationsInvalidFilter(
+            @Mocked IBackupRestoreConfig backupRestoreConfig,
+            @Capturing INotificationService notificationService)
+            throws ParseException {
+        new Expectations() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                result = "SOME_FAKE_FILE_TYPE_1, SOME_FAKE_FILE_TYPE_2";
+                maxTimes = 2;
+            }
+        };
+        new Expectations() {
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 1;
+            }
+        };
+        Path path =
+                Paths.get(
+                        "fakeDataLocation",
+                        "fakeKeyspace",
+                        "fakeColumnFamily",
+                        "fakeBackup",
+                        "fakeData.db");
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
+        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
+        backupNotificationMgr.updateEventStart(backupEvent);
+        new Verifications() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                maxTimes = 2;
+            }
+
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 1;
+            }
+        };
+    }
+
+    @Test
+    public void testNotificationsPartiallyValidFilter(
+            @Mocked IBackupRestoreConfig backupRestoreConfig,
+            @Capturing INotificationService notificationService)
+            throws ParseException {
+        new Expectations() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                result = "SOME_FAKE_FILE_TYPE_1, SOME_FAKE_FILE_TYPE_2, META_V2";
+                maxTimes = 2;
+            }
+        };
+        new Expectations() {
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 1;
+            }
+        };
+        Path path =
+                Paths.get(
+                        "fakeDataLocation",
+                        "fakeKeyspace",
+                        "fakeColumnFamily",
+                        "fakeBackup",
+                        "fakeData.db");
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
+        backupNotificationMgr.updateEventStart(backupEvent);
+        new Verifications() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                maxTimes = 2;
+            }
+
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 1;
+            }
+        };
+    }
+
+    @Test
+    public void testNoNotificationsPartiallyValidFilter(
+            @Mocked IBackupRestoreConfig backupRestoreConfig,
+            @Capturing INotificationService notificationService)
+            throws ParseException {
+        new Expectations() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                result = "SOME_FAKE_FILE_TYPE_1, SOME_FAKE_FILE_TYPE_2, SST";
+                maxTimes = 2;
+            }
+        };
+        new Expectations() {
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 0;
+            }
+        };
+        Path path =
+                Paths.get(
+                        "fakeDataLocation",
+                        "fakeKeyspace",
+                        "fakeColumnFamily",
+                        "fakeBackup",
+                        "fakeData.db");
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.META_V2);
+        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
+        backupNotificationMgr.updateEventStart(backupEvent);
+        new Verifications() {
+            {
+                backupRestoreConfig.getBackupNotifyComponentIncludeList();
+                maxTimes = 2;
+            }
+
+            {
+                notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
+                maxTimes = 0;
             }
         };
     }

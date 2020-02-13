@@ -101,8 +101,12 @@ public interface IBackupRestoreConfig {
 
     /**
      * Returns a csv of backup component file types {@link
-     * com.netflix.priam.backup.AbstractBackupPath.BackupFileType} on which to send notifications.
-     * Default value of this filter is an empty string. Sample filter : "SNAPSHOT_VERIFIED, META_V2"
+     * com.netflix.priam.backup.AbstractBackupPath.BackupFileType} on which to send
+     * backup notifications.
+     * Default value of this filter is an empty string which would imply that backup
+     * notifications will be sent for all component types see {@link
+     * com.netflix.priam.backup.AbstractBackupPath.BackupFileType}.
+     * Sample filter : "SNAPSHOT_VERIFIED, META_V2"
      *
      * @return A csv string that can be parsed to infer the component file types on which to send
      *     backup related notifications

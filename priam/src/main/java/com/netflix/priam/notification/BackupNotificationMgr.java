@@ -130,7 +130,11 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 // SNS Attributes for filtering messages. Cluster name and backup file type.
                 Map<String, MessageAttributeValue> messageAttributes =
                         getMessageAttributes(abp.getType());
-
+                logger.info(
+                        String.format(
+                                "Notified BackUpFileTypes %s, going to notify on file " + "type %s",
+                                StringUtils.join(updatedNotifiedBackupFileTypeSet, ", "),
+                                abp.getType().toString()));
                 this.notificationService.notify(jsonObject.toString(), messageAttributes);
             } else {
                 logger.debug(

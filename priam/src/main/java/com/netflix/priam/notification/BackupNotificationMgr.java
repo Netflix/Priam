@@ -61,8 +61,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         this.instanceInfo = instanceInfo;
         this.instanceIdentity = instanceIdentity;
         this.notifiedBackupFileTypesSet = new HashSet<>();
-        this.notifiedBackupFileTypes =
-                this.backupRestoreConfig.getBackupNotifyComponentIncludeList();
+        this.notifiedBackupFileTypes = "";
     }
 
     public void notify(BackupVerificationResult backupVerificationResult) {
@@ -132,7 +131,6 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 // SNS Attributes for filtering messages. Cluster name and backup file type.
                 Map<String, MessageAttributeValue> messageAttributes =
                         getMessageAttributes(abp.getType());
-
                 this.notificationService.notify(jsonObject.toString(), messageAttributes);
             } else {
                 logger.debug(
@@ -151,8 +149,12 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
 
     private Set<AbstractBackupPath.BackupFileType> getUpdatedNotifiedBackupFileTypesSet(
             String notifiedBackupFileTypes) {
-        if (!notifiedBackupFileTypes.equals(
-                this.backupRestoreConfig.getBackupNotifyComponentIncludeList())) {
+        String propertyValue = this.backupRestoreConfig.getBackupNotifyComponentIncludeList();
+        if (!notifiedBackupFileTypes.equals(propertyValue)) {
+            logger.info(
+                    String.format(
+                            "Notified BackupFileTypes changed from %s to %s",
+                            this.notifiedBackupFileTypes, propertyValue));
             this.notifiedBackupFileTypesSet.clear();
             this.notifiedBackupFileTypes =
                     this.backupRestoreConfig.getBackupNotifyComponentIncludeList();

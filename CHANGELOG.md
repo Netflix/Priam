@@ -1,4 +1,16 @@
 # Changelog
+
+# Changelog
+## 2020/02/21 3.11.57
+(#844, #839) Implementation of a filter for Backup Notification. The filter can be controlled using the configuration "priam.backupNotifyComponentIncludeList"
+
+## 2019/10/24 3.11.56
+(#836) Move flush and compactions to Service Layer. This allows us to "hot" reload the jobs when configurations change.
+(#836) Send SNAPSHOT_VERIFIED message when a snapshot is verified and ready to be consumed by downward dependencies.
+
+## 2019/08/23 3.11.55
+(#832) Travis build fails for oraclejdk8. Migration to openjdk8
+
 ## 2019/10/16 3.11.54
 (#834) Removing functionality of creating incremental manifest file in backup V1 as it is not used. 
 (#834) Bug fix: When meta file do not exist for TTL in backup v2 we should not be throwing NPE. 

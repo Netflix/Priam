@@ -59,6 +59,6 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
 
     @Override
     public String getBackupNotifyComponentIncludeList() {
-        return config.get("priam.backup.notify.component.include", StringUtils.EMPTY);
+        return config.get("priam.backupNotifyComponentIncludeList", StringUtils.EMPTY);
     }
 }

@@ -31,7 +31,10 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,10 +91,11 @@ public class BackupVerificationTask extends Task {
                                         backupRestoreConfig.getBackupVerificationSLOInHours(),
                                         ChronoUnit.HOURS),
                         DateUtil.getInstant());
-        Optional<BackupVerificationResult> verificationResult =
-                backupVerification.verifyBackup(
+        List<BackupVerificationResult> verificationResults =
+                backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_META_SERVICE, false, dateRange);
-        if (!verificationResult.isPresent() || !verificationResult.get().valid) {
+        if (verificationResults.isEmpty()
+                || verificationResults.stream().filter(r -> r.valid).collect(Collectors.toList()).isEmpty()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
@@ -99,11 +103,14 @@ public class BackupVerificationTask extends Task {
         } else {
             // verification result is available and is valid.
             // send notification that backup is uploaded.
-            logger.info(
-                    "Sending {} message for backup: {}",
-                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                    verificationResult.get().snapshotInstant);
-            backupNotificationMgr.notify(verificationResult.get());
+            verificationResults.stream().forEach(r -> {
+                logger.info(
+                        "Sending {} message for backup: {}",
+                        AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                        r.snapshotInstant);
+                backupNotificationMgr.notify(r);
+            });
+
         }
     }
 

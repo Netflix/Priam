@@ -108,6 +108,54 @@ public class BackupVerification {
         return Optional.empty();
     }
 
+    public List<BackupVerificationResult> verifyAllBackups(
+            BackupVersion backupVersion, boolean force, DateRange dateRange)
+            throws UnsupportedTypeException, IllegalArgumentException {
+        IMetaProxy metaProxy = getMetaProxy(backupVersion);
+        if (metaProxy == null) {
+            throw new UnsupportedTypeException(
+                    "BackupVersion type: " + backupVersion + " is not supported");
+        }
+
+        if (dateRange == null) {
+            throw new IllegalArgumentException("dateRange provided is null");
+        }
+
+        List<BackupVerificationResult> result = new ArrayList<>();
+
+        List<BackupMetadata> metadata =
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
+        if (metadata == null || metadata.isEmpty()) return result;
+        for (BackupMetadata backupMetadata : metadata) {
+            if (backupMetadata.getLastValidated() != null && !force) {
+                // Backup is already validated. Nothing to do.
+                BackupVerificationResult backupVerificationResult = new BackupVerificationResult();
+                backupVerificationResult.valid = true;
+                backupVerificationResult.manifestAvailable = true;
+                backupVerificationResult.snapshotInstant = backupMetadata.getStart().toInstant();
+                Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
+                backupVerificationResult.remotePath =
+                        snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
+                result.add(backupVerificationResult);
+            }
+            else {
+                BackupVerificationResult backupVerificationResult =
+                        verifyBackup(metaProxy, backupMetadata);
+                if (logger.isDebugEnabled())
+                    logger.debug(
+                            "BackupVerification: metadata: {}, result: {}",
+                            backupMetadata,
+                            backupVerificationResult);
+                if (backupVerificationResult.valid) {
+                    backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+                    backupStatusMgr.update(backupMetadata);
+                    result.add(backupVerificationResult);
+                }
+            }
+        }
+        return result;
+    }
+
     private BackupVerificationResult verifyBackup(
             IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
         Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());

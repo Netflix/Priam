@@ -28,7 +28,8 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
 import mockit.Expectations;
 import mockit.Mock;
 import mockit.MockUp;
@@ -57,16 +58,17 @@ public class TestBackupVerificationTask {
         public static boolean throwError = false;
 
         @Mock
-        public Optional<BackupVerificationResult> verifyBackup(
+        public List<BackupVerificationResult> verifyAllBackups(
                 BackupVersion backupVersion, boolean force, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
 
-            if (failCall) return Optional.of(new BackupVerificationResult());
+            if (failCall) return new ArrayList<>();
 
-            BackupVerificationResult result = new BackupVerificationResult();
-            result.valid = true;
-            return Optional.of(result);
+            BackupVerificationResult backupVerificationResult = new BackupVerificationResult();
+            backupVerificationResult.valid = true;
+            List<BackupVerificationResult> result = new ArrayList<>();
+            return result;
         }
     }
 

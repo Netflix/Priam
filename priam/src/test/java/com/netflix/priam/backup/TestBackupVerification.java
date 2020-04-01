@@ -31,7 +31,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
@@ -120,10 +119,11 @@ public class TestBackupVerification {
 
     private void setUp() throws Exception {
         Instant start = DateUtil.parseInstant(backupDate);
-        for(int i=0; i<numFakeBackups-1; i++){
+        for (int i = 0; i < numFakeBackups - 1; i++) {
             backupStatusMgr.finish(
-                    getBackupMetaData(BackupVersion.SNAPSHOT_BACKUP,
-                            start.plus(i+1, ChronoUnit.MINUTES),
+                    getBackupMetaData(
+                            BackupVersion.SNAPSHOT_BACKUP,
+                            start.plus(i + 1, ChronoUnit.MINUTES),
                             Status.FINISHED));
         }
         backupStatusMgr.finish(
@@ -133,10 +133,11 @@ public class TestBackupVerification {
                         BackupVersion.SNAPSHOT_BACKUP,
                         start.plus(20, ChronoUnit.MINUTES),
                         Status.FAILED));
-        for(int i=0; i<numFakeBackups-1; i++){
+        for (int i = 0; i < numFakeBackups - 1; i++) {
             backupStatusMgr.finish(
-                    getBackupMetaData(BackupVersion.SNAPSHOT_META_SERVICE,
-                            start.plus(i+1, ChronoUnit.MINUTES),
+                    getBackupMetaData(
+                            BackupVersion.SNAPSHOT_META_SERVICE,
+                            start.plus(i + 1, ChronoUnit.MINUTES),
                             Status.FINISHED));
         }
         backupStatusMgr.finish(
@@ -186,22 +187,21 @@ public class TestBackupVerification {
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults.stream()
+        backupVerificationResults
+                .stream()
                 .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
-                backupStatusMgr
-                        .getLatestBackupMetadata(
-                                BackupVersion.SNAPSHOT_BACKUP,
-                                new DateRange(backupDate + "," + backupDateEnd));
+                backupStatusMgr.getLatestBackupMetadata(
+                        BackupVersion.SNAPSHOT_BACKUP,
+                        new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupMetadata.isEmpty());
         Assert.assertTrue(backupMetadata.size() == numFakeBackups);
         backupMetadata.stream().forEach(b -> Assert.assertNotNull(b.getLastValidated()));
 
         backupMetadata =
-                backupStatusMgr
-                        .getLatestBackupMetadata(
-                                BackupVersion.SNAPSHOT_META_SERVICE,
-                                new DateRange(backupDate + "," + backupDateEnd));
+                backupStatusMgr.getLatestBackupMetadata(
+                        BackupVersion.SNAPSHOT_META_SERVICE,
+                        new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupMetadata.isEmpty());
         Assert.assertTrue(backupMetadata.size() == numFakeBackups);
         backupMetadata.stream().forEach(b -> Assert.assertNull(b.getLastValidated()));
@@ -267,22 +267,21 @@ public class TestBackupVerification {
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults.stream()
+        backupVerificationResults
+                .stream()
                 .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
-                backupStatusMgr
-                        .getLatestBackupMetadata(
-                                BackupVersion.SNAPSHOT_META_SERVICE,
-                                new DateRange(backupDate + "," + backupDateEnd));
+                backupStatusMgr.getLatestBackupMetadata(
+                        BackupVersion.SNAPSHOT_META_SERVICE,
+                        new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupMetadata.isEmpty());
         Assert.assertTrue(backupMetadata.size() == numFakeBackups);
         backupMetadata.stream().forEach(b -> Assert.assertNotNull(b.getLastValidated()));
 
         backupMetadata =
-                backupStatusMgr
-                        .getLatestBackupMetadata(
-                                BackupVersion.SNAPSHOT_BACKUP,
-                                new DateRange(backupDate + "," + backupDateEnd));
+                backupStatusMgr.getLatestBackupMetadata(
+                        BackupVersion.SNAPSHOT_BACKUP,
+                        new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupMetadata.isEmpty());
         Assert.assertTrue(backupMetadata.size() == numFakeBackups);
         backupMetadata.stream().forEach(b -> Assert.assertNull(b.getLastValidated()));

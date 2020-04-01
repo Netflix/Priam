@@ -137,8 +137,7 @@ public class BackupVerification {
                 backupVerificationResult.remotePath =
                         snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
                 result.add(backupVerificationResult);
-            }
-            else {
+            } else {
                 BackupVerificationResult backupVerificationResult =
                         verifyBackup(metaProxy, backupMetadata);
                 if (logger.isDebugEnabled())

@@ -41,9 +41,7 @@ allprojects {
       compile 'com.googlecode.json-simple:json-simple:1.1.1'
       compile 'org.xerial.snappy:snappy-java:1.1.2.6'
       compile 'org.yaml:snakeyaml:1.19'
-      // Until Cassandra releases cassandra-all jars for 4.0
-      compile files(project.rootDir.getPath() + '/libs/apache-cassandra-4.0-SNAPSHOT.jar')
-      //compile 'org.apache.cassandra:cassandra-all:3.0.17'
+      compile 'org.apache.cassandra:cassandra-all:4.0-alpha3'
       compile 'javax.ws.rs:jsr311-api:1.1.1'
       compile 'joda-time:joda-time:2.9.9'
       compile 'org.apache.commons:commons-configuration2:2.1.1'

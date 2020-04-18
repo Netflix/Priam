@@ -41,9 +41,9 @@ public class AWSVpcInstanceDataRetriever extends InstanceDataRetrieverBase{
         return vpcId;
     }
 
-  /** @return either the public hostname if we have one, otherwise the vpc local hostname */
-  @Override
-  public String getPublicHostname() {
+    /** @return either the public hostname if we have one, otherwise the vpc local hostname */
+    @Override
+    public String getPublicHostname() {
         try {
             return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-hostname");
         } catch (RuntimeException error) {
@@ -52,4 +52,14 @@ public class AWSVpcInstanceDataRetriever extends InstanceDataRetrieverBase{
         }
     }
 
+    /** @return either the public ip if we have one, otherwise the vpc local ip */
+    @Override
+    public String getPublicIP() {
+        try {
+            return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/public-ipv4");
+        } catch (RuntimeException error) {
+            // If we can't retrieve a public hostname, retrieve a VPC local one.
+            return SystemUtils.getDataFromUrl("http://169.254.169.254/latest/meta-data/local-ipv4");
+        }
+    }
 }

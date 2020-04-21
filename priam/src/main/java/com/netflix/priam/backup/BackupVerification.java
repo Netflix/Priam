@@ -127,17 +127,7 @@ public class BackupVerification {
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
         if (metadata == null || metadata.isEmpty()) return result;
         for (BackupMetadata backupMetadata : metadata) {
-            if (backupMetadata.getLastValidated() != null && !force) {
-                // Backup is already validated. Nothing to do.
-                BackupVerificationResult backupVerificationResult = new BackupVerificationResult();
-                backupVerificationResult.valid = true;
-                backupVerificationResult.manifestAvailable = true;
-                backupVerificationResult.snapshotInstant = backupMetadata.getStart().toInstant();
-                Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
-                backupVerificationResult.remotePath =
-                        snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
-                result.add(backupVerificationResult);
-            } else {
+            if (backupMetadata.getLastValidated() == null) {
                 BackupVerificationResult backupVerificationResult =
                         verifyBackup(metaProxy, backupMetadata);
                 if (logger.isDebugEnabled())

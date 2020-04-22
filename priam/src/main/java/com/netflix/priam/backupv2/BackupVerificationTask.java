@@ -108,12 +108,12 @@ public class BackupVerificationTask extends Task {
             verificationResults
                     .stream()
                     .forEach(
-                            r -> {
+                            backupVerificationResult -> {
                                 logger.info(
                                         "Sending {} message for backup: {}",
                                         AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                        r.snapshotInstant);
-                                backupNotificationMgr.notify(r);
+                                        backupVerificationResult.snapshotInstant);
+                                backupNotificationMgr.notify(backupVerificationResult);
                             });
         }
     }

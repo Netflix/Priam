@@ -109,7 +109,7 @@ public class BackupVerification {
     }
 
     public List<BackupVerificationResult> verifyAllBackups(
-            BackupVersion backupVersion, boolean force, DateRange dateRange)
+            BackupVersion backupVersion, DateRange dateRange)
             throws UnsupportedTypeException, IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         if (metaProxy == null) {

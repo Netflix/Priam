@@ -90,8 +90,7 @@ public class BackupVerificationTask extends Task {
                                         ChronoUnit.HOURS),
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
-                backupVerification.verifyAllBackups(
-                        BackupVersion.SNAPSHOT_META_SERVICE, false, dateRange);
+                backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
         if (verificationResults.isEmpty()
                 || verificationResults
                         .stream()

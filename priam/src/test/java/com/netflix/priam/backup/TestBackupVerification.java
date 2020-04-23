@@ -101,6 +101,16 @@ public class TestBackupVerification {
     }
 
     @Test
+    public void illegalDateRangeBackupDateRange() throws UnsupportedTypeException {
+        try {
+            backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_BACKUP, null);
+            Assert.assertTrue(false);
+        } catch (IllegalArgumentException e) {
+            Assert.assertTrue(true);
+        }
+    }
+
+    @Test
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
@@ -115,6 +125,20 @@ public class TestBackupVerification {
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
+    }
+
+    @Test
+    public void noBackupDateRange() throws Exception {
+        List<BackupVerificationResult> backupVerificationResults =
+                backupVerification.verifyAllBackups(
+                        BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
+        Assert.assertFalse(backupVerificationResults.size() > 0);
+
+        backupVerificationResults =
+                backupVerification.verifyAllBackups(
+                        BackupVersion.SNAPSHOT_META_SERVICE,
+                        new DateRange(Instant.now(), Instant.now()));
+        Assert.assertFalse(backupVerificationResults.size() > 0);
     }
 
     private void setUp() throws Exception {
@@ -177,13 +201,12 @@ public class TestBackupVerification {
     }
 
     @Test
-    public void verifyBackupVersion1List() throws Exception {
+    public void verifyBackupVersion1DateRange() throws Exception {
         setUp();
         // Verify for backup version 1.0
         List<BackupVerificationResult> backupVerificationResults =
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_BACKUP,
-                        false,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
@@ -257,13 +280,12 @@ public class TestBackupVerification {
     }
 
     @Test
-    public void verifyBackupVersion2List() throws Exception {
+    public void verifyBackupVersion2DateRange() throws Exception {
         setUp();
         // Verify for backup version 2.0
         List<BackupVerificationResult> backupVerificationResults =
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_META_SERVICE,
-                        false,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);

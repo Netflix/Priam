@@ -31,7 +31,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.temporal.ChronoUnit;
-import java.util.Optional;
+import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -88,10 +88,14 @@ public class BackupVerificationTask extends Task {
                                         backupRestoreConfig.getBackupVerificationSLOInHours(),
                                         ChronoUnit.HOURS),
                         DateUtil.getInstant());
-        Optional<BackupVerificationResult> verificationResult =
-                backupVerification.verifyBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE, false, dateRange);
-        if (!verificationResult.isPresent() || !verificationResult.get().valid) {
+        List<BackupVerificationResult> verificationResults =
+                backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
+        if (verificationResults.isEmpty()
+                || verificationResults
+                                .stream()
+                                .filter(backupVerificationResult -> backupVerificationResult.valid)
+                                .count()
+                        == 0) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
@@ -99,11 +103,16 @@ public class BackupVerificationTask extends Task {
         } else {
             // verification result is available and is valid.
             // send notification that backup is uploaded.
-            logger.info(
-                    "Sending {} message for backup: {}",
-                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                    verificationResult.get().snapshotInstant);
-            backupNotificationMgr.notify(verificationResult.get());
+            verificationResults
+                    .stream()
+                    .forEach(
+                            backupVerificationResult -> {
+                                logger.info(
+                                        "Sending {} message for backup: {}",
+                                        AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                                        backupVerificationResult.snapshotInstant);
+                                backupNotificationMgr.notify(backupVerificationResult);
+                            });
         }
     }
 

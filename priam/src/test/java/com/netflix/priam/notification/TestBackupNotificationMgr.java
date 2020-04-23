@@ -295,7 +295,7 @@ public class TestBackupNotificationMgr {
     }
 
     @Test
-    public void testNotify(@Capturing INotificationService notificationService){
+    public void testNotify(@Capturing INotificationService notificationService) {
         new Expectations() {
             {
                 notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);

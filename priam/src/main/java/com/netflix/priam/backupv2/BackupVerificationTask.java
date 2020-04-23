@@ -93,10 +93,8 @@ public class BackupVerificationTask extends Task {
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
         if (verificationResults.isEmpty()
                 || verificationResults
-                        .stream()
-                        .filter(r -> r.valid)
-                        .collect(Collectors.toList())
-                        .isEmpty()) {
+                .stream()
+                .filter(backupVerificationResult -> backupVerificationResult.valid).count() == 0) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());

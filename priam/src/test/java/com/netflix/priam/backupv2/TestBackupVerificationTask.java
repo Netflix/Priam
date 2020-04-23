@@ -29,7 +29,6 @@ import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
-
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -70,20 +69,19 @@ public class TestBackupVerificationTask {
             if (failCall) return new ArrayList<>();
 
             List<BackupVerificationResult> result = new ArrayList<>();
-            if(validBackupVerificationResult){
+            if (validBackupVerificationResult) {
                 result.add(getValidBackupVerificationResult());
-            }
-            else{
+            } else {
                 result.add(getInvalidBackupVerificationResult());
             }
             return result;
         }
     }
 
-    static class MockBackupNotificationMgr extends MockUp<BackupNotificationMgr>{
+    static class MockBackupNotificationMgr extends MockUp<BackupNotificationMgr> {
         @Mock
-        public void notify(BackupVerificationResult backupVerificationResult){
-            //do nothing just return
+        public void notify(BackupVerificationResult backupVerificationResult) {
+            // do nothing just return
             return;
         }
     }

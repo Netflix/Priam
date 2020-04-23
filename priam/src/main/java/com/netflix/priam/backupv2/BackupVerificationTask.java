@@ -32,7 +32,6 @@ import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
-import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,8 +92,10 @@ public class BackupVerificationTask extends Task {
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
         if (verificationResults.isEmpty()
                 || verificationResults
-                .stream()
-                .filter(backupVerificationResult -> backupVerificationResult.valid).count() == 0) {
+                                .stream()
+                                .filter(backupVerificationResult -> backupVerificationResult.valid)
+                                .count()
+                        == 0) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());

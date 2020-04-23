@@ -59,7 +59,7 @@ public class TestBackupVerificationTask {
 
         @Mock
         public List<BackupVerificationResult> verifyAllBackups(
-                BackupVersion backupVersion, boolean force, DateRange dateRange)
+                BackupVersion backupVersion, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
 

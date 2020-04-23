@@ -1,6 +1,7 @@
 # Changelog
+## 2020/04/22 3.11.58
+(#850) Modifying the backup verification strategy to verify all unverified backups in the specified date range vs the old implementation that verified the latest backup in the specified date range.
 
-# Changelog
 ## 2020/02/21 3.11.57
 (#844, #839) Implementation of a filter for Backup Notification. The filter can be controlled using the configuration "priam.backupNotifyComponentIncludeList"
 

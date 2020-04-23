@@ -26,9 +26,12 @@ import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
-import java.util.Optional;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import mockit.Expectations;
 import mockit.Mock;
 import mockit.MockUp;
@@ -41,32 +44,45 @@ public class TestBackupVerificationTask {
     private static BackupVerificationTask backupVerificationService;
     private static IConfiguration configuration;
     private static BackupVerification backupVerification;
+    private static BackupNotificationMgr backupNotificationMgr;
 
     public TestBackupVerificationTask() {
         new MockBackupVerification();
+        new MockBackupNotificationMgr();
         Injector injector = Guice.createInjector(new BRTestModule());
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
         if (backupVerificationService == null)
             backupVerificationService = injector.getInstance(BackupVerificationTask.class);
-        if (backupVerification == null)
-            backupVerification = injector.getInstance(BackupVerification.class);
     }
 
     static class MockBackupVerification extends MockUp<BackupVerification> {
         public static boolean failCall = false;
         public static boolean throwError = false;
+        public static boolean validBackupVerificationResult = true;
 
         @Mock
-        public Optional<BackupVerificationResult> verifyBackup(
-                BackupVersion backupVersion, boolean force, DateRange dateRange)
+        public List<BackupVerificationResult> verifyAllBackups(
+                BackupVersion backupVersion, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
 
-            if (failCall) return Optional.of(new BackupVerificationResult());
+            if (failCall) return new ArrayList<>();
 
-            BackupVerificationResult result = new BackupVerificationResult();
-            result.valid = true;
-            return Optional.of(result);
+            List<BackupVerificationResult> result = new ArrayList<>();
+            if (validBackupVerificationResult) {
+                result.add(getValidBackupVerificationResult());
+            } else {
+                result.add(getInvalidBackupVerificationResult());
+            }
+            return result;
+        }
+    }
+
+    static class MockBackupNotificationMgr extends MockUp<BackupNotificationMgr> {
+        @Mock
+        public void notify(BackupVerificationResult backupVerificationResult) {
+            // do nothing just return
+            return;
         }
     }
 
@@ -97,6 +113,14 @@ public class TestBackupVerificationTask {
     }
 
     @Test
+    public void normalOperationNoValidBackups() throws Exception {
+        MockBackupVerification.throwError = false;
+        MockBackupVerification.failCall = false;
+        MockBackupVerification.validBackupVerificationResult = false;
+        backupVerificationService.execute();
+    }
+
+    @Test
     public void testRestoreMode(@Mocked InstanceState state) throws Exception {
         new Expectations() {
             {
@@ -105,5 +129,25 @@ public class TestBackupVerificationTask {
             }
         };
         backupVerificationService.execute();
+    }
+
+    private static BackupVerificationResult getInvalidBackupVerificationResult() {
+        BackupVerificationResult result = new BackupVerificationResult();
+        result.valid = false;
+        result.manifestAvailable = true;
+        result.remotePath = "some_random";
+        result.filesMatched = 123;
+        result.snapshotInstant = Instant.EPOCH;
+        return result;
+    }
+
+    private static BackupVerificationResult getValidBackupVerificationResult() {
+        BackupVerificationResult result = new BackupVerificationResult();
+        result.valid = true;
+        result.manifestAvailable = true;
+        result.remotePath = "some_random";
+        result.filesMatched = 123;
+        result.snapshotInstant = Instant.EPOCH;
+        return result;
     }
 }

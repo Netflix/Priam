@@ -117,6 +117,10 @@ public class BackupVerificationTask extends Task {
         }
     }
 
+    public BackupMetrics getBackupMetrics() {
+        return backupMetrics;
+    }
+
     /**
      * Interval between trying to verify data manifest file on Remote file system.
      *

@@ -26,6 +26,7 @@ import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
@@ -166,6 +167,12 @@ public class TestBackupVerificationTask {
             }
         };
         backupVerificationService.execute();
+    }
+
+    @Test
+    public void testGetBackupMetrics() {
+        BackupMetrics backupMetrics = backupVerificationService.getBackupMetrics();
+        Assert.assertTrue(backupMetrics != null);
     }
 
     private static BackupVerificationResult getInvalidBackupVerificationResult() {

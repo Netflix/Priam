@@ -32,10 +32,7 @@ import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import mockit.Expectations;
-import mockit.Mock;
-import mockit.MockUp;
-import mockit.Mocked;
+import mockit.*;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -66,13 +63,17 @@ public class TestBackupVerificationTask {
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
 
-            if (failCall) return new ArrayList<>();
+            if (failCall) {
+                List<BackupVerificationResult> results = new ArrayList<>();
+                results.add(getInvalidBackupVerificationResult());
+                return results;
+            }
 
             List<BackupVerificationResult> result = new ArrayList<>();
             if (validBackupVerificationResult) {
                 result.add(getValidBackupVerificationResult());
             } else {
-                result.add(getInvalidBackupVerificationResult());
+                return result; // Return empty backup verification results
             }
             return result;
         }
@@ -99,25 +100,61 @@ public class TestBackupVerificationTask {
     }
 
     @Test
-    public void failCalls() throws Exception {
-        MockBackupVerification.throwError = false;
-        MockBackupVerification.failCall = true;
-        backupVerificationService.execute();
-    }
-
-    @Test
     public void normalOperation() throws Exception {
         MockBackupVerification.throwError = false;
         MockBackupVerification.failCall = false;
+        new Expectations() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 0;
+            }
+        };
         backupVerificationService.execute();
+        new Verifications() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 0;
+            }
+        };
     }
 
     @Test
-    public void normalOperationNoValidBackups() throws Exception {
+    public void normalOperationEmptyBackups() throws Exception {
         MockBackupVerification.throwError = false;
         MockBackupVerification.failCall = false;
         MockBackupVerification.validBackupVerificationResult = false;
+        new Expectations() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 0;
+            }
+        };
         backupVerificationService.execute();
+        new Verifications() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 0;
+            }
+        };
+    }
+
+    @Test
+    public void failCalls() throws Exception {
+        MockBackupVerification.throwError = false;
+        MockBackupVerification.failCall = true;
+        new Expectations() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 1;
+            }
+        };
+        backupVerificationService.execute();
+        new Verifications() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 1;
+            }
+        };
     }
 
     @Test

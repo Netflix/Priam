@@ -90,8 +90,8 @@ public class BackupVerificationTask extends Task {
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
-        if (verificationResults.isEmpty()
-                || verificationResults
+        if (!verificationResults.isEmpty()
+                && verificationResults
                                 .stream()
                                 .filter(backupVerificationResult -> backupVerificationResult.valid)
                                 .count()
@@ -101,8 +101,9 @@ public class BackupVerificationTask extends Task {
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
         } else {
-            // verification result is available and is valid.
-            // send notification that backup is uploaded.
+            // we would be here if there are no backup verification results
+            // or backup verification results are available and are all valid.
+            // send notifications for each backup that was uploaded and verified.
             verificationResults
                     .stream()
                     .forEach(

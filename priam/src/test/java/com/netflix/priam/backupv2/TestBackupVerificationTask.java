@@ -19,19 +19,17 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backup.BackupVerification;
-import com.netflix.priam.backup.BackupVerificationResult;
-import com.netflix.priam.backup.BackupVersion;
-import com.netflix.priam.backup.Status;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import mockit.*;
 import org.junit.Assert;
 import org.junit.Test;
@@ -53,7 +51,7 @@ public class TestBackupVerificationTask {
     }
 
     static class MockBackupVerification extends MockUp<BackupVerification> {
-        public static boolean failCall = false;
+        public static boolean emptyBackupVerificationList = false;
         public static boolean throwError = false;
         public static boolean validBackupVerificationResult = true;
 
@@ -63,17 +61,14 @@ public class TestBackupVerificationTask {
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
 
-            if (failCall) {
-                List<BackupVerificationResult> results = new ArrayList<>();
-                results.add(getInvalidBackupVerificationResult());
-                return results;
+            if (emptyBackupVerificationList) {
+                return new ArrayList<>();
             }
-
             List<BackupVerificationResult> result = new ArrayList<>();
             if (validBackupVerificationResult) {
                 result.add(getValidBackupVerificationResult());
             } else {
-                return result; // Return empty backup verification results
+                result.add(getInvalidBackupVerificationResult());
             }
             return result;
         }
@@ -90,7 +85,7 @@ public class TestBackupVerificationTask {
     @Test
     public void throwError() throws Exception {
         MockBackupVerification.throwError = true;
-        MockBackupVerification.failCall = false;
+        MockBackupVerification.emptyBackupVerificationList = false;
         try {
             backupVerificationService.execute();
             Assert.assertTrue(false);
@@ -102,7 +97,7 @@ public class TestBackupVerificationTask {
     @Test
     public void normalOperation() throws Exception {
         MockBackupVerification.throwError = false;
-        MockBackupVerification.failCall = false;
+        MockBackupVerification.emptyBackupVerificationList = false;
         new Expectations() {
             {
                 backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
@@ -119,9 +114,32 @@ public class TestBackupVerificationTask {
     }
 
     @Test
-    public void normalOperationEmptyBackups() throws Exception {
+    public void normalOperationPriorVerifiedBackups(
+            @Mocked BackupRestoreUtil backupRestoreUtil,
+            @Mocked AbstractBackupPath remoteBackupPath)
+            throws Exception {
         MockBackupVerification.throwError = false;
-        MockBackupVerification.failCall = false;
+        MockBackupVerification.emptyBackupVerificationList = true;
+        new Expectations() {
+            {
+                backupRestoreUtil.getLatestValidMetaPath((IMetaProxy) any, (DateRange) any);
+                result = Optional.of(remoteBackupPath);
+                maxTimes = 1;
+            }
+        };
+        backupVerificationService.execute();
+        new Verifications() {
+            {
+                backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
+                maxTimes = 1;
+            }
+        };
+    }
+
+    @Test
+    public void normalOperationInvalidBackups() throws Exception {
+        MockBackupVerification.throwError = false;
+        MockBackupVerification.emptyBackupVerificationList = false;
         MockBackupVerification.validBackupVerificationResult = false;
         new Expectations() {
             {
@@ -141,7 +159,7 @@ public class TestBackupVerificationTask {
     @Test
     public void failCalls() throws Exception {
         MockBackupVerification.throwError = false;
-        MockBackupVerification.failCall = true;
+        MockBackupVerification.emptyBackupVerificationList = true;
         new Expectations() {
             {
                 backupVerificationService.getBackupMetrics().incrementBackupVerificationFailure();
@@ -166,6 +184,12 @@ public class TestBackupVerificationTask {
             }
         };
         backupVerificationService.execute();
+    }
+
+    @Test
+    public void testGetBackupMetrics() {
+        BackupMetrics backupMetrics = backupVerificationService.getBackupMetrics();
+        Assert.assertTrue(backupMetrics != null);
     }
 
     private static BackupVerificationResult getInvalidBackupVerificationResult() {

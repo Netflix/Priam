@@ -90,7 +90,7 @@ public class BackupVerificationTask extends Task {
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
-
+        
         verificationResults
                 .stream()
                 .forEach(
@@ -102,7 +102,6 @@ public class BackupVerificationTask extends Task {
                             backupNotificationMgr.notify(backupVerificationResult);
                         });
 
-        // There are no backups in our SLO window and hence verification results is empty
         if (!BackupRestoreUtil.getLatestValidMetaPath(
                         backupVerification.getMetaProxy(BackupVersion.SNAPSHOT_META_SERVICE),
                         dateRange)

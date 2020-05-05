@@ -60,6 +60,8 @@ public class BackupService implements IService {
         scheduleTask(scheduler, SnapshotBackup.class, snapshotTimer);
 
         if (snapshotTimer != null) {
+            // Set cleanup
+            scheduleTask(scheduler, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
             // Schedule commit log task
             scheduleTask(
                     scheduler, CommitLogBackupTask.class, CommitLogBackupTask.getTimer(config));
@@ -70,9 +72,6 @@ public class BackupService implements IService {
                 scheduler,
                 IncrementalBackup.class,
                 IncrementalBackup.getTimer(config, backupRestoreConfig));
-
-        // Set cleanup
-        scheduleTask(scheduler, UpdateCleanupPolicy.class, UpdateCleanupPolicy.getTimer());
     }
 
     @Override

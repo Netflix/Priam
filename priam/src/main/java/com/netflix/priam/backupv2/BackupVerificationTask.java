@@ -90,19 +90,31 @@ public class BackupVerificationTask extends Task {
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
-        if (!verificationResults.isEmpty()
-                && verificationResults
-                                .stream()
-                                .filter(backupVerificationResult -> backupVerificationResult.valid)
-                                .count()
-                        == 0) {
+        // There are no backups in our SLO window and hence verification results is empty
+        boolean backupVerificationFailed =
+                (verificationResults.isEmpty()
+                        && !BackupRestoreUtil.getLatestValidMetaPath(
+                                        backupVerification.getMetaProxy(
+                                                BackupVersion.SNAPSHOT_META_SERVICE),
+                                        dateRange)
+                                .isPresent());
+        // There are no valid backups in our SLO window
+        backupVerificationFailed |=
+                !verificationResults.isEmpty()
+                        && verificationResults
+                                        .stream()
+                                        .filter(
+                                                backupVerificationResult ->
+                                                        backupVerificationResult.valid)
+                                        .count()
+                                == 0;
+        if (backupVerificationFailed) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
         } else {
-            // we would be here if there are no backup verification results
-            // or backup verification results are available and are all valid.
+            // we would be here only if there are valid backup verification results
             // send notifications for each backup that was uploaded and verified.
             verificationResults
                     .stream()

@@ -53,7 +53,7 @@ public class BackupVerification {
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    private IMetaProxy getMetaProxy(BackupVersion backupVersion) {
+    public IMetaProxy getMetaProxy(BackupVersion backupVersion) {
         switch (backupVersion) {
             case SNAPSHOT_BACKUP:
                 return metaV1Proxy;

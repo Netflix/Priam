@@ -1,5 +1,5 @@
 # Changelog
-## 2020/04/22 3.1.89
+## 2020/05/05 3.1.89
 (#859, #863) Fixing the bug in the backup verification strategy to only page when there is no valid backup in the specified date range (SLO window) And also disable lifecyle rule for backup if backup v1 is disabled.
 
 ## 2020/04/22 3.1.88

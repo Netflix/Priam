@@ -90,7 +90,7 @@ public class BackupVerificationTask extends Task {
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
-        
+
         verificationResults
                 .stream()
                 .forEach(

@@ -90,30 +90,31 @@ public class BackupVerificationTask extends Task {
                         DateUtil.getInstant());
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
-        if (verificationResults.isEmpty()
-                || verificationResults
-                                .stream()
-                                .filter(backupVerificationResult -> backupVerificationResult.valid)
-                                .count()
-                        == 0) {
+
+        verificationResults
+                .stream()
+                .forEach(
+                        backupVerificationResult -> {
+                            logger.info(
+                                    "Sending {} message for backup: {}",
+                                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                                    backupVerificationResult.snapshotInstant);
+                            backupNotificationMgr.notify(backupVerificationResult);
+                        });
+
+        if (!BackupRestoreUtil.getLatestValidMetaPath(
+                        backupVerification.getMetaProxy(BackupVersion.SNAPSHOT_META_SERVICE),
+                        dateRange)
+                .isPresent()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
-        } else {
-            // verification result is available and is valid.
-            // send notification that backup is uploaded.
-            verificationResults
-                    .stream()
-                    .forEach(
-                            backupVerificationResult -> {
-                                logger.info(
-                                        "Sending {} message for backup: {}",
-                                        AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                        backupVerificationResult.snapshotInstant);
-                                backupNotificationMgr.notify(backupVerificationResult);
-                            });
         }
+    }
+
+    public BackupMetrics getBackupMetrics() {
+        return backupMetrics;
     }
 
     /**

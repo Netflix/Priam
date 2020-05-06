@@ -98,7 +98,7 @@ public class TestBackupService {
                 new BackupService(
                         configuration, backupRestoreConfig, scheduler, cassandraTunerService);
         backupService.scheduleService();
-        Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
+        Assert.assertEquals(0, scheduler.getScheduler().getJobKeys(null).size());
 
         // snapshot V1 name should not be there.
         Set<Path> backupPaths =

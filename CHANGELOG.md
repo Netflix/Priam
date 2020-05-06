@@ -1,4 +1,7 @@
 # Changelog
+## 2020/05/05 3.1.90
+This is a re-release of 3.1.89 since that release failed due to a test that failed because of a concurrent execution on another release train.
+
 ## 2020/05/05 3.1.89
 (#859, #863) Fixing the bug in the backup verification strategy to only page when there is no valid backup in the specified date range (SLO window) And also disable lifecyle rule for backup if backup v1 is disabled.
 

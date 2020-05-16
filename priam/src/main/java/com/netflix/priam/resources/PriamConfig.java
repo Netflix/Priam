@@ -18,6 +18,7 @@ package com.netflix.priam.resources;
 
 import com.google.inject.Inject;
 import com.netflix.priam.PriamServer;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.GET;
@@ -51,14 +52,17 @@ public class PriamConfig {
                     priamServer.getConfiguration().getStructuredConfiguration(group);
             if (name != null && value.containsKey(name)) {
                 result.put(name, value.get(name));
-                return Response.ok(result, MediaType.APPLICATION_JSON).build();
+                return Response.ok(GsonJsonSerializer.getGson().toJson(result)).build();
             } else if (name != null) {
                 result.put("message", String.format("No such structured config: [%s]", name));
                 logger.error(String.format("No such structured config: [%s]", name));
-                return Response.status(404).entity(result).type(MediaType.APPLICATION_JSON).build();
+                return Response.status(404)
+                        .entity(GsonJsonSerializer.getGson().toJson(result))
+                        .type(MediaType.TEXT_PLAIN)
+                        .build();
             } else {
                 result.putAll(value);
-                return Response.ok(result, MediaType.APPLICATION_JSON).build();
+                return Response.ok(GsonJsonSerializer.getGson().toJson(result)).build();
             }
         } catch (Exception e) {
             logger.error("Error while executing getPriamConfig", e);
@@ -68,8 +72,7 @@ public class PriamConfig {
 
     @GET
     @Path("/structured/{group}")
-    public Response getPriamConfig(
-            @PathParam("group") String group, @PathParam("name") String name) {
+    public Response getPriamConfig(@PathParam("group") String group) {
         return doGetPriamConfig(group, null);
     }
 
@@ -89,11 +92,14 @@ public class PriamConfig {
             String value = priamServer.getConfiguration().getProperty(name, defaultValue);
             if (value != null) {
                 result.put(name, value);
-                return Response.ok(result, MediaType.APPLICATION_JSON).build();
+                return Response.ok(GsonJsonSerializer.getGson().toJson(result)).build();
             } else {
                 result.put("message", String.format("No such property: [%s]", name));
                 logger.error(String.format("No such property: [%s]", name));
-                return Response.status(404).entity(result).type(MediaType.APPLICATION_JSON).build();
+                return Response.status(404)
+                        .entity(GsonJsonSerializer.getGson().toJson(result))
+                        .type(MediaType.TEXT_PLAIN)
+                        .build();
             }
         } catch (Exception e) {
             logger.error("Error while executing getPriamConfig", e);

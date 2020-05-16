@@ -20,6 +20,7 @@ import static org.junit.Assert.*;
 
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.config.FakeConfiguration;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import java.util.HashMap;
 import java.util.Map;
 import javax.ws.rs.core.Response;
@@ -49,17 +50,26 @@ public class PriamConfigTest {
     public void getPriamConfig() {
         final Map<String, String> expected = new HashMap<>();
         expected.put("backupLocation", "casstestbackup");
+        String expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         new Expectations() {
             {
                 priamServer.getConfiguration();
                 result = fakeConfiguration;
-                times = 2;
+                times = 3;
             }
         };
 
-        Response response = resource.getPriamConfigByName("all", "backupLocation");
+        Response response = resource.getPriamConfig("all");
         assertEquals(200, response.getStatus());
-        assertEquals(expected, response.getEntity());
+
+        Map<String, Object> result =
+                GsonJsonSerializer.getGson().fromJson(response.getEntity().toString(), Map.class);
+        assertNotNull(result);
+        assertTrue(!result.isEmpty());
+
+        response = resource.getPriamConfigByName("all", "backupLocation");
+        assertEquals(200, response.getStatus());
+        assertEquals(expectedJsonString, response.getEntity());
 
         Response badResponse = resource.getPriamConfigByName("all", "getUnrealThing");
         assertEquals(404, badResponse.getStatus());
@@ -77,15 +87,22 @@ public class PriamConfigTest {
             }
         };
 
+        String expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         Response response = resource.getProperty("test.prop", null);
         assertEquals(200, response.getStatus());
-        assertEquals(expected, response.getEntity());
+        assertEquals(expectedJsonString, response.getEntity());
+
+        Map<String, Object> result =
+                GsonJsonSerializer.getGson().fromJson(response.getEntity().toString(), Map.class);
+        assertNotNull(result);
+        assertTrue(!result.isEmpty());
 
         Response defaultResponse = resource.getProperty("not.a.property", "NOVALUE");
         expected.clear();
         expected.put("not.a.property", "NOVALUE");
+        expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         assertEquals(200, defaultResponse.getStatus());
-        assertEquals(expected, defaultResponse.getEntity());
+        assertEquals(expectedJsonString, defaultResponse.getEntity());
 
         Response badResponse = resource.getProperty("not.a.property", null);
         assertEquals(404, badResponse.getStatus());

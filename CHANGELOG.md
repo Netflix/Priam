@@ -1,5 +1,5 @@
 # Changelog
-## 2020/05/05 3.11.60
+## 2020/05/18 3.11.60
 (#870) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
 
 ## 2020/05/05 3.11.59

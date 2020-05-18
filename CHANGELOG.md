@@ -1,4 +1,7 @@
 # Changelog
+## 2020/05/18 3.1.91
+(#871) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
+
 ## 2020/05/05 3.1.90
 This is a re-release of 3.1.89 since that release failed due to a test that failed because of a concurrent execution on another release train.
 

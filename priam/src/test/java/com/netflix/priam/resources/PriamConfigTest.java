@@ -48,9 +48,6 @@ public class PriamConfigTest {
 
     @Test
     public void getPriamConfig() {
-        final Map<String, String> expected = new HashMap<>();
-        expected.put("backupLocation", "casstestbackup");
-        String expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         new Expectations() {
             {
                 priamServer.getConfiguration();
@@ -67,9 +64,14 @@ public class PriamConfigTest {
         assertNotNull(result);
         assertTrue(!result.isEmpty());
 
+        final Map<String, String> expected = new HashMap<>();
+        expected.put("backupLocation", "casstestbackup");
+        String expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         response = resource.getPriamConfigByName("all", "backupLocation");
         assertEquals(200, response.getStatus());
         assertEquals(expectedJsonString, response.getEntity());
+        result = GsonJsonSerializer.getGson().fromJson(response.getEntity().toString(), Map.class);
+        assertEquals(result, expected);
 
         Response badResponse = resource.getPriamConfigByName("all", "getUnrealThing");
         assertEquals(404, badResponse.getStatus());
@@ -103,6 +105,10 @@ public class PriamConfigTest {
         expectedJsonString = GsonJsonSerializer.getGson().toJson(expected);
         assertEquals(200, defaultResponse.getStatus());
         assertEquals(expectedJsonString, defaultResponse.getEntity());
+        result =
+                GsonJsonSerializer.getGson()
+                        .fromJson(defaultResponse.getEntity().toString(), Map.class);
+        assertEquals(result, expected);
 
         Response badResponse = resource.getProperty("not.a.property", null);
         assertEquals(404, badResponse.getStatus());

@@ -1,4 +1,7 @@
 # Changelog
+## 2020/05/18 3.11.61
+This is a re-release of v3.11.60 that failed to be uploaded.
+
 ## 2020/05/18 3.11.60
 (#870) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
 

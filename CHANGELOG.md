@@ -1,4 +1,7 @@
 # Changelog
+## 2020/05/18 3.11.60
+(#870) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
+
 ## 2020/05/05 3.11.59
 (#860, #864) Fixing the bug in the backup verification strategy to only page when there is no valid backup in the specified date range (SLO window) And also disable lifecyle rule for backup if backup v1 is disabled.
 

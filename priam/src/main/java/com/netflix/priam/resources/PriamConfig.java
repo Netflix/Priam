@@ -58,7 +58,7 @@ public class PriamConfig {
                 logger.error(String.format("No such structured config: [%s]", name));
                 return Response.status(404)
                         .entity(GsonJsonSerializer.getGson().toJson(result))
-                        .type(MediaType.TEXT_PLAIN)
+                        .type(MediaType.APPLICATION_JSON)
                         .build();
             } else {
                 result.putAll(value);
@@ -98,7 +98,7 @@ public class PriamConfig {
                 logger.error(String.format("No such property: [%s]", name));
                 return Response.status(404)
                         .entity(GsonJsonSerializer.getGson().toJson(result))
-                        .type(MediaType.TEXT_PLAIN)
+                        .type(MediaType.APPLICATION_JSON)
                         .build();
             }
         } catch (Exception e) {

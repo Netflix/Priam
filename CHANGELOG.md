@@ -1,4 +1,7 @@
 # Changelog
+## 2020/05/19 3.1.92
+(#877) Fixing BackupServletV2 endpoints that were broken because of an underlying dependency change from the release 3.1.89.
+
 ## 2020/05/18 3.1.91
 (#871) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
 

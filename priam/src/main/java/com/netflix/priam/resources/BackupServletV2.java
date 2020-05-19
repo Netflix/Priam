@@ -27,6 +27,7 @@ import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -118,7 +119,7 @@ public class BackupServletV2 {
                         new DateRange(
                                 instant,
                                 instant.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)));
-        return Response.ok(metadataList).build();
+        return Response.ok(GsonJsonSerializer.getGson().toJson(metadataList)).build();
     }
 
     @GET
@@ -137,7 +138,7 @@ public class BackupServletV2 {
                     .build();
         }
 
-        return Response.ok(result.get()).build();
+        return Response.ok(result.get().toString()).build();
     }
 
     @GET
@@ -155,9 +156,11 @@ public class BackupServletV2 {
                         latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
 
         return Response.ok(
-                        allFiles.stream()
-                                .map(AbstractBackupPath::getRemotePath)
-                                .collect(Collectors.toList()))
+                        GsonJsonSerializer.getGson()
+                                .toJson(
+                                        allFiles.stream()
+                                                .map(AbstractBackupPath::getRemotePath)
+                                                .collect(Collectors.toList())))
                 .build();
     }
 }

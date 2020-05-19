@@ -4,7 +4,9 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
+import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -13,6 +15,7 @@ import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -33,6 +36,8 @@ public class BackupServletV2Test {
     private @Mocked SnapshotMetaTask snapshotBackup;
     private @Mocked BackupVerification backupVerification;
     private @Mocked FileSnapshotStatusMgr backupStatusMgr;
+    private @Mocked BackupRestoreUtil backupRestoreUtil;
+    private @Mocked MetaV2Proxy metaV2Proxy;
     private BackupServletV2 resource;
     private RestoreServlet restoreResource;
     private InstanceInfo instanceInfo;
@@ -45,6 +50,8 @@ public class BackupServletV2Test {
                     "SNAPPY",
                     "PLAINTEXT",
                     "meta_v2_201812011000.json");
+    private static Provider<AbstractBackupPath> pathProvider;
+    private static IConfiguration configuration;
 
     @Before
     public void setUp() {
@@ -53,6 +60,8 @@ public class BackupServletV2Test {
         instanceInfo = injector.getInstance(InstanceInfo.class);
         resource = injector.getInstance(BackupServletV2.class);
         restoreResource = injector.getInstance(RestoreServlet.class);
+        pathProvider = injector.getProvider(AbstractBackupPath.class);
+        configuration = injector.getInstance(IConfiguration.class);
     }
 
     @Test
@@ -179,10 +188,12 @@ public class BackupServletV2Test {
                 resource.validateV2SnapshotByDate(
                         new DateUtil.DateRange(Instant.now(), Instant.now()).toString(), true);
         assertEquals(204, response.getStatus());
+        assertEquals(
+                response.getEntity().toString(), "No valid meta found for provided time range");
     }
 
     @Test
-    public void testListDateRange() throws Exception {
+    public void testValidateV2SnapshotByDate() throws Exception {
         new Expectations() {
             {
                 backupVerification.verifyBackup(
@@ -201,21 +212,46 @@ public class BackupServletV2Test {
                 response.getEntity().toString());
     }
 
+    //    @Test
+    //    public void testListDateRange() throws Exception {
+    //        Optional<AbstractBackupPath> abstractBackupPath = getAbstractBackupPath();
+    //        String dateRange = String.format("%s,%s",
+    //                new SimpleDateFormat("yyyymmddhhmm").format(new Date())
+    //                , new SimpleDateFormat("yyyymmddhhmm").format(new Date()));
+    //        new Expectations() {{
+    //                backupRestoreUtil.getLatestValidMetaPath(metaV2Proxy,
+    //                        new DateUtil.DateRange((Instant) any, (Instant) any)); result =
+    // abstractBackupPath;
+    //
+    //                backupRestoreUtil.getAllFiles(
+    //                        abstractBackupPath.get(),
+    //                        new DateUtil.DateRange((Instant) any, (Instant) any), metaV2Proxy,
+    //                        pathProvider); result = getBackupPathList();
+    //        }};
+    //
+    //        Response response =
+    //                resource.list(dateRange);
+    //        assertEquals(200, response.getStatus());
+    //    }
+
     @Test
     public void testListDateRangeNoBackups() throws Exception {
+        String dateRange =
+                String.format(
+                        "%s,%s",
+                        new SimpleDateFormat("yyyymmdd").format(new Date()),
+                        new SimpleDateFormat("yyyymmdd").format(new Date()));
+
         new Expectations() {
             {
-                backupVerification.verifyBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        anyBoolean,
-                        new DateUtil.DateRange((Instant) any, (Instant) any));
+                backupRestoreUtil.getLatestValidMetaPath(
+                        metaV2Proxy, new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = Optional.empty();
             }
         };
-        Response response =
-                resource.validateV2SnapshotByDate(
-                        new DateUtil.DateRange(Instant.now(), Instant.now()).toString(), true);
-        assertEquals(204, response.getStatus());
+        Response response = resource.list(dateRange);
+        assertEquals(200, response.getStatus());
+        assertEquals(response.getEntity().toString(), "No valid meta found!");
     }
 
     @Test
@@ -278,5 +314,45 @@ public class BackupServletV2Test {
         backupMetadata.setStatus(Status.FINISHED);
         backupMetadata.setSnapshotLocation(location.toString());
         return backupMetadata;
+    }
+
+    private static Optional<AbstractBackupPath> getAbstractBackupPath() throws Exception {
+        Path path =
+                Paths.get(
+                        configuration.getDataFileLocation(),
+                        "keyspace1",
+                        "columnfamily1",
+                        "backup",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath = pathProvider.get();
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
+        return Optional.of(abstractBackupPath);
+    }
+
+    private static List<AbstractBackupPath> getBackupPathList() throws Exception {
+        List<AbstractBackupPath> abstractBackupPathList = new ArrayList<>();
+        Path path =
+                Paths.get(
+                        configuration.getDataFileLocation(),
+                        "keyspace1",
+                        "columnfamily1",
+                        "backup",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath1 = pathProvider.get();
+        abstractBackupPath1.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
+        abstractBackupPathList.add(abstractBackupPath1);
+
+        path =
+                Paths.get(
+                        configuration.getDataFileLocation(),
+                        "keyspace1",
+                        "columnfamily1",
+                        "backup",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath2 = pathProvider.get();
+        abstractBackupPath2.parseLocal(
+                path.toFile(), AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED);
+        abstractBackupPathList.add(abstractBackupPath2);
+        return abstractBackupPathList;
     }
 }

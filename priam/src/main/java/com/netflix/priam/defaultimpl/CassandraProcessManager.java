@@ -65,6 +65,7 @@ public class CassandraProcessManager implements ICassandraProcess {
         env.put("LOCAL_JMX", config.enableRemoteJMX() ? "no" : "yes");
         env.put("MAX_DIRECT_MEMORY", config.getMaxDirectMemory());
         env.put("CASS_LOGS_DIR", config.getLogDirLocation());
+        env.put("CASSANDRA_LOG_DIR", config.getLogDirLocation());
     }
 
     public void start(boolean join_ring) throws IOException {

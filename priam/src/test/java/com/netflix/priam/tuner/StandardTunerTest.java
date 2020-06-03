@@ -20,15 +20,21 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.common.io.Files;
 import com.google.inject.Guice;
+import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.BackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileReader;
+import java.nio.charset.Charset;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -48,13 +54,16 @@ public class StandardTunerTest {
     private final InstanceInfo instanceInfo;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final File target = new File("/tmp/priam_test.yaml");
+    private IConfiguration config;
 
     public StandardTunerTest() {
-        this.tuner = Guice.createInjector(new BRTestModule()).getInstance(StandardTuner.class);
-        this.instanceInfo =
-                Guice.createInjector(new BRTestModule()).getInstance(InstanceInfo.class);
-        this.backupRestoreConfig =
-                Guice.createInjector(new BRTestModule()).getInstance(BackupRestoreConfig.class);
+        Injector injector = Guice.createInjector(new BRTestModule());
+        this.tuner = injector.getInstance(StandardTuner.class);
+        this.instanceInfo = injector.getInstance(InstanceInfo.class);
+        this.backupRestoreConfig = injector.getInstance(BackupRestoreConfig.class);
+        this.config = injector.getInstance(IConfiguration.class);
+        File targetDir = new File(config.getYamlLocation()).getParentFile();
+        if (!targetDir.exists()) targetDir.mkdirs();
     }
 
     @Test
@@ -170,6 +179,49 @@ public class StandardTunerTest {
         @Override
         public String getExtraConfigParams() {
             return extraConfigParams;
+        }
+    }
+
+    @Test
+    public void testPropertiesFiles() throws Exception {
+        FakeConfiguration fake = (FakeConfiguration) config;
+        File testRackDcFile = new File("src/test/resources/conf/cassandra-rackdc.properties");
+        File testYamlFile = new File("src/main/resources/incr-restore-cassandra.yaml");
+        String propertiesPath = new File(config.getYamlLocation()).getParentFile().getPath();
+        File rackDcFile =
+                new File(
+                        Paths.get(propertiesPath, "cassandra-rackdc.properties")
+                                .normalize()
+                                .toString());
+        File configFile =
+                new File(Paths.get(propertiesPath, "properties_test.yaml").normalize().toString());
+        System.out.println(testRackDcFile);
+        System.out.println(rackDcFile);
+        Files.copy(testRackDcFile, rackDcFile);
+        Files.copy(testYamlFile, configFile);
+
+        try {
+            fake.fakeProperties.put(
+                    "propertyOverrides.cassandra-rackdc",
+                    "dc=${dc},rack=${rac},ec2_naming_scheme=legacy,dc_suffix=testsuffix");
+
+            tuner.writeAllProperties(configFile.getPath(), "your_host", "YourSeedProvider");
+            Properties prop = new Properties();
+            prop.load(new FileReader(rackDcFile));
+            assertEquals("us-east-1", prop.getProperty("dc"));
+            assertEquals("my_zone", prop.getProperty("rack"));
+            assertEquals("legacy", prop.getProperty("ec2_naming_scheme"));
+            assertEquals("testsuffix", prop.getProperty("dc_suffix"));
+
+            assertEquals(4, prop.stringPropertyNames().size());
+        } finally {
+            fake.fakeProperties.clear();
+            for (String line : Files.readLines(rackDcFile, Charset.defaultCharset())) {
+                System.out.println(line);
+            }
+
+            Files.copy(testRackDcFile, rackDcFile);
+            Files.copy(testYamlFile, configFile);
         }
     }
 }

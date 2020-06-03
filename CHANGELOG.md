@@ -1,6 +1,15 @@
 # Changelog
-## 2020/06/03 3.11.63
-(#881) Ported PropertiesFileTuner to the 3.11 branch.
+## 2020/06/03 3.11.66
+(#881) Portng PropertiesFileTuner to the 3.11 branch.
+
+## 2020/05/26 3.11.65
+(#884) Adding support for upstream C* log directory env variable. 
+
+## 2020/05/19 3.11.64
+Re-re-releasing 3.11.62
+
+## 2020/05/19 3.11.63
+Re-releasing 3.11.62
 
 ## 2020/05/19 3.11.62
 (#878) Fixing BackupServletV2 endpoints that were broken because of an underlying dependency change from the release 3.11.59.

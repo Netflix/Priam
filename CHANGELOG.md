@@ -1,4 +1,7 @@
 # Changelog
+## 2020/06/03 3.11.63
+(#881) Ported PropertiesFileTuner to the 3.11 branch.
+
 ## 2020/05/19 3.11.62
 (#878) Fixing BackupServletV2 endpoints that were broken because of an underlying dependency change from the release 3.11.59.
 

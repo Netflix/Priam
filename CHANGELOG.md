@@ -1,4 +1,7 @@
 # Changelog
+## 2020/06/04 3.11.67
+Re-releasing 3.11.66
+
 ## 2020/06/03 3.11.66
 (#881) Portng PropertiesFileTuner to the 3.11 branch.
 

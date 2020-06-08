@@ -132,19 +132,9 @@ public class StandardTuner implements ICassandraTuner {
         // TODO: port commit log backups to the PropertiesFileTuner implementation
         configureCommitLogBackups();
 
-        File configurationDirectory = new File(config.getCassConfigurationDirectory());
-        if (configurationDirectory.exists() && configurationDirectory.isDirectory()) {
-            String[] tunablePropertyFiles = config.getTunablePropertyFiles().split(",");
-            for (String file: tunablePropertyFiles) {
-                // e.g. cassandra-rackdc.properties
-                String[] propertiesFile = file.split("\\.");
-                if (propertiesFile.length > 1 && !propertiesFile[0].isEmpty())
-                {
-                    String prefix = propertiesFile[0];
-                    PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config, prefix);
-                    propertyTuner.updateAndSaveProperties(Paths.get(configurationDirectory.getPath(), file).toString());
-                }
-            }
+        PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config);
+        for (String propertyFile : config.getTunablePropertyFiles()) {
+            propertyTuner.updateAndSaveProperties(propertyFile);
         }
     }
 

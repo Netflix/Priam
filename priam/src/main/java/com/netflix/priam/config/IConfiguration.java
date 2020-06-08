@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.tuner.JVMOption;
 import com.netflix.priam.config.PriamConfiguration;
@@ -44,16 +45,6 @@ public interface IConfiguration {
      * @return Path to the home dir of Cassandra
      */
     String getCassHome();
-
-    /**
-     * Returns the path to the Cassandra configuration directory, this varies by distribution but the default
-     * of finding the yaml file and going up one directory is a reasonable default. If you have a custom Yaml
-     * Location that doesn't have all the other configuration files you may want to tune this.
-     * @return
-     */
-    default String getCassConfigurationDirectory() {
-        return new File(getYamlLocation()).getParentFile().getPath();
-    }
 
     String getYamlLocation();
 
@@ -805,11 +796,10 @@ public interface IConfiguration {
     }
 
     /**
-     * Return a comma delimited list of property files that should be tuned in the configuration
-     * directory by Priam. These files live relative to the configuration directory.
-     * @return A comma delimited list of relative file paths to the configuration directory
+     * Return a list of property file paths from the configuration directory by Priam that should be tuned.
+     * @return the files paths
      */
-    default String getTunablePropertyFiles() { return ""; }
+    default ImmutableSet<String> getTunablePropertyFiles() { return ImmutableSet.of(); }
 
     /**
      * Escape hatch for getting any arbitrary property by key

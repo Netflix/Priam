@@ -47,7 +47,7 @@ public class StandardTunerTest
 
         config = new FakeConfiguration();
         tuner = new StandardTuner(config);
-        File targetDir = new File(config.getCassConfigurationDirectory());
+        File targetDir = new File(config.getYamlLocation()).getParentFile();
         if(!targetDir.exists())
             targetDir.mkdirs();
     }
@@ -109,7 +109,8 @@ public class StandardTunerTest
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), new File(target));
 
         File testRackDcFile = new File("src/test/resources/conf/cassandra-rackdc.properties");
-        File rackDcFile = new File(Paths.get(config.getCassConfigurationDirectory(), "cassandra-rackdc.properties").normalize().toString());
+        String propertiesPath = new File(config.getYamlLocation()).getParentFile().getPath();
+        File rackDcFile = new File(Paths.get(propertiesPath, "cassandra-rackdc.properties").normalize().toString());
         Files.copy(testRackDcFile, rackDcFile);
 
         try {

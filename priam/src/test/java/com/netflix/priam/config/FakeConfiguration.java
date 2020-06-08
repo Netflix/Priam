@@ -17,6 +17,7 @@
 
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Singleton;
 import com.netflix.priam.tuner.JVMOption;
@@ -27,10 +28,7 @@ import com.netflix.priam.scheduler.SchedulerType;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration
@@ -874,8 +872,9 @@ public class FakeConfiguration implements IConfiguration
     }
 
     @Override
-    public String getTunablePropertyFiles() {
-        return "cassandra-rackdc.properties";
+    public ImmutableSet<String> getTunablePropertyFiles() {
+        String path = new File(getYamlLocation()).getParentFile().getPath();
+        return ImmutableSet.of(path + "/cassandra-rackdc.properties");
     }
 
     @Override

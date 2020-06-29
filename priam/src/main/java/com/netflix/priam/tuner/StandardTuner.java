@@ -31,6 +31,10 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
+/**
+ * Tune the standard cassandra parameters/configurations. eg. cassandra.yaml, jvm.options, bootstrap
+ * etc.
+ */
 public class StandardTuner implements ICassandraTuner {
     private static final Logger logger = LoggerFactory.getLogger(StandardTuner.class);
     protected final IConfiguration config;
@@ -47,6 +51,7 @@ public class StandardTuner implements ICassandraTuner {
         this.instanceInfo = instanceInfo;
     }
 
+    @SuppressWarnings("unchecked")
     public void writeAllProperties(String yamlLocation, String hostname, String seedProvider)
             throws Exception {
         DumperOptions options = new DumperOptions();
@@ -144,7 +149,13 @@ public class StandardTuner implements ICassandraTuner {
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 
+        // TODO: port commit log backups to the PropertiesFileTuner implementation
         configureCommitLogBackups();
+
+        PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config);
+        for (String propertyFile : config.getTunablePropertyFiles()) {
+            propertyTuner.updateAndSaveProperties(propertyFile);
+        }
     }
 
     /**
@@ -207,7 +218,7 @@ public class StandardTuner implements ICassandraTuner {
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
     }
 
-    protected void configureCommitLogBackups() throws IOException {
+    protected void configureCommitLogBackups() {
         if (!config.isBackingUpCommitLogs()) return;
         Properties props = new Properties();
         props.put("archive_command", config.getCommitLogBackupArchiveCmd());
@@ -218,6 +229,8 @@ public class StandardTuner implements ICassandraTuner {
         try (FileOutputStream fos =
                 new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
             props.store(fos, "cassandra commit log archive props, as written by priam");
+        } catch (IOException e) {
+            logger.error("Could not store commitlog_archiving.properties", e);
         }
     }
 

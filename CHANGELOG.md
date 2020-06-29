@@ -1,6 +1,9 @@
 # Changelog
-## 2020/06/29 3.1.93
+## 2020/06/29 3.1.94
 (#888) Portng PropertiesFileTuner to the 3.x branch.
+
+## 2020/05/19 3.1.93
+Re-releasing 3.1.92
 
 ## 2020/05/19 3.1.92
 (#877) Fixing BackupServletV2 endpoints that were broken because of an underlying dependency change from the release 3.1.89.

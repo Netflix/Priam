@@ -1,9 +1,12 @@
 # Changelog
+## 2020/07/02/ 3.11.68
+(#891) Adding an exception in the replace-ip path when a node attempts to bootstrap to an existing token because of a stale state.
+
 ## 2020/06/04 3.11.67
 Re-releasing 3.11.66
 
 ## 2020/06/03 3.11.66
-(#881) Portng PropertiesFileTuner to the 3.11 branch.
+(#881) Porting PropertiesFileTuner to the 3.11 branch.
 
 ## 2020/05/26 3.11.65
 (#884) Adding support for upstream C* log directory env variable. 

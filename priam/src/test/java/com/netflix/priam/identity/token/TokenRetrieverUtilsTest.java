@@ -66,7 +66,7 @@ public class TokenRetrieverUtilsTest {
         Assert.assertEquals("127.0.0.4", replaceIp);
     }
 
-    @Test
+    @Test(expected = TokenRetrieverUtils.TokenAliveException.class)
     public void testRetrieveTokenOwnerWhenGossipDisagrees(@Mocked SystemUtils systemUtils)
             throws Exception {
 
@@ -102,10 +102,9 @@ public class TokenRetrieverUtilsTest {
         };
 
         String replaceIp = TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals(null, replaceIp);
     }
 
-    @Test
+    @Test(expected = TokenRetrieverUtils.TokenAliveException.class)
     public void testRetrieveTokenOwnerWhenAllHostsInGossipReturnsNull(
             @Mocked SystemUtils systemUtils) throws Exception {
         new Expectations() {
@@ -121,7 +120,9 @@ public class TokenRetrieverUtilsTest {
 
     @Test(expected = TokenRetrieverUtils.GossipParseException.class)
     public void testRetrieveTokenOwnerWhenAllInstancesThrowGossipParseException(
-            @Mocked SystemUtils systemUtils) throws TokenRetrieverUtils.GossipParseException {
+            @Mocked SystemUtils systemUtils)
+            throws TokenRetrieverUtils.GossipParseException,
+                    TokenRetrieverUtils.TokenAliveException {
 
         new Expectations() {
             {

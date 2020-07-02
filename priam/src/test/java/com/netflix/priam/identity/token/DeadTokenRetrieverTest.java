@@ -109,7 +109,7 @@ public class DeadTokenRetrieverTest {
         };
     }
 
-    @Test
+    @Test(expected = TokenRetrieverUtils.TokenAliveException.class)
     // There is a potential slot for dead token but we are unable to replace.
     public void testNoReplacementNoGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
         List<PriamInstance> allInstances = getInstances(2);
@@ -132,7 +132,6 @@ public class DeadTokenRetrieverTest {
                 new DeadTokenRetriever(
                         factory, membership, configuration, new FakeSleeper(), instanceInfo);
         PriamInstance priamInstance = deadTokenRetriever.get();
-        Assert.assertNull(priamInstance);
         new Verifications() {
             {
                 factory.delete(withAny(instance));

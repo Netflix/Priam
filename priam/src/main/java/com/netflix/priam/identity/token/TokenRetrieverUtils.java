@@ -35,7 +35,7 @@ public class TokenRetrieverUtils {
      */
     public static String inferTokenOwnerFromGossip(
             List<? extends PriamInstance> allIds, String token, String dc)
-            throws GossipParseException {
+            throws GossipParseException, TokenAliveException {
 
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
@@ -107,7 +107,8 @@ public class TokenRetrieverUtils {
     }
 
     // helper method to get the token owner IP from a Cassandra node.
-    private static String getIp(String host, String token) throws GossipParseException {
+    private static String getIp(String host, String token)
+            throws GossipParseException, TokenAliveException {
         String response = null;
         try {
             response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, host));
@@ -119,8 +120,8 @@ public class TokenRetrieverUtils {
             // place to start.
             // We just verify that the endpoint we provide is not "live".
             if (liveNodes.contains(endpointInfo)) {
-                logger.warn("The token [{}] is considered as alive by [{}].", token, host);
-                return null;
+                throw new TokenAliveException(
+                        String.format("The token %s is considered as alive by %s.", token, host));
             }
 
             return endpointInfo;
@@ -152,6 +153,24 @@ public class TokenRetrieverUtils {
         }
 
         public GossipParseException(String message, Throwable t) {
+            super(message, t);
+        }
+    }
+
+    /** This exception is thrown either when a node is bootstrapping using a token that is alive. */
+    public static class TokenAliveException extends Exception {
+
+        private static final long serialVersionUID = 1038678311186020257L;
+
+        public TokenAliveException() {
+            super();
+        }
+
+        public TokenAliveException(String message) {
+            super(message);
+        }
+
+        public TokenAliveException(String message, Throwable t) {
             super(message, t);
         }
     }

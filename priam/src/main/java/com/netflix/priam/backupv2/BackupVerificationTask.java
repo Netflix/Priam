@@ -102,9 +102,8 @@ public class BackupVerificationTask extends Task {
                             backupNotificationMgr.notify(backupVerificationResult);
                         });
 
-        if (!BackupRestoreUtil.getLatestValidMetaPath(
-                        backupVerification.getMetaProxy(BackupVersion.SNAPSHOT_META_SERVICE),
-                        dateRange)
+        if (!backupVerification
+                .verifyBackup(BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
                 .isPresent()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",

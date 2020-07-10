@@ -46,8 +46,7 @@ public class TokenRetrieverUtilsTest {
                     .collect(Collectors.toList());
 
     @Test
-    public void testRetrieveTokenOwnerWhenGossipAgrees(@Mocked SystemUtils systemUtils)
-            throws Exception {
+    public void testRetrieveTokenOwnerWhenGossipAgrees(@Mocked SystemUtils systemUtils) {
         // mark previous instance with tokenNumber 4 as down in gossip.
         List<String> myliveInstances =
                 liveInstances
@@ -62,13 +61,14 @@ public class TokenRetrieverUtilsTest {
             }
         };
 
-        String replaceIp = TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals("127.0.0.4", replaceIp);
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        Assert.assertEquals(
+                "127.0.0.4", inferredTokenOwnership.getTokenInformation().getIpAddress());
     }
 
-    @Test(expected = TokenRetrieverUtils.TokenAliveException.class)
-    public void testRetrieveTokenOwnerWhenGossipDisagrees(@Mocked SystemUtils systemUtils)
-            throws Exception {
+    @Test
+    public void testRetrieveTokenOwnerWhenGossipDisagrees(@Mocked SystemUtils systemUtils) {
 
         List<String> myliveInstances =
                 liveInstances
@@ -101,10 +101,15 @@ public class TokenRetrieverUtilsTest {
             }
         };
 
-        String replaceIp = TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        Assert.assertEquals(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH,
+                inferredTokenOwnership.getTokenInformationStatus());
+        Assert.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
     }
 
-    @Test(expected = TokenRetrieverUtils.TokenAliveException.class)
+    @Test
     public void testRetrieveTokenOwnerWhenAllHostsInGossipReturnsNull(
             @Mocked SystemUtils systemUtils) throws Exception {
         new Expectations() {
@@ -114,15 +119,17 @@ public class TokenRetrieverUtilsTest {
             }
         };
 
-        String replaceIp = TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertNull(replaceIp);
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        Assert.assertEquals(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.GOOD,
+                inferredTokenOwnership.getTokenInformationStatus());
+        Assert.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
     }
 
-    @Test(expected = TokenRetrieverUtils.GossipParseException.class)
+    @Test
     public void testRetrieveTokenOwnerWhenAllInstancesThrowGossipParseException(
-            @Mocked SystemUtils systemUtils)
-            throws TokenRetrieverUtils.GossipParseException,
-                    TokenRetrieverUtils.TokenAliveException {
+            @Mocked SystemUtils systemUtils) {
 
         new Expectations() {
             {
@@ -131,8 +138,12 @@ public class TokenRetrieverUtilsTest {
             }
         };
 
-        String replaceIp = TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertNull(replaceIp);
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        Assert.assertEquals(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.UNREACHABLE_NODES,
+                inferredTokenOwnership.getTokenInformationStatus());
+        Assert.assertNull(inferredTokenOwnership.getTokenInformation());
     }
 
     private String newGossipRecord(

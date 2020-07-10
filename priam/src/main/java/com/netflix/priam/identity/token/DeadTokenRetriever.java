@@ -112,27 +112,50 @@ public class DeadTokenRetriever extends TokenRetrieverBase implements IDeadToken
             factory.delete(priamInstance);
 
             // find the replaced IP
-            try {
-                replacedIp =
-                        TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                                allInstancesWithinCluster,
-                                priamInstance.getToken(),
-                                priamInstance.getDC());
 
-                // Lets not replace the instance if gossip info is not merging!!
-                if (replacedIp == null) return null;
-                logger.info(
-                        "Will try to replace token: {} with replacedIp (from gossip info): {} instead of ip from Token database: {}",
-                        priamInstance.getToken(),
-                        replacedIp,
-                        priamInstance.getHostIP());
-            } catch (TokenRetrieverUtils.GossipParseException e) {
-                // In case of gossip exception, fallback to IP in token database.
-                this.replacedIp = priamInstance.getHostIP();
-                logger.info(
-                        "Will try to replace token: {} with replacedIp from Token database: {}",
-                        priamInstance.getToken(),
-                        priamInstance.getHostIP());
+            // Infer current ownership information from other instances using gossip.
+            TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
+                    TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                            allInstancesWithinCluster,
+                            priamInstance.getToken(),
+                            priamInstance.getDC());
+
+            switch (inferredTokenInformation.getTokenInformationStatus()) {
+                case GOOD:
+                    if (inferredTokenInformation.getTokenInformation() == null) {
+                        logger.error(
+                                "If you see this message, it should not have happened. We expect token ownership information if all nodes agree. This is a code bounty issue.");
+                        return null;
+                    }
+                    // Everyone agreed to a value. Check if it is live node.
+                    if (inferredTokenInformation.getTokenInformation().isLive()) {
+                        logger.info(
+                                "This token is considered alive unanimously! We will not replace this instance.");
+                        return null;
+                    } else
+                        this.replacedIp =
+                                inferredTokenInformation.getTokenInformation().getIpAddress();
+                    break;
+                case UNREACHABLE_NODES:
+                    // In case of unable to reach sufficient nodes, fallback to IP in token
+                    // database. This could be a genuine case of say missing security permissions.
+                    this.replacedIp = priamInstance.getHostIP();
+                    logger.warn(
+                            "Unable to reach sufficient nodes. Please check security group permissions or there might be a network partition.");
+                    logger.info(
+                            "Will try to replace token: {} with replacedIp from Token database: {}",
+                            priamInstance.getToken(),
+                            priamInstance.getHostIP());
+                    break;
+                case MISMATCH:
+                    // Lets not replace the instance if gossip info is not merging!!
+                    logger.info(
+                            "Mismatch in gossip. We will not replace this instance, until gossip settles down.");
+                    return null;
+                default:
+                    throw new IllegalStateException(
+                            "Unexpected value: "
+                                    + inferredTokenInformation.getTokenInformationStatus());
             }
 
             PriamInstance result;

@@ -78,7 +78,7 @@ public class TokenRetrieverUtils {
                     if (matchedGossipInstances == noOfInstancesGossipShouldMatch) {
                         inferredTokenOwnership.setTokenInformationStatus(
                                 InferredTokenOwnership.TokenInformationStatus.GOOD);
-                        break;
+                        return inferredTokenOwnership;
                     }
                 } else {
                     // Mismatch in the gossip information from Cassandra.
@@ -92,7 +92,7 @@ public class TokenRetrieverUtils {
                             inferredTokenOwnership.getTokenInformation().isLive
                                     ? inferredTokenOwnership.getTokenInformation()
                                     : tokenInformation);
-                    break;
+                    return inferredTokenOwnership;
                 }
 
             } catch (GossipParseException e) {

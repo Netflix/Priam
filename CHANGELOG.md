@@ -1,4 +1,7 @@
 # Changelog
+## 2020/07/13 3.1.96
+(#894) Fix the inferTokenOwnership information. This will provide all the details to the caller method so they can make decision rather than throwing any exception. 
+
 ## 2020/07/02/ 3.1.95
 (#890) Adding an exception in the replace-ip path when a node attempts to bootstrap to an existing token because of a stale state. 
 

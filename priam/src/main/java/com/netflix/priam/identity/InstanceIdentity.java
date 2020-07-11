@@ -29,7 +29,6 @@ import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
 import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.identity.token.TokenRetrieverUtils;
-import com.netflix.priam.identity.token.TokenRetrieverUtils.GossipParseException;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -39,7 +38,6 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -166,18 +164,28 @@ public class InstanceIdentity {
                         // Priam might have crashed before bootstrapping Cassandra in replace mode.
                         // So, it is premature to use the assigned token without checking Cassandra
                         // gossip.
-                        try {
-                            String replaceIp =
-                                    TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                                            aliveInstances, instance.getToken(), instance.getDC());
-                            if (!StringUtils.isEmpty(replaceIp)
-                                    && !replaceIp.equals(instance.getHostIP())) {
-                                setReplacedIp(replaceIp);
-                                logger.info(
-                                        "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
-                                                + replaceIp);
-                            }
-                        } catch (GossipParseException e) {
+
+                        // Infer current ownership information from other instances using gossip.
+                        TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
+                                TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                                        aliveInstances, instance.getToken(), instance.getDC());
+                        String inferredIp =
+                                (inferredTokenInformation.getTokenInformation() == null)
+                                        ? null
+                                        : inferredTokenInformation
+                                                .getTokenInformation()
+                                                .getIpAddress();
+                        // if unreachable rely on token database.
+                        // if mismatch rely on token database.
+                        if (inferredTokenInformation.getTokenInformationStatus()
+                                        == TokenRetrieverUtils.InferredTokenOwnership
+                                                .TokenInformationStatus.GOOD
+                                && !inferredIp.equalsIgnoreCase(instance.getHostIP())
+                                && !inferredTokenInformation.getTokenInformation().isLive()) {
+                            setReplacedIp(inferredIp);
+                            logger.info(
+                                    "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
+                                            + inferredIp);
                         }
                     }
                 }

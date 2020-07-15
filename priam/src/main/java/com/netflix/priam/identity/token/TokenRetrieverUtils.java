@@ -1,11 +1,11 @@
 package com.netflix.priam.identity.token;
 
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.utils.GsonJsonSerializer;
 import com.netflix.priam.utils.SystemUtils;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.apache.commons.lang3.StringUtils;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -33,9 +33,8 @@ public class TokenRetrieverUtils {
      * @throws GossipParseException when required number of instances are not available to fetch the
      *     gossip info.
      */
-    public static String inferTokenOwnerFromGossip(
-            List<? extends PriamInstance> allIds, String token, String dc)
-            throws GossipParseException, TokenAliveException {
+    public static InferredTokenOwnership inferTokenOwnerFromGossip(
+            List<? extends PriamInstance> allIds, String token, String dc) {
 
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.
@@ -59,56 +58,64 @@ public class TokenRetrieverUtils {
         // the IP to be replaced, in large clusters it may affect the startup
         // performance. So we pick three random hosts from the ring and see if they all
         // agree on the IP to be replaced. If not, we don't replace.
-        String replaceIp = null;
+        InferredTokenOwnership inferredTokenOwnership = new InferredTokenOwnership();
         int matchedGossipInstances = 0, reachableInstances = 0;
         for (PriamInstance instance : eligibleInstances) {
             logger.info(
                     "Calling getIp on hostname[{}] and token[{}]", instance.getHostName(), token);
 
             try {
-                String ip = getIp(instance.getHostName(), token);
+                TokenInformation tokenInformation =
+                        getTokenInformation(instance.getHostName(), token);
                 reachableInstances++;
 
-                if (replaceIp == null) {
-                    replaceIp = ip;
+                if (inferredTokenOwnership.getTokenInformation() == null) {
+                    inferredTokenOwnership.setTokenInformation(tokenInformation);
                 }
 
-                if (StringUtils.isEmpty(ip) || !replaceIp.equals(ip)) {
-                    // If the IP address produced by getIp call is empty it means it was able to
-                    // parse the status information and that token was still alive!!
-                    // We do not want to do anything if token is considered as alive by Cassandra.
+                if (inferredTokenOwnership.getTokenInformation().equals(tokenInformation)) {
+                    matchedGossipInstances++;
+                    if (matchedGossipInstances == noOfInstancesGossipShouldMatch) {
+                        inferredTokenOwnership.setTokenInformationStatus(
+                                InferredTokenOwnership.TokenInformationStatus.GOOD);
+                        return inferredTokenOwnership;
+                    }
+                } else {
+                    // Mismatch in the gossip information from Cassandra.
+                    inferredTokenOwnership.setTokenInformationStatus(
+                            InferredTokenOwnership.TokenInformationStatus.MISMATCH);
                     logger.info(
-                            "Not producing anything in replaceIp as according to C* that token is still alive or "
-                                    + "there is a mismatch in status information per Cassandra. ip: [{}], replaceIp: [{}]",
-                            ip,
-                            replaceIp);
-                    return null;
+                            "There is a mismatch in the status information reported by Cassandra. TokenInformation1: {}, TokenInformation2: {}",
+                            inferredTokenOwnership.getTokenInformation(),
+                            tokenInformation);
+                    inferredTokenOwnership.setTokenInformation(
+                            inferredTokenOwnership.getTokenInformation().isLive
+                                    ? inferredTokenOwnership.getTokenInformation()
+                                    : tokenInformation);
+                    return inferredTokenOwnership;
                 }
 
-                matchedGossipInstances++;
-                if (matchedGossipInstances == noOfInstancesGossipShouldMatch) {
-                    return replaceIp;
-                }
             } catch (GossipParseException e) {
                 logger.warn(e.getMessage());
             }
         }
 
-        // Throw exception if we are not able to reach at least minimum required
-        // instances.
+        // If we are not able to reach at least minimum required instances.
         if (reachableInstances < noOfInstancesGossipShouldMatch) {
-            throw new GossipParseException(
+            inferredTokenOwnership.setTokenInformationStatus(
+                    InferredTokenOwnership.TokenInformationStatus.UNREACHABLE_NODES);
+            logger.info(
                     String.format(
                             "Unable to find enough instances where gossip match. Required: [%d]",
                             noOfInstancesGossipShouldMatch));
         }
 
-        return null;
+        return inferredTokenOwnership;
     }
 
     // helper method to get the token owner IP from a Cassandra node.
-    private static String getIp(String host, String token)
-            throws GossipParseException, TokenAliveException {
+    private static TokenInformation getTokenInformation(String host, String token)
+            throws GossipParseException {
         String response = null;
         try {
             response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, host));
@@ -119,12 +126,8 @@ public class TokenRetrieverUtils {
             // We intentionally do not use the "unreachable" nodes as it may or may not be the best
             // place to start.
             // We just verify that the endpoint we provide is not "live".
-            if (liveNodes.contains(endpointInfo)) {
-                throw new TokenAliveException(
-                        String.format("The token %s is considered as alive by %s.", token, host));
-            }
-
-            return endpointInfo;
+            boolean isLive = liveNodes.contains(endpointInfo);
+            return new TokenInformation(endpointInfo, isLive);
         } catch (RuntimeException e) {
             throw new GossipParseException(
                     String.format("Error in reaching out to host: [%s]", host), e);
@@ -134,6 +137,65 @@ public class TokenRetrieverUtils {
                             "Error in parsing gossip response [%s] from host: [%s]",
                             response, host),
                     e);
+        }
+    }
+
+    public static class TokenInformation {
+        private String ipAddress;
+        private boolean isLive;
+
+        public TokenInformation(String ipAddress, boolean isLive) {
+            this.ipAddress = ipAddress;
+            this.isLive = isLive;
+        }
+
+        public boolean isLive() {
+            return isLive;
+        }
+
+        public String getIpAddress() {
+            return ipAddress;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || this.getClass() != obj.getClass()) return false;
+            TokenInformation tokenInformation = (TokenInformation) obj;
+            return this.ipAddress.equalsIgnoreCase(tokenInformation.getIpAddress())
+                    && isLive == tokenInformation.isLive;
+        }
+
+        public String toString() {
+            return GsonJsonSerializer.getGson().toJson(this);
+        }
+    }
+
+    public static class InferredTokenOwnership {
+        public enum TokenInformationStatus {
+            GOOD,
+            UNREACHABLE_NODES,
+            MISMATCH
+        }
+
+        private TokenInformationStatus tokenInformationStatus =
+                TokenInformationStatus.UNREACHABLE_NODES;
+        private TokenInformation tokenInformation;
+
+        public void setTokenInformationStatus(TokenInformationStatus tokenInformationStatus) {
+            this.tokenInformationStatus = tokenInformationStatus;
+        }
+
+        public void setTokenInformation(TokenInformation tokenInformation) {
+            this.tokenInformation = tokenInformation;
+        }
+
+        public TokenInformationStatus getTokenInformationStatus() {
+            return tokenInformationStatus;
+        }
+
+        public TokenInformation getTokenInformation() {
+            return tokenInformation;
         }
     }
 
@@ -153,24 +215,6 @@ public class TokenRetrieverUtils {
         }
 
         public GossipParseException(String message, Throwable t) {
-            super(message, t);
-        }
-    }
-
-    /** This exception is thrown either when a node is bootstrapping using a token that is alive. */
-    public static class TokenAliveException extends Exception {
-
-        private static final long serialVersionUID = 1038678311186020257L;
-
-        public TokenAliveException() {
-            super();
-        }
-
-        public TokenAliveException(String message) {
-            super(message);
-        }
-
-        public TokenAliveException(String message, Throwable t) {
             super(message, t);
         }
     }

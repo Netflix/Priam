@@ -36,6 +36,13 @@ public class AssignedTokenRetrieverTest {
         List<PriamInstance> liveHosts = newPriamInstances();
         Collections.shuffle(liveHosts);
 
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.GOOD);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(liveHosts.get(0).getHostIP(), false));
+
         new Expectations() {
             {
                 config.getAppName();
@@ -52,7 +59,7 @@ public class AssignedTokenRetrieverTest {
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
                         liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
-                result = liveHosts.get(0).getHostIP();
+                result = inferredTokenOwnership;
             }
         };
 
@@ -106,6 +113,12 @@ public class AssignedTokenRetrieverTest {
         // the case we are trying to test is when Priam restarted after it acquired the
         // token. new instance is already registered with token database.
         liveHosts.add(newInstance);
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.GOOD);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(deadInstance.getHostIP(), false));
 
         new Expectations() {
             {
@@ -122,7 +135,7 @@ public class AssignedTokenRetrieverTest {
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
                         liveHosts, newInstance.getToken(), newInstance.getDC());
-                result = deadInstance.getHostIP();
+                result = inferredTokenOwnership;
             }
         };
 
@@ -162,6 +175,13 @@ public class AssignedTokenRetrieverTest {
         List<PriamInstance> liveHosts = newPriamInstances();
         Collections.shuffle(liveHosts);
 
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(liveHosts.get(0).getHostIP(), false));
+
         new Expectations() {
             {
                 config.getAppName();
@@ -177,7 +197,7 @@ public class AssignedTokenRetrieverTest {
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
                         liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
-                result = null;
+                result = inferredTokenOwnership;
             }
         };
 

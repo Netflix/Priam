@@ -30,6 +30,7 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
+import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import org.slf4j.Logger;
@@ -66,55 +67,43 @@ public class BackupVerificationTask extends Task {
     @Override
     public void execute() throws Exception {
         // Ensure that backup version 2.0 is actually enabled.
-        if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equalsIgnoreCase("-1")) {
-            logger.info(
-                    "Not executing the Verification Service for backups as V2 backups are not enabled.");
+        if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equals("-1")) {
+            logger.info("Skipping backup verification. V2 backups are not enabled.");
             return;
         }
 
         if (instanceState.getRestoreStatus() != null
                 && instanceState.getRestoreStatus().getStatus() != null
                 && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
-            logger.info(
-                    "Not executing the Verification Service for backups as Priam is in restore mode.");
+            logger.info("Skipping backup verification. Priam is in restore mode.");
             return;
         }
 
         // Validate the backup done in last x hours.
-        DateRange dateRange =
-                new DateRange(
-                        DateUtil.getInstant()
-                                .minus(
-                                        backupRestoreConfig.getBackupVerificationSLOInHours(),
-                                        ChronoUnit.HOURS),
-                        DateUtil.getInstant());
+        Instant now = DateUtil.getInstant();
+        Instant slo =
+                now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
+        DateRange dateRange = new DateRange(slo, now);
         List<BackupVerificationResult> verificationResults =
                 backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
 
-        verificationResults
-                .stream()
-                .forEach(
-                        backupVerificationResult -> {
-                            logger.info(
-                                    "Sending {} message for backup: {}",
-                                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                    backupVerificationResult.snapshotInstant);
-                            backupNotificationMgr.notify(backupVerificationResult);
-                        });
+        verificationResults.forEach(
+                result -> {
+                    logger.info(
+                            "Sending {} message for backup: {}",
+                            AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                            result.snapshotInstant);
+                    backupNotificationMgr.notify(result);
+                });
 
-        if (!BackupRestoreUtil.getLatestValidMetaPath(
-                        backupVerification.getMetaProxy(BackupVersion.SNAPSHOT_META_SERVICE),
-                        dateRange)
+        if (!backupVerification
+                .verifyBackup(BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
                 .isPresent()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
         }
-    }
-
-    public BackupMetrics getBackupMetrics() {
-        return backupMetrics;
     }
 
     /**

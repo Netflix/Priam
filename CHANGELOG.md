@@ -1,4 +1,7 @@
 # Changelog
+## 2020/07/15 3.1.97
+(#898) Make BackupVerificationTask log and emit when there is no verified backup within SLO. Cease requiring the backup to be fully in S3.
+
 ## 2020/07/13 3.1.96
 (#894) Fix the inferTokenOwnership information. This will provide all the details to the caller method so they can make decision rather than throwing any exception. 
 

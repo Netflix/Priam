@@ -1,5 +1,9 @@
 # Changelog
-## 2020/07/02/ 3.11.68
+## 2020/07/15 3.11.69
+(#894) Fix the inferTokenOwnership information. This will provide all the details to the caller method so they can make decision rather than throwing any exception.
+(#897) Make BackupVerificationTask log and emit when there is no verified backup within SLO. Cease requiring the backup to be fully in S3.
+
+## 2020/07/02 3.11.68
 (#891) Adding an exception in the replace-ip path when a node attempts to bootstrap to an existing token because of a stale state.
 
 ## 2020/06/04 3.11.67

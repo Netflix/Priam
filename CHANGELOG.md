@@ -1,4 +1,7 @@
 # Changelog
+## 2020/08/11 3.11.70
+(#901) Throw when gossip unanimously says token is already owned by a live node.
+
 ## 2020/07/15 3.11.69
 (#894) Fix the inferTokenOwnership information. This will provide all the details to the caller method so they can make decision rather than throwing any exception.
 (#897) Make BackupVerificationTask log and emit when there is no verified backup within SLO. Cease requiring the backup to be fully in S3.

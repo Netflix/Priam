@@ -1,4 +1,7 @@
 # Changelog
+## 2020/08/11 3.1.98
+(#900) Throw when gossip unanimously says token is already owned by a live node.
+
 ## 2020/07/15 3.1.97
 (#898) Make BackupVerificationTask log and emit when there is no verified backup within SLO. Cease requiring the backup to be fully in S3.
 

@@ -1,5 +1,7 @@
 package com.netflix.priam.identity.token;
 
+import com.google.common.base.Strings;
+import com.google.common.truth.Truth;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -15,9 +17,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class AssignedTokenRetrieverTest {
     public static final String APP = "testapp";
@@ -82,11 +83,11 @@ public class AssignedTokenRetrieverTest {
                         newTokenRetriever,
                         instanceInfo);
 
-        Assert.assertEquals(false, instanceIdentity.isReplace());
+        Truth.assertThat(instanceIdentity.isReplace()).isFalse();
     }
 
     @Test
-    public void grabAssignedTokenStartDbInReplaceModeWhenGossipAgreesOnPreviousTokenOwner(
+    public void grabAssignedTokenStartDbInReplaceModeWhenGossipAgreesPreviousTokenOwnerIsNotLive(
             @Mocked IPriamInstanceFactory<PriamInstance> factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
@@ -101,7 +102,6 @@ public class AssignedTokenRetrieverTest {
         PriamInstance deadInstance = liveHosts.remove(0);
         PriamInstance newInstance =
                 newMockPriamInstance(
-                        APP,
                         deadInstance.getDC(),
                         deadInstance.getRac(),
                         deadInstance.getId(),
@@ -158,8 +158,82 @@ public class AssignedTokenRetrieverTest {
                         newTokenRetriever,
                         instanceInfo);
 
-        Assert.assertEquals(deadInstance.getHostIP(), instanceIdentity.getReplacedIp());
-        Assert.assertEquals(true, instanceIdentity.isReplace());
+        Truth.assertThat(instanceIdentity.getReplacedIp()).isEqualTo(deadInstance.getHostIP());
+        Truth.assertThat(instanceIdentity.isReplace()).isTrue();
+    }
+
+    @Test
+    public void grabAssignedTokenThrowWhenGossipAgreesPreviousTokenOwnerIsLive(
+            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IConfiguration config,
+            @Mocked IMembership membership,
+            @Mocked Sleeper sleeper,
+            @Mocked ITokenManager tokenManager,
+            @Mocked InstanceInfo instanceInfo,
+            @Mocked TokenRetrieverUtils retrievalUtils) {
+        List<PriamInstance> liveHosts = newPriamInstances();
+        Collections.shuffle(liveHosts);
+
+        PriamInstance deadInstance = liveHosts.remove(0);
+        PriamInstance newInstance =
+                newMockPriamInstance(
+                        deadInstance.getDC(),
+                        deadInstance.getRac(),
+                        deadInstance.getId(),
+                        String.format("new-fakeInstance-%d", deadInstance.getId()),
+                        String.format("127.1.1.%d", deadInstance.getId() + 100),
+                        String.format("new-fakeHost-%d", deadInstance.getId()),
+                        deadInstance.getToken());
+
+        // the case we are trying to test is when Priam restarted after it acquired the
+        // token. new instance is already registered with token database.
+        liveHosts.add(newInstance);
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.GOOD);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(deadInstance.getHostIP(), true));
+
+        new Expectations() {
+            {
+                config.getAppName();
+                result = APP;
+
+                factory.getAllIds(DEAD_APP);
+                result = Collections.singletonList(deadInstance);
+                factory.getAllIds(APP);
+                result = liveHosts;
+
+                instanceInfo.getInstanceId();
+                result = newInstance.getInstanceId();
+
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                        liveHosts, newInstance.getToken(), newInstance.getDC());
+                result = inferredTokenOwnership;
+            }
+        };
+
+        IDeadTokenRetriever deadTokenRetriever =
+                new DeadTokenRetriever(factory, membership, config, sleeper, instanceInfo);
+        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
+                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
+        INewTokenRetriever newTokenRetriever =
+                new NewTokenRetriever(
+                        factory, membership, config, sleeper, tokenManager, instanceInfo);
+        Assertions.assertThrows(
+                TokenRetrieverUtils.GossipParseException.class,
+                () ->
+                        new InstanceIdentity(
+                                factory,
+                                membership,
+                                config,
+                                sleeper,
+                                tokenManager,
+                                deadTokenRetriever,
+                                preGeneratedTokenRetriever,
+                                newTokenRetriever,
+                                instanceInfo));
     }
 
     @Test
@@ -220,8 +294,8 @@ public class AssignedTokenRetrieverTest {
                         newTokenRetriever,
                         instanceInfo);
 
-        Assert.assertTrue(StringUtils.isEmpty(instanceIdentity.getReplacedIp()));
-        Assert.assertEquals(false, instanceIdentity.isReplace());
+        Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();
+        Truth.assertThat(instanceIdentity.isReplace()).isFalse();
     }
 
     private List<PriamInstance> newPriamInstances() {
@@ -246,10 +320,9 @@ public class AssignedTokenRetrieverTest {
             String dc, String rack, int seqNo, String ipRanges) {
         return IntStream.range(0, 3)
                 .map(e -> seqNo + (e * 9))
-                .<PriamInstance>mapToObj(
+                .mapToObj(
                         e ->
                                 newMockPriamInstance(
-                                        APP,
                                         dc,
                                         rack,
                                         e,
@@ -261,7 +334,6 @@ public class AssignedTokenRetrieverTest {
     }
 
     private PriamInstance newMockPriamInstance(
-            String app,
             String dc,
             String rack,
             int id,
@@ -270,7 +342,7 @@ public class AssignedTokenRetrieverTest {
             String hostName,
             String token) {
         PriamInstance priamInstance = new PriamInstance();
-        priamInstance.setApp(app);
+        priamInstance.setApp(APP);
         priamInstance.setDC(dc);
         priamInstance.setRac(rack);
         priamInstance.setId(id);

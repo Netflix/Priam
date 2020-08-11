@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.common.base.Preconditions;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.ListMultimap;
@@ -29,6 +30,7 @@ import com.netflix.priam.identity.token.IDeadTokenRetriever;
 import com.netflix.priam.identity.token.INewTokenRetriever;
 import com.netflix.priam.identity.token.IPreGeneratedTokenRetriever;
 import com.netflix.priam.identity.token.TokenRetrieverUtils;
+import com.netflix.priam.identity.token.TokenRetrieverUtils.GossipParseException;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
@@ -166,26 +168,28 @@ public class InstanceIdentity {
                         // gossip.
 
                         // Infer current ownership information from other instances using gossip.
-                        TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
+                        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
                                         aliveInstances, instance.getToken(), instance.getDC());
-                        String inferredIp =
-                                (inferredTokenInformation.getTokenInformation() == null)
-                                        ? null
-                                        : inferredTokenInformation
-                                                .getTokenInformation()
-                                                .getIpAddress();
                         // if unreachable rely on token database.
                         // if mismatch rely on token database.
-                        if (inferredTokenInformation.getTokenInformationStatus()
-                                        == TokenRetrieverUtils.InferredTokenOwnership
-                                                .TokenInformationStatus.GOOD
-                                && !inferredIp.equalsIgnoreCase(instance.getHostIP())
-                                && !inferredTokenInformation.getTokenInformation().isLive()) {
-                            setReplacedIp(inferredIp);
-                            logger.info(
-                                    "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
-                                            + inferredIp);
+                        if (inferredTokenOwnership.getTokenInformationStatus()
+                                == TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus
+                                        .GOOD) {
+                            Preconditions.checkNotNull(
+                                    inferredTokenOwnership.getTokenInformation());
+                            String inferredIp =
+                                    inferredTokenOwnership.getTokenInformation().getIpAddress();
+                            if (!inferredIp.equalsIgnoreCase(instance.getHostIP())) {
+                                if (inferredTokenOwnership.getTokenInformation().isLive()) {
+                                    throw new GossipParseException(
+                                            "We have been assigned a token that C* thinks is alive. Throwing to buy time in the hopes that Gossip just needs to settle.");
+                                }
+                                setReplacedIp(inferredIp);
+                                logger.info(
+                                        "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
+                                                + inferredIp);
+                            }
                         }
                     }
                 }

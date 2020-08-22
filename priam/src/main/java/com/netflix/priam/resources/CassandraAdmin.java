@@ -185,7 +185,7 @@ public class CassandraAdmin {
             return Response.ok().entity(rootObj).build();
         } catch (Exception e) {
             try {
-                rootObj.put("status", "ERRROR");
+                rootObj.put("status", "ERROR");
                 rootObj.put("desc", e.getLocalizedMessage());
             } catch (Exception e1) {
                 return Response.status(503).entity("FlushError").build();
@@ -201,11 +201,11 @@ public class CassandraAdmin {
 
         try {
             compaction.execute();
-            rootObj.put("Compcated", true);
+            rootObj.put("Compacted", true);
             return Response.ok().entity(rootObj).build();
         } catch (Exception e) {
             try {
-                rootObj.put("status", "ERRROR");
+                rootObj.put("status", "ERROR");
                 rootObj.put("desc", e.getLocalizedMessage());
             } catch (Exception e1) {
                 return Response.status(503).entity("CompactionError").build();

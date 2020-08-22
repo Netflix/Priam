@@ -26,7 +26,6 @@ import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.connection.JMXConnectionException;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
-import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
 import org.codehaus.jettison.json.JSONException;
@@ -178,7 +177,7 @@ public class CassandraAdmin {
             return Response.ok().entity(rootObj).build();
         } catch (Exception e) {
             try {
-                rootObj.put("status", "ERRROR");
+                rootObj.put("status", "ERROR");
                 rootObj.put("desc", e.getLocalizedMessage());
             } catch (Exception e1) {
                 return Response.status(503).entity("FlushError").build();
@@ -194,11 +193,11 @@ public class CassandraAdmin {
 
         try {
             compaction.execute();
-            rootObj.put("Compcated", true);
+            rootObj.put("Compacted", true);
             return Response.ok().entity(rootObj).build();
         } catch (Exception e) {
             try {
-                rootObj.put("status", "ERRROR");
+                rootObj.put("status", "ERROR");
                 rootObj.put("desc", e.getLocalizedMessage());
             } catch (Exception e1) {
                 return Response.status(503).entity("CompactionError").build();

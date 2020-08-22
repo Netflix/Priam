@@ -26,15 +26,6 @@ import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.connection.JMXConnectionException;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
 import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONArray;
@@ -43,13 +34,21 @@ import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
+
 /** Do general operations. Start/Stop and some JMX node tool commands */
-@SuppressWarnings("deprecation")
 @Path("/v1/cassadmin")
 @Produces(MediaType.APPLICATION_JSON)
 public class CassandraAdmin {
     private static final String REST_HEADER_KEYSPACES = "keyspaces";
-    private static final String REST_HEADER_CFS = "cfnames";
     private static final String REST_HEADER_TOKEN = "token";
     private static final String REST_SUCCESS = "[\"ok\"]";
     private static final Logger logger = LoggerFactory.getLogger(CassandraAdmin.class);
@@ -75,7 +74,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/start")
-    public Response cassStart() throws IOException, InterruptedException, JSONException {
+    public Response cassStart() throws IOException {
         cassProcess.start(true);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -83,7 +82,7 @@ public class CassandraAdmin {
     @GET
     @Path("/stop")
     public Response cassStop(@DefaultValue("false") @QueryParam("force") boolean force)
-            throws IOException, InterruptedException, JSONException {
+            throws IOException {
         cassProcess.stop(force);
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
     }
@@ -91,7 +90,7 @@ public class CassandraAdmin {
     @GET
     @Path("/refresh")
     public Response cassRefresh(@QueryParam(REST_HEADER_KEYSPACES) String keyspaces)
-            throws IOException, ExecutionException, InterruptedException, JSONException {
+            throws IOException, ExecutionException, InterruptedException {
         logger.debug("node tool refresh is being called");
         if (StringUtils.isBlank(keyspaces))
             return Response.status(400).entity("Missing keyspace in request").build();
@@ -110,7 +109,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/info")
-    public Response cassInfo() throws IOException, InterruptedException, JSONException {
+    public Response cassInfo() throws JSONException {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -125,7 +124,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/partitioner")
-    public Response cassPartitioner() throws IOException, InterruptedException, JSONException {
+    public Response cassPartitioner() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -140,8 +139,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/ring/{id}")
-    public Response cassRing(@PathParam("id") String keyspace)
-            throws IOException, InterruptedException, JSONException {
+    public Response cassRing(@PathParam("id") String keyspace) throws JSONException {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -171,7 +169,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/flush")
-    public Response cassFlush() throws IOException, InterruptedException, ExecutionException {
+    public Response cassFlush() {
         JSONObject rootObj = new JSONObject();
 
         try {
@@ -191,7 +189,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/compact")
-    public Response cassCompact() throws IOException, ExecutionException, InterruptedException {
+    public Response cassCompact() {
         JSONObject rootObj = new JSONObject();
 
         try {
@@ -247,7 +245,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/version")
-    public Response version() throws IOException, ExecutionException, InterruptedException {
+    public Response version() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -264,7 +262,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/disablegossip")
-    public Response disablegossip() throws IOException, ExecutionException, InterruptedException {
+    public Response disablegossip() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -279,7 +277,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/enablegossip")
-    public Response enablegossip() throws IOException, ExecutionException, InterruptedException {
+    public Response enablegossip() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -294,7 +292,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/disablethrift")
-    public Response disablethrift() throws IOException, ExecutionException, InterruptedException {
+    public Response disablethrift() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -309,7 +307,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/enablethrift")
-    public Response enablethrift() throws IOException, ExecutionException, InterruptedException {
+    public Response enablethrift() {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -324,8 +322,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/statusthrift")
-    public Response statusthrift()
-            throws IOException, ExecutionException, InterruptedException, JSONException {
+    public Response statusthrift() throws JSONException {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);
@@ -354,8 +351,7 @@ public class CassandraAdmin {
 
     @GET
     @Path("/move")
-    public Response moveToken(@QueryParam(REST_HEADER_TOKEN) String newToken)
-            throws IOException, ExecutionException, InterruptedException, ConfigurationException {
+    public Response moveToken(@QueryParam(REST_HEADER_TOKEN) String newToken) throws IOException {
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);

@@ -1,4 +1,7 @@
 # Changelog
+## 2020/09/08 3.1.99
+(#903) Remove noisy log statements from CassandraAdmin.
+
 ## 2020/08/11 3.1.98
 (#900) Throw when gossip unanimously says token is already owned by a live node.
 

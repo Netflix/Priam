@@ -31,6 +31,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.ThreadSleeper;
 import java.io.File;
+import java.io.FileFilter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -211,6 +212,13 @@ public class SnapshotBackup extends AbstractBackup {
         // Add files to this dir
         abstractBackupPaths.addAll(
                 upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot(), true));
+
+        // Next, upload secondary indexes
+        FileFilter filter = (file) -> file.getName().startsWith("." + columnFamily);
+        for (File subDir : Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {})) {
+            abstractBackupPaths.addAll(
+                    upload(subDir, BackupFileType.SNAP, config.enableAsyncIncremental(), true));
+        }
     }
 
     private static boolean isValidBackupDir(Path backupDir) {

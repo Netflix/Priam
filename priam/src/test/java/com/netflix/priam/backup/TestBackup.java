@@ -91,7 +91,7 @@ public class TestBackup {
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(4, filesystem.uploadedFiles.size());
+        Assert.assertEquals(5, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
@@ -142,7 +142,7 @@ public class TestBackup {
         }
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(6, filesystem.uploadedFiles.size());
+        Assert.assertEquals(7, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
@@ -156,6 +156,8 @@ public class TestBackup {
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
+        files.add(
+                "target/data/Keyspace1/Standard1/backups/.Standard1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
 
         expectedFiles.clear();
         for (String filePath : files) {

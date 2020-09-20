@@ -26,7 +26,9 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
+import java.io.FileFilter;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -112,9 +114,16 @@ public class IncrementalBackup extends AbstractBackup {
     @Override
     protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
             throws Exception {
-        BackupFileType fileType = BackupFileType.SST;
-        if (backupRestoreConfig.enableV2Backups()) fileType = BackupFileType.SST_V2;
+        BackupFileType fileType =
+                backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
+        // upload SSTables and components
         upload(backupDir, fileType, config.enableAsyncIncremental(), true);
+
+        // Next, upload secondary indexes
+        FileFilter filter = (file) -> file.getName().startsWith("." + columnFamily);
+        for (File subDir : Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {})) {
+            upload(subDir, fileType, config.enableAsyncIncremental(), true);
+        }
     }
 }

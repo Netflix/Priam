@@ -144,21 +144,16 @@ public abstract class AbstractBackup extends Task {
 
             for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
-
-                if (!isValidBackupDir(keyspaceDir, backupDir)) {
-                    continue;
+                if (backupDir.exists() && backupDir.isDirectory() && backupDir.canRead()) {
+                    String columnFamilyName = columnFamilyDir.getName().split("-")[0];
+                    if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
+                        // Clean the backup/snapshot directory else files will keep getting
+                        // accumulated.
+                        SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
+                    } else {
+                        processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
+                    }
                 }
-
-                String columnFamilyName = columnFamilyDir.getName().split("-")[0];
-
-                if (backupRestoreUtil.isFiltered(
-                        keyspaceDir.getName(), columnFamilyDir.getName())) {
-                    // Clean the backup/snapshot directory else files will keep getting accumulated.
-                    SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
-                    continue;
-                }
-
-                processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
             } // end processing all CFs for keyspace
         } // end processing keyspaces under the C* data dir
     }
@@ -206,19 +201,5 @@ public abstract class AbstractBackup extends Task {
                 }
             }
         return backupPaths;
-    }
-
-    /** Filters unwanted keyspaces */
-    private boolean isValidBackupDir(File keyspaceDir, File backupDir) {
-        if (backupDir == null || !backupDir.isDirectory() || !backupDir.exists()) return false;
-        String keyspaceName = keyspaceDir.getName();
-        if (BackupRestoreUtil.FILTER_KEYSPACE.contains(keyspaceName)) {
-            logger.debug(
-                    "{} is not consider a valid keyspace backup directory, will be bypass.",
-                    keyspaceName);
-            return false;
-        }
-
-        return true;
     }
 }

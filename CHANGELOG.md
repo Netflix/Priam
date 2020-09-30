@@ -1,4 +1,7 @@
 # Changelog
+## 2020/09/30 3.11.72
+(#908, #910) Stop explicitly filtering OpsCenter keyspace when backing up. Remove more noisy log statements.
+
 ## 2020/09/08 3.11.71
 (#902) Remove noisy log statements from CassandraAdmin.
 

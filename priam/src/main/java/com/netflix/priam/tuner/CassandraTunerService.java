@@ -38,9 +38,10 @@ public class CassandraTunerService implements IService {
         // Update the cassandra to enable/disable new incremental files.
         new RetryableCallable<Void>(6, 10000) {
             public Void retriableCall() throws Exception {
-                JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
-                nodetool.setIncrementalBackupsEnabled(
-                        IncrementalBackup.isEnabled(configuration, backupRestoreConfig));
+                try (JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+                    nodeTool.setIncrementalBackupsEnabled(
+                            IncrementalBackup.isEnabled(configuration, backupRestoreConfig));
+                }
                 return null;
             }
         }.call();

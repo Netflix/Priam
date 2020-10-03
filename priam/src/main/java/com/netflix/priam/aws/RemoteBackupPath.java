@@ -18,9 +18,9 @@ package com.netflix.priam.aws;
 
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
@@ -119,12 +119,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
         }
 
         setCompression(
-                ICompression.CompressionAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
+                CompressionAlgorithm.valueOf(remoteFilePath.getName(name_count_idx++).toString()));
 
         setEncryption(
-                IFileCryptography.CryptographyAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
+                CryptographyAlgorithm.valueOf(remoteFilePath.getName(name_count_idx++).toString()));
         fileName = remoteFilePath.getName(name_count_idx).toString();
     }
 

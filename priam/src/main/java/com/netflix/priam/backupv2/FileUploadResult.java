@@ -16,8 +16,8 @@
  */
 package com.netflix.priam.backupv2;
 
-import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.io.File;
 import java.nio.file.Files;
@@ -37,11 +37,9 @@ public class FileUploadResult {
     private final long fileSizeOnDisk; // Size on disk in bytes
     private Boolean isUploaded;
     // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
-    private ICompression.CompressionAlgorithm compression =
-            ICompression.CompressionAlgorithm.SNAPPY;
+    private CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;
     // Valid encryption technique for now is PLAINTEXT only. In future we will support pgp and more.
-    private IFileCryptography.CryptographyAlgorithm encryption =
-            IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
+    private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
     private String backupPath;
 
     public FileUploadResult(
@@ -108,19 +106,19 @@ public class FileUploadResult {
         isUploaded = uploaded;
     }
 
-    public ICompression.CompressionAlgorithm getCompression() {
+    public CompressionAlgorithm getCompression() {
         return compression;
     }
 
-    public void setCompression(ICompression.CompressionAlgorithm compression) {
+    public void setCompression(CompressionAlgorithm compression) {
         this.compression = compression;
     }
 
-    public IFileCryptography.CryptographyAlgorithm getEncryption() {
+    public CryptographyAlgorithm getEncryption() {
         return encryption;
     }
 
-    public void setEncryption(IFileCryptography.CryptographyAlgorithm encryption) {
+    public void setEncryption(CryptographyAlgorithm encryption) {
         this.encryption = encryption;
     }
 

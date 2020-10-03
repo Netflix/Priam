@@ -23,18 +23,15 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
+import org.apache.commons.lang3.StringUtils;
+
 import java.io.File;
 import java.nio.file.Path;
-import java.text.ParseException;
 import java.time.Instant;
 import java.util.Date;
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ImplementedBy(RemoteBackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     public static final char PATH_SEP = File.separatorChar;
 
     public enum BackupFileType {
@@ -86,7 +83,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.config = config;
     }
 
-    public void parseLocal(File file, BackupFileType type) throws ParseException {
+    public void parseLocal(File file, BackupFileType type) {
         this.backupFile = file;
 
         String rpath =
@@ -196,10 +193,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public String getFileName() {
         return fileName;
-    }
-
-    public String getBaseDir() {
-        return baseDir;
     }
 
     public String getToken() {

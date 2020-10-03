@@ -32,6 +32,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
@@ -343,8 +344,14 @@ public class SnapshotMetaTask extends AbstractBackup {
                     continue;
                 }
 
+                BasicFileAttributes fileAttributes =
+                        Files.readAttributes(file.toPath(), BasicFileAttributes.class);
                 FileUploadResult fileUploadResult =
-                        FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
+                        new FileUploadResult(
+                                file.toPath(),
+                                fileAttributes.lastModifiedTime().toInstant(),
+                                fileAttributes.creationTime().toInstant(),
+                                fileAttributes.size());
                 // Add isUploaded and remotePath here.
                 try {
                     AbstractBackupPath abstractBackupPath = pathFactory.get();

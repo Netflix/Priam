@@ -85,8 +85,6 @@ public class TestBackupUtils {
         FileUploadResult fileUploadResult =
                 new FileUploadResult(
                         Paths.get(path.getFileName()),
-                        path.getKeyspace(),
-                        path.getColumnFamily(),
                         path.getLastModified(),
                         path.getLastModified(),
                         path.getSize());

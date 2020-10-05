@@ -18,17 +18,14 @@
 package com.netflix.priam.aws;
 
 import com.google.inject.Guice;
-import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.Instant;
 import org.junit.Assert;
 import org.junit.Test;
@@ -39,23 +36,16 @@ import org.slf4j.LoggerFactory;
 public class TestRemoteBackupPath {
     private static final Logger logger = LoggerFactory.getLogger(TestRemoteBackupPath.class);
     private Provider<AbstractBackupPath> pathFactory;
-    private IConfiguration configuration;
 
     public TestRemoteBackupPath() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        pathFactory = injector.getProvider(AbstractBackupPath.class);
-        configuration = injector.getInstance(IConfiguration.class);
+        pathFactory =
+                Guice.createInjector(new BRTestModule()).getProvider(AbstractBackupPath.class);
     }
 
     @Test
-    public void testV1BackupPathsSST() throws ParseException {
+    public void testV1BackupPathsSST() {
         Path path =
-                Paths.get(
-                        configuration.getDataFileLocation(),
-                        "keyspace1",
-                        "columnfamily1",
-                        "backup",
-                        "mc-1234-Data.db");
+                Paths.get("target/data", "keyspace1", "columnfamily1", "backup", "mc-1234-Data.db");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
         abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SST);
 
@@ -82,20 +72,11 @@ public class TestRemoteBackupPath {
         Assert.assertEquals(abstractBackupPath.getTime(), abstractBackupPath2.getTime());
     }
 
-    private void validateAbstractBackupPath(AbstractBackupPath abp1, AbstractBackupPath abp2) {
-        Assert.assertEquals(abp1.getKeyspace(), abp2.getKeyspace());
-        Assert.assertEquals(abp1.getColumnFamily(), abp2.getColumnFamily());
-        Assert.assertEquals(abp1.getFileName(), abp2.getFileName());
-        Assert.assertEquals(abp1.getType(), abp2.getType());
-        Assert.assertEquals(abp1.getCompression(), abp2.getCompression());
-        Assert.assertEquals(abp1.getEncryption(), abp2.getEncryption());
-    }
-
     @Test
-    public void testV1BackupPathsSnap() throws ParseException {
+    public void testV1BackupPathsSnap() {
         Path path =
                 Paths.get(
-                        configuration.getDataFileLocation(),
+                        "target/data",
                         "keyspace1",
                         "columnfamily1",
                         "snapshot",
@@ -125,16 +106,16 @@ public class TestRemoteBackupPath {
     }
 
     @Test
-    public void testV1BackupPathsMeta() throws ParseException {
-        Path path = Paths.get(configuration.getDataFileLocation(), "meta.json");
+    public void testV1BackupPathsMeta() {
+        Path path = Paths.get("target/data", "meta.json");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
         abstractBackupPath.parseLocal(path.toFile(), BackupFileType.META);
 
         // Verify parse local
         Assert.assertEquals(
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
-        Assert.assertEquals(null, abstractBackupPath.getKeyspace());
-        Assert.assertEquals(null, abstractBackupPath.getColumnFamily());
+        Assert.assertNull(abstractBackupPath.getKeyspace());
+        Assert.assertNull(abstractBackupPath.getColumnFamily());
         Assert.assertEquals(BackupFileType.META, abstractBackupPath.getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
 
@@ -149,14 +130,9 @@ public class TestRemoteBackupPath {
     }
 
     @Test
-    public void testV2BackupPathSST() throws ParseException {
+    public void testV2BackupPathSST() {
         Path path =
-                Paths.get(
-                        configuration.getDataFileLocation(),
-                        "keyspace1",
-                        "columnfamily1",
-                        "backup",
-                        "mc-1234-Data.db");
+                Paths.get("target/data", "keyspace1", "columnfamily1", "backup", "mc-1234-Data.db");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
         abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SST_V2);
 
@@ -182,16 +158,16 @@ public class TestRemoteBackupPath {
     }
 
     @Test
-    public void testV2BackupPathMeta() throws ParseException {
-        Path path = Paths.get(configuration.getDataFileLocation(), "meta_v2_201801011201.json");
+    public void testV2BackupPathMeta() {
+        Path path = Paths.get("target/data", "meta_v2_201801011201.json");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
         abstractBackupPath.parseLocal(path.toFile(), BackupFileType.META_V2);
 
         // Verify parse local
         Assert.assertEquals(
                 0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
-        Assert.assertEquals(null, abstractBackupPath.getKeyspace());
-        Assert.assertEquals(null, abstractBackupPath.getColumnFamily());
+        Assert.assertNull(abstractBackupPath.getKeyspace());
+        Assert.assertNull(abstractBackupPath.getColumnFamily());
         Assert.assertEquals(BackupFileType.META_V2, abstractBackupPath.getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
         Assert.assertEquals(CryptographyAlgorithm.PLAINTEXT, abstractBackupPath.getEncryption());
@@ -211,7 +187,46 @@ public class TestRemoteBackupPath {
     }
 
     @Test
-    public void testRemoteV2Prefix() throws ParseException {
+    public void testV2BackupPathSecondaryIndex() {
+        Path path =
+                Paths.get(
+                        "target/data",
+                        "keyspace1",
+                        "columnfamily1",
+                        "backup",
+                        ".columnfamily1_field1_idx",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath = pathFactory.get();
+        abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SECONDARY_INDEX);
+
+        // Verify parse local
+        Assert.assertEquals(
+                0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
+        Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
+        Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
+        Assert.assertEquals("SNAPPY", abstractBackupPath.getCompression().name());
+        Assert.assertEquals(BackupFileType.SECONDARY_INDEX, abstractBackupPath.getType());
+        Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
+
+        // Verify toRemote and parseRemote.
+        Instant now = DateUtil.getInstant();
+        abstractBackupPath.setLastModified(now);
+        String remotePath = abstractBackupPath.getRemotePath();
+        logger.info(remotePath);
+        Assert.assertEquals(
+                "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX/"
+                        + now.toEpochMilli()
+                        + "/keyspace1/columnfamily1/.columnfamily1_field1_idx/SNAPPY/PLAINTEXT/mc-1234-Data.db",
+                remotePath);
+
+        AbstractBackupPath abstractBackupPath2 = pathFactory.get();
+        abstractBackupPath2.parseRemote(remotePath);
+        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+    }
+
+    @Test
+    public void testRemoteV2Prefix() {
         Path path = Paths.get("test_backup");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
         Assert.assertEquals(
@@ -222,5 +237,14 @@ public class TestRemoteBackupPath {
         Assert.assertEquals(
                 "fake_base_dir/-6717_random_fake_app/1808575600/META_V2",
                 abstractBackupPath.remoteV2Prefix(path, BackupFileType.META_V2).toString());
+    }
+
+    private void validateAbstractBackupPath(AbstractBackupPath abp1, AbstractBackupPath abp2) {
+        Assert.assertEquals(abp1.getKeyspace(), abp2.getKeyspace());
+        Assert.assertEquals(abp1.getColumnFamily(), abp2.getColumnFamily());
+        Assert.assertEquals(abp1.getFileName(), abp2.getFileName());
+        Assert.assertEquals(abp1.getType(), abp2.getType());
+        Assert.assertEquals(abp1.getCompression(), abp2.getCompression());
+        Assert.assertEquals(abp1.getEncryption(), abp2.getEncryption());
     }
 }

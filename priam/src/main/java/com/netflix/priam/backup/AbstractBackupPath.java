@@ -47,7 +47,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         SST_V2;
 
         private static ImmutableSet<BackupFileType> DATA_FILE_TYPES =
-                ImmutableSet.of(SNAP, SST, SST_V2);
+                ImmutableSet.of(SECONDARY_INDEX, SNAP, SST, SST_V2);
 
         public static boolean isDataFile(BackupFileType type) {
             return DATA_FILE_TYPES.contains(type);
@@ -70,6 +70,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String baseDir;
     protected String token;
     protected String region;
+    protected String indexDir;
     protected Date time;
     private long size; // uncompressed file size
     private long compressedFileSize = 0;
@@ -104,6 +105,9 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             this.keyspace = elements[0];
             this.columnFamily = elements[1];
         }
+        if (type == BackupFileType.SECONDARY_INDEX) {
+            this.indexDir = elements[3];
+        }
 
         /*
         1. For old style snapshots, make this value to time at which backup was executed.
@@ -128,22 +132,22 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     /** Local restore file */
     public File newRestoreFile() {
         File return_;
+        String dataDir = config.getDataFileLocation();
         switch (type) {
             case CL:
                 return_ = new File(PATH_JOINER.join(config.getBackupCommitLogLocation(), fileName));
+                break;
+            case SECONDARY_INDEX:
+                String restoreFileName =
+                        PATH_JOINER.join(dataDir, keyspace, columnFamily, indexDir, fileName);
+                return_ = new File(restoreFileName);
                 break;
             case META:
             case META_V2:
                 return_ = new File(PATH_JOINER.join(config.getDataFileLocation(), fileName));
                 break;
             default:
-                return_ =
-                        new File(
-                                PATH_JOINER.join(
-                                        config.getDataFileLocation(),
-                                        keyspace,
-                                        columnFamily,
-                                        fileName));
+                return_ = new File(PATH_JOINER.join(dataDir, keyspace, columnFamily, fileName));
         }
         File parent = new File(return_.getParent());
         if (!parent.exists()) parent.mkdirs();

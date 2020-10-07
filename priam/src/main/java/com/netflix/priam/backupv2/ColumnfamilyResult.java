@@ -13,9 +13,11 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * This is a POJO to encapsulate all the SSTables for a given column family. Created by aagrawal on
@@ -28,22 +30,6 @@ public class ColumnfamilyResult {
 
     public ColumnfamilyResult(String keyspaceName, String columnfamilyName) {
         this.keyspaceName = keyspaceName;
-        this.columnfamilyName = columnfamilyName;
-    }
-
-    public String getKeyspaceName() {
-        return keyspaceName;
-    }
-
-    public void setKeyspaceName(String keyspaceName) {
-        this.keyspaceName = keyspaceName;
-    }
-
-    public String getColumnfamilyName() {
-        return columnfamilyName;
-    }
-
-    public void setColumnfamilyName(String columnfamilyName) {
         this.columnfamilyName = columnfamilyName;
     }
 
@@ -68,21 +54,17 @@ public class ColumnfamilyResult {
     /** This is a POJO to encapsulate a SSTable and all its components. */
     public static class SSTableResult {
         private String prefix;
-        private List<FileUploadResult> sstableComponents;
-
-        public String getPrefix() {
-            return prefix;
-        }
+        private Set<FileUploadResult> sstableComponents;
 
         public void setPrefix(String prefix) {
             this.prefix = prefix;
         }
 
-        public List<FileUploadResult> getSstableComponents() {
+        public Set<FileUploadResult> getSstableComponents() {
             return sstableComponents;
         }
 
-        public void setSstableComponents(List<FileUploadResult> sstableComponents) {
+        public void setSstableComponents(ImmutableSet<FileUploadResult> sstableComponents) {
             this.sstableComponents = sstableComponents;
         }
 

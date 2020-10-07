@@ -16,9 +16,9 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.CassandraOperations;
@@ -34,7 +34,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
-import java.util.*;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
@@ -253,16 +255,18 @@ public class SnapshotMetaTask extends AbstractBackup {
     private ColumnfamilyResult convertToColumnFamilyResult(
             String keyspace,
             String columnFamilyName,
-            Map<String, List<FileUploadResult>> filePrefixToFileMap) {
+            ImmutableSetMultimap<String, FileUploadResult> filePrefixToFileMap) {
         ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap.forEach(
-                (key, value) -> {
-                    ColumnfamilyResult.SSTableResult ssTableResult =
-                            new ColumnfamilyResult.SSTableResult();
-                    ssTableResult.setPrefix(key);
-                    ssTableResult.setSstableComponents(value);
-                    columnfamilyResult.addSstable(ssTableResult);
-                });
+        filePrefixToFileMap
+                .keySet()
+                .forEach(
+                        (key) -> {
+                            ColumnfamilyResult.SSTableResult ssTableResult =
+                                    new ColumnfamilyResult.SSTableResult();
+                            ssTableResult.setPrefix(key);
+                            ssTableResult.setSstableComponents(filePrefixToFileMap.get(key));
+                            columnfamilyResult.addSstable(ssTableResult);
+                        });
         return columnfamilyResult;
     }
 
@@ -321,7 +325,8 @@ public class SnapshotMetaTask extends AbstractBackup {
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
 
-        Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
+        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+                ImmutableSetMultimap.builder();
         Collection<File> files =
                 FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
 
@@ -366,8 +371,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                     e.printStackTrace();
                 }
 
-                filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
-                filePrefixToFileMap.get(prefix).add(fileUploadResult);
+                filePrefixToFileMap.put(prefix, fileUploadResult);
             } catch (Exception e) {
                 /* If you are here it means either of the issues. In that case, do not upload the meta file.
                  * @throws  UnsupportedOperationException
@@ -390,20 +394,17 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         ColumnfamilyResult columnfamilyResult =
-                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap);
-        filePrefixToFileMap.clear(); // Release the resources.
+                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
 
         logger.debug(
                 "Starting the processing of KS: {}, CF: {}, No.of SSTables: {}",
-                columnfamilyResult.getKeyspaceName(),
-                columnfamilyResult.getColumnfamilyName(),
-                columnfamilyResult.getSstables().size());
+                keyspace,
+                columnFamily,
+                filePrefixToFileMap.build().keySet().size());
+        filePrefixToFileMap = null; // Release the resources.
 
         dataStep.addColumnfamilyResult(columnfamilyResult);
-        logger.debug(
-                "Finished processing KS: {}, CF: {}",
-                columnfamilyResult.getKeyspaceName(),
-                columnfamilyResult.getColumnfamilyName());
+        logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
     }
 
     // For testing purposes only.

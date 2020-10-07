@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backupv2;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -29,7 +30,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 
@@ -60,8 +60,7 @@ public class TestBackupUtils {
                 ColumnfamilyResult.SSTableResult ssTableResult =
                         new ColumnfamilyResult.SSTableResult();
 
-                ssTableResult.setSstableComponents(new ArrayList<>());
-                ssTableResult.getSstableComponents().add(getFileUploadResult(path));
+                ssTableResult.setSstableComponents(ImmutableSet.of(getFileUploadResult(path)));
                 columnfamilyResult.addSstable(ssTableResult);
             }
         }

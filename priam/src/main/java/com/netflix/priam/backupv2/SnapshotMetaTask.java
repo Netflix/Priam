@@ -28,6 +28,7 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.FileFilter;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -270,9 +271,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         return columnfamilyResult;
     }
 
-    private void uploadAllFiles(
-            final String keyspace, final String columnFamily, final File backupDir)
-            throws Exception {
+    private void uploadAllFiles(final String columnFamily, final File backupDir) throws Exception {
         // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
         // uploads of previous snapshot leftover as Priam restarted or any failure for any reason
         // (like we exhausted the wait time for upload)
@@ -293,6 +292,17 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
+
+                // Next, upload secondary indexes
+                FileFilter filter = getSecondaryIndexFileFilter(columnFamily);
+                File[] indexDirectories = snapshotDirectory.listFiles(filter);
+                for (File subDir : Optional.ofNullable(indexDirectories).orElse(new File[] {})) {
+                    upload(
+                            subDir,
+                            AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2,
+                            true,
+                            false);
+                }
             }
         }
     }
@@ -306,7 +316,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 generateMetaFile(keyspace, columnFamily, backupDir);
                 break;
             case UPLOAD_FILES:
-                uploadAllFiles(keyspace, columnFamily, backupDir);
+                uploadAllFiles(columnFamily, backupDir);
                 break;
             default:
                 throw new Exception("Unknown meta file type: " + metaStep);
@@ -324,6 +334,32 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
+        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+                ImmutableSetMultimap.builder();
+        filePrefixToFileMap.putAll(
+                getFileUploadResults(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
+
+        // Next, add secondary indexes
+        FileFilter filter = getSecondaryIndexFileFilter(columnFamily);
+        File[] indexDirectories = snapshotDir.listFiles(filter);
+        for (File subDir : Optional.ofNullable(indexDirectories).orElse(new File[] {})) {
+            filePrefixToFileMap.putAll(
+                    getFileUploadResults(
+                            subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
+        }
+
+        ColumnfamilyResult columnfamilyResult =
+                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
+
+        int sstableCount = columnfamilyResult.getSstables().size();
+        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstableCount);
+
+        dataStep.addColumnfamilyResult(columnfamilyResult);
+        logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
+    }
+
+    ImmutableSetMultimap<String, FileUploadResult> getFileUploadResults(
+            File snapshotDir, AbstractBackupPath.BackupFileType type) throws Exception {
         ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
                 ImmutableSetMultimap.builder();
         for (File file : FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null)) {
@@ -363,7 +399,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             // Add isUploaded and remotePath here.
             try {
                 AbstractBackupPath abstractBackupPath = pathFactory.get();
-                abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
+                abstractBackupPath.parseLocal(file, type);
                 fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
                 fileUploadResult.setUploaded(
                         fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
@@ -375,17 +411,8 @@ public class SnapshotMetaTask extends AbstractBackup {
             }
             filePrefixToFileMap.put(prefix.get(), fileUploadResult);
         }
-
-        ColumnfamilyResult columnfamilyResult =
-                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
-
-        int sstableCount = columnfamilyResult.getSstables().size();
-        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstableCount);
-
-        dataStep.addColumnfamilyResult(columnfamilyResult);
-        logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
+        return filePrefixToFileMap.build();
     }
-
     /**
      * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
      * not an sstable component or a manifest or schema file.
@@ -408,6 +435,10 @@ public class SnapshotMetaTask extends AbstractBackup {
             logger.error("Unknown file type with no SSTFileBase found: {}", file.getAbsolutePath());
         }
         return Optional.ofNullable(prefix);
+    }
+
+    private static FileFilter getSecondaryIndexFileFilter(String colFamily) {
+        return (file) -> file.getName().startsWith("." + colFamily) && isAReadableDirectory(file);
     }
 
     // For testing purposes only.

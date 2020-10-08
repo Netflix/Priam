@@ -34,8 +34,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
-import java.util.Collection;
 import java.util.Date;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -324,54 +324,23 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
-
         ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
                 ImmutableSetMultimap.builder();
-        Collection<File> files =
-                FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
-
-        for (File file : files) {
+        for (File file : FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null)) {
             if (!file.exists()) continue;
+            Optional<String> prefix = getPrefix(file);
+            if (!prefix.isPresent()) continue;
 
+            FileUploadResult fileUploadResult;
             try {
-                String prefix = PrefixGenerator.getSSTFileBase(file.getName());
-
-                if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_MANIFEST_FILE))
-                    prefix = "manifest";
-
-                if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_SCHEMA_FILE))
-                    prefix = "schema";
-
-                if (prefix == null) {
-                    logger.error(
-                            "Unknown file type with no SSTFileBase found: {}",
-                            file.getAbsolutePath());
-                    continue;
-                }
-
                 BasicFileAttributes fileAttributes =
                         Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-                FileUploadResult fileUploadResult =
+                fileUploadResult =
                         new FileUploadResult(
                                 file.toPath(),
                                 fileAttributes.lastModifiedTime().toInstant(),
                                 fileAttributes.creationTime().toInstant(),
                                 fileAttributes.size());
-                // Add isUploaded and remotePath here.
-                try {
-                    AbstractBackupPath abstractBackupPath = pathFactory.get();
-                    abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
-                    fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
-                    fileUploadResult.setUploaded(
-                            fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
-                } catch (Exception e) {
-                    logger.error(
-                            "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
-                            e.getMessage());
-                    e.printStackTrace();
-                }
-
-                filePrefixToFileMap.put(prefix, fileUploadResult);
             } catch (Exception e) {
                 /* If you are here it means either of the issues. In that case, do not upload the meta file.
                  * @throws  UnsupportedOperationException
@@ -391,20 +360,54 @@ public class SnapshotMetaTask extends AbstractBackup {
                         e);
                 throw e;
             }
+            // Add isUploaded and remotePath here.
+            try {
+                AbstractBackupPath abstractBackupPath = pathFactory.get();
+                abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
+                fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
+                fileUploadResult.setUploaded(
+                        fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
+            } catch (Exception e) {
+                logger.error(
+                        "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
+                        e.getMessage());
+                e.printStackTrace();
+            }
+            filePrefixToFileMap.put(prefix.get(), fileUploadResult);
         }
 
         ColumnfamilyResult columnfamilyResult =
                 convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
 
-        logger.debug(
-                "Starting the processing of KS: {}, CF: {}, No.of SSTables: {}",
-                keyspace,
-                columnFamily,
-                filePrefixToFileMap.build().keySet().size());
-        filePrefixToFileMap = null; // Release the resources.
+        int sstableCount = columnfamilyResult.getSstables().size();
+        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstableCount);
 
         dataStep.addColumnfamilyResult(columnfamilyResult);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
+    }
+
+    /**
+     * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
+     * not an sstable component or a manifest or schema file.
+     *
+     * <p>For example: mc-3-big-Data.db --> mc-3-big ks-cf-ka-7213-Index.db --> ks-cf-ka-7213
+     *
+     * @param file the file from which to extract a common prefix.
+     * @return common prefix of the file, or empty,
+     */
+    public static Optional<String> getPrefix(File file) {
+        String fileName = file.getName();
+        String prefix = null;
+        if (fileName.contains("-")) {
+            prefix = fileName.substring(0, fileName.lastIndexOf("-"));
+        } else if (fileName.equalsIgnoreCase(CASSANDRA_MANIFEST_FILE)) {
+            prefix = "manifest";
+        } else if (fileName.equalsIgnoreCase(CASSANDRA_SCHEMA_FILE)) {
+            prefix = "schema";
+        } else {
+            logger.error("Unknown file type with no SSTFileBase found: {}", file.getAbsolutePath());
+        }
+        return Optional.ofNullable(prefix);
     }
 
     // For testing purposes only.

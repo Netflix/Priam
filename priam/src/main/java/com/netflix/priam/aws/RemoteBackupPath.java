@@ -39,7 +39,9 @@ import java.util.Optional;
 public class RemoteBackupPath extends AbstractBackupPath {
     private static final ImmutableSet<BackupFileType> V2_ONLY_FILE_TYPES =
             ImmutableSet.of(
-                    BackupFileType.META_V2, BackupFileType.SST_V2, BackupFileType.SECONDARY_INDEX);
+                    BackupFileType.META_V2,
+                    BackupFileType.SST_V2,
+                    BackupFileType.SECONDARY_INDEX_V2);
 
     @Inject
     public RemoteBackupPath(IConfiguration config, InstanceIdentity factory) {
@@ -83,7 +85,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
         if (BackupFileType.isDataFile(type)) {
             parts.add(keyspace, columnFamily);
         }
-        if (type == BackupFileType.SECONDARY_INDEX) {
+        if (type == BackupFileType.SECONDARY_INDEX_V2) {
             parts.add(indexDir);
         }
         parts.add(getCompression().toString(), getEncryption().toString(), fileName);
@@ -104,7 +106,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
             keyspace = remotePath.getName(index++).toString();
             columnFamily = remotePath.getName(index++).toString();
         }
-        if (type == BackupFileType.SECONDARY_INDEX) {
+        if (type == BackupFileType.SECONDARY_INDEX_V2) {
             indexDir = remotePath.getName(index++).toString();
         }
         setCompression(remotePath.getName(index++).toString());

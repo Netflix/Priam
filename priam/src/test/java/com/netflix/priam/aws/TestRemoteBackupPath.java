@@ -197,7 +197,7 @@ public class TestRemoteBackupPath {
                         ".columnfamily1_field1_idx",
                         "mc-1234-Data.db");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
-        abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SECONDARY_INDEX);
+        abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SECONDARY_INDEX_V2);
 
         // Verify parse local
         Assert.assertEquals(
@@ -205,7 +205,7 @@ public class TestRemoteBackupPath {
         Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
         Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
         Assert.assertEquals("SNAPPY", abstractBackupPath.getCompression().name());
-        Assert.assertEquals(BackupFileType.SECONDARY_INDEX, abstractBackupPath.getType());
+        Assert.assertEquals(BackupFileType.SECONDARY_INDEX_V2, abstractBackupPath.getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
 
         // Verify toRemote and parseRemote.
@@ -214,7 +214,7 @@ public class TestRemoteBackupPath {
         String remotePath = abstractBackupPath.getRemotePath();
         logger.info(remotePath);
         Assert.assertEquals(
-                "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX/"
+                "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX_V2/"
                         + now.toEpochMilli()
                         + "/keyspace1/columnfamily1/.columnfamily1_field1_idx/SNAPPY/PLAINTEXT/mc-1234-Data.db",
                 remotePath);

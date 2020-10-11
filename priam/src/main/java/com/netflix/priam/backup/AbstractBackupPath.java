@@ -40,14 +40,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         CL,
         META,
         META_V2,
-        SECONDARY_INDEX,
+        SECONDARY_INDEX_V2,
         SNAP,
         SNAPSHOT_VERIFIED,
         SST,
         SST_V2;
 
         private static ImmutableSet<BackupFileType> DATA_FILE_TYPES =
-                ImmutableSet.of(SECONDARY_INDEX, SNAP, SST, SST_V2);
+                ImmutableSet.of(SECONDARY_INDEX_V2, SNAP, SST, SST_V2);
 
         public static boolean isDataFile(BackupFileType type) {
             return DATA_FILE_TYPES.contains(type);
@@ -105,7 +105,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             this.keyspace = elements[0];
             this.columnFamily = elements[1];
         }
-        if (type == BackupFileType.SECONDARY_INDEX) {
+        if (type == BackupFileType.SECONDARY_INDEX_V2) {
             this.indexDir = elements[3];
         }
 
@@ -137,7 +137,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             case CL:
                 return_ = new File(PATH_JOINER.join(config.getBackupCommitLogLocation(), fileName));
                 break;
-            case SECONDARY_INDEX:
+            case SECONDARY_INDEX_V2:
                 String restoreFileName =
                         PATH_JOINER.join(dataDir, keyspace, columnFamily, indexDir, fileName);
                 return_ = new File(restoreFileName);

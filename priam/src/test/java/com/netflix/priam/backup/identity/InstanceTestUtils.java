@@ -89,15 +89,15 @@ public abstract class InstanceTestUtils {
         INewTokenRetriever newTokenRetriever =
                 new NewTokenRetriever(
                         factory, membership, config, sleeper, tokenManager, newInstanceInfo);
+        ITokenRetriever instanceRetriever =
+                new TokenRetriever(
+                        factory,
+                        config,
+                        deadTokenRetriever,
+                        preGeneratedTokenRetriever,
+                        newTokenRetriever,
+                        newInstanceInfo);
         return new InstanceIdentity(
-                factory,
-                membership,
-                config,
-                sleeper,
-                this.tokenManager,
-                deadTokenRetriever,
-                preGeneratedTokenRetriever,
-                newTokenRetriever,
-                newInstanceInfo);
+                factory, membership, config, newInstanceInfo, instanceRetriever);
     }
 }

@@ -37,7 +37,6 @@ public class TokenRetriever implements ITokenRetriever {
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
-    private final IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
     private final INewTokenRetriever newTokenRetriever;
 
     private final java.util.function.Predicate<PriamInstance> sameHostPredicate =
@@ -48,14 +47,12 @@ public class TokenRetriever implements ITokenRetriever {
             IPriamInstanceFactory factory,
             IMembership membership,
             IConfiguration config,
-            IPreGeneratedTokenRetriever preGeneratedTokenRetriever,
             INewTokenRetriever newTokenRetriever,
             InstanceInfo instanceInfo,
             Sleeper sleeper) {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
-        this.preGeneratedTokenRetriever = preGeneratedTokenRetriever;
         this.newTokenRetriever = newTokenRetriever;
         this.myInstanceInfo = instanceInfo;
         this.randomizer = new Random();
@@ -327,7 +324,49 @@ public class TokenRetriever implements ITokenRetriever {
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
-                PriamInstance result = preGeneratedTokenRetriever.get();
+                logger.info("Looking for any pre-generated token");
+
+                final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+                List<String> asgInstances = membership.getRacMembership();
+                // Sleep random interval - upto 15 sec
+                sleeper.sleep(new Random().nextInt(5000) + 10000);
+                PriamInstance result = null;
+                for (PriamInstance dead : allIds) {
+                    // test same zone and is it is alive.
+                    if (!dead.getRac().equals(myInstanceInfo.getRac())
+                            || asgInstances.contains(dead.getInstanceId())
+                            || !isInstanceDummy(dead)) continue;
+                    logger.info("Found pre-generated token: {}", dead.getToken());
+                    PriamInstance markAsDead =
+                            factory.create(
+                                    dead.getApp() + "-dead",
+                                    dead.getId(),
+                                    dead.getInstanceId(),
+                                    dead.getHostName(),
+                                    dead.getHostIP(),
+                                    dead.getRac(),
+                                    dead.getVolumes(),
+                                    dead.getToken());
+                    // remove it as we marked it down...
+                    factory.delete(dead);
+
+                    String payLoad = markAsDead.getToken();
+                    logger.info(
+                            "Trying to grab slot {} with availability zone {}",
+                            markAsDead.getId(),
+                            markAsDead.getRac());
+                    result =
+                            factory.create(
+                                    config.getAppName(),
+                                    markAsDead.getId(),
+                                    myInstanceInfo.getInstanceId(),
+                                    myInstanceInfo.getHostname(),
+                                    myInstanceInfo.getHostIP(),
+                                    myInstanceInfo.getRac(),
+                                    markAsDead.getVolumes(),
+                                    payLoad);
+                    break;
+                }
                 if (result != null) {
                     isTokenPregenerated = true;
                 }
@@ -337,7 +376,6 @@ public class TokenRetriever implements ITokenRetriever {
             @Override
             public void forEachExecution() {
                 populateRacMap();
-                preGeneratedTokenRetriever.setLocMap(locMap);
             }
         }.call();
     }

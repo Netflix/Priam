@@ -43,7 +43,6 @@ import org.junit.Test;
 public class TokenRetrieverTest {
     @Mocked private IPriamInstanceFactory<PriamInstance> factory;
     @Mocked private IMembership membership;
-    @Mocked private IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
     @Mocked private INewTokenRetriever newTokenRetriever;
     private InstanceInfo instanceInfo;
     private IConfiguration configuration;
@@ -213,7 +212,6 @@ public class TokenRetrieverTest {
                 factory,
                 membership,
                 configuration,
-                preGeneratedTokenRetriever,
                 newTokenRetriever,
                 instanceInfo,
                 new FakeSleeper());

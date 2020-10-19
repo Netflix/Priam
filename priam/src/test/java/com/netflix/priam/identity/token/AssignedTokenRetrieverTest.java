@@ -64,20 +64,12 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
         INewTokenRetriever newTokenRetriever =
                 new NewTokenRetriever(
                         factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory,
-                        membership,
-                        config,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo,
-                        sleeper);
+                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.isReplace()).isFalse();
@@ -136,20 +128,12 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
         INewTokenRetriever newTokenRetriever =
                 new NewTokenRetriever(
                         factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory,
-                        membership,
-                        config,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo,
-                        sleeper);
+                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.getReplacedIp()).isEqualTo(deadInstance.getHostIP());
@@ -208,20 +192,12 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
         INewTokenRetriever newTokenRetriever =
                 new NewTokenRetriever(
                         factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory,
-                        membership,
-                        config,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo,
-                        sleeper);
+                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
         Assertions.assertThrows(
                 TokenRetrieverUtils.GossipParseException.class,
                 () ->
@@ -268,20 +244,12 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
         INewTokenRetriever newTokenRetriever =
                 new NewTokenRetriever(
                         factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory,
-                        membership,
-                        config,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo,
-                        sleeper);
+                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();

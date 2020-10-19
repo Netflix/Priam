@@ -40,10 +40,11 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /** Created by aagrawal on 3/1/19. */
-public class DeadTokenRetrieverTest {
+public class TokenRetrieverTest {
     @Mocked private IPriamInstanceFactory<PriamInstance> factory;
     @Mocked private IMembership membership;
-    private IDeadTokenRetriever deadTokenRetriever;
+    @Mocked private IPreGeneratedTokenRetriever preGeneratedTokenRetriever;
+    @Mocked private INewTokenRetriever newTokenRetriever;
     private InstanceInfo instanceInfo;
     private IConfiguration configuration;
 
@@ -58,7 +59,7 @@ public class DeadTokenRetrieverTest {
                     .mapToObj(e -> String.format("127.0.0.%d", e))
                     .collect(Collectors.toList());
 
-    public DeadTokenRetrieverTest() {
+    public TokenRetrieverTest() {
         Injector injector = Guice.createInjector(new BRTestModule());
         if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
@@ -74,10 +75,7 @@ public class DeadTokenRetrieverTest {
                 result = Lists.newArrayList();
             }
         };
-        deadTokenRetriever =
-                new DeadTokenRetriever(
-                        factory, membership, configuration, new FakeSleeper(), instanceInfo);
-        PriamInstance priamInstance = deadTokenRetriever.get();
+        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
         Assert.assertNull(priamInstance);
     }
 
@@ -96,10 +94,7 @@ public class DeadTokenRetrieverTest {
                 result = racMembership;
             }
         };
-        deadTokenRetriever =
-                new DeadTokenRetriever(
-                        factory, membership, configuration, new FakeSleeper(), instanceInfo);
-        PriamInstance priamInstance = deadTokenRetriever.get();
+        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
         Assert.assertNull(priamInstance);
         new Verifications() {
             {
@@ -128,10 +123,7 @@ public class DeadTokenRetrieverTest {
                 times = 1;
             }
         };
-        deadTokenRetriever =
-                new DeadTokenRetriever(
-                        factory, membership, configuration, new FakeSleeper(), instanceInfo);
-        PriamInstance priamInstance = deadTokenRetriever.get();
+        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
         Assert.assertNull(priamInstance);
         new Verifications() {
             {
@@ -175,12 +167,10 @@ public class DeadTokenRetrieverTest {
                 returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
             }
         };
-        deadTokenRetriever =
-                new DeadTokenRetriever(
-                        factory, membership, configuration, new FakeSleeper(), instanceInfo);
-        PriamInstance priamInstance = deadTokenRetriever.get();
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        PriamInstance priamInstance = tokenRetriever.grabDeadToken();
         Assert.assertNotNull(priamInstance);
-        Assert.assertEquals("127.0.0.3", deadTokenRetriever.getReplaceIp());
+        Assert.assertEquals("127.0.0.3", tokenRetriever.getReplacedIp());
     }
 
     private List<PriamInstance> getInstances(int noOfInstances) {
@@ -216,5 +206,16 @@ public class DeadTokenRetrieverTest {
         ins.setDC(instanceInfo.getRegion());
         ins.setToken(payload);
         return ins;
+    }
+
+    private TokenRetriever getTokenRetriever() {
+        return new TokenRetriever(
+                factory,
+                membership,
+                configuration,
+                preGeneratedTokenRetriever,
+                newTokenRetriever,
+                instanceInfo,
+                new FakeSleeper());
     }
 }

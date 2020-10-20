@@ -11,6 +11,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
+import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.util.*;
@@ -31,13 +32,13 @@ public class TokenRetriever implements ITokenRetriever {
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;
+    private final ITokenManager tokenManager;
 
     // Instance information contains other information like ASG/vpc-id etc.
     private InstanceInfo myInstanceInfo;
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
-    private final INewTokenRetriever newTokenRetriever;
 
     private final java.util.function.Predicate<PriamInstance> sameHostPredicate =
             (i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId());
@@ -47,16 +48,16 @@ public class TokenRetriever implements ITokenRetriever {
             IPriamInstanceFactory factory,
             IMembership membership,
             IConfiguration config,
-            INewTokenRetriever newTokenRetriever,
             InstanceInfo instanceInfo,
-            Sleeper sleeper) {
+            Sleeper sleeper,
+            ITokenManager tokenManager) {
         this.factory = factory;
         this.membership = membership;
         this.config = config;
-        this.newTokenRetriever = newTokenRetriever;
         this.myInstanceInfo = instanceInfo;
         this.randomizer = new Random();
         this.sleeper = sleeper;
+        this.tokenManager = tokenManager;
     }
 
     @Override
@@ -390,14 +391,59 @@ public class TokenRetriever implements ITokenRetriever {
             @Override
             public PriamInstance retriableCall() throws Exception {
                 set(100, 100);
-                newTokenRetriever.setLocMap(locMap);
-                return newTokenRetriever.get();
+                logger.info("Generating my own and new token");
+                // Sleep random interval - upto 15 sec
+                sleeper.sleep(new Random().nextInt(15000));
+                int hash = tokenManager.regionOffset(myInstanceInfo.getRegion());
+                // use this hash so that the nodes are spread far away from the other
+                // regions.
+
+                int max = hash;
+                List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
+                for (PriamInstance data : allInstances)
+                    max =
+                            (data.getRac().equals(myInstanceInfo.getRac()) && (data.getId() > max))
+                                    ? data.getId()
+                                    : max;
+                int maxSlot = max - hash;
+                int my_slot;
+
+                if (hash == max && locMap.get(myInstanceInfo.getRac()).size() == 0) {
+                    int idx = config.getRacs().indexOf(myInstanceInfo.getRac());
+                    if (idx < 0)
+                        throw new Exception(
+                                String.format(
+                                        "Rac %s is not in Racs %s",
+                                        myInstanceInfo.getRac(), config.getRacs()));
+                    my_slot = idx + maxSlot;
+                } else my_slot = config.getRacs().size() + maxSlot;
+
+                logger.info(
+                        "Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
+                        my_slot,
+                        membership.getRacCount(),
+                        membership.getRacMembershipSize(),
+                        myInstanceInfo.getRegion());
+                String payload =
+                        tokenManager.createToken(
+                                my_slot,
+                                membership.getRacCount(),
+                                membership.getRacMembershipSize(),
+                                myInstanceInfo.getRegion());
+                return factory.create(
+                        config.getAppName(),
+                        my_slot + hash,
+                        myInstanceInfo.getInstanceId(),
+                        myInstanceInfo.getHostname(),
+                        myInstanceInfo.getHostIP(),
+                        myInstanceInfo.getRac(),
+                        null,
+                        payload);
             }
 
             @Override
             public void forEachExecution() {
                 populateRacMap();
-                newTokenRetriever.setLocMap(locMap);
             }
         }.call();
     }

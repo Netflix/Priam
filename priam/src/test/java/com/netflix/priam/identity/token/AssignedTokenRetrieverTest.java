@@ -64,12 +64,9 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.isReplace()).isFalse();
@@ -128,12 +125,9 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.getReplacedIp()).isEqualTo(deadInstance.getHostIP());
@@ -192,12 +186,9 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         Assertions.assertThrows(
                 TokenRetrieverUtils.GossipParseException.class,
                 () ->
@@ -244,12 +235,9 @@ public class AssignedTokenRetrieverTest {
             }
         };
 
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory, membership, config, newTokenRetriever, instanceInfo, sleeper);
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
                 new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();

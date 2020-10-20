@@ -21,9 +21,7 @@ import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.*;
 import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.identity.token.INewTokenRetriever;
 import com.netflix.priam.identity.token.ITokenRetriever;
-import com.netflix.priam.identity.token.NewTokenRetriever;
 import com.netflix.priam.identity.token.TokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
@@ -84,12 +82,9 @@ public abstract class InstanceTestUtils {
 
     InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
         InstanceInfo newInstanceInfo = new FakeInstanceInfo(instanceId, zone, region);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, newInstanceInfo);
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
-                        factory, membership, config, newTokenRetriever, newInstanceInfo, sleeper);
+                        factory, membership, config, newInstanceInfo, sleeper, tokenManager);
         return new InstanceIdentity(factory, membership, config, newInstanceInfo, tokenRetriever);
     }
 }

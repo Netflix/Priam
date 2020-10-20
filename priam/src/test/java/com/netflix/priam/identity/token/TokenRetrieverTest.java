@@ -28,6 +28,7 @@ import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.TokenManager;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -43,7 +44,6 @@ import org.junit.Test;
 public class TokenRetrieverTest {
     @Mocked private IPriamInstanceFactory<PriamInstance> factory;
     @Mocked private IMembership membership;
-    @Mocked private INewTokenRetriever newTokenRetriever;
     private InstanceInfo instanceInfo;
     private IConfiguration configuration;
 
@@ -84,7 +84,6 @@ public class TokenRetrieverTest {
         List<PriamInstance> allInstances = getInstances(1);
         List<String> racMembership = getRacMembership(1);
         racMembership.add(instanceInfo.getInstanceId());
-
         new Expectations() {
             {
                 factory.getAllIds(anyString);
@@ -212,8 +211,8 @@ public class TokenRetrieverTest {
                 factory,
                 membership,
                 configuration,
-                newTokenRetriever,
                 instanceInfo,
-                new FakeSleeper());
+                new FakeSleeper(),
+                new TokenManager(configuration));
     }
 }

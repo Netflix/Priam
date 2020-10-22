@@ -2,9 +2,6 @@ package com.netflix.priam.identity.token;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Multimaps;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -14,10 +11,16 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.util.*;
-import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+import static java.util.stream.Collectors.toList;
 
 public class TokenRetriever implements ITokenRetriever {
 
@@ -27,8 +30,6 @@ public class TokenRetriever implements ITokenRetriever {
 
     private final Random randomizer;
     private final Sleeper sleeper;
-    private final ListMultimap<String, PriamInstance> locMap =
-            Multimaps.newListMultimap(new HashMap<>(), Lists::newArrayList);
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final IMembership membership;
     private final IConfiguration config;
@@ -373,11 +374,6 @@ public class TokenRetriever implements ITokenRetriever {
                 }
                 return result;
             }
-
-            @Override
-            public void forEachExecution() {
-                populateRacMap();
-            }
         }.call();
     }
 
@@ -398,17 +394,17 @@ public class TokenRetriever implements ITokenRetriever {
                 // use this hash so that the nodes are spread far away from the other
                 // regions.
 
-                int max = hash;
-                List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
-                for (PriamInstance data : allInstances)
-                    max =
-                            (data.getRac().equals(myInstanceInfo.getRac()) && (data.getId() > max))
-                                    ? data.getId()
-                                    : max;
+                List<Integer> racIds =
+                        factory.getAllIds(config.getAppName())
+                                .stream()
+                                .filter(i -> i.getRac().equals(myInstanceInfo.getRac()))
+                                .map(PriamInstance::getId)
+                                .collect(toList());
+                int max = Math.max(hash, racIds.stream().max(Integer::compareTo).orElse(hash));
                 int maxSlot = max - hash;
                 int my_slot;
 
-                if (hash == max && locMap.get(myInstanceInfo.getRac()).size() == 0) {
+                if (hash == max && racIds.isEmpty()) {
                     int idx = config.getRacs().indexOf(myInstanceInfo.getRac());
                     if (idx < 0)
                         throw new Exception(
@@ -440,11 +436,6 @@ public class TokenRetriever implements ITokenRetriever {
                         null,
                         payload);
             }
-
-            @Override
-            public void forEachExecution() {
-                populateRacMap();
-            }
         }.call();
     }
 
@@ -455,14 +446,6 @@ public class TokenRetriever implements ITokenRetriever {
                 .stream()
                 .filter(predicate)
                 .findFirst();
-    }
-
-    private void populateRacMap() {
-        locMap.clear();
-        List<PriamInstance> instances = factory.getAllIds(config.getAppName());
-        for (PriamInstance ins : instances) {
-            locMap.put(ins.getRac(), ins);
-        }
     }
 
     public void setReplacedIp(String replacedIp) {

@@ -134,7 +134,8 @@ public class PriamInstance implements Serializable {
         return outOfService;
     }
 
-    public void setOutOfService(boolean outOfService) {
-        this.outOfService = outOfService;
+    public PriamInstance setOutOfService() {
+        this.outOfService = true;
+        return this;
     }
 }

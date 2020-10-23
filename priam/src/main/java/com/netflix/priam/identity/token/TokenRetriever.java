@@ -1,7 +1,5 @@
 package com.netflix.priam.identity.token;
 
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.config.IConfiguration;
@@ -13,12 +11,15 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import javax.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.util.stream.Collectors.toList;
 
 public class TokenRetriever implements ITokenRetriever {
 
@@ -104,35 +105,28 @@ public class TokenRetriever implements ITokenRetriever {
             @Override
             public PriamInstance retriableCall() throws Exception {
                 // Check if this node is decommissioned.
-                List<PriamInstance> deadInstances =
-                        factory.getAllIds(config.getAppName() + "-dead");
-                PriamInstance instance = findInstance(deadInstances).orElse(null);
-                if (instance != null) {
-                    instance.setOutOfService(true);
-                }
-
-                if (instance == null) {
-                    List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
-                    instance = findInstance(aliveInstances).orElse(null);
-
-                    if (instance != null) {
-                        instance.setOutOfService(false);
-                        // Priam might have crashed before bootstrapping Cassandra in replace mode.
-                        // So, it is premature to use the assigned token without checking Cassandra
-                        // gossip.
-                        getReplacedIpForAssignedToken(aliveInstances, instance)
-                                .ifPresent(ip -> setReplacedIp(ip));
+                Optional<PriamInstance> instance =
+                        findInstance(factory.getAllIds(config.getAppName() + "-dead"))
+                                .map(PriamInstance::setOutOfService);
+                if (!instance.isPresent()) {
+                    List<PriamInstance> liveNodes = factory.getAllIds(config.getAppName());
+                    instance = instance.map(Optional::of).orElseGet(() -> findInstance(liveNodes));
+                    if (instance.isPresent()) {
+                        // Why check gossip? Priam might have crashed before bootstrapping
+                        // Cassandra in replace mode.
+                        Optional<String> optionalIp =
+                                getReplacedIpForAssignedToken(liveNodes, instance.get());
+                        optionalIp.ifPresent(ip -> replacedIp = ip);
+                        optionalIp.ifPresent(ip -> isReplace = true);
                     }
                 }
-
-                if (instance != null) {
-                    logger.info(
-                            "Got token for {} node: {}",
-                            instance.isOutOfService() ? "dead" : "live",
-                            instance);
-                }
-
-                return instance;
+                instance.ifPresent(
+                        priamInstance ->
+                                logger.info(
+                                        "Got token for {} node: {}",
+                                        priamInstance.isOutOfService() ? "dead" : "live",
+                                        priamInstance));
+                return instance.orElse(null);
             }
         }.call();
     }
@@ -428,11 +422,6 @@ public class TokenRetriever implements ITokenRetriever {
                 .stream()
                 .filter((i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId()))
                 .findFirst();
-    }
-
-    public void setReplacedIp(String replacedIp) {
-        this.replacedIp = replacedIp;
-        if (!replacedIp.isEmpty()) this.isReplace = true;
     }
 
     private List<String> getDualAccountRacMembership(List<String> asgInstances) {

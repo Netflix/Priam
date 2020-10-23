@@ -127,23 +127,9 @@ public class TokenRetriever implements ITokenRetriever {
 
                 if (instance != null) {
                     logger.info(
-                            "{} found that this node is {}."
-                                    + " application: {},"
-                                    + " id: {},"
-                                    + " instance: {},"
-                                    + " region: {},"
-                                    + " host ip: {},"
-                                    + " host name: {},"
-                                    + " token: {}",
-                            instance.isOutOfService() ? "[Dead]" : "[Alive]",
-                            instance.isOutOfService() ? "dead" : "alive",
-                            instance.getApp(),
-                            instance.getId(),
-                            instance.getInstanceId(),
-                            instance.getDC(),
-                            instance.getHostIP(),
-                            instance.getHostName(),
-                            instance.getToken());
+                            "Got token for {} node: {}",
+                            instance.isOutOfService() ? "dead" : "live",
+                            instance);
                 }
 
                 return instance;

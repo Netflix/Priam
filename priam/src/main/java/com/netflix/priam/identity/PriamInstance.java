@@ -110,8 +110,8 @@ public class PriamInstance implements Serializable {
     @Override
     public String toString() {
         return String.format(
-                "Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s Location %s, Id: %s: Token: %s",
-                getHostName(), getInstanceId(), getApp(), getRac(), getDC(), getId(), getToken());
+                "Hostname: %s, InstanceId: %s, APP_NAME: %s, RAC : %s, Location %s, Id: %s: Token: %s, IP: %s",
+                hostname, instanceId, app, availabilityZone, location, Id, token, publicip);
     }
 
     public String getDC() {

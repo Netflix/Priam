@@ -1,5 +1,7 @@
 package com.netflix.priam.identity.token;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.config.IConfiguration;
@@ -11,16 +13,12 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-
-import static java.util.stream.Collectors.toList;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TokenRetriever implements ITokenRetriever {
 
@@ -40,9 +38,6 @@ public class TokenRetriever implements ITokenRetriever {
     private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
     private String replacedIp = "";
-
-    private final java.util.function.Predicate<PriamInstance> sameHostPredicate =
-            (i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId());
 
     @Inject
     public TokenRetriever(
@@ -111,15 +106,14 @@ public class TokenRetriever implements ITokenRetriever {
                 // Check if this node is decommissioned.
                 List<PriamInstance> deadInstances =
                         factory.getAllIds(config.getAppName() + "-dead");
-                PriamInstance instance =
-                        findInstance(deadInstances, sameHostPredicate).orElse(null);
+                PriamInstance instance = findInstance(deadInstances).orElse(null);
                 if (instance != null) {
                     instance.setOutOfService(true);
                 }
 
                 if (instance == null) {
                     List<PriamInstance> aliveInstances = factory.getAllIds(config.getAppName());
-                    instance = findInstance(aliveInstances, sameHostPredicate).orElse(null);
+                    instance = findInstance(aliveInstances).orElse(null);
 
                     if (instance != null) {
                         instance.setOutOfService(false);
@@ -439,12 +433,10 @@ public class TokenRetriever implements ITokenRetriever {
         }.call();
     }
 
-    private Optional<PriamInstance> findInstance(
-            List<PriamInstance> instances, java.util.function.Predicate<PriamInstance> predicate) {
-        return Optional.ofNullable(instances)
-                .orElse(Collections.emptyList())
+    private Optional<PriamInstance> findInstance(List<PriamInstance> instances) {
+        return instances
                 .stream()
-                .filter(predicate)
+                .filter((i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId()))
                 .findFirst();
     }
 

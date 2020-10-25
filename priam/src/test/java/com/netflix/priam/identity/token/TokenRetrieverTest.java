@@ -17,6 +17,7 @@
 
 package com.netflix.priam.identity.token;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -31,6 +32,7 @@ import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
@@ -71,7 +73,7 @@ public class TokenRetrieverTest {
                 factory.getAllIds(anyString);
                 result = Lists.newArrayList();
                 membership.getRacMembership();
-                result = Lists.newArrayList();
+                result = ImmutableSet.of();
             }
         };
         PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
@@ -82,14 +84,14 @@ public class TokenRetrieverTest {
     // There is no slot available for replacement as per Token Database.
     public void testNoReplacementNoSpotAvailable() throws Exception {
         List<PriamInstance> allInstances = getInstances(1);
-        List<String> racMembership = getRacMembership(1);
+        Set<String> racMembership = getRacMembership(1);
         racMembership.add(instanceInfo.getInstanceId());
         new Expectations() {
             {
                 factory.getAllIds(anyString);
                 result = allInstances;
                 membership.getRacMembership();
-                result = racMembership;
+                result = ImmutableSet.copyOf(racMembership);
             }
         };
         PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
@@ -106,7 +108,7 @@ public class TokenRetrieverTest {
     // There is a potential slot for dead token but we are unable to replace.
     public void testNoReplacementNoGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
         List<PriamInstance> allInstances = getInstances(2);
-        List<String> racMembership = getRacMembership(1);
+        Set<String> racMembership = getRacMembership(1);
         racMembership.add(instanceInfo.getInstanceId());
         PriamInstance instance = null;
         // gossip info returns null, thus unable to replace the instance.
@@ -115,7 +117,7 @@ public class TokenRetrieverTest {
                 factory.getAllIds(anyString);
                 result = allInstances;
                 membership.getRacMembership();
-                result = racMembership;
+                result = ImmutableSet.copyOf(racMembership);
                 SystemUtils.getDataFromUrl(anyString);
                 result = getStatus(liveInstances, tokenToEndpointMap);
                 times = 1;
@@ -145,7 +147,7 @@ public class TokenRetrieverTest {
     @Test
     public void testReplacementGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
         List<PriamInstance> allInstances = getInstances(6);
-        List<String> racMembership = getRacMembership(2);
+        Set<String> racMembership = getRacMembership(2);
         racMembership.add(instanceInfo.getInstanceId());
 
         List<String> myliveInstances =
@@ -160,7 +162,7 @@ public class TokenRetrieverTest {
                 factory.getAllIds(anyString);
                 result = allInstances;
                 membership.getRacMembership();
-                result = racMembership;
+                result = ImmutableSet.copyOf(racMembership);
                 SystemUtils.getDataFromUrl(anyString);
                 returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
             }
@@ -185,11 +187,10 @@ public class TokenRetrieverTest {
         return allInstances;
     }
 
-    private List<String> getRacMembership(int noOfInstances) {
-        List<String> racMembership = Lists.newArrayList();
-        for (int i = 1; i <= noOfInstances; i++)
-            racMembership.add(String.format("instance_id_%d", i));
-        return racMembership;
+    private Set<String> getRacMembership(int noOfInstances) {
+        return IntStream.range(1, noOfInstances + 1)
+                .mapToObj(i -> String.format("instance_id_%d", i))
+                .collect(Collectors.toSet());
     }
 
     private PriamInstance create(

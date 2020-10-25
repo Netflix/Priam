@@ -17,28 +17,25 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
 import java.util.List;
 
 public class FakeMembership implements IMembership {
 
-    private List<String> instances;
+    private ImmutableSet<String> instances;
 
     public FakeMembership(List<String> priamInstances) {
-        this.instances = priamInstances;
-    }
-
-    public void setInstances(List<String> priamInstances) {
-        this.instances = priamInstances;
+        this.instances = ImmutableSet.copyOf(priamInstances);
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public ImmutableSet<String> getRacMembership() {
         return instances;
     }
 
     @Override
-    public List<String> getCrossAccountRacMembership() {
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         return null;
     }
 

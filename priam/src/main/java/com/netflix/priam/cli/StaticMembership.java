@@ -16,10 +16,10 @@
  */
 package com.netflix.priam.cli;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.IMembership;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
@@ -36,7 +36,7 @@ public class StaticMembership implements IMembership {
 
     private static final Logger logger = LoggerFactory.getLogger(StaticMembership.class);
 
-    private List<String> racMembership;
+    private ImmutableSet<String> racMembership;
     private int racCount;
 
     public StaticMembership() throws IOException {
@@ -57,18 +57,18 @@ public class StaticMembership implements IMembership {
             if (name.startsWith(INSTANCES_PRE)) {
                 racCount += 1;
                 if (name.equals(INSTANCES_PRE + racName))
-                    racMembership = Arrays.asList(config.getProperty(name).split(","));
+                    racMembership = ImmutableSet.copyOf(config.getProperty(name).split(","));
             }
         }
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public ImmutableSet<String> getRacMembership() {
         return racMembership;
     }
 
     @Override
-    public List<String> getCrossAccountRacMembership() {
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         return null;
     }
 

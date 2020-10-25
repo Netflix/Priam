@@ -1,7 +1,11 @@
 package com.netflix.priam.identity.token;
 
+import static java.util.stream.Collectors.toList;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Sets;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -11,15 +15,13 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.inject.Inject;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-
-import static java.util.stream.Collectors.toList;
+import java.util.Set;
+import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TokenRetriever implements ITokenRetriever {
 
@@ -140,12 +142,7 @@ public class TokenRetriever implements ITokenRetriever {
                 logger.info("Looking for a token from any dead node");
                 final List<PriamInstance> allInstancesWithinCluster =
                         factory.getAllIds(config.getAppName());
-                List<String> asgInstances = membership.getRacMembership();
-                if (config.isDualAccount()) {
-                    asgInstances = getDualAccountRacMembership(asgInstances);
-                } else {
-                    logger.info("Single Account cluster");
-                }
+                Set<String> asgInstances = getRacInstanceIds();
 
                 // Sleep random interval - upto 15 sec
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
@@ -279,7 +276,7 @@ public class TokenRetriever implements ITokenRetriever {
                 logger.info("Looking for any pre-generated token");
 
                 final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
-                List<String> asgInstances = membership.getRacMembership();
+                Set<String> asgInstances = getRacInstanceIds();
                 // Sleep random interval - upto 15 sec
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
                 PriamInstance result = null;
@@ -424,19 +421,11 @@ public class TokenRetriever implements ITokenRetriever {
                 .findFirst();
     }
 
-    private List<String> getDualAccountRacMembership(List<String> asgInstances) {
-        logger.info("Dual Account cluster");
-
-        List<String> crossAccountAsgInstances = membership.getCrossAccountRacMembership();
-
-        // Remove duplicates (probably there are not)
-        asgInstances.removeAll(crossAccountAsgInstances);
-
-        // Merge the two lists
-        asgInstances.addAll(crossAccountAsgInstances);
-        logger.info("Combined Instances in the AZ: {}", asgInstances);
-
-        return asgInstances;
+    private Set<String> getRacInstanceIds() {
+        ImmutableSet<String> racMembership = membership.getRacMembership();
+        return config.isDualAccount()
+                ? Sets.union(membership.getCrossAccountRacMembership(), racMembership)
+                : racMembership;
     }
 
     private long getSleepTime() {

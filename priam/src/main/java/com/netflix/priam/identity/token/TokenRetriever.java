@@ -151,6 +151,7 @@ public class TokenRetriever implements ITokenRetriever {
                                 + config.getAppName()
                                 + " to find an available token to acquire.");
 
+                PriamInstance result = null;
                 for (PriamInstance priamInstance : allInstancesWithinCluster) {
                     // test same zone and is it alive.
                     if (!priamInstance.getRac().equals(myInstanceInfo.getRac())
@@ -177,94 +178,47 @@ public class TokenRetriever implements ITokenRetriever {
                     factory.delete(priamInstance);
 
                     // find the replaced IP
-
-                    // Infer current ownership information from other instances using gossip.
-                    TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
-                            TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                                    allInstancesWithinCluster,
-                                    priamInstance.getToken(),
-                                    priamInstance.getDC());
-
-                    switch (inferredTokenInformation.getTokenInformationStatus()) {
-                        case GOOD:
-                            if (inferredTokenInformation.getTokenInformation() == null) {
-                                logger.error(
-                                        "If you see this message, it should not have happened. We expect token ownership information if all nodes agree. This is a code bounty issue.");
-                                return null;
-                            }
-                            // Everyone agreed to a value. Check if it is live node.
-                            if (inferredTokenInformation.getTokenInformation().isLive()) {
-                                logger.info(
-                                        "This token is considered alive unanimously! We will not replace this instance.");
-                                return null;
-                            } else
-                                replacedIp =
-                                        inferredTokenInformation
-                                                .getTokenInformation()
-                                                .getIpAddress();
-                            break;
-                        case UNREACHABLE_NODES:
-                            // In case of unable to reach sufficient nodes, fallback to IP in token
-                            // database. This could be a genuine case of say missing security
-                            // permissions.
-                            replacedIp = priamInstance.getHostIP();
-                            logger.warn(
-                                    "Unable to reach sufficient nodes. Please check security group permissions or there might be a network partition.");
-                            logger.info(
-                                    "Will try to replace token: {} with replacedIp from Token database: {}",
-                                    priamInstance.getToken(),
-                                    priamInstance.getHostIP());
-                            break;
-                        case MISMATCH:
-                            // Lets not replace the instance if gossip info is not merging!!
-                            logger.info(
-                                    "Mismatch in gossip. We will not replace this instance, until gossip settles down.");
-                            return null;
-                        default:
-                            throw new IllegalStateException(
-                                    "Unexpected value: "
-                                            + inferredTokenInformation.getTokenInformationStatus());
-                    }
-
-                    PriamInstance result;
-                    try {
-                        result =
-                                factory.create(
-                                        config.getAppName(),
-                                        markAsDead.getId(),
-                                        myInstanceInfo.getInstanceId(),
-                                        myInstanceInfo.getHostname(),
-                                        myInstanceInfo.getHostIP(),
-                                        myInstanceInfo.getRac(),
-                                        markAsDead.getVolumes(),
-                                        markAsDead.getToken());
-                    } catch (Exception ex) {
-                        long sleepTime = getSleepTime();
-                        logger.warn(
-                                "Exception when acquiring dead token: "
-                                        + priamInstance.getToken()
-                                        + " , will sleep for "
-                                        + sleepTime
-                                        + " millisecs before we retry.");
-                        Thread.sleep(sleepTime);
-
-                        throw ex;
-                    }
-
-                    logger.info(
-                            "Acquired token: "
-                                    + priamInstance.getToken()
-                                    + " and we will replace with replacedIp: "
-                                    + replacedIp);
-
-                    if (result != null) {
+                    Optional<String> ipToReplace =
+                            getReplacedIpForExistingToken(allInstancesWithinCluster, priamInstance);
+                    if (ipToReplace.isPresent()) {
+                        replacedIp = ipToReplace.get();
                         isReplace = true;
+
+                        try {
+                            result =
+                                    factory.create(
+                                            config.getAppName(),
+                                            markAsDead.getId(),
+                                            myInstanceInfo.getInstanceId(),
+                                            myInstanceInfo.getHostname(),
+                                            myInstanceInfo.getHostIP(),
+                                            myInstanceInfo.getRac(),
+                                            markAsDead.getVolumes(),
+                                            markAsDead.getToken());
+                        } catch (Exception ex) {
+                            long sleepTime = getSleepTime();
+                            logger.warn(
+                                    "Exception when acquiring dead token: "
+                                            + priamInstance.getToken()
+                                            + " , will sleep for "
+                                            + sleepTime
+                                            + " millisecs before we retry.");
+                            Thread.sleep(sleepTime);
+
+                            throw ex;
+                        }
+
+                        logger.info(
+                                "Acquired token: "
+                                        + priamInstance.getToken()
+                                        + " and we will replace with replacedIp: "
+                                        + replacedIp);
+                        break;
                     }
-                    return result;
                 }
 
                 logger.info("This node was NOT able to acquire any dead token");
-                return null;
+                return result;
             }
         }.call();
     }
@@ -412,6 +366,52 @@ public class TokenRetriever implements ITokenRetriever {
             }
         }
         return Optional.ofNullable(ipToReplace);
+    }
+
+    private Optional<String> getReplacedIpForExistingToken(
+            List<PriamInstance> allInstancesWithinCluster, PriamInstance priamInstance) {
+
+        // Infer current ownership information from other instances using gossip.
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                        allInstancesWithinCluster, priamInstance.getToken(), priamInstance.getDC());
+
+        switch (inferredTokenInformation.getTokenInformationStatus()) {
+            case GOOD:
+                if (inferredTokenInformation.getTokenInformation() == null) {
+                    logger.error(
+                            "If you see this message, it should not have happened. We expect token ownership information if all nodes agree. This is a code bounty issue.");
+                    return Optional.empty();
+                }
+                // Everyone agreed to a value. Check if it is live node.
+                if (inferredTokenInformation.getTokenInformation().isLive()) {
+                    logger.info(
+                            "This token is considered alive unanimously! We will not replace this instance.");
+                    return Optional.empty();
+                } else
+                    return Optional.of(
+                            inferredTokenInformation.getTokenInformation().getIpAddress());
+            case UNREACHABLE_NODES:
+                // In case of unable to reach sufficient nodes, fallback to IP in token
+                // database. This could be a genuine case of say missing security
+                // permissions.
+                logger.warn(
+                        "Unable to reach sufficient nodes. Please check security group permissions or there might be a network partition.");
+                logger.info(
+                        "Will try to replace token: {} with replacedIp from Token database: {}",
+                        priamInstance.getToken(),
+                        priamInstance.getHostIP());
+                return Optional.of(priamInstance.getHostIP());
+            case MISMATCH:
+                // Lets not replace the instance if gossip info is not merging!!
+                logger.info(
+                        "Mismatch in gossip. We will not replace this instance, until gossip settles down.");
+                return Optional.empty();
+            default:
+                throw new IllegalStateException(
+                        "Unexpected value: "
+                                + inferredTokenInformation.getTokenInformationStatus());
+        }
     }
 
     private Optional<PriamInstance> findInstance(List<PriamInstance> instances) {

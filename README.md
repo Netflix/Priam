@@ -71,6 +71,6 @@ References
 [release]:https://github.com/Netflix/Priam/releases/latest "Latest Release (external link) ➶"
 [wiki]:http://netflix.github.io/Priam/
 [repo]:https://github.com/Netflix/Priam
-[img-travis-ci]:https://travis-ci.org/Netflix/Priam.svg?branch=3.x
-[travis-ci]:https://travis-ci.org/Netflix/Priam
+[img-travis-ci]:https://travis-ci.com/Netflix/Priam.svg?branch=3.x
+[travis-ci]:https://travis-ci.com/Netflix/Priam
 

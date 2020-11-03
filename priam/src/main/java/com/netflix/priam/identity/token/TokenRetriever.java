@@ -173,30 +173,7 @@ public class TokenRetriever implements ITokenRetriever {
                         replacedIp = ipToReplace.get();
                         isReplace = true;
 
-                        try {
-                            result =
-                                    factory.create(
-                                            config.getAppName(),
-                                            priamInstance.getId(),
-                                            myInstanceInfo.getInstanceId(),
-                                            myInstanceInfo.getHostname(),
-                                            myInstanceInfo.getHostIP(),
-                                            myInstanceInfo.getRac(),
-                                            priamInstance.getVolumes(),
-                                            priamInstance.getToken());
-                        } catch (Exception ex) {
-                            long sleepTime = getSleepTime();
-                            logger.warn(
-                                    "Exception when acquiring dead token: "
-                                            + priamInstance.getToken()
-                                            + " , will sleep for "
-                                            + sleepTime
-                                            + " millisecs before we retry.");
-                            Thread.sleep(sleepTime);
-
-                            throw ex;
-                        }
-
+                        result = claimToken(priamInstance);
                         logger.info(
                                 "Acquired token: "
                                         + priamInstance.getToken()
@@ -235,16 +212,7 @@ public class TokenRetriever implements ITokenRetriever {
                             "Trying to grab slot {} with availability zone {}",
                             dead.getId(),
                             dead.getRac());
-                    result =
-                            factory.create(
-                                    config.getAppName(),
-                                    dead.getId(),
-                                    myInstanceInfo.getInstanceId(),
-                                    myInstanceInfo.getHostname(),
-                                    myInstanceInfo.getHostIP(),
-                                    myInstanceInfo.getRac(),
-                                    dead.getVolumes(),
-                                    dead.getToken());
+                    result = claimToken(dead);
                     break;
                 }
                 if (result != null) {
@@ -403,6 +371,28 @@ public class TokenRetriever implements ITokenRetriever {
                 priamInstance.getToken());
         // remove it as we marked it down...
         factory.delete(priamInstance);
+    }
+
+    private PriamInstance claimToken(PriamInstance instance) {
+        try {
+            return factory.create(
+                    config.getAppName(),
+                    instance.getId(),
+                    myInstanceInfo.getInstanceId(),
+                    myInstanceInfo.getHostname(),
+                    myInstanceInfo.getHostIP(),
+                    myInstanceInfo.getRac(),
+                    instance.getVolumes(),
+                    instance.getToken());
+        } catch (Exception ex) {
+            long sleepTime = randomizer.nextInt(MAX_VALUE_IN_MILISECS);
+            logger.warn(
+                    "Failed creating token: {}; sleeping {} millis",
+                    instance.getToken(),
+                    sleepTime);
+            sleeper.sleepQuietly(sleepTime);
+            throw ex;
+        }
     }
 
     private Optional<PriamInstance> findInstance(List<PriamInstance> instances) {

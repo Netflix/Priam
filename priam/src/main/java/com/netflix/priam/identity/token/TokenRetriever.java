@@ -61,29 +61,17 @@ public class TokenRetriever implements ITokenRetriever {
 
     @Override
     public PriamInstance get() throws Exception {
-        // Grab the token which was preassigned.
-        logger.info("trying to grab preassigned token.");
         PriamInstance myInstance = grabPreAssignedToken();
-
-        // Grab a dead token.
         if (myInstance == null) {
-            logger.info("unable to grab preassigned token. trying to grab a dead token.");
             myInstance = grabDeadToken();
         }
-
-        // Grab a pre-generated token if there is such one.
         if (myInstance == null) {
-            logger.info("unable to grab a dead token. trying to grab a pregenerated token.");
             myInstance = grabPreGeneratedToken();
         }
-
-        // Grab a new token
         if (myInstance == null) {
-            logger.info("unable to grab a pregenerated token. trying to grab a new token.");
             myInstance = grabNewToken();
         }
-
-        logger.info("My token: {}", myInstance.getToken());
+        logger.info("My instance: {}", myInstance);
         return myInstance;
     }
 
@@ -106,10 +94,11 @@ public class TokenRetriever implements ITokenRetriever {
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
+                logger.info("Trying to grab a pre-assigned token.");
                 // Check if this node is decommissioned.
+                List<PriamInstance> allIds = factory.getAllIds(config.getAppName() + "-dead");
                 Optional<PriamInstance> instance =
-                        findInstance(factory.getAllIds(config.getAppName() + "-dead"))
-                                .map(PriamInstance::setOutOfService);
+                        findInstance(allIds).map(PriamInstance::setOutOfService);
                 if (!instance.isPresent()) {
                     List<PriamInstance> liveNodes = factory.getAllIds(config.getAppName());
                     instance = instance.map(Optional::of).orElseGet(() -> findInstance(liveNodes));
@@ -122,12 +111,6 @@ public class TokenRetriever implements ITokenRetriever {
                         optionalIp.ifPresent(ip -> isReplace = true);
                     }
                 }
-                instance.ifPresent(
-                        priamInstance ->
-                                logger.info(
-                                        "Got token for {} node: {}",
-                                        priamInstance.isOutOfService() ? "dead" : "live",
-                                        priamInstance));
                 return instance.orElse(null);
             }
         }.call();
@@ -138,53 +121,23 @@ public class TokenRetriever implements ITokenRetriever {
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
-
-                logger.info("Looking for a token from any dead node");
-                final List<PriamInstance> allInstancesWithinCluster =
-                        factory.getAllIds(config.getAppName());
-                Set<String> asgInstances = getRacInstanceIds();
-
-                // Sleep random interval - upto 15 sec
+                logger.info("Trying to grab a dead token");
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
-                logger.info(
-                        "About to iterate through all instances within cluster "
-                                + config.getAppName()
-                                + " to find an available token to acquire.");
-
-                PriamInstance result = null;
-                for (PriamInstance priamInstance : allInstancesWithinCluster) {
-                    // test same zone and is it alive.
-                    if (!priamInstance.getRac().equals(myInstanceInfo.getRac())
-                            || asgInstances.contains(priamInstance.getInstanceId())
-                            || isInstanceDummy(priamInstance)) continue;
-                    // TODO: If instance is in SHUTTING_DOWN mode, it might not show up in asg
-                    // instances (if cloud control plane is having issues), thus, we should not try
-                    // to replace the instance as it will lead to "Cannot replace a live node"
-                    // issue.
-
-                    logger.info("Found dead instance: {}", priamInstance.toString());
-
-                    markDead(priamInstance);
-
-                    // find the replaced IP
-                    Optional<String> ipToReplace =
-                            getReplacedIpForExistingToken(allInstancesWithinCluster, priamInstance);
+                final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+                Set<String> asgInstances = getRacInstanceIds();
+                for (PriamInstance instance : allIds) {
+                    if (!instance.getRac().equals(myInstanceInfo.getRac())
+                            || asgInstances.contains(instance.getInstanceId())
+                            || isInstanceDummy(instance)) continue;
+                    markDead(instance);
+                    Optional<String> ipToReplace = getReplacedIpForExistingToken(allIds, instance);
                     if (ipToReplace.isPresent()) {
                         replacedIp = ipToReplace.get();
                         isReplace = true;
-
-                        result = claimToken(priamInstance);
-                        logger.info(
-                                "Acquired token: "
-                                        + priamInstance.getToken()
-                                        + " and we will replace with replacedIp: "
-                                        + replacedIp);
-                        break;
+                        return claimToken(instance);
                     }
                 }
-
-                logger.info("This node was NOT able to acquire any dead token");
-                return result;
+                return null;
             }
         }.call();
     }
@@ -193,32 +146,19 @@ public class TokenRetriever implements ITokenRetriever {
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
-                logger.info("Looking for any pre-generated token");
-
+                logger.info("Trying to grab a pre-generated token");
+                sleeper.sleep(new Random().nextInt(5000) + 10000);
                 final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
                 Set<String> asgInstances = getRacInstanceIds();
-                // Sleep random interval - upto 15 sec
-                sleeper.sleep(new Random().nextInt(5000) + 10000);
-                PriamInstance result = null;
                 for (PriamInstance dead : allIds) {
-                    // test same zone and is it is alive.
                     if (!dead.getRac().equals(myInstanceInfo.getRac())
                             || asgInstances.contains(dead.getInstanceId())
                             || !isInstanceDummy(dead)) continue;
-                    logger.info("Found pre-generated token: {}", dead.getToken());
                     markDead(dead);
-
-                    logger.info(
-                            "Trying to grab slot {} with availability zone {}",
-                            dead.getId(),
-                            dead.getRac());
-                    result = claimToken(dead);
-                    break;
-                }
-                if (result != null) {
                     isTokenPregenerated = true;
+                    return claimToken(dead);
                 }
-                return result;
+                return null;
             }
         }.call();
     }
@@ -233,13 +173,10 @@ public class TokenRetriever implements ITokenRetriever {
             @Override
             public PriamInstance retriableCall() throws Exception {
                 set(100, 100);
-                logger.info("Generating my own and new token");
-                // Sleep random interval - upto 15 sec
+                logger.info("Trying to generate a new token");
                 sleeper.sleep(new Random().nextInt(15000));
+                // this hash ensures the nodes are spread far away from the other regions.
                 int hash = tokenManager.regionOffset(myInstanceInfo.getRegion());
-                // use this hash so that the nodes are spread far away from the other
-                // regions.
-
                 List<Integer> racIds =
                         factory.getAllIds(config.getAppName())
                                 .stream()
@@ -249,7 +186,6 @@ public class TokenRetriever implements ITokenRetriever {
                 int max = Math.max(hash, racIds.stream().max(Integer::compareTo).orElse(hash));
                 int maxSlot = max - hash;
                 int my_slot;
-
                 if (hash == max && racIds.isEmpty()) {
                     int idx = config.getRacs().indexOf(myInstanceInfo.getRac());
                     if (idx < 0)
@@ -259,7 +195,6 @@ public class TokenRetriever implements ITokenRetriever {
                                         myInstanceInfo.getRac(), config.getRacs()));
                     my_slot = idx + maxSlot;
                 } else my_slot = config.getRacs().size() + maxSlot;
-
                 logger.info(
                         "Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
                         my_slot,
@@ -333,9 +268,11 @@ public class TokenRetriever implements ITokenRetriever {
                     logger.info(
                             "This token is considered alive unanimously! We will not replace this instance.");
                     return Optional.empty();
-                } else
-                    return Optional.of(
-                            inferredTokenInformation.getTokenInformation().getIpAddress());
+                } else {
+                    String ip = inferredTokenInformation.getTokenInformation().getIpAddress();
+                    logger.info("Will try to replace token owned by {}", ip);
+                    return Optional.of(ip);
+                }
             case UNREACHABLE_NODES:
                 // In case of unable to reach sufficient nodes, fallback to IP in token
                 // database. This could be a genuine case of say missing security
@@ -402,15 +339,11 @@ public class TokenRetriever implements ITokenRetriever {
                 .findFirst();
     }
 
-    private Set<String> getRacInstanceIds() {
+    private Set<String> getRacInstanceIds() { // TODO(CASS-1986)
         ImmutableSet<String> racMembership = membership.getRacMembership();
         return config.isDualAccount()
                 ? Sets.union(membership.getCrossAccountRacMembership(), racMembership)
                 : racMembership;
-    }
-
-    private long getSleepTime() {
-        return this.randomizer.nextInt(MAX_VALUE_IN_MILISECS);
     }
 
     private boolean isInstanceDummy(PriamInstance instance) {

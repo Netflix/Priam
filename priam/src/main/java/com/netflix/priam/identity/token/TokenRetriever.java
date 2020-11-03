@@ -164,18 +164,7 @@ public class TokenRetriever implements ITokenRetriever {
 
                     logger.info("Found dead instance: {}", priamInstance.toString());
 
-                    PriamInstance markAsDead =
-                            factory.create(
-                                    priamInstance.getApp() + "-dead",
-                                    priamInstance.getId(),
-                                    priamInstance.getInstanceId(),
-                                    priamInstance.getHostName(),
-                                    priamInstance.getHostIP(),
-                                    priamInstance.getRac(),
-                                    priamInstance.getVolumes(),
-                                    priamInstance.getToken());
-                    // remove it as we marked it down...
-                    factory.delete(priamInstance);
+                    markDead(priamInstance);
 
                     // find the replaced IP
                     Optional<String> ipToReplace =
@@ -188,13 +177,13 @@ public class TokenRetriever implements ITokenRetriever {
                             result =
                                     factory.create(
                                             config.getAppName(),
-                                            markAsDead.getId(),
+                                            priamInstance.getId(),
                                             myInstanceInfo.getInstanceId(),
                                             myInstanceInfo.getHostname(),
                                             myInstanceInfo.getHostIP(),
                                             myInstanceInfo.getRac(),
-                                            markAsDead.getVolumes(),
-                                            markAsDead.getToken());
+                                            priamInstance.getVolumes(),
+                                            priamInstance.getToken());
                         } catch (Exception ex) {
                             long sleepTime = getSleepTime();
                             logger.warn(
@@ -240,34 +229,22 @@ public class TokenRetriever implements ITokenRetriever {
                             || asgInstances.contains(dead.getInstanceId())
                             || !isInstanceDummy(dead)) continue;
                     logger.info("Found pre-generated token: {}", dead.getToken());
-                    PriamInstance markAsDead =
-                            factory.create(
-                                    dead.getApp() + "-dead",
-                                    dead.getId(),
-                                    dead.getInstanceId(),
-                                    dead.getHostName(),
-                                    dead.getHostIP(),
-                                    dead.getRac(),
-                                    dead.getVolumes(),
-                                    dead.getToken());
-                    // remove it as we marked it down...
-                    factory.delete(dead);
+                    markDead(dead);
 
-                    String payLoad = markAsDead.getToken();
                     logger.info(
                             "Trying to grab slot {} with availability zone {}",
-                            markAsDead.getId(),
-                            markAsDead.getRac());
+                            dead.getId(),
+                            dead.getRac());
                     result =
                             factory.create(
                                     config.getAppName(),
-                                    markAsDead.getId(),
+                                    dead.getId(),
                                     myInstanceInfo.getInstanceId(),
                                     myInstanceInfo.getHostname(),
                                     myInstanceInfo.getHostIP(),
                                     myInstanceInfo.getRac(),
-                                    markAsDead.getVolumes(),
-                                    payLoad);
+                                    dead.getVolumes(),
+                                    dead.getToken());
                     break;
                 }
                 if (result != null) {
@@ -412,6 +389,20 @@ public class TokenRetriever implements ITokenRetriever {
                         "Unexpected value: "
                                 + inferredTokenInformation.getTokenInformationStatus());
         }
+    }
+
+    private void markDead(PriamInstance priamInstance) {
+        factory.create(
+                priamInstance.getApp() + "-dead",
+                priamInstance.getId(),
+                priamInstance.getInstanceId(),
+                priamInstance.getHostName(),
+                priamInstance.getHostIP(),
+                priamInstance.getRac(),
+                priamInstance.getVolumes(),
+                priamInstance.getToken());
+        // remove it as we marked it down...
+        factory.delete(priamInstance);
     }
 
     private Optional<PriamInstance> findInstance(List<PriamInstance> instances) {

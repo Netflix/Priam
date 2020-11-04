@@ -17,8 +17,10 @@
 
 package com.netflix.priam.identity.token;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
+import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
@@ -30,9 +32,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
@@ -76,7 +76,7 @@ public class TokenRetrieverTest {
                 result = ImmutableSet.of();
             }
         };
-        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
+        PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
         Assert.assertNull(priamInstance);
     }
 
@@ -94,7 +94,7 @@ public class TokenRetrieverTest {
                 result = ImmutableSet.copyOf(racMembership);
             }
         };
-        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
+        PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
         Assert.assertNull(priamInstance);
         new Verifications() {
             {
@@ -123,7 +123,7 @@ public class TokenRetrieverTest {
                 times = 1;
             }
         };
-        PriamInstance priamInstance = getTokenRetriever().grabDeadToken();
+        PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
         Assert.assertNull(priamInstance);
         new Verifications() {
             {
@@ -168,9 +168,61 @@ public class TokenRetrieverTest {
             }
         };
         TokenRetriever tokenRetriever = getTokenRetriever();
-        PriamInstance priamInstance = tokenRetriever.grabDeadToken();
+        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
         Assert.assertNotNull(priamInstance);
         Assert.assertEquals("127.0.0.3", tokenRetriever.getReplacedIp());
+    }
+
+    @Test
+    public void testPrioritizeDeadTokens(@Mocked SystemUtils systemUtils) throws Exception {
+        ImmutableList<PriamInstance> allInstances =
+                ImmutableList.of(
+                        create(0, "iid_0", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + ""),
+                        create(
+                                1,
+                                "new_slot",
+                                "host_1",
+                                "127.0.0.1",
+                                instanceInfo.getRac(),
+                                1 + ""));
+
+        new Expectations() {
+            {
+                factory.getAllIds(anyString);
+                result = allInstances;
+                membership.getRacMembership();
+                result = ImmutableSet.of();
+                SystemUtils.getDataFromUrl(anyString);
+                returns(null, null);
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
+        Truth.assertThat(priamInstance).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.0");
+    }
+
+    @Test
+    public void testPrioritizeDeadInstancesEvenIfAfterANewSlot(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        ImmutableList<PriamInstance> allInstances =
+                ImmutableList.of(
+                        create(0, "new_slot", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + ""),
+                        create(1, "iid_1", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + ""));
+        new Expectations() {
+            {
+                factory.getAllIds(anyString);
+                result = allInstances;
+                membership.getRacMembership();
+                result = ImmutableSet.of();
+                SystemUtils.getDataFromUrl(anyString);
+                returns(null, null);
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
+        Truth.assertThat(priamInstance).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.1");
     }
 
     private List<PriamInstance> getInstances(int noOfInstances) {

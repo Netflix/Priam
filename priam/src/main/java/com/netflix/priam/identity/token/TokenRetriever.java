@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 public class TokenRetriever implements ITokenRetriever {
 
-    public static final String DUMMY_INSTANCE_ID = "new_slot";
+    public static final String NEW_SLOT = "new_slot";
     private static final int MAX_VALUE_IN_MILISECS = 300000; // sleep up to 5 minutes
     private static final Logger logger = LoggerFactory.getLogger(InstanceIdentity.class);
 
@@ -63,10 +63,7 @@ public class TokenRetriever implements ITokenRetriever {
     public PriamInstance get() throws Exception {
         PriamInstance myInstance = grabPreAssignedToken();
         if (myInstance == null) {
-            myInstance = grabDeadToken();
-        }
-        if (myInstance == null) {
-            myInstance = grabPreGeneratedToken();
+            myInstance = grabExistingToken();
         }
         if (myInstance == null) {
             myInstance = grabNewToken();
@@ -117,46 +114,37 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     @VisibleForTesting
-    public PriamInstance grabDeadToken() throws Exception {
+    public PriamInstance grabExistingToken() throws Exception {
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
-                logger.info("Trying to grab a dead token");
+                logger.info("Trying to grab an existing token");
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
-                final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
                 Set<String> asgInstances = getRacInstanceIds();
-                for (PriamInstance instance : allIds) {
-                    if (!instance.getRac().equals(myInstanceInfo.getRac())
-                            || asgInstances.contains(instance.getInstanceId())
-                            || isInstanceDummy(instance)) continue;
+                List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+                Optional<PriamInstance> optionalInstance =
+                        allIds.stream()
+                                .filter(i -> i.getRac().equals(myInstanceInfo.getRac()))
+                                .filter(i -> !asgInstances.contains(i.getInstanceId()))
+                                .min(
+                                        (left, right) ->
+                                                Boolean.compare(isNewSlot(left), isNewSlot(right)));
+                if (optionalInstance.isPresent()) {
+                    PriamInstance instance = optionalInstance.get();
                     markDead(instance);
-                    Optional<String> ipToReplace = getReplacedIpForExistingToken(allIds, instance);
-                    if (ipToReplace.isPresent()) {
-                        replacedIp = ipToReplace.get();
-                        isReplace = true;
-                        return claimToken(instance);
+                    if (isNewSlot(instance)) {
+                        isTokenPregenerated = true;
+                    } else {
+                        Optional<String> ipToReplace =
+                                getReplacedIpForExistingToken(allIds, instance);
+                        if (ipToReplace.isPresent()) {
+                            replacedIp = ipToReplace.get();
+                            isReplace = true;
+                        } else {
+                            return null;
+                        }
                     }
-                }
-                return null;
-            }
-        }.call();
-    }
-
-    private PriamInstance grabPreGeneratedToken() throws Exception {
-        return new RetryableCallable<PriamInstance>() {
-            @Override
-            public PriamInstance retriableCall() throws Exception {
-                logger.info("Trying to grab a pre-generated token");
-                sleeper.sleep(new Random().nextInt(5000) + 10000);
-                final List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
-                Set<String> asgInstances = getRacInstanceIds();
-                for (PriamInstance dead : allIds) {
-                    if (!dead.getRac().equals(myInstanceInfo.getRac())
-                            || asgInstances.contains(dead.getInstanceId())
-                            || !isInstanceDummy(dead)) continue;
-                    markDead(dead);
-                    isTokenPregenerated = true;
-                    return claimToken(dead);
+                    return optionalInstance.map(i -> claimToken(i)).orElse(null);
                 }
                 return null;
             }
@@ -346,7 +334,7 @@ public class TokenRetriever implements ITokenRetriever {
                 : racMembership;
     }
 
-    private boolean isInstanceDummy(PriamInstance instance) {
-        return instance.getInstanceId().equals(DUMMY_INSTANCE_ID);
+    private boolean isNewSlot(PriamInstance instance) {
+        return instance.getInstanceId().equals(NEW_SLOT);
     }
 }

@@ -29,6 +29,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -193,7 +194,7 @@ public class TestRemoteBackupPath {
                         "target/data",
                         "keyspace1",
                         "columnfamily1",
-                        "backup",
+                        "backups",
                         ".columnfamily1_field1_idx",
                         "mc-1234-Data.db");
         AbstractBackupPath abstractBackupPath = pathFactory.get();
@@ -223,6 +224,64 @@ public class TestRemoteBackupPath {
         abstractBackupPath2.parseRemote(remotePath);
         Assert.assertEquals(now, abstractBackupPath2.getLastModified());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+    }
+
+    @Test
+    public void testV2SnapshotPathSecondaryIndex() {
+        Path path =
+                Paths.get(
+                        "target/data",
+                        "keyspace1",
+                        "columnfamily1",
+                        "snapshots",
+                        "snap_v2_19700101000",
+                        ".columnfamily1_field1_idx",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath = pathFactory.get();
+        abstractBackupPath.parseLocal(path.toFile(), BackupFileType.SECONDARY_INDEX_V2);
+
+        // Verify parse local
+        Assert.assertEquals(
+                0, abstractBackupPath.getLastModified().toEpochMilli()); // File do not exist.
+        Assert.assertEquals("keyspace1", abstractBackupPath.getKeyspace());
+        Assert.assertEquals("columnfamily1", abstractBackupPath.getColumnFamily());
+        Assert.assertEquals("SNAPPY", abstractBackupPath.getCompression().name());
+        Assert.assertEquals(BackupFileType.SECONDARY_INDEX_V2, abstractBackupPath.getType());
+        Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
+
+        // Verify toRemote and parseRemote.
+        Instant now = DateUtil.getInstant();
+        abstractBackupPath.setLastModified(now);
+        String remotePath = abstractBackupPath.getRemotePath();
+        logger.info(remotePath);
+        Assert.assertEquals(
+                "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX_V2/"
+                        + now.toEpochMilli()
+                        + "/keyspace1/columnfamily1/.columnfamily1_field1_idx/SNAPPY/PLAINTEXT/mc-1234-Data.db",
+                remotePath);
+
+        AbstractBackupPath abstractBackupPath2 = pathFactory.get();
+        abstractBackupPath2.parseRemote(remotePath);
+        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
+    }
+
+    @Test
+    public void testUnknownBackupFolder() {
+        Path path =
+                Paths.get(
+                        "target/data",
+                        "keyspace1",
+                        "columnfamily1",
+                        "foo", // foo is invalid
+                        ".columnfamily1_field1_idx",
+                        "mc-1234-Data.db");
+        AbstractBackupPath abstractBackupPath = pathFactory.get();
+        Assertions.assertThrows(
+                NullPointerException.class,
+                () ->
+                        abstractBackupPath.parseLocal(
+                                path.toFile(), BackupFileType.SECONDARY_INDEX_V2));
     }
 
     @Test

@@ -28,7 +28,7 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
-import java.io.FileFilter;
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,10 +36,12 @@ import java.nio.file.Paths;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -294,9 +296,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
 
                 // Next, upload secondary indexes
-                FileFilter filter = getSecondaryIndexFileFilter(columnFamily);
-                File[] indexDirectories = snapshotDirectory.listFiles(filter);
-                for (File subDir : Optional.ofNullable(indexDirectories).orElse(new File[] {})) {
+                for (File subDir : getSecondaryIndexDirectories(snapshotDirectory, columnFamily)) {
                     upload(
                             subDir,
                             AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2,
@@ -340,9 +340,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 getFileUploadResults(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
-        FileFilter filter = getSecondaryIndexFileFilter(columnFamily);
-        File[] indexDirectories = snapshotDir.listFiles(filter);
-        for (File subDir : Optional.ofNullable(indexDirectories).orElse(new File[] {})) {
+        for (File subDir : getSecondaryIndexDirectories(snapshotDir, columnFamily)) {
             filePrefixToFileMap.putAll(
                     getFileUploadResults(
                             subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
@@ -437,8 +435,12 @@ public class SnapshotMetaTask extends AbstractBackup {
         return Optional.ofNullable(prefix);
     }
 
-    private static FileFilter getSecondaryIndexFileFilter(String colFamily) {
-        return (file) -> file.getName().startsWith("." + colFamily) && isAReadableDirectory(file);
+    private List<File> getSecondaryIndexDirectories(File snapshotDir, String columnFamily)
+            throws IOException {
+        return Files.walk(snapshotDir.toPath(), Integer.MAX_VALUE)
+                .map(Path::toFile)
+                .filter(f -> f.getName().startsWith("." + columnFamily) && isAReadableDirectory(f))
+                .collect(Collectors.toList());
     }
 
     // For testing purposes only.

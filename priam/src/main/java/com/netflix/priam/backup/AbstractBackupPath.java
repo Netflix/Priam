@@ -17,6 +17,8 @@
 package com.netflix.priam.backup;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
@@ -35,6 +37,8 @@ import org.apache.commons.lang3.StringUtils;
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
     public static final char PATH_SEP = File.separatorChar;
     public static final Joiner PATH_JOINER = Joiner.on(PATH_SEP);
+    private static final ImmutableMap<BackupFolder, Integer> FOLDER_POSITIONS =
+            ImmutableMap.of(BackupFolder.BACKUPS, 3, BackupFolder.SNAPSHOTS, 4);
 
     public enum BackupFileType {
         CL,
@@ -100,13 +104,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
         String rpath =
                 new File(config.getDataFileLocation()).toURI().relativize(file.toURI()).getPath();
-        String[] elements = rpath.split("" + PATH_SEP);
+        String[] parts = rpath.split("" + PATH_SEP);
         if (BackupFileType.isDataFile(type)) {
-            this.keyspace = elements[0];
-            this.columnFamily = elements[1];
+            this.keyspace = parts[0];
+            this.columnFamily = parts[1];
         }
         if (type == BackupFileType.SECONDARY_INDEX_V2) {
-            this.indexDir = elements[3];
+            Integer index = BackupFolder.fromName(parts[2]).map(FOLDER_POSITIONS::get).orElse(null);
+            Preconditions.checkNotNull(index, "Unrecognized backup folder " + parts[2]);
+            this.indexDir = parts[index];
         }
 
         /*
@@ -116,7 +122,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         */
         this.time =
                 type == BackupFileType.SNAP
-                        ? DateUtil.getDate(elements[3])
+                        ? DateUtil.getDate(parts[3])
                         : new Date(file.lastModified());
     }
 

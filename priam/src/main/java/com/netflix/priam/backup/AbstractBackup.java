@@ -144,7 +144,7 @@ public abstract class AbstractBackup extends Task {
 
             for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
-                if (backupDir.exists() && backupDir.isDirectory() && backupDir.canRead()) {
+                if (isAReadableDirectory(backupDir)) {
                     String columnFamilyName = columnFamilyDir.getName().split("-")[0];
                     if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
                         // Clean the backup/snapshot directory else files will keep getting
@@ -201,5 +201,9 @@ public abstract class AbstractBackup extends Task {
                 }
             }
         return backupPaths;
+    }
+
+    protected static boolean isAReadableDirectory(File dir) {
+        return dir.exists() && dir.isDirectory() && dir.canRead();
     }
 }

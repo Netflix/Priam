@@ -18,11 +18,6 @@ import java.util.Iterator;
 
 public interface IFileCryptography {
 
-    enum CryptographyAlgorithm {
-        PLAINTEXT,
-        PGP
-    }
-
     /**
      * @param in - a handle to the encrypted, compressed data stream
      * @param passwd - pass phrase used to extract the PGP private key from the encrypted content.

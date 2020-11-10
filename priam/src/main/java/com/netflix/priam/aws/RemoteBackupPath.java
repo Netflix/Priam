@@ -16,17 +16,20 @@
  */
 package com.netflix.priam.aws;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Optional;
 
 /**
  * Represents location of an object on the remote file system. All the objects will be keyed with a
@@ -34,42 +37,37 @@ import java.util.Date;
  * this instance.
  */
 public class RemoteBackupPath extends AbstractBackupPath {
+    private static final ImmutableSet<BackupFileType> V2_ONLY_FILE_TYPES =
+            ImmutableSet.of(
+                    BackupFileType.META_V2,
+                    BackupFileType.SST_V2,
+                    BackupFileType.SECONDARY_INDEX_V2);
 
     @Inject
     public RemoteBackupPath(IConfiguration config, InstanceIdentity factory) {
         super(config, factory);
     }
 
-    private Path getV2Prefix() {
-        return Paths.get(baseDir, getAppNameWithHash(clusterName), token);
-    }
-
-    private void parseV2Prefix(Path remoteFilePath) {
-        if (remoteFilePath.getNameCount() < 3)
-            throw new RuntimeException(
-                    "Not enough no. of elements to parseV2Prefix : " + remoteFilePath);
-        baseDir = remoteFilePath.getName(0).toString();
-        clusterName = parseAndValidateAppNameWithHash(remoteFilePath.getName(1).toString());
-        token = remoteFilePath.getName(2).toString();
+    private ImmutableList.Builder<String> getV2Prefix() {
+        ImmutableList.Builder<String> prefix = ImmutableList.builder();
+        prefix.add(baseDir, prependHash(clusterName), token);
+        return prefix;
     }
 
     /* This will ensure that there is some randomness in the path at the start so that remote file systems
     can hash the contents better when we have lot of clusters backing up at the same remote location.
     */
-    private String getAppNameWithHash(String appName) {
+    private String prependHash(String appName) {
         return String.format("%d_%s", appName.hashCode() % 10000, appName);
     }
 
-    private String parseAndValidateAppNameWithHash(String appNameWithHash) {
+    private String removeHash(String appNameWithHash) {
         int hash = Integer.parseInt(appNameWithHash.substring(0, appNameWithHash.indexOf("_")));
         String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
-        // Validate the hash
-        int calculatedHash = appName.hashCode() % 10000;
-        if (calculatedHash != hash)
-            throw new RuntimeException(
-                    String.format(
-                            "Hash for the app name: %s was calculated to be: %d but provided was: %d",
-                            appName, calculatedHash, hash));
+        Preconditions.checkArgument(
+                hash == appName.hashCode() % 10000,
+                "Prepended hash does not match app name. Should have received: %s",
+                prependHash(appName));
         return appName;
     }
 
@@ -81,93 +79,76 @@ public class RemoteBackupPath extends AbstractBackupPath {
      * Another major difference w.r.t. V1 is having no distinction between SNAP and SST files as we upload SSTables only
      * once to remote file system.
      */
-    private Path getV2Location() {
-        Path prefix =
-                Paths.get(
-                        getV2Prefix().toString(),
-                        type.toString(),
-                        getLastModified().toEpochMilli() + "");
-
-        if (type == BackupFileType.SST_V2) {
-            prefix = Paths.get(prefix.toString(), keyspace, columnFamily);
-        }
-
-        return Paths.get(
-                prefix.toString(),
-                getCompression().toString(),
-                getEncryption().toString(),
-                fileName);
-    }
-
-    private void parseV2Location(String remoteFile) {
-        Path remoteFilePath = Paths.get(remoteFile);
-        parseV2Prefix(remoteFilePath);
-        if (remoteFilePath.getNameCount() < 8)
-            throw new IndexOutOfBoundsException(
-                    String.format(
-                            "Too few elements (expected: [%d]) in path: %s", 8, remoteFilePath));
-        int name_count_idx = 3;
-
-        type = BackupFileType.valueOf(remoteFilePath.getName(name_count_idx++).toString());
-        setLastModified(
-                Instant.ofEpochMilli(
-                        Long.parseLong(remoteFilePath.getName(name_count_idx++).toString())));
-
-        if (type == BackupFileType.SST_V2) {
-            keyspace = remoteFilePath.getName(name_count_idx++).toString();
-            columnFamily = remoteFilePath.getName(name_count_idx++).toString();
-        }
-
-        setCompression(
-                ICompression.CompressionAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
-
-        setEncryption(
-                IFileCryptography.CryptographyAlgorithm.valueOf(
-                        remoteFilePath.getName(name_count_idx++).toString()));
-        fileName = remoteFilePath.getName(name_count_idx).toString();
-    }
-
-    private Path getV1Location() {
-        Path path =
-                Paths.get(
-                        getV1Prefix().toString(),
-                        DateUtil.formatyyyyMMddHHmm(time),
-                        type.toString());
-        if (BackupFileType.isDataFile(type))
-            path = Paths.get(path.toString(), keyspace, columnFamily);
-        return Paths.get(path.toString(), fileName);
-    }
-
-    private void parseV1Location(Path remoteFilePath) {
-        parseV1Prefix(remoteFilePath);
-        if (remoteFilePath.getNameCount() < 7)
-            throw new IndexOutOfBoundsException(
-                    String.format(
-                            "Too few elements (expected: [%d]) in path: %s", 7, remoteFilePath));
-
-        time = DateUtil.getDate(remoteFilePath.getName(4).toString());
-        type = BackupFileType.valueOf(remoteFilePath.getName(5).toString());
+    private String getV2Location() {
+        ImmutableList.Builder<String> parts = getV2Prefix();
+        parts.add(type.toString(), getLastModified().toEpochMilli() + "");
         if (BackupFileType.isDataFile(type)) {
-            keyspace = remoteFilePath.getName(6).toString();
-            columnFamily = remoteFilePath.getName(7).toString();
+            parts.add(keyspace, columnFamily);
         }
-        // append the rest
-        fileName = remoteFilePath.getName(remoteFilePath.getNameCount() - 1).toString();
+        if (type == BackupFileType.SECONDARY_INDEX_V2) {
+            parts.add(indexDir);
+        }
+        parts.add(getCompression().toString(), getEncryption().toString(), fileName);
+        return toPath(parts.build()).toString();
     }
 
-    private Path getV1Prefix() {
-        return Paths.get(baseDir, region, clusterName, token);
+    private void parseV2Location(Path remotePath) {
+        Preconditions.checkArgument(
+                remotePath.getNameCount() >= 8, "%s has fewer than %d parts", remotePath, 8);
+        int index = 0;
+        baseDir = remotePath.getName(index++).toString();
+        clusterName = removeHash(remotePath.getName(index++).toString());
+        token = remotePath.getName(index++).toString();
+        type = BackupFileType.valueOf(remotePath.getName(index++).toString());
+        String lastModified = remotePath.getName(index++).toString();
+        setLastModified(Instant.ofEpochMilli(Long.parseLong(lastModified)));
+        if (BackupFileType.isDataFile(type)) {
+            keyspace = remotePath.getName(index++).toString();
+            columnFamily = remotePath.getName(index++).toString();
+        }
+        if (type == BackupFileType.SECONDARY_INDEX_V2) {
+            indexDir = remotePath.getName(index++).toString();
+        }
+        setCompression(remotePath.getName(index++).toString());
+        setEncryption(remotePath.getName(index++).toString());
+        fileName = remotePath.getName(index).toString();
     }
 
-    private void parseV1Prefix(Path remoteFilePath) {
-        if (remoteFilePath.getNameCount() < 4)
-            throw new RuntimeException(
-                    "Not enough no. of elements to parseV1Prefix : " + remoteFilePath);
-        baseDir = remoteFilePath.getName(0).toString();
-        region = remoteFilePath.getName(1).toString();
-        clusterName = remoteFilePath.getName(2).toString();
-        token = remoteFilePath.getName(3).toString();
+    private String getV1Location() {
+        ImmutableList.Builder<String> parts = ImmutableList.builder();
+        String timeString = DateUtil.formatyyyyMMddHHmm(time);
+        parts.add(baseDir, region, clusterName, token, timeString, type.toString());
+        if (BackupFileType.isDataFile(type)) {
+            parts.add(keyspace, columnFamily);
+        }
+        parts.add(fileName);
+        return toPath(parts.build()).toString();
+    }
+
+    private Path toPath(ImmutableList<String> parts) {
+        return Paths.get(parts.get(0), parts.subList(1, parts.size()).toArray(new String[0]));
+    }
+
+    private void parseV1Location(Path remotePath) {
+        Preconditions.checkArgument(
+                remotePath.getNameCount() >= 7, "%s has fewer than %d parts", remotePath, 7);
+        parseV1Prefix(remotePath);
+        time = DateUtil.getDate(remotePath.getName(4).toString());
+        type = BackupFileType.valueOf(remotePath.getName(5).toString());
+        if (BackupFileType.isDataFile(type)) {
+            keyspace = remotePath.getName(6).toString();
+            columnFamily = remotePath.getName(7).toString();
+        }
+        fileName = remotePath.getName(remotePath.getNameCount() - 1).toString();
+    }
+
+    private void parseV1Prefix(Path remotePath) {
+        Preconditions.checkArgument(
+                remotePath.getNameCount() >= 4, "%s needs %d parts to parse prefix", remotePath, 4);
+        baseDir = remotePath.getName(0).toString();
+        region = remotePath.getName(1).toString();
+        clusterName = remotePath.getName(2).toString();
+        token = remotePath.getName(3).toString();
     }
 
     /**
@@ -179,29 +160,21 @@ public class RemoteBackupPath extends AbstractBackupPath {
      */
     @Override
     public String getRemotePath() {
-        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
-            return getV2Location().toString();
-        } else {
-            return getV1Location().toString();
-        }
+        return V2_ONLY_FILE_TYPES.contains(type) ? getV2Location() : getV1Location();
     }
 
     @Override
-    public void parseRemote(String remoteFilePath) {
-        // Check for all backup file types to ensure how we parse
-        // TODO: We should clean this hack to get backupFileType for parsing when we delete V1 of
-        // backups.
-        for (BackupFileType fileType : BackupFileType.values()) {
-            if (remoteFilePath.contains(PATH_SEP + fileType.toString() + PATH_SEP)) {
-                type = fileType;
-                break;
-            }
-        }
-
-        if (type == BackupFileType.SST_V2 || type == BackupFileType.META_V2) {
-            parseV2Location(remoteFilePath);
+    public void parseRemote(String remotePath) {
+        // Hack to determine type in advance of parsing. Will disappear once v1 is retired
+        Optional<BackupFileType> inferredType =
+                Arrays.stream(BackupFileType.values())
+                        .filter(bft -> remotePath.contains(PATH_SEP + bft.toString() + PATH_SEP))
+                        .findAny()
+                        .filter(V2_ONLY_FILE_TYPES::contains);
+        if (inferredType.isPresent()) {
+            parseV2Location(Paths.get(remotePath));
         } else {
-            parseV1Location(Paths.get(remoteFilePath));
+            parseV1Location(Paths.get(remotePath));
         }
     }
 
@@ -212,12 +185,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     @Override
     public String remotePrefix(Date start, Date end, String location) {
-        StringBuilder buff = new StringBuilder(clusterPrefix(location));
-        token = instanceIdentity.getInstance().getToken();
-        buff.append(token).append(RemoteBackupPath.PATH_SEP);
-        // match the common characters to prefix.
-        buff.append(match(start, end));
-        return buff.toString();
+        return PATH_JOINER.join(
+                clusterPrefix(location),
+                instanceIdentity.getInstance().getToken(),
+                match(start, end));
     }
 
     @Override
@@ -227,33 +198,30 @@ public class RemoteBackupPath extends AbstractBackupPath {
             clusterName = config.getAppName();
         } else if (location.getNameCount() >= 3) {
             baseDir = location.getName(1).toString();
-            clusterName = parseAndValidateAppNameWithHash(location.getName(2).toString());
+            clusterName = removeHash(location.getName(2).toString());
         }
         token = instanceIdentity.getInstance().getToken();
-        return Paths.get(getV2Prefix().toString(), fileType.toString());
+        ImmutableList.Builder<String> parts = getV2Prefix();
+        parts.add(fileType.toString());
+        return toPath(parts.build());
     }
 
     @Override
     public String clusterPrefix(String location) {
-        StringBuilder buff = new StringBuilder();
         String[] elements = location.split(String.valueOf(RemoteBackupPath.PATH_SEP));
+        Preconditions.checkArgument(
+                elements.length < 2 || elements.length > 3,
+                "Path must have fewer than 2 or greater than 3 elements. Saw %s",
+                location);
         if (elements.length <= 1) {
             baseDir = config.getBackupLocation();
             region = instanceIdentity.getInstanceInfo().getRegion();
             clusterName = config.getAppName();
         } else {
-            if (elements.length < 4)
-                throw new IndexOutOfBoundsException(
-                        String.format(
-                                "Too few elements (expected: [%d]) in path: %s", 4, location));
             baseDir = elements[1];
             region = elements[2];
             clusterName = elements[3];
         }
-        buff.append(baseDir).append(RemoteBackupPath.PATH_SEP);
-        buff.append(region).append(RemoteBackupPath.PATH_SEP);
-        buff.append(clusterName).append(RemoteBackupPath.PATH_SEP);
-
-        return buff.toString();
+        return PATH_JOINER.join(baseDir, region, clusterName, ""); // "" ensures a trailing "/"
     }
 }

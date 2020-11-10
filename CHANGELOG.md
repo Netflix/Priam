@@ -1,4 +1,7 @@
 # Changelog
+## 2020/11/09 3.11.73
+(#911) Backup secondary index files.
+
 ## 2020/09/30 3.11.72
 (#908, #910) Stop explicitly filtering OpsCenter keyspace when backing up. Remove more noisy log statements.
 

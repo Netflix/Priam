@@ -93,8 +93,9 @@ public class TokenRetrieverTest {
                 result = ImmutableSet.copyOf(racMembership);
             }
         };
-        PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
-        Truth.assertThat(priamInstance).isNull();
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        Truth.assertThat(tokenRetriever.grabExistingToken()).isNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
         List<PriamInstance> factoryInstances = factory.getAllIds(configuration.getAppName());
         Truth.assertThat(factoryInstances).containsExactlyElementsIn(allInstances);
     }
@@ -115,7 +116,9 @@ public class TokenRetrieverTest {
                 times = 1;
             }
         };
-        Truth.assertThat(getTokenRetriever().grabExistingToken()).isNull();
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        Truth.assertThat(tokenRetriever.grabExistingToken()).isNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
         List<PriamInstance> instances = factory.getAllIds(configuration.getAppName());
         Truth.assertThat(instances).doesNotContain(allInstances.get(1));
     }
@@ -153,9 +156,9 @@ public class TokenRetrieverTest {
             }
         };
         TokenRetriever tokenRetriever = getTokenRetriever();
-        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
-        Truth.assertThat(priamInstance).isNotNull();
-        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.3");
+        Truth.assertThat(tokenRetriever.grabExistingToken()).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isTrue();
+        Truth.assertThat(tokenRetriever.getReplacedIp().get()).isEqualTo("127.0.0.3");
     }
 
     @Test
@@ -171,9 +174,9 @@ public class TokenRetrieverTest {
             }
         };
         TokenRetriever tokenRetriever = getTokenRetriever();
-        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
-        Truth.assertThat(priamInstance).isNotNull();
-        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.0");
+        Truth.assertThat(tokenRetriever.grabExistingToken()).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isTrue();
+        Truth.assertThat(tokenRetriever.getReplacedIp().get()).isEqualTo("127.0.0.0");
     }
 
     @Test
@@ -190,9 +193,9 @@ public class TokenRetrieverTest {
             }
         };
         TokenRetriever tokenRetriever = getTokenRetriever();
-        PriamInstance priamInstance = tokenRetriever.grabExistingToken();
-        Truth.assertThat(priamInstance).isNotNull();
-        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.1");
+        Truth.assertThat(tokenRetriever.grabExistingToken()).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isTrue();
+        Truth.assertThat(tokenRetriever.getReplacedIp().get()).isEqualTo("127.0.0.1");
     }
 
     @Test

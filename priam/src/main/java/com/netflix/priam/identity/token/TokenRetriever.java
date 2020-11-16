@@ -33,9 +33,8 @@ public class TokenRetriever implements ITokenRetriever {
 
     // Instance information contains other information like ASG/vpc-id etc.
     private InstanceInfo myInstanceInfo;
-    private boolean isReplace = false;
     private boolean isTokenPregenerated = false;
-    private String replacedIp = "";
+    private String replacedIp;
 
     @Inject
     public TokenRetriever(
@@ -68,13 +67,8 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     @Override
-    public String getReplacedIp() {
-        return replacedIp;
-    }
-
-    @Override
-    public boolean isReplace() {
-        return isReplace;
+    public Optional<String> getReplacedIp() {
+        return Optional.ofNullable(replacedIp);
     }
 
     @Override
@@ -97,10 +91,7 @@ public class TokenRetriever implements ITokenRetriever {
                     if (instance.isPresent()) {
                         // Why check gossip? Priam might have crashed before bootstrapping
                         // Cassandra in replace mode.
-                        Optional<String> optionalIp =
-                                getReplacedIpForAssignedToken(liveNodes, instance.get());
-                        optionalIp.ifPresent(ip -> replacedIp = ip);
-                        optionalIp.ifPresent(ip -> isReplace = true);
+                        replacedIp = getReplacedIpForAssignedToken(liveNodes, instance.get());
                     }
                 }
                 return instance.orElse(null);
@@ -130,12 +121,8 @@ public class TokenRetriever implements ITokenRetriever {
                     if (isNewSlot(instance)) {
                         isTokenPregenerated = true;
                     } else {
-                        Optional<String> ipToReplace =
-                                getReplacedIpForExistingToken(allIds, instance);
-                        if (ipToReplace.isPresent()) {
-                            replacedIp = ipToReplace.get();
-                            isReplace = true;
-                        } else {
+                        replacedIp = getReplacedIpForExistingToken(allIds, instance);
+                        if (replacedIp == null) {
                             return null;
                         }
                     }
@@ -180,7 +167,7 @@ public class TokenRetriever implements ITokenRetriever {
         }.call();
     }
 
-    private Optional<String> getReplacedIpForAssignedToken(
+    private String getReplacedIpForAssignedToken(
             List<PriamInstance> aliveInstances, PriamInstance instance)
             throws TokenRetrieverUtils.GossipParseException {
         // Infer current ownership information from other instances using gossip.
@@ -205,10 +192,10 @@ public class TokenRetriever implements ITokenRetriever {
                                 + inferredIp);
             }
         }
-        return Optional.ofNullable(ipToReplace);
+        return ipToReplace;
     }
 
-    private Optional<String> getReplacedIpForExistingToken(
+    private String getReplacedIpForExistingToken(
             List<PriamInstance> allInstancesWithinCluster, PriamInstance priamInstance) {
 
         // Infer current ownership information from other instances using gossip.
@@ -221,17 +208,17 @@ public class TokenRetriever implements ITokenRetriever {
                 if (inferredTokenInformation.getTokenInformation() == null) {
                     logger.error(
                             "If you see this message, it should not have happened. We expect token ownership information if all nodes agree. This is a code bounty issue.");
-                    return Optional.empty();
+                    return null;
                 }
                 // Everyone agreed to a value. Check if it is live node.
                 if (inferredTokenInformation.getTokenInformation().isLive()) {
                     logger.info(
                             "This token is considered alive unanimously! We will not replace this instance.");
-                    return Optional.empty();
+                    return null;
                 } else {
                     String ip = inferredTokenInformation.getTokenInformation().getIpAddress();
                     logger.info("Will try to replace token owned by {}", ip);
-                    return Optional.of(ip);
+                    return ip;
                 }
             case UNREACHABLE_NODES:
                 // In case of unable to reach sufficient nodes, fallback to IP in token
@@ -243,12 +230,12 @@ public class TokenRetriever implements ITokenRetriever {
                         "Will try to replace token: {} with replacedIp from Token database: {}",
                         priamInstance.getToken(),
                         priamInstance.getHostIP());
-                return Optional.of(priamInstance.getHostIP());
+                return priamInstance.getHostIP();
             case MISMATCH:
                 // Lets not replace the instance if gossip info is not merging!!
                 logger.info(
                         "Mismatch in gossip. We will not replace this instance, until gossip settles down.");
-                return Optional.empty();
+                return null;
             default:
                 throw new IllegalStateException(
                         "Unexpected value: "

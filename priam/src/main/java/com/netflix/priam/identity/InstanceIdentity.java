@@ -92,8 +92,8 @@ public class InstanceIdentity {
         this.config = config;
         this.myInstanceInfo = instanceInfo;
         this.myInstance = tokenRetriever.get();
-        this.replacedIp = tokenRetriever.getReplacedIp();
-        this.isReplace = tokenRetriever.isReplace();
+        this.replacedIp = tokenRetriever.getReplacedIp().orElse(null);
+        this.isReplace = replacedIp != null;
         this.isTokenPregenerated = tokenRetriever.isTokenPregenerated();
     }
 

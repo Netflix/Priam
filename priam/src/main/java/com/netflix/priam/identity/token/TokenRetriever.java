@@ -177,7 +177,7 @@ public class TokenRetriever implements ITokenRetriever {
                 if (hash == max && racIds.isEmpty()) {
                     int idx = config.getRacs().indexOf(myInstanceInfo.getRac());
                     if (idx < 0)
-                        throw new Exception(
+                        throw new IllegalStateException(
                                 String.format(
                                         "Rac %s is not in Racs %s",
                                         myInstanceInfo.getRac(), config.getRacs()));

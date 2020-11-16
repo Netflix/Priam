@@ -17,13 +17,13 @@
 
 package com.netflix.priam.identity.token;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
@@ -32,20 +32,22 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.TokenManager;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import javax.swing.*;
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.Verifications;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 /** Created by aagrawal on 3/1/19. */
 public class TokenRetrieverTest {
-    @Mocked private IPriamInstanceFactory<PriamInstance> factory;
     @Mocked private IMembership membership;
+    private IPriamInstanceFactory<PriamInstance> factory;
     private InstanceInfo instanceInfo;
     private IConfiguration configuration;
 
@@ -62,22 +64,21 @@ public class TokenRetrieverTest {
 
     public TokenRetrieverTest() {
         Injector injector = Guice.createInjector(new BRTestModule());
-        if (instanceInfo == null) instanceInfo = injector.getInstance(InstanceInfo.class);
-        if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
+        instanceInfo = injector.getInstance(InstanceInfo.class);
+        configuration = injector.getInstance(IConfiguration.class);
+        factory = injector.getInstance(IPriamInstanceFactory.class);
     }
 
     @Test
     public void testNoReplacementNormalScenario() throws Exception {
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = Lists.newArrayList();
                 membership.getRacMembership();
                 result = ImmutableSet.of();
             }
         };
         PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
-        Assert.assertNull(priamInstance);
+        Truth.assertThat(priamInstance).isNull();
     }
 
     @Test
@@ -88,20 +89,14 @@ public class TokenRetrieverTest {
         racMembership.add(instanceInfo.getInstanceId());
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = allInstances;
                 membership.getRacMembership();
                 result = ImmutableSet.copyOf(racMembership);
             }
         };
         PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
-        Assert.assertNull(priamInstance);
-        new Verifications() {
-            {
-                factory.delete(withAny(priamInstance));
-                times = 0;
-            }
-        };
+        Truth.assertThat(priamInstance).isNull();
+        List<PriamInstance> factoryInstances = factory.getAllIds(configuration.getAppName());
+        Truth.assertThat(factoryInstances).containsExactlyElementsIn(allInstances);
     }
 
     @Test
@@ -110,12 +105,9 @@ public class TokenRetrieverTest {
         List<PriamInstance> allInstances = getInstances(2);
         Set<String> racMembership = getRacMembership(1);
         racMembership.add(instanceInfo.getInstanceId());
-        PriamInstance instance = null;
         // gossip info returns null, thus unable to replace the instance.
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = allInstances;
                 membership.getRacMembership();
                 result = ImmutableSet.copyOf(racMembership);
                 SystemUtils.getDataFromUrl(anyString);
@@ -123,14 +115,9 @@ public class TokenRetrieverTest {
                 times = 1;
             }
         };
-        PriamInstance priamInstance = getTokenRetriever().grabExistingToken();
-        Assert.assertNull(priamInstance);
-        new Verifications() {
-            {
-                factory.delete(withAny(instance));
-                times = 1;
-            }
-        };
+        Truth.assertThat(getTokenRetriever().grabExistingToken()).isNull();
+        List<PriamInstance> instances = factory.getAllIds(configuration.getAppName());
+        Truth.assertThat(instances).doesNotContain(allInstances.get(1));
     }
 
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
@@ -146,7 +133,7 @@ public class TokenRetrieverTest {
 
     @Test
     public void testReplacementGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
-        List<PriamInstance> allInstances = getInstances(6);
+        getInstances(6);
         Set<String> racMembership = getRacMembership(2);
         racMembership.add(instanceInfo.getInstanceId());
 
@@ -159,8 +146,6 @@ public class TokenRetrieverTest {
 
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = allInstances;
                 membership.getRacMembership();
                 result = ImmutableSet.copyOf(racMembership);
                 SystemUtils.getDataFromUrl(anyString);
@@ -169,27 +154,16 @@ public class TokenRetrieverTest {
         };
         TokenRetriever tokenRetriever = getTokenRetriever();
         PriamInstance priamInstance = tokenRetriever.grabExistingToken();
-        Assert.assertNotNull(priamInstance);
-        Assert.assertEquals("127.0.0.3", tokenRetriever.getReplacedIp());
+        Truth.assertThat(priamInstance).isNotNull();
+        Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.3");
     }
 
     @Test
     public void testPrioritizeDeadTokens(@Mocked SystemUtils systemUtils) throws Exception {
-        ImmutableList<PriamInstance> allInstances =
-                ImmutableList.of(
-                        create(0, "iid_0", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + ""),
-                        create(
-                                1,
-                                "new_slot",
-                                "host_1",
-                                "127.0.0.1",
-                                instanceInfo.getRac(),
-                                1 + ""));
-
+        create(0, "iid_0", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + "");
+        create(1, "new_slot", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + "");
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = allInstances;
                 membership.getRacMembership();
                 result = ImmutableSet.of();
                 SystemUtils.getDataFromUrl(anyString);
@@ -205,14 +179,10 @@ public class TokenRetrieverTest {
     @Test
     public void testPrioritizeDeadInstancesEvenIfAfterANewSlot(@Mocked SystemUtils systemUtils)
             throws Exception {
-        ImmutableList<PriamInstance> allInstances =
-                ImmutableList.of(
-                        create(0, "new_slot", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + ""),
-                        create(1, "iid_1", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + ""));
+        create(0, "new_slot", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + "");
+        create(1, "iid_1", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + "");
         new Expectations() {
             {
-                factory.getAllIds(anyString);
-                result = allInstances;
                 membership.getRacMembership();
                 result = ImmutableSet.of();
                 SystemUtils.getDataFromUrl(anyString);
@@ -223,6 +193,95 @@ public class TokenRetrieverTest {
         PriamInstance priamInstance = tokenRetriever.grabExistingToken();
         Truth.assertThat(priamInstance).isNotNull();
         Truth.assertThat(tokenRetriever.getReplacedIp()).isEqualTo("127.0.0.1");
+    }
+
+    @Test
+    public void testNewTokenFailureIfProhibited() {
+        ((FakeConfiguration) configuration).setCreateNewToken(false);
+        create(0, "iid_0", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + "");
+        create(1, "iid_1", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + "");
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of("iid_0", "iid_1");
+            }
+        };
+        Assertions.assertThrows(IllegalStateException.class, () -> getTokenRetriever().get());
+    }
+
+    @Test
+    public void testNewTokenNoInstancesInRac() throws Exception {
+        create(0, "iid_0", "host_0", "127.0.0.0", "az2", 0 + "");
+        create(1, "iid_1", "host_1", "127.0.0.1", "az2", 1 + "");
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of("iid_0", "iid_1");
+                membership.getRacCount();
+                result = 1;
+                membership.getRacMembershipSize();
+                result = 3;
+            }
+        };
+        PriamInstance instance = getTokenRetriever().get();
+        Truth.assertThat(instance.getToken()).isEqualTo("1808575600");
+        // region offset for us-east-1 + index of rac az1 (1808575600 + 0)
+        Truth.assertThat(instance.getId()).isEqualTo(1808575600);
+    }
+
+    @Test
+    public void testNewTokenGenerationNoInstancesWithLargeEnoughId() throws Exception {
+        create(0, "iid_0", "host_0", "127.0.0.0", "az1", 0 + "");
+        create(1, "iid_1", "host_1", "127.0.0.1", "az1", 1 + "");
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of("iid_0", "iid_1");
+                membership.getRacCount();
+                result = 1;
+                membership.getRacMembershipSize();
+                result = 3;
+            }
+        };
+        PriamInstance instance = getTokenRetriever().get();
+        Truth.assertThat(instance.getToken()).isEqualTo("170141183460469231731687303717692681326");
+        // region offset for us-east-1 + number of racs in cluster (3)
+        Truth.assertThat(instance.getId()).isEqualTo(1808575603);
+    }
+
+    @Test
+    public void testNewTokenFailureWhenMyRacIsNotInCluster() {
+        ((FakeConfiguration) configuration).setRacs("az2", "az3");
+        create(0, "iid_0", "host_0", "127.0.0.0", "az2", 0 + "");
+        create(1, "iid_1", "host_1", "127.0.0.1", "az2", 1 + "");
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of("iid_0", "iid_1");
+            }
+        };
+        Assertions.assertThrows(IllegalStateException.class, () -> getTokenRetriever().get());
+    }
+
+    @Test
+    public void testNewTokenGenerationMultipleInstancesWithLargetEnoughIds() throws Exception {
+        create(2000000000, "iid_0", "host_0", "127.0.0.0", "az1", 0 + "");
+        create(2000000001, "iid_1", "host_1", "127.0.0.1", "az1", 1 + "");
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of("iid_0", "iid_1");
+                membership.getRacCount();
+                result = 1;
+                membership.getRacMembershipSize();
+                result = 3;
+            }
+        };
+        PriamInstance instance = getTokenRetriever().get();
+        Truth.assertThat(instance.getToken())
+                .isEqualTo("10856391546591660081525376676060033425699421368");
+        // max id (2000000001) + total instances (3)
+        Truth.assertThat(instance.getId()).isEqualTo(2000000004);
     }
 
     private List<PriamInstance> getInstances(int noOfInstances) {
@@ -247,16 +306,8 @@ public class TokenRetrieverTest {
 
     private PriamInstance create(
             int id, String instanceID, String hostname, String ip, String rac, String payload) {
-        PriamInstance ins = new PriamInstance();
-        ins.setApp(configuration.getAppName());
-        ins.setRac(rac);
-        ins.setHost(hostname);
-        ins.setHostIP(ip);
-        ins.setId(id);
-        ins.setInstanceId(instanceID);
-        ins.setDC(instanceInfo.getRegion());
-        ins.setToken(payload);
-        return ins;
+        return factory.create(
+                configuration.getAppName(), id, instanceID, hostname, ip, rac, null, payload);
     }
 
     private TokenRetriever getTokenRetriever() {

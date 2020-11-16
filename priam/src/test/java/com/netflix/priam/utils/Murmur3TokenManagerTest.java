@@ -91,12 +91,12 @@ public class Murmur3TokenManagerTest {
         assertEquals(
                 MAXIMUM_TOKEN_MURMUR3
                         .subtract(MINIMUM_TOKEN_MURMUR3)
-                        .divide(BigInteger.valueOf(8 * 32))
+                        .divide(BigInteger.valueOf(256))
                         .multiply(BigInteger.TEN)
                         .add(BigInteger.valueOf(tokenManager.regionOffset("region")))
                         .add(MINIMUM_TOKEN_MURMUR3)
                         .toString(),
-                tokenManager.createToken(10, 8, 32, "region"));
+                tokenManager.createToken(10, 256, "region"));
     }
 
     @Test(expected = IllegalArgumentException.class)

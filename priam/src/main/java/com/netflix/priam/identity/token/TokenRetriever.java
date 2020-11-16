@@ -1,7 +1,5 @@
 package com.netflix.priam.identity.token;
 
-import static java.util.stream.Collectors.toList;
-
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableSet;
@@ -15,10 +13,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.Set;
+import java.util.*;
 import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -144,7 +139,9 @@ public class TokenRetriever implements ITokenRetriever {
                             return null;
                         }
                     }
-                    return optionalInstance.map(i -> claimToken(i)).orElse(null);
+                    return optionalInstance
+                            .map(i -> claimToken(i.getId(), i.getVolumes(), i.getToken()))
+                            .orElse(null);
                 }
                 return null;
             }
@@ -152,58 +149,33 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     private PriamInstance grabNewToken() throws Exception {
-        if (!this.config.isCreateNewTokenEnable()) {
-            throw new IllegalStateException(
-                    "Node attempted to erroneously create a new token when we should be grabbing an existing token.");
-        }
-
+        Preconditions.checkState(config.isCreateNewTokenEnable());
         return new RetryableCallable<PriamInstance>() {
             @Override
             public PriamInstance retriableCall() throws Exception {
                 set(100, 100);
                 logger.info("Trying to generate a new token");
                 sleeper.sleep(new Random().nextInt(15000));
-                // this hash ensures the nodes are spread far away from the other regions.
-                int hash = tokenManager.regionOffset(myInstanceInfo.getRegion());
-                List<Integer> racIds =
+                String myRegion = myInstanceInfo.getRegion();
+                // this offset ensures the nodes are spread far away from the other regions.
+                int regionOffset = tokenManager.regionOffset(myRegion);
+                String myRac = myInstanceInfo.getRac();
+                List<String> racs = config.getRacs();
+                int mySlot =
                         factory.getAllIds(config.getAppName())
                                 .stream()
-                                .filter(i -> i.getRac().equals(myInstanceInfo.getRac()))
+                                .filter(i -> i.getRac().equals(myRac))
                                 .map(PriamInstance::getId)
-                                .collect(toList());
-                int max = Math.max(hash, racIds.stream().max(Integer::compareTo).orElse(hash));
-                int maxSlot = max - hash;
-                int my_slot;
-                if (hash == max && racIds.isEmpty()) {
-                    int idx = config.getRacs().indexOf(myInstanceInfo.getRac());
-                    if (idx < 0)
-                        throw new IllegalStateException(
-                                String.format(
-                                        "Rac %s is not in Racs %s",
-                                        myInstanceInfo.getRac(), config.getRacs()));
-                    my_slot = idx + maxSlot;
-                } else my_slot = config.getRacs().size() + maxSlot;
-                logger.info(
-                        "Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
-                        my_slot,
-                        membership.getRacCount(),
-                        membership.getRacMembershipSize(),
-                        myInstanceInfo.getRegion());
-                String payload =
-                        tokenManager.createToken(
-                                my_slot,
-                                membership.getRacCount(),
-                                membership.getRacMembershipSize(),
-                                myInstanceInfo.getRegion());
-                return factory.create(
-                        config.getAppName(),
-                        my_slot + hash,
-                        myInstanceInfo.getInstanceId(),
-                        myInstanceInfo.getHostname(),
-                        myInstanceInfo.getHostIP(),
-                        myInstanceInfo.getRac(),
-                        null,
-                        payload);
+                                .max(Integer::compareTo)
+                                .map(id -> racs.size() + Math.max(id, regionOffset) - regionOffset)
+                                .orElseGet(
+                                        () -> {
+                                            Preconditions.checkState(racs.contains(myRac));
+                                            return racs.indexOf(myRac);
+                                        });
+                int instanceCount = membership.getRacCount() * membership.getRacMembershipSize();
+                String newToken = tokenManager.createToken(mySlot, instanceCount, myRegion);
+                return claimToken(mySlot + regionOffset, null /* volumes */, newToken);
             }
         }.call();
     }
@@ -298,23 +270,20 @@ public class TokenRetriever implements ITokenRetriever {
         factory.delete(priamInstance);
     }
 
-    private PriamInstance claimToken(PriamInstance instance) {
+    private PriamInstance claimToken(int id, Map<String, Object> volumes, String token) {
         try {
             return factory.create(
                     config.getAppName(),
-                    instance.getId(),
+                    id,
                     myInstanceInfo.getInstanceId(),
                     myInstanceInfo.getHostname(),
                     myInstanceInfo.getHostIP(),
                     myInstanceInfo.getRac(),
-                    instance.getVolumes(),
-                    instance.getToken());
+                    volumes,
+                    token);
         } catch (Exception ex) {
             long sleepTime = randomizer.nextInt(MAX_VALUE_IN_MILISECS);
-            logger.warn(
-                    "Failed creating token: {}; sleeping {} millis",
-                    instance.getToken(),
-                    sleepTime);
+            logger.warn("Failed creating token: {}; sleeping {} millis", token, sleepTime);
             sleeper.sleepQuietly(sleepTime);
             throw ex;
         }

@@ -123,6 +123,29 @@ public class TokenRetrieverTest {
         Truth.assertThat(instances).doesNotContain(allInstances.get(1));
     }
 
+    @Test
+    // There is a potential slot for dead token but we are unable to replace.
+    public void testUsePregeneratedTokenWhenThereIsNoGossipMatchForDeadToken(
+            @Mocked SystemUtils systemUtils) throws Exception {
+        create(0, "iid_0", "host_0", "127.0.0.0", instanceInfo.getRac(), 0 + "");
+        create(1, "new_slot", "host_1", "127.0.0.1", instanceInfo.getRac(), 1 + "");
+        // gossip info returns null, thus unable to replace the instance.
+        new Expectations() {
+            {
+                membership.getRacMembership();
+                result = ImmutableSet.of();
+                SystemUtils.getDataFromUrl(anyString);
+                result = getStatus(liveInstances, tokenToEndpointMap);
+                times = 1;
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        PriamInstance instance = tokenRetriever.grabExistingToken();
+        Truth.assertThat(instance).isNotNull();
+        Truth.assertThat(instance.getId()).isEqualTo(1);
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
+    }
+
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
         JSONObject jsonObject = new JSONObject();
         try {

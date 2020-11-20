@@ -14,6 +14,7 @@ import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,31 +107,25 @@ public class TokenRetriever implements ITokenRetriever {
             public PriamInstance retriableCall() throws Exception {
                 logger.info("Trying to grab an existing token");
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
-                Set<String> asgInstances = getRacInstanceIds();
+                Set<String> racInstanceIds = getRacInstanceIds();
                 List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
-                Optional<PriamInstance> optionalInstance =
+                List<PriamInstance> instances =
                         allIds.stream()
                                 .filter(i -> i.getRac().equals(myInstanceInfo.getRac()))
-                                .filter(i -> !asgInstances.contains(i.getInstanceId()))
-                                .min(
-                                        (left, right) ->
-                                                Boolean.compare(isNewSlot(left), isNewSlot(right)));
-                if (optionalInstance.isPresent()) {
-                    PriamInstance instance = optionalInstance.get();
-                    markDead(instance);
-                    if (isNewSlot(instance)) {
-                        isTokenPregenerated = true;
-                    } else {
-                        replacedIp = getReplacedIpForExistingToken(allIds, instance);
-                        if (replacedIp == null) {
-                            return null;
-                        }
-                    }
-                    return optionalInstance
-                            .map(i -> claimToken(i.getId(), i.getVolumes(), i.getToken()))
-                            .orElse(null);
+                                .filter(i -> !racInstanceIds.contains(i.getInstanceId()))
+                                .collect(Collectors.toList());
+                Optional<PriamInstance> candidate =
+                        instances.stream().filter(i -> !isNew(i)).findFirst();
+                candidate.ifPresent(i -> markDead(i));
+                candidate.ifPresent(i -> replacedIp = getReplacedIpForExistingToken(allIds, i));
+                if (replacedIp == null) {
+                    candidate = instances.stream().filter(i -> isNew(i)).findFirst();
+                    candidate.ifPresent(i -> isTokenPregenerated = true);
+                    candidate.ifPresent(i -> markDead(i));
                 }
-                return null;
+                return candidate
+                        .map(i -> claimToken(i.getId(), i.getVolumes(), i.getToken()))
+                        .orElse(null);
             }
         }.call();
     }
@@ -290,7 +285,7 @@ public class TokenRetriever implements ITokenRetriever {
                 : racMembership;
     }
 
-    private boolean isNewSlot(PriamInstance instance) {
+    private boolean isNew(PriamInstance instance) {
         return instance.getInstanceId().equals(NEW_SLOT);
     }
 }

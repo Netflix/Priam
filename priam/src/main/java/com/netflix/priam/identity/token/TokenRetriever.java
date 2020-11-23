@@ -116,16 +116,12 @@ public class TokenRetriever implements ITokenRetriever {
                                 .collect(Collectors.toList());
                 Optional<PriamInstance> candidate =
                         instances.stream().filter(i -> !isNew(i)).findFirst();
-                candidate.ifPresent(i -> markDead(i));
                 candidate.ifPresent(i -> replacedIp = getReplacedIpForExistingToken(allIds, i));
                 if (replacedIp == null) {
                     candidate = instances.stream().filter(i -> isNew(i)).findFirst();
                     candidate.ifPresent(i -> isTokenPregenerated = true);
-                    candidate.ifPresent(i -> markDead(i));
                 }
-                return candidate
-                        .map(i -> claimToken(i.getId(), i.getVolumes(), i.getToken()))
-                        .orElse(null);
+                return candidate.map(i -> claimToken(i)).orElse(null);
             }
         }.call();
     }
@@ -157,7 +153,7 @@ public class TokenRetriever implements ITokenRetriever {
                                         });
                 int instanceCount = membership.getRacCount() * membership.getRacMembershipSize();
                 String newToken = tokenManager.createToken(mySlot, instanceCount, myRegion);
-                return claimToken(mySlot + regionOffset, null /* volumes */, newToken);
+                return createToken(mySlot + regionOffset, newToken);
             }
         }.call();
     }
@@ -238,21 +234,30 @@ public class TokenRetriever implements ITokenRetriever {
         }
     }
 
-    private void markDead(PriamInstance priamInstance) {
-        factory.create(
-                priamInstance.getApp() + "-dead",
-                priamInstance.getId(),
-                priamInstance.getInstanceId(),
-                priamInstance.getHostName(),
-                priamInstance.getHostIP(),
-                priamInstance.getRac(),
-                priamInstance.getVolumes(),
-                priamInstance.getToken());
-        // remove it as we marked it down...
-        factory.delete(priamInstance);
+    private PriamInstance claimToken(PriamInstance originalInstance) {
+        PriamInstance newInstance = new PriamInstance();
+        newInstance.setApp(config.getAppName());
+        newInstance.setId(originalInstance.getId());
+        newInstance.setInstanceId(myInstanceInfo.getInstanceId());
+        newInstance.setHost(myInstanceInfo.getHostname());
+        newInstance.setHostIP(myInstanceInfo.getHostIP());
+        newInstance.setRac(myInstanceInfo.getRac());
+        newInstance.setVolumes(originalInstance.getVolumes());
+        newInstance.setToken(originalInstance.getToken());
+        newInstance.setDC(originalInstance.getDC());
+        try {
+            factory.update(originalInstance, newInstance);
+        } catch (Exception ex) {
+            long sleepTime = randomizer.nextInt(MAX_VALUE_IN_MILISECS);
+            String token = newInstance.getToken();
+            logger.warn("Failed updating token: {}; sleeping {} millis", token, sleepTime);
+            sleeper.sleepQuietly(sleepTime);
+            throw ex;
+        }
+        return newInstance;
     }
 
-    private PriamInstance claimToken(int id, Map<String, Object> volumes, String token) {
+    private PriamInstance createToken(int id, String token) {
         try {
             return factory.create(
                     config.getAppName(),
@@ -261,11 +266,11 @@ public class TokenRetriever implements ITokenRetriever {
                     myInstanceInfo.getHostname(),
                     myInstanceInfo.getHostIP(),
                     myInstanceInfo.getRac(),
-                    volumes,
+                    null /* volumes */,
                     token);
         } catch (Exception ex) {
             long sleepTime = randomizer.nextInt(MAX_VALUE_IN_MILISECS);
-            logger.warn("Failed creating token: {}; sleeping {} millis", token, sleepTime);
+            logger.warn("Failed updating token: {}; sleeping {} millis", token, sleepTime);
             sleeper.sleepQuietly(sleepTime);
             throw ex;
         }

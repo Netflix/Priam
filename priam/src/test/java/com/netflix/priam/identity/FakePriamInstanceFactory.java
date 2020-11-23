@@ -72,7 +72,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     }
 
     @Override
-    public void update(PriamInstance inst) {
+    public void update(PriamInstance orig, PriamInstance inst) {
         instances.put(inst.getId(), inst);
     }
 

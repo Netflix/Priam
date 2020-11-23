@@ -77,9 +77,10 @@ public interface IPriamInstanceFactory<T> {
     /**
      * Update the details of the server node in registry
      *
-     * @param inst the node to update
+     * @param orig the values that should exist in the database for the update to succeed
+     * @param inst the new values
      */
-    void update(PriamInstance inst);
+    void update(PriamInstance orig, PriamInstance inst);
 
     /**
      * Sort the list by instance ID

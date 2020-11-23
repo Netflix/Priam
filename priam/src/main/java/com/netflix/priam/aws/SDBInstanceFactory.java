@@ -104,9 +104,9 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     }
 
     @Override
-    public void update(PriamInstance inst) {
+    public void update(PriamInstance orig, PriamInstance inst) {
         try {
-            dao.createInstance(inst);
+            dao.updateInstance(orig, inst);
         } catch (AmazonServiceException e) {
             throw new RuntimeException("Unable to update/create priam instance", e);
         }

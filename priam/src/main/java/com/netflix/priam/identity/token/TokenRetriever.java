@@ -95,7 +95,7 @@ public class TokenRetriever implements ITokenRetriever {
                         replacedIp = getReplacedIpForAssignedToken(liveNodes, instance.get());
                     }
                 }
-                return instance.orElse(null);
+                return instance.map(i -> claimToken(i)).orElse(null);
             }
         }.call();
     }
@@ -236,6 +236,12 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     private PriamInstance claimToken(PriamInstance originalInstance) {
+        if (originalInstance.getInstanceId().equals(myInstanceInfo.getInstanceId())
+                && originalInstance.getHostName().equals(myInstanceInfo.getHostname())
+                && originalInstance.getHostIP().equals(myInstanceInfo.getHostIP())
+                && originalInstance.getRac().equals(myInstanceInfo.getRac())) {
+            return originalInstance;
+        }
         PriamInstance newInstance = new PriamInstance();
         newInstance.setApp(config.getAppName());
         newInstance.setId(originalInstance.getId());

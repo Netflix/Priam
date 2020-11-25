@@ -388,6 +388,13 @@ public class TokenRetrieverTest {
         Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isTrue();
     }
 
+    @Test
+    public void testIPIsUpdatedWhenGrabbingPreassignedToken(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        create(0, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 0 + "");
+        Truth.assertThat(getTokenRetriever().get().getHostIP()).isEqualTo("127.0.0.0");
+    }
+
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
         JSONObject jsonObject = new JSONObject();
         try {

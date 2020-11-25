@@ -17,6 +17,7 @@
 
 package com.netflix.priam.identity.token;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.common.truth.Truth;
@@ -37,7 +38,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import javax.swing.*;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.codehaus.jettison.json.JSONObject;
@@ -53,14 +53,10 @@ public class TokenRetrieverTest {
 
     private Map<String, String> tokenToEndpointMap =
             IntStream.range(0, 6)
-                    .mapToObj(e -> Integer.valueOf(e))
+                    .boxed()
                     .collect(
-                            Collectors.toMap(
-                                    e -> String.valueOf(e), e -> String.format("127.0.0.%s", e)));
-    private List<String> liveInstances =
-            IntStream.range(0, 6)
-                    .mapToObj(e -> String.format("127.0.0.%d", e))
-                    .collect(Collectors.toList());
+                            Collectors.toMap(String::valueOf, e -> String.format("127.0.0.%s", e)));
+    private ImmutableList<String> liveInstances = ImmutableList.copyOf(tokenToEndpointMap.values());
 
     public TokenRetrieverTest() {
         Injector injector = Guice.createInjector(new BRTestModule());
@@ -103,7 +99,7 @@ public class TokenRetrieverTest {
     @Test
     // There is a potential slot for dead token but we are unable to replace.
     public void testNoReplacementNoGossipMatch(@Mocked SystemUtils systemUtils) throws Exception {
-        List<PriamInstance> allInstances = getInstances(2);
+        getInstances(2);
         Set<String> racMembership = getRacMembership(1);
         racMembership.add(instanceInfo.getInstanceId());
         // gossip info returns null, thus unable to replace the instance.
@@ -142,17 +138,6 @@ public class TokenRetrieverTest {
         Truth.assertThat(instance).isNotNull();
         Truth.assertThat(instance.getId()).isEqualTo(1);
         Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
-    }
-
-    private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
-        JSONObject jsonObject = new JSONObject();
-        try {
-            jsonObject.put("live", liveInstances);
-            jsonObject.put("tokenToEndpointMap", tokenToEndpointMap);
-        } catch (Exception e) {
-
-        }
-        return jsonObject.toString();
     }
 
     @Test
@@ -306,6 +291,112 @@ public class TokenRetrieverTest {
                 .isEqualTo("10856391546591660081525376676060033425699421368");
         // max id (2000000001) + total instances (3)
         Truth.assertThat(instance.getId()).isEqualTo(2000000004);
+    }
+
+    @Test
+    public void testPreassignedTokenNotReplacedIfPublicIPMatch(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        // IP in DB doesn't matter so we make it different to confirm that
+        create(0, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 0 + "");
+        getInstances(5);
+        String gossipResponse = getStatus(liveInstances, tokenToEndpointMap);
+
+        new Expectations() {
+            {
+                SystemUtils.getDataFromUrl(anyString);
+                returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
+    }
+
+    @Test
+    public void testPreassignedTokenNotReplacedIfPrivateIPMatch(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        // IP in DB doesn't matter so we make it different to confirm that
+        create(0, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 0 + "");
+        getInstances(5);
+        Map<String, String> myTokenToEndpointMap =
+                IntStream.range(0, 7)
+                        .boxed()
+                        .collect(
+                                Collectors.toMap(
+                                        String::valueOf, e -> String.format("127.1.1.%s", e)));
+        ImmutableList<String> myLiveInstances = ImmutableList.copyOf(tokenToEndpointMap.values());
+        String gossipResponse = getStatus(myLiveInstances, myTokenToEndpointMap);
+
+        new Expectations() {
+            {
+                SystemUtils.getDataFromUrl(anyString);
+                returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
+    }
+
+    @Test
+    public void testGetPreassignedTokenThrowsIfOwnerIPIsLive(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        getInstances(5);
+        create(6, instanceInfo.getInstanceId(), "host_5", "1.2.3.4", "az1", 6 + "");
+        Map<String, String> myTokenToEndpointMap =
+                IntStream.range(0, 7)
+                        .boxed()
+                        .collect(
+                                Collectors.toMap(
+                                        String::valueOf, e -> String.format("18.221.0.%s", e)));
+        ImmutableList<String> myLiveInstances = ImmutableList.copyOf(myTokenToEndpointMap.values());
+        String gossipResponse = getStatus(myLiveInstances, myTokenToEndpointMap);
+
+        new Expectations() {
+            {
+                SystemUtils.getDataFromUrl(anyString);
+                returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
+            }
+        };
+        Assertions.assertThrows(
+                TokenRetrieverUtils.GossipParseException.class, () -> getTokenRetriever().get());
+    }
+
+    @Test
+    public void testGetPreassignedTokenReplacesIfOwnerIPIsNotLive(@Mocked SystemUtils systemUtils)
+            throws Exception {
+        getInstances(5);
+        create(6, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 6 + "");
+        Map<String, String> myTokenToEndpointMap =
+                IntStream.range(0, 7)
+                        .boxed()
+                        .collect(
+                                Collectors.toMap(
+                                        String::valueOf, e -> String.format("18.221.0.%s", e)));
+        List<String> myLiveInstances =
+                tokenToEndpointMap.values().stream().sorted().limit(6).collect(Collectors.toList());
+        String gossipResponse = getStatus(myLiveInstances, myTokenToEndpointMap);
+
+        new Expectations() {
+            {
+                SystemUtils.getDataFromUrl(anyString);
+                returns(gossipResponse, gossipResponse, null, "random_value", gossipResponse);
+            }
+        };
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isTrue();
+    }
+
+    private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("live", liveInstances);
+            jsonObject.put("tokenToEndpointMap", tokenToEndpointMap);
+        } catch (Exception e) {
+
+        }
+        return jsonObject.toString();
     }
 
     private List<PriamInstance> getInstances(int noOfInstances) {

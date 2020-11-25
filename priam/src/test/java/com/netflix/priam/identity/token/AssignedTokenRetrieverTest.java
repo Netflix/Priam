@@ -58,6 +58,9 @@ public class AssignedTokenRetrieverTest {
                 instanceInfo.getInstanceId();
                 result = liveHosts.get(0).getInstanceId();
 
+                instanceInfo.getHostIP();
+                result = liveHosts.get(0).getHostIP();
+
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
                         liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
                 result = inferredTokenOwnership;

@@ -17,6 +17,7 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -33,6 +34,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
+        if (appName.endsWith("-dead")) return ImmutableList.of();
         List<PriamInstance> result = new ArrayList<>(instances.values());
         sort(result);
         return result;

@@ -19,6 +19,7 @@ package com.netflix.priam.identity;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import java.io.*;
 import java.util.List;
@@ -32,18 +33,18 @@ public class DoubleRing {
     private final IConfiguration config;
     private final IPriamInstanceFactory<PriamInstance> factory;
     private final ITokenManager tokenManager;
-    private final InstanceIdentity instanceIdentity;
+    private final InstanceInfo instanceInfo;
 
     @Inject
     public DoubleRing(
             IConfiguration config,
             IPriamInstanceFactory factory,
             ITokenManager tokenManager,
-            InstanceIdentity instanceIdentity) {
+            InstanceInfo instanceInfo) {
         this.config = config;
         this.factory = factory;
         this.tokenManager = tokenManager;
-        this.instanceIdentity = instanceIdentity;
+        this.instanceInfo = instanceInfo;
     }
 
     /**
@@ -56,7 +57,7 @@ public class DoubleRing {
         // delete all
         for (PriamInstance data : local) factory.delete(data);
 
-        int hash = tokenManager.regionOffset(instanceIdentity.getInstanceInfo().getRegion());
+        int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         // move existing slots.
         for (PriamInstance data : local) {
             int slot = (data.getId() - hash) * 2;
@@ -80,16 +81,13 @@ public class DoubleRing {
                             ? (currentSlot + 3) - new_ring_size
                             : currentSlot + 3;
             String token =
-                    tokenManager.createToken(
-                            new_slot,
-                            new_ring_size,
-                            instanceIdentity.getInstanceInfo().getRegion());
+                    tokenManager.createToken(new_slot, new_ring_size, instanceInfo.getRegion());
             factory.create(
                     data.getApp(),
                     new_slot + hash,
                     InstanceIdentity.DUMMY_INSTANCE_ID,
-                    instanceIdentity.getInstanceInfo().getHostname(),
-                    instanceIdentity.getInstanceInfo().getHostIP(),
+                    instanceInfo.getHostname(),
+                    instanceInfo.getHostIP(),
                     data.getRac(),
                     null,
                     token);
@@ -100,8 +98,7 @@ public class DoubleRing {
     private List<PriamInstance> filteredRemote(List<PriamInstance> lst) {
         List<PriamInstance> local = Lists.newArrayList();
         for (PriamInstance data : lst)
-            if (data.getDC().equals(instanceIdentity.getInstanceInfo().getRegion()))
-                local.add(data);
+            if (data.getDC().equals(instanceInfo.getRegion())) local.add(data);
         return local;
     }
 

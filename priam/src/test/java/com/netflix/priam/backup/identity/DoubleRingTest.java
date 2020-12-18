@@ -32,7 +32,7 @@ public class DoubleRingTest extends InstanceTestUtils {
     public void testDouble() throws Exception {
         createInstances();
         int originalSize = factory.getAllIds(config.getAppName()).size();
-        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
         List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
         factory.sort(doubled);
 
@@ -59,7 +59,7 @@ public class DoubleRingTest extends InstanceTestUtils {
     public void testBR() throws Exception {
         createInstances();
         int intialSize = factory.getAllIds(config.getAppName()).size();
-        DoubleRing ring = new DoubleRing(config, factory, tokenManager, identity);
+        DoubleRing ring = new DoubleRing(config, factory, tokenManager, instanceInfo);
         ring.backup();
         ring.doubleSlots();
         assertEquals(intialSize * 2, factory.getAllIds(config.getAppName()).size());

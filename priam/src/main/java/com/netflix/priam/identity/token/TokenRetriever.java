@@ -236,9 +236,11 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     private PriamInstance claimToken(PriamInstance originalInstance) {
+        String hostIP =
+                config.usePrivateIP() ? myInstanceInfo.getPrivateIP() : myInstanceInfo.getHostIP();
         if (originalInstance.getInstanceId().equals(myInstanceInfo.getInstanceId())
                 && originalInstance.getHostName().equals(myInstanceInfo.getHostname())
-                && originalInstance.getHostIP().equals(myInstanceInfo.getHostIP())
+                && originalInstance.getHostIP().equals(hostIP)
                 && originalInstance.getRac().equals(myInstanceInfo.getRac())) {
             return originalInstance;
         }
@@ -247,7 +249,7 @@ public class TokenRetriever implements ITokenRetriever {
         newInstance.setId(originalInstance.getId());
         newInstance.setInstanceId(myInstanceInfo.getInstanceId());
         newInstance.setHost(myInstanceInfo.getHostname());
-        newInstance.setHostIP(myInstanceInfo.getHostIP());
+        newInstance.setHostIP(hostIP);
         newInstance.setRac(myInstanceInfo.getRac());
         newInstance.setVolumes(originalInstance.getVolumes());
         newInstance.setToken(originalInstance.getToken());
@@ -266,12 +268,16 @@ public class TokenRetriever implements ITokenRetriever {
 
     private PriamInstance createToken(int id, String token) {
         try {
+            String hostIp =
+                    config.usePrivateIP()
+                            ? myInstanceInfo.getPrivateIP()
+                            : myInstanceInfo.getHostIP();
             return factory.create(
                     config.getAppName(),
                     id,
                     myInstanceInfo.getInstanceId(),
                     myInstanceInfo.getHostname(),
-                    myInstanceInfo.getHostIP(),
+                    hostIp,
                     myInstanceInfo.getRac(),
                     null /* volumes */,
                     token);

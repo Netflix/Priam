@@ -22,6 +22,7 @@ import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
@@ -34,10 +35,13 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
-        if (appName.endsWith("-dead")) return ImmutableList.of();
-        List<PriamInstance> result = new ArrayList<>(instances.values());
-        sort(result);
-        return result;
+        return appName.endsWith("-dead")
+                ? ImmutableList.of()
+                : instances
+                        .values()
+                        .stream()
+                        .sorted(Comparator.comparingInt(PriamInstance::getId))
+                        .collect(Collectors.toList());
     }
 
     @Override
@@ -76,17 +80,5 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     @Override
     public void update(PriamInstance orig, PriamInstance inst) {
         instances.put(inst.getId(), inst);
-    }
-
-    @Override
-    public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator =
-                (Comparator<PriamInstance>)
-                        (o1, o2) -> {
-                            Integer c1 = o1.getId();
-                            Integer c2 = o2.getId();
-                            return c1.compareTo(c2);
-                        };
-        return_.sort(comparator);
     }
 }

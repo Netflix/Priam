@@ -81,11 +81,4 @@ public interface IPriamInstanceFactory<T> {
      * @param inst the new values
      */
     void update(PriamInstance orig, PriamInstance inst);
-
-    /**
-     * Sort the list by instance ID
-     *
-     * @param return_ the list of nodes to sort
-     */
-    void sort(List<T> return_);
 }

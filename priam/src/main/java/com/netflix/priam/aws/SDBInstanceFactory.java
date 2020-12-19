@@ -24,6 +24,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,10 +49,10 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
 
     @Override
     public List<PriamInstance> getAllIds(String appName) {
-        List<PriamInstance> return_ = new ArrayList<>();
-        return_.addAll(dao.getAllIds(appName));
-        sort(return_);
-        return return_;
+        return dao.getAllIds(appName)
+                .stream()
+                .sorted(Comparator.comparingInt(PriamInstance::getId))
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -110,18 +111,6 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
         } catch (AmazonServiceException e) {
             throw new RuntimeException("Unable to update/create priam instance", e);
         }
-    }
-
-    @Override
-    public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator =
-                (Comparator<PriamInstance>)
-                        (o1, o2) -> {
-                            Integer c1 = o1.getId();
-                            Integer c2 = o2.getId();
-                            return c1.compareTo(c2);
-                        };
-        return_.sort(comparator);
     }
 
     private PriamInstance makePriamInstance(

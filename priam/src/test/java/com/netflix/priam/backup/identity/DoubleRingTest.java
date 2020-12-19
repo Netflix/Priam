@@ -34,8 +34,6 @@ public class DoubleRingTest extends InstanceTestUtils {
         int originalSize = factory.getAllIds(config.getAppName()).size();
         new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
         List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
-        factory.sort(doubled);
-
         assertEquals(originalSize * 2, doubled.size());
         validate(doubled);
     }

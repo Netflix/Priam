@@ -95,8 +95,6 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         int before = factory.getAllIds(config.getAppName()).size();
         new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
         List<PriamInstance> lst = factory.getAllIds(config.getAppName());
-        // sort it so it will look good if you want to print it.
-        factory.sort(lst);
         for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
             if (0 == i % 2) continue;

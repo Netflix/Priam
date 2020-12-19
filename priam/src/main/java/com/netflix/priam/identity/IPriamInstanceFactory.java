@@ -88,13 +88,4 @@ public interface IPriamInstanceFactory<T> {
      * @param return_ the list of nodes to sort
      */
     void sort(List<T> return_);
-
-    /**
-     * Attach volumes if required
-     *
-     * @param instance
-     * @param mountPath
-     * @param device
-     */
-    void attachVolumes(PriamInstance instance, String mountPath, String device);
 }

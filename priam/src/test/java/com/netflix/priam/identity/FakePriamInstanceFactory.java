@@ -89,9 +89,4 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
                         };
         return_.sort(comparator);
     }
-
-    @Override
-    public void attachVolumes(PriamInstance instance, String mountPath, String device) {
-        // TODO Auto-generated method stub
-    }
 }

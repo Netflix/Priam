@@ -124,11 +124,6 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
         return_.sort(comparator);
     }
 
-    @Override
-    public void attachVolumes(PriamInstance instance, String mountPath, String device) {
-        // TODO Auto-generated method stub
-    }
-
     private PriamInstance makePriamInstance(
             String app,
             int id,

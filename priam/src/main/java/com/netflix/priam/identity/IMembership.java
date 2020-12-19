@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.AWSMembership;
 import java.util.Collection;
-import java.util.List;
 
 /**
  * Interface to manage membership meta information such as size of RAC, list of nodes in RAC etc.
@@ -75,7 +74,7 @@ public interface IMembership {
      *
      * @return
      */
-    List<String> listACL(int from, int to);
+    ImmutableSet<String> listACL(int from, int to);
 
     /**
      * Expand the membership size by 1.

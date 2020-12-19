@@ -274,11 +274,11 @@ public class AWSMembership implements IMembership {
     }
 
     /** List SG ACL's */
-    public List<String> listACL(int from, int to) {
+    public ImmutableSet<String> listACL(int from, int to) {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            List<String> ipPermissions = new ArrayList<>();
+            ImmutableSet.Builder<String> ipPermissions = ImmutableSet.builder();
 
             if (isClassic()) {
 
@@ -316,7 +316,7 @@ public class AWSMembership implements IMembership {
                 logger.debug("Fetch current permissions for vpc env of running instance");
             }
 
-            return ipPermissions;
+            return ipPermissions.build();
         } finally {
             if (client != null) client.shutdown();
         }

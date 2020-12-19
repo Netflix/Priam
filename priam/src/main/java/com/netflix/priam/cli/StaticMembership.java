@@ -21,7 +21,6 @@ import com.netflix.priam.identity.IMembership;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.Collection;
-import java.util.List;
 import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
@@ -90,7 +89,7 @@ public class StaticMembership implements IMembership {
     public void removeACL(Collection<String> listIPs, int from, int to) {}
 
     @Override
-    public List<String> listACL(int from, int to) {
+    public ImmutableSet<String> listACL(int from, int to) {
         return null;
     }
 

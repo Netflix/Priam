@@ -73,10 +73,9 @@ public class UpdateSecuritySettings extends Task {
     public void execute() {
         // if seed dont execute.
         int port = config.getSSLStoragePort();
-        List<String> acls = membership.listACL(port, port);
+        ImmutableSet<String> acls = membership.listACL(port, port);
         ImmutableSet<PriamInstance> instances = factory.getAllIds(config.getAppName());
 
-        // iterate to add...
         Set<String> add = new HashSet<>();
         ImmutableSet<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
         for (PriamInstance instance : allInstances) {

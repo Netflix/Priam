@@ -17,11 +17,12 @@
 
 package com.netflix.priam.identity;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
-import java.util.*;
+import java.util.Comparator;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class FakePriamInstanceFactory implements IPriamInstanceFactory {
@@ -34,14 +35,15 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory {
     }
 
     @Override
-    public List<PriamInstance> getAllIds(String appName) {
+    public ImmutableSet<PriamInstance> getAllIds(String appName) {
         return appName.endsWith("-dead")
-                ? ImmutableList.of()
-                : instances
-                        .values()
-                        .stream()
-                        .sorted(Comparator.comparingInt(PriamInstance::getId))
-                        .collect(Collectors.toList());
+                ? ImmutableSet.of()
+                : ImmutableSet.copyOf(
+                        instances
+                                .values()
+                                .stream()
+                                .sorted(Comparator.comparingInt(PriamInstance::getId))
+                                .collect(Collectors.toList()));
     }
 
     @Override

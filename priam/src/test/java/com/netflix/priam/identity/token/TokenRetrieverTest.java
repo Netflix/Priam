@@ -92,8 +92,8 @@ public class TokenRetrieverTest {
         TokenRetriever tokenRetriever = getTokenRetriever();
         Truth.assertThat(tokenRetriever.grabExistingToken()).isNull();
         Truth.assertThat(tokenRetriever.getReplacedIp().isPresent()).isFalse();
-        List<PriamInstance> factoryInstances = factory.getAllIds(configuration.getAppName());
-        Truth.assertThat(factoryInstances).containsExactlyElementsIn(allInstances);
+        Truth.assertThat(factory.getAllIds(configuration.getAppName()))
+                .containsExactlyElementsIn(allInstances);
     }
 
     @Test

@@ -13,7 +13,10 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.util.*;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import org.slf4j.Logger;
@@ -83,11 +86,12 @@ public class TokenRetriever implements ITokenRetriever {
             public PriamInstance retriableCall() throws Exception {
                 logger.info("Trying to grab a pre-assigned token.");
                 // Check if this node is decommissioned.
-                List<PriamInstance> allIds = factory.getAllIds(config.getAppName() + "-dead");
+                ImmutableSet<PriamInstance> allIds =
+                        factory.getAllIds(config.getAppName() + "-dead");
                 Optional<PriamInstance> instance =
                         findInstance(allIds).map(PriamInstance::setOutOfService);
                 if (!instance.isPresent()) {
-                    List<PriamInstance> liveNodes = factory.getAllIds(config.getAppName());
+                    ImmutableSet<PriamInstance> liveNodes = factory.getAllIds(config.getAppName());
                     instance = instance.map(Optional::of).orElseGet(() -> findInstance(liveNodes));
                     if (instance.isPresent()) {
                         // Why check gossip? Priam might have crashed before bootstrapping
@@ -108,7 +112,7 @@ public class TokenRetriever implements ITokenRetriever {
                 logger.info("Trying to grab an existing token");
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
                 Set<String> racInstanceIds = getRacInstanceIds();
-                List<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+                ImmutableSet<PriamInstance> allIds = factory.getAllIds(config.getAppName());
                 List<PriamInstance> instances =
                         allIds.stream()
                                 .filter(i -> i.getRac().equals(myInstanceInfo.getRac()))
@@ -159,7 +163,7 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     private String getReplacedIpForAssignedToken(
-            List<PriamInstance> aliveInstances, PriamInstance instance)
+            ImmutableSet<PriamInstance> aliveInstances, PriamInstance instance)
             throws TokenRetrieverUtils.GossipParseException {
         // Infer current ownership information from other instances using gossip.
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
@@ -188,7 +192,7 @@ public class TokenRetriever implements ITokenRetriever {
     }
 
     private String getReplacedIpForExistingToken(
-            List<PriamInstance> allInstancesWithinCluster, PriamInstance priamInstance) {
+            ImmutableSet<PriamInstance> allInstancesWithinCluster, PriamInstance priamInstance) {
 
         // Infer current ownership information from other instances using gossip.
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenInformation =
@@ -289,7 +293,7 @@ public class TokenRetriever implements ITokenRetriever {
         }
     }
 
-    private Optional<PriamInstance> findInstance(List<PriamInstance> instances) {
+    private Optional<PriamInstance> findInstance(ImmutableSet<PriamInstance> instances) {
         return instances
                 .stream()
                 .filter((i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId()))

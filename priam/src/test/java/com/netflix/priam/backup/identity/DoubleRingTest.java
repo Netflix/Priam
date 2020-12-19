@@ -19,6 +19,7 @@ package com.netflix.priam.backup.identity;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -33,9 +34,9 @@ public class DoubleRingTest extends InstanceTestUtils {
         createInstances();
         int originalSize = factory.getAllIds(config.getAppName()).size();
         new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
-        List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
+        ImmutableSet<PriamInstance> doubled = factory.getAllIds(config.getAppName());
         assertEquals(originalSize * 2, doubled.size());
-        validate(doubled);
+        validate(doubled.asList());
     }
 
     private void validate(List<PriamInstance> doubled) {

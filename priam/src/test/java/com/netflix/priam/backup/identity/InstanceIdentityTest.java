@@ -19,10 +19,10 @@ package com.netflix.priam.backup.identity;
 
 import static org.junit.Assert.*;
 
+import com.google.common.collect.ImmutableList;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import java.util.List;
 import org.junit.Test;
 
 public class InstanceIdentityTest extends InstanceTestUtils {
@@ -94,7 +94,7 @@ public class InstanceIdentityTest extends InstanceTestUtils {
         createInstances();
         int before = factory.getAllIds(config.getAppName()).size();
         new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
-        List<PriamInstance> lst = factory.getAllIds(config.getAppName());
+        ImmutableList<PriamInstance> lst = factory.getAllIds(config.getAppName()).asList();
         for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
             if (0 == i % 2) continue;

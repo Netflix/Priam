@@ -1,6 +1,7 @@
 package com.netflix.priam.identity.token;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
@@ -50,10 +51,10 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.emptyList();
+                result = ImmutableSet.of();
 
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = liveHosts.get(0).getInstanceId();
@@ -62,7 +63,9 @@ public class AssignedTokenRetrieverTest {
                 result = liveHosts.get(0).getHostIP();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
                 result = inferredTokenOwnership;
             }
         };
@@ -115,15 +118,17 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.singletonList(deadInstance);
+                result = ImmutableSet.of(deadInstance);
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = newInstance.getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, newInstance.getToken(), newInstance.getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        newInstance.getToken(),
+                        newInstance.getDC());
                 result = inferredTokenOwnership;
             }
         };
@@ -176,15 +181,17 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.singletonList(deadInstance);
+                result = ImmutableSet.of(deadInstance);
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = newInstance.getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, newInstance.getToken(), newInstance.getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        newInstance.getToken(),
+                        newInstance.getDC());
                 result = inferredTokenOwnership;
             }
         };
@@ -225,15 +232,17 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.emptyList();
+                result = ImmutableSet.of();
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = liveHosts.get(0).getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
                 result = inferredTokenOwnership;
             }
         };

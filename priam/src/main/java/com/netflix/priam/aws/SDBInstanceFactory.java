@@ -17,9 +17,9 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.AmazonServiceException;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -35,24 +35,22 @@ import org.slf4j.LoggerFactory;
 public class SDBInstanceFactory implements IPriamInstanceFactory {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
-    private final IConfiguration config;
     private final SDBInstanceData dao;
     private final InstanceInfo instanceInfo;
 
     @Inject
-    public SDBInstanceFactory(
-            IConfiguration config, SDBInstanceData dao, InstanceInfo instanceInfo) {
-        this.config = config;
+    public SDBInstanceFactory(SDBInstanceData dao, InstanceInfo instanceInfo) {
         this.dao = dao;
         this.instanceInfo = instanceInfo;
     }
 
     @Override
-    public List<PriamInstance> getAllIds(String appName) {
-        return dao.getAllIds(appName)
-                .stream()
-                .sorted(Comparator.comparingInt(PriamInstance::getId))
-                .collect(Collectors.toList());
+    public ImmutableSet<PriamInstance> getAllIds(String appName) {
+        return ImmutableSet.copyOf(
+                dao.getAllIds(appName)
+                        .stream()
+                        .sorted((Comparator.comparingInt(PriamInstance::getId)))
+                        .collect(Collectors.toList()));
     }
 
     @Override

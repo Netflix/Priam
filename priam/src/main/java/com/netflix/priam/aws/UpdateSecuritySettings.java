@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.aws;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
@@ -73,11 +74,11 @@ public class UpdateSecuritySettings extends Task {
         // if seed dont execute.
         int port = config.getSSLStoragePort();
         List<String> acls = membership.listACL(port, port);
-        List<PriamInstance> instances = factory.getAllIds(config.getAppName());
+        ImmutableSet<PriamInstance> instances = factory.getAllIds(config.getAppName());
 
         // iterate to add...
         Set<String> add = new HashSet<>();
-        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
+        ImmutableSet<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
         for (PriamInstance instance : allInstances) {
             String range = instance.getHostIP() + "/32";
             if (!acls.contains(range)) add.add(range);

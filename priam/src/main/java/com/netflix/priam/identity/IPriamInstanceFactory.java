@@ -16,9 +16,9 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.SDBInstanceFactory;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -33,7 +33,7 @@ public interface IPriamInstanceFactory {
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
-    List<PriamInstance> getAllIds(String appName);
+    ImmutableSet<PriamInstance> getAllIds(String appName);
 
     /**
      * Return the Cassandra server node with the given {@code id}.

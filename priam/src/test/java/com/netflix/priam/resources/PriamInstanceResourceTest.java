@@ -20,12 +20,11 @@ package com.netflix.priam.resources;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
-import java.util.List;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
@@ -56,7 +55,8 @@ public class PriamInstanceResourceTest {
             @Mocked final PriamInstance instance2,
             @Mocked final PriamInstance instance3) {
         new Expectations() {
-            final List<PriamInstance> instances = ImmutableList.of(instance1, instance2, instance3);
+            final ImmutableSet<PriamInstance> instances =
+                    ImmutableSet.of(instance1, instance2, instance3);
 
             {
                 config.getAppName();

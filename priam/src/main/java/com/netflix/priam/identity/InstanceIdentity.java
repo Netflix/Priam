@@ -107,10 +107,7 @@ public class InstanceIdentity {
 
     private void populateRacMap() {
         locMap.clear();
-        List<PriamInstance> instances = factory.getAllIds(config.getAppName());
-        for (PriamInstance ins : instances) {
-            locMap.put(ins.getRac(), ins);
-        }
+        factory.getAllIds(config.getAppName()).forEach(ins -> locMap.put(ins.getRac(), ins));
     }
 
     public List<String> getSeeds() {

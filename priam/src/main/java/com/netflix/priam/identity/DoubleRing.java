@@ -16,13 +16,13 @@
  */
 package com.netflix.priam.identity;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import java.io.*;
-import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class DoubleRing {
      * nodes come up, they will get the unsed token assigned per token logic.
      */
     public void doubleSlots() {
-        List<PriamInstance> local = filteredRemote(factory.getAllIds(config.getAppName()));
+        Set<PriamInstance> local = getInstancesInSameRegion();
 
         // delete all
         for (PriamInstance data : local) factory.delete(data);
@@ -73,7 +73,7 @@ public class DoubleRing {
         }
 
         int new_ring_size = local.size() * 2;
-        for (PriamInstance data : filteredRemote(factory.getAllIds(config.getAppName()))) {
+        for (PriamInstance data : getInstancesInSameRegion()) {
             // if max then rotate.
             int currentSlot = data.getId() - hash;
             int new_slot =
@@ -95,11 +95,11 @@ public class DoubleRing {
     }
 
     // filter other DC's
-    private List<PriamInstance> filteredRemote(List<PriamInstance> lst) {
-        List<PriamInstance> local = Lists.newArrayList();
-        for (PriamInstance data : lst)
-            if (data.getDC().equals(instanceInfo.getRegion())) local.add(data);
-        return local;
+    private Set<PriamInstance> getInstancesInSameRegion() {
+        return factory.getAllIds(config.getAppName())
+                .stream()
+                .filter(i -> i.getDC().equals(instanceInfo.getRegion()))
+                .collect(Collectors.toSet());
     }
 
     /** Backup the current state in case of failure */
@@ -108,7 +108,7 @@ public class DoubleRing {
         TMP_BACKUP_FILE = File.createTempFile("Backup-instance-data", ".dat");
         try (ObjectOutputStream stream =
                 new ObjectOutputStream(new FileOutputStream(TMP_BACKUP_FILE))) {
-            stream.writeObject(filteredRemote(factory.getAllIds(config.getAppName())));
+            stream.writeObject(getInstancesInSameRegion());
             logger.info(
                     "Wrote the backup of the instances to: {}", TMP_BACKUP_FILE.getAbsolutePath());
         }
@@ -121,14 +121,13 @@ public class DoubleRing {
      * @throws ClassNotFoundException
      */
     public void restore() throws IOException, ClassNotFoundException {
-        for (PriamInstance data : filteredRemote(factory.getAllIds(config.getAppName())))
-            factory.delete(data);
+        for (PriamInstance data : getInstancesInSameRegion()) factory.delete(data);
 
         // read from the file.
         try (ObjectInputStream stream =
                 new ObjectInputStream(new FileInputStream(TMP_BACKUP_FILE))) {
             @SuppressWarnings("unchecked")
-            List<PriamInstance> allInstances = (List<PriamInstance>) stream.readObject();
+            Set<PriamInstance> allInstances = (Set<PriamInstance>) stream.readObject();
             for (PriamInstance data : allInstances)
                 factory.create(
                         data.getApp(),

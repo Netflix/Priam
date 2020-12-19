@@ -37,7 +37,7 @@ public class PriamInstanceResource {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final IConfiguration config;
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory;
     private final InstanceInfo instanceInfo;
 
     @Inject

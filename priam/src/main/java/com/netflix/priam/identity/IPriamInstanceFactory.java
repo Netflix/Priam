@@ -26,14 +26,14 @@ import java.util.Map;
  * delete or list instances from the registry
  */
 @ImplementedBy(SDBInstanceFactory.class)
-public interface IPriamInstanceFactory<T> {
+public interface IPriamInstanceFactory {
     /**
      * Return a list of all Cassandra server nodes registered.
      *
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
-    List<T> getAllIds(String appName);
+    List<PriamInstance> getAllIds(String appName);
 
     /**
      * Return the Cassandra server node with the given {@code id}.

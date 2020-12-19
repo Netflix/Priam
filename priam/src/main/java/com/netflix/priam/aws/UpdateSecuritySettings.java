@@ -52,7 +52,7 @@ public class UpdateSecuritySettings extends Task {
 
     private static final Random ran = new Random();
     private final IMembership membership;
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory;
 
     @Inject
     // Note: do not parameterized the generic type variable to an implementation as it confuses

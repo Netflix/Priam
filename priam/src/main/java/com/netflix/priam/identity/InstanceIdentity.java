@@ -40,7 +40,7 @@ public class InstanceIdentity {
 
     private final ListMultimap<String, PriamInstance> locMap =
             Multimaps.newListMultimap(new HashMap<>(), Lists::newArrayList);
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory;
     private final IMembership membership;
     private final IConfiguration config;
 

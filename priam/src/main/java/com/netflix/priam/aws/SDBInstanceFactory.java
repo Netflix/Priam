@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
  * SimpleDB based instance instanceIdentity. Requires 'InstanceIdentity' domain to be created ahead
  */
 @Singleton
-public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
+public class SDBInstanceFactory implements IPriamInstanceFactory {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
     private final IConfiguration config;

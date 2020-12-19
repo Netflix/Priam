@@ -24,7 +24,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
+public class FakePriamInstanceFactory implements IPriamInstanceFactory {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
     private final InstanceInfo instanceInfo;
 

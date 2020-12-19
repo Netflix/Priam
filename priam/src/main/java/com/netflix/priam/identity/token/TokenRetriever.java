@@ -27,7 +27,7 @@ public class TokenRetriever implements ITokenRetriever {
 
     private final Random randomizer;
     private final Sleeper sleeper;
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory;
     private final IMembership membership;
     private final IConfiguration config;
     private final ITokenManager tokenManager;

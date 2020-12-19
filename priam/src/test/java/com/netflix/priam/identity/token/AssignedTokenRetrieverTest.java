@@ -26,7 +26,7 @@ public class AssignedTokenRetrieverTest {
 
     @Test
     public void grabAssignedTokenStartDbInBootstrapModeWhenGossipAgreesCurrentInstanceIsTokenOwner(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -77,7 +77,7 @@ public class AssignedTokenRetrieverTest {
 
     @Test
     public void grabAssignedTokenStartDbInReplaceModeWhenGossipAgreesPreviousTokenOwnerIsNotLive(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -139,7 +139,7 @@ public class AssignedTokenRetrieverTest {
 
     @Test
     public void grabAssignedTokenThrowWhenGossipAgreesPreviousTokenOwnerIsLive(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -201,7 +201,7 @@ public class AssignedTokenRetrieverTest {
 
     @Test
     public void grabAssignedTokenStartDbInBootstrapModeWhenGossipDisagreesOnPreviousTokenOwner(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,

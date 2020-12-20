@@ -21,10 +21,12 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
+import groovy.lang.Singleton;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+@Singleton
 public class FakePriamInstanceFactory implements IPriamInstanceFactory {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
     private final InstanceInfo instanceInfo;

@@ -17,21 +17,20 @@
 package com.netflix.priam.aws;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,15 +53,20 @@ public class UpdateSecuritySettings extends Task {
     private static final Random ran = new Random();
     private final IMembership membership;
     private final IPriamInstanceFactory factory;
+    private final InstanceInfo instanceInfo;
 
     @Inject
     // Note: do not parameterized the generic type variable to an implementation as it confuses
     // Guice in the binding.
     public UpdateSecuritySettings(
-            IConfiguration config, IMembership membership, IPriamInstanceFactory factory) {
+            IConfiguration config,
+            IMembership membership,
+            IPriamInstanceFactory factory,
+            InstanceInfo instanceInfo) {
         super(config);
         this.membership = membership;
         this.factory = factory;
+        this.instanceInfo = instanceInfo;
     }
 
     /**
@@ -71,36 +75,27 @@ public class UpdateSecuritySettings extends Task {
      */
     @Override
     public void execute() {
-        // if seed dont execute.
         int port = config.getSSLStoragePort();
-        ImmutableSet<String> acls = membership.listACL(port, port);
-        ImmutableSet<PriamInstance> instances = factory.getAllIds(config.getAppName());
-
-        Set<String> add = new HashSet<>();
-        ImmutableSet<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
-        for (PriamInstance instance : allInstances) {
-            String range = instance.getHostIP() + "/32";
-            if (!acls.contains(range)) add.add(range);
-        }
-        if (add.size() > 0) {
-            membership.addACL(add, port, port);
+        ImmutableSet<String> currentAcl = membership.listACL(port, port);
+        Set<String> desiredAcl =
+                factory.getAllIds(config.getAppName())
+                        .stream()
+                        .map(i -> i.getHostIP() + "/32")
+                        .collect(Collectors.toSet());
+        // Make sure a hole is opened for my instance.
+        // This accommodates the eventually consistent CassandraInstanceFactory.
+        // Remove once IPs are all private as there won't be any chance of a discrepancy anymore.
+        String myIp =
+                config.usePrivateIP() ? instanceInfo.getPrivateIP() : instanceInfo.getHostIP();
+        desiredAcl.add(myIp + "/32");
+        Set<String> aclToAdd = Sets.difference(desiredAcl, currentAcl);
+        if (!aclToAdd.isEmpty()) {
+            membership.addACL(aclToAdd, port, port);
             firstTimeUpdated = true;
         }
-
-        // just iterate to generate ranges.
-        List<String> currentRanges = Lists.newArrayList();
-        for (PriamInstance instance : instances) {
-            String range = instance.getHostIP() + "/32";
-            currentRanges.add(range);
-        }
-
-        // iterate to remove...
-        List<String> remove = Lists.newArrayList();
-        for (String acl : acls)
-            if (!currentRanges.contains(acl)) // if not found then remove....
-            remove.add(acl);
-        if (remove.size() > 0) {
-            membership.removeACL(remove, port, port);
+        Set<String> aclToRemove = Sets.difference(currentAcl, desiredAcl);
+        if (!aclToRemove.isEmpty()) {
+            membership.removeACL(aclToRemove, port, port);
             firstTimeUpdated = true;
         }
     }

@@ -19,14 +19,18 @@ package com.netflix.priam.identity;
 
 import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FakeMembership implements IMembership {
 
     private ImmutableSet<String> instances;
+    private Set<String> acl;
 
     public FakeMembership(List<String> priamInstances) {
         this.instances = ImmutableSet.copyOf(priamInstances);
+        this.acl = new HashSet<>();
     }
 
     @Override
@@ -51,20 +55,17 @@ public class FakeMembership implements IMembership {
 
     @Override
     public void addACL(Collection<String> listIPs, int from, int to) {
-        // TODO Auto-generated method stub
-
+        acl.addAll(listIPs);
     }
 
     @Override
     public void removeACL(Collection<String> listIPs, int from, int to) {
-        // TODO Auto-generated method stub
-
+        acl.removeAll(listIPs);
     }
 
     @Override
     public ImmutableSet<String> listACL(int from, int to) {
-        // TODO Auto-generated method stub
-        return null;
+        return ImmutableSet.copyOf(acl);
     }
 
     @Override

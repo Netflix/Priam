@@ -17,12 +17,12 @@
 
 package com.netflix.priam.backup.identity;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
+import com.google.common.collect.ImmutableList;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import java.util.List;
 import org.junit.Test;
 
 public class InstanceIdentityTest extends InstanceTestUtils {
@@ -72,10 +72,8 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     public void testDoubleSlots() throws Exception {
         createInstances();
         int before = factory.getAllIds(config.getAppName()).size();
-        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
-        List<PriamInstance> lst = factory.getAllIds(config.getAppName());
-        // sort it so it will look good if you want to print it.
-        factory.sort(lst);
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
+        ImmutableList<PriamInstance> lst = factory.getAllIds(config.getAppName()).asList();
         for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
             if (0 == i % 2) continue;
@@ -87,13 +85,13 @@ public class InstanceIdentityTest extends InstanceTestUtils {
     @Test
     public void testDoubleGrap() throws Exception {
         createInstances();
-        new DoubleRing(config, factory, tokenManager, identity).doubleSlots();
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
         int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }
 
-    private void printInstance(PriamInstance ins, int hash) {
+    public void printInstance(PriamInstance ins, int hash) {
         System.out.println("ID: " + (ins.getId() - hash));
         System.out.println("PayLoad: " + ins.getToken());
     }

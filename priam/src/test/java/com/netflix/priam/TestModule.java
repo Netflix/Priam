@@ -52,7 +52,7 @@ public class TestModule extends AbstractModule {
         bind(InstanceInfo.class)
                 .toInstance(new FakeInstanceInfo("fakeInstance1", "az1", "us-east-1"));
 
-        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
+        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class).in(Scopes.SINGLETON);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
         bind(IMembership.class)
                 .toInstance(

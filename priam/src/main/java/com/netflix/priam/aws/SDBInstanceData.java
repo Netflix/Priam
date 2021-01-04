@@ -74,7 +74,9 @@ public class SDBInstanceData {
      */
     public PriamInstance getInstance(String app, String dc, int id) {
         AmazonSimpleDB simpleDBClient = getSimpleDBClient();
-        SelectRequest request = new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id));
+        SelectRequest request =
+                new SelectRequest(String.format(INSTANCE_QUERY, app, dc, id))
+                        .withConsistentRead(true);
         SelectResult result = simpleDBClient.select(request);
         if (result.getItems().size() == 0) return null;
         return transform(result.getItems().get(0));
@@ -91,8 +93,10 @@ public class SDBInstanceData {
         Set<PriamInstance> inslist = new HashSet<>();
         String nextToken = null;
         do {
-            SelectRequest request = new SelectRequest(String.format(ALL_QUERY, app));
-            request.setNextToken(nextToken);
+            SelectRequest request =
+                    new SelectRequest(String.format(ALL_QUERY, app))
+                            .withConsistentRead(true)
+                            .withNextToken(nextToken);
             SelectResult result = simpleDBClient.select(request);
             nextToken = result.getNextToken();
             for (Item item : result.getItems()) {
@@ -106,15 +110,23 @@ public class SDBInstanceData {
     /**
      * Create a new instance entry in SimpleDB
      *
-     * @param instance Instance entry to be created.
+     * @param orig Original instance used for validation
+     * @param inst Instance entry to be created.
      * @throws AmazonServiceException If unable to write to Simple DB because of any error.
      */
-    public void createInstance(PriamInstance instance) throws AmazonServiceException {
-        AmazonSimpleDB simpleDBClient = getSimpleDBClient();
+    public void updateInstance(PriamInstance orig, PriamInstance inst)
+            throws AmazonServiceException {
         PutAttributesRequest putReq =
-                new PutAttributesRequest(
-                        DOMAIN, getKey(instance), createAttributesToRegister(instance));
-        simpleDBClient.putAttributes(putReq);
+                new PutAttributesRequest(DOMAIN, getKey(inst), createAttributesToRegister(inst))
+                        .withExpected(
+                                new UpdateCondition()
+                                        .withName(Attributes.INSTANCE_ID)
+                                        .withValue(orig.getInstanceId()))
+                        .withExpected(
+                                new UpdateCondition()
+                                        .withName(Attributes.TOKEN)
+                                        .withValue(orig.getToken()));
+        getSimpleDBClient().putAttributes(putReq);
     }
 
     /**

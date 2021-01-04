@@ -28,6 +28,7 @@ import com.netflix.priam.identity.PriamInstance;
 
 import java.util.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -152,7 +153,7 @@ public class SDBInstanceData {
         instance.setUpdatetime(new Date().getTime());
         List<ReplaceableAttribute> attrs = new ArrayList<ReplaceableAttribute>();
         attrs.add(new ReplaceableAttribute(Attributes.INSTANCE_ID, instance.getInstanceId(), false));
-        attrs.add(new ReplaceableAttribute(Attributes.TOKEN, instance.getToken(), true));
+        attrs.add(new ReplaceableAttribute(Attributes.TOKEN, StringUtils.trimToEmpty(instance.getToken()), true));
         attrs.add(new ReplaceableAttribute(Attributes.APP_ID, instance.getApp(), true));
         attrs.add(new ReplaceableAttribute(Attributes.ID, Integer.toString(instance.getId()), true));
         attrs.add(new ReplaceableAttribute(Attributes.AVAILABILITY_ZONE, instance.getRac(), true));
@@ -166,7 +167,7 @@ public class SDBInstanceData {
     protected List<Attribute> createAttributesToDeRegister(PriamInstance instance) {
         List<Attribute> attrs = new ArrayList<Attribute>();
         attrs.add(new Attribute(Attributes.INSTANCE_ID, instance.getInstanceId()));
-        attrs.add(new Attribute(Attributes.TOKEN, instance.getToken()));
+        attrs.add(new Attribute(Attributes.TOKEN, StringUtils.trimToEmpty(instance.getToken())));
         attrs.add(new Attribute(Attributes.APP_ID, instance.getApp()));
         attrs.add(new Attribute(Attributes.ID, Integer.toString(instance.getId())));
         attrs.add(new Attribute(Attributes.AVAILABILITY_ZONE, instance.getRac()));

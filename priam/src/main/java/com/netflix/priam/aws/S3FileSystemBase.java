@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final int MAX_CHUNKS = 10000;
-    static final long MAX_BUFFERED_IN_STREAM_SIZE = 5 * 1024 * 1024;
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     AmazonS3 s3Client;
     final IConfiguration config;

@@ -281,10 +281,7 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         }
     }
 
-    final long getChunkSize(Path localPath) {
-        long chunkSize = config.getBackupChunkSize();
-        long proposedChunkSize = localPath.toFile().length() / (MAX_CHUNKS - 5);
-        if (proposedChunkSize > chunkSize) return proposedChunkSize;
-        return chunkSize;
+    final long getChunkSize(Path path) {
+        return Math.max(path.toFile().length() / (MAX_CHUNKS - 5), config.getBackupChunkSize());
     }
 }

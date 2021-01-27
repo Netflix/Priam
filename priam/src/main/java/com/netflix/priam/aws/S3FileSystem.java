@@ -39,7 +39,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -124,7 +123,7 @@ public class S3FileSystem extends S3FileSystemBase {
                         config.getBackupPrefix(),
                         remotePath.toString(),
                         initResponse.getUploadId());
-        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<PartETag>());
+        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
 
         try (InputStream in = new FileInputStream(localPath.toFile())) {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
@@ -147,7 +146,7 @@ public class S3FileSystem extends S3FileSystemBase {
                         new S3PartUploader(s3Client, dp, partETags, partsUploaded);
                 compressedFileSize += chunk.length;
                 // TODO: Get the future over here and create a new arraylist.
-                Future<Void> future = executor.submit(partUploader);
+                executor.submit(partUploader);
             }
 
             // TODO: Instead of waiting for executor thread to be empty we should wait for all the
@@ -231,7 +230,7 @@ public class S3FileSystem extends S3FileSystemBase {
                 PutObjectResult upload =
                         new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                             @Override
-                            public PutObjectResult retriableCall() throws Exception {
+                            public PutObjectResult retriableCall() {
                                 return s3Client.putObject(putObjectRequest);
                             }
                         }.call();

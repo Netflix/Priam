@@ -28,7 +28,6 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -56,13 +55,7 @@ public abstract class AbstractBackup extends Task {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    /** A means to override the type of backup strategy chosen via BackupFileSystemContext */
-    protected void setFileSystem(IBackupFileSystem fs) {
-        this.fs = fs;
-    }
-
-    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type)
-            throws ParseException {
+    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) {
         final AbstractBackupPath bp = pathFactory.get();
         bp.parseLocal(file, type);
         return bp;

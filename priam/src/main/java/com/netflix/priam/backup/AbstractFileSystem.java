@@ -113,7 +113,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     @Override
     public Future<Path> asyncDownloadFile(
             final Path remotePath, final Path localPath, final int retry)
-            throws BackupRestoreException, RejectedExecutionException {
+            throws RejectedExecutionException {
         return fileDownloadExecutor.submit(
                 () -> {
                     downloadFile(remotePath, localPath, retry);
@@ -159,7 +159,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             final AbstractBackupPath path,
             final int retry,
             final boolean deleteAfterSuccessfulUpload)
-            throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
+            throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
                     uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);

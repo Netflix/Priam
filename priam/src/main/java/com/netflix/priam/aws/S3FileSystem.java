@@ -118,7 +118,6 @@ public class S3FileSystem extends S3FileSystemBase {
 
         try (InputStream in = new FileInputStream(localFile)) {
             Iterator<byte[]> chunks = compress.compress(in, chunkSize);
-            // Upload parts.
             int partNum = 0;
             AtomicInteger partsPut = new AtomicInteger(0);
             long compressedFileSize = 0;
@@ -129,12 +128,10 @@ public class S3FileSystem extends S3FileSystemBase {
                 DataPart dp = new DataPart(++partNum, chunk, prefix, destination, uploadId);
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsPut);
                 compressedFileSize += chunk.length;
-                // TODO: Get the future over here and create a new arraylist.
+                // TODO: output Future<Etag> instead, collect them here, wait for all below
                 executor.submit(partUploader);
             }
 
-            // TODO: Instead of waiting for executor thread to be empty we should wait for all the
-            // futures to finish.
             executor.sleepTillEmpty();
             logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
             Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
@@ -161,7 +158,6 @@ public class S3FileSystem extends S3FileSystemBase {
 
         String prefix = config.getBackupPrefix();
         String destination = remotePath.toString();
-        // Upload file without using multipart upload as it will be more efficient.
         if (logger.isDebugEnabled()) logger.debug("PUTing {}/{}", prefix, destination);
 
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -172,18 +168,13 @@ public class S3FileSystem extends S3FileSystemBase {
             }
             byte[] chunk = byteArrayOutputStream.toByteArray();
             long compressedFileSize = chunk.length;
-            /**
-             * Weird, right that we are checking for length which is positive. You can thanks this
-             * to sometimes C* creating files which are zero bytes, and giving that in snapshot for
-             * some unknown reason.
-             */
+            // C* snapshots may have empty files. That is probably unintentional.
             if (chunk.length > 0) rateLimiter.acquire(chunk.length);
             ObjectMetadata objectMetadata = getObjectMetadata(localFile);
             objectMetadata.setContentLength(chunk.length);
             ByteArrayInputStream inputStream = new ByteArrayInputStream(chunk);
             PutObjectRequest putObjectRequest =
                     new PutObjectRequest(prefix, destination, inputStream, objectMetadata);
-            // Retry if failed.
             PutObjectResult upload =
                     new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                         @Override

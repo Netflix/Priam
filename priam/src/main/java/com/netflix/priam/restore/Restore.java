@@ -30,9 +30,7 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
-import java.io.File;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,10 +68,8 @@ public class Restore extends AbstractRestore {
     }
 
     @Override
-    protected final Future<Path> downloadFile(
-            final AbstractBackupPath path, final File restoreLocation) throws Exception {
-        return fs.asyncDownloadFile(
-                Paths.get(path.getRemotePath()), Paths.get(restoreLocation.getAbsolutePath()), 5);
+    protected final Future<Path> downloadFile(final AbstractBackupPath path) throws Exception {
+        return fs.asyncDownloadFile(path, 5 /* retries */);
     }
 
     public static TaskTimer getTimer() {

@@ -91,9 +91,13 @@ public class TestAbstractFileSystem {
         }
     }
 
+    private AbstractBackupPath getDummyPath() throws ParseException {
+        return getDummyPath(Paths.get(configuration.getDataFileLocation() + "/ks/cf/file-Data.db"));
+    }
+
     private AbstractBackupPath getDummyPath(Path localPath) throws ParseException {
         AbstractBackupPath path = injector.getInstance(AbstractBackupPath.class);
-        path.parseLocal(localPath.toFile(), AbstractBackupPath.BackupFileType.SNAP);
+        path.parseLocal(localPath.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
         return path;
     }
 
@@ -107,9 +111,9 @@ public class TestAbstractFileSystem {
     }
 
     @Test
-    public void testFailedRetriesDownload() {
+    public void testFailedRetriesDownload() throws Exception {
         try {
-            failureFileSystem.downloadFile(Paths.get(""), null, 2);
+            failureFileSystem.downloadFile(getDummyPath(), "", 2);
         } catch (BackupRestoreException e) {
             // Verify the failure metric for download is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
@@ -139,7 +143,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testDownload() throws Exception {
         // Dummy download
-        myFileSystem.downloadFile(Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
+        myFileSystem.downloadFile(getDummyPath(), "", 2);
         // Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
     }
@@ -254,9 +258,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncDownload() throws Exception {
         // Testing single async download.
-        Future<Path> future =
-                myFileSystem.asyncDownloadFile(
-                        Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
+        Future<Path> future = myFileSystem.asyncDownloadFile(getDummyPath(), 2);
         future.get();
         // 1. Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
@@ -271,9 +273,7 @@ public class TestAbstractFileSystem {
         int totalFiles = 1000;
         List<Future<Path>> futureList = new ArrayList<>();
         for (int i = 0; i < totalFiles; i++)
-            futureList.add(
-                    myFileSystem.asyncDownloadFile(
-                            Paths.get("" + i), Paths.get(configuration.getDataFileLocation()), 2));
+            futureList.add(myFileSystem.asyncDownloadFile(getDummyPath(Paths.get("" + i)), 2));
 
         // Ensure processing is finished.
         for (Future future1 : futureList) {
@@ -289,7 +289,7 @@ public class TestAbstractFileSystem {
 
     @Test
     public void testAsyncDownloadFailure() throws Exception {
-        Future<Path> future = failureFileSystem.asyncDownloadFile(Paths.get(""), null, 2);
+        Future<Path> future = failureFileSystem.asyncDownloadFile(getDummyPath(), 2);
         try {
             future.get();
         } catch (Exception e) {

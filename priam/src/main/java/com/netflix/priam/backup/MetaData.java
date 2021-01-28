@@ -92,10 +92,7 @@ public class MetaData {
      */
     public Boolean doesExist(final AbstractBackupPath meta) {
         try {
-            fs.downloadFile(
-                    Paths.get(meta.getRemotePath()),
-                    Paths.get(meta.newRestoreFile().getAbsolutePath()),
-                    5); // download actual file to disk
+            fs.downloadFile(meta, "" /* suffix */, 5 /* retries */);
         } catch (Exception e) {
             logger.error("Error downloading the Meta data try with a different date...", e);
         }

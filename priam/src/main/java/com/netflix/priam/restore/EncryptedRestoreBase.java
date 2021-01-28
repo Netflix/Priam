@@ -14,7 +14,9 @@
 package com.netflix.priam.restore;
 
 import com.google.inject.Provider;
-import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -37,6 +39,7 @@ import org.slf4j.LoggerFactory;
 /** Provides common functionality applicable to all restore strategies */
 public abstract class EncryptedRestoreBase extends AbstractRestore {
     private static final Logger logger = LoggerFactory.getLogger(EncryptedRestoreBase.class);
+    private static final String TMP_SUFFIX = ".tmp";
 
     private final String jobName;
     private final ICredentialGeneric pgpCredential;
@@ -86,12 +89,12 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
     }
 
     @Override
-    protected final Future<Path> downloadFile(
-            final AbstractBackupPath path, final File restoreLocation) throws Exception {
+    protected final Future<Path> downloadFile(final AbstractBackupPath path) throws Exception {
         final char[] passPhrase =
                 new String(this.pgpCredential.getValue(ICredentialGeneric.KEY.PGP_PASSWORD))
                         .toCharArray();
-        File tempFile = new File(restoreLocation.getAbsolutePath() + ".tmp");
+        File restoreLocation = path.newRestoreFile();
+        File tempFile = new File(restoreLocation.getAbsolutePath() + TMP_SUFFIX);
 
         return executor.submit(
                 new RetryableCallable<Path>() {
@@ -102,10 +105,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                         // == download object from source bucket
                         try {
                             // Not retrying to download file here as it is already in RetryCallable.
-                            fs.downloadFile(
-                                    Paths.get(path.getRemotePath()),
-                                    Paths.get(tempFile.getAbsolutePath()),
-                                    0);
+                            fs.downloadFile(path, TMP_SUFFIX, 0 /* retries */);
                         } catch (Exception ex) {
                             // This behavior is retryable; therefore, lets get to a clean state
                             // before each retry.

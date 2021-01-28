@@ -29,21 +29,20 @@ public interface IBackupFileSystem {
     /**
      * Download the file denoted by remotePath to the local file system denoted by local path.
      *
-     * @param remotePath fully qualified location of the file on remote file system.
-     * @param localPath location on the local file sytem where remote file should be downloaded.
+     * @param path Backup path representing a local and remote file pair
      * @param retry No. of times to retry to download a file from remote file system. If &lt;1, it
      *     will try to download file exactly once.
      * @throws BackupRestoreException if file is not available, downloadable or any other error from
      *     remote file system.
      */
-    void downloadFile(Path remotePath, Path localPath, int retry) throws BackupRestoreException;
+    void downloadFile(AbstractBackupPath path, String suffix, int retry)
+            throws BackupRestoreException;
 
     /**
      * Download the file denoted by remotePath in an async fashion to the local file system denoted
      * by local path.
      *
-     * @param remotePath fully qualified location of the file on remote file system.
-     * @param localPath location on the local file sytem where remote file should be downloaded.
+     * @param path Backuop path representing a local and remote file pair
      * @param retry No. of times to retry to download a file from remote file system. If &lt;1, it
      *     will try to download file exactly once.
      * @return The future of the async job to monitor the progress of the job.
@@ -52,7 +51,7 @@ public interface IBackupFileSystem {
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
      *     to add the work to the queue.
      */
-    Future<Path> asyncDownloadFile(final Path remotePath, final Path localPath, final int retry)
+    Future<Path> asyncDownloadFile(final AbstractBackupPath path, final int retry)
             throws BackupRestoreException, RejectedExecutionException;
 
     /**

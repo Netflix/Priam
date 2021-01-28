@@ -111,22 +111,21 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     @Override
-    public Future<Path> asyncDownloadFile(
-            final Path remotePath, final Path localPath, final int retry)
+    public Future<Path> asyncDownloadFile(final AbstractBackupPath path, final int retry)
             throws RejectedExecutionException {
         return fileDownloadExecutor.submit(
                 () -> {
-                    downloadFile(remotePath, localPath, retry);
-                    return remotePath;
+                    downloadFile(path, "" /* suffix */, retry);
+                    return Paths.get(path.getRemotePath());
                 });
     }
 
     @Override
-    public void downloadFile(final Path remotePath, final Path localPath, final int retry)
+    public void downloadFile(final AbstractBackupPath path, String suffix, final int retry)
             throws BackupRestoreException {
         // TODO: Should we download the file if localPath already exists?
-        if (remotePath == null || localPath == null) return;
-        localPath.toFile().getParentFile().mkdirs();
+        Path remotePath = Paths.get(path.getRemotePath());
+        Path localPath = Paths.get(path.newRestoreFile().getAbsolutePath() + suffix);
         logger.info("Downloading file: {} to location: {}", remotePath, localPath);
         try {
             new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {

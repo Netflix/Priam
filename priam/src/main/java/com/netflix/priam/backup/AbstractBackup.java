@@ -77,7 +77,7 @@ public abstract class AbstractBackup extends Task {
             final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
             throws Exception {
         final List<AbstractBackupPath> bps = Lists.newArrayList();
-        final List<Future<Path>> futures = Lists.newArrayList();
+        final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
 
         File[] files = parent.listFiles();
         if (files == null) return bps;
@@ -86,19 +86,8 @@ public abstract class AbstractBackup extends Task {
             if (file.isFile() && file.exists()) {
                 AbstractBackupPath bp = getAbstractBackupPath(file, type);
 
-                if (async)
-                    futures.add(
-                            fs.asyncUploadAndDelete(
-                                    Paths.get(bp.getBackupFile().getAbsolutePath()),
-                                    Paths.get(bp.getRemotePath()),
-                                    bp,
-                                    10));
-                else
-                    fs.uploadAndDelete(
-                            Paths.get(bp.getBackupFile().getAbsolutePath()),
-                            Paths.get(bp.getRemotePath()),
-                            bp,
-                            10);
+                if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
+                else fs.uploadAndDelete(bp, 10);
 
                 bps.add(bp);
             }
@@ -106,7 +95,7 @@ public abstract class AbstractBackup extends Task {
 
         // Wait for all files to be uploaded.
         if (async && waitForCompletion) {
-            for (Future future : futures)
+            for (Future<AbstractBackupPath> future : futures)
                 future.get(); // This might throw exception if there is any error
         }
 

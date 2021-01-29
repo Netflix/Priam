@@ -24,7 +24,6 @@ import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,11 +61,7 @@ public class MetaData {
             fr.write(jsonObj.toJSONString());
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
-        fs.uploadAndDelete(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                10);
+        fs.uploadAndDelete(backupfile, 10);
         addToRemotePath(backupfile.getRemotePath());
         return backupfile;
     }

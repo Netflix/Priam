@@ -188,8 +188,7 @@ public class MetaFileWriterBuilder {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
             abstractBackupPath.parseLocal(
                     metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            backupFileSystem.uploadAndDelete(
-                    metaFilePath, Paths.get(getRemoteMetaFilePath()), abstractBackupPath, 10);
+            backupFileSystem.uploadAndDelete(abstractBackupPath, 10);
         }
 
         public Path getMetaFilePath() {

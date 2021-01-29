@@ -20,7 +20,6 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -66,11 +65,7 @@ public class CommitLogBackup {
 
                 if (snapshotName != null) bp.time = DateUtil.getDate(snapshotName);
 
-                fs.uploadAndDelete(
-                        Paths.get(bp.getBackupFile().getAbsolutePath()),
-                        Paths.get(bp.getRemotePath()),
-                        bp,
-                        10);
+                fs.uploadAndDelete(bp, 10);
                 bps.add(bp);
                 addToRemotePath(bp.getRemotePath());
             } catch (Exception e) {

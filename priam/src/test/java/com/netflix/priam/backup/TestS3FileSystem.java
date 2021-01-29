@@ -37,16 +37,6 @@ import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
-import mockit.Mock;
-import mockit.MockUp;
-import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -58,6 +48,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import mockit.Mock;
+import mockit.MockUp;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TestS3FileSystem {
     private static Injector injector;
@@ -97,11 +96,7 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadAndDelete(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0);
+        fs.uploadAndDelete(backupfile, 0);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -111,11 +106,7 @@ public class TestS3FileSystem {
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SST_V2);
-        fs.uploadAndDelete(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0);
+        fs.uploadAndDelete(backupfile, 0);
         Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
         // Lets delete the file now.
         List<Path> deleteFiles = Lists.newArrayList();
@@ -133,11 +124,7 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadAndDelete(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0);
+            fs.uploadAndDelete(backupfile, 0);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -154,11 +141,7 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadAndDelete(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0);
+            fs.uploadAndDelete(backupfile, 0);
         } catch (BackupRestoreException e) {
             // ignore
         }

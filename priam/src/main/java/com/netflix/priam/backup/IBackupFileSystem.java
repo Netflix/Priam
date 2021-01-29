@@ -42,7 +42,7 @@ public interface IBackupFileSystem {
      * Download the file denoted by remotePath in an async fashion to the local file system denoted
      * by local path.
      *
-     * @param path Backuop path representing a local and remote file pair
+     * @param path Backup path representing a local and remote file pair
      * @param retry No. of times to retry to download a file from remote file system. If &lt;1, it
      *     will try to download file exactly once.
      * @return The future of the async job to monitor the progress of the job.
@@ -55,17 +55,14 @@ public interface IBackupFileSystem {
             throws BackupRestoreException, RejectedExecutionException;
 
     /**
-     * Upload the local file denoted by localPath to the remote file system at location denoted by
-     * remotePath. De-duping of the file to upload will always be done by comparing the
+     * Upload the local file to its remote counterpart. Both locations are embedded within the path
+     * parameter. De-duping of the file to upload will always be done by comparing the
      * files-in-progress to be uploaded. This may result in this particular request to not to be
      * executed e.g. if any other thread has given the same file to upload and that file is in
      * internal queue. Note that de-duping is best effort and is not always guaranteed as we try to
      * avoid lock on read/write of the files-in-progress. Once uploaded, files are deleted.
      *
-     * @param localPath Path of the local file that needs to be uploaded.
-     * @param remotePath Fully qualified path on the remote file system where file should be
-     *     uploaded.
-     * @param path AbstractBackupPath to be used to send backup notifications only.
+     * @param path Backup path representing a local and remote file pair
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
@@ -73,16 +70,13 @@ public interface IBackupFileSystem {
      * @throws FileNotFoundException If a file as denoted by localPath is not available or is a
      *     directory.
      */
-    void uploadAndDelete(Path localPath, Path remotePath, AbstractBackupPath path, int retry)
+    void uploadAndDelete(AbstractBackupPath path, int retry)
             throws FileNotFoundException, BackupRestoreException;
 
     /**
      * Upload the local file denoted by localPath in async fashion to the remote file system at
      * location denoted by remotePath.
      *
-     * @param localPath Path of the local file that needs to be uploaded.
-     * @param remotePath Fully qualified path on the remote file system where file should be
-     *     uploaded.
      * @param path AbstractBackupPath to be used to send backup notifications only.
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
@@ -95,11 +89,7 @@ public interface IBackupFileSystem {
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
      *     to add the work to the queue.
      */
-    Future<Path> asyncUploadAndDelete(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry)
+    Future<AbstractBackupPath> asyncUploadAndDelete(final AbstractBackupPath path, final int retry)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**

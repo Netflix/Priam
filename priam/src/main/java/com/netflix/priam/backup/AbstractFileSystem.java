@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
@@ -32,7 +33,6 @@ import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -152,35 +152,24 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException;
 
     @Override
-    public Future<Path> asyncUploadAndDelete(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry)
-            throws RejectedExecutionException {
+    public Future<AbstractBackupPath> asyncUploadAndDelete(
+            final AbstractBackupPath path, final int retry) throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadAndDelete(localPath, remotePath, path, retry);
-                    return localPath;
+                    uploadAndDelete(path, retry);
+                    return path;
                 });
     }
 
     @Override
-    public void uploadAndDelete(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry)
-            throws FileNotFoundException, BackupRestoreException {
-        if (localPath == null
-                || remotePath == null
-                || !localPath.toFile().exists()
-                || localPath.toFile().isDirectory())
-            throw new FileNotFoundException(
-                    "File do not exist or is a directory. localPath: "
-                            + localPath
-                            + ", remotePath: "
-                            + remotePath);
+    public void uploadAndDelete(final AbstractBackupPath path, final int retry)
+            throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        File localFile = localPath.toFile();
+        Preconditions.checkArgument(localFile.exists(), "Can't upload nonexistent {}", localPath);
+        Preconditions.checkArgument(
+                !localFile.isDirectory(), "Can only upload files {} is a directory", localPath);
+        Path remotePath = Paths.get(path.getRemotePath());
 
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
@@ -215,11 +204,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 logger.info(
                         "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
-                if (!FileUtils.deleteQuietly(localPath.toFile()))
+                if (!FileUtils.deleteQuietly(localFile))
                     logger.warn(
                             String.format(
                                     "Failed to delete local file %s.",
-                                    localPath.toFile().getAbsolutePath()));
+                                    localFile.getAbsolutePath()));
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();

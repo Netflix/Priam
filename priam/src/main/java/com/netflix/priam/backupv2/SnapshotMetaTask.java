@@ -219,7 +219,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             MetaFileWriterBuilder.UploadStep uploadStep = processSnapshot(snapshotInstant);
             backupMetadata.setSnapshotLocation(
                     config.getBackupPrefix() + File.separator + uploadStep.getRemoteMetaFilePath());
-            uploadStep.uploadMetaFile(true);
+            uploadStep.uploadMetaFile();
 
             logger.info("Finished processing snapshot meta service");
 

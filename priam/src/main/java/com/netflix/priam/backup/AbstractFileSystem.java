@@ -152,27 +152,25 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException;
 
     @Override
-    public Future<Path> asyncUploadFile(
+    public Future<Path> asyncUploadAndDelete(
             final Path localPath,
             final Path remotePath,
             final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
+            final int retry)
             throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);
+                    uploadAndDelete(localPath, remotePath, path, retry);
                     return localPath;
                 });
     }
 
     @Override
-    public void uploadFile(
+    public void uploadAndDelete(
             final Path localPath,
             final Path remotePath,
             final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
+            final int retry)
             throws FileNotFoundException, BackupRestoreException {
         if (localPath == null
                 || remotePath == null
@@ -217,7 +215,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 logger.info(
                         "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
-                if (deleteAfterSuccessfulUpload && !FileUtils.deleteQuietly(localPath.toFile()))
+                if (!FileUtils.deleteQuietly(localPath.toFile()))
                     logger.warn(
                             String.format(
                                     "Failed to delete local file %s.",

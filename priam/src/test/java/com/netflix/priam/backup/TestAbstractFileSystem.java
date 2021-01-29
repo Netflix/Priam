@@ -82,8 +82,8 @@ public class TestAbstractFileSystem {
         try {
             Collection<File> files = generateFiles(1, 1, 1);
             for (File file : files) {
-                failureFileSystem.uploadFile(
-                        file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+                failureFileSystem.uploadAndDelete(
+                        file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2);
             }
         } catch (BackupRestoreException e) {
             // Verify the failure metric for upload is incremented.
@@ -125,12 +125,11 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 1);
         // Dummy upload with compressed size.
         for (File file : files) {
-            myFileSystem.uploadFile(
+            myFileSystem.uploadAndDelete(
                     file.toPath(),
                     Paths.get(file.toString() + ".tmp"),
                     getDummyPath(file.toPath()),
-                    2,
-                    true);
+                    2);
             // Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
 
@@ -154,12 +153,11 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
             myFileSystem
-                    .asyncUploadFile(
+                    .asyncUploadAndDelete(
                             file.toPath(),
                             Paths.get(file.toString() + ".tmp"),
                             getDummyPath(file.toPath()),
-                            2,
-                            true)
+                            2)
                     .get();
             // 1. Verify the success metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
@@ -177,12 +175,11 @@ public class TestAbstractFileSystem {
         List<Future<Path>> futures = new ArrayList<>();
         for (File file : files) {
             futures.add(
-                    myFileSystem.asyncUploadFile(
+                    myFileSystem.asyncUploadAndDelete(
                             file.toPath(),
                             Paths.get(file.toString() + ".tmp"),
                             getDummyPath(file.toPath()),
-                            2,
-                            true));
+                            2));
         }
 
         // Verify all the work is finished.
@@ -209,8 +206,8 @@ public class TestAbstractFileSystem {
         for (int i = 0; i < size; i++) {
             torun.add(
                     () -> {
-                        myFileSystem.uploadFile(
-                                file.toPath(), file.toPath(), abstractBackupPath, 2, true);
+                        myFileSystem.uploadAndDelete(
+                                file.toPath(), file.toPath(), abstractBackupPath, 2);
                         return Boolean.TRUE;
                     });
         }
@@ -238,8 +235,8 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
             Future<Path> future =
-                    failureFileSystem.asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+                    failureFileSystem.asyncUploadAndDelete(
+                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2);
             try {
                 future.get();
             } catch (Exception e) {

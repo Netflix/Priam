@@ -67,7 +67,7 @@ public class MetaFileWriterBuilder {
     }
 
     public interface UploadStep {
-        void uploadMetaFile(boolean deleteOnSuccess) throws Exception;
+        void uploadMetaFile() throws Exception;
 
         Path getMetaFilePath();
 
@@ -182,20 +182,14 @@ public class MetaFileWriterBuilder {
         /**
          * Upload the meta file generated to backup file system.
          *
-         * @param deleteOnSuccess delete the meta file from local file system if backup is
-         *     successful. Useful for testing purposes
          * @throws Exception when unable to upload the meta file.
          */
-        public void uploadMetaFile(boolean deleteOnSuccess) throws Exception {
+        public void uploadMetaFile() throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
             abstractBackupPath.parseLocal(
                     metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            backupFileSystem.uploadFile(
-                    metaFilePath,
-                    Paths.get(getRemoteMetaFilePath()),
-                    abstractBackupPath,
-                    10,
-                    deleteOnSuccess);
+            backupFileSystem.uploadAndDelete(
+                    metaFilePath, Paths.get(getRemoteMetaFilePath()), abstractBackupPath, 10);
         }
 
         public Path getMetaFilePath() {

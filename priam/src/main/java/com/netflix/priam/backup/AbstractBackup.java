@@ -88,19 +88,17 @@ public abstract class AbstractBackup extends Task {
 
                 if (async)
                     futures.add(
-                            fs.asyncUploadFile(
+                            fs.asyncUploadAndDelete(
                                     Paths.get(bp.getBackupFile().getAbsolutePath()),
                                     Paths.get(bp.getRemotePath()),
                                     bp,
-                                    10,
-                                    true));
+                                    10));
                 else
-                    fs.uploadFile(
+                    fs.uploadAndDelete(
                             Paths.get(bp.getBackupFile().getAbsolutePath()),
                             Paths.get(bp.getRemotePath()),
                             bp,
-                            10,
-                            true);
+                            10);
 
                 bps.add(bp);
             }

@@ -60,7 +60,7 @@ public interface IBackupFileSystem {
      * files-in-progress to be uploaded. This may result in this particular request to not to be
      * executed e.g. if any other thread has given the same file to upload and that file is in
      * internal queue. Note that de-duping is best effort and is not always guaranteed as we try to
-     * avoid lock on read/write of the files-in-progress.
+     * avoid lock on read/write of the files-in-progress. Once uploaded, files are deleted.
      *
      * @param localPath Path of the local file that needs to be uploaded.
      * @param remotePath Fully qualified path on the remote file system where file should be
@@ -68,20 +68,12 @@ public interface IBackupFileSystem {
      * @param path AbstractBackupPath to be used to send backup notifications only.
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
-     * @param deleteAfterSuccessfulUpload If true, delete the file denoted by localPath after it is
-     *     successfully uploaded to the filesystem. If there is any failure, file will not be
-     *     deleted.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
      *     readable or remote file system errors.
      * @throws FileNotFoundException If a file as denoted by localPath is not available or is a
      *     directory.
      */
-    void uploadFile(
-            Path localPath,
-            Path remotePath,
-            AbstractBackupPath path,
-            int retry,
-            boolean deleteAfterSuccessfulUpload)
+    void uploadAndDelete(Path localPath, Path remotePath, AbstractBackupPath path, int retry)
             throws FileNotFoundException, BackupRestoreException;
 
     /**
@@ -94,9 +86,6 @@ public interface IBackupFileSystem {
      * @param path AbstractBackupPath to be used to send backup notifications only.
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
-     * @param deleteAfterSuccessfulUpload If true, delete the file denoted by localPath after it is
-     *     successfully uploaded to the filesystem. If there is any failure, file will not be
-     *     deleted.
      * @return The future of the async job to monitor the progress of the job. This will be null if
      *     file was de-duped for upload.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
@@ -106,12 +95,11 @@ public interface IBackupFileSystem {
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
      *     to add the work to the queue.
      */
-    Future<Path> asyncUploadFile(
+    Future<Path> asyncUploadAndDelete(
             final Path localPath,
             final Path remotePath,
             final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
+            final int retry)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**

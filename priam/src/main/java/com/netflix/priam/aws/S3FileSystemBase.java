@@ -225,8 +225,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     @Override
-    public long getFileSize(Path remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getShard(), remotePath.toString()).getContentLength();
+    public long getFileSize(String remotePath) throws BackupRestoreException {
+        return s3Client.getObjectMetadata(getShard(), remotePath).getContentLength();
     }
 
     @Override

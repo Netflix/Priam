@@ -35,6 +35,7 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -69,14 +70,14 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
+            throws BackupRestoreException {
+        String remotePath = path.getRemotePath();
+        Path localPath = Paths.get(path.newRestoreFile().getAbsolutePath() + suffix);
         try (OutputStream os = new FileOutputStream(localPath.toFile());
                 RangeReadInputStream rris =
                         new RangeReadInputStream(
-                                s3Client,
-                                getShard(),
-                                super.getFileSize(remotePath),
-                                remotePath.toString())) {
+                                s3Client, getShard(), super.getFileSize(remotePath), remotePath)) {
             /*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.
              * Hence, decompressing it here would compromise the decryption.

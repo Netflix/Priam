@@ -124,14 +124,14 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     public void downloadFile(final AbstractBackupPath path, String suffix, final int retry)
             throws BackupRestoreException {
         // TODO: Should we download the file if localPath already exists?
-        Path remotePath = Paths.get(path.getRemotePath());
-        Path localPath = Paths.get(path.newRestoreFile().getAbsolutePath() + suffix);
-        logger.info("Downloading file: {} to location: {}", remotePath, localPath);
+        String remotePath = path.getRemotePath();
+        String localPath = path.newRestoreFile().getAbsolutePath() + suffix;
+        logger.info("Downloading file: {} to location: {}", path.getRemotePath(), localPath);
         try {
             new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {
                 @Override
                 public Void retriableCall() throws Exception {
-                    downloadFileImpl(remotePath, localPath);
+                    downloadFileImpl(path, suffix);
                     return null;
                 }
             }.call();
@@ -148,7 +148,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         }
     }
 
-    protected abstract void downloadFileImpl(final Path remotePath, final Path localPath)
+    protected abstract void downloadFileImpl(final AbstractBackupPath path, String suffix)
             throws BackupRestoreException;
 
     @Override

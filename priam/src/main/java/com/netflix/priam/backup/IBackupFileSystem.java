@@ -171,7 +171,7 @@ public interface IBackupFileSystem {
      * @throws BackupRestoreException in case of failure to read object denoted by remotePath or any
      *     other error.
      */
-    long getFileSize(Path remotePath) throws BackupRestoreException;
+    long getFileSize(String remotePath) throws BackupRestoreException;
 
     /**
      * Checks if the file denoted by remotePath exists on the remote file system. It does not need

@@ -310,11 +310,11 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected void downloadFileImpl(Path remotePath, Path localPath)
+        protected void downloadFileImpl(AbstractBackupPath path, String suffix)
                 throws BackupRestoreException {
             throw new BackupRestoreException(
                     "User injected failure file system error for testing download. Remote path: "
-                            + remotePath);
+                            + path.getRemotePath());
         }
 
         @Override
@@ -340,7 +340,7 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected void downloadFileImpl(Path remotePath, Path localPath)
+        protected void downloadFileImpl(AbstractBackupPath path, String suffix)
                 throws BackupRestoreException {
             try {
                 Thread.sleep(random.nextInt(20));

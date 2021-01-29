@@ -68,16 +68,18 @@ public class S3FileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
-        String remotePathName = remotePath.toString();
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
+            throws BackupRestoreException {
+        String remotePath = path.getRemotePath();
+        File localFile = new File(path.newRestoreFile().getAbsolutePath() + suffix);
         try {
             long size = super.getFileSize(remotePath);
             RangeReadInputStream rris =
-                    new RangeReadInputStream(s3Client, getShard(), size, remotePathName);
+                    new RangeReadInputStream(s3Client, getShard(), size, remotePath);
             final long bufferSize = Math.min(MAX_BUFFER_SIZE, size);
             compress.decompressAndClose(
                     new BufferedInputStream(rris, (int) bufferSize),
-                    new BufferedOutputStream(new FileOutputStream(localPath.toFile())));
+                    new BufferedOutputStream(new FileOutputStream(localFile)));
         } catch (Exception e) {
             String err =
                     String.format(

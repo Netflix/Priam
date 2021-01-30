@@ -284,11 +284,10 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected long uploadFileImpl(Path localPath, Path remotePath)
-                throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
             throw new BackupRestoreException(
                     "User injected failure file system error for testing upload. Local path: "
-                            + localPath);
+                            + path.getBackupFile().getAbsolutePath());
         }
     }
 
@@ -316,8 +315,7 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected long uploadFileImpl(Path localPath, Path remotePath)
-                throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
             try {
                 Thread.sleep(random.nextInt(20));
             } catch (InterruptedException e) {

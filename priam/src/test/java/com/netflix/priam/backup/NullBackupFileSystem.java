@@ -72,7 +72,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
         return 0;
     }
 }

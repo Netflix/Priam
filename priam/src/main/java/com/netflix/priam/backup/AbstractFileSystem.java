@@ -183,7 +183,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
                                 public Long retriableCall() throws Exception {
-                                    return uploadFileImpl(localPath, remotePath);
+                                    return uploadFileImpl(path);
                                 }
                             }.call();
 
@@ -264,7 +264,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 
-    protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
+    protected abstract long uploadFileImpl(final AbstractBackupPath path)
             throws BackupRestoreException;
 
     @Override

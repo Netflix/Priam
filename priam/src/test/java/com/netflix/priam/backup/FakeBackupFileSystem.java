@@ -166,9 +166,9 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
-        uploadedFiles.add(localPath.toFile().getAbsolutePath());
-        addFile(remotePath.toString());
-        return localPath.toFile().length();
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        uploadedFiles.add(path.getBackupFile().getAbsolutePath());
+        addFile(path.getRemotePath());
+        return path.getBackupFile().length();
     }
 }

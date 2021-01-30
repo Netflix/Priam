@@ -36,6 +36,7 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -104,18 +105,19 @@ public class S3FileSystem extends S3FileSystemBase {
         return ret;
     }
 
-    private long uploadMultipart(Path localPath, Path remotePath) throws BackupRestoreException {
+    private long uploadMultipart(AbstractBackupPath path) throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        String remotePath = path.getRemotePath();
         long chunkSize = getChunkSize(localPath);
         String prefix = config.getBackupPrefix();
-        String destination = remotePath.toString();
         if (logger.isDebugEnabled())
-            logger.debug("Uploading to {}/{} with chunk size {}", prefix, destination, chunkSize);
+            logger.debug("Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(prefix, remotePath.toString())
+                new InitiateMultipartUploadRequest(prefix, remotePath)
                         .withObjectMetadata(getObjectMetadata(localFile));
         String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
-        DataPart part = new DataPart(prefix, destination, uploadId);
+        DataPart part = new DataPart(prefix, remotePath, uploadId);
         List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
 
         try (InputStream in = new FileInputStream(localFile)) {
@@ -127,7 +129,7 @@ public class S3FileSystem extends S3FileSystemBase {
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
-                DataPart dp = new DataPart(++partNum, chunk, prefix, destination, uploadId);
+                DataPart dp = new DataPart(++partNum, chunk, prefix, remotePath, uploadId);
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsPut);
                 compressedFileSize += chunk.length;
                 // TODO: output Future<Etag> instead, collect them here, wait for all below
@@ -153,14 +155,15 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        String remotePath = path.getRemotePath();
         long chunkSize = config.getBackupChunkSize();
         File localFile = localPath.toFile();
-        if (localFile.length() >= chunkSize) return uploadMultipart(localPath, remotePath);
+        if (localFile.length() >= chunkSize) return uploadMultipart(path);
 
         String prefix = config.getBackupPrefix();
-        String destination = remotePath.toString();
-        if (logger.isDebugEnabled()) logger.debug("PUTing {}/{}", prefix, destination);
+        if (logger.isDebugEnabled()) logger.debug("PUTing {}/{}", prefix, remotePath);
 
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 InputStream in = new BufferedInputStream(new FileInputStream(localFile))) {
@@ -176,7 +179,7 @@ public class S3FileSystem extends S3FileSystemBase {
             objectMetadata.setContentLength(chunk.length);
             ByteArrayInputStream inputStream = new ByteArrayInputStream(chunk);
             PutObjectRequest putObjectRequest =
-                    new PutObjectRequest(prefix, destination, inputStream, objectMetadata);
+                    new PutObjectRequest(prefix, remotePath, inputStream, objectMetadata);
             PutObjectResult upload =
                     new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                         @Override

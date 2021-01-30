@@ -96,18 +96,18 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        String remotePath = path.getRemotePath();
+
         long chunkSize = getChunkSize(localPath);
         // initialize chunking request to aws
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
+                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath);
         // Fetch the aws generated upload id for this chunking request
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part =
-                new DataPart(
-                        config.getBackupPrefix(),
-                        remotePath.toString(),
-                        initResponse.getUploadId());
+                new DataPart(config.getBackupPrefix(), remotePath, initResponse.getUploadId());
         // Metadata on number of parts to be uploaded
         List<PartETag> partETags = Lists.newArrayList();
 
@@ -138,8 +138,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         // == Read compressed data, encrypt each chunk, upload it to aws
         try (BufferedInputStream compressedBis =
                 new BufferedInputStream(new FileInputStream(compressedDstFile))) {
-            Iterator<byte[]> chunks =
-                    this.encryptor.encryptStream(compressedBis, remotePath.toString());
+            Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, remotePath);
 
             // identifies this part position in the object we are uploading
             int partNum = 0;
@@ -155,7 +154,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                                 ++partNum,
                                 chunk,
                                 config.getBackupPrefix(),
-                                remotePath.toString(),
+                                remotePath,
                                 initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 encryptedFileSize += chunk.length;

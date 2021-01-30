@@ -236,7 +236,7 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
         throw new UnsupportedOperationException();
     }
 

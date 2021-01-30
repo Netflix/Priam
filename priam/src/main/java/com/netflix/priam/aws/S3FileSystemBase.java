@@ -45,7 +45,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
-    private static final int MAX_CHUNKS = 10000;
+    private static final int MAX_CHUNKS = 9995; // 10K is AWS limit, minus a small buffer
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     AmazonS3 s3Client;
     final IConfiguration config;
@@ -282,6 +282,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
     }
 
     final long getChunkSize(Path path) {
-        return Math.max(path.toFile().length() / (MAX_CHUNKS - 5), config.getBackupChunkSize());
+        return Math.max(path.toFile().length() / MAX_CHUNKS, config.getBackupChunkSize());
     }
 }

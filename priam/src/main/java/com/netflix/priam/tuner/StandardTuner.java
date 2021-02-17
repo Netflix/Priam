@@ -105,6 +105,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("hinted_handoff_throttle_in_kb", config.getHintedHandoffThrottleKb());
         map.put("authenticator", config.getAuthenticator());
         map.put("authorizer", config.getAuthorizer());
+        map.put("role_manager", config.getRoleManager());
         map.put("internode_compression", config.getInternodeCompression());
         map.put("dynamic_snitch", config.isDynamicSnitchEnabled());
 

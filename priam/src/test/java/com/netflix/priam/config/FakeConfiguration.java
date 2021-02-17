@@ -31,6 +31,7 @@ public class FakeConfiguration implements IConfiguration {
     private final String appName;
     private String restorePrefix = "";
     public Map<String, Object> fakeConfig;
+    private String roleManager = "";
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -182,6 +183,16 @@ public class FakeConfiguration implements IConfiguration {
     public ImmutableSet<String> getTunablePropertyFiles() {
         String path = new File(getYamlLocation()).getParentFile().getPath();
         return ImmutableSet.of(path + "/cassandra-rackdc.properties");
+    }
+
+    @Override
+    public String getRoleManager() {
+        return this.roleManager;
+    }
+
+    public FakeConfiguration setRoleManager(String roleManager) {
+        this.roleManager = roleManager;
+        return this;
     }
 
     public String getRAC() {

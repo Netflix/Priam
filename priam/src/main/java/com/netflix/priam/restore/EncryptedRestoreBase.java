@@ -17,6 +17,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
+import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -28,6 +29,7 @@ import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
@@ -157,31 +159,35 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                     ex);
                         }
 
-                        // == object downloaded and decrypted successfully, now uncompress it
-                        logger.info(
-                                "Start uncompressing file: {} to the FINAL destination stream",
-                                decryptedFile.getAbsolutePath());
+                        // == object is downloaded and decrypted, now uncompress it if necessary
+                        if (path.getCompression() == CompressionAlgorithm.NONE) {
+                            Files.move(decryptedFile.toPath(), restoreLocation.toPath());
+                        } else {
+                            logger.info(
+                                    "Start uncompressing file: {} to the FINAL destination stream",
+                                    decryptedFile.getAbsolutePath());
 
-                        try (InputStream is =
-                                        new BufferedInputStream(
-                                                new FileInputStream(decryptedFile));
-                                BufferedOutputStream finalDestination =
-                                        new BufferedOutputStream(
-                                                new FileOutputStream(restoreLocation))) {
-                            compress.decompressAndClose(is, finalDestination);
-                        } catch (Exception ex) {
-                            throw new Exception(
-                                    "Exception uncompressing file: "
-                                            + decryptedFile.getAbsolutePath()
-                                            + " to the FINAL destination stream",
-                                    ex);
+                            try (InputStream is =
+                                            new BufferedInputStream(
+                                                    new FileInputStream(decryptedFile));
+                                    BufferedOutputStream finalDestination =
+                                            new BufferedOutputStream(
+                                                    new FileOutputStream(restoreLocation))) {
+                                compress.decompressAndClose(is, finalDestination);
+                            } catch (Exception ex) {
+                                throw new Exception(
+                                        "Exception uncompressing file: "
+                                                + decryptedFile.getAbsolutePath()
+                                                + " to the FINAL destination stream",
+                                        ex);
+                            }
+
+                            logger.info(
+                                    "Completed uncompressing file: {} to the FINAL destination stream "
+                                            + " current worker: {}",
+                                    decryptedFile.getAbsolutePath(),
+                                    Thread.currentThread().getName());
                         }
-
-                        logger.info(
-                                "Completed uncompressing file: {} to the FINAL destination stream "
-                                        + " current worker: {}",
-                                decryptedFile.getAbsolutePath(),
-                                Thread.currentThread().getName());
                         // if here, everything was successful for this object, lets remove unneeded
                         // file(s)
                         if (tempFile.exists()) tempFile.delete();

@@ -28,6 +28,7 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -42,6 +43,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,7 +51,7 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
-    private static final long MAX_BUFFER_SIZE = 5 * 1024 * 1024;
+    private static final int MAX_BUFFER_SIZE = 5 * 1024 * 1024;
 
     @Inject
     public S3FileSystem(
@@ -73,14 +75,19 @@ public class S3FileSystem extends S3FileSystemBase {
             throws BackupRestoreException {
         String remotePath = path.getRemotePath();
         File localFile = new File(path.newRestoreFile().getAbsolutePath() + suffix);
-        try {
-            long size = super.getFileSize(remotePath);
-            RangeReadInputStream rris =
-                    new RangeReadInputStream(s3Client, getShard(), size, remotePath);
-            final long bufferSize = Math.min(MAX_BUFFER_SIZE, size);
-            compress.decompressAndClose(
-                    new BufferedInputStream(rris, (int) bufferSize),
-                    new BufferedOutputStream(new FileOutputStream(localFile)));
+        long size = super.getFileSize(remotePath);
+        final int bufferSize = Math.min(MAX_BUFFER_SIZE, Math.toIntExact(size));
+        try (BufferedInputStream is =
+                        new BufferedInputStream(
+                                new RangeReadInputStream(s3Client, getShard(), size, remotePath),
+                                bufferSize);
+                BufferedOutputStream os =
+                        new BufferedOutputStream(new FileOutputStream(localFile))) {
+            if (path.getCompression() == CompressionAlgorithm.NONE) {
+                IOUtils.copyLarge(is, os);
+            } else {
+                compress.decompressAndClose(is, os);
+            }
         } catch (Exception e) {
             String err =
                     String.format(

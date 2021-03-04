@@ -20,7 +20,6 @@ import com.google.inject.ImplementedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Iterator;
 
 @ImplementedBy(SnappyCompression.class)
 public interface ICompression {
@@ -30,7 +29,4 @@ public interface ICompression {
      * streams
      */
     void decompressAndClose(InputStream input, OutputStream output) throws IOException;
-
-    /** Produces chunks of compressed data. */
-    Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException;
 }

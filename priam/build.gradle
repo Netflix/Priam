@@ -1,1 +1,8 @@
 apply plugin: 'groovy'
+
+/**
+ * This is from https://jmockit.github.io/tutorial/Introduction.html#runningTests
+ */
+test {
+    jvmArgs "-javaagent:${classpath.find { it.name.contains("jmockit") }.absolutePath}"
+}

@@ -1,6 +1,6 @@
 plugins {
-    id 'nebula.netflixoss' version '7.1.2'
-    id 'com.github.sherter.google-java-format' version '0.7.1'
+    id 'nebula.netflixoss' version '9.1.0'
+    id 'com.github.sherter.google-java-format' version '0.8'
 }
 
 repositories {
@@ -90,7 +90,7 @@ subprojects {
         compile 'com.google.http-client:google-http-client-jackson2:1.28.0'
         compile 'com.netflix.spectator:spectator-api:0.83.0'
         compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
-        testCompile 'org.jmockit:jmockit:1.31'
+        testCompile 'org.jmockit:jmockit:1.38'
         testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
         testCompile "com.google.truth:truth:1.0.1"
         testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
@@ -118,12 +118,12 @@ task codeCoverageReport(type: JacocoReport, group: "Coverage reports") {
     }
     afterEvaluate {
         // Exclude generated files from top-level coverage report
-        classDirectories = files(
+        classDirectories.setFrom(files(
                 classDirectories.files.collect {
                     fileTree(
                             dir: it
                     )
                 }
-        )
+        ))
     }
 }

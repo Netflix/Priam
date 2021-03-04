@@ -30,8 +30,6 @@ public class TokenRetrieverUtils {
      * @param dc
      * @return IP of the token owner based on gossip information or null if C* status doesn't
      *     converge.
-     * @throws GossipParseException when required number of instances are not available to fetch the
-     *     gossip info.
      */
     public static InferredTokenOwnership inferTokenOwnerFromGossip(
             List<? extends PriamInstance> allIds, String token, String dc) {

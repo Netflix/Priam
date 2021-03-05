@@ -41,6 +41,7 @@ Thumbs.db
 .gradle
 .m2
 
+
 # Build output directies
 /target
 */target
@@ -67,3 +68,6 @@ atlassian-ide-plugin.xml
 # NetBeans specific files/directories
 .nbattrs
 >>>>>>> build/multi-project
+
+# publishing secrets
+secrets/signing-key

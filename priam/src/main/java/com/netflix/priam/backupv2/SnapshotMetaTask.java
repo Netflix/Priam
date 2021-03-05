@@ -415,7 +415,7 @@ public class SnapshotMetaTask extends AbstractBackup {
      * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
      * not an sstable component or a manifest or schema file.
      *
-     * <p>For example: mc-3-big-Data.db --> mc-3-big ks-cf-ka-7213-Index.db --> ks-cf-ka-7213
+     * <p>For example: mc-3-big-Data.db -- mc-3-big ks-cf-ka-7213-Index.db -- ks-cf-ka-7213
      *
      * @param file the file from which to extract a common prefix.
      * @return common prefix of the file, or empty,

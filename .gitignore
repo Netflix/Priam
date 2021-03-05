@@ -67,3 +67,7 @@ atlassian-ide-plugin.xml
 # NetBeans specific files/directories
 .nbattrs
 >>>>>>> build/multi-project
+
+
+# publishing secrets
+secrets/signing-key

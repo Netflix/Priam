@@ -26,12 +26,9 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-@RunWith(JMockit.class)
 public class PriamConfigTest {
     private @Mocked PriamServer priamServer;
 

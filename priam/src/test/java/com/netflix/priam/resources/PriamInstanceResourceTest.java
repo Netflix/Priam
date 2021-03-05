@@ -30,12 +30,9 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
-import mockit.integration.junit4.JMockit;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 
-@RunWith(JMockit.class)
 public class PriamInstanceResourceTest {
     private static final String APP_NAME = "myApp";
     private static final int NODE_ID = 3;

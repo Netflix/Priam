@@ -16,10 +16,14 @@
  */
 package com.netflix.priam.backup;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
@@ -38,6 +42,7 @@ import org.slf4j.LoggerFactory;
 /** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
+    private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
     static final String INCREMENTAL_BACKUP_FOLDER = "backups";
     public static final String SNAPSHOT_FOLDER = "snapshots";
 
@@ -76,21 +81,17 @@ public abstract class AbstractBackup extends Task {
     protected List<AbstractBackupPath> upload(
             final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
             throws Exception {
-        final List<AbstractBackupPath> bps = Lists.newArrayList();
+        Set<File> files =
+                Files.list(parent.toPath()).map(Path::toFile).filter(File::isFile).collect(toSet());
+        Set<String> compressedFiles = getCompressedFilePrefixes(files);
         final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
-
-        File[] files = parent.listFiles();
-        if (files == null) return bps;
-
+        final List<AbstractBackupPath> bps = Lists.newArrayList();
         for (File file : files) {
-            if (file.isFile() && file.exists()) {
-                AbstractBackupPath bp = getAbstractBackupPath(file, type);
-
-                if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
-                else fs.uploadAndDelete(bp, 10);
-
-                bps.add(bp);
-            }
+            AbstractBackupPath bp = getAbstractBackupPath(file, type);
+            bp.setCompression(getCompressionAlgorithm(file.getName(), compressedFiles));
+            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
+            else fs.uploadAndDelete(bp, 10);
+            bps.add(bp);
         }
 
         // Wait for all files to be uploaded.
@@ -100,6 +101,31 @@ public abstract class AbstractBackup extends Task {
         }
 
         return bps;
+    }
+
+    private Set<String> getCompressedFilePrefixes(Set<File> files) {
+        return files.stream()
+                .map(File::getName)
+                .filter(name -> name.endsWith(COMPRESSION_SUFFIX))
+                .map(name -> name.substring(0, name.lastIndexOf('-')))
+                .collect(toSet());
+    }
+
+    private CompressionAlgorithm getCompressionAlgorithm(String file, Set<String> compressedFiles) {
+        BackupsToCompress which = config.getBackupsToCompress();
+        switch (which) {
+            case NONE:
+                return CompressionAlgorithm.NONE;
+            case ALL:
+                return CompressionAlgorithm.SNAPPY;
+            case UNCOMPRESSED:
+                int splitIndex = file.lastIndexOf('-');
+                return splitIndex >= 0 && compressedFiles.contains(file.substring(0, splitIndex))
+                        ? CompressionAlgorithm.NONE
+                        : CompressionAlgorithm.SNAPPY;
+            default:
+                throw new IllegalArgumentException("NONE, ALL, UNCOMPRESSED only. Saw: " + which);
+        }
     }
 
     protected final void initiateBackup(

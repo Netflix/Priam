@@ -281,8 +281,8 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         return compression;
     }
 
-    public void setCompression(String compression) {
-        this.compression = CompressionAlgorithm.valueOf(compression);
+    public void setCompression(CompressionAlgorithm compressionAlgorithm) {
+        this.compression = compressionAlgorithm;
     }
 
     public CryptographyAlgorithm getEncryption() {

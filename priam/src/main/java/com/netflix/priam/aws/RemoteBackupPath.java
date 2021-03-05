@@ -21,6 +21,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
@@ -109,7 +110,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
         if (type == BackupFileType.SECONDARY_INDEX_V2) {
             indexDir = remotePath.getName(index++).toString();
         }
-        setCompression(remotePath.getName(index++).toString());
+        setCompression(CompressionAlgorithm.valueOf(remotePath.getName(index++).toString()));
         setEncryption(remotePath.getName(index++).toString());
         fileName = remotePath.getName(index).toString();
     }

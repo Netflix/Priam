@@ -141,28 +141,11 @@ public class StandardTunerTest {
         extraParamValues.put(priamKeyName2, "test");
         extraParamValues.put(priamKeyName3, "randomKeyValue");
         extraParamValues.put(priamKeyName4, "randomGroupValue");
-
-        Map map =
-                applyFakeConfiguration(new TunerConfiguration(extraConfigParam, extraParamValues));
-        Assert.assertEquals("your_host", map.get("listen_address"));
-        Assert.assertEquals("true", ((Map) map.get("client_encryption_options")).get("optional"));
-        Assert.assertEquals(
-                "test", ((Map) map.get("client_encryption_options")).get("keystore_password"));
-        Assert.assertEquals("randomKeyValue", map.get("randomKey"));
-        Assert.assertEquals("randomGroupValue", ((Map) map.get("randomGroup")).get("randomKey"));
-    }
-
-    @Test
-    public void testRoleManagerOverride() throws Exception {
-        String roleManagerOverride = "org.apache.cassandra.auth.CustomRoleManager";
-        Map map =
-                applyFakeConfiguration(new FakeConfiguration().setRoleManager(roleManagerOverride));
-        Assert.assertEquals(roleManagerOverride, map.get("role_manager"));
-    }
-
-    private Map applyFakeConfiguration(FakeConfiguration fakeConfiguration) throws Exception {
         StandardTuner tuner =
-                new StandardTuner(fakeConfiguration, backupRestoreConfig, instanceInfo);
+                new StandardTuner(
+                        new TunerConfiguration(extraConfigParam, extraParamValues),
+                        backupRestoreConfig,
+                        instanceInfo);
         Files.copy(new File("src/main/resources/incr-restore-cassandra.yaml"), target);
         tuner.writeAllProperties(target.getAbsolutePath(), "your_host", "YourSeedProvider");
 
@@ -170,7 +153,13 @@ public class StandardTunerTest {
         DumperOptions options = new DumperOptions();
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
-        return yaml.load(new FileInputStream(target));
+        Map map = yaml.load(new FileInputStream(target));
+        Assert.assertEquals("your_host", map.get("listen_address"));
+        Assert.assertEquals("true", ((Map) map.get("client_encryption_options")).get("optional"));
+        Assert.assertEquals(
+                "test", ((Map) map.get("client_encryption_options")).get("keystore_password"));
+        Assert.assertEquals("randomKeyValue", map.get("randomKey"));
+        Assert.assertEquals("randomGroupValue", ((Map) map.get("randomGroup")).get("randomKey"));
     }
 
     private class TunerConfiguration extends FakeConfiguration {

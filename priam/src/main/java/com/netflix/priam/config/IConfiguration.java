@@ -560,6 +560,11 @@ public interface IConfiguration {
         return "org.apache.cassandra.auth.AllowAllAuthorizer";
     }
 
+    /** Defaults to 'CassandraRoleManager'. */
+    default String getRoleManager() {
+        return "org.apache.cassandra.auth.CassandraRoleManager";
+    }
+
     /** @return true/false, if Cassandra needs to be started manually */
     default boolean doesCassandraStartManually() {
         return false;

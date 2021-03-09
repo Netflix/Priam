@@ -427,6 +427,11 @@ public class PriamConfiguration implements IConfiguration {
                 PRIAM_PRE + ".authorizer", "org.apache.cassandra.auth.AllowAllAuthorizer");
     }
 
+    public String getRoleManager() {
+        return config.get(
+                PRIAM_PRE + ".roleManager", "org.apache.cassandra.auth.CassandraRoleManager");
+    }
+
     @Override
     public boolean doesCassandraStartManually() {
         return config.get(PRIAM_PRE + ".cass.manual.start.enable", false);

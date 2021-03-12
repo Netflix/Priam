@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
@@ -44,7 +45,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -316,12 +316,12 @@ public class SnapshotMetaTask extends AbstractBackup {
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
         ImmutableSetMultimap.Builder<String, AbstractBackupPath> builder =
                 ImmutableSetMultimap.builder();
-        builder.putAll(getBackupPaths(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
+        builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
         for (File subDir : getSecondaryIndexDirectories(snapshotDir, columnFamily)) {
             builder.putAll(
-                    getBackupPaths(subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
+                    getSSTables(subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }
 
         ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
@@ -330,18 +330,13 @@ public class SnapshotMetaTask extends AbstractBackup {
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
     }
 
-    ImmutableSetMultimap<String, AbstractBackupPath> getBackupPaths(
-            File snapshotDir, AbstractBackupPath.BackupFileType type) {
-        ImmutableSetMultimap.Builder<String, AbstractBackupPath> sstables =
+    private ImmutableSetMultimap<String, AbstractBackupPath> getSSTables(
+            File snapshotDir, AbstractBackupPath.BackupFileType type) throws IOException {
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> ssTables =
                 ImmutableSetMultimap.builder();
-        for (File file : FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null)) {
-            Optional<String> prefix = getPrefix(file);
-            if (!prefix.isPresent()) continue;
-            AbstractBackupPath abstractBackupPath = pathFactory.get();
-            abstractBackupPath.parseLocal(file, type);
-            sstables.put(prefix.get(), abstractBackupPath);
-        }
-        return sstables.build();
+        getBackupPaths(snapshotDir, type)
+                .forEach(bp -> getPrefix(bp.getBackupFile()).ifPresent(p -> ssTables.put(p, bp)));
+        return ssTables.build();
     }
 
     /**
@@ -353,7 +348,7 @@ public class SnapshotMetaTask extends AbstractBackup {
      * @param file the file from which to extract a common prefix.
      * @return common prefix of the file, or empty,
      */
-    public static Optional<String> getPrefix(File file) {
+    private static Optional<String> getPrefix(File file) {
         String fileName = file.getName();
         String prefix = null;
         if (fileName.contains("-")) {
@@ -376,7 +371,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 .collect(Collectors.toList());
     }
 
-    // For testing purposes only.
+    @VisibleForTesting
     void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
     }

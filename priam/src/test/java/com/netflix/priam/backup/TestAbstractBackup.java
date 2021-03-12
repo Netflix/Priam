@@ -1,6 +1,7 @@
 package com.netflix.priam.backup;
 
 import com.google.appengine.repackaged.com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -14,7 +15,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -120,7 +120,8 @@ public class TestAbstractBackup {
     public void testCorrectCompressionAlgorithm() throws Exception {
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
-        List<AbstractBackupPath> abps = abstractBackup.upload(parent, backupFileType, false, false);
+        ImmutableSet<AbstractBackupPath> abps =
+                abstractBackup.upload(parent, backupFileType, false, false);
         AbstractBackupPath abstractBackupPath =
                 abps.stream()
                         .filter(abp -> abp.getFileName().equals(tablePart))

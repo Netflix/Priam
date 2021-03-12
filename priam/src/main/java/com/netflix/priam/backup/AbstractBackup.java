@@ -18,6 +18,7 @@ package com.netflix.priam.backup;
 
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -28,6 +29,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,12 +62,6 @@ public abstract class AbstractBackup extends Task {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type) {
-        final AbstractBackupPath bp = pathFactory.get();
-        bp.parseLocal(file, type);
-        return bp;
-    }
-
     /**
      * Upload files in the specified dir. Does not delete the file in case of error. The files are
      * uploaded serially or async based on flag provided.
@@ -78,20 +74,14 @@ public abstract class AbstractBackup extends Task {
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected List<AbstractBackupPath> upload(
+    protected ImmutableSet<AbstractBackupPath> upload(
             final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
             throws Exception {
-        Set<File> files =
-                Files.list(parent.toPath()).map(Path::toFile).filter(File::isFile).collect(toSet());
-        Set<String> compressedFiles = getCompressedFilePrefixes(files);
+        ImmutableSet<AbstractBackupPath> bps = getBackupPaths(parent, type);
         final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
-        final List<AbstractBackupPath> bps = Lists.newArrayList();
-        for (File file : files) {
-            AbstractBackupPath bp = getAbstractBackupPath(file, type);
-            bp.setCompression(getCompressionAlgorithm(file.getName(), compressedFiles));
+        for (AbstractBackupPath bp : bps) {
             if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
             else fs.uploadAndDelete(bp, 10);
-            bps.add(bp);
         }
 
         // Wait for all files to be uploaded.
@@ -103,12 +93,24 @@ public abstract class AbstractBackup extends Task {
         return bps;
     }
 
-    private Set<String> getCompressedFilePrefixes(Set<File> files) {
-        return files.stream()
-                .map(File::getName)
-                .filter(name -> name.endsWith(COMPRESSION_SUFFIX))
-                .map(name -> name.substring(0, name.lastIndexOf('-')))
-                .collect(toSet());
+    protected ImmutableSet<AbstractBackupPath> getBackupPaths(File dir, BackupFileType type)
+            throws IOException {
+        Set<File> files =
+                Files.list(dir.toPath()).map(Path::toFile).filter(File::isFile).collect(toSet());
+        Set<String> compressedFilePrefixes =
+                files.stream()
+                        .map(File::getName)
+                        .filter(name -> name.endsWith(COMPRESSION_SUFFIX))
+                        .map(name -> name.substring(0, name.lastIndexOf('-')))
+                        .collect(toSet());
+        final ImmutableSet.Builder<AbstractBackupPath> bps = ImmutableSet.builder();
+        for (File file : files) {
+            final AbstractBackupPath bp = pathFactory.get();
+            bp.parseLocal(file, type);
+            bp.setCompression(getCompressionAlgorithm(file.getName(), compressedFilePrefixes));
+            bps.add(bp);
+        }
+        return bps.build();
     }
 
     private CompressionAlgorithm getCompressionAlgorithm(String file, Set<String> compressedFiles) {

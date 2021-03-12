@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.aws;
 
+import com.google.api.client.util.Lists;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -28,9 +29,7 @@ import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * Represents location of an object on the remote file system. All the objects will be keyed with a
@@ -103,16 +102,23 @@ public class RemoteBackupPath extends AbstractBackupPath {
         type = BackupFileType.valueOf(remotePath.getName(index++).toString());
         String lastModified = remotePath.getName(index++).toString();
         setLastModified(Instant.ofEpochMilli(Long.parseLong(lastModified)));
+        List<String> parts = Lists.newArrayListWithCapacity(4);
         if (BackupFileType.isDataFile(type)) {
             keyspace = remotePath.getName(index++).toString();
             columnFamily = remotePath.getName(index++).toString();
+            parts.add(keyspace);
+            parts.add(columnFamily);
         }
         if (type == BackupFileType.SECONDARY_INDEX_V2) {
             indexDir = remotePath.getName(index++).toString();
+            parts.add(indexDir);
         }
         setCompression(CompressionAlgorithm.valueOf(remotePath.getName(index++).toString()));
         setEncryption(remotePath.getName(index++).toString());
         fileName = remotePath.getName(index).toString();
+        parts.add(fileName);
+        this.backupFile =
+                Paths.get(config.getDataFileLocation(), parts.toArray(new String[] {})).toFile();
     }
 
     private String getV1Location() {

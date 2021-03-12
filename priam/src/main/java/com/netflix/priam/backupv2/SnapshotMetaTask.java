@@ -32,8 +32,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -255,24 +253,6 @@ public class SnapshotMetaTask extends AbstractBackup {
         return JOBNAME;
     }
 
-    private ColumnfamilyResult convertToColumnFamilyResult(
-            String keyspace,
-            String columnFamilyName,
-            ImmutableSetMultimap<String, FileUploadResult> filePrefixToFileMap) {
-        ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap
-                .keySet()
-                .forEach(
-                        (key) -> {
-                            ColumnfamilyResult.SSTableResult ssTableResult =
-                                    new ColumnfamilyResult.SSTableResult();
-                            ssTableResult.setPrefix(key);
-                            ssTableResult.setSstableComponents(filePrefixToFileMap.get(key));
-                            columnfamilyResult.addSstable(ssTableResult);
-                        });
-        return columnfamilyResult;
-    }
-
     private void uploadAllFiles(final String columnFamily, final File backupDir) throws Exception {
         // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
         // uploads of previous snapshot leftover as Priam restarted or any failure for any reason
@@ -334,83 +314,36 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
-        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> builder =
                 ImmutableSetMultimap.builder();
-        filePrefixToFileMap.putAll(
-                getFileUploadResults(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
+        builder.putAll(getBackupPaths(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
         for (File subDir : getSecondaryIndexDirectories(snapshotDir, columnFamily)) {
-            filePrefixToFileMap.putAll(
-                    getFileUploadResults(
-                            subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
+            builder.putAll(
+                    getBackupPaths(subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }
 
-        ColumnfamilyResult columnfamilyResult =
-                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
-
-        int sstableCount = columnfamilyResult.getSstables().size();
-        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstableCount);
-
-        dataStep.addColumnfamilyResult(columnfamilyResult);
+        ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
+        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
+        dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
     }
 
-    ImmutableSetMultimap<String, FileUploadResult> getFileUploadResults(
-            File snapshotDir, AbstractBackupPath.BackupFileType type) throws Exception {
-        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+    ImmutableSetMultimap<String, AbstractBackupPath> getBackupPaths(
+            File snapshotDir, AbstractBackupPath.BackupFileType type) {
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> sstables =
                 ImmutableSetMultimap.builder();
         for (File file : FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null)) {
-            if (!file.exists()) continue;
             Optional<String> prefix = getPrefix(file);
             if (!prefix.isPresent()) continue;
-
-            FileUploadResult fileUploadResult;
-            try {
-                BasicFileAttributes fileAttributes =
-                        Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-                fileUploadResult =
-                        new FileUploadResult(
-                                file.toPath(),
-                                fileAttributes.lastModifiedTime().toInstant(),
-                                fileAttributes.creationTime().toInstant(),
-                                fileAttributes.size());
-            } catch (Exception e) {
-                /* If you are here it means either of the issues. In that case, do not upload the meta file.
-                 * @throws  UnsupportedOperationException
-                 *          if an attributes of the given type are not supported
-                 * @throws  IOException
-                 *          if an I/O error occurs
-                 * @throws  SecurityException
-                 *          In the case of the default provider, a security manager is
-                 *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-                 *          method is invoked to check read access to the file. If this
-                 *          method is invoked to read security sensitive attributes then the
-                 *          security manager may be invoke to check for additional permissions.
-                 */
-                logger.error(
-                        "Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: "
-                                + file.getAbsolutePath(),
-                        e);
-                throw e;
-            }
-            // Add isUploaded and remotePath here.
-            try {
-                AbstractBackupPath abstractBackupPath = pathFactory.get();
-                abstractBackupPath.parseLocal(file, type);
-                fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
-                fileUploadResult.setUploaded(
-                        fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
-            } catch (Exception e) {
-                logger.error(
-                        "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
-                        e.getMessage());
-                e.printStackTrace();
-            }
-            filePrefixToFileMap.put(prefix.get(), fileUploadResult);
+            AbstractBackupPath abstractBackupPath = pathFactory.get();
+            abstractBackupPath.parseLocal(file, type);
+            sstables.put(prefix.get(), abstractBackupPath);
         }
-        return filePrefixToFileMap.build();
+        return sstables.build();
     }
+
     /**
      * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
      * not an sstable component or a manifest or schema file.

@@ -16,9 +16,12 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.GsonJsonSerializer;
+import java.io.File;
 import java.nio.file.Path;
 import java.time.Instant;
 
@@ -31,13 +34,14 @@ public class FileUploadResult {
     private final Instant fileCreationTime;
     private final long fileSizeOnDisk; // Size on disk in bytes
     // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
-    private final CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;
+    private final CompressionAlgorithm compression;
     // Valid encryption technique for now is PLAINTEXT only. In future we will support pgp and more.
-    private final CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
+    private final CryptographyAlgorithm encryption;
 
     private Boolean isUploaded;
     private String backupPath;
 
+    @VisibleForTesting
     public FileUploadResult(
             Path fileName,
             Instant lastModifiedTime,
@@ -47,6 +51,19 @@ public class FileUploadResult {
         this.lastModifiedTime = lastModifiedTime;
         this.fileCreationTime = fileCreationTime;
         this.fileSizeOnDisk = fileSizeOnDisk;
+        this.compression = CompressionAlgorithm.SNAPPY;
+        this.encryption = CryptographyAlgorithm.PLAINTEXT;
+    }
+
+    public FileUploadResult(AbstractBackupPath path) {
+        File file = path.getBackupFile();
+        this.fileName = file.toPath();
+        this.backupPath = path.getRemotePath();
+        this.lastModifiedTime = path.getLastModified();
+        this.fileCreationTime = path.getLastModified(); // Remove. Always immutable in practice.
+        this.fileSizeOnDisk = path.getSize();
+        this.compression = path.getCompression();
+        this.encryption = path.getEncryption();
     }
 
     public void setUploaded(Boolean uploaded) {

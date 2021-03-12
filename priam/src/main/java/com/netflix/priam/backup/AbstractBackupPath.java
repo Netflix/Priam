@@ -80,7 +80,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private long compressedFileSize = 0;
     protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
-    private File backupFile;
+    protected File backupFile;
     private Instant lastModified;
     private Date uploadedTs;
     private CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;

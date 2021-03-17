@@ -16,9 +16,9 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.SDBInstanceFactory;
-import java.util.List;
 import java.util.Map;
 
 /**
@@ -26,14 +26,14 @@ import java.util.Map;
  * delete or list instances from the registry
  */
 @ImplementedBy(SDBInstanceFactory.class)
-public interface IPriamInstanceFactory<T> {
+public interface IPriamInstanceFactory {
     /**
      * Return a list of all Cassandra server nodes registered.
      *
      * @param appName the cluster name
      * @return a list of all nodes in {@code appName}
      */
-    List<T> getAllIds(String appName);
+    ImmutableSet<PriamInstance> getAllIds(String appName);
 
     /**
      * Return the Cassandra server node with the given {@code id}.
@@ -77,23 +77,8 @@ public interface IPriamInstanceFactory<T> {
     /**
      * Update the details of the server node in registry
      *
-     * @param inst the node to update
+     * @param orig the values that should exist in the database for the update to succeed
+     * @param inst the new values
      */
-    void update(PriamInstance inst);
-
-    /**
-     * Sort the list by instance ID
-     *
-     * @param return_ the list of nodes to sort
-     */
-    void sort(List<T> return_);
-
-    /**
-     * Attach volumes if required
-     *
-     * @param instance
-     * @param mountPath
-     * @param device
-     */
-    void attachVolumes(PriamInstance instance, String mountPath, String device);
+    void update(PriamInstance orig, PriamInstance inst);
 }

@@ -57,12 +57,12 @@ public class FakeInstanceInfo implements InstanceInfo {
 
     @Override
     public String getHostIP() {
-        return instanceId;
+        return "127.0.0.0";
     }
 
     @Override
     public String getPrivateIP() {
-        return instanceId;
+        return "127.1.1.0";
     }
 
     @Override

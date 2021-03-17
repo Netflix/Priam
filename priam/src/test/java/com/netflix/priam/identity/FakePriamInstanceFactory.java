@@ -17,12 +17,17 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
-import java.util.*;
+import groovy.lang.Singleton;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
+@Singleton
+public class FakePriamInstanceFactory implements IPriamInstanceFactory {
     private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
     private final InstanceInfo instanceInfo;
 
@@ -32,10 +37,15 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     }
 
     @Override
-    public List<PriamInstance> getAllIds(String appName) {
-        List<PriamInstance> result = new ArrayList<>(instances.values());
-        sort(result);
-        return result;
+    public ImmutableSet<PriamInstance> getAllIds(String appName) {
+        return appName.endsWith("-dead")
+                ? ImmutableSet.of()
+                : ImmutableSet.copyOf(
+                        instances
+                                .values()
+                                .stream()
+                                .sorted(Comparator.comparingInt(PriamInstance::getId))
+                                .collect(Collectors.toList()));
     }
 
     @Override
@@ -72,24 +82,7 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     }
 
     @Override
-    public void update(PriamInstance inst) {
+    public void update(PriamInstance orig, PriamInstance inst) {
         instances.put(inst.getId(), inst);
-    }
-
-    @Override
-    public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator =
-                (Comparator<PriamInstance>)
-                        (o1, o2) -> {
-                            Integer c1 = o1.getId();
-                            Integer c2 = o2.getId();
-                            return c1.compareTo(c2);
-                        };
-        return_.sort(comparator);
-    }
-
-    @Override
-    public void attachVolumes(PriamInstance instance, String mountPath, String device) {
-        // TODO Auto-generated method stub
     }
 }

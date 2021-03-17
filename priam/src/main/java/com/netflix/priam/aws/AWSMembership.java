@@ -24,7 +24,7 @@ import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
 import com.amazonaws.services.ec2.model.Filter;
-import com.google.common.collect.Lists;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.name.Named;
 import com.netflix.priam.config.IConfiguration;
@@ -60,7 +60,7 @@ public class AWSMembership implements IMembership {
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public ImmutableSet<String> getRacMembership() {
         AmazonAutoScaling client = null;
         try {
             List<String> asgNames = new ArrayList<>();
@@ -73,7 +73,7 @@ public class AWSMembership implements IMembership {
                                     asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
-            List<String> instanceIds = Lists.newArrayList();
+            ImmutableSet.Builder<String> instanceIds = ImmutableSet.builder();
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 for (Instance ins : asg.getInstances())
                     if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
@@ -89,7 +89,7 @@ public class AWSMembership implements IMembership {
                                 StringUtils.join(asgNames, ","),
                                 StringUtils.join(instanceIds, ",")));
             }
-            return instanceIds;
+            return instanceIds.build();
         } finally {
             if (client != null) client.shutdown();
         }
@@ -117,7 +117,7 @@ public class AWSMembership implements IMembership {
     }
 
     @Override
-    public List<String> getCrossAccountRacMembership() {
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         AmazonAutoScaling client = null;
         try {
             List<String> asgNames = new ArrayList<>();
@@ -130,7 +130,7 @@ public class AWSMembership implements IMembership {
                                     asgNames.toArray(new String[asgNames.size()]));
             DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
 
-            List<String> instanceIds = Lists.newArrayList();
+            ImmutableSet.Builder<String> instanceIds = ImmutableSet.builder();
             for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
                 for (Instance ins : asg.getInstances())
                     if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
@@ -144,7 +144,7 @@ public class AWSMembership implements IMembership {
                                 "Querying Amazon returned following instance in the cross-account ASG: %s --> %s",
                                 instanceInfo.getRac(), StringUtils.join(instanceIds, ",")));
             }
-            return instanceIds;
+            return instanceIds.build();
         } finally {
             if (client != null) client.shutdown();
         }
@@ -274,11 +274,11 @@ public class AWSMembership implements IMembership {
     }
 
     /** List SG ACL's */
-    public List<String> listACL(int from, int to) {
+    public ImmutableSet<String> listACL(int from, int to) {
         AmazonEC2 client = null;
         try {
             client = getEc2Client();
-            List<String> ipPermissions = new ArrayList<>();
+            ImmutableSet.Builder<String> ipPermissions = ImmutableSet.builder();
 
             if (isClassic()) {
 
@@ -316,7 +316,7 @@ public class AWSMembership implements IMembership {
                 logger.debug("Fetch current permissions for vpc env of running instance");
             }
 
-            return ipPermissions;
+            return ipPermissions.build();
         } finally {
             if (client != null) client.shutdown();
         }

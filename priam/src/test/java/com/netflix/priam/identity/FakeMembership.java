@@ -17,28 +17,29 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FakeMembership implements IMembership {
 
-    private List<String> instances;
+    private ImmutableSet<String> instances;
+    private Set<String> acl;
 
     public FakeMembership(List<String> priamInstances) {
-        this.instances = priamInstances;
-    }
-
-    public void setInstances(List<String> priamInstances) {
-        this.instances = priamInstances;
+        this.instances = ImmutableSet.copyOf(priamInstances);
+        this.acl = new HashSet<>();
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public ImmutableSet<String> getRacMembership() {
         return instances;
     }
 
     @Override
-    public List<String> getCrossAccountRacMembership() {
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         return null;
     }
 
@@ -54,20 +55,17 @@ public class FakeMembership implements IMembership {
 
     @Override
     public void addACL(Collection<String> listIPs, int from, int to) {
-        // TODO Auto-generated method stub
-
+        acl.addAll(listIPs);
     }
 
     @Override
     public void removeACL(Collection<String> listIPs, int from, int to) {
-        // TODO Auto-generated method stub
-
+        acl.removeAll(listIPs);
     }
 
     @Override
-    public List<String> listACL(int from, int to) {
-        // TODO Auto-generated method stub
-        return null;
+    public ImmutableSet<String> listACL(int from, int to) {
+        return ImmutableSet.copyOf(acl);
     }
 
     @Override

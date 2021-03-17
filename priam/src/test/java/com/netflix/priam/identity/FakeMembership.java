@@ -23,13 +23,25 @@ import java.util.List;
 public class FakeMembership implements IMembership {
 
     private List<String> instances;
+    private int racSize;
+    private int racCount;
 
     public FakeMembership(List<String> priamInstances) {
         this.instances = priamInstances;
     }
 
+    public FakeMembership() {}
+
     public void setInstances(List<String> priamInstances) {
         this.instances = priamInstances;
+    }
+
+    public void setRacSize(int racSize) {
+        this.racSize = racSize;
+    }
+
+    public void setRacCount(int racCount) {
+        this.racCount = racCount;
     }
 
     @Override
@@ -44,12 +56,12 @@ public class FakeMembership implements IMembership {
 
     @Override
     public int getRacMembershipSize() {
-        return 3;
+        return racSize;
     }
 
     @Override
     public int getRacCount() {
-        return 3;
+        return racCount;
     }
 
     @Override

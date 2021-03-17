@@ -20,10 +20,7 @@ package com.netflix.priam.config;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Singleton;
 import java.io.File;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration {
@@ -83,7 +80,16 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public List<String> getRacs() {
-        return Arrays.asList("az1", "az2", "az3");
+        return Optional
+            .ofNullable((List<String>) getFakeConfig("Priam.zones.available"))
+            .orElse(Arrays.asList("az1", "az2", "az3"));
+    }
+
+    @Override
+    public String getPartitioner() {
+        return Optional
+            .ofNullable((String) getFakeConfig("Priam.partitioner"))
+            .orElse("org.apache.cassandra.dht.RandomPartitioner");
     }
 
     @Override

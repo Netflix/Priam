@@ -81,23 +81,9 @@ abstract class InstanceTestUtils {
 
     InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
         InstanceInfo newInstanceInfo = new FakeInstanceInfo(instanceId, zone, region);
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, newInstanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(
-                        factory, membership, config, sleeper, newInstanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, newInstanceInfo);
-        return new InstanceIdentity(
-                factory,
-                membership,
-                config,
-                sleeper,
-                this.tokenManager,
-                deadTokenRetriever,
-                preGeneratedTokenRetriever,
-                newTokenRetriever,
-                newInstanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, newInstanceInfo, sleeper, tokenManager);
+        return new InstanceIdentity(factory, membership, config, newInstanceInfo, tokenRetriever);
     }
 }

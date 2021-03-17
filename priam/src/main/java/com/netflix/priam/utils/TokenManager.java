@@ -77,20 +77,6 @@ public class TokenManager implements ITokenManager {
                 .add(minimumToken);
     }
 
-    /**
-     * Creates a token given the following parameter
-     *
-     * @param my_slot -- Slot where this instance has to be.
-     * @param rac_count -- Rac count is the number of RAC's
-     * @param rac_size -- number of memberships in the rac
-     * @param region -- name of the DC where it this token is created.
-     */
-    @Override
-    public String createToken(int my_slot, int rac_count, int rac_size, String region) {
-        int regionCount = rac_count * rac_size;
-        return initialToken(regionCount, my_slot, regionOffset(region)).toString();
-    }
-
     @Override
     public String createToken(int my_slot, int totalCount, String region) {
         return initialToken(totalCount, my_slot, regionOffset(region)).toString();

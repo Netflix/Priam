@@ -3,6 +3,7 @@ package com.netflix.priam.identity.token;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.core.IsNot.not;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.SystemUtils;
 import java.util.List;
@@ -19,20 +20,21 @@ public class TokenRetrieverUtilsTest {
     private static final String APP = "testapp";
     private static final String STATUS_URL_FORMAT = "http://%s:8080/Priam/REST/v1/cassadmin/status";
 
-    private List<PriamInstance> instances =
-            IntStream.range(0, 6)
-                    .<PriamInstance>mapToObj(
-                            e ->
-                                    newMockPriamInstance(
-                                            APP,
-                                            "us-east",
-                                            (e < 3) ? "az1" : "az2",
-                                            e,
-                                            String.format("fakeInstance-%d", e),
-                                            String.format("127.0.0.%d", e),
-                                            String.format("fakeHost-%d", e),
-                                            String.valueOf(e)))
-                    .collect(Collectors.toList());
+    private ImmutableSet<PriamInstance> instances =
+            ImmutableSet.copyOf(
+                    IntStream.range(0, 6)
+                            .<PriamInstance>mapToObj(
+                                    e ->
+                                            newMockPriamInstance(
+                                                    APP,
+                                                    "us-east",
+                                                    (e < 3) ? "az1" : "az2",
+                                                    e,
+                                                    String.format("fakeInstance-%d", e),
+                                                    String.format("127.0.0.%d", e),
+                                                    String.format("fakeHost-%d", e),
+                                                    String.valueOf(e)))
+                            .collect(Collectors.toList()));
 
     private Map<String, String> tokenToEndpointMap =
             IntStream.range(0, 6)
@@ -96,7 +98,7 @@ public class TokenRetrieverUtilsTest {
                 minTimes = 0;
 
                 SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-5"));
-                result = getStatus(liveInstances, tokenToEndpointMap);
+                result = null;
                 minTimes = 0;
             }
         };

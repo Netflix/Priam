@@ -22,7 +22,7 @@ import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.net.URI;
-import java.util.List;
+import java.util.stream.Collectors;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -37,7 +37,7 @@ public class PriamInstanceResource {
     private static final Logger log = LoggerFactory.getLogger(PriamInstanceResource.class);
 
     private final IConfiguration config;
-    private final IPriamInstanceFactory<PriamInstance> factory;
+    private final IPriamInstanceFactory factory;
     private final InstanceInfo instanceInfo;
 
     @Inject
@@ -57,13 +57,10 @@ public class PriamInstanceResource {
      */
     @GET
     public String getInstances() {
-        StringBuilder response = new StringBuilder();
-        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
-        for (PriamInstance node : allInstances) {
-            response.append(node.toString());
-            response.append("\n");
-        }
-        return response.toString();
+        return factory.getAllIds(config.getAppName())
+                .stream()
+                .map(PriamInstance::toString)
+                .collect(Collectors.joining("\n", "", "\n"));
     }
 
     /**

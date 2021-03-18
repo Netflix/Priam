@@ -1,4 +1,10 @@
 # Changelog
+## 2021/03/17 3.11.77
+(#913) Store Private IPs in the token database when the snitch is GPFS.
+
+## 2021/03/09 3.11.76
+(#918) Adding support for custom override for role_manager.
+
 ## 2020/11/09 3.11.73
 (#911) Backup secondary index files.
 

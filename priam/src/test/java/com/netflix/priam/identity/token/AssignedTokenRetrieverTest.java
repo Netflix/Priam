@@ -1,6 +1,7 @@
 package com.netflix.priam.identity.token;
 
 import com.google.common.base.Strings;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
@@ -26,7 +27,7 @@ public class AssignedTokenRetrieverTest {
 
     @Test
     public void grabAssignedTokenStartDbInBootstrapModeWhenGossipAgreesCurrentInstanceIsTokenOwner(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -50,45 +51,36 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.emptyList();
+                result = ImmutableSet.of();
 
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = liveHosts.get(0).getInstanceId();
 
+                instanceInfo.getHostIP();
+                result = liveHosts.get(0).getHostIP();
+
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
                 result = inferredTokenOwnership;
             }
         };
 
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
-                new InstanceIdentity(
-                        factory,
-                        membership,
-                        config,
-                        sleeper,
-                        tokenManager,
-                        deadTokenRetriever,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo);
-
+                new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.isReplace()).isFalse();
     }
 
     @Test
     public void grabAssignedTokenStartDbInReplaceModeWhenGossipAgreesPreviousTokenOwnerIsNotLive(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -126,45 +118,33 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.singletonList(deadInstance);
+                result = ImmutableSet.of(deadInstance);
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = newInstance.getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, newInstance.getToken(), newInstance.getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        newInstance.getToken(),
+                        newInstance.getDC());
                 result = inferredTokenOwnership;
             }
         };
 
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
-                new InstanceIdentity(
-                        factory,
-                        membership,
-                        config,
-                        sleeper,
-                        tokenManager,
-                        deadTokenRetriever,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo);
-
+                new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(instanceIdentity.getReplacedIp()).isEqualTo(deadInstance.getHostIP());
         Truth.assertThat(instanceIdentity.isReplace()).isTrue();
     }
 
     @Test
     public void grabAssignedTokenThrowWhenGossipAgreesPreviousTokenOwnerIsLive(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -201,44 +181,34 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.singletonList(deadInstance);
+                result = ImmutableSet.of(deadInstance);
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = newInstance.getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, newInstance.getToken(), newInstance.getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        newInstance.getToken(),
+                        newInstance.getDC());
                 result = inferredTokenOwnership;
             }
         };
 
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         Assertions.assertThrows(
                 TokenRetrieverUtils.GossipParseException.class,
                 () ->
                         new InstanceIdentity(
-                                factory,
-                                membership,
-                                config,
-                                sleeper,
-                                tokenManager,
-                                deadTokenRetriever,
-                                preGeneratedTokenRetriever,
-                                newTokenRetriever,
-                                instanceInfo));
+                                factory, membership, config, instanceInfo, tokenRetriever));
     }
 
     @Test
     public void grabAssignedTokenStartDbInBootstrapModeWhenGossipDisagreesOnPreviousTokenOwner(
-            @Mocked IPriamInstanceFactory<PriamInstance> factory,
+            @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
             @Mocked Sleeper sleeper,
@@ -262,38 +232,26 @@ public class AssignedTokenRetrieverTest {
                 result = APP;
 
                 factory.getAllIds(DEAD_APP);
-                result = Collections.emptyList();
+                result = ImmutableSet.of();
                 factory.getAllIds(APP);
-                result = liveHosts;
+                result = ImmutableSet.copyOf(liveHosts);
 
                 instanceInfo.getInstanceId();
                 result = liveHosts.get(0).getInstanceId();
 
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(
-                        liveHosts, liveHosts.get(0).getToken(), liveHosts.get(0).getDC());
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
                 result = inferredTokenOwnership;
             }
         };
 
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(factory, membership, config, sleeper, instanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, instanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
         InstanceIdentity instanceIdentity =
-                new InstanceIdentity(
-                        factory,
-                        membership,
-                        config,
-                        sleeper,
-                        tokenManager,
-                        deadTokenRetriever,
-                        preGeneratedTokenRetriever,
-                        newTokenRetriever,
-                        instanceInfo);
-
+                new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
         Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();
         Truth.assertThat(instanceIdentity.isReplace()).isFalse();
     }

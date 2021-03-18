@@ -21,7 +21,8 @@ import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.identity.*;
 import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.identity.token.*;
+import com.netflix.priam.identity.token.ITokenRetriever;
+import com.netflix.priam.identity.token.TokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
@@ -81,23 +82,9 @@ public abstract class InstanceTestUtils {
 
     InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
         InstanceInfo newInstanceInfo = new FakeInstanceInfo(instanceId, zone, region);
-        IDeadTokenRetriever deadTokenRetriever =
-                new DeadTokenRetriever(factory, membership, config, sleeper, newInstanceInfo);
-        IPreGeneratedTokenRetriever preGeneratedTokenRetriever =
-                new PreGeneratedTokenRetriever(
-                        factory, membership, config, sleeper, newInstanceInfo);
-        INewTokenRetriever newTokenRetriever =
-                new NewTokenRetriever(
-                        factory, membership, config, sleeper, tokenManager, newInstanceInfo);
-        return new InstanceIdentity(
-                factory,
-                membership,
-                config,
-                sleeper,
-                this.tokenManager,
-                deadTokenRetriever,
-                preGeneratedTokenRetriever,
-                newTokenRetriever,
-                newInstanceInfo);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, newInstanceInfo, sleeper, tokenManager);
+        return new InstanceIdentity(factory, membership, config, newInstanceInfo, tokenRetriever);
     }
 }

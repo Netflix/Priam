@@ -22,8 +22,6 @@ import java.util.List;
 
 @ImplementedBy(TokenManager.class)
 public interface ITokenManager {
-    String createToken(int mySlot, int racCount, int racSize, String region);
-
     String createToken(int mySlot, int totalCount, String region);
 
     BigInteger findClosestToken(BigInteger tokenToSearch, List<BigInteger> tokenList);

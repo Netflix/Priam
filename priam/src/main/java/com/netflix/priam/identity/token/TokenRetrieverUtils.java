@@ -1,5 +1,6 @@
 package com.netflix.priam.identity.token;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import com.netflix.priam.utils.SystemUtils;
@@ -32,7 +33,7 @@ public class TokenRetrieverUtils {
      *     converge.
      */
     public static InferredTokenOwnership inferTokenOwnerFromGossip(
-            List<? extends PriamInstance> allIds, String token, String dc) {
+            ImmutableSet<PriamInstance> allIds, String token, String dc) {
 
         // Avoid using dead instance who we are trying to replace (duh!!)
         // Avoid other regions instances to avoid communication over public ip address.

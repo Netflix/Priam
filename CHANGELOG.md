@@ -1,4 +1,7 @@
 # Changelog
+## 2021/03/17 3.1.103
+(#923) Store private ips in the token database when using GPFS. Plus substantial refactoring of token generation logic.
+
 ## 2020/09/30 3.1.100
 (#907, #909) Stop explicitly filtering OpsCenter keyspace when backing up. Remove more noisy log statements.
 

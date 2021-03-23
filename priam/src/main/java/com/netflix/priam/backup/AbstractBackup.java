@@ -107,13 +107,18 @@ public abstract class AbstractBackup extends Task {
         for (File file : files) {
             final AbstractBackupPath bp = pathFactory.get();
             bp.parseLocal(file, type);
-            bp.setCompression(getCompressionAlgorithm(file.getName(), compressedFilePrefixes));
+            bp.setCompression(getCorrectCompressionAlgorithm(bp, compressedFilePrefixes));
             bps.add(bp);
         }
         return bps.build();
     }
 
-    private CompressionAlgorithm getCompressionAlgorithm(String file, Set<String> compressedFiles) {
+    private CompressionAlgorithm getCorrectCompressionAlgorithm(
+            AbstractBackupPath path, Set<String> compressedFiles) {
+        if (!BackupFileType.isV2(path.getType())) {
+            return CompressionAlgorithm.SNAPPY;
+        }
+        String file = path.getFileName();
         BackupsToCompress which = config.getBackupsToCompress();
         switch (which) {
             case NONE:

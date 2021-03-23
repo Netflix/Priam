@@ -53,8 +53,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         private static ImmutableSet<BackupFileType> DATA_FILE_TYPES =
                 ImmutableSet.of(SECONDARY_INDEX_V2, SNAP, SST, SST_V2);
 
+        private static ImmutableSet<BackupFileType> V2_FILE_TYPES =
+                ImmutableSet.of(SECONDARY_INDEX_V2, SST_V2, META_V2);
+
         public static boolean isDataFile(BackupFileType type) {
             return DATA_FILE_TYPES.contains(type);
+        }
+
+        public static boolean isV2(BackupFileType type) {
+            return V2_FILE_TYPES.contains(type);
         }
 
         public static BackupFileType fromString(String s) throws BackupRestoreException {

@@ -4,7 +4,7 @@ plugins {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 googleJavaFormat {
@@ -33,7 +33,7 @@ subprojects {
     group = 'com.netflix.priam'
 
     repositories {
-        jcenter()
+        mavenCentral()
     }
 
     configurations {

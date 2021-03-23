@@ -59,8 +59,9 @@ public class FileUploadResult {
         File file = path.getBackupFile();
         this.fileName = file.toPath();
         this.backupPath = path.getRemotePath();
+        // TODO Remove this. It is redundant with fileCreationTime as the files are immutable.
         this.lastModifiedTime = path.getLastModified();
-        this.fileCreationTime = path.getLastModified(); // Remove. Always immutable in practice.
+        this.fileCreationTime = path.getLastModified();
         this.fileSizeOnDisk = path.getSize();
         this.compression = path.getCompression();
         this.encryption = path.getEncryption();

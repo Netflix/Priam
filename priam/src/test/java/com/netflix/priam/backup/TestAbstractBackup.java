@@ -120,11 +120,11 @@ public class TestAbstractBackup {
     public void testCorrectCompressionAlgorithm() throws Exception {
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
-        ImmutableSet<AbstractBackupPath> abps =
+        ImmutableSet<AbstractBackupPath> paths =
                 abstractBackup.upload(parent, backupFileType, false, false);
         AbstractBackupPath abstractBackupPath =
-                abps.stream()
-                        .filter(abp -> abp.getFileName().equals(tablePart))
+                paths.stream()
+                        .filter(path -> path.getFileName().equals(tablePart))
                         .findAny()
                         .orElseThrow(IllegalStateException::new);
         Truth.assertThat(abstractBackupPath.getCompression()).isEqualTo(compressionAlgorithm);

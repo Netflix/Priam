@@ -31,7 +31,6 @@ public class FakeConfiguration implements IConfiguration {
 
     private final String appName;
     private String restorePrefix = "";
-    private String roleManager = "";
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
@@ -201,16 +200,6 @@ public class FakeConfiguration implements IConfiguration {
     public ImmutableSet<String> getTunablePropertyFiles() {
         String path = new File(getYamlLocation()).getParentFile().getPath();
         return ImmutableSet.of(path + "/cassandra-rackdc.properties");
-    }
-
-    @Override
-    public String getRoleManager() {
-        return this.roleManager;
-    }
-
-    public FakeConfiguration setRoleManager(String roleManager) {
-        this.roleManager = roleManager;
-        return this;
     }
 
     public String getRAC() {

@@ -61,6 +61,7 @@ public class TestBackupUtils {
             String prefix = basename.substring(0, lastIndex);
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
+            path.setCreationTime(path.getLastModified());
             builder.put(prefix, path);
         }
         dataStep.addColumnfamilyResult(keyspace, columnfamily, builder.build());

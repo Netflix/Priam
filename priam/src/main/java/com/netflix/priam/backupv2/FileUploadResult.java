@@ -17,6 +17,7 @@
 package com.netflix.priam.backupv2;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.CompressionAlgorithm;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
@@ -56,12 +57,13 @@ public class FileUploadResult {
     }
 
     public FileUploadResult(AbstractBackupPath path) {
+        Preconditions.checkArgument(path.getLastModified().toEpochMilli() > 0);
+        Preconditions.checkArgument(path.getCreationTime().toEpochMilli() > 0);
         File file = path.getBackupFile();
         this.fileName = file.toPath();
         this.backupPath = path.getRemotePath();
-        // TODO Remove this. It is redundant with fileCreationTime as the files are immutable.
         this.lastModifiedTime = path.getLastModified();
-        this.fileCreationTime = path.getLastModified();
+        this.fileCreationTime = path.getCreationTime();
         this.fileSizeOnDisk = path.getSize();
         this.compression = path.getCompression();
         this.encryption = path.getEncryption();

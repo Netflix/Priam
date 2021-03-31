@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
@@ -28,7 +29,10 @@ import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -89,6 +93,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected final IConfiguration config;
     protected File backupFile;
     private Instant lastModified;
+    private Instant creationTime;
     private Date uploadedTs;
     private CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
@@ -103,9 +108,18 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.baseDir = config.getBackupLocation();
         this.clusterName = config.getAppName();
         this.fileName = file.getName();
-        this.lastModified = Instant.ofEpochMilli(file.lastModified());
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            this.lastModified = fileAttributes.lastModifiedTime().toInstant();
+            this.creationTime = fileAttributes.creationTime().toInstant();
+            this.size = fileAttributes.size();
+        } catch (IOException e) {
+            this.lastModified = Instant.ofEpochMilli(0L);
+            this.creationTime = Instant.ofEpochMilli(0L);
+            this.size = 0L;
+        }
         this.region = instanceIdentity.getInstanceInfo().getRegion();
-        this.size = file.length();
         this.token = instanceIdentity.getInstance().getToken();
         this.type = type;
 
@@ -130,7 +144,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.time =
                 type == BackupFileType.SNAP
                         ? DateUtil.getDate(parts[3])
-                        : new Date(file.lastModified());
+                        : new Date(lastModified.toEpochMilli());
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
@@ -282,6 +296,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public void setLastModified(Instant instant) {
         this.lastModified = instant;
+    }
+
+    public Instant getCreationTime() {
+        return creationTime;
+    }
+
+    @VisibleForTesting
+    public void setCreationTime(Instant instant) {
+        this.creationTime = instant;
     }
 
     public CompressionAlgorithm getCompression() {

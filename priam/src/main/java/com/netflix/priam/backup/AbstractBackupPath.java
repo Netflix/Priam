@@ -23,7 +23,7 @@ import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -95,7 +95,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private Instant lastModified;
     private Instant creationTime;
     private Date uploadedTs;
-    private CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;
+    private CompressionType compression = CompressionType.SNAPPY;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
@@ -307,12 +307,12 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.creationTime = instant;
     }
 
-    public CompressionAlgorithm getCompression() {
+    public CompressionType getCompression() {
         return compression;
     }
 
-    public void setCompression(CompressionAlgorithm compressionAlgorithm) {
-        this.compression = compressionAlgorithm;
+    public void setCompression(CompressionType compressionType) {
+        this.compression = compressionType;
     }
 
     public CryptographyAlgorithm getEncryption() {

@@ -32,13 +32,13 @@ public class ChunkedStream implements Iterator<byte[]> {
     private final SnappyOutputStream snappy;
     private final InputStream origin;
     private final long chunkSize;
-    private final CompressionAlgorithm compression;
+    private final CompressionType compression;
 
     public ChunkedStream(InputStream is, long chunkSize) {
-        this(is, chunkSize, CompressionAlgorithm.NONE);
+        this(is, chunkSize, CompressionType.NONE);
     }
 
-    public ChunkedStream(InputStream is, long chunkSize, CompressionAlgorithm compression) {
+    public ChunkedStream(InputStream is, long chunkSize, CompressionType compression) {
         this.origin = is;
         this.bos = new ByteArrayOutputStream();
         this.snappy = new SnappyOutputStream(bos);
@@ -77,7 +77,7 @@ public class ChunkedStream implements Iterator<byte[]> {
     }
 
     private byte[] done() throws IOException {
-        if (compression == CompressionAlgorithm.SNAPPY) snappy.flush();
+        if (compression == CompressionType.SNAPPY) snappy.flush();
         byte[] return_ = bos.toByteArray();
         hasnext = false;
         IOUtils.closeQuietly(snappy);

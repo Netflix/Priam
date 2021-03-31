@@ -29,7 +29,7 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ChunkedStream;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -84,7 +84,7 @@ public class S3FileSystem extends S3FileSystemBase {
                                 bufferSize);
                 BufferedOutputStream os =
                         new BufferedOutputStream(new FileOutputStream(localFile))) {
-            if (path.getCompression() == CompressionAlgorithm.NONE) {
+            if (path.getCompression() == CompressionType.NONE) {
                 IOUtils.copyLarge(is, os);
             } else {
                 compress.decompressAndClose(is, os);

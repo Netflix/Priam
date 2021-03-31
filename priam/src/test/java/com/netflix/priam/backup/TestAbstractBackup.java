@@ -6,7 +6,7 @@ import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
@@ -42,7 +42,7 @@ public class TestAbstractBackup {
     private final AbstractBackup abstractBackup;
     private final FakeConfiguration fakeConfiguration;
     private final String tablePart;
-    private final CompressionAlgorithm compressionAlgorithm;
+    private final CompressionType compressionAlgorithm;
 
     @BeforeClass
     public static void setUp() throws IOException {
@@ -70,26 +70,25 @@ public class TestAbstractBackup {
     public static Collection<Object[]> data() {
         return Arrays.asList(
                 new Object[][] {
-                    {BackupsToCompress.NONE, COMPRESSED_DATA, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.NONE, COMPRESSION_INFO, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.NONE, UNCOMPRESSED_DATA, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.NONE, RANDOM_DATA, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.NONE, RANDOM_COMPONENT, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.ALL, COMPRESSED_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.ALL, COMPRESSION_INFO, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.ALL, UNCOMPRESSED_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.ALL, RANDOM_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.ALL, RANDOM_COMPONENT, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.IF_REQUIRED, COMPRESSED_DATA, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.IF_REQUIRED, COMPRESSION_INFO, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.IF_REQUIRED, UNCOMPRESSED_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.IF_REQUIRED, RANDOM_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.IF_REQUIRED, RANDOM_COMPONENT, CompressionAlgorithm.SNAPPY},
+                    {BackupsToCompress.NONE, COMPRESSED_DATA, CompressionType.NONE},
+                    {BackupsToCompress.NONE, COMPRESSION_INFO, CompressionType.NONE},
+                    {BackupsToCompress.NONE, UNCOMPRESSED_DATA, CompressionType.NONE},
+                    {BackupsToCompress.NONE, RANDOM_DATA, CompressionType.NONE},
+                    {BackupsToCompress.NONE, RANDOM_COMPONENT, CompressionType.NONE},
+                    {BackupsToCompress.ALL, COMPRESSED_DATA, CompressionType.SNAPPY},
+                    {BackupsToCompress.ALL, COMPRESSION_INFO, CompressionType.SNAPPY},
+                    {BackupsToCompress.ALL, UNCOMPRESSED_DATA, CompressionType.SNAPPY},
+                    {BackupsToCompress.ALL, RANDOM_DATA, CompressionType.SNAPPY},
+                    {BackupsToCompress.ALL, RANDOM_COMPONENT, CompressionType.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, COMPRESSED_DATA, CompressionType.NONE},
+                    {BackupsToCompress.IF_REQUIRED, COMPRESSION_INFO, CompressionType.NONE},
+                    {BackupsToCompress.IF_REQUIRED, UNCOMPRESSED_DATA, CompressionType.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, RANDOM_DATA, CompressionType.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, RANDOM_COMPONENT, CompressionType.SNAPPY},
                 });
     }
 
-    public TestAbstractBackup(
-            BackupsToCompress which, String tablePart, CompressionAlgorithm algo) {
+    public TestAbstractBackup(BackupsToCompress which, String tablePart, CompressionType algo) {
         this.tablePart = tablePart;
         this.compressionAlgorithm = algo;
         Injector injector = Guice.createInjector(new BRTestModule());
@@ -113,7 +112,7 @@ public class TestAbstractBackup {
     }
 
     @Test
-    public void testCorrectCompressionAlgorithm() throws Exception {
+    public void testCorrectCompressionType() throws Exception {
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
         ImmutableSet<AbstractBackupPath> paths =

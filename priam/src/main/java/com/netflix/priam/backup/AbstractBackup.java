@@ -23,7 +23,7 @@ import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
@@ -113,23 +113,23 @@ public abstract class AbstractBackup extends Task {
         return bps.build();
     }
 
-    private CompressionAlgorithm getCorrectCompressionAlgorithm(
+    private CompressionType getCorrectCompressionAlgorithm(
             AbstractBackupPath path, Set<String> compressedFiles) {
         if (!BackupFileType.isV2(path.getType())) {
-            return CompressionAlgorithm.SNAPPY;
+            return CompressionType.SNAPPY;
         }
         String file = path.getFileName();
         BackupsToCompress which = config.getBackupsToCompress();
         switch (which) {
             case NONE:
-                return CompressionAlgorithm.NONE;
+                return CompressionType.NONE;
             case ALL:
-                return CompressionAlgorithm.SNAPPY;
+                return CompressionType.SNAPPY;
             case IF_REQUIRED:
                 int splitIndex = file.lastIndexOf('-');
                 return splitIndex >= 0 && compressedFiles.contains(file.substring(0, splitIndex))
-                        ? CompressionAlgorithm.NONE
-                        : CompressionAlgorithm.SNAPPY;
+                        ? CompressionType.NONE
+                        : CompressionType.SNAPPY;
             default:
                 throw new IllegalArgumentException("NONE, ALL, UNCOMPRESSED only. Saw: " + which);
         }

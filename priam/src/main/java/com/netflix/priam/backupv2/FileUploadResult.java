@@ -19,7 +19,7 @@ package com.netflix.priam.backupv2;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.io.File;
@@ -35,7 +35,7 @@ public class FileUploadResult {
     private final Instant fileCreationTime;
     private final long fileSizeOnDisk; // Size on disk in bytes
     // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
-    private final CompressionAlgorithm compression;
+    private final CompressionType compression;
     // Valid encryption technique for now is PLAINTEXT only. In future we will support pgp and more.
     private final CryptographyAlgorithm encryption;
 
@@ -52,7 +52,7 @@ public class FileUploadResult {
         this.lastModifiedTime = lastModifiedTime;
         this.fileCreationTime = fileCreationTime;
         this.fileSizeOnDisk = fileSizeOnDisk;
-        this.compression = CompressionAlgorithm.SNAPPY;
+        this.compression = CompressionType.SNAPPY;
         this.encryption = CryptographyAlgorithm.PLAINTEXT;
     }
 

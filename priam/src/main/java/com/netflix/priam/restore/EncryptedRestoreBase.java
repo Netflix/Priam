@@ -17,7 +17,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -160,7 +160,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                         }
 
                         // == object is downloaded and decrypted, now uncompress it if necessary
-                        if (path.getCompression() == CompressionAlgorithm.NONE) {
+                        if (path.getCompression() == CompressionType.NONE) {
                             Files.move(decryptedFile.toPath(), restoreLocation.toPath());
                         } else {
                             logger.info(

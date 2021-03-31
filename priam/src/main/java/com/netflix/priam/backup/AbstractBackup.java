@@ -125,7 +125,7 @@ public abstract class AbstractBackup extends Task {
                 return CompressionAlgorithm.NONE;
             case ALL:
                 return CompressionAlgorithm.SNAPPY;
-            case UNCOMPRESSED:
+            case IF_REQUIRED:
                 int splitIndex = file.lastIndexOf('-');
                 return splitIndex >= 0 && compressedFiles.contains(file.substring(0, splitIndex))
                         ? CompressionAlgorithm.NONE

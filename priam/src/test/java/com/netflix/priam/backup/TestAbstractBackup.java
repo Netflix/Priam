@@ -80,15 +80,11 @@ public class TestAbstractBackup {
                     {BackupsToCompress.ALL, UNCOMPRESSED_DATA, CompressionAlgorithm.SNAPPY},
                     {BackupsToCompress.ALL, RANDOM_DATA, CompressionAlgorithm.SNAPPY},
                     {BackupsToCompress.ALL, RANDOM_COMPONENT, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.UNCOMPRESSED, COMPRESSED_DATA, CompressionAlgorithm.NONE},
-                    {BackupsToCompress.UNCOMPRESSED, COMPRESSION_INFO, CompressionAlgorithm.NONE},
-                    {
-                        BackupsToCompress.UNCOMPRESSED,
-                        UNCOMPRESSED_DATA,
-                        CompressionAlgorithm.SNAPPY
-                    },
-                    {BackupsToCompress.UNCOMPRESSED, RANDOM_DATA, CompressionAlgorithm.SNAPPY},
-                    {BackupsToCompress.UNCOMPRESSED, RANDOM_COMPONENT, CompressionAlgorithm.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, COMPRESSED_DATA, CompressionAlgorithm.NONE},
+                    {BackupsToCompress.IF_REQUIRED, COMPRESSION_INFO, CompressionAlgorithm.NONE},
+                    {BackupsToCompress.IF_REQUIRED, UNCOMPRESSED_DATA, CompressionAlgorithm.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, RANDOM_DATA, CompressionAlgorithm.SNAPPY},
+                    {BackupsToCompress.IF_REQUIRED, RANDOM_COMPONENT, CompressionAlgorithm.SNAPPY},
                 });
     }
 

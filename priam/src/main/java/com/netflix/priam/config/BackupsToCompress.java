@@ -2,6 +2,6 @@ package com.netflix.priam.config;
 
 public enum BackupsToCompress {
     ALL,
-    UNCOMPRESSED,
+    IF_REQUIRED,
     NONE
 }

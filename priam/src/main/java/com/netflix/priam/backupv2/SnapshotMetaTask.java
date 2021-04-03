@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
@@ -32,8 +33,6 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
 import java.util.List;
@@ -46,7 +45,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -219,7 +217,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             MetaFileWriterBuilder.UploadStep uploadStep = processSnapshot(snapshotInstant);
             backupMetadata.setSnapshotLocation(
                     config.getBackupPrefix() + File.separator + uploadStep.getRemoteMetaFilePath());
-            uploadStep.uploadMetaFile(true);
+            uploadStep.uploadMetaFile();
 
             logger.info("Finished processing snapshot meta service");
 
@@ -253,24 +251,6 @@ public class SnapshotMetaTask extends AbstractBackup {
     @Override
     public String getName() {
         return JOBNAME;
-    }
-
-    private ColumnfamilyResult convertToColumnFamilyResult(
-            String keyspace,
-            String columnFamilyName,
-            ImmutableSetMultimap<String, FileUploadResult> filePrefixToFileMap) {
-        ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap
-                .keySet()
-                .forEach(
-                        (key) -> {
-                            ColumnfamilyResult.SSTableResult ssTableResult =
-                                    new ColumnfamilyResult.SSTableResult();
-                            ssTableResult.setPrefix(key);
-                            ssTableResult.setSstableComponents(filePrefixToFileMap.get(key));
-                            columnfamilyResult.addSstable(ssTableResult);
-                        });
-        return columnfamilyResult;
     }
 
     private void uploadAllFiles(final String columnFamily, final File backupDir) throws Exception {
@@ -334,83 +314,31 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
-        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> builder =
                 ImmutableSetMultimap.builder();
-        filePrefixToFileMap.putAll(
-                getFileUploadResults(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
+        builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
         for (File subDir : getSecondaryIndexDirectories(snapshotDir, columnFamily)) {
-            filePrefixToFileMap.putAll(
-                    getFileUploadResults(
-                            subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
+            builder.putAll(
+                    getSSTables(subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }
 
-        ColumnfamilyResult columnfamilyResult =
-                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap.build());
-
-        int sstableCount = columnfamilyResult.getSstables().size();
-        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstableCount);
-
-        dataStep.addColumnfamilyResult(columnfamilyResult);
+        ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
+        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
+        dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
     }
 
-    ImmutableSetMultimap<String, FileUploadResult> getFileUploadResults(
-            File snapshotDir, AbstractBackupPath.BackupFileType type) throws Exception {
-        ImmutableSetMultimap.Builder<String, FileUploadResult> filePrefixToFileMap =
+    private ImmutableSetMultimap<String, AbstractBackupPath> getSSTables(
+            File snapshotDir, AbstractBackupPath.BackupFileType type) throws IOException {
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> ssTables =
                 ImmutableSetMultimap.builder();
-        for (File file : FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null)) {
-            if (!file.exists()) continue;
-            Optional<String> prefix = getPrefix(file);
-            if (!prefix.isPresent()) continue;
-
-            FileUploadResult fileUploadResult;
-            try {
-                BasicFileAttributes fileAttributes =
-                        Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-                fileUploadResult =
-                        new FileUploadResult(
-                                file.toPath(),
-                                fileAttributes.lastModifiedTime().toInstant(),
-                                fileAttributes.creationTime().toInstant(),
-                                fileAttributes.size());
-            } catch (Exception e) {
-                /* If you are here it means either of the issues. In that case, do not upload the meta file.
-                 * @throws  UnsupportedOperationException
-                 *          if an attributes of the given type are not supported
-                 * @throws  IOException
-                 *          if an I/O error occurs
-                 * @throws  SecurityException
-                 *          In the case of the default provider, a security manager is
-                 *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-                 *          method is invoked to check read access to the file. If this
-                 *          method is invoked to read security sensitive attributes then the
-                 *          security manager may be invoke to check for additional permissions.
-                 */
-                logger.error(
-                        "Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: "
-                                + file.getAbsolutePath(),
-                        e);
-                throw e;
-            }
-            // Add isUploaded and remotePath here.
-            try {
-                AbstractBackupPath abstractBackupPath = pathFactory.get();
-                abstractBackupPath.parseLocal(file, type);
-                fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
-                fileUploadResult.setUploaded(
-                        fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
-            } catch (Exception e) {
-                logger.error(
-                        "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
-                        e.getMessage());
-                e.printStackTrace();
-            }
-            filePrefixToFileMap.put(prefix.get(), fileUploadResult);
-        }
-        return filePrefixToFileMap.build();
+        getBackupPaths(snapshotDir, type)
+                .forEach(bp -> getPrefix(bp.getBackupFile()).ifPresent(p -> ssTables.put(p, bp)));
+        return ssTables.build();
     }
+
     /**
      * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
      * not an sstable component or a manifest or schema file.
@@ -420,7 +348,7 @@ public class SnapshotMetaTask extends AbstractBackup {
      * @param file the file from which to extract a common prefix.
      * @return common prefix of the file, or empty,
      */
-    public static Optional<String> getPrefix(File file) {
+    private static Optional<String> getPrefix(File file) {
         String fileName = file.getName();
         String prefix = null;
         if (fileName.contains("-")) {
@@ -443,7 +371,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 .collect(Collectors.toList());
     }
 
-    // For testing purposes only.
+    @VisibleForTesting
     void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
     }

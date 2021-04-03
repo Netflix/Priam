@@ -171,7 +171,7 @@ public class TestMetaV2Proxy {
                         "columnfamily1",
                         "SNAPPY",
                         "PLAINTEXT",
-                        "file1.Data.db"));
+                        "file1-Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -181,7 +181,7 @@ public class TestMetaV2Proxy {
                         "columnfamily1",
                         "SNAPPY",
                         "PLAINTEXT",
-                        "file2.Data.db"));
+                        "file2-Data.db"));
 
         files.add(
                 Paths.get(
@@ -210,7 +210,7 @@ public class TestMetaV2Proxy {
                         "columnfamily1",
                         "SNAPPY",
                         "PLAINTEXT",
-                        "file3.Data.db"));
+                        "file3-Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),
@@ -220,7 +220,7 @@ public class TestMetaV2Proxy {
                         "columnfamily1",
                         "SNAPPY",
                         "PLAINTEXT",
-                        "file4.Data.db"));
+                        "file4-Data.db"));
         files.add(
                 Paths.get(
                         getPrefix(),

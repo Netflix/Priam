@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.inject.Inject;
@@ -32,7 +33,6 @@ import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Date;
@@ -111,28 +111,27 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     }
 
     @Override
-    public Future<Path> asyncDownloadFile(
-            final Path remotePath, final Path localPath, final int retry)
-            throws BackupRestoreException, RejectedExecutionException {
+    public Future<Path> asyncDownloadFile(final AbstractBackupPath path, final int retry)
+            throws RejectedExecutionException {
         return fileDownloadExecutor.submit(
                 () -> {
-                    downloadFile(remotePath, localPath, retry);
-                    return remotePath;
+                    downloadFile(path, "" /* suffix */, retry);
+                    return Paths.get(path.getRemotePath());
                 });
     }
 
     @Override
-    public void downloadFile(final Path remotePath, final Path localPath, final int retry)
+    public void downloadFile(final AbstractBackupPath path, String suffix, final int retry)
             throws BackupRestoreException {
         // TODO: Should we download the file if localPath already exists?
-        if (remotePath == null || localPath == null) return;
-        localPath.toFile().getParentFile().mkdirs();
-        logger.info("Downloading file: {} to location: {}", remotePath, localPath);
+        String remotePath = path.getRemotePath();
+        String localPath = path.newRestoreFile().getAbsolutePath() + suffix;
+        logger.info("Downloading file: {} to location: {}", path.getRemotePath(), localPath);
         try {
             new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {
                 @Override
                 public Void retriableCall() throws Exception {
-                    downloadFileImpl(remotePath, localPath);
+                    downloadFileImpl(path, suffix);
                     return null;
                 }
             }.call();
@@ -149,41 +148,28 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         }
     }
 
-    protected abstract void downloadFileImpl(final Path remotePath, final Path localPath)
+    protected abstract void downloadFileImpl(final AbstractBackupPath path, String suffix)
             throws BackupRestoreException;
 
     @Override
-    public Future<Path> asyncUploadFile(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
-            throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
+    public Future<AbstractBackupPath> asyncUploadAndDelete(
+            final AbstractBackupPath path, final int retry) throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadFile(localPath, remotePath, path, retry, deleteAfterSuccessfulUpload);
-                    return localPath;
+                    uploadAndDelete(path, retry);
+                    return path;
                 });
     }
 
     @Override
-    public void uploadFile(
-            final Path localPath,
-            final Path remotePath,
-            final AbstractBackupPath path,
-            final int retry,
-            final boolean deleteAfterSuccessfulUpload)
-            throws FileNotFoundException, BackupRestoreException {
-        if (localPath == null
-                || remotePath == null
-                || !localPath.toFile().exists()
-                || localPath.toFile().isDirectory())
-            throw new FileNotFoundException(
-                    "File do not exist or is a directory. localPath: "
-                            + localPath
-                            + ", remotePath: "
-                            + remotePath);
+    public void uploadAndDelete(final AbstractBackupPath path, final int retry)
+            throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        File localFile = localPath.toFile();
+        Preconditions.checkArgument(localFile.exists(), "Can't upload nonexistent {}", localPath);
+        Preconditions.checkArgument(
+                !localFile.isDirectory(), "Can only upload files {} is a directory", localPath);
+        Path remotePath = Paths.get(path.getRemotePath());
 
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
@@ -197,7 +183,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
                                 public Long retriableCall() throws Exception {
-                                    return uploadFileImpl(localPath, remotePath);
+                                    return uploadFileImpl(path);
                                 }
                             }.call();
 
@@ -218,11 +204,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 logger.info(
                         "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
-                if (deleteAfterSuccessfulUpload && !FileUtils.deleteQuietly(localPath.toFile()))
+                if (!FileUtils.deleteQuietly(localFile))
                     logger.warn(
                             String.format(
                                     "Failed to delete local file %s.",
-                                    localPath.toFile().getAbsolutePath()));
+                                    localFile.getAbsolutePath()));
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
@@ -278,7 +264,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 
-    protected abstract long uploadFileImpl(final Path localPath, final Path remotePath)
+    protected abstract long uploadFileImpl(final AbstractBackupPath path)
             throws BackupRestoreException;
 
     @Override

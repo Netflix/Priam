@@ -768,4 +768,10 @@ public class PriamConfiguration implements IConfiguration {
     public boolean isForgottenFileMoveEnabled() {
         return config.get(PRIAM_PRE + ".forgottenFileMoveEnabled", false);
     }
+
+    @Override
+    public BackupsToCompress getBackupsToCompress() {
+        return BackupsToCompress.valueOf(
+                config.get("priam.backupsToCompress", BackupsToCompress.ALL.name()));
+    }
 }

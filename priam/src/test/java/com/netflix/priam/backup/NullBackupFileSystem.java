@@ -43,7 +43,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public long getFileSize(Path remotePath) throws BackupRestoreException {
+    public long getFileSize(String remotePath) throws BackupRestoreException {
         return 0;
     }
 
@@ -63,7 +63,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath)
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
             throws BackupRestoreException {}
 
     @Override
@@ -72,7 +72,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
         return 0;
     }
 }

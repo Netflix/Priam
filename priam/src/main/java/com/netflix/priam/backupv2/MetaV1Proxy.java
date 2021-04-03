@@ -149,9 +149,8 @@ public class MetaV1Proxy implements IMetaProxy {
 
     @Override
     public Path downloadMetaFile(AbstractBackupPath meta) throws BackupRestoreException {
-        Path localFile = Paths.get(meta.newRestoreFile().getAbsolutePath() + ".download");
-        fs.downloadFile(Paths.get(meta.getRemotePath()), localFile, 10);
-        return localFile;
+        fs.downloadFile(meta, ".download" /* suffix */, 10 /* retries */);
+        return Paths.get(meta.newRestoreFile().getAbsolutePath() + ".download");
     }
 
     @Override

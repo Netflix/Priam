@@ -16,6 +16,9 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.collect.ImmutableCollection;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.ImmutableSet;
 import com.google.gson.stream.JsonWriter;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -30,6 +33,7 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import org.slf4j.Logger;
@@ -61,13 +65,17 @@ public class MetaFileWriterBuilder {
     }
 
     public interface DataStep {
-        DataStep addColumnfamilyResult(ColumnfamilyResult columnfamilyResult) throws IOException;
+        DataStep addColumnfamilyResult(
+                String keyspace,
+                String columnFamily,
+                ImmutableMultimap<String, AbstractBackupPath> sstables)
+                throws IOException;
 
         UploadStep endMetaFileGeneration() throws IOException;
     }
 
     public interface UploadStep {
-        void uploadMetaFile(boolean deleteOnSuccess) throws Exception;
+        void uploadMetaFile() throws Exception;
 
         Path getMetaFilePath();
 
@@ -132,18 +140,18 @@ public class MetaFileWriterBuilder {
          * Add {@link ColumnfamilyResult} after it has been processed so it can be streamed to
          * meta.json. Streaming write to meta.json is required so we don't get Priam OOM.
          *
-         * @param columnfamilyResult a POJO encapsulating the column family result
          * @throws IOException if unable to write to the file or if JSON is not valid
          */
-        public MetaFileWriterBuilder.DataStep addColumnfamilyResult(
-                ColumnfamilyResult columnfamilyResult) throws IOException {
+        public DataStep addColumnfamilyResult(
+                String keyspace,
+                String columnFamily,
+                ImmutableMultimap<String, AbstractBackupPath> sstables)
+                throws IOException {
+
             if (jsonWriter == null)
                 throw new NullPointerException(
                         "addColumnfamilyResult: Json Writer in MetaFileWriter is null. This should not happen!");
-            if (columnfamilyResult == null)
-                throw new NullPointerException(
-                        "Column family result is null in MetaFileWriter. This should not happen!");
-            jsonWriter.jsonValue(columnfamilyResult.toString());
+            jsonWriter.jsonValue(toColumnFamilyResult(keyspace, columnFamily, sstables).toString());
             return this;
         }
 
@@ -182,20 +190,13 @@ public class MetaFileWriterBuilder {
         /**
          * Upload the meta file generated to backup file system.
          *
-         * @param deleteOnSuccess delete the meta file from local file system if backup is
-         *     successful. Useful for testing purposes
          * @throws Exception when unable to upload the meta file.
          */
-        public void uploadMetaFile(boolean deleteOnSuccess) throws Exception {
+        public void uploadMetaFile() throws Exception {
             AbstractBackupPath abstractBackupPath = pathFactory.get();
             abstractBackupPath.parseLocal(
                     metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-            backupFileSystem.uploadFile(
-                    metaFilePath,
-                    Paths.get(getRemoteMetaFilePath()),
-                    abstractBackupPath,
-                    10,
-                    deleteOnSuccess);
+            backupFileSystem.uploadAndDelete(abstractBackupPath, 10);
         }
 
         public Path getMetaFilePath() {
@@ -207,6 +208,41 @@ public class MetaFileWriterBuilder {
             abstractBackupPath.parseLocal(
                     metaFilePath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
             return abstractBackupPath.getRemotePath();
+        }
+
+        private ColumnfamilyResult toColumnFamilyResult(
+                String keyspace,
+                String columnFamily,
+                ImmutableMultimap<String, AbstractBackupPath> sstables) {
+            ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamily);
+            sstables.keySet()
+                    .stream()
+                    .map(k -> toSSTableResult(k, sstables.get(k)))
+                    .forEach(columnfamilyResult::addSstable);
+            return columnfamilyResult;
+        }
+
+        private ColumnfamilyResult.SSTableResult toSSTableResult(
+                String prefix, ImmutableCollection<AbstractBackupPath> sstable) {
+            ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
+            ssTableResult.setPrefix(prefix);
+            ssTableResult.setSstableComponents(
+                    ImmutableSet.copyOf(
+                            sstable.stream()
+                                    .map(this::toFileUploadResult)
+                                    .collect(Collectors.toSet())));
+            return ssTableResult;
+        }
+
+        private FileUploadResult toFileUploadResult(AbstractBackupPath path) {
+            FileUploadResult fileUploadResult = new FileUploadResult(path);
+            try {
+                Path backupPath = Paths.get(fileUploadResult.getBackupPath());
+                fileUploadResult.setUploaded(backupFileSystem.checkObjectExists(backupPath));
+            } catch (Exception e) {
+                logger.error("Error checking if file exists. Ignoring as it is not fatal.", e);
+            }
+            return fileUploadResult;
         }
     }
 }

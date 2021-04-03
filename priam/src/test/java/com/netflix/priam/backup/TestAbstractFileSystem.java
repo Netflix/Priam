@@ -82,8 +82,7 @@ public class TestAbstractFileSystem {
         try {
             Collection<File> files = generateFiles(1, 1, 1);
             for (File file : files) {
-                failureFileSystem.uploadFile(
-                        file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+                failureFileSystem.uploadAndDelete(getDummyPath(file.toPath()), 2);
             }
         } catch (BackupRestoreException e) {
             // Verify the failure metric for upload is incremented.
@@ -91,9 +90,13 @@ public class TestAbstractFileSystem {
         }
     }
 
+    private AbstractBackupPath getDummyPath() throws ParseException {
+        return getDummyPath(Paths.get(configuration.getDataFileLocation() + "/ks/cf/file-Data.db"));
+    }
+
     private AbstractBackupPath getDummyPath(Path localPath) throws ParseException {
         AbstractBackupPath path = injector.getInstance(AbstractBackupPath.class);
-        path.parseLocal(localPath.toFile(), AbstractBackupPath.BackupFileType.SNAP);
+        path.parseLocal(localPath.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
         return path;
     }
 
@@ -107,9 +110,9 @@ public class TestAbstractFileSystem {
     }
 
     @Test
-    public void testFailedRetriesDownload() {
+    public void testFailedRetriesDownload() throws Exception {
         try {
-            failureFileSystem.downloadFile(Paths.get(""), null, 2);
+            failureFileSystem.downloadFile(getDummyPath(), "", 2);
         } catch (BackupRestoreException e) {
             // Verify the failure metric for download is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
@@ -118,51 +121,26 @@ public class TestAbstractFileSystem {
 
     @Test
     public void testUpload() throws Exception {
-        Collection<File> files = generateFiles(1, 1, 1);
-        // Dummy upload with compressed size.
-        for (File file : files) {
-            myFileSystem.uploadFile(
-                    file.toPath(),
-                    Paths.get(file.toString() + ".tmp"),
-                    getDummyPath(file.toPath()),
-                    2,
-                    true);
-            // Verify the success metric for upload is incremented.
-            Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
-
-            // Verify delete of the original file if flag provided.
-            Assert.assertFalse(file.exists());
-            break;
-        }
+        File file = generateFiles(1, 1, 1).iterator().next();
+        myFileSystem.uploadAndDelete(getDummyPath(file.toPath()), 2);
+        Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
+        Assert.assertFalse(file.exists());
     }
 
     @Test
     public void testDownload() throws Exception {
         // Dummy download
-        myFileSystem.downloadFile(Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
+        myFileSystem.downloadFile(getDummyPath(), "", 2);
         // Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
     }
 
     @Test
     public void testAsyncUpload() throws Exception {
-        // Testing single async upload.
-        Collection<File> files = generateFiles(1, 1, 1);
-        for (File file : files) {
-            myFileSystem
-                    .asyncUploadFile(
-                            file.toPath(),
-                            Paths.get(file.toString() + ".tmp"),
-                            getDummyPath(file.toPath()),
-                            2,
-                            true)
-                    .get();
-            // 1. Verify the success metric for upload is incremented.
-            Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
-            // 2. The task queue is empty after upload is finished.
-            Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
-            break;
-        }
+        File file = generateFiles(1, 1, 1).iterator().next();
+        myFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2).get();
+        Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
+        Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
     }
 
     @Test
@@ -170,19 +148,13 @@ public class TestAbstractFileSystem {
         // Testing the queue feature works.
         // 1. Give 1000 dummy files to upload. File upload takes some random time to upload
         Collection<File> files = generateFiles(1, 1, 20);
-        List<Future<Path>> futures = new ArrayList<>();
+        List<Future<AbstractBackupPath>> futures = new ArrayList<>();
         for (File file : files) {
-            futures.add(
-                    myFileSystem.asyncUploadFile(
-                            file.toPath(),
-                            Paths.get(file.toString() + ".tmp"),
-                            getDummyPath(file.toPath()),
-                            2,
-                            true));
+            futures.add(myFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2));
         }
 
         // Verify all the work is finished.
-        for (Future future : futures) {
+        for (Future<AbstractBackupPath> future : futures) {
             future.get();
         }
         // 2. Success metric is incremented correctly
@@ -205,8 +177,7 @@ public class TestAbstractFileSystem {
         for (int i = 0; i < size; i++) {
             torun.add(
                     () -> {
-                        myFileSystem.uploadFile(
-                                file.toPath(), file.toPath(), abstractBackupPath, 2, true);
+                        myFileSystem.uploadAndDelete(abstractBackupPath, 2);
                         return Boolean.TRUE;
                     });
         }
@@ -216,7 +187,7 @@ public class TestAbstractFileSystem {
 
         // no more need for the threadpool
         threads.shutdown();
-        for (Future future : futures) {
+        for (Future<Boolean> future : futures) {
             try {
                 future.get();
             } catch (InterruptedException | ExecutionException e) {
@@ -233,9 +204,8 @@ public class TestAbstractFileSystem {
         // Testing single async upload.
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
-            Future<Path> future =
-                    failureFileSystem.asyncUploadFile(
-                            file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
+            Future<AbstractBackupPath> future =
+                    failureFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2);
             try {
                 future.get();
             } catch (Exception e) {
@@ -254,9 +224,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncDownload() throws Exception {
         // Testing single async download.
-        Future<Path> future =
-                myFileSystem.asyncDownloadFile(
-                        Paths.get(""), Paths.get(configuration.getDataFileLocation()), 2);
+        Future<Path> future = myFileSystem.asyncDownloadFile(getDummyPath(), 2);
         future.get();
         // 1. Verify the success metric for download is incremented.
         Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
@@ -271,9 +239,7 @@ public class TestAbstractFileSystem {
         int totalFiles = 1000;
         List<Future<Path>> futureList = new ArrayList<>();
         for (int i = 0; i < totalFiles; i++)
-            futureList.add(
-                    myFileSystem.asyncDownloadFile(
-                            Paths.get("" + i), Paths.get(configuration.getDataFileLocation()), 2));
+            futureList.add(myFileSystem.asyncDownloadFile(getDummyPath(Paths.get("" + i)), 2));
 
         // Ensure processing is finished.
         for (Future future1 : futureList) {
@@ -289,7 +255,7 @@ public class TestAbstractFileSystem {
 
     @Test
     public void testAsyncDownloadFailure() throws Exception {
-        Future<Path> future = failureFileSystem.asyncDownloadFile(Paths.get(""), null, 2);
+        Future<Path> future = failureFileSystem.asyncDownloadFile(getDummyPath(), 2);
         try {
             future.get();
         } catch (Exception e) {
@@ -310,19 +276,18 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected void downloadFileImpl(Path remotePath, Path localPath)
+        protected void downloadFileImpl(AbstractBackupPath path, String suffix)
                 throws BackupRestoreException {
             throw new BackupRestoreException(
                     "User injected failure file system error for testing download. Remote path: "
-                            + remotePath);
+                            + path.getRemotePath());
         }
 
         @Override
-        protected long uploadFileImpl(Path localPath, Path remotePath)
-                throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
             throw new BackupRestoreException(
                     "User injected failure file system error for testing upload. Local path: "
-                            + localPath);
+                            + path.getBackupFile().getAbsolutePath());
         }
     }
 
@@ -340,7 +305,7 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected void downloadFileImpl(Path remotePath, Path localPath)
+        protected void downloadFileImpl(AbstractBackupPath path, String suffix)
                 throws BackupRestoreException {
             try {
                 Thread.sleep(random.nextInt(20));
@@ -350,8 +315,7 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected long uploadFileImpl(Path localPath, Path remotePath)
-                throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
             try {
                 Thread.sleep(random.nextInt(20));
             } catch (InterruptedException e) {

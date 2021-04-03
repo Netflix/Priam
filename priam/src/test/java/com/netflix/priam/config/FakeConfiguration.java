@@ -229,4 +229,9 @@ public class FakeConfiguration implements IConfiguration {
     public void usePrivateIP(boolean usePrivateIp) {
         this.usePrivateIp = usePrivateIp;
     }
+
+    public BackupsToCompress getBackupsToCompress() {
+        return (BackupsToCompress)
+                fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
+    }
 }

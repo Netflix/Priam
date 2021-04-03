@@ -25,18 +25,25 @@ import org.xerial.snappy.SnappyOutputStream;
 
 /** Byte iterator representing compressed data. Uses snappy compression */
 public class ChunkedStream implements Iterator<byte[]> {
-    private boolean hasnext = true;
-    private final ByteArrayOutputStream bos;
-    private final SnappyOutputStream compress;
-    private final InputStream origin;
-    private final long chunkSize;
     private static final int BYTES_TO_READ = 2048;
 
-    public ChunkedStream(InputStream is, long chunkSize) throws IOException {
+    private boolean hasnext = true;
+    private final ByteArrayOutputStream bos;
+    private final SnappyOutputStream snappy;
+    private final InputStream origin;
+    private final long chunkSize;
+    private final CompressionType compression;
+
+    public ChunkedStream(InputStream is, long chunkSize) {
+        this(is, chunkSize, CompressionType.NONE);
+    }
+
+    public ChunkedStream(InputStream is, long chunkSize, CompressionType compression) {
         this.origin = is;
         this.bos = new ByteArrayOutputStream();
-        this.compress = new SnappyOutputStream(bos);
+        this.snappy = new SnappyOutputStream(bos);
         this.chunkSize = chunkSize;
+        this.compression = compression;
     }
 
     @Override
@@ -50,7 +57,16 @@ public class ChunkedStream implements Iterator<byte[]> {
             byte data[] = new byte[BYTES_TO_READ];
             int count;
             while ((count = origin.read(data, 0, data.length)) != -1) {
-                compress.write(data, 0, count);
+                switch (compression) {
+                    case NONE:
+                        bos.write(data, 0, count);
+                        break;
+                    case SNAPPY:
+                        snappy.write(data, 0, count);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Snappy compression only.");
+                }
                 if (bos.size() >= chunkSize) return returnSafe();
             }
             // We don't have anything else to read hence set to false.
@@ -61,10 +77,10 @@ public class ChunkedStream implements Iterator<byte[]> {
     }
 
     private byte[] done() throws IOException {
-        compress.flush();
+        if (compression == CompressionType.SNAPPY) snappy.flush();
         byte[] return_ = bos.toByteArray();
         hasnext = false;
-        IOUtils.closeQuietly(compress);
+        IOUtils.closeQuietly(snappy);
         IOUtils.closeQuietly(bos);
         IOUtils.closeQuietly(origin);
         return return_;

@@ -1,6 +1,6 @@
 package com.netflix.priam.compress;
 
-public enum CompressionAlgorithm {
+public enum CompressionType {
     SNAPPY,
     LZ4,
     NONE

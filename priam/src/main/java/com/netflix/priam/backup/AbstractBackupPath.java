@@ -16,19 +16,23 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Joiner;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
-import com.netflix.priam.compress.CompressionAlgorithm;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
@@ -53,8 +57,15 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         private static ImmutableSet<BackupFileType> DATA_FILE_TYPES =
                 ImmutableSet.of(SECONDARY_INDEX_V2, SNAP, SST, SST_V2);
 
+        private static ImmutableSet<BackupFileType> V2_FILE_TYPES =
+                ImmutableSet.of(SECONDARY_INDEX_V2, SST_V2, META_V2);
+
         public static boolean isDataFile(BackupFileType type) {
             return DATA_FILE_TYPES.contains(type);
+        }
+
+        public static boolean isV2(BackupFileType type) {
+            return V2_FILE_TYPES.contains(type);
         }
 
         public static BackupFileType fromString(String s) throws BackupRestoreException {
@@ -80,10 +91,11 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private long compressedFileSize = 0;
     protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
-    private File backupFile;
+    protected File backupFile;
     private Instant lastModified;
+    private Instant creationTime;
     private Date uploadedTs;
-    private CompressionAlgorithm compression = CompressionAlgorithm.SNAPPY;
+    private CompressionType compression = CompressionType.SNAPPY;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
@@ -96,9 +108,18 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.baseDir = config.getBackupLocation();
         this.clusterName = config.getAppName();
         this.fileName = file.getName();
-        this.lastModified = Instant.ofEpochMilli(file.lastModified());
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            this.lastModified = fileAttributes.lastModifiedTime().toInstant();
+            this.creationTime = fileAttributes.creationTime().toInstant();
+            this.size = fileAttributes.size();
+        } catch (IOException e) {
+            this.lastModified = Instant.ofEpochMilli(0L);
+            this.creationTime = Instant.ofEpochMilli(0L);
+            this.size = 0L;
+        }
         this.region = instanceIdentity.getInstanceInfo().getRegion();
-        this.size = file.length();
         this.token = instanceIdentity.getInstance().getToken();
         this.type = type;
 
@@ -123,7 +144,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.time =
                 type == BackupFileType.SNAP
                         ? DateUtil.getDate(parts[3])
-                        : new Date(file.lastModified());
+                        : new Date(lastModified.toEpochMilli());
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
@@ -277,12 +298,21 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.lastModified = instant;
     }
 
-    public CompressionAlgorithm getCompression() {
+    public Instant getCreationTime() {
+        return creationTime;
+    }
+
+    @VisibleForTesting
+    public void setCreationTime(Instant instant) {
+        this.creationTime = instant;
+    }
+
+    public CompressionType getCompression() {
         return compression;
     }
 
-    public void setCompression(String compression) {
-        this.compression = CompressionAlgorithm.valueOf(compression);
+    public void setCompression(CompressionType compressionType) {
+        this.compression = compressionType;
     }
 
     public CryptographyAlgorithm getEncryption() {

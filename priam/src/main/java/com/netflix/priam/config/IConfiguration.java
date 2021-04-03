@@ -1104,6 +1104,14 @@ public interface IConfiguration {
     }
 
     /**
+     * @return BackupsToCompress UNCOMPRESSED means compress backups only when the files are not
+     *     already compressed by Cassandra
+     */
+    default BackupsToCompress getBackupsToCompress() {
+        return BackupsToCompress.ALL;
+    }
+
+    /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also
      * exposed via HTTP at v1/config/unstructured/X

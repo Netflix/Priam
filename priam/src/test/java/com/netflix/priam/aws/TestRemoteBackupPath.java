@@ -24,7 +24,7 @@ import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -194,9 +194,7 @@ public class TestRemoteBackupPath {
         Assert.assertEquals(null, abstractBackupPath.getColumnFamily());
         Assert.assertEquals(BackupFileType.META_V2, abstractBackupPath.getType());
         Assert.assertEquals(path.toFile(), abstractBackupPath.getBackupFile());
-        Assert.assertEquals(
-                IFileCryptography.CryptographyAlgorithm.PLAINTEXT,
-                abstractBackupPath.getEncryption());
+        Assert.assertEquals(CryptographyAlgorithm.PLAINTEXT, abstractBackupPath.getEncryption());
 
         // Verify toRemote and parseRemote.
         Instant now = DateUtil.getInstant();

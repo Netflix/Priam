@@ -16,9 +16,10 @@
  */
 package com.netflix.priam.backupv2;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.CassandraOperations;
@@ -28,19 +29,20 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
+import java.util.Date;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.filefilter.FileFilterUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -212,7 +214,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             MetaFileWriterBuilder.UploadStep uploadStep = processSnapshot(snapshotInstant);
             backupMetadata.setSnapshotLocation(
                     config.getBackupPrefix() + File.separator + uploadStep.getRemoteMetaFilePath());
-            uploadStep.uploadMetaFile(true);
+            uploadStep.uploadMetaFile();
 
             logger.info("Finished processing snapshot meta service");
 
@@ -248,25 +250,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         return JOBNAME;
     }
 
-    private ColumnfamilyResult convertToColumnFamilyResult(
-            String keyspace,
-            String columnFamilyName,
-            Map<String, List<FileUploadResult>> filePrefixToFileMap) {
-        ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamilyName);
-        filePrefixToFileMap.forEach(
-                (key, value) -> {
-                    ColumnfamilyResult.SSTableResult ssTableResult =
-                            new ColumnfamilyResult.SSTableResult();
-                    ssTableResult.setPrefix(key);
-                    ssTableResult.setSstableComponents(value);
-                    columnfamilyResult.addSstable(ssTableResult);
-                });
-        return columnfamilyResult;
-    }
-
-    private void uploadAllFiles(
-            final String keyspace, final String columnFamily, final File backupDir)
-            throws Exception {
+    private void uploadAllFiles(final File backupDir) throws Exception {
         // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
         // uploads of previous snapshot leftover as Priam restarted or any failure for any reason
         // (like we exhausted the wait time for upload)
@@ -300,7 +284,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 generateMetaFile(keyspace, columnFamily, backupDir);
                 break;
             case UPLOAD_FILES:
-                uploadAllFiles(keyspace, columnFamily, backupDir);
+                uploadAllFiles(backupDir);
                 break;
             default:
                 throw new Exception("Unknown meta file type: " + metaStep);
@@ -318,84 +302,48 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> builder =
+                ImmutableSetMultimap.builder();
+        builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
-        Map<String, List<FileUploadResult>> filePrefixToFileMap = new HashMap<>();
-        Collection<File> files =
-                FileUtils.listFiles(snapshotDir, FileFilterUtils.fileFileFilter(), null);
-
-        for (File file : files) {
-            if (!file.exists()) continue;
-
-            try {
-                String prefix = PrefixGenerator.getSSTFileBase(file.getName());
-
-                if (prefix == null && file.getName().equalsIgnoreCase(CASSANDRA_MANIFEST_FILE))
-                    prefix = "manifest";
-
-                if (prefix == null) {
-                    logger.error(
-                            "Unknown file type with no SSTFileBase found: {}",
-                            file.getAbsolutePath());
-                    continue;
-                }
-
-                FileUploadResult fileUploadResult =
-                        FileUploadResult.getFileUploadResult(keyspace, columnFamily, file);
-                // Add isUploaded and remotePath here.
-                try {
-                    AbstractBackupPath abstractBackupPath = pathFactory.get();
-                    abstractBackupPath.parseLocal(file, AbstractBackupPath.BackupFileType.SST_V2);
-                    fileUploadResult.setBackupPath(abstractBackupPath.getRemotePath());
-                    fileUploadResult.setUploaded(
-                            fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath())));
-                } catch (Exception e) {
-                    logger.error(
-                            "Error while setting the remoteLocation or checking if file exists. Ignoring them as they are not fatal.",
-                            e.getMessage());
-                    e.printStackTrace();
-                }
-
-                filePrefixToFileMap.putIfAbsent(prefix, new ArrayList<>());
-                filePrefixToFileMap.get(prefix).add(fileUploadResult);
-            } catch (Exception e) {
-                /* If you are here it means either of the issues. In that case, do not upload the meta file.
-                 * @throws  UnsupportedOperationException
-                 *          if an attributes of the given type are not supported
-                 * @throws  IOException
-                 *          if an I/O error occurs
-                 * @throws  SecurityException
-                 *          In the case of the default provider, a security manager is
-                 *          installed, its {@link SecurityManager#checkRead(String) checkRead}
-                 *          method is invoked to check read access to the file. If this
-                 *          method is invoked to read security sensitive attributes then the
-                 *          security manager may be invoke to check for additional permissions.
-                 */
-                logger.error(
-                        "Internal error while trying to generate FileUploadResult and/or reading FileAttributes for file: "
-                                + file.getAbsolutePath(),
-                        e);
-                throw e;
-            }
-        }
-
-        ColumnfamilyResult columnfamilyResult =
-                convertToColumnFamilyResult(keyspace, columnFamily, filePrefixToFileMap);
-        filePrefixToFileMap.clear(); // Release the resources.
-
-        logger.debug(
-                "Starting the processing of KS: {}, CF: {}, No.of SSTables: {}",
-                columnfamilyResult.getKeyspaceName(),
-                columnfamilyResult.getColumnfamilyName(),
-                columnfamilyResult.getSstables().size());
-
-        dataStep.addColumnfamilyResult(columnfamilyResult);
-        logger.debug(
-                "Finished processing KS: {}, CF: {}",
-                columnfamilyResult.getKeyspaceName(),
-                columnfamilyResult.getColumnfamilyName());
+        ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
+        logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
+        dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
+        logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
     }
 
-    // For testing purposes only.
+    private ImmutableSetMultimap<String, AbstractBackupPath> getSSTables(
+            File snapshotDir, AbstractBackupPath.BackupFileType type) throws IOException {
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> ssTables =
+                ImmutableSetMultimap.builder();
+        getBackupPaths(snapshotDir, type)
+                .forEach(bp -> getPrefix(bp.getBackupFile()).ifPresent(p -> ssTables.put(p, bp)));
+        return ssTables.build();
+    }
+
+    /**
+     * Gives the prefix (common name) of the sstable components. Returns an empty Optional if it is
+     * not an sstable component or a manifest or schema file.
+     *
+     * <p>For example: mc-3-big-Data.db -- mc-3-big ks-cf-ka-7213-Index.db -- ks-cf-ka-7213
+     *
+     * @param file the file from which to extract a common prefix.
+     * @return common prefix of the file, or empty,
+     */
+    private static Optional<String> getPrefix(File file) {
+        String fileName = file.getName();
+        String prefix = null;
+        if (fileName.contains("-")) {
+            prefix = fileName.substring(0, fileName.lastIndexOf("-"));
+        } else if (fileName.equalsIgnoreCase(CASSANDRA_MANIFEST_FILE)) {
+            prefix = "manifest";
+        } else {
+            logger.error("Unknown file type with no SSTFileBase found: {}", file.getAbsolutePath());
+        }
+        return Optional.ofNullable(prefix);
+    }
+
+    @VisibleForTesting
     void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
     }

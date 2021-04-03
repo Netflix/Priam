@@ -137,7 +137,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                                 + localFileHandler.getAbsolutePath()
                                 + File.pathSeparator
                                 + localFileHandler.getName());
-            futureList.add(downloadFile(temp, localFileHandler));
+            futureList.add(downloadFile(temp));
         }
 
         // Wait for all download to finish that were started from this method.
@@ -301,19 +301,16 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
      * decrypted(optionally) and decompressed before saving to final location.
      *
      * @param path - path of object to download from source S3/GCS.
-     * @param restoreLocation - path to the final location of the decompressed and/or decrypted
-     *     file.
      * @return Future of the job to track the progress of the job.
      * @throws Exception If there is any error in downloading file from the remote file system.
      */
-    protected abstract Future<Path> downloadFile(
-            final AbstractBackupPath path, final File restoreLocation) throws Exception;
+    protected abstract Future<Path> downloadFile(final AbstractBackupPath path) throws Exception;
 
-    public final class BoundedList<E> extends LinkedList<E> {
+    final class BoundedList<E> extends LinkedList<E> {
 
         private final int limit;
 
-        public BoundedList(int limit) {
+        BoundedList(int limit) {
             this.limit = limit;
         }
 

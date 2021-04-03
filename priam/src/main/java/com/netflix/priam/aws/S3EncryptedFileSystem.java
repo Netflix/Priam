@@ -26,6 +26,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
@@ -35,6 +36,7 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.*;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -69,14 +71,14 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected void downloadFileImpl(Path remotePath, Path localPath) throws BackupRestoreException {
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
+            throws BackupRestoreException {
+        String remotePath = path.getRemotePath();
+        Path localPath = Paths.get(path.newRestoreFile().getAbsolutePath() + suffix);
         try (OutputStream os = new FileOutputStream(localPath.toFile());
                 RangeReadInputStream rris =
                         new RangeReadInputStream(
-                                s3Client,
-                                getShard(),
-                                super.getFileSize(remotePath),
-                                remotePath.toString())) {
+                                s3Client, getShard(), super.getFileSize(remotePath), remotePath)) {
             /*
              * To handle use cases where decompression should be done outside of the download.  For example, the file have been compressed and then encrypted.
              * Hence, decompressing it here would compromise the decryption.
@@ -95,18 +97,18 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected long uploadFileImpl(Path localPath, Path remotePath) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        String remotePath = path.getRemotePath();
+
         long chunkSize = getChunkSize(localPath);
         // initialize chunking request to aws
         InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath.toString());
+                new InitiateMultipartUploadRequest(config.getBackupPrefix(), remotePath);
         // Fetch the aws generated upload id for this chunking request
         InitiateMultipartUploadResult initResponse = s3Client.initiateMultipartUpload(initRequest);
         DataPart part =
-                new DataPart(
-                        config.getBackupPrefix(),
-                        remotePath.toString(),
-                        initResponse.getUploadId());
+                new DataPart(config.getBackupPrefix(), remotePath, initResponse.getUploadId());
         // Metadata on number of parts to be uploaded
         List<PartETag> partETags = Lists.newArrayList();
 
@@ -121,7 +123,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         try (InputStream in = new FileInputStream(localPath.toFile());
                 BufferedOutputStream compressedBos =
                         new BufferedOutputStream(new FileOutputStream(compressedDstFile))) {
-            Iterator<byte[]> compressedChunks = this.compress.compress(in, chunkSize);
+            Iterator<byte[]> compressedChunks =
+                    new ChunkedStream(in, chunkSize, path.getCompression());
             while (compressedChunks.hasNext()) {
                 byte[] compressedChunk = compressedChunks.next();
                 compressedBos.write(compressedChunk);
@@ -137,8 +140,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         // == Read compressed data, encrypt each chunk, upload it to aws
         try (BufferedInputStream compressedBis =
                 new BufferedInputStream(new FileInputStream(compressedDstFile))) {
-            Iterator<byte[]> chunks =
-                    this.encryptor.encryptStream(compressedBis, remotePath.toString());
+            Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, remotePath);
 
             // identifies this part position in the object we are uploading
             int partNum = 0;
@@ -154,7 +156,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                                 ++partNum,
                                 chunk,
                                 config.getBackupPrefix(),
-                                remotePath.toString(),
+                                remotePath,
                                 initResponse.getUploadId());
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 encryptedFileSize += chunk.length;

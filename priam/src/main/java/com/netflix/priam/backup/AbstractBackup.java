@@ -16,19 +16,24 @@
  */
 package com.netflix.priam.backup;
 
+import static java.util.stream.Collectors.toSet;
+
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.compress.CompressionType;
+import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -39,6 +44,7 @@ import org.slf4j.LoggerFactory;
 /** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
+    private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
     static final String INCREMENTAL_BACKUP_FOLDER = "backups";
     public static final String SNAPSHOT_FOLDER = "snapshots";
 
@@ -56,18 +62,6 @@ public abstract class AbstractBackup extends Task {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    /** A means to override the type of backup strategy chosen via BackupFileSystemContext */
-    protected void setFileSystem(IBackupFileSystem fs) {
-        this.fs = fs;
-    }
-
-    private AbstractBackupPath getAbstractBackupPath(final File file, final BackupFileType type)
-            throws ParseException {
-        final AbstractBackupPath bp = pathFactory.get();
-        bp.parseLocal(file, type);
-        return bp;
-    }
-
     /**
      * Upload files in the specified dir. Does not delete the file in case of error. The files are
      * uploaded serially or async based on flag provided.
@@ -80,46 +74,65 @@ public abstract class AbstractBackup extends Task {
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected List<AbstractBackupPath> upload(
+    protected ImmutableSet<AbstractBackupPath> upload(
             final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
             throws Exception {
-        final List<AbstractBackupPath> bps = Lists.newArrayList();
-        final List<Future<Path>> futures = Lists.newArrayList();
-
-        File[] files = parent.listFiles();
-        if (files == null) return bps;
-
-        for (File file : files) {
-            if (file.isFile() && file.exists()) {
-                AbstractBackupPath bp = getAbstractBackupPath(file, type);
-
-                if (async)
-                    futures.add(
-                            fs.asyncUploadFile(
-                                    Paths.get(bp.getBackupFile().getAbsolutePath()),
-                                    Paths.get(bp.getRemotePath()),
-                                    bp,
-                                    10,
-                                    true));
-                else
-                    fs.uploadFile(
-                            Paths.get(bp.getBackupFile().getAbsolutePath()),
-                            Paths.get(bp.getRemotePath()),
-                            bp,
-                            10,
-                            true);
-
-                bps.add(bp);
-            }
+        ImmutableSet<AbstractBackupPath> bps = getBackupPaths(parent, type);
+        final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
+        for (AbstractBackupPath bp : bps) {
+            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
+            else fs.uploadAndDelete(bp, 10);
         }
 
         // Wait for all files to be uploaded.
         if (async && waitForCompletion) {
-            for (Future future : futures)
+            for (Future<AbstractBackupPath> future : futures)
                 future.get(); // This might throw exception if there is any error
         }
 
         return bps;
+    }
+
+    protected ImmutableSet<AbstractBackupPath> getBackupPaths(File dir, BackupFileType type)
+            throws IOException {
+        Set<File> files =
+                Files.list(dir.toPath()).map(Path::toFile).filter(File::isFile).collect(toSet());
+        Set<String> compressedFilePrefixes =
+                files.stream()
+                        .map(File::getName)
+                        .filter(name -> name.endsWith(COMPRESSION_SUFFIX))
+                        .map(name -> name.substring(0, name.lastIndexOf('-')))
+                        .collect(toSet());
+        final ImmutableSet.Builder<AbstractBackupPath> bps = ImmutableSet.builder();
+        for (File file : files) {
+            final AbstractBackupPath bp = pathFactory.get();
+            bp.parseLocal(file, type);
+            bp.setCompression(getCorrectCompressionAlgorithm(bp, compressedFilePrefixes));
+            bps.add(bp);
+        }
+        return bps.build();
+    }
+
+    private CompressionType getCorrectCompressionAlgorithm(
+            AbstractBackupPath path, Set<String> compressedFiles) {
+        if (!BackupFileType.isV2(path.getType())) {
+            return CompressionType.SNAPPY;
+        }
+        String file = path.getFileName();
+        BackupsToCompress which = config.getBackupsToCompress();
+        switch (which) {
+            case NONE:
+                return CompressionType.NONE;
+            case ALL:
+                return CompressionType.SNAPPY;
+            case IF_REQUIRED:
+                int splitIndex = file.lastIndexOf('-');
+                return splitIndex >= 0 && compressedFiles.contains(file.substring(0, splitIndex))
+                        ? CompressionType.NONE
+                        : CompressionType.SNAPPY;
+            default:
+                throw new IllegalArgumentException("NONE, ALL, UNCOMPRESSED only. Saw: " + which);
+        }
     }
 
     protected final void initiateBackup(
@@ -144,7 +157,7 @@ public abstract class AbstractBackup extends Task {
 
             for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
-                if (backupDir.exists() && backupDir.isDirectory() && backupDir.canRead()) {
+                if (isAReadableDirectory(backupDir)) {
                     String columnFamilyName = columnFamilyDir.getName().split("-")[0];
                     if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
                         // Clean the backup/snapshot directory else files will keep getting
@@ -201,5 +214,9 @@ public abstract class AbstractBackup extends Task {
                 }
             }
         return backupPaths;
+    }
+
+    protected static boolean isAReadableDirectory(File dir) {
+        return dir.exists() && dir.isDirectory() && dir.canRead();
     }
 }

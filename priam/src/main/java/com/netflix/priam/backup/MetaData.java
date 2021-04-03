@@ -24,7 +24,6 @@ import com.netflix.priam.utils.DateUtil;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
@@ -62,12 +61,7 @@ public class MetaData {
             fr.write(jsonObj.toJSONString());
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                10,
-                true);
+        fs.uploadAndDelete(backupfile, 10);
         addToRemotePath(backupfile.getRemotePath());
         return backupfile;
     }
@@ -92,10 +86,7 @@ public class MetaData {
      */
     public Boolean doesExist(final AbstractBackupPath meta) {
         try {
-            fs.downloadFile(
-                    Paths.get(meta.getRemotePath()),
-                    Paths.get(meta.newRestoreFile().getAbsolutePath()),
-                    5); // download actual file to disk
+            fs.downloadFile(meta, "" /* suffix */, 5 /* retries */);
         } catch (Exception e) {
             logger.error("Error downloading the Meta data try with a different date...", e);
         }

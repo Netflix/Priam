@@ -31,6 +31,7 @@ public class FakeConfiguration implements IConfiguration {
 
     private final String appName;
     private String restorePrefix = "";
+    public Map<String, Object> fakeConfig;
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
@@ -46,8 +47,13 @@ public class FakeConfiguration implements IConfiguration {
 
     public FakeConfiguration(String appName) {
         this.appName = appName;
+        fakeConfig = new HashMap<>();
         this.mayCreateNewToken = true; // matches interface default
         this.racs = ImmutableList.of("az1", "az2", "az3");
+    }
+
+    public void setFakeConfig(String key, Object value) {
+        fakeConfig.put(key, value);
     }
 
     @Override
@@ -256,5 +262,11 @@ public class FakeConfiguration implements IConfiguration {
 
     public void setSkipUpdatingOthersIngressRules(boolean skipUpdatingOthersIngressRules) {
         this.skipUpdatingOthersIngressRules = skipUpdatingOthersIngressRules;
+    }
+
+    @Override
+    public BackupsToCompress getBackupsToCompress() {
+        return (BackupsToCompress)
+                fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
     }
 }

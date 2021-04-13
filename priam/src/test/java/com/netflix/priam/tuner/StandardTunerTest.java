@@ -160,6 +160,14 @@ public class StandardTunerTest {
         Assert.assertEquals(roleManagerOverride, map.get("role_manager"));
     }
 
+    @Test
+    public void testDiskAccessMode() throws Exception {
+        String diskAccessMode = "test_mode";
+        Map map =
+                applyFakeConfiguration(new FakeConfiguration().setDiskAccessMode(diskAccessMode));
+        Assert.assertEquals(diskAccessMode, map.get("disk_access_mode"));
+    }
+
     private Map applyFakeConfiguration(FakeConfiguration fakeConfiguration) throws Exception {
         StandardTuner tuner =
                 new StandardTuner(fakeConfiguration, backupRestoreConfig, instanceInfo);

@@ -1111,6 +1111,11 @@ public interface IConfiguration {
         return BackupsToCompress.ALL;
     }
 
+    /** @return the way how data files are accessed. Default value is auto. */
+    default String getDiskAccessMode() {
+        return "auto";
+    }
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

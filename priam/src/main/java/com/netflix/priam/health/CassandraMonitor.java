@@ -92,7 +92,10 @@ public class CassandraMonitor extends Task {
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
-                instanceState.setIsThriftActive(bean.isThriftServerRunning());
+                instanceState.setIsThriftActive(
+                        bean.isThriftServerRunning()
+                                && (!config.isCheckThriftOnPortEnabled()
+                                        || isListeningOnPort(config.getThriftPort())));
             } else {
                 // Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);
@@ -171,5 +174,20 @@ public class CassandraMonitor extends Task {
     public static void setIsCassadraStarted() {
         // Setting cassandra flag to true
         isCassandraStarted.set(true);
+    }
+
+    private boolean isListeningOnPort(int port) {
+        String[] cmd = {"/bin/sh", "-c", "ss -tuln | grep -c " + port};
+        String line = null;
+        try {
+            Process p = Runtime.getRuntime().exec(cmd);
+            p.waitFor();
+            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            line = b.readLine();
+            b.close();
+        } catch (Exception e) {
+            logger.warn("Exception thrown while checking if process is listening on a port ", e);
+        }
+        return line != null && Integer.parseInt(line) != 0;
     }
 }

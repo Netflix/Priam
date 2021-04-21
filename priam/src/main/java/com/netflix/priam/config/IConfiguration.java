@@ -1099,6 +1099,11 @@ public interface IConfiguration {
         return getSnitch().equals("org.apache.cassandra.locator.GossipingPropertyFileSnitch");
     }
 
+    /** @return true to check is thrift listening on the rpc_port. */
+    default boolean isCheckThriftOnPortEnabled() {
+        return true;
+    }
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

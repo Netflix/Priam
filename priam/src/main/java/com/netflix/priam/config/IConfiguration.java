@@ -1100,8 +1100,8 @@ public interface IConfiguration {
     }
 
     /** @return true to check is thrift listening on the rpc_port. */
-    default boolean isCheckThriftOnPortEnabled() {
-        return true;
+    default boolean checkThriftServerIsListening() {
+        return false;
     }
 
     /**

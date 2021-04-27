@@ -765,7 +765,7 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isCheckThriftOnPortEnabled() {
-        return config.get(PRIAM_PRE + ".checkThriftOnPort", true);
+    public boolean checkThriftServerIsListening() {
+        return config.get(PRIAM_PRE + ".checkThriftServerIsListening", false);
     }
 }

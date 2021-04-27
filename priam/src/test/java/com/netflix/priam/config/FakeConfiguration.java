@@ -34,6 +34,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
+    private boolean checkThriftIsListening;
 
     public final Map<String, String> fakeProperties = new HashMap<>();
 
@@ -226,5 +227,14 @@ public class FakeConfiguration implements IConfiguration {
 
     public void usePrivateIP(boolean usePrivateIp) {
         this.usePrivateIp = usePrivateIp;
+    }
+
+    @Override
+    public boolean checkThriftServerIsListening() {
+        return checkThriftIsListening;
+    }
+
+    public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
+        this.checkThriftIsListening = checkThriftServerIsListening;
     }
 }

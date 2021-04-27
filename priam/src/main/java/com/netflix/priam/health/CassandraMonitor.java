@@ -25,10 +25,7 @@ import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.IOUtils;
@@ -92,10 +89,10 @@ public class CassandraMonitor extends Task {
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
+                ThriftChecker thriftChecker = new ThriftChecker(this.config);
                 instanceState.setIsThriftActive(
-                        bean.isThriftServerRunning()
-                                && (!config.isCheckThriftOnPortEnabled()
-                                        || isListeningOnPort(config.getThriftPort())));
+                        bean.isThriftServerRunning() && thriftChecker.isThriftServerListening());
+
             } else {
                 // Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);
@@ -174,20 +171,5 @@ public class CassandraMonitor extends Task {
     public static void setIsCassadraStarted() {
         // Setting cassandra flag to true
         isCassandraStarted.set(true);
-    }
-
-    private boolean isListeningOnPort(int port) {
-        String[] cmd = {"/bin/sh", "-c", "ss -tuln | grep -c " + port};
-        String line = null;
-        try {
-            Process p = Runtime.getRuntime().exec(cmd);
-            p.waitFor();
-            BufferedReader b = new BufferedReader(new InputStreamReader(p.getInputStream()));
-            line = b.readLine();
-            b.close();
-        } catch (Exception e) {
-            logger.warn("Exception thrown while checking if process is listening on a port ", e);
-        }
-        return line != null && Integer.parseInt(line) != 0;
     }
 }

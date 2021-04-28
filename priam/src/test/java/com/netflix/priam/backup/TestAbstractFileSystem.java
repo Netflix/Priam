@@ -80,7 +80,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testFailedRetriesUpload() throws Exception {
         try {
-            Collection<File> files = generateFiles(1, 1, 1);
+            Collection<File> files = generateFiles(1, 1, 1, false);
             for (File file : files) {
                 failureFileSystem.uploadFile(
                         file.toPath(), file.toPath(), getDummyPath(file.toPath()), 2, true);
@@ -97,11 +97,18 @@ public class TestAbstractFileSystem {
         return path;
     }
 
-    private Collection<File> generateFiles(int noOfKeyspaces, int noOfCf, int noOfSstables)
-            throws Exception {
+    private Collection<File> generateFiles(
+            int noOfKeyspaces, int noOfCf, int noOfSstables, boolean empty) throws Exception {
         Path dataDir = Paths.get(configuration.getDataFileLocation());
         BackupFileUtils.generateDummyFiles(
-                dataDir, noOfKeyspaces, noOfCf, noOfSstables, "snapshot", "201812310000", true);
+                dataDir,
+                noOfKeyspaces,
+                noOfCf,
+                noOfSstables,
+                "snapshot",
+                "201812310000",
+                true,
+                empty);
         String[] ext = {"db"};
         return FileUtils.listFiles(dataDir.toFile(), ext, true);
     }
@@ -118,7 +125,7 @@ public class TestAbstractFileSystem {
 
     @Test
     public void testUpload() throws Exception {
-        Collection<File> files = generateFiles(1, 1, 1);
+        Collection<File> files = generateFiles(1, 1, 1, false);
         // Dummy upload with compressed size.
         for (File file : files) {
             myFileSystem.uploadFile(
@@ -147,7 +154,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncUpload() throws Exception {
         // Testing single async upload.
-        Collection<File> files = generateFiles(1, 1, 1);
+        Collection<File> files = generateFiles(1, 1, 1, false);
         for (File file : files) {
             myFileSystem
                     .asyncUploadFile(
@@ -169,7 +176,7 @@ public class TestAbstractFileSystem {
     public void testAsyncUploadBulk() throws Exception {
         // Testing the queue feature works.
         // 1. Give 1000 dummy files to upload. File upload takes some random time to upload
-        Collection<File> files = generateFiles(1, 1, 20);
+        Collection<File> files = generateFiles(1, 1, 20, false);
         List<Future<Path>> futures = new ArrayList<>();
         for (File file : files) {
             futures.add(
@@ -195,7 +202,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testUploadDedup() throws Exception {
         // Testing the de-duping works.
-        Collection<File> files = generateFiles(1, 1, 1);
+        Collection<File> files = generateFiles(1, 1, 1, false);
         File file = files.iterator().next();
         AbstractBackupPath abstractBackupPath = getDummyPath(file.toPath());
         // 1. Give same file to upload x times. Only one request will be entertained.
@@ -229,9 +236,28 @@ public class TestAbstractFileSystem {
     }
 
     @Test
+    public void testUploadEmptyFile() throws Exception {
+        Collection<File> files = generateFiles(1, 1, 1, true);
+        for (File file : files) {
+            try {
+                myFileSystem.uploadFile(
+                        file.toPath(),
+                        Paths.get(file.toString() + ".tmp"),
+                        getDummyPath(file.toPath()),
+                        1,
+                        false);
+            } catch (BackupRestoreException e) {
+                // ignore
+            }
+            // Verify deletion of empty file.
+            Assert.assertFalse(file.exists());
+        }
+    }
+
+    @Test
     public void testAsyncUploadFailure() throws Exception {
         // Testing single async upload.
-        Collection<File> files = generateFiles(1, 1, 1);
+        Collection<File> files = generateFiles(1, 1, 1, false);
         for (File file : files) {
             Future<Path> future =
                     failureFileSystem.asyncUploadFile(

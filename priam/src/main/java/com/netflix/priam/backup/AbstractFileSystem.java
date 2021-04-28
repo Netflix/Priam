@@ -185,6 +185,12 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                             + ", remotePath: "
                             + remotePath);
 
+        if (localPath.toFile().length() == 0) {
+            logger.info("File: {} is empty. Hence deleting it.", localPath);
+            localPath.toFile().delete();
+            throw new BackupRestoreException("File was empty. LocalPath: " + localPath);
+        }
+
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
             try {

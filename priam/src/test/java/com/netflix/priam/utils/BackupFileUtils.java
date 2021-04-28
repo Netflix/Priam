@@ -43,7 +43,8 @@ public class BackupFileUtils {
             int noOfSstables,
             String backupDir,
             String snapshotName,
-            boolean cleanup)
+            boolean cleanup,
+            boolean empty)
             throws Exception {
         // Clean the dummy directory
         if (cleanup) cleanupDir(dummyDir);
@@ -67,8 +68,9 @@ public class BackupFileUtils {
                                         snapshotName,
                                         prefixName + "-" + type.name() + ".db");
                         componentPath.getParent().toFile().mkdirs();
+                        String content = empty ? "" : "Test";
                         try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
-                            fileWriter.write("");
+                            fileWriter.write(content);
                         }
                     }
                 }
@@ -81,8 +83,9 @@ public class BackupFileUtils {
                                 backupDir,
                                 snapshotName,
                                 "manifest.json");
+                String content = empty ? "" : "Test";
                 try (FileWriter fileWriter = new FileWriter(componentPath.toFile())) {
-                    fileWriter.write("");
+                    fileWriter.write(content);
                 }
             }
         }

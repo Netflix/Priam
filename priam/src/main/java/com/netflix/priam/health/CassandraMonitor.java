@@ -25,7 +25,10 @@ import com.netflix.priam.merics.CassMonitorMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.IOUtils;
@@ -44,17 +47,20 @@ public class CassandraMonitor extends Task {
     private final InstanceState instanceState;
     private final ICassandraProcess cassProcess;
     private final CassMonitorMetrics cassMonitorMetrics;
+    private final IThriftChecker thriftChecker;
 
     @Inject
     protected CassandraMonitor(
             IConfiguration config,
             InstanceState instanceState,
             ICassandraProcess cassProcess,
-            CassMonitorMetrics cassMonitorMetrics) {
+            CassMonitorMetrics cassMonitorMetrics,
+            IThriftChecker thriftChecker) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
         this.cassMonitorMetrics = cassMonitorMetrics;
+        this.thriftChecker = thriftChecker;
     }
 
     @Override
@@ -89,7 +95,6 @@ public class CassandraMonitor extends Task {
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
-                ThriftChecker thriftChecker = new ThriftChecker(this.config);
                 instanceState.setIsThriftActive(
                         bean.isThriftServerRunning() && thriftChecker.isThriftServerListening());
 

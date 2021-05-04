@@ -1,10 +1,6 @@
 package com.netflix.priam.health;
 
-import com.google.inject.Guice;
-import com.google.inject.Injector;
-import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.config.IConfiguration;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,34 +11,32 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class TestThriftChecker {
-    private IConfiguration config;
+    private FakeConfiguration config;
+    private ThriftChecker thriftChecker;
 
     @Mocked private Process mockProcess;
 
     @Before
     public void TestThriftChecker() {
-        Injector injector = Guice.createInjector(new BRTestModule());
-        config = injector.getInstance(IConfiguration.class);
+        config = new FakeConfiguration();
+        thriftChecker = new ThriftChecker(config);
     }
 
     @Test
     public void testThriftServerIsListeningDisabled() {
-        ((FakeConfiguration) config).setCheckThriftServerIsListening(false);
-        ThriftChecker checker = new ThriftChecker(config);
-        Assert.assertTrue(checker.isThriftServerListening());
+        config.setCheckThriftServerIsListening(false);
+        Assert.assertTrue(thriftChecker.isThriftServerListening());
     }
 
     @Test
     public void testThriftServerIsNotListening() {
-        ((FakeConfiguration) config).setCheckThriftServerIsListening(true);
-        ThriftChecker checker = new ThriftChecker(config);
-        Assert.assertFalse(checker.isThriftServerListening());
+        config.setCheckThriftServerIsListening(true);
+        Assert.assertFalse(thriftChecker.isThriftServerListening());
     }
 
     @Test
     public void testThriftServerIsListening() throws IOException {
-        ((FakeConfiguration) config).setCheckThriftServerIsListening(true);
-        ThriftChecker checker = new ThriftChecker(config);
+        config.setCheckThriftServerIsListening(true);
         final InputStream mockOutput = new ByteArrayInputStream("1".getBytes());
         new Expectations() {
             {
@@ -62,13 +56,12 @@ public class TestThriftChecker {
             }
         };
 
-        Assert.assertTrue(checker.isThriftServerListening());
+        Assert.assertTrue(thriftChecker.isThriftServerListening());
     }
 
     @Test
     public void testThriftServerIsListeningException() throws IOException {
-        ((FakeConfiguration) config).setCheckThriftServerIsListening(true);
-        ThriftChecker checker = new ThriftChecker(config);
+        config.setCheckThriftServerIsListening(true);
         final IOException mockOutput = new IOException("Command exited with code 0");
         new Expectations() {
             {
@@ -88,6 +81,6 @@ public class TestThriftChecker {
             }
         };
 
-        Assert.assertTrue(checker.isThriftServerListening());
+        Assert.assertTrue(thriftChecker.isThriftServerListening());
     }
 }

@@ -21,33 +21,32 @@ public class ThriftChecker implements IThriftChecker {
         if (!config.checkThriftServerIsListening()) {
             return true;
         }
+        String[] cmd =
+                new String[] {
+                    "/bin/sh", "-c", "ss -tuln | grep -c " + config.getThriftPort(), " 2>/dev/null"
+                };
+        Process process = null;
         try {
-            Process process =
-                    Runtime.getRuntime()
-                            .exec(
-                                    new String[] {
-                                        "/bin/sh",
-                                        "-c",
-                                        "ss -tuln | grep -c " + config.getThriftPort(),
-                                        " 2>/dev/null"
-                                    });
+            process = Runtime.getRuntime().exec(cmd);
             process.waitFor(1, TimeUnit.SECONDS);
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line = reader.readLine();
-            reader.close();
-            if (Integer.parseInt(line) == 0) {
-                logger.info(
-                        "Could not find anything listening on the rpc port {}!",
-                        config.getThriftPort());
-                return false;
-            }
         } catch (Exception e) {
-            logger.warn("Exception thrown while checking if process is listening on a port ", e);
+            logger.warn("Exception while executing the process: ", e);
         }
-        // Returning true for exceptions as well because we do not want to generate unnecessary
-        // noise that thrift is not listening on the port when actually we are unable to execute the
-        // query.
+        if (process != null) {
+            try (BufferedReader reader =
+                    new BufferedReader(new InputStreamReader(process.getInputStream())); ) {
+                if (Integer.parseInt(reader.readLine()) == 0) {
+                    logger.info(
+                            "Could not find anything listening on the rpc port {}!",
+                            config.getThriftPort());
+                    return false;
+                }
+            } catch (Exception e) {
+                logger.warn("Exception while reading the input stream: ", e);
+            }
+        }
+        // A quiet on-call is our top priority, err on the side of avoiding false positives by
+        // default.
         return true;
     }
 }

@@ -9,7 +9,6 @@ import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.config.InstanceInfo;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,7 +20,6 @@ public class TestUpdateSecuritySettings {
     private IMembership membership;
     private IPriamInstanceFactory factory;
     private FakeConfiguration config;
-    private InstanceInfo instanceInfo;
 
     @Before
     public void setUp() {
@@ -30,7 +28,6 @@ public class TestUpdateSecuritySettings {
         membership = injector.getInstance(IMembership.class);
         updateSecuritySettings = injector.getInstance(UpdateSecuritySettings.class);
         config = (FakeConfiguration) injector.getInstance(IConfiguration.class);
-        instanceInfo = injector.getInstance(InstanceInfo.class);
     }
 
     @Test
@@ -68,41 +65,21 @@ public class TestUpdateSecuritySettings {
     }
 
     @Test
-    public void addMyPrivateIP() {
-        config.usePrivateIP(true);
-        String ingressRule = instanceInfo.getPrivateIP() + "/32";
-        Truth.assertThat(membership.listACL(PORT, PORT)).doesNotContain(ingressRule);
+    public void dontDeleteOthersIngress() {
+        config.setSkipDeletingOthersIngressRules(true);
+        membership.addACL(ImmutableSet.of("1.1.1.1/32"), PORT, PORT);
+        Truth.assertThat(membership.listACL(PORT, PORT)).contains("1.1.1.1/32");
         updateSecuritySettings.execute();
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
+        Truth.assertThat(membership.listACL(PORT, PORT)).contains("1.1.1.1/32");
     }
 
     @Test
-    public void addMyPublicIP() {
-        config.usePrivateIP(false);
-        String ingressRule = instanceInfo.getHostIP() + "/32";
-        Truth.assertThat(membership.listACL(PORT, PORT)).doesNotContain(ingressRule);
+    public void dontUpdateOthersIngress() {
+        addToFactory(1, "1.1.1.1");
+        config.setSkipUpdatingOthersIngressRules(true);
+        Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
         updateSecuritySettings.execute();
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
-    }
-
-    @Test
-    public void keepMyPrivateIP() {
-        config.usePrivateIP(true);
-        String ingressRule = instanceInfo.getPrivateIP() + "/32";
-        membership.addACL(ImmutableSet.of(ingressRule), PORT, PORT);
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
-        updateSecuritySettings.execute();
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
-    }
-
-    @Test
-    public void keepMyPublicIP() {
-        config.usePrivateIP(false);
-        String ingressRule = instanceInfo.getHostIP() + "/32";
-        membership.addACL(ImmutableSet.of(ingressRule), PORT, PORT);
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
-        updateSecuritySettings.execute();
-        Truth.assertThat(membership.listACL(PORT, PORT)).contains(ingressRule);
+        Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
     }
 
     private void addToFactory(int id, String ip) {

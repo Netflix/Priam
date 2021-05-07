@@ -35,6 +35,8 @@ public class FakeConfiguration implements IConfiguration {
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
+    private boolean skipDeletingOthersIngressRules;
+    private boolean skipUpdatingOthersIngressRules;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -228,5 +230,23 @@ public class FakeConfiguration implements IConfiguration {
 
     public void usePrivateIP(boolean usePrivateIp) {
         this.usePrivateIp = usePrivateIp;
+    }
+
+    @Override
+    public boolean skipDeletingOthersIngressRules() {
+        return this.skipDeletingOthersIngressRules;
+    }
+
+    public void setSkipDeletingOthersIngressRules(boolean skipDeletingOthersIngressRules) {
+        this.skipDeletingOthersIngressRules = skipDeletingOthersIngressRules;
+    }
+
+    @Override
+    public boolean skipUpdatingOthersIngressRules() {
+        return this.skipUpdatingOthersIngressRules;
+    }
+
+    public void setSkipUpdatingOthersIngressRules(boolean skipUpdatingOthersIngressRules) {
+        this.skipUpdatingOthersIngressRules = skipUpdatingOthersIngressRules;
     }
 }

@@ -1122,6 +1122,26 @@ public interface IConfiguration {
     }
 
     /**
+     * @return true if Priam should skip deleting ingress rules for IPs not found in the token
+     *     database.
+     */
+    default boolean skipDeletingOthersIngressRules() {
+        return false;
+    }
+
+    /**
+     * @return true if Priam should skip updating ingress rules for ips found in the token database.
+     */
+    default boolean skipUpdatingOthersIngressRules() {
+        return false;
+    }
+
+    /** @return get the threshold at which point we might risk not getting our ingress rule set. */
+    default int getACLSizeWarnThreshold() {
+        return 500;
+    }
+
+    /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also
      * exposed via HTTP at v1/config/unstructured/X

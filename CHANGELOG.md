@@ -1,4 +1,10 @@
 # Changelog
+## 2021/05/12 3.1.105
+(#939) Improve the configurability of setting ingress rules.
+
+## 2021/03/23 3.1.104
+Bugfix: Revert adding role_manager to cassandra 2.1 yaml due to incompatibility
+
 ## 2021/03/17 3.1.103
 (#923) Store private ips in the token database when using GPFS. Plus substantial refactoring of token generation logic.
 

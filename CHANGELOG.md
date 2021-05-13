@@ -1,4 +1,7 @@
 # Changelog
+## 2021/05/12 3.11.78
+Improve the configurability of setting ingress rules.
+
 ## 2021/03/17 3.11.77
 (#913) Store Private IPs in the token database when the snitch is GPFS.
 

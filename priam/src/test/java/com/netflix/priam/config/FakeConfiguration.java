@@ -39,6 +39,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean checkThriftIsListening;
     private boolean skipDeletingOthersIngressRules;
     private boolean skipUpdatingOthersIngressRules;
+    private boolean skipIngressUnlessIPIsPublic;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -236,7 +237,7 @@ public class FakeConfiguration implements IConfiguration {
 
     public BackupsToCompress getBackupsToCompress() {
         return (BackupsToCompress)
-            fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
+                fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
     }
 
     @Override
@@ -274,5 +275,14 @@ public class FakeConfiguration implements IConfiguration {
 
     public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
         this.checkThriftIsListening = checkThriftServerIsListening;
+    }
+
+    @Override
+    public boolean skipIngressUnlessIPIsPublic() {
+        return this.skipIngressUnlessIPIsPublic;
+    }
+
+    public void setSkipIngressUnlessIPIsPublic(boolean skipIngressUnlessIPIsPublic) {
+        this.skipIngressUnlessIPIsPublic = skipIngressUnlessIPIsPublic;
     }
 }

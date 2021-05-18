@@ -1142,6 +1142,14 @@ public interface IConfiguration {
     }
 
     /**
+     * @return true if Priam should skip ingress on an IP address from the token database unless it
+     *     can confirm that it is public
+     */
+    default boolean skipIngressUnlessIPIsPublic() {
+        return false;
+    }
+
+    /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also
      * exposed via HTTP at v1/config/unstructured/X

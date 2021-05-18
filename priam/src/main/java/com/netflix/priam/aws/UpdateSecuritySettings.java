@@ -25,9 +25,12 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,15 +56,20 @@ public class UpdateSecuritySettings extends Task {
     private static final Random ran = new Random();
     private final IMembership membership;
     private final IPriamInstanceFactory factory;
+    private final IPConverter ipConverter;
 
     @Inject
     // Note: do not parameterized the generic type variable to an implementation as it confuses
     // Guice in the binding.
     public UpdateSecuritySettings(
-            IConfiguration config, IMembership membership, IPriamInstanceFactory factory) {
+            IConfiguration config,
+            IMembership membership,
+            IPriamInstanceFactory factory,
+            IPConverter ipConverter) {
         super(config);
         this.membership = membership;
         this.factory = factory;
+        this.ipConverter = ipConverter;
     }
 
     /**
@@ -75,7 +83,9 @@ public class UpdateSecuritySettings extends Task {
         Set<String> desiredAcl =
                 factory.getAllIds(config.getAppName())
                         .stream()
-                        .map(i -> i.getHostIP() + "/32")
+                        .map(i -> getIngressRule(i).orElse(null))
+                        .filter(Objects::nonNull)
+                        .map(ip -> ip + "/32")
                         .collect(Collectors.toSet());
         if (!config.skipDeletingOthersIngressRules()) {
             Set<String> aclToRemove = Sets.difference(currentAcl, desiredAcl);
@@ -97,6 +107,12 @@ public class UpdateSecuritySettings extends Task {
                 firstTimeUpdated = true;
             }
         }
+    }
+
+    private Optional<String> getIngressRule(PriamInstance instance) {
+        return config.skipIngressUnlessIPIsPublic()
+                ? ipConverter.getPublicIP(instance)
+                : Optional.of(instance.getHostIP());
     }
 
     public static TaskTimer getTimer(InstanceIdentity id) {

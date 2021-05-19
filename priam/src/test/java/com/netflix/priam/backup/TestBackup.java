@@ -157,7 +157,7 @@ public class TestBackup {
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
         files.add(
-                "target/data/Keyspace1/Standard1/backups/.Standard1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
+                "target/data/Keyspace1/Standard1/backups/.STANDARD1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
 
         expectedFiles.clear();
         for (String filePath : files) {

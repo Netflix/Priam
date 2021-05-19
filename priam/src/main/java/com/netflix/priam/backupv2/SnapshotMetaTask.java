@@ -35,12 +35,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Date;
-import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
@@ -361,14 +359,6 @@ public class SnapshotMetaTask extends AbstractBackup {
             logger.error("Unknown file type with no SSTFileBase found: {}", file.getAbsolutePath());
         }
         return Optional.ofNullable(prefix);
-    }
-
-    private List<File> getSecondaryIndexDirectories(File snapshotDir, String columnFamily)
-            throws IOException {
-        return Files.walk(snapshotDir.toPath(), Integer.MAX_VALUE)
-                .map(Path::toFile)
-                .filter(f -> f.getName().startsWith("." + columnFamily) && isAReadableDirectory(f))
-                .collect(Collectors.toList());
     }
 
     @VisibleForTesting

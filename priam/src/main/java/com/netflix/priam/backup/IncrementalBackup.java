@@ -26,9 +26,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
-import java.io.FileFilter;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -121,11 +119,8 @@ public class IncrementalBackup extends AbstractBackup {
         upload(backupDir, fileType, config.enableAsyncIncremental(), true);
 
         // Next, upload secondary indexes
-        FileFilter filter =
-                (file) ->
-                        file.getName().startsWith("." + columnFamily) && isAReadableDirectory(file);
-        for (File subDir : Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {})) {
-            upload(subDir, fileType, config.enableAsyncIncremental(), true);
+        for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
+            upload(dir, fileType, config.enableAsyncIncremental(), true);
         }
     }
 }

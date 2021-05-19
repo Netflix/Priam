@@ -29,14 +29,13 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -214,6 +213,15 @@ public abstract class AbstractBackup extends Task {
                 }
             }
         return backupPaths;
+    }
+
+    protected static File[] getSecondaryIndexDirectories(File backupDir, String columnFamily) {
+        String reference = "." + columnFamily.toLowerCase(Locale.ROOT);
+        FileFilter filter =
+                (file) ->
+                        file.getName().toLowerCase(Locale.ROOT).startsWith(reference)
+                                && isAReadableDirectory(file);
+        return Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {});
     }
 
     protected static boolean isAReadableDirectory(File dir) {

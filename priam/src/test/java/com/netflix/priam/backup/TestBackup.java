@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.collect.Iterators;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
@@ -26,6 +27,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import mockit.Mock;
 import mockit.MockUp;
@@ -97,6 +99,21 @@ public class TestBackup {
     }
 
     @Test
+    public void testIncrementalBackupOfSecondaryIndexes() throws Exception {
+        filesystem.cleanup();
+        generateIncrementalFiles();
+        IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
+        backup.execute();
+        Iterator<String> paths =
+                filesystem.listFileSystem("casstestbackup", "/", null /* marker */);
+        String path =
+                Iterators.find(paths, p -> p.endsWith("Keyspace1-Standard1-ia-4-Data.db"), null);
+        Assert.assertNotNull(path);
+        Assert.assertTrue(
+                path.contains(AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2.name()));
+    }
+
+    @Test
     public void testClusterSpecificColumnFamiliesSkippedBefore21() throws Exception {
         String[] columnFamilyDirs = {"schema_columns", "local", "peers", "LocationInfo"};
         testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
@@ -156,6 +173,7 @@ public class TestBackup {
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
+        // purposely testing case mismatch in secondary index directory (CASS-2201)
         files.add(
                 "target/data/Keyspace1/Standard1/backups/.STANDARD1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
 

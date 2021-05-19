@@ -120,7 +120,7 @@ public class IncrementalBackup extends AbstractBackup {
 
         // Next, upload secondary indexes
         for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
-            upload(dir, fileType, config.enableAsyncIncremental(), true);
+            upload(dir, BackupFileType.SECONDARY_INDEX_V2, config.enableAsyncIncremental(), true);
         }
     }
 }

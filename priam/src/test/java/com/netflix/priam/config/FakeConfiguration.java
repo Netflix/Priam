@@ -35,6 +35,8 @@ public class FakeConfiguration implements IConfiguration {
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
     private boolean checkThriftIsListening;
+    private boolean skipDeletingOthersIngressRules;
+    private boolean skipUpdatingOthersIngressRules;
 
     public final Map<String, String> fakeProperties = new HashMap<>();
 
@@ -236,5 +238,22 @@ public class FakeConfiguration implements IConfiguration {
 
     public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
         this.checkThriftIsListening = checkThriftServerIsListening;
+    
+    @Override
+    public boolean skipDeletingOthersIngressRules() {
+        return this.skipDeletingOthersIngressRules;
+    }
+
+    public void setSkipDeletingOthersIngressRules(boolean skipDeletingOthersIngressRules) {
+        this.skipDeletingOthersIngressRules = skipDeletingOthersIngressRules;
+    }
+
+    @Override
+    public boolean skipUpdatingOthersIngressRules() {
+        return this.skipUpdatingOthersIngressRules;
+    }
+
+    public void setSkipUpdatingOthersIngressRules(boolean skipUpdatingOthersIngressRules) {
+        this.skipUpdatingOthersIngressRules = skipUpdatingOthersIngressRules;
     }
 }

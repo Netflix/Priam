@@ -1,8 +1,6 @@
 language: java
 jdk:
 - openjdk8
-after_success:
-- bash <(curl -s https://codecov.io/bash)
 sudo: false
 install: "./installViaTravis.sh"
 script:
@@ -13,9 +11,9 @@ cache:
   - "$HOME/.gradle"
 env:
   global:
-  - secure: Ae8tBwNsk5ooFgEsVsNiLHwEb2QpySK0iDcHbre+KJCK33c1ZePiHvYXG163lGeaNt6TEzzEz6jUhR1O62IYdUhW13nZZnV4dSKxsUrRBq55u1Z+ScaYEzSJZGV5+XOV+6c98XQNTUuktBi/Ah4Ga4G/bmw1ySnweVSL6dD87DY=
-  - secure: MXItimTMCfLe0wMXIeix7ntqheLAi6DAPTSqqJzMzGtw4QuPG2+ReEP6VzW1htneXOxR8bj7cFE1d3ryagRpABIft/05tmtqk1W3pQKgWHmRrIihznt5ViKmicXjDk4PbTcSomQ3g/0UfL5m/diIoe00I9D/2kjDe/eEh6L9+ug=
-  - secure: v9BKp80DIxRYbPpvMWa4aofZVQlCQdEkiV3LHB8IewZV8EzlB/YpQtklpsNTOmWSBdCKWTTrE/R34tYmRKJ1DBwGiVvXYZmgKVg572SvNXqwFbs0BSiA6ansvNtpkJmVsjQPRZ9uEIu0TyKJyg3MrnUsPcPGKIYbtKa7XpbUnE0=
-  - secure: tEB7+XBWcIIT2awQx4ZE89v6rxtQ1NQ9faiY8iltsNKYMWp6c7l+io1j4kg7z7LI+7abNqGwae7M3szcDRryMhPt2NhmggrAvEPPncqSVPPx5Vw5WAhPqEK0oI7fVXSTqIXmwxKM4fsHQtUGZLe9rIUFg1YsWOiND/h5XcwxsAg=
-  - secure: IYCq2pGZ1co9g7iESf5g9xODUlYDz2s6uG/x44mD90h0n8FEnULlsutIU7cneqBt298VXysR/vKOxF4IdyuaPMY/aZCEb9OtLtPC5fZouzR6+3o8P/wM5yyj37R9bq7gkPx49ZPygmtJ0YggQws6bCRrZ4chSehPwp4i8wwL5fY=
-  - secure: rH7xRToviCmw7IwTGMC/q2lj8+b2MWfViJ+wfD8QjtAs0wEGLpE4ORmH1vt6XDG9S8FXfj1HYy9HV4XymNhJFLaXt0CPFM2dNoZi+9nBOQ7aPUwhezlEN/OwRsfhMASIQIOR5DfeGq69t7eT/dvhZtYitPJKrYttcZ+UD0XAlLM=
+  - secure: JUZT8CmNPjpmKguIioCY0quM5ZGzO03fv7YMDZqR909WbfiX57ArPJOorD9U1ri8REiRjhIe5dTgQMNtar6i1uJj0EwhCIahRn+CNJhtHBxA1siX3/E8HU8ANirLLziBQlWnnjwKlGoUKw04plMLkaA9Ybn3WV9sdi/kVHRpI2Y=
+  - secure: wxVMsVmsKEuksiQlkm47gAH6Pu5lM3zwWVXJw1eUf9zTqLVwqomuQ19Bgv2ZDcoWNBdcfRouhV98uCclCgFD3tPTVfJ3GSrXhpQLstGihNRtZE5EmEVj8rephVa4H1g0BxzuhbFCgV6VyQWECvAYpyyutk6+ygeS7uhjWtUCTus=
+  - secure: wDpYNAJGRtlnbJUfmnmmTSH5+TTf5AccjbaVa1NVblQPb0gdupEo8lGPeKGyaAWtteHlC+ih5nP6nh2geoWc6Svfv7fXRdffVyCF+WLrTPKvPOgC1A9IgrbVbjKRJv3Lqx+i6vYcRc+EJ3Bn9Z5AVACY4ag9KfDr5Xc1xmoJK6U=
+  - secure: XP08P6WaX92eH0lziOoWAAPz0HDpg8RjuxgNQBaQ5NmgyjRypxMnjro2Uqfcivn0tjV8tFQNzGrx2Y1LaC3w1ZJiINuLbSKWNfC/NP/zlMwTfQBwnwx0brmn5u/OwpqmU6l+nrMNyXKKR4hhH47O2ZD3ynrRAivt5tgDo/6xp9Y=
+  - secure: Gf497SakGlRoyYAqNrto/U+wrfJ9wtUzStwV0uac5CEJoDNN1DG3LA+HmRYgubwXZU3VKb/2BPEyflNV+LOWW54CkWu5Syw4i//iL+FEHv2eDR82NyvOcl11BtmUDLW/G+iBV5J3DlGTSmbgfC195kAYhozxx5FF+UVIYisS0Yc=
+  - secure: ky97xfe8gq2KqexRhLvaaEI85H/6HJ3iXh+z8eHnRHQpCkL4azVripdaUXwMj5H5EotWevB1nZVdttX/ZU5VIfkyA7H7fgWT9I17o4p8JKA8VItzUAIWopA4pUw2moxKiqhJZ8szqBCeEk5qgbUJyFbsAsHrTmoqSI/8u3WaL0U=

@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.util.concurrent.ListenableFuture;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.util.Date;
@@ -89,7 +90,8 @@ public interface IBackupFileSystem {
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
      *     to add the work to the queue.
      */
-    Future<AbstractBackupPath> asyncUploadAndDelete(final AbstractBackupPath path, final int retry)
+    ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
+            final AbstractBackupPath path, final int retry)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**

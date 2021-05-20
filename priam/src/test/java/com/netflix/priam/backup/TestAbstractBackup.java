@@ -1,8 +1,8 @@
 package com.netflix.priam.backup;
 
-import com.google.appengine.repackaged.com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableList;
 import com.google.common.truth.Truth;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Provider;
@@ -115,13 +115,15 @@ public class TestAbstractBackup {
     public void testCorrectCompressionType() throws Exception {
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
-        ImmutableSet<AbstractBackupPath> paths =
-                abstractBackup.upload(parent, backupFileType, false, false);
-        AbstractBackupPath abstractBackupPath =
-                paths.stream()
-                        .filter(path -> path.getFileName().equals(tablePart))
-                        .findAny()
-                        .orElseThrow(IllegalStateException::new);
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                abstractBackup.uploadAndDeleteAllFiles(parent, backupFileType, false);
+        AbstractBackupPath abstractBackupPath = null;
+        for (ListenableFuture<AbstractBackupPath> future : futures) {
+            if (future.get().getFileName().equals(tablePart)) {
+                abstractBackupPath = future.get();
+                break;
+            }
+        }
         Truth.assertThat(abstractBackupPath.getCompression()).isEqualTo(compressionAlgorithm);
     }
 }

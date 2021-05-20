@@ -17,7 +17,10 @@
 package com.netflix.priam.backupv2;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
@@ -37,6 +40,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Inject;
@@ -77,6 +82,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private static final Lock lock = new ReentrantLock();
     private final IBackupStatusMgr snapshotStatusMgr;
     private final InstanceIdentity instanceIdentity;
+    private final ExecutorService threadPool;
 
     private enum MetaStep {
         META_GENERATION,
@@ -104,6 +110,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
         this.metaProxy = metaProxy;
+        this.threadPool = Executors.newSingleThreadExecutor();
     }
 
     /**
@@ -271,15 +278,15 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
-                upload(snapshotDirectory, AbstractBackupPath.BackupFileType.SST_V2, true, false);
+                AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
+                uploadAndDeleteAllFiles(snapshotDirectory, type, true);
 
                 // Next, upload secondary indexes
+                type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
+                ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory, columnFamily)) {
-                    upload(
-                            subDir,
-                            AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2,
-                            true,
-                            false);
+                    futures = uploadAndDeleteAllFiles(subDir, type, true);
+                    Futures.whenAllComplete(futures).call(new DirectoryDeleter(subDir), threadPool);
                 }
             }
         }

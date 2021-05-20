@@ -37,6 +37,8 @@ public class TestCassandraMonitor {
     private static CassandraMonitor monitor;
     private static InstanceState instanceState;
     private static CassMonitorMetrics cassMonitorMetrics;
+    private static IThriftChecker thriftChecker;
+
     private IConfiguration config;
 
     @Mocked private Process mockProcess;
@@ -47,13 +49,16 @@ public class TestCassandraMonitor {
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
+        thriftChecker = injector.getInstance(ThriftChecker.class);
         if (instanceState == null) instanceState = injector.getInstance(InstanceState.class);
 
         if (cassMonitorMetrics == null)
             cassMonitorMetrics = injector.getInstance(CassMonitorMetrics.class);
 
         if (monitor == null)
-            monitor = new CassandraMonitor(config, instanceState, cassProcess, cassMonitorMetrics);
+            monitor =
+                    new CassandraMonitor(
+                            config, instanceState, cassProcess, cassMonitorMetrics, thriftChecker);
     }
 
     @Test

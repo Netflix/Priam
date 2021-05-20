@@ -103,6 +103,9 @@ public class TestBackup {
         filesystem.cleanup();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
+        File secondaryIndexBackupDir =
+                new File("target/data/Keyspace1/Standard1/backups/.STANDARD1_field1_idx_1/");
+        Assert.assertTrue(secondaryIndexBackupDir.exists());
         backup.execute();
         Iterator<String> paths =
                 filesystem.listFileSystem("casstestbackup", "/", null /* marker */);
@@ -111,6 +114,7 @@ public class TestBackup {
         Assert.assertNotNull(path);
         Assert.assertTrue(
                 path.contains(AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2.name()));
+        Assert.assertFalse(secondaryIndexBackupDir.exists());
     }
 
     @Test

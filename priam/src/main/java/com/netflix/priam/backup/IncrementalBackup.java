@@ -16,6 +16,10 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -116,11 +120,15 @@ public class IncrementalBackup extends AbstractBackup {
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
         // upload SSTables and components
-        upload(backupDir, fileType, config.enableAsyncIncremental(), true);
+        uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
 
         // Next, upload secondary indexes
+        fileType = BackupFileType.SECONDARY_INDEX_V2;
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
         for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
-            upload(dir, BackupFileType.SECONDARY_INDEX_V2, config.enableAsyncIncremental(), true);
+            futures = uploadAndDeleteAllFiles(dir, fileType, config.enableAsyncIncremental());
+            Futures.whenAllComplete(futures)
+                    .call(new DirectoryDeleter(dir), MoreExecutors.directExecutor());
         }
     }
 }

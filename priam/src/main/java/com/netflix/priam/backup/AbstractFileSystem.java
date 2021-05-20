@@ -20,6 +20,9 @@ package com.netflix.priam.backup;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -61,7 +64,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
-    private final ThreadPoolExecutor fileUploadExecutor;
+    private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
@@ -93,10 +96,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 .withName(backupMetrics.uploadQueueSize)
                 .monitorSize(uploadQueue);
         this.fileUploadExecutor =
-                new BlockingSubmitThreadPoolExecutor(
-                        configuration.getBackupThreads(),
-                        uploadQueue,
-                        configuration.getUploadTimeout());
+                MoreExecutors.listeningDecorator(
+                        new BlockingSubmitThreadPoolExecutor(
+                                configuration.getBackupThreads(),
+                                uploadQueue,
+                                configuration.getUploadTimeout()));
 
         BlockingQueue<Runnable> downloadQueue =
                 new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
@@ -152,7 +156,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException;
 
     @Override
-    public Future<AbstractBackupPath> asyncUploadAndDelete(
+    public ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
             final AbstractBackupPath path, final int retry) throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {

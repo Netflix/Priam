@@ -774,4 +774,9 @@ public class PriamConfiguration implements IConfiguration {
         return BackupsToCompress.valueOf(
                 config.get("priam.backupsToCompress", BackupsToCompress.ALL.name()));
     }
+
+    @Override
+    public boolean checkThriftServerIsListening() {
+        return config.get(PRIAM_PRE + ".checkThriftServerIsListening", false);
+    }
 }

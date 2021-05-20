@@ -238,7 +238,8 @@ public class FakeConfiguration implements IConfiguration {
 
     public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
         this.checkThriftIsListening = checkThriftServerIsListening;
-    
+    }
+
     @Override
     public boolean skipDeletingOthersIngressRules() {
         return this.skipDeletingOthersIngressRules;

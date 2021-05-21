@@ -246,7 +246,7 @@ public class FakeConfiguration implements IConfiguration {
         this.diskAccessMode = diskAccessMode;
         return this;
     }
-    
+
     @Override
     public boolean checkThriftServerIsListening() {
         return checkThriftIsListening;

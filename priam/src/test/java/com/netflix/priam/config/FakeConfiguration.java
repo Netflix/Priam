@@ -35,6 +35,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
+    private String diskAccessMode;
     private boolean checkThriftIsListening;
 
     public Map<String, String> fakeProperties = new HashMap<>();
@@ -234,6 +235,16 @@ public class FakeConfiguration implements IConfiguration {
     public BackupsToCompress getBackupsToCompress() {
         return (BackupsToCompress)
                 fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
+    }
+
+    @Override
+    public String getDiskAccessMode() {
+        return this.diskAccessMode;
+    }
+
+    public FakeConfiguration setDiskAccessMode(String diskAccessMode) {
+        this.diskAccessMode = diskAccessMode;
+        return this;
     }
 
     @Override

@@ -779,4 +779,9 @@ public class PriamConfiguration implements IConfiguration {
     public String getDiskAccessMode() {
         return config.get(PRIAM_PRE + ".diskAccessMode", "auto");
     }
+    
+    @Override
+    public boolean checkThriftServerIsListening() {
+        return config.get(PRIAM_PRE + ".checkThriftServerIsListening", false);
+    }
 }

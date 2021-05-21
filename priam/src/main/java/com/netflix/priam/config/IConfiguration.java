@@ -1103,6 +1103,11 @@ public interface IConfiguration {
         return getSnitch().equals("org.apache.cassandra.locator.GossipingPropertyFileSnitch");
     }
 
+    /** @return true to check is thrift listening on the rpc_port. */
+    default boolean checkThriftServerIsListening() {
+        return false;
+    }
+
     /**
      * @return BackupsToCompress UNCOMPRESSED means compress backups only when the files are not
      *     already compressed by Cassandra

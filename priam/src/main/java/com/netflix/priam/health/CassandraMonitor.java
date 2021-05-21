@@ -47,17 +47,20 @@ public class CassandraMonitor extends Task {
     private final InstanceState instanceState;
     private final ICassandraProcess cassProcess;
     private final CassMonitorMetrics cassMonitorMetrics;
+    private final IThriftChecker thriftChecker;
 
     @Inject
     protected CassandraMonitor(
             IConfiguration config,
             InstanceState instanceState,
             ICassandraProcess cassProcess,
-            CassMonitorMetrics cassMonitorMetrics) {
+            CassMonitorMetrics cassMonitorMetrics,
+            IThriftChecker thriftChecker) {
         super(config);
         this.instanceState = instanceState;
         this.cassProcess = cassProcess;
         this.cassMonitorMetrics = cassMonitorMetrics;
+        this.thriftChecker = thriftChecker;
     }
 
     @Override
@@ -92,7 +95,9 @@ public class CassandraMonitor extends Task {
                 NodeProbe bean = JMXNodeTool.instance(this.config);
                 instanceState.setIsGossipActive(bean.isGossipRunning());
                 instanceState.setIsNativeTransportActive(bean.isNativeTransportRunning());
-                instanceState.setIsThriftActive(bean.isThriftServerRunning());
+                instanceState.setIsThriftActive(
+                        bean.isThriftServerRunning() && thriftChecker.isThriftServerListening());
+
             } else {
                 // Setting cassandra flag to false
                 instanceState.setCassandraProcessAlive(false);

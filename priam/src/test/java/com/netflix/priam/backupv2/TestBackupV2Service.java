@@ -84,7 +84,8 @@ public class TestBackupV2Service {
                 3,
                 AbstractBackup.SNAPSHOT_FOLDER,
                 snapshotName,
-                true);
+                true,
+                false);
 
         // Create one V1 snapshot.
         String snapshotV1Name = DateUtil.formatInstant(DateUtil.yyyyMMdd, snapshotInstant);
@@ -95,6 +96,7 @@ public class TestBackupV2Service {
                 3,
                 AbstractBackup.SNAPSHOT_FOLDER,
                 snapshotV1Name,
+                false,
                 false);
 
         IService backupService =

@@ -81,7 +81,8 @@ public class TestBackupService {
                 3,
                 AbstractBackup.SNAPSHOT_FOLDER,
                 snapshotV1Name,
-                true);
+                true,
+                false);
 
         String snapshotName = "meta_v2_" + snapshotV1Name;
         // Create one V2 snapshot.
@@ -92,6 +93,7 @@ public class TestBackupService {
                 3,
                 AbstractBackup.SNAPSHOT_FOLDER,
                 snapshotName,
+                false,
                 false);
 
         IService backupService =

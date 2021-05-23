@@ -12,6 +12,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Derives public ips from PriamInstances with AWS hostnames. */
 public class AWSIPConverter implements IPConverter {
     private static final Logger logger = LoggerFactory.getLogger(AWSIPConverter.class);
     private static final Pattern IP_PART = Pattern.compile("^[0-9]{1,3}$");

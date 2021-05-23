@@ -1136,11 +1136,6 @@ public interface IConfiguration {
         return false;
     }
 
-    /** @return get the threshold at which point we might risk not getting our ingress rule set. */
-    default int getACLSizeWarnThreshold() {
-        return 500;
-    }
-
     /**
      * @return true if Priam should skip ingress on an IP address from the token database unless it
      *     can confirm that it is public

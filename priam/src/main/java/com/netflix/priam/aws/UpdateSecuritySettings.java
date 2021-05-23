@@ -26,6 +26,7 @@ import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.merics.SecurityMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -57,6 +58,7 @@ public class UpdateSecuritySettings extends Task {
     private final IMembership membership;
     private final IPriamInstanceFactory factory;
     private final IPConverter ipConverter;
+    private final SecurityMetrics securityMetrics;
 
     @Inject
     // Note: do not parameterized the generic type variable to an implementation as it confuses
@@ -65,11 +67,13 @@ public class UpdateSecuritySettings extends Task {
             IConfiguration config,
             IMembership membership,
             IPriamInstanceFactory factory,
-            IPConverter ipConverter) {
+            IPConverter ipConverter,
+            SecurityMetrics securityMetrics) {
         super(config);
         this.membership = membership;
         this.factory = factory;
         this.ipConverter = ipConverter;
+        this.securityMetrics = securityMetrics;
     }
 
     /**
@@ -80,6 +84,7 @@ public class UpdateSecuritySettings extends Task {
     public void execute() {
         int port = config.getSSLStoragePort();
         ImmutableSet<String> currentAcl = membership.listACL(port, port);
+        securityMetrics.setIngressRules(currentAcl.size());
         Set<String> desiredAcl =
                 factory.getAllIds(config.getAppName())
                         .stream()
@@ -99,10 +104,6 @@ public class UpdateSecuritySettings extends Task {
             Set<String> aclToAdd = Sets.difference(desiredAcl, currentAcl);
             logger.info("ingress rules to update: {}", Joiner.on(",").join(aclToAdd));
             if (!aclToAdd.isEmpty()) {
-                int resultingSize = aclToAdd.size() + currentAcl.size();
-                if (resultingSize > config.getACLSizeWarnThreshold()) {
-                    logger.warn("We are trying to make too many ingress rules! {}", resultingSize);
-                }
                 membership.addACL(aclToAdd, port, port);
                 firstTimeUpdated = true;
             }

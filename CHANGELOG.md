@@ -1,4 +1,14 @@
 # Changelog
+## 2021/05/25 3.11.79
+(#922) Optionally skip compression of backups
+(#943) Optionally make extra check to ensure Thrift server is actually listening on the rpc_port
+(#944) Make disk_access_mode a first class configuration option
+(#941) Delete secondary index backup directories after uploading
+(#940) Improve operator control over creation of ingress rules
+
+## 2021/05/12 3.11.78
+Improve operator control over creation of ingress rules
+
 ## 2021/03/17 3.11.77
 (#913) Store Private IPs in the token database when the snitch is GPFS.
 

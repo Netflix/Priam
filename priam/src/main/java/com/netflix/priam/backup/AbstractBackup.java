@@ -18,8 +18,10 @@ package com.netflix.priam.backup;
 
 import static java.util.stream.Collectors.toSet;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -29,15 +31,16 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,28 +73,22 @@ public abstract class AbstractBackup extends Task {
      * @param parent Parent dir
      * @param type Type of file (META, SST, SNAP etc)
      * @param async Upload the file(s) in async fashion if enabled.
-     * @param waitForCompletion wait for completion for all files to upload if using async API. If
-     *     `false` it will queue the files and return with no guarantee to upload.
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected ImmutableSet<AbstractBackupPath> upload(
-            final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
-            throws Exception {
-        ImmutableSet<AbstractBackupPath> bps = getBackupPaths(parent, type);
-        final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
-        for (AbstractBackupPath bp : bps) {
+    protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
+            final File parent, final BackupFileType type, boolean async) throws Exception {
+        ImmutableSet<AbstractBackupPath> backupPaths = getBackupPaths(parent, type);
+        final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
+                ImmutableList.builder();
+        for (AbstractBackupPath bp : backupPaths) {
             if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
-            else fs.uploadAndDelete(bp, 10);
+            else {
+                fs.uploadAndDelete(bp, 10);
+                futures.add(Futures.immediateFuture(bp));
+            }
         }
-
-        // Wait for all files to be uploaded.
-        if (async && waitForCompletion) {
-            for (Future<AbstractBackupPath> future : futures)
-                future.get(); // This might throw exception if there is any error
-        }
-
-        return bps;
+        return futures.build();
     }
 
     protected ImmutableSet<AbstractBackupPath> getBackupPaths(File dir, BackupFileType type)
@@ -217,6 +214,15 @@ public abstract class AbstractBackup extends Task {
                 }
             }
         return backupPaths;
+    }
+
+    protected static File[] getSecondaryIndexDirectories(File backupDir, String columnFamily) {
+        String reference = "." + columnFamily.toLowerCase(Locale.ROOT);
+        FileFilter filter =
+                (file) ->
+                        file.getName().toLowerCase(Locale.ROOT).startsWith(reference)
+                                && isAReadableDirectory(file);
+        return Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {});
     }
 
     protected static boolean isAReadableDirectory(File dir) {

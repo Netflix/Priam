@@ -16,7 +16,9 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -36,6 +38,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import org.apache.commons.io.FileUtils;
@@ -209,8 +212,13 @@ public class SnapshotBackup extends AbstractBackup {
 
         forgottenFilesManager.findAndMoveForgottenFiles(snapshotInstant, snapshotDir);
         // Add files to this dir
-        abstractBackupPaths.addAll(
-                upload(snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot(), true));
+
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                uploadAndDeleteAllFiles(
+                        snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot());
+        for (Future<AbstractBackupPath> future : futures) {
+            abstractBackupPaths.add(future.get());
+        }
     }
 
     private static boolean isValidBackupDir(Path backupDir) {

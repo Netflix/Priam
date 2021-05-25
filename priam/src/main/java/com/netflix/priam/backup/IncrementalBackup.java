@@ -16,6 +16,10 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -26,9 +30,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
-import java.io.FileFilter;
 import java.nio.file.Path;
-import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -118,14 +120,22 @@ public class IncrementalBackup extends AbstractBackup {
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
         // upload SSTables and components
-        upload(backupDir, fileType, config.enableAsyncIncremental(), true);
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+        Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
 
         // Next, upload secondary indexes
-        FileFilter filter =
-                (file) ->
-                        file.getName().startsWith("." + columnFamily) && isAReadableDirectory(file);
-        for (File subDir : Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {})) {
-            upload(subDir, fileType, config.enableAsyncIncremental(), true);
+        fileType = BackupFileType.SECONDARY_INDEX_V2;
+        for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
+            futures = uploadAndDeleteAllFiles(dir, fileType, config.enableAsyncIncremental());
+            Futures.whenAllComplete(futures)
+                    .call(
+                            () -> {
+                                if (FileUtils.sizeOfDirectory(dir) == 0)
+                                    FileUtils.deleteQuietly(dir);
+                                return null;
+                            },
+                            MoreExecutors.directExecutor());
         }
     }
 }

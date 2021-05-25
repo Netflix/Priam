@@ -183,14 +183,21 @@ public class AWSMembership implements IMembership {
                     logger.info("Done adding ACL to classic: " + StringUtils.join(listIPs, ","));
                 }
             } else {
+                // Adding peers' IPs as ingress to the running instance SG
                 AuthorizeSecurityGroupIngressRequest sgIngressRequest =
-                        new AuthorizeSecurityGroupIngressRequest();
-                sgIngressRequest.withGroupId(getVpcGoupId());
+                        new AuthorizeSecurityGroupIngressRequest()
+                                .withGroupId(getVpcGoupId())
+                                .withIpPermissions(ipPermissions);
                 // fetch SG group id for vpc account of the running instance.
-                client.authorizeSecurityGroupIngress(
-                        sgIngressRequest.withIpPermissions(
-                                ipPermissions)); // Adding peers' IPs as ingress to the running
-                // instance SG
+                int status =
+                        client.authorizeSecurityGroupIngress(sgIngressRequest)
+                                .getSdkHttpMetadata()
+                                .getHttpStatusCode();
+                if (status != 200) {
+                    logger.warn(
+                            "We might have too many ingress rules saw http status {} when updating",
+                            status);
+                }
                 if (logger.isInfoEnabled()) {
                     logger.info("Done adding ACL to vpc: " + StringUtils.join(listIPs, ","));
                 }

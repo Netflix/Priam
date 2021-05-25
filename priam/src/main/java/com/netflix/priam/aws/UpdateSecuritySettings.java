@@ -16,6 +16,7 @@
  */
 package com.netflix.priam.aws;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.inject.Inject;
@@ -24,10 +25,13 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.config.InstanceInfo;
+import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.merics.SecurityMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -53,7 +57,8 @@ public class UpdateSecuritySettings extends Task {
     private static final Random ran = new Random();
     private final IMembership membership;
     private final IPriamInstanceFactory factory;
-    private final InstanceInfo instanceInfo;
+    private final IPConverter ipConverter;
+    private final SecurityMetrics securityMetrics;
 
     @Inject
     // Note: do not parameterized the generic type variable to an implementation as it confuses
@@ -62,11 +67,13 @@ public class UpdateSecuritySettings extends Task {
             IConfiguration config,
             IMembership membership,
             IPriamInstanceFactory factory,
-            InstanceInfo instanceInfo) {
+            IPConverter ipConverter,
+            SecurityMetrics securityMetrics) {
         super(config);
         this.membership = membership;
         this.factory = factory;
-        this.instanceInfo = instanceInfo;
+        this.ipConverter = ipConverter;
+        this.securityMetrics = securityMetrics;
     }
 
     /**
@@ -77,27 +84,36 @@ public class UpdateSecuritySettings extends Task {
     public void execute() {
         int port = config.getSSLStoragePort();
         ImmutableSet<String> currentAcl = membership.listACL(port, port);
+        securityMetrics.setIngressRules(currentAcl.size());
         Set<String> desiredAcl =
                 factory.getAllIds(config.getAppName())
                         .stream()
-                        .map(i -> i.getHostIP() + "/32")
+                        .map(i -> getIngressRule(i).orElse(null))
+                        .filter(Objects::nonNull)
+                        .map(ip -> ip + "/32")
                         .collect(Collectors.toSet());
-        // Make sure a hole is opened for my instance.
-        // This accommodates the eventually consistent CassandraInstanceFactory.
-        // Remove once IPs are all private as there won't be any chance of a discrepancy anymore.
-        String myIp =
-                config.usePrivateIP() ? instanceInfo.getPrivateIP() : instanceInfo.getHostIP();
-        desiredAcl.add(myIp + "/32");
-        Set<String> aclToAdd = Sets.difference(desiredAcl, currentAcl);
-        if (!aclToAdd.isEmpty()) {
-            membership.addACL(aclToAdd, port, port);
-            firstTimeUpdated = true;
+        if (!config.skipDeletingOthersIngressRules()) {
+            Set<String> aclToRemove = Sets.difference(currentAcl, desiredAcl);
+            logger.info("ingress rules to delete: {}", Joiner.on(",").join(aclToRemove));
+            if (!aclToRemove.isEmpty()) {
+                membership.removeACL(aclToRemove, port, port);
+                firstTimeUpdated = true;
+            }
         }
-        Set<String> aclToRemove = Sets.difference(currentAcl, desiredAcl);
-        if (!aclToRemove.isEmpty()) {
-            membership.removeACL(aclToRemove, port, port);
-            firstTimeUpdated = true;
+        if (!config.skipUpdatingOthersIngressRules()) {
+            Set<String> aclToAdd = Sets.difference(desiredAcl, currentAcl);
+            logger.info("ingress rules to update: {}", Joiner.on(",").join(aclToAdd));
+            if (!aclToAdd.isEmpty()) {
+                membership.addACL(aclToAdd, port, port);
+                firstTimeUpdated = true;
+            }
         }
+    }
+
+    private Optional<String> getIngressRule(PriamInstance instance) {
+        return config.skipIngressUnlessIPIsPublic()
+                ? ipConverter.getPublicIP(instance)
+                : Optional.of(instance.getHostIP());
     }
 
     public static TaskTimer getTimer(InstanceIdentity id) {

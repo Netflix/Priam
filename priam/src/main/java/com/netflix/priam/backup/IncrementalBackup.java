@@ -120,15 +120,22 @@ public class IncrementalBackup extends AbstractBackup {
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
         // upload SSTables and components
-        uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+        Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
 
         // Next, upload secondary indexes
         fileType = BackupFileType.SECONDARY_INDEX_V2;
-        ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
         for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
             futures = uploadAndDeleteAllFiles(dir, fileType, config.enableAsyncIncremental());
             Futures.whenAllComplete(futures)
-                    .call(new DirectoryDeleter(dir), MoreExecutors.directExecutor());
+                    .call(
+                            () -> {
+                                if (FileUtils.sizeOfDirectory(dir) == 0)
+                                    FileUtils.deleteQuietly(dir);
+                                return null;
+                            },
+                            MoreExecutors.directExecutor());
         }
     }
 }

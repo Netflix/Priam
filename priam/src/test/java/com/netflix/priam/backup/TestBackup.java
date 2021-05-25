@@ -177,7 +177,7 @@ public class TestBackup {
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Index.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-2-Data.db");
         files.add("target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-3-Data.db");
-        // purposely testing case mismatch in secondary index directory (CASS-2201)
+        // purposely testing case mismatch in secondary index directory which can exist in practice
         files.add(
                 "target/data/Keyspace1/Standard1/backups/.STANDARD1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
 

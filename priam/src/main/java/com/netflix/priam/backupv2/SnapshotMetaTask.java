@@ -286,7 +286,14 @@ public class SnapshotMetaTask extends AbstractBackup {
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory, columnFamily)) {
                     futures = uploadAndDeleteAllFiles(subDir, type, true);
-                    Futures.whenAllComplete(futures).call(new DirectoryDeleter(subDir), threadPool);
+                    Futures.whenAllComplete(futures)
+                            .call(
+                                    () -> {
+                                        if (FileUtils.sizeOfDirectory(subDir) == 0)
+                                            FileUtils.deleteQuietly(subDir);
+                                        return null;
+                                    },
+                                    threadPool);
                 }
             }
         }

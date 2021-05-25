@@ -41,8 +41,6 @@ import java.util.HashSet;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Callable;
-import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -226,19 +224,5 @@ public abstract class AbstractBackup extends Task {
 
     protected static boolean isAReadableDirectory(File dir) {
         return dir.exists() && dir.isDirectory() && dir.canRead();
-    }
-
-    public static final class DirectoryDeleter implements Callable<Void> {
-        private final File directory;
-
-        public DirectoryDeleter(File directory) {
-            this.directory = directory;
-        }
-
-        @Override
-        public Void call() throws Exception {
-            if (FileUtils.sizeOfDirectory(directory) == 0) FileUtils.deleteQuietly(directory);
-            return null;
-        }
     }
 }

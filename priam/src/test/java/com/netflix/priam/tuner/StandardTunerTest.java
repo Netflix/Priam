@@ -153,6 +153,13 @@ public class StandardTunerTest {
     }
 
     @Test
+    public void testDiskAccessMode() throws Exception {
+        String diskAccessMode = "test_mode";
+        Map map = applyFakeConfiguration(new FakeConfiguration().setDiskAccessMode(diskAccessMode));
+        Assert.assertEquals(diskAccessMode, map.get("disk_access_mode"));
+    }
+
+    @Test
     public void testRoleManagerOverride() throws Exception {
         String roleManagerOverride = "org.apache.cassandra.auth.CustomRoleManager";
         Map map =

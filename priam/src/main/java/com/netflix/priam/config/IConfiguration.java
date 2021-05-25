@@ -1103,12 +1103,45 @@ public interface IConfiguration {
         return getSnitch().equals("org.apache.cassandra.locator.GossipingPropertyFileSnitch");
     }
 
+    /** @return true to check is thrift listening on the rpc_port. */
+    default boolean checkThriftServerIsListening() {
+        return false;
+    }
+
     /**
      * @return BackupsToCompress UNCOMPRESSED means compress backups only when the files are not
      *     already compressed by Cassandra
      */
     default BackupsToCompress getBackupsToCompress() {
         return BackupsToCompress.ALL;
+    }
+
+    /** @return the way how data files are accessed. Default value is auto. */
+    default String getDiskAccessMode() {
+        return "auto";
+    }
+
+    /**
+     * @return true if Priam should skip deleting ingress rules for IPs not found in the token
+     *     database.
+     */
+    default boolean skipDeletingOthersIngressRules() {
+        return false;
+    }
+
+    /**
+     * @return true if Priam should skip updating ingress rules for ips found in the token database.
+     */
+    default boolean skipUpdatingOthersIngressRules() {
+        return false;
+    }
+
+    /**
+     * @return true if Priam should skip ingress on an IP address from the token database unless it
+     *     can confirm that it is public
+     */
+    default boolean skipIngressUnlessIPIsPublic() {
+        return false;
     }
 
     /**

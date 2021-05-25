@@ -35,6 +35,11 @@ public class FakeConfiguration implements IConfiguration {
     private boolean mayCreateNewToken;
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
+    private String diskAccessMode;
+    private boolean checkThriftIsListening;
+    private boolean skipDeletingOthersIngressRules;
+    private boolean skipUpdatingOthersIngressRules;
+    private boolean skipIngressUnlessIPIsPublic;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -233,5 +238,51 @@ public class FakeConfiguration implements IConfiguration {
     public BackupsToCompress getBackupsToCompress() {
         return (BackupsToCompress)
                 fakeConfig.getOrDefault("Priam.backupsToCompress", BackupsToCompress.ALL);
+    }
+
+    @Override
+    public boolean skipDeletingOthersIngressRules() {
+        return this.skipDeletingOthersIngressRules;
+    }
+
+    public void setSkipDeletingOthersIngressRules(boolean skipDeletingOthersIngressRules) {
+        this.skipDeletingOthersIngressRules = skipDeletingOthersIngressRules;
+    }
+
+    @Override
+    public boolean skipUpdatingOthersIngressRules() {
+        return this.skipUpdatingOthersIngressRules;
+    }
+
+    public void setSkipUpdatingOthersIngressRules(boolean skipUpdatingOthersIngressRules) {
+        this.skipUpdatingOthersIngressRules = skipUpdatingOthersIngressRules;
+    }
+
+    @Override
+    public String getDiskAccessMode() {
+        return this.diskAccessMode;
+    }
+
+    public FakeConfiguration setDiskAccessMode(String diskAccessMode) {
+        this.diskAccessMode = diskAccessMode;
+        return this;
+    }
+
+    @Override
+    public boolean checkThriftServerIsListening() {
+        return checkThriftIsListening;
+    }
+
+    public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
+        this.checkThriftIsListening = checkThriftServerIsListening;
+    }
+
+    @Override
+    public boolean skipIngressUnlessIPIsPublic() {
+        return this.skipIngressUnlessIPIsPublic;
+    }
+
+    public void setSkipIngressUnlessIPIsPublic(boolean skipIngressUnlessIPIsPublic) {
+        this.skipIngressUnlessIPIsPublic = skipIngressUnlessIPIsPublic;
     }
 }

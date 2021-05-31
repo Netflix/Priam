@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Future;
+import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -95,8 +96,10 @@ public abstract class AbstractBackup extends Task {
 
     protected ImmutableSet<AbstractBackupPath> getBackupPaths(File dir, BackupFileType type)
             throws IOException {
-        Set<File> files =
-                Files.list(dir.toPath()).map(Path::toFile).filter(File::isFile).collect(toSet());
+        Set<File> files;
+        try (Stream<Path> pathStream = Files.list(dir.toPath())) {
+            files = pathStream.map(Path::toFile).filter(File::isFile).collect(toSet());
+        }
         Set<String> compressedFilePrefixes =
                 files.stream()
                         .map(File::getName)

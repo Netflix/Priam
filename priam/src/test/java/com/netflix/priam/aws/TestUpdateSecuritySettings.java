@@ -20,6 +20,7 @@ public class TestUpdateSecuritySettings {
     private IMembership membership;
     private IPriamInstanceFactory factory;
     private FakeConfiguration config;
+    private FakeIPConverter ipConverter;
 
     @Before
     public void setUp() {
@@ -28,6 +29,7 @@ public class TestUpdateSecuritySettings {
         membership = injector.getInstance(IMembership.class);
         updateSecuritySettings = injector.getInstance(UpdateSecuritySettings.class);
         config = (FakeConfiguration) injector.getInstance(IConfiguration.class);
+        ipConverter = (FakeIPConverter) injector.getInstance(IPConverter.class);
     }
 
     @Test
@@ -77,6 +79,28 @@ public class TestUpdateSecuritySettings {
     public void dontUpdateOthersIngress() {
         addToFactory(1, "1.1.1.1");
         config.setSkipUpdatingOthersIngressRules(true);
+        Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
+        updateSecuritySettings.execute();
+        Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
+    }
+
+    @Test
+    public void dontUpdatePrivateIngress() {
+        addToFactory(1, "2.2.2.2");
+        ipConverter.setShouldFail(false);
+        config.setSkipIngressUnlessIPIsPublic(true);
+        Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
+        updateSecuritySettings.execute();
+        // The private IP produced by our FakeIPConverter
+        Truth.assertThat(membership.listACL(PORT, PORT)).contains("1.1.1.1/32");
+        Truth.assertThat(membership.listACL(PORT, PORT)).doesNotContain("2.2.2.2/32");
+    }
+
+    @Test
+    public void dontUpdateUnknownIngress() {
+        addToFactory(1, "1.1.1.1");
+        ipConverter.setShouldFail(true);
+        config.setSkipIngressUnlessIPIsPublic(true);
         Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();
         updateSecuritySettings.execute();
         Truth.assertThat(membership.listACL(PORT, PORT)).isEmpty();

@@ -16,13 +16,14 @@
  */
 package com.netflix.priam.backupv2;
 
-import com.netflix.priam.compress.ICompression;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Preconditions;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.compress.CompressionType;
+import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.io.File;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 
 /**
@@ -30,98 +31,46 @@ import java.time.Instant;
  */
 public class FileUploadResult {
     private final Path fileName;
-    @GsonJsonSerializer.PriamAnnotation.GsonIgnore private String keyspaceName;
-    @GsonJsonSerializer.PriamAnnotation.GsonIgnore private String columnFamilyName;
-    private Instant lastModifiedTime;
+    private final Instant lastModifiedTime;
     private final Instant fileCreationTime;
     private final long fileSizeOnDisk; // Size on disk in bytes
-    private Boolean isUploaded;
     // Valid compression technique for now is SNAPPY only. Future we need to support LZ4 and NONE
-    private ICompression.CompressionAlgorithm compression =
-            ICompression.CompressionAlgorithm.SNAPPY;
+    private final CompressionType compression;
     // Valid encryption technique for now is PLAINTEXT only. In future we will support pgp and more.
-    private IFileCryptography.CryptographyAlgorithm encryption =
-            IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
+    private final CryptographyAlgorithm encryption;
+
+    private Boolean isUploaded;
     private String backupPath;
 
+    @VisibleForTesting
     public FileUploadResult(
             Path fileName,
-            String keyspaceName,
-            String columnFamilyName,
             Instant lastModifiedTime,
             Instant fileCreationTime,
             long fileSizeOnDisk) {
         this.fileName = fileName;
-        this.keyspaceName = keyspaceName;
-        this.columnFamilyName = columnFamilyName;
         this.lastModifiedTime = lastModifiedTime;
         this.fileCreationTime = fileCreationTime;
         this.fileSizeOnDisk = fileSizeOnDisk;
+        this.compression = CompressionType.SNAPPY;
+        this.encryption = CryptographyAlgorithm.PLAINTEXT;
     }
 
-    private static FileUploadResult getFileUploadResult(
-            String keyspaceName, String columnFamilyName, Path file) throws Exception {
-        BasicFileAttributes fileAttributes = Files.readAttributes(file, BasicFileAttributes.class);
-        return new FileUploadResult(
-                file,
-                keyspaceName,
-                columnFamilyName,
-                fileAttributes.lastModifiedTime().toInstant(),
-                fileAttributes.creationTime().toInstant(),
-                fileAttributes.size());
-    }
-
-    public static FileUploadResult getFileUploadResult(
-            String keyspaceName, String columnFamilyName, File file) throws Exception {
-        return getFileUploadResult(keyspaceName, columnFamilyName, file.toPath());
-    }
-
-    public Path getFileName() {
-        return fileName;
-    }
-
-    public String getKeyspaceName() {
-        return keyspaceName;
-    }
-
-    public String getColumnFamilyName() {
-        return columnFamilyName;
-    }
-
-    public Instant getLastModifiedTime() {
-        return lastModifiedTime;
-    }
-
-    public Instant getFileCreationTime() {
-        return fileCreationTime;
-    }
-
-    public long getFileSizeOnDisk() {
-        return fileSizeOnDisk;
-    }
-
-    public Boolean getUploaded() {
-        return isUploaded;
+    public FileUploadResult(AbstractBackupPath path) {
+        Preconditions.checkArgument(path.getLastModified().toEpochMilli() > 0);
+        Preconditions.checkArgument(path.getCreationTime().toEpochMilli() > 0);
+        File file = path.getBackupFile();
+        this.fileName = file.toPath();
+        this.backupPath = path.getRemotePath();
+        this.lastModifiedTime = path.getLastModified();
+        this.fileCreationTime = path.getCreationTime();
+        this.fileSizeOnDisk = path.getSize();
+        this.compression = path.getCompression();
+        this.encryption = path.getEncryption();
     }
 
     public void setUploaded(Boolean uploaded) {
         isUploaded = uploaded;
-    }
-
-    public ICompression.CompressionAlgorithm getCompression() {
-        return compression;
-    }
-
-    public void setCompression(ICompression.CompressionAlgorithm compression) {
-        this.compression = compression;
-    }
-
-    public IFileCryptography.CryptographyAlgorithm getEncryption() {
-        return encryption;
-    }
-
-    public void setEncryption(IFileCryptography.CryptographyAlgorithm encryption) {
-        this.encryption = encryption;
     }
 
     public String getBackupPath() {
@@ -130,19 +79,6 @@ public class FileUploadResult {
 
     public void setBackupPath(String backupPath) {
         this.backupPath = backupPath;
-    }
-
-    public void setLastModifiedTime(Instant lastModifiedTime) {
-        this.lastModifiedTime = lastModifiedTime;
-    }
-
-    public void setKeyspaceName(String keyspaceName) {
-
-        this.keyspaceName = keyspaceName;
-    }
-
-    public void setColumnFamilyName(String columnFamilyName) {
-        this.columnFamilyName = columnFamilyName;
     }
 
     @Override

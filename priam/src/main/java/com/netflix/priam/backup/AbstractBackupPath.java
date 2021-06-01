@@ -16,41 +16,51 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
-import com.netflix.priam.compress.ICompression;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.cryptography.IFileCryptography;
+import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.text.ParseException;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @ImplementedBy(RemoteBackupPath.class)
 public abstract class AbstractBackupPath implements Comparable<AbstractBackupPath> {
-    private static final Logger logger = LoggerFactory.getLogger(AbstractBackupPath.class);
     public static final char PATH_SEP = File.separatorChar;
+    public static final Joiner PATH_JOINER = Joiner.on(PATH_SEP);
 
     public enum BackupFileType {
-        SNAP,
-        SST,
         CL,
         META,
         META_V2,
-        SST_V2,
-        SNAPSHOT_VERIFIED;
+        SNAP,
+        SNAPSHOT_VERIFIED,
+        SST,
+        SST_V2;
+
+        private static final ImmutableSet<BackupFileType> DATA_FILE_TYPES =
+                ImmutableSet.of(SNAP, SST, SST_V2);
+
+        private static final ImmutableSet<BackupFileType> V2_FILE_TYPES =
+                ImmutableSet.of(SST_V2, META_V2);
 
         public static boolean isDataFile(BackupFileType type) {
-            return type != BackupFileType.META
-                    && type != BackupFileType.META_V2
-                    && type != BackupFileType.CL
-                    && type != SNAPSHOT_VERIFIED;
+            return DATA_FILE_TYPES.contains(type);
+        }
+
+        public static boolean isV2(BackupFileType type) {
+            return V2_FILE_TYPES.contains(type);
         }
 
         public static BackupFileType fromString(String s) throws BackupRestoreException {
@@ -75,47 +85,54 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private long compressedFileSize = 0;
     protected final InstanceIdentity instanceIdentity;
     protected final IConfiguration config;
-    private File backupFile;
+    protected File backupFile;
     private Instant lastModified;
+    private Instant creationTime;
     private Date uploadedTs;
-    private ICompression.CompressionAlgorithm compression =
-            ICompression.CompressionAlgorithm.SNAPPY;
-    private IFileCryptography.CryptographyAlgorithm encryption =
-            IFileCryptography.CryptographyAlgorithm.PLAINTEXT;
+    private CompressionType compression = CompressionType.SNAPPY;
+    private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
         this.config = config;
     }
 
-    public void parseLocal(File file, BackupFileType type) throws ParseException {
+    public void parseLocal(File file, BackupFileType type) {
         this.backupFile = file;
-
-        String rpath =
-                new File(config.getDataFileLocation()).toURI().relativize(file.toURI()).getPath();
-        String[] elements = rpath.split("" + PATH_SEP);
-        this.clusterName = config.getAppName();
         this.baseDir = config.getBackupLocation();
+        this.clusterName = config.getAppName();
+        this.fileName = file.getName();
+        BasicFileAttributes fileAttributes;
+        try {
+            fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
+            this.lastModified = fileAttributes.lastModifiedTime().toInstant();
+            this.creationTime = fileAttributes.creationTime().toInstant();
+            this.size = fileAttributes.size();
+        } catch (IOException e) {
+            this.lastModified = Instant.ofEpochMilli(0L);
+            this.creationTime = Instant.ofEpochMilli(0L);
+            this.size = 0L;
+        }
         this.region = instanceIdentity.getInstanceInfo().getRegion();
         this.token = instanceIdentity.getInstance().getToken();
         this.type = type;
+        String rpath =
+                new File(config.getDataFileLocation()).toURI().relativize(file.toURI()).getPath();
+        String[] parts = rpath.split("" + PATH_SEP);
         if (BackupFileType.isDataFile(type)) {
-            this.keyspace = elements[0];
-            this.columnFamily = elements[1];
+            this.keyspace = parts[0];
+            this.columnFamily = parts[1];
         }
-
-        time = new Date(file.lastModified());
 
         /*
         1. For old style snapshots, make this value to time at which backup was executed.
         2. This is to ensure that all the files from the snapshot are uploaded under single directory in remote file system.
         3. For META file we always override the time field via @link{Metadata#decorateMetaJson}
         */
-        if (type == BackupFileType.SNAP) time = DateUtil.getDate(elements[3]);
-
-        this.lastModified = Instant.ofEpochMilli(file.lastModified());
-        this.fileName = file.getName();
-        this.size = file.length();
+        this.time =
+                type == BackupFileType.SNAP
+                        ? DateUtil.getDate(parts[3])
+                        : new Date(lastModified.toEpochMilli());
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
@@ -129,18 +146,20 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     /** Local restore file */
     public File newRestoreFile() {
-        StringBuilder buff = new StringBuilder();
-        if (type == BackupFileType.CL) {
-            buff.append(config.getBackupCommitLogLocation()).append(PATH_SEP);
-        } else {
-            buff.append(config.getDataFileLocation()).append(PATH_SEP);
-            if (type != BackupFileType.META && type != BackupFileType.META_V2)
-                buff.append(keyspace).append(PATH_SEP).append(columnFamily).append(PATH_SEP);
+        File return_;
+        String dataDir = config.getDataFileLocation();
+        switch (type) {
+            case CL:
+                return_ = new File(PATH_JOINER.join(config.getBackupCommitLogLocation(), fileName));
+                break;
+            case META:
+            case META_V2:
+                return_ = new File(PATH_JOINER.join(config.getDataFileLocation(), fileName));
+                break;
+            default:
+                return_ = new File(PATH_JOINER.join(dataDir, keyspace, columnFamily, fileName));
         }
 
-        buff.append(fileName);
-
-        File return_ = new File(buff.toString());
         File parent = new File(return_.getParent());
         if (!parent.exists()) parent.mkdirs();
         return return_;
@@ -198,10 +217,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public String getFileName() {
         return fileName;
-    }
-
-    public String getBaseDir() {
-        return baseDir;
     }
 
     public String getToken() {
@@ -267,20 +282,29 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.lastModified = instant;
     }
 
-    public ICompression.CompressionAlgorithm getCompression() {
+    public Instant getCreationTime() {
+        return creationTime;
+    }
+
+    @VisibleForTesting
+    public void setCreationTime(Instant instant) {
+        this.creationTime = instant;
+    }
+
+    public CompressionType getCompression() {
         return compression;
     }
 
-    public void setCompression(ICompression.CompressionAlgorithm compression) {
-        this.compression = compression;
+    public void setCompression(CompressionType compressionType) {
+        this.compression = compressionType;
     }
 
-    public IFileCryptography.CryptographyAlgorithm getEncryption() {
+    public CryptographyAlgorithm getEncryption() {
         return encryption;
     }
 
-    public void setEncryption(IFileCryptography.CryptographyAlgorithm encryption) {
-        this.encryption = encryption;
+    public void setEncryption(String encryption) {
+        this.encryption = CryptographyAlgorithm.valueOf(encryption);
     }
 
     @Override

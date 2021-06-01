@@ -25,6 +25,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
 import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
+import com.google.api.client.util.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -43,20 +44,24 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import mockit.Mock;
 import mockit.MockUp;
-import org.junit.*;
+import org.apache.commons.io.FileUtils;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TestS3FileSystem {
     private static Injector injector;
     private static final Logger logger = LoggerFactory.getLogger(TestS3FileSystem.class);
-    private static final String FILE_PATH =
-            "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
+    private static final File DIR = new File("target/data/KS1/CF1/backups/201108082320/");
     private static BackupMetrics backupMetrics;
     private static String region;
     private static IConfiguration configuration;
@@ -73,26 +78,15 @@ public class TestS3FileSystem {
     }
 
     @BeforeClass
-    public static void setup() throws InterruptedException, IOException {
+    public static void setUp() {
         new MockS3PartUploader();
         new MockAmazonS3Client();
-
-        File dir1 = new File("target/data/Keyspace1/Standard1/backups/201108082320");
-        if (!dir1.exists()) dir1.mkdirs();
-        File file = new File(FILE_PATH);
-        long fiveKB = (5L * 1024);
-        byte b = 8;
-        BufferedOutputStream bos1 = new BufferedOutputStream(new FileOutputStream(file));
-        for (long i = 0; i < fiveKB; i++) {
-            bos1.write(b);
-        }
-        bos1.close();
+        if (!DIR.exists()) DIR.mkdirs();
     }
 
     @AfterClass
-    public static void cleanup() {
-        File file = new File(FILE_PATH);
-        file.delete();
+    public static void cleanup() throws IOException {
+        FileUtils.cleanDirectory(DIR);
     }
 
     @Test
@@ -100,14 +94,9 @@ public class TestS3FileSystem {
         MockS3PartUploader.setup();
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0,
-                false);
+        fs.uploadAndDelete(backupfile, 0);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -116,13 +105,8 @@ public class TestS3FileSystem {
         MockS3PartUploader.setup();
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(new File(FILE_PATH), BackupFileType.SST_V2);
-        fs.uploadFile(
-                Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                Paths.get(backupfile.getRemotePath()),
-                backupfile,
-                0,
-                false);
+        backupfile.parseLocal(localFile(), BackupFileType.SST_V2);
+        fs.uploadAndDelete(backupfile, 0);
         Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
         // Lets delete the file now.
         List<Path> deleteFiles = Lists.newArrayList();
@@ -137,17 +121,10 @@ public class TestS3FileSystem {
         MockS3PartUploader.partFailure = true;
         long noOfFailures = backupMetrics.getInvalidUploads().count();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String snapshotfile =
-                "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadFile(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0,
-                    false);
+            fs.uploadAndDelete(backupfile, 0);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -161,17 +138,10 @@ public class TestS3FileSystem {
         MockS3PartUploader.completionFailure = true;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.setS3Client(new MockAmazonS3Client().getMockInstance());
-        String snapshotfile =
-                "target/data/Keyspace1/Standard1/backups/201108082320/Keyspace1-Standard1-ia-1-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadFile(
-                    Paths.get(backupfile.getBackupFile().getAbsolutePath()),
-                    Paths.get(backupfile.getRemotePath()),
-                    backupfile,
-                    0,
-                    false);
+            fs.uploadAndDelete(backupfile, 0);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -234,6 +204,20 @@ public class TestS3FileSystem {
         }
     }
 
+    private File localFile() throws IOException {
+        String caller = Thread.currentThread().getStackTrace()[1].getMethodName();
+        File file = new File(DIR + caller + "KS1-CF1-ia-1-Data.db");
+        if (file.createNewFile()) {
+            byte[] data = new byte[5 << 10];
+            Arrays.fill(data, (byte) 8);
+            try (BufferedOutputStream os = new BufferedOutputStream(new FileOutputStream(file))) {
+                os.write(data);
+            }
+        }
+        Preconditions.checkState(file.exists());
+        return file;
+    }
+
     // Mock Nodeprobe class
     static class MockS3PartUploader extends MockUp<S3PartUploader> {
         static int compattempts = 0;
@@ -269,7 +253,7 @@ public class TestS3FileSystem {
             return uploadPart();
         }
 
-        static void setup() {
+        public static void setup() {
             compattempts = 0;
             partAttempts = 0;
             partFailure = false;

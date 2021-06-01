@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backupv2;
 
+import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Guice;
 import com.google.inject.Inject;
 import com.google.inject.Injector;
@@ -29,7 +30,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import org.apache.commons.io.FileUtils;
 
@@ -52,20 +52,19 @@ public class TestBackupUtils {
     public Path createMeta(List<String> filesToAdd, Instant snapshotTime) throws IOException {
         MetaFileWriterBuilder.DataStep dataStep =
                 metaFileWriterBuilder.newBuilder().startMetaFileGeneration(snapshotTime);
-        ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnfamily);
+        ImmutableSetMultimap.Builder<String, AbstractBackupPath> builder =
+                ImmutableSetMultimap.builder();
         for (String file : filesToAdd) {
+            String basename = Paths.get(file).getFileName().toString();
+            int lastIndex = basename.lastIndexOf('-');
+            lastIndex = lastIndex < 0 ? basename.length() : lastIndex;
+            String prefix = basename.substring(0, lastIndex);
             AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
-            if (path.getType() == AbstractBackupPath.BackupFileType.SST_V2) {
-                ColumnfamilyResult.SSTableResult ssTableResult =
-                        new ColumnfamilyResult.SSTableResult();
-
-                ssTableResult.setSstableComponents(new ArrayList<>());
-                ssTableResult.getSstableComponents().add(getFileUploadResult(path));
-                columnfamilyResult.addSstable(ssTableResult);
-            }
+            path.setCreationTime(path.getLastModified());
+            builder.put(prefix, path);
         }
-        dataStep.addColumnfamilyResult(columnfamilyResult);
+        dataStep.addColumnfamilyResult(keyspace, columnfamily, builder.build());
         Path metaPath = dataStep.endMetaFileGeneration().getMetaFilePath();
         metaPath.toFile().setLastModified(snapshotTime.toEpochMilli());
         return metaPath;
@@ -79,18 +78,5 @@ public class TestBackupUtils {
         }
         path.toFile().setLastModified(lastModifiedTime.toEpochMilli());
         return path.toString();
-    }
-
-    private FileUploadResult getFileUploadResult(AbstractBackupPath path) {
-        FileUploadResult fileUploadResult =
-                new FileUploadResult(
-                        Paths.get(path.getFileName()),
-                        path.getKeyspace(),
-                        path.getColumnFamily(),
-                        path.getLastModified(),
-                        path.getLastModified(),
-                        path.getSize());
-        fileUploadResult.setBackupPath(path.getRemotePath());
-        return fileUploadResult;
     }
 }

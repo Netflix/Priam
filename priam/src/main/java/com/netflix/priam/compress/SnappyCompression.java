@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 Netflix, Inc.
+ * Copyright 2013 Netflix, Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,18 +17,12 @@
 package com.netflix.priam.compress;
 
 import java.io.*;
-import java.util.Iterator;
 import org.apache.commons.io.IOUtils;
 import org.xerial.snappy.SnappyInputStream;
 
 /** Class to generate compressed chunks of data from an input stream using SnappyCompression */
 public class SnappyCompression implements ICompression {
     private static final int BUFFER = 2 * 1024;
-
-    @Override
-    public Iterator<byte[]> compress(InputStream is, long chunkSize) throws IOException {
-        return new ChunkedStream(is, chunkSize);
-    }
 
     @Override
     public void decompressAndClose(InputStream input, OutputStream output) throws IOException {

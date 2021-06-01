@@ -17,6 +17,7 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
@@ -28,6 +29,7 @@ import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
 import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
@@ -39,6 +41,7 @@ import org.slf4j.LoggerFactory;
 /** Provides common functionality applicable to all restore strategies */
 public abstract class EncryptedRestoreBase extends AbstractRestore {
     private static final Logger logger = LoggerFactory.getLogger(EncryptedRestoreBase.class);
+    private static final String TMP_SUFFIX = ".tmp";
 
     private final String jobName;
     private final ICredentialGeneric pgpCredential;
@@ -88,12 +91,12 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
     }
 
     @Override
-    protected final Future<Path> downloadFile(
-            final AbstractBackupPath path, final File restoreLocation) throws Exception {
+    protected final Future<Path> downloadFile(final AbstractBackupPath path) throws Exception {
         final char[] passPhrase =
                 new String(this.pgpCredential.getValue(ICredentialGeneric.KEY.PGP_PASSWORD))
                         .toCharArray();
-        File tempFile = new File(restoreLocation.getAbsolutePath() + ".tmp");
+        File restoreLocation = path.newRestoreFile();
+        File tempFile = new File(restoreLocation.getAbsolutePath() + TMP_SUFFIX);
 
         return executor.submit(
                 new RetryableCallable<Path>() {
@@ -104,10 +107,7 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                         // == download object from source bucket
                         try {
                             // Not retrying to download file here as it is already in RetryCallable.
-                            fs.downloadFile(
-                                    Paths.get(path.getRemotePath()),
-                                    Paths.get(tempFile.getAbsolutePath()),
-                                    0);
+                            fs.downloadFile(path, TMP_SUFFIX, 0 /* retries */);
                         } catch (Exception ex) {
                             // This behavior is retryable; therefore, lets get to a clean state
                             // before each retry.
@@ -159,31 +159,35 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                                     ex);
                         }
 
-                        // == object downloaded and decrypted successfully, now uncompress it
-                        logger.info(
-                                "Start uncompressing file: {} to the FINAL destination stream",
-                                decryptedFile.getAbsolutePath());
+                        // == object is downloaded and decrypted, now uncompress it if necessary
+                        if (path.getCompression() == CompressionType.NONE) {
+                            Files.move(decryptedFile.toPath(), restoreLocation.toPath());
+                        } else {
+                            logger.info(
+                                    "Start uncompressing file: {} to the FINAL destination stream",
+                                    decryptedFile.getAbsolutePath());
 
-                        try (InputStream is =
-                                        new BufferedInputStream(
-                                                new FileInputStream(decryptedFile));
-                                BufferedOutputStream finalDestination =
-                                        new BufferedOutputStream(
-                                                new FileOutputStream(restoreLocation))) {
-                            compress.decompressAndClose(is, finalDestination);
-                        } catch (Exception ex) {
-                            throw new Exception(
-                                    "Exception uncompressing file: "
-                                            + decryptedFile.getAbsolutePath()
-                                            + " to the FINAL destination stream",
-                                    ex);
+                            try (InputStream is =
+                                            new BufferedInputStream(
+                                                    new FileInputStream(decryptedFile));
+                                    BufferedOutputStream finalDestination =
+                                            new BufferedOutputStream(
+                                                    new FileOutputStream(restoreLocation))) {
+                                compress.decompressAndClose(is, finalDestination);
+                            } catch (Exception ex) {
+                                throw new Exception(
+                                        "Exception uncompressing file: "
+                                                + decryptedFile.getAbsolutePath()
+                                                + " to the FINAL destination stream",
+                                        ex);
+                            }
+
+                            logger.info(
+                                    "Completed uncompressing file: {} to the FINAL destination stream "
+                                            + " current worker: {}",
+                                    decryptedFile.getAbsolutePath(),
+                                    Thread.currentThread().getName());
                         }
-
-                        logger.info(
-                                "Completed uncompressing file: {} to the FINAL destination stream "
-                                        + " current worker: {}",
-                                decryptedFile.getAbsolutePath(),
-                                Thread.currentThread().getName());
                         // if here, everything was successful for this object, lets remove unneeded
                         // file(s)
                         if (tempFile.exists()) tempFile.delete();

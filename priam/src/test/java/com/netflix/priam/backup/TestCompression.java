@@ -20,6 +20,8 @@ package com.netflix.priam.backup;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import com.netflix.priam.compress.ChunkedStream;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.compress.SnappyCompression;
 import com.netflix.priam.utils.SystemUtils;
@@ -118,7 +120,10 @@ public class TestCompression {
         try {
 
             Iterator<byte[]> it =
-                    compress.compress(new FileInputStream(randomContentFile), chunkSize);
+                    new ChunkedStream(
+                            new FileInputStream(randomContentFile),
+                            chunkSize,
+                            CompressionType.SNAPPY);
             try (FileOutputStream ostream = new FileOutputStream(compressedOutputFile)) {
                 while (it.hasNext()) {
                     byte[] chunk = it.next();

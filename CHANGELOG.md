@@ -1,4 +1,9 @@
 # Changelog
+## 2021/05/31 3.1.106
+(#947) Optionally skip compression when uploading backups.
+(#946) Allow operators to restrict ingress rules to public IPs exclusively.
+(#936) Optionally check to ensure Thrift server is listening on rpc_port before claiming it is healthy.
+
 ## 2021/05/12 3.1.105
 (#939) Improve the configurability of setting ingress rules.
 

@@ -81,7 +81,10 @@ public class RemoteBackupPath extends AbstractBackupPath {
      */
     private String getV2Location() {
         ImmutableList.Builder<String> parts = getV2Prefix();
-        parts.add(type.toString(), getLastModified().toEpochMilli() + "");
+        // JDK-8177809 truncate to seconds to ensure consistent behavior with our old method of
+        // getting lastModified time (File::lastModified) in Java 8.
+        long lastModified = getLastModified().toEpochMilli() / 1_000L * 1_000L;
+        parts.add(type.toString(), lastModified + "");
         if (BackupFileType.isDataFile(type)) {
             parts.add(keyspace, columnFamily);
         }

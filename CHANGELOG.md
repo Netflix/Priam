@@ -1,4 +1,7 @@
 # Changelog
+## 2021/06/07 3.11.80
+(#948) Reverting back to previous behavior of omitting milliseconds in backup last modified times.
+
 ## 2021/05/25 3.11.79
 (#922) Optionally skip compression of backups
 (#943) Optionally make extra check to ensure Thrift server is actually listening on the rpc_port

@@ -154,7 +154,9 @@ public class TestRemoteBackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                now.toEpochMilli() / 1_000L * 1_000L,
+                abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 
@@ -183,7 +185,9 @@ public class TestRemoteBackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                now.toEpochMilli() / 1_000L * 1_000L,
+                abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 
@@ -214,15 +218,17 @@ public class TestRemoteBackupPath {
         abstractBackupPath.setLastModified(now);
         String remotePath = abstractBackupPath.getRemotePath();
         logger.info(remotePath);
+        long correctLastModified = +now.toEpochMilli() / 1_000L * 1_000L;
         Assert.assertEquals(
                 "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX_V2/"
-                        + now.toEpochMilli()
+                        + correctLastModified
                         + "/keyspace1/columnfamily1/.columnfamily1_field1_idx/SNAPPY/PLAINTEXT/mc-1234-Data.db",
                 remotePath);
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                correctLastModified, abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 
@@ -254,15 +260,17 @@ public class TestRemoteBackupPath {
         abstractBackupPath.setLastModified(now);
         String remotePath = abstractBackupPath.getRemotePath();
         logger.info(remotePath);
+        long correctLastModified = +now.toEpochMilli() / 1_000L * 1_000L;
         Assert.assertEquals(
                 "casstestbackup/1049_fake-app/1808575600/SECONDARY_INDEX_V2/"
-                        + now.toEpochMilli()
+                        + correctLastModified
                         + "/keyspace1/columnfamily1/.columnfamily1_field1_idx/SNAPPY/PLAINTEXT/mc-1234-Data.db",
                 remotePath);
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                correctLastModified, abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 

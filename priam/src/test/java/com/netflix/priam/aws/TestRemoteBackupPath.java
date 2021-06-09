@@ -177,7 +177,9 @@ public class TestRemoteBackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                now.toEpochMilli() / 1_000L * 1_000L,
+                abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 
@@ -206,7 +208,9 @@ public class TestRemoteBackupPath {
 
         AbstractBackupPath abstractBackupPath2 = pathFactory.get();
         abstractBackupPath2.parseRemote(remotePath);
-        Assert.assertEquals(now, abstractBackupPath2.getLastModified());
+        Assert.assertEquals(
+                now.toEpochMilli() / 1_000L * 1_000L,
+                abstractBackupPath2.getLastModified().toEpochMilli());
         validateAbstractBackupPath(abstractBackupPath, abstractBackupPath2);
     }
 

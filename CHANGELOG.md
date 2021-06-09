@@ -1,4 +1,7 @@
 # Changelog
+## 2021/06/07 3.1.107
+(#949) Reverting back to previous behavior of omitting milliseconds in backup last modified times.
+
 ## 2021/05/31 3.1.106
 (#947) Optionally skip compression when uploading backups.
 (#946) Allow operators to restrict ingress rules to public IPs exclusively.

@@ -1,4 +1,7 @@
 # Changelog
+## 2021/06/10 3.1.109
+(#951) Removing instances of methods that don't exist in guava 19.0
+
 ## 2021/06/09 3.1.108
 (#950) Pinning guava to 19.0 which is the max 2.1 Cassandra can tolerate.
 

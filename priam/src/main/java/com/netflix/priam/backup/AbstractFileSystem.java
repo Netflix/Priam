@@ -166,9 +166,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
-        Preconditions.checkArgument(localFile.exists(), "Can't upload nonexistent {}", localPath);
         Preconditions.checkArgument(
-                !localFile.isDirectory(), "Can only upload files {} is a directory", localPath);
+                localFile.exists(), String.format("Can't upload nonexistent %s", localPath));
+        Preconditions.checkArgument(
+                !localFile.isDirectory(),
+                String.format("Can only upload files %s is a directory", localPath));
         Path remotePath = Paths.get(path.getRemotePath());
 
         if (tasksQueued.add(localPath)) {

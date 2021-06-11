@@ -52,7 +52,7 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
-    private static final int MAX_BUFFER_SIZE = 5 * 1024 * 1024;
+    private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
 
     @Inject
     public S3FileSystem(
@@ -77,7 +77,7 @@ public class S3FileSystem extends S3FileSystemBase {
         String remotePath = path.getRemotePath();
         File localFile = new File(path.newRestoreFile().getAbsolutePath() + suffix);
         long size = super.getFileSize(remotePath);
-        final int bufferSize = Math.min(MAX_BUFFER_SIZE, Math.toIntExact(size));
+        final int bufferSize = Math.toIntExact(Math.min(MAX_BUFFER_SIZE, size));
         try (BufferedInputStream is =
                         new BufferedInputStream(
                                 new RangeReadInputStream(s3Client, getShard(), size, remotePath),

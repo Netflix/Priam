@@ -1,4 +1,7 @@
 # Changelog
+## 2021/06/11 3.1.110
+(#953) Fixing integer overflow problem in restore
+
 ## 2021/06/10 3.1.109
 (#951) Removing instances of methods that don't exist in guava 19.0
 

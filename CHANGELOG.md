@@ -1,4 +1,7 @@
 # Changelog
+## 2021/06/11 3.11.81
+(#952) Fixing integer overflow problem in restore.
+
 ## 2021/06/07 3.11.80
 (#948) Reverting back to previous behavior of omitting milliseconds in backup last modified times.
 

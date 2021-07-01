@@ -110,11 +110,9 @@ public class IncrementalBackup extends AbstractBackup {
     }
 
     @Override
-    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
-            throws Exception {
-        BackupFileType fileType = BackupFileType.SST;
-        if (backupRestoreConfig.enableV2Backups()) fileType = BackupFileType.SST_V2;
-
+    protected void processColumnFamily(File backupDir) throws Exception {
+        BackupFileType fileType =
+                backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
         upload(backupDir, fileType, config.enableAsyncIncremental(), true);
     }
 }

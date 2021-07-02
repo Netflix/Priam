@@ -32,6 +32,7 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -258,7 +259,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         return JOBNAME;
     }
 
-    private void uploadAllFiles(final String columnFamily, final File backupDir) throws Exception {
+    private void uploadAllFiles(final File backupDir) throws Exception {
         // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
         // uploads of previous snapshot leftover as Priam restarted or any failure for any reason
         // (like we exhausted the wait time for upload)
@@ -284,19 +285,24 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
-                for (File subDir : getSecondaryIndexDirectories(snapshotDirectory, columnFamily)) {
+                FileFilter siFilter = getSecondaryIndexDirectoryFilter(backupDir);
+                File[] siFiles =
+                        Optional.ofNullable(snapshotDirectory.listFiles(siFilter))
+                                .orElse(new File[] {});
+                for (File subDir : siFiles) {
                     futures = uploadAndDeleteAllFiles(subDir, type, true);
-                    Futures.whenAllComplete(futures)
-                            .call(
-                                    () -> {
-                                        if (FileUtils.sizeOfDirectory(subDir) == 0)
-                                            FileUtils.deleteQuietly(subDir);
-                                        return null;
-                                    },
-                                    threadPool);
+                    if (futures.isEmpty()) {
+                        deleteIfEmpty(subDir);
+                    }
+                    Futures.whenAllComplete(futures).call(() -> deleteIfEmpty(subDir), threadPool);
                 }
             }
         }
+    }
+
+    private Void deleteIfEmpty(File dir) {
+        if (FileUtils.sizeOfDirectory(dir) == 0) FileUtils.deleteQuietly(dir);
+        return null;
     }
 
     @Override
@@ -308,7 +314,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 generateMetaFile(keyspace, columnFamily, backupDir);
                 break;
             case UPLOAD_FILES:
-                uploadAllFiles(columnFamily, backupDir);
+                uploadAllFiles(backupDir);
                 break;
             default:
                 throw new Exception("Unknown meta file type: " + metaStep);
@@ -331,9 +337,12 @@ public class SnapshotMetaTask extends AbstractBackup {
         builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
-        for (File subDir : getSecondaryIndexDirectories(snapshotDir, columnFamily)) {
+        FileFilter siFilter = getSecondaryIndexDirectoryFilter(backupDir);
+        File[] secondaryIndexDirectories =
+                Optional.ofNullable(snapshotDir.listFiles(siFilter)).orElse(new File[] {});
+        for (File directory : secondaryIndexDirectories) {
             builder.putAll(
-                    getSSTables(subDir, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
+                    getSSTables(directory, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }
 
         ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();

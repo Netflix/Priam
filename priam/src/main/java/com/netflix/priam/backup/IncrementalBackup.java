@@ -30,7 +30,9 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
+import java.io.FileFilter;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -115,7 +117,6 @@ public class IncrementalBackup extends AbstractBackup {
 
     @Override
     protected void processColumnFamily(File backupDir) throws Exception {
-        String columnFamily = getColumnFamily(backupDir);
         BackupFileType fileType =
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
@@ -126,16 +127,21 @@ public class IncrementalBackup extends AbstractBackup {
 
         // Next, upload secondary indexes
         fileType = BackupFileType.SECONDARY_INDEX_V2;
-        for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
-            futures = uploadAndDeleteAllFiles(dir, fileType, config.enableAsyncIncremental());
+        FileFilter siFilter = getSecondaryIndexDirectoryFilter(backupDir);
+        File[] secondaryIndexDirectories =
+                Optional.ofNullable(backupDir.listFiles(siFilter)).orElse(new File[] {});
+        for (File directory : secondaryIndexDirectories) {
+            futures = uploadAndDeleteAllFiles(directory, fileType, config.enableAsyncIncremental());
+            if (futures.isEmpty()) {
+                deleteIfEmpty(directory);
+            }
             Futures.whenAllComplete(futures)
-                    .call(
-                            () -> {
-                                if (FileUtils.sizeOfDirectory(dir) == 0)
-                                    FileUtils.deleteQuietly(dir);
-                                return null;
-                            },
-                            MoreExecutors.directExecutor());
+                    .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
         }
+    }
+
+    private Void deleteIfEmpty(File dir) {
+        if (FileUtils.sizeOfDirectory(dir) == 0) FileUtils.deleteQuietly(dir);
+        return null;
     }
 }

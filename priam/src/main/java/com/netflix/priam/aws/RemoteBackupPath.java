@@ -69,8 +69,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
         String appName = appNameWithHash.substring(appNameWithHash.indexOf("_") + 1);
         Preconditions.checkArgument(
                 hash == appName.hashCode() % 10000,
-                "Prepended hash does not match app name. Should have received: %s",
-                prependHash(appName));
+                "Prepended hash does not match app name. Should have received: "
+                        + prependHash(appName));
         return appName;
     }
 
@@ -100,7 +100,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV2Location(Path remotePath) {
         Preconditions.checkArgument(
-                remotePath.getNameCount() >= 8, "%s has fewer than %d parts", remotePath, 8);
+                remotePath.getNameCount() >= 8,
+                String.format("%s has fewer than %d parts", remotePath, 8));
         int index = 0;
         baseDir = remotePath.getName(index++).toString();
         clusterName = removeHash(remotePath.getName(index++).toString());
@@ -144,7 +145,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV1Location(Path remotePath) {
         Preconditions.checkArgument(
-                remotePath.getNameCount() >= 7, "%s has fewer than %d parts", remotePath, 7);
+                remotePath.getNameCount() >= 7,
+                String.format("%s has fewer than %d parts", remotePath, 7));
         parseV1Prefix(remotePath);
         time = DateUtil.getDate(remotePath.getName(4).toString());
         type = BackupFileType.valueOf(remotePath.getName(5).toString());
@@ -157,7 +159,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
 
     private void parseV1Prefix(Path remotePath) {
         Preconditions.checkArgument(
-                remotePath.getNameCount() >= 4, "%s needs %d parts to parse prefix", remotePath, 4);
+                remotePath.getNameCount() >= 4,
+                String.format("%s needs %d parts to parse prefix", remotePath, 4));
         baseDir = remotePath.getName(0).toString();
         region = remotePath.getName(1).toString();
         clusterName = remotePath.getName(2).toString();
@@ -224,8 +227,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
         String[] elements = location.split(String.valueOf(RemoteBackupPath.PATH_SEP));
         Preconditions.checkArgument(
                 elements.length < 2 || elements.length > 3,
-                "Path must have fewer than 2 or greater than 3 elements. Saw %s",
-                location);
+                "Path must have fewer than 2 or greater than 3 elements. Saw " + location);
         if (elements.length <= 1) {
             baseDir = config.getBackupLocation();
             region = instanceIdentity.getInstanceInfo().getRegion();

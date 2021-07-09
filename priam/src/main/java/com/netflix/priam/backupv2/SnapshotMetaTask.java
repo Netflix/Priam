@@ -261,9 +261,8 @@ public class SnapshotMetaTask extends AbstractBackup {
                 if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
                         || !snapshotDirectory.isDirectory()) continue;
 
-                if (snapshotDirectory.list().length == 0) {
-                    FileUtils.cleanDirectory(snapshotDirectory);
-                    FileUtils.deleteDirectory(snapshotDirectory);
+                if (FileUtils.sizeOfDirectory(snapshotDirectory) == 0) {
+                    FileUtils.deleteQuietly(snapshotDirectory);
                     continue;
                 }
 

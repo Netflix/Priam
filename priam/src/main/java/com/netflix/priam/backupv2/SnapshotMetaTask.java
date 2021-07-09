@@ -276,9 +276,9 @@ public class SnapshotMetaTask extends AbstractBackup {
     }
 
     @Override
-    protected void processColumnFamily(
-            final String keyspace, final String columnFamily, final File backupDir)
-            throws Exception {
+    protected void processColumnFamily(File backupDir) throws Exception {
+        String keyspace = getKeyspace(backupDir);
+        String columnFamily = getColumnFamily(backupDir);
         switch (metaStep) {
             case META_GENERATION:
                 generateMetaFile(keyspace, columnFamily, backupDir);

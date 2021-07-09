@@ -99,7 +99,7 @@ public class TestAbstractBackup {
         abstractBackup =
                 new AbstractBackup(fakeConfiguration, context, pathFactory) {
                     @Override
-                    protected void processColumnFamily(String ks, String cf, File dir) {}
+                    protected void processColumnFamily(File dir) {}
 
                     @Override
                     public void execute() {}

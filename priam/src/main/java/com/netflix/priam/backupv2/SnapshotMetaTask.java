@@ -32,7 +32,6 @@ import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -285,11 +284,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
-                FileFilter siFilter = getSecondaryIndexDirectoryFilter(backupDir);
-                File[] siFiles =
-                        Optional.ofNullable(snapshotDirectory.listFiles(siFilter))
-                                .orElse(new File[] {});
-                for (File subDir : siFiles) {
+                for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
                     futures = uploadAndDeleteAllFiles(subDir, type, true);
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
@@ -337,10 +332,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
-        FileFilter siFilter = getSecondaryIndexDirectoryFilter(backupDir);
-        File[] secondaryIndexDirectories =
-                Optional.ofNullable(snapshotDir.listFiles(siFilter)).orElse(new File[] {});
-        for (File directory : secondaryIndexDirectories) {
+        for (File directory : getSecondaryIndexDirectories(backupDir)) {
             builder.putAll(
                     getSSTables(directory, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }

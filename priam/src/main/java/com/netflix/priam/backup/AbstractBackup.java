@@ -37,7 +37,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,13 +220,9 @@ public abstract class AbstractBackup extends Task {
         return backupPaths;
     }
 
-    protected static FileFilter getSecondaryIndexDirectoryFilter(File backupDir) {
-        FileFilter startsWithDot = (file) -> file.getName().startsWith(".") && file.isDirectory();
-        Set<String> siDirNames =
-                Optional.ofNullable(backupDir.getParentFile().listFiles(startsWithDot))
-                        .map(files -> Arrays.stream(files).map(File::getName).collect(toSet()))
-                        .orElse(ImmutableSet.of());
-        return (file) -> siDirNames.contains(file.getName()) && isAReadableDirectory(file);
+    protected static File[] getSecondaryIndexDirectories(File backupDir) {
+        FileFilter filter = (file) -> file.getName().startsWith(".") && isAReadableDirectory(file);
+        return Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {});
     }
 
     protected static boolean isAReadableDirectory(File dir) {

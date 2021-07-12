@@ -114,8 +114,7 @@ public class IncrementalBackup extends AbstractBackup {
     }
 
     @Override
-    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
-            throws Exception {
+    protected void processColumnFamily(File backupDir) throws Exception {
         BackupFileType fileType =
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
@@ -126,16 +125,18 @@ public class IncrementalBackup extends AbstractBackup {
 
         // Next, upload secondary indexes
         fileType = BackupFileType.SECONDARY_INDEX_V2;
-        for (File dir : getSecondaryIndexDirectories(backupDir, columnFamily)) {
-            futures = uploadAndDeleteAllFiles(dir, fileType, config.enableAsyncIncremental());
+        for (File directory : getSecondaryIndexDirectories(backupDir)) {
+            futures = uploadAndDeleteAllFiles(directory, fileType, config.enableAsyncIncremental());
+            if (futures.isEmpty()) {
+                deleteIfEmpty(directory);
+            }
             Futures.whenAllComplete(futures)
-                    .call(
-                            () -> {
-                                if (FileUtils.sizeOfDirectory(dir) == 0)
-                                    FileUtils.deleteQuietly(dir);
-                                return null;
-                            },
-                            MoreExecutors.directExecutor());
+                    .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
         }
+    }
+
+    private Void deleteIfEmpty(File dir) {
+        if (FileUtils.sizeOfDirectory(dir) == 0) FileUtils.deleteQuietly(dir);
+        return null;
     }
 }

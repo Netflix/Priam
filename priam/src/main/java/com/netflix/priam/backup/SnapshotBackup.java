@@ -200,9 +200,7 @@ public class SnapshotBackup extends AbstractBackup {
     }
 
     @Override
-    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir)
-            throws Exception {
-
+    protected void processColumnFamily(File backupDir) throws Exception {
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
 
         if (snapshotDir == null) {

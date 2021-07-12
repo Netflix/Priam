@@ -38,7 +38,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -158,29 +157,34 @@ public abstract class AbstractBackup extends Task {
             for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
                 if (isAReadableDirectory(backupDir)) {
-                    String columnFamilyName = columnFamilyDir.getName().split("-")[0];
+                    String columnFamilyName = getColumnFamily(backupDir);
                     if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
                         // Clean the backup/snapshot directory else files will keep getting
                         // accumulated.
                         SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
                     } else {
-                        processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
+                        processColumnFamily(backupDir);
                     }
                 }
             } // end processing all CFs for keyspace
         } // end processing keyspaces under the C* data dir
     }
 
+    protected String getColumnFamily(File backupDir) {
+        return backupDir.getParentFile().getName().split("-")[0];
+    }
+
+    protected String getKeyspace(File backupDir) {
+        return backupDir.getParentFile().getName();
+    }
+
     /**
      * Process the columnfamily in a given snapshot/backup directory.
      *
-     * @param keyspace Name of the keyspace
-     * @param columnFamily Name of the columnfamily
      * @param backupDir Location of the backup/snapshot directory in that columnfamily.
      * @throws Exception throws exception if there is any error in process the directory.
      */
-    protected abstract void processColumnFamily(
-            String keyspace, String columnFamily, File backupDir) throws Exception;
+    protected abstract void processColumnFamily(File backupDir) throws Exception;
 
     /**
      * Get all the backup directories for Cassandra.
@@ -216,12 +220,8 @@ public abstract class AbstractBackup extends Task {
         return backupPaths;
     }
 
-    protected static File[] getSecondaryIndexDirectories(File backupDir, String columnFamily) {
-        String reference = "." + columnFamily.toLowerCase(Locale.ROOT);
-        FileFilter filter =
-                (file) ->
-                        file.getName().toLowerCase(Locale.ROOT).startsWith(reference)
-                                && isAReadableDirectory(file);
+    protected static File[] getSecondaryIndexDirectories(File backupDir) {
+        FileFilter filter = (file) -> file.getName().startsWith(".") && isAReadableDirectory(file);
         return Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {});
     }
 

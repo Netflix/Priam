@@ -180,6 +180,14 @@ public class TestBackup {
         // purposely testing case mismatch in secondary index directory which can exist in practice
         files.add(
                 "target/data/Keyspace1/Standard1/backups/.STANDARD1_field1_idx_1/Keyspace1-Standard1-ia-4-Data.db");
+        File fileToSkip =
+                new File(
+                        "target/data/Keyspace1/Standard1/backups/.foo/Keyspace1-Standard1-ia-5-Data.db");
+        if (!fileToSkip.exists()) fileToSkip.mkdirs();
+        File siDir =
+                new File(
+                        "target/data/Keyspace1/Standard1/.STANDARD1_field1_idx_1/Keyspace1-Standard1-ia-5-Data.db");
+        if (!siDir.exists()) siDir.mkdirs();
 
         expectedFiles.clear();
         for (String filePath : files) {

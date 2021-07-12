@@ -1,4 +1,7 @@
 # Changelog
+## 2021/07/11 3.11.82
+(#955) Upload and delete any backup directory starting with a '.'
+
 ## 2021/06/11 3.11.81
 (#952) Fixing integer overflow problem in restore.
 

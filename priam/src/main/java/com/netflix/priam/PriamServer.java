@@ -18,7 +18,6 @@ package com.netflix.priam;
 
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.aws.UpdateSecuritySettings;
 import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.ClusterManagementService;
@@ -95,21 +94,6 @@ public class PriamServer implements IService {
 
         // start to schedule jobs
         scheduler.start();
-
-        // update security settings.
-        if (config.isMultiDC()) {
-            scheduler.runTaskNow(UpdateSecuritySettings.class);
-            // sleep for 150 sec if this is a new node with new IP for SG to be updated by other
-            // seed nodes
-            if (instanceIdentity.isReplace() || instanceIdentity.isTokenPregenerated())
-                sleeper.sleep(150 * 1000);
-            else if (UpdateSecuritySettings.firstTimeUpdated) sleeper.sleep(60 * 1000);
-
-            scheduler.addTask(
-                    UpdateSecuritySettings.JOBNAME,
-                    UpdateSecuritySettings.class,
-                    UpdateSecuritySettings.getTimer(instanceIdentity));
-        }
 
         // Set up cassandra tuning.
         cassandraTunerService.scheduleService();

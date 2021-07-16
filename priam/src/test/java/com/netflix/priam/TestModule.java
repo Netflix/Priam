@@ -20,8 +20,6 @@ package com.netflix.priam;
 import com.google.common.collect.ImmutableList;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
-import com.netflix.priam.aws.FakeIPConverter;
-import com.netflix.priam.aws.IPConverter;
 import com.netflix.priam.backup.FakeCredentials;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.NullBackupFileSystem;
@@ -65,6 +63,5 @@ public class TestModule extends AbstractModule {
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(Sleeper.class).to(FakeSleeper.class);
         bind(Registry.class).toInstance(new DefaultRegistry());
-        bind(IPConverter.class).toInstance(new FakeIPConverter());
     }
 }

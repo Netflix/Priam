@@ -40,11 +40,11 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
-@Ignore
+@Disabled
 public class TestModule extends AbstractModule {
 
     @Override

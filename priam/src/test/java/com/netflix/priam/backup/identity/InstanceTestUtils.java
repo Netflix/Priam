@@ -28,10 +28,10 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
 import java.util.ArrayList;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Ignore;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 
-@Ignore
+@Disabled
 abstract class InstanceTestUtils {
 
     private final List<String> instances = new ArrayList<>();
@@ -44,7 +44,7 @@ abstract class InstanceTestUtils {
     InstanceInfo instanceInfo;
     private final String region = "us-east-1";
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         instances.add("fakeinstance1");
         instances.add("fakeinstance2");

@@ -17,8 +17,8 @@
 
 package com.netflix.priam.configSource;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,8 +33,8 @@ public final class SystemPropertiesConfigSourceTest {
         configSource.initialize("asgName", "region");
 
         // sys props are filtered to starting with priam, so this should be missing.
-        Assert.assertEquals(null, configSource.get(key));
+        Assertions.assertEquals(null, configSource.get(key));
 
-        Assert.assertEquals(0, configSource.size());
+        Assertions.assertEquals(0, configSource.size());
     }
 }

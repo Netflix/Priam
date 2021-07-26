@@ -17,15 +17,15 @@
 
 package com.netflix.priam.tuner;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import java.util.*;
 import java.util.stream.Collectors;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 8/29/17. */
 public class JVMOptionTunerTest {

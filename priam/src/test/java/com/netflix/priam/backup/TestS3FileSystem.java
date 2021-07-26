@@ -51,10 +51,10 @@ import java.util.stream.Collectors;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -77,14 +77,14 @@ public class TestS3FileSystem {
         region = instanceInfo.getRegion();
     }
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() {
         new MockS3PartUploader();
         new MockAmazonS3Client();
         if (!DIR.exists()) DIR.mkdirs();
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws IOException {
         FileUtils.cleanDirectory(DIR);
     }
@@ -97,7 +97,7 @@ public class TestS3FileSystem {
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
         fs.uploadAndDelete(backupfile, 0);
-        Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
+        Assertions.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
     @Test
@@ -107,12 +107,12 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SST_V2);
         fs.uploadAndDelete(backupfile, 0);
-        Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
+        Assertions.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
         // Lets delete the file now.
         List<Path> deleteFiles = Lists.newArrayList();
         deleteFiles.add(Paths.get(backupfile.getRemotePath()));
         fs.deleteRemoteFiles(deleteFiles);
-        Assert.assertFalse(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
+        Assertions.assertFalse(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
     }
 
     @Test
@@ -128,8 +128,8 @@ public class TestS3FileSystem {
         } catch (BackupRestoreException e) {
             // ignore
         }
-        Assert.assertEquals(0, MockS3PartUploader.compattempts);
-        Assert.assertEquals(1, backupMetrics.getInvalidUploads().count() - noOfFailures);
+        Assertions.assertEquals(0, MockS3PartUploader.compattempts);
+        Assertions.assertEquals(1, backupMetrics.getInvalidUploads().count() - noOfFailures);
     }
 
     @Test
@@ -152,10 +152,10 @@ public class TestS3FileSystem {
         MockAmazonS3Client.setRuleAvailable(false);
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        Assertions.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
+        Assertions.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assertions.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
     }
 
     @Test
@@ -163,10 +163,10 @@ public class TestS3FileSystem {
         MockAmazonS3Client.setRuleAvailable(true);
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        Assertions.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
+        Assertions.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assertions.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
     }
 
     @Test
@@ -177,10 +177,10 @@ public class TestS3FileSystem {
         MockAmazonS3Client.updateRule(
                 MockAmazonS3Client.getBucketLifecycleConfig(clusterPrefix, 2));
         fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
+        Assertions.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
         BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
+        Assertions.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
+        Assertions.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
     }
 
     @Test
@@ -198,9 +198,9 @@ public class TestS3FileSystem {
         try {
             MockAmazonS3Client.emulateError = true;
             fs.deleteRemoteFiles(filesToDelete);
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         } catch (BackupRestoreException e) {
-            Assert.assertTrue(true);
+            Assertions.assertTrue(true);
         }
     }
 

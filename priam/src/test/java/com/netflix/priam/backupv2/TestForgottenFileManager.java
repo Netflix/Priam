@@ -35,10 +35,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 1/1/19. */
 public class TestForgottenFileManager {
@@ -57,7 +57,7 @@ public class TestForgottenFileManager {
         testBackupUtils = injector.getInstance(TestBackupUtils.class);
     }
 
-    @Before
+    @BeforeEach
     public void prep() throws Exception {
         cleanup();
         Instant now = DateUtil.getInstant();
@@ -95,7 +95,7 @@ public class TestForgottenFileManager {
         Files.createLink(Paths.get(snapshotDir.toString(), file4.getFileName().toString()), file4);
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws Exception {
         String dataDir = configuration.getDataFileLocation();
         org.apache.commons.io.FileUtils.cleanDirectory(new File(dataDir));
@@ -116,16 +116,16 @@ public class TestForgottenFileManager {
                 new File(configuration.getDataFileLocation()), files);
 
         // Extra symlinks are deleted.
-        Assert.assertFalse(Files.exists(randomSymlink));
+        Assertions.assertFalse(Files.exists(randomSymlink));
 
         // Symlinks are created for all the files. They are not moved yet.
         Collection<File> symlinkFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
-        Assert.assertEquals(allFiles.size(), symlinkFiles.size());
+        Assertions.assertEquals(allFiles.size(), symlinkFiles.size());
         for (Path file : allFiles) {
             Path symlink = Paths.get(lostFoundDir.toString(), file.getFileName().toString());
-            Assert.assertTrue(symlinkFiles.contains(symlink.toFile()));
-            Assert.assertTrue(Files.isSymbolicLink(symlink));
-            Assert.assertTrue(Files.exists(file));
+            Assertions.assertTrue(symlinkFiles.contains(symlink.toFile()));
+            Assertions.assertTrue(Files.isSymbolicLink(symlink));
+            Assertions.assertTrue(Files.exists(file));
         }
 
         // Lets change the configuration and try again!!
@@ -133,18 +133,18 @@ public class TestForgottenFileManager {
         forgottenFilesManager.moveForgottenFiles(
                 new File(configuration.getDataFileLocation()), files);
         Collection<File> movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
-        Assert.assertEquals(allFiles.size(), movedFiles.size());
+        Assertions.assertEquals(allFiles.size(), movedFiles.size());
         movedFiles
                 .stream()
                 .forEach(
                         file -> {
-                            Assert.assertTrue(
+                            Assertions.assertTrue(
                                     Files.isRegularFile(Paths.get(file.getAbsolutePath())));
                         });
         allFiles.stream()
                 .forEach(
                         file -> {
-                            Assert.assertFalse(file.toFile().exists());
+                            Assertions.assertFalse(file.toFile().exists());
                         });
 
         configuration.setGracePeriodForgottenFileInDaysForRead(
@@ -158,10 +158,10 @@ public class TestForgottenFileManager {
         Collection<File> columnfamilyFiles =
                 forgottenFilesManager.getColumnfamilyFiles(
                         snapshotInstant, columnfamilyDir.toFile());
-        Assert.assertEquals(3, columnfamilyFiles.size());
-        Assert.assertTrue(columnfamilyFiles.contains(allFiles.get(0).toFile()));
-        Assert.assertTrue(columnfamilyFiles.contains(allFiles.get(1).toFile()));
-        Assert.assertTrue(columnfamilyFiles.contains(allFiles.get(2).toFile()));
+        Assertions.assertEquals(3, columnfamilyFiles.size());
+        Assertions.assertTrue(columnfamilyFiles.contains(allFiles.get(0).toFile()));
+        Assertions.assertTrue(columnfamilyFiles.contains(allFiles.get(1).toFile()));
+        Assertions.assertTrue(columnfamilyFiles.contains(allFiles.get(2).toFile()));
     }
 
     @Test
@@ -172,24 +172,24 @@ public class TestForgottenFileManager {
 
         // Only one potential forgotten file - file1. It will be symlink here.
         Collection<File> movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
-        Assert.assertEquals(1, movedFiles.size());
-        Assert.assertTrue(
+        Assertions.assertEquals(1, movedFiles.size());
+        Assertions.assertTrue(
                 movedFiles
                         .iterator()
                         .next()
                         .getName()
                         .equals(allFiles.get(0).getFileName().toString()));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 Files.isSymbolicLink(Paths.get(movedFiles.iterator().next().getAbsolutePath())));
 
         // All files still remain in columnfamily dir.
         Collection<File> cfFiles =
                 FileUtils.listFiles(new File(allFiles.get(0).getParent().toString()), null, false);
-        Assert.assertEquals(allFiles.size(), cfFiles.size());
+        Assertions.assertEquals(allFiles.size(), cfFiles.size());
 
         // Snapshot is untouched.
         Collection<File> snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
-        Assert.assertEquals(3, snapshotFiles.size());
+        Assertions.assertEquals(3, snapshotFiles.size());
 
         // Lets change the configuration and try again!!
         configuration.setGracePeriodForgottenFileInDaysForRead(0);
@@ -197,12 +197,12 @@ public class TestForgottenFileManager {
         configuration.setGracePeriodForgottenFileInDaysForRead(
                 ForgottenFilesConfiguration.DEFAULT_GRACE_PERIOD);
         movedFiles = FileUtils.listFiles(lostFoundDir.toFile(), null, false);
-        Assert.assertEquals(1, movedFiles.size());
-        Assert.assertTrue(
+        Assertions.assertEquals(1, movedFiles.size());
+        Assertions.assertTrue(
                 Files.isRegularFile(Paths.get(movedFiles.iterator().next().getAbsolutePath())));
         cfFiles =
                 FileUtils.listFiles(new File(allFiles.get(0).getParent().toString()), null, false);
-        Assert.assertEquals(6, cfFiles.size());
+        Assertions.assertEquals(6, cfFiles.size());
         int temp_file_name = 1;
         for (File file : cfFiles) {
             file.getName().equals(allFiles.get(temp_file_name++).getFileName().toString());
@@ -210,7 +210,7 @@ public class TestForgottenFileManager {
 
         // Snapshot is untouched.
         snapshotFiles = FileUtils.listFiles(snapshotDir.toFile(), null, false);
-        Assert.assertEquals(3, snapshotFiles.size());
+        Assertions.assertEquals(3, snapshotFiles.size());
     }
 
     private class ForgottenFilesConfiguration extends FakeConfiguration {

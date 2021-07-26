@@ -1,6 +1,6 @@
 package com.netflix.priam.resources;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -27,8 +27,8 @@ import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.joda.time.DateTime;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class BackupServletV2Test {
     private IConfiguration config;
@@ -53,7 +53,7 @@ public class BackupServletV2Test {
     private static Provider<AbstractBackupPath> pathProvider;
     private static IConfiguration configuration;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);

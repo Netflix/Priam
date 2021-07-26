@@ -29,9 +29,9 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.DateUtil;
 import java.io.IOException;
 import java.util.ArrayList;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TestRestore {
     private static FakeBackupFileSystem filesystem;
@@ -41,7 +41,7 @@ public class TestRestore {
     private static Restore restore;
     private static InstanceState instanceState;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws InterruptedException, IOException {
         Injector injector = Guice.createInjector(new BRTestModule());
         if (filesystem == null) filesystem = injector.getInstance(FakeBackupFileSystem.class);
@@ -71,13 +71,13 @@ public class TestRestore {
         populateBackupFileSystem("test_backup");
         String dateRange = "201108110030,201108110530";
         restore.restore(new DateUtil.DateRange(dateRange));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assertions.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
     }
 
     @Test
@@ -85,13 +85,13 @@ public class TestRestore {
         populateBackupFileSystem("test_backup");
         String dateRange = "201108110030,201108110730";
         restore.restore(new DateUtil.DateRange(dateRange));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(4)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(5)));
-        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(4)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assertions.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
     }
 
     @Test
@@ -102,15 +102,15 @@ public class TestRestore {
         filesystem.addFile(metafile);
         String dateRange = "201108110030,201108110530";
         restore.restore(new DateUtil.DateRange(dateRange));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(0)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(metafile));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(1)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(2)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(3)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
-        Assert.assertEquals(metafile, instanceState.getRestoreStatus().getSnapshotMetaFile());
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(0)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(metafile));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(1)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(2)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(3)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assertions.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertEquals(metafile, instanceState.getRestoreStatus().getSnapshotMetaFile());
     }
 
     @Test
@@ -124,16 +124,16 @@ public class TestRestore {
         filesystem.addFile(snapFile);
         String dateRange = "201108110030,201108110530";
         restore.restore(new DateUtil.DateRange(dateRange));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(0)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(metafile));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(snapFile));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(1)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(2)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(3)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
-        Assert.assertEquals(metafile, instanceState.getRestoreStatus().getSnapshotMetaFile());
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(0)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(metafile));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(snapFile));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(1)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(2)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(3)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assertions.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertEquals(metafile, instanceState.getRestoreStatus().getSnapshotMetaFile());
     }
 
     @Test
@@ -142,7 +142,7 @@ public class TestRestore {
         filesystem.setupTest(fileList);
         String dateRange = "201109110030,201109110530";
         restore.restore(new DateUtil.DateRange(dateRange));
-        Assert.assertEquals(Status.FAILED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertEquals(Status.FAILED, instanceState.getRestoreStatus().getStatus());
     }
 
     @Test
@@ -151,12 +151,12 @@ public class TestRestore {
         String dateRange = "201108110030,201108110530";
         restore.restore(new DateUtil.DateRange(dateRange));
         System.out.println("Downloaded files: " + filesystem.downloadedFiles);
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
-        Assert.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
-        Assert.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
-        Assert.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(0)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(1)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(2)));
+        Assertions.assertTrue(filesystem.downloadedFiles.contains(fileList.get(3)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(4)));
+        Assertions.assertFalse(filesystem.downloadedFiles.contains(fileList.get(5)));
+        Assertions.assertEquals(Status.FINISHED, instanceState.getRestoreStatus().getStatus());
     }
 }

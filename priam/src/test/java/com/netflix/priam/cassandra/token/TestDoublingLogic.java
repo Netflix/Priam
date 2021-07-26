@@ -17,14 +17,14 @@
 
 package com.netflix.priam.cassandra.token;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /** Seems like skip 3 is the magic number.... this test will make sure to test the same. */
 public class TestDoublingLogic {

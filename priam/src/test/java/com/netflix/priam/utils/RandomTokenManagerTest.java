@@ -19,39 +19,50 @@ package com.netflix.priam.utils;
 
 import static com.netflix.priam.utils.TokenManager.MAXIMUM_TOKEN_RANDOM;
 import static com.netflix.priam.utils.TokenManager.MINIMUM_TOKEN_RANDOM;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.netflix.priam.config.FakeConfiguration;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class RandomTokenManagerTest {
     private TokenManager tokenManager;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         FakeConfiguration config = new FakeConfiguration();
         this.tokenManager = new TokenManager(config);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void initialToken_zeroSize() {
-        tokenManager.initialToken(0, 0, 1);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    tokenManager.initialToken(0, 0, 1);
+                });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void initialToken_negativePosition() {
-        tokenManager.initialToken(1, -1, 1);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    tokenManager.initialToken(1, -1, 1);
+                });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void initialToken_negativeOffset() {
-        tokenManager.initialToken(1, 0, -1);
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    tokenManager.initialToken(1, 0, -1);
+                });
     }
 
     @Test
@@ -96,9 +107,13 @@ public class RandomTokenManagerTest {
                 tokenManager.createToken(10, 256, "region"));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void findClosestToken_emptyTokenList() {
-        tokenManager.findClosestToken(BigInteger.ZERO, Collections.emptyList());
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> {
+                    tokenManager.findClosestToken(BigInteger.ZERO, Collections.emptyList());
+                });
     }
 
     @Test
@@ -175,11 +190,11 @@ public class RandomTokenManagerTest {
             for (String region2 : allRegions.split(",")) {
                 if (region1.equals(region2)) continue;
                 assertFalse(
-                        "Diffrence seems to be low",
                         Math.abs(
                                         tokenManager.regionOffset(region1)
                                                 - tokenManager.regionOffset(region2))
-                                < 100);
+                                < 100,
+                        "Diffrence seems to be low");
             }
     }
 

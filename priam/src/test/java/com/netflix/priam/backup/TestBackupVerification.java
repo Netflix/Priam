@@ -38,10 +38,10 @@ import java.util.Optional;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 1/23/19. */
 public class TestBackupVerification {
@@ -83,8 +83,8 @@ public class TestBackupVerification {
         }
     }
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void cleanup() {
         new MockMetaV1Proxy();
         new MockMetaV2Proxy();
@@ -95,9 +95,9 @@ public class TestBackupVerification {
     public void illegalDateRange() throws UnsupportedTypeException {
         try {
             backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, false, null);
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
+            Assertions.assertTrue(true);
         }
     }
 
@@ -105,9 +105,9 @@ public class TestBackupVerification {
     public void illegalDateRangeBackupDateRange() throws UnsupportedTypeException {
         try {
             backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_BACKUP, null);
-            Assert.assertTrue(false);
+            Assertions.assertTrue(false);
         } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
+            Assertions.assertTrue(true);
         }
     }
 
@@ -118,14 +118,14 @@ public class TestBackupVerification {
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResultOptinal.isPresent());
+        Assertions.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
                 backupVerification.verifyBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResultOptinal.isPresent());
+        Assertions.assertFalse(backupVerificationResultOptinal.isPresent());
     }
 
     @Test
@@ -133,13 +133,13 @@ public class TestBackupVerification {
         List<BackupVerificationResult> backupVerificationResults =
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResults.size() > 0);
+        Assertions.assertFalse(backupVerificationResults.size() > 0);
 
         backupVerificationResults =
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResults.size() > 0);
+        Assertions.assertFalse(backupVerificationResults.size() > 0);
     }
 
     private void setUp() throws Exception {
@@ -178,8 +178,9 @@ public class TestBackupVerification {
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
+        Assertions.assertTrue(backupVerificationResultOptinal.isPresent());
+        Assertions.assertEquals(
+                Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
@@ -187,8 +188,8 @@ public class TestBackupVerification {
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
-        Assert.assertTrue(backupMetadata.isPresent());
-        Assert.assertNotNull(backupMetadata.get().getLastValidated());
+        Assertions.assertTrue(backupMetadata.isPresent());
+        Assertions.assertNotNull(backupMetadata.get().getLastValidated());
 
         backupMetadata =
                 backupStatusMgr
@@ -197,8 +198,8 @@ public class TestBackupVerification {
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
-        Assert.assertTrue(backupMetadata.isPresent());
-        Assert.assertNull(backupMetadata.get().getLastValidated());
+        Assertions.assertTrue(backupMetadata.isPresent());
+        Assertions.assertNull(backupMetadata.get().getLastValidated());
     }
 
     @Test
@@ -209,26 +210,26 @@ public class TestBackupVerification {
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupVerificationResults.isEmpty());
-        Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
+        Assertions.assertTrue(!backupVerificationResults.isEmpty());
+        Assertions.assertTrue(backupVerificationResults.size() == numFakeBackups);
         backupVerificationResults
                 .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
+                .forEach(b -> Assertions.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupMetadata.isEmpty());
-        Assert.assertTrue(backupMetadata.size() == numFakeBackups);
-        backupMetadata.stream().forEach(b -> Assert.assertNotNull(b.getLastValidated()));
+        Assertions.assertTrue(!backupMetadata.isEmpty());
+        Assertions.assertTrue(backupMetadata.size() == numFakeBackups);
+        backupMetadata.stream().forEach(b -> Assertions.assertNotNull(b.getLastValidated()));
 
         backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupMetadata.isEmpty());
-        Assert.assertTrue(backupMetadata.size() == numFakeBackups);
-        backupMetadata.stream().forEach(b -> Assert.assertNull(b.getLastValidated()));
+        Assertions.assertTrue(!backupMetadata.isEmpty());
+        Assertions.assertTrue(backupMetadata.size() == numFakeBackups);
+        backupMetadata.stream().forEach(b -> Assertions.assertNull(b.getLastValidated()));
     }
 
     @Test
@@ -240,9 +241,10 @@ public class TestBackupVerification {
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
-        Assert.assertEquals("some_random", backupVerificationResultOptinal.get().remotePath);
+        Assertions.assertTrue(backupVerificationResultOptinal.isPresent());
+        Assertions.assertEquals(
+                Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
+        Assertions.assertEquals("some_random", backupVerificationResultOptinal.get().remotePath);
 
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
@@ -251,8 +253,8 @@ public class TestBackupVerification {
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
-        Assert.assertTrue(backupMetadata.isPresent());
-        Assert.assertNotNull(backupMetadata.get().getLastValidated());
+        Assertions.assertTrue(backupMetadata.isPresent());
+        Assertions.assertNotNull(backupMetadata.get().getLastValidated());
 
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
@@ -260,12 +262,12 @@ public class TestBackupVerification {
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(
+        Assertions.assertTrue(backupVerificationResultOptinal.isPresent());
+        Assertions.assertEquals(
                 DateUtil.parseInstant(backupDate),
                 backupVerificationResultOptinal.get().snapshotInstant);
-        Assert.assertNotEquals("some_random", backupVerificationResultOptinal.get().remotePath);
-        Assert.assertEquals(
+        Assertions.assertNotEquals("some_random", backupVerificationResultOptinal.get().remotePath);
+        Assertions.assertEquals(
                 location.subpath(1, location.getNameCount()).toString(),
                 backupVerificationResultOptinal.get().remotePath);
 
@@ -276,8 +278,8 @@ public class TestBackupVerification {
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
-        Assert.assertTrue(backupMetadata.isPresent());
-        Assert.assertNull(backupMetadata.get().getLastValidated());
+        Assertions.assertTrue(backupMetadata.isPresent());
+        Assertions.assertNull(backupMetadata.get().getLastValidated());
     }
 
     @Test
@@ -288,26 +290,26 @@ public class TestBackupVerification {
                 backupVerification.verifyAllBackups(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupVerificationResults.isEmpty());
-        Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
+        Assertions.assertTrue(!backupVerificationResults.isEmpty());
+        Assertions.assertTrue(backupVerificationResults.size() == numFakeBackups);
         backupVerificationResults
                 .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
+                .forEach(b -> Assertions.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupMetadata.isEmpty());
-        Assert.assertTrue(backupMetadata.size() == numFakeBackups);
-        backupMetadata.stream().forEach(b -> Assert.assertNotNull(b.getLastValidated()));
+        Assertions.assertTrue(!backupMetadata.isEmpty());
+        Assertions.assertTrue(backupMetadata.size() == numFakeBackups);
+        backupMetadata.stream().forEach(b -> Assertions.assertNotNull(b.getLastValidated()));
 
         backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupMetadata.isEmpty());
-        Assert.assertTrue(backupMetadata.size() == numFakeBackups);
-        backupMetadata.stream().forEach(b -> Assert.assertNull(b.getLastValidated()));
+        Assertions.assertTrue(!backupMetadata.isEmpty());
+        Assertions.assertTrue(backupMetadata.size() == numFakeBackups);
+        backupMetadata.stream().forEach(b -> Assertions.assertNull(b.getLastValidated()));
     }
 
     private BackupMetadata getBackupMetaData(
@@ -334,6 +336,6 @@ public class TestBackupVerification {
     @Test
     public void testGetMetaProxy() {
         IMetaProxy metaProxy = backupVerification.getMetaProxy(BackupVersion.SNAPSHOT_META_SERVICE);
-        Assert.assertTrue(metaProxy != null);
+        Assertions.assertTrue(metaProxy != null);
     }
 }

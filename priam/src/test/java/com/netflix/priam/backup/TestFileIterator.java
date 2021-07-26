@@ -31,10 +31,10 @@ import java.io.IOException;
 import java.util.*;
 import mockit.Mock;
 import mockit.MockUp;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * Unit test for backup file iterator
@@ -48,7 +48,7 @@ public class TestFileIterator {
     private static String region;
     private static String bucket = "TESTBUCKET";
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws InterruptedException, IOException {
         AmazonS3Client s3client = new MockAmazonS3Client().getMockInstance();
         new MockObjectListing();
@@ -85,7 +85,7 @@ public class TestFileIterator {
     }
 
     // MockObjectListing class
-    @Ignore
+    @Disabled
     static class MockObjectListing extends MockUp<ObjectListing> {
         static boolean truncated = true;
         static boolean firstcall = true;
@@ -121,7 +121,7 @@ public class TestFileIterator {
         Iterator<AbstractBackupPath> fileIterator = s3FileSystem.list(bucket, stime, etime);
         Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
-        Assert.assertEquals(0, files.size());
+        Assertions.assertEquals(0, files.size());
     }
 
     @Test
@@ -134,23 +134,23 @@ public class TestFileIterator {
 
         Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
-        Assert.assertEquals(3, files.size());
-        Assert.assertTrue(
+        Assertions.assertEquals(3, files.size());
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
@@ -167,39 +167,39 @@ public class TestFileIterator {
 
         Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
-        Assert.assertEquals(5, files.size());
-        Assert.assertTrue(
+        Assertions.assertEquals(5, files.size());
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
@@ -216,39 +216,39 @@ public class TestFileIterator {
 
         Set<String> files = new HashSet<>();
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
-        Assert.assertEquals(2, files.size());
-        Assert.assertFalse(
+        Assertions.assertEquals(2, files.size());
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201107110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201107110430/SST/ks1/cf1/f2.db"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201107110030/META/meta.json"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201107110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
@@ -271,39 +271,39 @@ public class TestFileIterator {
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
         while (fileIterator.hasNext()) files.add(fileIterator.next().getRemotePath());
 
-        Assert.assertEquals(5, files.size());
-        Assert.assertTrue(
+        Assertions.assertEquals(5, files.size());
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks1/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks1/cf1/f2.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/META/meta.json"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110600/SST/ks1/cf1/f3.db"));
 
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110030/SNAP/ks2/cf1/f1.db"));
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 files.contains(
                         "test_backup/"
                                 + region
                                 + "/fakecluster/123456/201108110430/SST/ks2/cf1/f2.db"));
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 files.contains(
                         "test_backup/"
                                 + region

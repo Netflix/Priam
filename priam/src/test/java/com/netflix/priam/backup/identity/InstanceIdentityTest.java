@@ -17,13 +17,13 @@
 
 package com.netflix.priam.backup.identity;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableList;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class InstanceIdentityTest extends InstanceTestUtils {
 

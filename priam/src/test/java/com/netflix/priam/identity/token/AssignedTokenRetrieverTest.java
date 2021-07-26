@@ -18,8 +18,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class AssignedTokenRetrieverTest {
     public static final String APP = "testapp";

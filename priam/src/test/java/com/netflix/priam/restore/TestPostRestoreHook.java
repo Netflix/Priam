@@ -22,15 +22,15 @@ import com.netflix.priam.TestModule;
 import com.netflix.priam.config.IConfiguration;
 import java.io.File;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestPostRestoreHook {
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void setup() {
         Injector inject = Guice.createInjector(new TestModule());
         IConfiguration configuration = inject.getInstance(IConfiguration.class);
@@ -55,7 +55,7 @@ public class TestPostRestoreHook {
     public void testPostRestoreHookValidParameters() {
         Injector inject = Guice.createInjector(new TestModule());
         IPostRestoreHook postRestoreHook = inject.getInstance(IPostRestoreHook.class);
-        Assert.assertTrue(postRestoreHook.hasValidParameters());
+        Assertions.assertTrue(postRestoreHook.hasValidParameters());
     }
 
     @Test
@@ -111,7 +111,7 @@ public class TestPostRestoreHook {
                                 // add a delay to heartbeat
                                 Thread.sleep(delayInMs);
                                 if (!heartBeatFile.exists() && !heartBeatFile.createNewFile()) {
-                                    Assert.fail("Unable to create heartbeat file");
+                                    Assertions.fail("Unable to create heartbeat file");
                                 }
                                 for (int i = 0; i < 10; i++) {
                                     FileUtils.touch(heartBeatFile);
@@ -121,7 +121,7 @@ public class TestPostRestoreHook {
                                 File doneFile = new File(doneFileName);
                                 doneFile.createNewFile();
                             } catch (Exception ex) {
-                                Assert.fail(ex.getMessage());
+                                Assertions.fail(ex.getMessage());
                             }
                         });
 

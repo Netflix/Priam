@@ -25,9 +25,9 @@ import com.netflix.priam.TestModule;
 import com.netflix.priam.config.IConfiguration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public class TestScheduler {
     // yuck, but marginally better than using Thread.sleep
@@ -46,7 +46,7 @@ public class TestScheduler {
     }
 
     @Test
-    @Ignore(
+    @Disabled(
             "not sure what this test really does, except test countdown latch and thread context switching")
     public void testSingleInstanceSchedule() throws Exception {
         latch = new CountDownLatch(3);
@@ -57,10 +57,10 @@ public class TestScheduler {
         // verify 3 tasks run or fail in 1s
         latch.await(2000, TimeUnit.MILLISECONDS);
         scheduler.shutdown();
-        Assert.assertEquals(3, SingleTestTask.count);
+        Assertions.assertEquals(3, SingleTestTask.count);
     }
 
-    @Ignore
+    @Disabled
     public static class TestTask extends Task {
         @Inject
         public TestTask(IConfiguration config) {
@@ -80,7 +80,7 @@ public class TestScheduler {
         }
     }
 
-    @Ignore
+    @Disabled
     @Singleton
     public static class SingleTestTask extends Task {
         @Inject

@@ -17,7 +17,7 @@
 
 package com.netflix.priam.tuner;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.io.Files;
 import com.google.inject.Guice;
@@ -37,10 +37,10 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
@@ -103,8 +103,8 @@ public class StandardTunerTest {
         assertEquals(BOP_PARTITIONER, partitioner);
     }
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void cleanup() {
         FileUtils.deleteQuietly(target);
     }
@@ -155,12 +155,14 @@ public class StandardTunerTest {
         options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK);
         Yaml yaml = new Yaml(options);
         Map map = yaml.load(new FileInputStream(target));
-        Assert.assertEquals("your_host", map.get("listen_address"));
-        Assert.assertEquals("true", ((Map) map.get("client_encryption_options")).get("optional"));
-        Assert.assertEquals(
+        Assertions.assertEquals("your_host", map.get("listen_address"));
+        Assertions.assertEquals(
+                "true", ((Map) map.get("client_encryption_options")).get("optional"));
+        Assertions.assertEquals(
                 "test", ((Map) map.get("client_encryption_options")).get("keystore_password"));
-        Assert.assertEquals("randomKeyValue", map.get("randomKey"));
-        Assert.assertEquals("randomGroupValue", ((Map) map.get("randomGroup")).get("randomKey"));
+        Assertions.assertEquals("randomKeyValue", map.get("randomKey"));
+        Assertions.assertEquals(
+                "randomGroupValue", ((Map) map.get("randomGroup")).get("randomKey"));
     }
 
     private class TunerConfiguration extends FakeConfiguration {

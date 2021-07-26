@@ -25,9 +25,9 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.Properties;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class DseTunerTest {
     private IConfiguration config;
@@ -37,7 +37,7 @@ public class DseTunerTest {
     private File targetFile;
     private File targetDseYamlFile;
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         config = new FakeConfiguration();
         dseConfig = new DseConfigStub();
@@ -58,7 +58,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertTrue(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
+        Assertions.assertTrue(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     @Test
@@ -68,7 +68,7 @@ public class DseTunerTest {
 
         Properties p = new Properties();
         p.load(new FileReader(targetFile));
-        Assert.assertFalse(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
+        Assertions.assertFalse(p.containsKey(AuditLogTunerLog4J.PRIMARY_AUDIT_LOG_ENTRY));
     }
 
     /**

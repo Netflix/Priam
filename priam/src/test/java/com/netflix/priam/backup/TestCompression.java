@@ -17,8 +17,8 @@
 
 package com.netflix.priam.backup;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
@@ -32,15 +32,15 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestCompression {
 
     private final File randomContentFile = new File("/tmp/content.txt");
 
-    @Before
+    @BeforeEach
     public void setup() throws IOException {
         try (FileOutputStream stream = new FileOutputStream(randomContentFile)) {
             for (int i = 0; i < (5 * 5); i++) {
@@ -54,7 +54,7 @@ public class TestCompression {
         }
     }
 
-    @After
+    @AfterEach
     public void done() {
         FileUtils.deleteQuietly(randomContentFile);
     }

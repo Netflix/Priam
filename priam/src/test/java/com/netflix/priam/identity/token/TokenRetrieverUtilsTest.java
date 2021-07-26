@@ -13,8 +13,8 @@ import java.util.stream.IntStream;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class TokenRetrieverUtilsTest {
     private static final String APP = "testapp";
@@ -65,7 +65,7 @@ public class TokenRetrieverUtilsTest {
 
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "127.0.0.4", inferredTokenOwnership.getTokenInformation().getIpAddress());
     }
 
@@ -105,10 +105,10 @@ public class TokenRetrieverUtilsTest {
 
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH,
                 inferredTokenOwnership.getTokenInformationStatus());
-        Assert.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
+        Assertions.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
     }
 
     @Test
@@ -123,10 +123,10 @@ public class TokenRetrieverUtilsTest {
 
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.GOOD,
                 inferredTokenOwnership.getTokenInformationStatus());
-        Assert.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
+        Assertions.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
     }
 
     @Test
@@ -142,10 +142,10 @@ public class TokenRetrieverUtilsTest {
 
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.UNREACHABLE_NODES,
                 inferredTokenOwnership.getTokenInformationStatus());
-        Assert.assertNull(inferredTokenOwnership.getTokenInformation());
+        Assertions.assertNull(inferredTokenOwnership.getTokenInformation());
     }
 
     private String newGossipRecord(

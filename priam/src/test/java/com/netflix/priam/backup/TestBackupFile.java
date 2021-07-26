@@ -30,16 +30,16 @@ import java.io.IOException;
 import java.sql.Date;
 import java.text.ParseException;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Test;
 
 public class TestBackupFile {
     private static Injector injector;
     private static String region;
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws IOException {
         injector = Guice.createInjector(new BRTestModule());
         File file =
@@ -62,7 +62,7 @@ public class TestBackupFile {
         region = factory.getInstanceInfo().getRegion();
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws IOException {
         File file = new File("Keyspace1-Standard1-ia-5-Data.db");
         FileUtils.deleteQuietly(file);
@@ -75,14 +75,14 @@ public class TestBackupFile {
                 "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
-        Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
-        Assert.assertEquals("Keyspace1", backupfile.keyspace);
-        Assert.assertEquals("Standard1", backupfile.columnFamily);
-        Assert.assertEquals("1234567", backupfile.token);
-        Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals(region, backupfile.region);
-        Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals(
+        Assertions.assertEquals(BackupFileType.SNAP, backupfile.type);
+        Assertions.assertEquals("Keyspace1", backupfile.keyspace);
+        Assertions.assertEquals("Standard1", backupfile.columnFamily);
+        Assertions.assertEquals("1234567", backupfile.token);
+        Assertions.assertEquals("fake-app", backupfile.clusterName);
+        Assertions.assertEquals(region, backupfile.region);
+        Assertions.assertEquals("casstestbackup", backupfile.baseDir);
+        Assertions.assertEquals(
                 "casstestbackup/"
                         + region
                         + "/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db",
@@ -95,15 +95,15 @@ public class TestBackupFile {
         File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.SST);
-        Assert.assertEquals(BackupFileType.SST, backupfile.type);
-        Assert.assertEquals("Keyspace1", backupfile.keyspace);
-        Assert.assertEquals("Standard1", backupfile.columnFamily);
-        Assert.assertEquals("1234567", backupfile.token);
-        Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals(region, backupfile.region);
-        Assert.assertEquals("casstestbackup", backupfile.baseDir);
+        Assertions.assertEquals(BackupFileType.SST, backupfile.type);
+        Assertions.assertEquals("Keyspace1", backupfile.keyspace);
+        Assertions.assertEquals("Standard1", backupfile.columnFamily);
+        Assertions.assertEquals("1234567", backupfile.token);
+        Assertions.assertEquals("fake-app", backupfile.clusterName);
+        Assertions.assertEquals(region, backupfile.region);
+        Assertions.assertEquals("casstestbackup", backupfile.baseDir);
         String datestr = DateUtil.formatyyyyMMddHHmm(new Date(bfile.lastModified()));
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "casstestbackup/"
                         + region
                         + "/fake-app/1234567/"
@@ -120,12 +120,12 @@ public class TestBackupFile {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(bfile, BackupFileType.META);
         backupfile.setTime(DateUtil.getDate("201108082320"));
-        Assert.assertEquals(BackupFileType.META, backupfile.type);
-        Assert.assertEquals("1234567", backupfile.token);
-        Assert.assertEquals("fake-app", backupfile.clusterName);
-        Assert.assertEquals(region, backupfile.region);
-        Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        Assert.assertEquals(
+        Assertions.assertEquals(BackupFileType.META, backupfile.type);
+        Assertions.assertEquals("1234567", backupfile.token);
+        Assertions.assertEquals("fake-app", backupfile.clusterName);
+        Assertions.assertEquals(region, backupfile.region);
+        Assertions.assertEquals("casstestbackup", backupfile.baseDir);
+        Assertions.assertEquals(
                 "casstestbackup/" + region + "/fake-app/1234567/201108082320/META/1234567.meta",
                 backupfile.getRemotePath());
     }

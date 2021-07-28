@@ -1,4 +1,7 @@
 # Changelog
+## 2021/07/28 3.11.83
+(#960) Fix bug in metafile generation where column family names are printed in place of keyspace names.
+
 ## 2021/07/11 3.11.82
 (#955) Upload and delete any backup directory starting with a '.'
 

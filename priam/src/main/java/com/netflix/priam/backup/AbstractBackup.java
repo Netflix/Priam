@@ -175,7 +175,7 @@ public abstract class AbstractBackup extends Task {
     }
 
     protected String getKeyspace(File backupDir) {
-        return backupDir.getParentFile().getName();
+        return backupDir.getParentFile().getParentFile().getName();
     }
 
     /**

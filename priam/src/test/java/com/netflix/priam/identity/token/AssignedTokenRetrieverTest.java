@@ -1,5 +1,6 @@
 package com.netflix.priam.identity.token;
 
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.netflix.priam.config.IConfiguration;
@@ -213,8 +214,7 @@ public class AssignedTokenRetrieverTest {
             @Mocked Sleeper sleeper,
             @Mocked ITokenManager tokenManager,
             @Mocked InstanceInfo instanceInfo,
-            @Mocked TokenRetrieverUtils retrievalUtils)
-            throws Exception {
+            @Mocked TokenRetrieverUtils retrievalUtils) {
         List<PriamInstance> liveHosts = newPriamInstances();
         Collections.shuffle(liveHosts);
 
@@ -254,6 +254,58 @@ public class AssignedTokenRetrieverTest {
                 () ->
                         new InstanceIdentity(
                                 factory, membership, config, instanceInfo, tokenRetriever));
+    }
+
+    @Test
+    public void grabAssignedTokenStartDbInBootstrapModeWhenGossipDisagreesOnPreviousTokenOwner(
+            @Mocked IPriamInstanceFactory factory,
+            @Mocked IConfiguration config,
+            @Mocked IMembership membership,
+            @Mocked Sleeper sleeper,
+            @Mocked ITokenManager tokenManager,
+            @Mocked InstanceInfo instanceInfo,
+            @Mocked TokenRetrieverUtils retrievalUtils)
+            throws Exception {
+        List<PriamInstance> liveHosts = newPriamInstances();
+        Collections.shuffle(liveHosts);
+
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(liveHosts.get(0).getHostIP(), false));
+
+        new Expectations() {
+            {
+                config.getAppName();
+                result = APP;
+                config.permitDirectTokenAssignmentWithGossipMismatch();
+                result = true;
+
+                factory.getAllIds(DEAD_APP);
+                result = ImmutableSet.of();
+                factory.getAllIds(APP);
+                result = ImmutableSet.copyOf(liveHosts);
+
+                instanceInfo.getInstanceId();
+                result = liveHosts.get(0).getInstanceId();
+
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
+                result = inferredTokenOwnership;
+            }
+        };
+
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
+        InstanceIdentity instanceIdentity =
+                new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
+        Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();
+        Truth.assertThat(instanceIdentity.isReplace()).isFalse();
     }
 
     private List<PriamInstance> newPriamInstances() {

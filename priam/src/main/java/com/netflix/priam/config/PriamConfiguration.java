@@ -784,4 +784,9 @@ public class PriamConfiguration implements IConfiguration {
     public boolean checkThriftServerIsListening() {
         return config.get(PRIAM_PRE + ".checkThriftServerIsListening", false);
     }
+
+    @Override
+    public boolean permitDirectTokenAssignmentWithGossipMismatch() {
+        return config.get(PRIAM_PRE + ".permitDirectTokenAssignmentWithGossipMismatch", false);
+    }
 }

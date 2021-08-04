@@ -1,6 +1,5 @@
 package com.netflix.priam.identity.token;
 
-import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.netflix.priam.config.IConfiguration;
@@ -207,7 +206,7 @@ public class AssignedTokenRetrieverTest {
     }
 
     @Test
-    public void grabAssignedTokenStartDbInBootstrapModeWhenGossipDisagreesOnPreviousTokenOwner(
+    public void grabAssignedTokenThrowToBuyTimeWhenGossipDisagreesOnPreviousTokenOwner(
             @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
             @Mocked IMembership membership,
@@ -250,10 +249,11 @@ public class AssignedTokenRetrieverTest {
         ITokenRetriever tokenRetriever =
                 new TokenRetriever(
                         factory, membership, config, instanceInfo, sleeper, tokenManager);
-        InstanceIdentity instanceIdentity =
-                new InstanceIdentity(factory, membership, config, instanceInfo, tokenRetriever);
-        Truth.assertThat(Strings.isNullOrEmpty(instanceIdentity.getReplacedIp())).isTrue();
-        Truth.assertThat(instanceIdentity.isReplace()).isFalse();
+        Assertions.assertThrows(
+                TokenRetrieverUtils.GossipParseException.class,
+                () ->
+                        new InstanceIdentity(
+                                factory, membership, config, instanceInfo, tokenRetriever));
     }
 
     private List<PriamInstance> newPriamInstances() {

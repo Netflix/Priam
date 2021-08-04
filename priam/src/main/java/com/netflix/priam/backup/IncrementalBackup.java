@@ -127,11 +127,12 @@ public class IncrementalBackup extends AbstractBackup {
         fileType = BackupFileType.SECONDARY_INDEX_V2;
         for (File directory : getSecondaryIndexDirectories(backupDir)) {
             futures = uploadAndDeleteAllFiles(directory, fileType, config.enableAsyncIncremental());
-            if (futures.isEmpty()) {
+            if (futures.stream().allMatch(ListenableFuture::isDone)) {
                 deleteIfEmpty(directory);
+            } else {
+                Futures.whenAllComplete(futures)
+                        .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
             }
-            Futures.whenAllComplete(futures)
-                    .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
         }
     }
 

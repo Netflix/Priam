@@ -188,7 +188,9 @@ public class TokenRetriever implements ITokenRetriever {
                                 + inferredIp);
             }
         } else if (inferredTokenOwnership.getTokenInformationStatus()
-                == TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH) {
+                        == TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus
+                                .MISMATCH
+                && !config.permitDirectTokenAssignmentWithGossipMismatch()) {
             throw new TokenRetrieverUtils.GossipParseException(
                     "We saw inconsistent results from gossip. Throwing to buy time for it to settle.");
         }

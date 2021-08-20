@@ -1,4 +1,7 @@
 # Changelog
+## 2021/08/18 3.11.84
+(#961) Ensure SI backup directories are deleted when empty
+
 ## 2021/07/28 3.11.83
 (#960) Fix bug in metafile generation where column family names are printed in place of keyspace names.
 

@@ -113,6 +113,23 @@ public class TestBackup {
         testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
     }
 
+    @Test
+    public void testSkippingEmptyFiles() throws Exception {
+        filesystem.cleanup();
+        File tmp = new File("target/data/");
+        if (tmp.exists()) cleanup(tmp);
+        File emptyFile =
+                new File(
+                        "target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-1-Data.db");
+        File parent = emptyFile.getParentFile();
+        if (!parent.exists()) parent.mkdirs();
+        Assert.assertTrue(emptyFile.createNewFile());
+        IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
+        backup.execute();
+        Assert.assertTrue(filesystem.uploadedFiles.isEmpty());
+        Assert.assertFalse(emptyFile.exists());
+    }
+
     private void testClusterSpecificColumnFamiliesSkipped(String[] columnFamilyDirs)
             throws Exception {
         filesystem.cleanup();

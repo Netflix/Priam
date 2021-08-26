@@ -24,6 +24,7 @@ import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
 import java.util.List;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -33,11 +34,17 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class AWSInstanceInfo implements InstanceInfo {
     private static final Logger logger = LoggerFactory.getLogger(AWSInstanceInfo.class);
+    static final String PUBLIC_HOSTNAME_URL =
+            "http://169.254.169.254/latest/meta-data/public-hostname";
+    static final String LOCAL_HOSTNAME_URL =
+            "http://169.254.169.254/latest/meta-data/local-hostname";
+    static final String PUBLIC_HOSTIP_URL = "http://169.254.169.254/latest/meta-data/public-ipv4";
+    static final String LOCAL_HOSTIP_URL = "http://169.254.169.254/latest/meta-data/local-ipv4";
     private JSONObject identityDocument = null;
     private String privateIp;
-    private String publicIp;
+    private String hostIP;
     private String rac;
-    private String publicHostName;
+    private String hostName;
     private String instanceId;
     private String instanceType;
     private String mac;
@@ -85,24 +92,6 @@ public class AWSInstanceInfo implements InstanceInfo {
             if (zone.size() == 3) break;
         }
         return ImmutableList.copyOf(zone);
-    }
-
-    public String getPublicHostname() {
-        if (publicHostName == null) {
-            publicHostName =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/public-hostname");
-        }
-        return publicHostName;
-    }
-
-    public String getPublicIP() {
-        if (publicIp == null) {
-            publicIp =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/public-ipv4");
-        }
-        return publicIp;
     }
 
     @Override
@@ -220,11 +209,29 @@ public class AWSInstanceInfo implements InstanceInfo {
 
     @Override
     public String getHostname() {
-        return (getPublicHostname() == null) ? getPrivateIP() : getPublicHostname();
+        if (hostName == null) {
+            hostName =
+                    tryGetDataFromUrl(PUBLIC_HOSTNAME_URL)
+                            .orElse(SystemUtils.getDataFromUrl(LOCAL_HOSTNAME_URL));
+        }
+        return hostName;
     }
 
     @Override
     public String getHostIP() {
-        return (getPublicIP() == null) ? getPrivateIP() : getPublicIP();
+        if (hostIP == null) {
+            hostIP =
+                    tryGetDataFromUrl(PUBLIC_HOSTIP_URL)
+                            .orElse(SystemUtils.getDataFromUrl(LOCAL_HOSTIP_URL));
+        }
+        return hostIP;
+    }
+
+    Optional<String> tryGetDataFromUrl(String url) {
+        try {
+            return Optional.of(SystemUtils.getDataFromUrl(url));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 }

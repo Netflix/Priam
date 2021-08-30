@@ -113,6 +113,7 @@ public class IncrementalBackup extends AbstractBackup {
     protected void processColumnFamily(File backupDir) throws Exception {
         BackupFileType fileType =
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
+        deleteEmptyFiles(backupDir);
         upload(backupDir, fileType, config.enableAsyncIncremental(), true);
     }
 }

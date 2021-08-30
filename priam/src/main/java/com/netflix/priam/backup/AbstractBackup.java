@@ -29,16 +29,16 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -226,5 +226,12 @@ public abstract class AbstractBackup extends Task {
 
     protected static boolean isAReadableDirectory(File dir) {
         return dir.exists() && dir.isDirectory() && dir.canRead();
+    }
+
+    protected static void deleteEmptyFiles(File dir) {
+        FileFilter filter = (file) -> file.isFile() && file.canWrite() && file.length() == 0L;
+        for (File file : Optional.ofNullable(dir.listFiles(filter)).orElse(new File[] {})) {
+            FileUtils.deleteQuietly(file);
+        }
     }
 }

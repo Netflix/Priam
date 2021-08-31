@@ -207,6 +207,56 @@ public class AssignedTokenRetrieverTest {
     }
 
     @Test
+    public void grabAssignedTokenThrowToBuyTimeWhenGossipDisagreesOnPreviousTokenOwner(
+            @Mocked IPriamInstanceFactory factory,
+            @Mocked IConfiguration config,
+            @Mocked IMembership membership,
+            @Mocked Sleeper sleeper,
+            @Mocked ITokenManager tokenManager,
+            @Mocked InstanceInfo instanceInfo,
+            @Mocked TokenRetrieverUtils retrievalUtils) {
+        List<PriamInstance> liveHosts = newPriamInstances();
+        Collections.shuffle(liveHosts);
+
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                new TokenRetrieverUtils.InferredTokenOwnership();
+        inferredTokenOwnership.setTokenInformationStatus(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH);
+        inferredTokenOwnership.setTokenInformation(
+                new TokenRetrieverUtils.TokenInformation(liveHosts.get(0).getHostIP(), false));
+
+        new Expectations() {
+            {
+                config.getAppName();
+                result = APP;
+
+                factory.getAllIds(DEAD_APP);
+                result = ImmutableSet.of();
+                factory.getAllIds(APP);
+                result = ImmutableSet.copyOf(liveHosts);
+
+                instanceInfo.getInstanceId();
+                result = liveHosts.get(0).getInstanceId();
+
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(
+                        ImmutableSet.copyOf(liveHosts),
+                        liveHosts.get(0).getToken(),
+                        liveHosts.get(0).getDC());
+                result = inferredTokenOwnership;
+            }
+        };
+
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, instanceInfo, sleeper, tokenManager);
+        Assertions.assertThrows(
+                TokenRetrieverUtils.GossipParseException.class,
+                () ->
+                        new InstanceIdentity(
+                                factory, membership, config, instanceInfo, tokenRetriever));
+    }
+
+    @Test
     public void grabAssignedTokenStartDbInBootstrapModeWhenGossipDisagreesOnPreviousTokenOwner(
             @Mocked IPriamInstanceFactory factory,
             @Mocked IConfiguration config,
@@ -230,6 +280,8 @@ public class AssignedTokenRetrieverTest {
             {
                 config.getAppName();
                 result = APP;
+                config.permitDirectTokenAssignmentWithGossipMismatch();
+                result = true;
 
                 factory.getAllIds(DEAD_APP);
                 result = ImmutableSet.of();

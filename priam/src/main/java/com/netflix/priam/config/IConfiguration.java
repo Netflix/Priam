@@ -1144,6 +1144,10 @@ public interface IConfiguration {
         return false;
     }
 
+    default boolean permitDirectTokenAssignmentWithGossipMismatch() {
+        return false;
+    }
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

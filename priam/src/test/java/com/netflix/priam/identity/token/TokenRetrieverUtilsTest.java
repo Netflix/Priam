@@ -6,8 +6,10 @@ import static org.hamcrest.core.IsNot.not;
 import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.PriamInstance;
 import com.netflix.priam.utils.SystemUtils;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
@@ -105,6 +107,40 @@ public class TokenRetrieverUtilsTest {
 
         TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
                 TokenRetrieverUtils.inferTokenOwnerFromGossip(instances, "4", "us-east");
+        Assert.assertEquals(
+                TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH,
+                inferredTokenOwnership.getTokenInformationStatus());
+        Assert.assertTrue(inferredTokenOwnership.getTokenInformation().isLive());
+    }
+
+    @Test
+    public void testRetrieveTokenOwnerWhenGossipDisagrees_2Nodes(@Mocked SystemUtils systemUtils) {
+        ImmutableSet<PriamInstance> myInstances =
+                ImmutableSet.copyOf(instances.stream().limit(3).collect(Collectors.toList()));
+        List<String> myLiveInstances = liveInstances.stream().limit(3).collect(Collectors.toList());
+        Map<String, String> myTokenToEndpointMap =
+                IntStream.range(0, 3)
+                        .mapToObj(String::valueOf)
+                        .collect(
+                                Collectors.toMap(
+                                        Function.identity(), (i) -> tokenToEndpointMap.get(i)));
+        Map<String, String> alteredMap = new HashMap<>(myTokenToEndpointMap);
+        alteredMap.put("1", "1.2.3.4");
+
+        new Expectations() {
+            {
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-0"));
+                result = getStatus(myLiveInstances, myTokenToEndpointMap);
+                minTimes = 0;
+
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-2"));
+                result = getStatus(myLiveInstances, alteredMap);
+                minTimes = 0;
+            }
+        };
+
+        TokenRetrieverUtils.InferredTokenOwnership inferredTokenOwnership =
+                TokenRetrieverUtils.inferTokenOwnerFromGossip(myInstances, "1", "us-east");
         Assert.assertEquals(
                 TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus.MISMATCH,
                 inferredTokenOwnership.getTokenInformationStatus());

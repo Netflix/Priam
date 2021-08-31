@@ -187,6 +187,12 @@ public class TokenRetriever implements ITokenRetriever {
                         "Priam found that the token is not alive according to Cassandra and we should start Cassandra in replace mode with replace ip: "
                                 + inferredIp);
             }
+        } else if (inferredTokenOwnership.getTokenInformationStatus()
+                        == TokenRetrieverUtils.InferredTokenOwnership.TokenInformationStatus
+                                .MISMATCH
+                && !config.permitDirectTokenAssignmentWithGossipMismatch()) {
+            throw new TokenRetrieverUtils.GossipParseException(
+                    "We saw inconsistent results from gossip. Throwing to buy time for it to settle.");
         }
         return ipToReplace;
     }

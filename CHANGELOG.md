@@ -1,4 +1,8 @@
 # Changelog
+## 2021/08/31 3.11.85
+(#973) Throw in case of gossip mismatch when determining replace_ip in assigned token case.
+(#970) Make getPublicIP and getPublicHostname fail elegantly when those attributes are absent.
+
 ## 2021/08/18 3.11.84
 (#961) Ensure SI backup directories are deleted when empty
 

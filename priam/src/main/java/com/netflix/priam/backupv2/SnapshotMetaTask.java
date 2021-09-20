@@ -116,31 +116,22 @@ public class SnapshotMetaTask extends AbstractBackup {
     /**
      * Interval between generating snapshot meta file using {@link SnapshotMetaTask}.
      *
-     * @param backupRestoreConfig {@link
-     *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details
-     *     from priam. Use "-1" to disable the service.
-     * @param config configuration to get the data folder.
+     * @param config {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get
+     *     configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for snapshot meta service.
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */
-    public static TaskTimer getTimer(
-            IConfiguration config, IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        TaskTimer timer =
-                CronTimer.getCronTimer(
-                        JOBNAME, backupRestoreConfig.getSnapshotMetaServiceCronExpression());
-        if (timer == null) {
-            cleanOldBackups(config);
-        }
-        return timer;
+    public static TaskTimer getTimer(IBackupRestoreConfig config) throws Exception {
+        return CronTimer.getCronTimer(JOBNAME, config.getSnapshotMetaServiceCronExpression());
     }
 
-    private static void cleanOldBackups(IConfiguration config) throws Exception {
+    static void cleanOldBackups(IConfiguration config) throws Exception {
         // Clean up all the backup directories, if any.
         Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
         for (Path backupDirPath : backupPaths)
             try (DirectoryStream<Path> directoryStream =
-                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                    Files.newDirectoryStream(backupDirPath, Files::isDirectory)) {
                 for (Path backupDir : directoryStream) {
                     if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
                         FileUtils.deleteDirectory(backupDir.toFile());
@@ -149,10 +140,9 @@ public class SnapshotMetaTask extends AbstractBackup {
             }
     }
 
-    public static boolean isBackupEnabled(
-            IConfiguration configuration, IBackupRestoreConfig backupRestoreConfig)
+    public static boolean isBackupEnabled(IBackupRestoreConfig backupRestoreConfig)
             throws Exception {
-        return (getTimer(configuration, backupRestoreConfig) != null);
+        return (getTimer(backupRestoreConfig) != null);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {

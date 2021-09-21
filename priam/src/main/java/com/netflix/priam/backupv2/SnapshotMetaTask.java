@@ -264,17 +264,19 @@ public class SnapshotMetaTask extends AbstractBackup {
                     continue;
                 }
 
+                Instant target = getUploadTarget();
+
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                uploadAndDeleteAllFiles(snapshotDirectory, type, true);
+                uploadAndDeleteAllFiles(snapshotDirectory, type, true, target);
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
-                    futures = uploadAndDeleteAllFiles(subDir, type, true);
+                    futures = uploadAndDeleteAllFiles(subDir, type, true, target);
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
                     }
@@ -282,6 +284,10 @@ public class SnapshotMetaTask extends AbstractBackup {
                 }
             }
         }
+    }
+
+    private Instant getUploadTarget() {
+        return Instant.EPOCH;
     }
 
     private Void deleteIfEmpty(File dir) {

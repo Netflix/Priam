@@ -113,4 +113,9 @@ public interface IBackupRestoreConfig {
     default String getBackupNotifyComponentIncludeList() {
         return StringUtils.EMPTY;
     }
+
+    /** returns how long a snapshot backup should take to upload */
+    default int getTargetDurationToCompleteSnaphotUpload() {
+        return 0;
+    }
 }

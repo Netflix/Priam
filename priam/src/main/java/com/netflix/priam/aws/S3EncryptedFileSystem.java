@@ -19,6 +19,7 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -26,6 +27,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.backup.RateLimiterFactory;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
@@ -37,6 +39,7 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Iterator;
 import java.util.List;
 import org.apache.commons.io.IOUtils;
@@ -97,7 +100,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     }
 
     @Override
-    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
 

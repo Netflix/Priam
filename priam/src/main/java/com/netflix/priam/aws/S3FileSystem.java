@@ -20,6 +20,7 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Preconditions;
+import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -28,6 +29,7 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.backup.RateLimiterFactory;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
@@ -39,6 +41,7 @@ import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -113,7 +116,8 @@ public class S3FileSystem extends S3FileSystemBase {
         return ret;
     }
 
-    private long uploadMultipart(AbstractBackupPath path) throws BackupRestoreException {
+    private long uploadMultipart(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
         long chunkSize = getChunkSize(localPath);
@@ -163,12 +167,13 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
         long chunkSize = config.getBackupChunkSize();
         File localFile = localPath.toFile();
-        if (localFile.length() >= chunkSize) return uploadMultipart(path);
+        if (localFile.length() >= chunkSize) return uploadMultipart(path, target);
 
         String prefix = config.getBackupPrefix();
         if (logger.isDebugEnabled()) logger.debug("PUTing {}/{}", prefix, remotePath);
@@ -182,7 +187,9 @@ public class S3FileSystem extends S3FileSystemBase {
             byte[] chunk = byteArrayOutputStream.toByteArray();
             long compressedFileSize = chunk.length;
             // C* snapshots may have empty files. That is probably unintentional.
-            if (chunk.length > 0) rateLimiter.acquire(chunk.length);
+            if (chunk.length > 0) {
+                rateLimiter.acquire(chunk.length);
+            }
             ObjectMetadata objectMetadata = getObjectMetadata(localFile);
             objectMetadata.setContentLength(chunk.length);
             ByteArrayInputStream inputStream = new ByteArrayInputStream(chunk);

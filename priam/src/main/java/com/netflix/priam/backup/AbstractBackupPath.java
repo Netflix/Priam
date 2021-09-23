@@ -323,6 +323,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         this.encryption = CryptographyAlgorithm.valueOf(encryption);
     }
 
+    public Path getBackupDirectory() {
+        File dir = getBackupFile().getParentFile();
+        return getType() == BackupFileType.SECONDARY_INDEX_V2
+                ? dir.getParentFile().toPath()
+                : dir.toPath();
+    }
+
     @Override
     public String toString() {
         return "From: " + getRemotePath() + " To: " + newRestoreFile().getPath();

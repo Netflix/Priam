@@ -83,5 +83,6 @@ public class BRTestModule extends AbstractModule {
         bind(Registry.class).toInstance(new DefaultRegistry());
         bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
+        bind(RateLimiterFactory.class).to(FakeRateLimiterFactory.class);
     }
 }

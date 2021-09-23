@@ -52,6 +52,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
 
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
     private final IFileCryptography encryptor;
+    private final RateLimiterFactory rateLimiterFactory;
 
     @Inject
     public S3EncryptedFileSystem(
@@ -62,10 +63,12 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             @Named("filecryptoalgorithm") IFileCryptography fileCryptography,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
-            InstanceInfo instanceInfo) {
+            InstanceInfo instanceInfo,
+            RateLimiterFactory rateLimiterFactory) {
 
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
+        this.rateLimiterFactory = rateLimiterFactory;
         super.s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
@@ -142,6 +145,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         }
 
         // == Read compressed data, encrypt each chunk, upload it to aws
+        RateLimiter fileRateLimiter = rateLimiterFactory.create(path, target);
         try (BufferedInputStream compressedBis =
                 new BufferedInputStream(new FileInputStream(compressedDstFile))) {
             Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, remotePath);
@@ -154,6 +158,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                 byte[] chunk = chunks.next();
                 // throttle upload to endpoint
                 rateLimiter.acquire(chunk.length);
+                fileRateLimiter.acquire(chunk.length);
 
                 DataPart dp =
                         new DataPart(

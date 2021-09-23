@@ -36,7 +36,9 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
@@ -83,6 +85,8 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final IBackupStatusMgr snapshotStatusMgr;
     private final InstanceIdentity instanceIdentity;
     private final ExecutorService threadPool;
+    private final IConfiguration config;
+    private final Clock clock;
 
     private enum MetaStep {
         META_GENERATION,
@@ -100,11 +104,14 @@ public class SnapshotMetaTask extends AbstractBackup {
             @Named("v2") IMetaProxy metaProxy,
             InstanceIdentity instanceIdentity,
             IBackupStatusMgr snapshotStatusMgr,
-            CassandraOperations cassandraOperations) {
+            CassandraOperations cassandraOperations,
+            Clock clock) {
         super(config, backupFileSystemCtx, pathFactory);
+        this.config = config;
         this.instanceIdentity = instanceIdentity;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
+        this.clock = clock;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
@@ -184,7 +191,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         // Save start snapshot status
-        Instant snapshotInstant = DateUtil.getInstant();
+        Instant snapshotInstant = clock.instant();
         String token = instanceIdentity.getInstance().getToken();
         BackupMetadata backupMetadata =
                 new BackupMetadata(
@@ -287,7 +294,8 @@ public class SnapshotMetaTask extends AbstractBackup {
     }
 
     private Instant getUploadTarget() {
-        return Instant.EPOCH;
+        return clock.instant()
+                .plus(config.getTargetDurationToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
     }
 
     private Void deleteIfEmpty(File dir) {

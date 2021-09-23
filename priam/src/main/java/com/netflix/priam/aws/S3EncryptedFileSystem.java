@@ -19,15 +19,14 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.DynamicRateLimiter;
 import com.netflix.priam.backup.RangeReadInputStream;
-import com.netflix.priam.backup.RateLimiterFactory;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
@@ -52,6 +51,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
 
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
     private final IFileCryptography encryptor;
+    private final DynamicRateLimiter dynamicRateLimiter;
 
     @Inject
     public S3EncryptedFileSystem(
@@ -62,10 +62,12 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             @Named("filecryptoalgorithm") IFileCryptography fileCryptography,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
-            InstanceInfo instanceInfo) {
+            InstanceInfo instanceInfo,
+            DynamicRateLimiter dynamicRateLimiter) {
 
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
+        this.dynamicRateLimiter = dynamicRateLimiter;
         super.s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
@@ -154,6 +156,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                 byte[] chunk = chunks.next();
                 // throttle upload to endpoint
                 rateLimiter.acquire(chunk.length);
+                dynamicRateLimiter.acquire(path, target, chunk.length);
 
                 DataPart dp =
                         new DataPart(

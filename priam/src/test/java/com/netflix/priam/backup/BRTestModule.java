@@ -89,7 +89,7 @@ public class BRTestModule extends AbstractModule {
         bind(Registry.class).toInstance(new DefaultRegistry());
         bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
-        bind(RateLimiterFactory.class).to(FakeRateLimiterFactory.class);
+        bind(ThroughputController.class).to(FakeThroughputController.class);
         bind(Clock.class).toInstance(Clock.fixed(Instant.EPOCH, ZoneId.systemDefault()));
     }
 }

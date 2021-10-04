@@ -27,7 +27,7 @@ import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
-import com.netflix.priam.backup.RateLimiterFactory;
+import com.netflix.priam.backup.ThroughputController;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
@@ -52,7 +52,8 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
 
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
     private final IFileCryptography encryptor;
-    private final RateLimiterFactory rateLimiterFactory;
+    private final ThroughputController throughputController;
+    private final RateLimiter dynamicRateLimiter;
 
     @Inject
     public S3EncryptedFileSystem(
@@ -64,16 +65,17 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
             InstanceInfo instanceInfo,
-            RateLimiterFactory rateLimiterFactory) {
+            ThroughputController throughputController) {
 
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         this.encryptor = fileCryptography;
-        this.rateLimiterFactory = rateLimiterFactory;
+        this.throughputController = throughputController;
         super.s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
                         .withRegion(instanceInfo.getRegion())
                         .build();
+        this.dynamicRateLimiter = RateLimiter.create(Double.MAX_VALUE);
     }
 
     @Override
@@ -145,7 +147,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         }
 
         // == Read compressed data, encrypt each chunk, upload it to aws
-        RateLimiter fileRateLimiter = rateLimiterFactory.create(path, target);
+        dynamicRateLimiter.setRate(throughputController.getDesiredThroughput(path, target));
         try (BufferedInputStream compressedBis =
                 new BufferedInputStream(new FileInputStream(compressedDstFile))) {
             Iterator<byte[]> chunks = this.encryptor.encryptStream(compressedBis, remotePath);
@@ -158,7 +160,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                 byte[] chunk = chunks.next();
                 // throttle upload to endpoint
                 rateLimiter.acquire(chunk.length);
-                fileRateLimiter.acquire(chunk.length);
+                dynamicRateLimiter.acquire(chunk.length);
 
                 DataPart dp =
                         new DataPart(

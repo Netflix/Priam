@@ -29,7 +29,7 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.RangeReadInputStream;
-import com.netflix.priam.backup.RateLimiterFactory;
+import com.netflix.priam.backup.ThroughputController;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
@@ -56,7 +56,8 @@ import org.slf4j.LoggerFactory;
 public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
-    private final RateLimiterFactory rateLimiterFactory;
+    private final ThroughputController throughputController;
+    private final RateLimiter dynamicRateLimiter;
 
     @Inject
     public S3FileSystem(
@@ -67,14 +68,15 @@ public class S3FileSystem extends S3FileSystemBase {
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
             InstanceInfo instanceInfo,
-            RateLimiterFactory rateLimiterFactory) {
+            ThroughputController throughputController) {
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())
                         .withRegion(instanceInfo.getRegion())
                         .build();
-        this.rateLimiterFactory = rateLimiterFactory;
+        this.throughputController = throughputController;
+        this.dynamicRateLimiter = RateLimiter.create(Double.MAX_VALUE);
     }
 
     @Override
@@ -141,11 +143,12 @@ public class S3FileSystem extends S3FileSystemBase {
             AtomicInteger partsPut = new AtomicInteger(0);
             long compressedFileSize = 0;
 
-            RateLimiter fileRateLimiter = rateLimiterFactory.create(path, target);
+            double targetThroughput = throughputController.getDesiredThroughput(path, target);
+            dynamicRateLimiter.setRate(targetThroughput);
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
-                fileRateLimiter.acquire(chunk.length);
+                dynamicRateLimiter.acquire(chunk.length);
                 DataPart dp = new DataPart(++partNum, chunk, prefix, remotePath, uploadId);
                 S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsPut);
                 compressedFileSize += chunk.length;
@@ -194,7 +197,9 @@ public class S3FileSystem extends S3FileSystemBase {
             // C* snapshots may have empty files. That is probably unintentional.
             if (chunk.length > 0) {
                 rateLimiter.acquire(chunk.length);
-                rateLimiterFactory.create(path, target).acquire(chunk.length);
+                logger.info("chunk length: " + chunk.length);
+                dynamicRateLimiter.setRate(throughputController.getDesiredThroughput(path, target));
+                dynamicRateLimiter.acquire(chunk.length);
             }
             ObjectMetadata objectMetadata = getObjectMetadata(localFile);
             objectMetadata.setContentLength(chunk.length);

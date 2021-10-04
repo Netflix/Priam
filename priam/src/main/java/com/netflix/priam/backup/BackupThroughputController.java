@@ -1,6 +1,5 @@
 package com.netflix.priam.backup;
 
-import com.google.common.util.concurrent.RateLimiter;
 import java.io.IOException;
 import java.nio.file.FileVisitResult;
 import java.nio.file.FileVisitor;
@@ -11,27 +10,28 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import javax.inject.Inject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class BackupRateLimiterFactory implements RateLimiterFactory {
+public class BackupThroughputController implements ThroughputController {
 
+    private static final Logger logger = LoggerFactory.getLogger(BackupThroughputController.class);
     private final Clock clock;
 
     @Inject
-    BackupRateLimiterFactory(Clock clock) {
+    BackupThroughputController(Clock clock) {
         this.clock = clock;
     }
 
     @Override
-    public RateLimiter create(AbstractBackupPath path, Instant target) {
+    public double getDesiredThroughput(AbstractBackupPath path, Instant target) {
         long secondsRemaining = Duration.between(clock.instant(), target).getSeconds();
         if (secondsRemaining < 1) {
             // skip file system checks when unnecessary
-            return RateLimiter.create(Double.MAX_VALUE);
+            return Double.MAX_VALUE;
         }
         long totalBytes = getTotalSize(path.getBackupDirectory());
-        double permitsPerSecond =
-                totalBytes < 1 ? Double.MAX_VALUE : (double) totalBytes / secondsRemaining;
-        return RateLimiter.create(permitsPerSecond);
+        return totalBytes < 1 ? Double.MAX_VALUE : (double) totalBytes / secondsRemaining;
     }
 
     private long getTotalSize(Path dir) {

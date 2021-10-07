@@ -1,14 +1,13 @@
 package com.netflix.priam.backup;
 
 import com.netflix.priam.config.IConfiguration;
-
-import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import javax.inject.Inject;
 
 public class BackupThroughputController implements ThroughputController {
 
@@ -42,7 +41,7 @@ public class BackupThroughputController implements ThroughputController {
         } catch (IOException e) {
             // BackupFileVisitor is happy with an estimate and won't produce these in practice.
         }
-        return fileVisitor.getTotalBytes();
+        return fileVisitor.getTotalBytes() / config.getBackupThreads();
     }
 
     private static final class BackupFileVisitor implements FileVisitor<Path> {

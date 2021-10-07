@@ -1154,6 +1154,14 @@ public interface IConfiguration {
     }
 
     /**
+     * @return the percentage off of the old rate that the current rate must be to trigger a new
+     *     rate in the dynamic rate limiter
+     */
+    default double getRateLimitChangeThreshold() {
+        return 0.1;
+    }
+
+    /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also
      * exposed via HTTP at v1/config/unstructured/X

@@ -144,7 +144,10 @@ public class S3FileSystem extends S3FileSystemBase {
             long compressedFileSize = 0;
 
             double newRate = throughputController.getDesiredThroughput(path, target);
-            dynamicRateLimiter.setRate(newRate);
+            double oldRate = dynamicRateLimiter.getRate();
+            if ((Math.abs(newRate - oldRate) / oldRate) > config.getRateLimitChangeThreshold()) {
+                dynamicRateLimiter.setRate(newRate);
+            }
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
@@ -198,7 +201,12 @@ public class S3FileSystem extends S3FileSystemBase {
             if (chunk.length > 0) {
                 rateLimiter.acquire(chunk.length);
                 logger.info("chunk length: " + chunk.length);
-                dynamicRateLimiter.setRate(throughputController.getDesiredThroughput(path, target));
+                double newRate = throughputController.getDesiredThroughput(path, target);
+                double oldRate = dynamicRateLimiter.getRate();
+                if ((Math.abs(newRate - oldRate) / oldRate)
+                        > config.getRateLimitChangeThreshold()) {
+                    dynamicRateLimiter.setRate(newRate);
+                }
                 dynamicRateLimiter.acquire(chunk.length);
             }
             ObjectMetadata objectMetadata = getObjectMetadata(localFile);

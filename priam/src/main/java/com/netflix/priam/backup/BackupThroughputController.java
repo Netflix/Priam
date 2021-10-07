@@ -1,13 +1,14 @@
 package com.netflix.priam.backup;
 
 import com.netflix.priam.config.IConfiguration;
+
+import javax.inject.Inject;
 import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import javax.inject.Inject;
 
 public class BackupThroughputController implements ThroughputController {
 
@@ -22,6 +23,9 @@ public class BackupThroughputController implements ThroughputController {
 
     @Override
     public double getDesiredThroughput(AbstractBackupPath path, Instant target) {
+        if (!path.getBackupFile().getAbsolutePath().contains(AbstractBackup.SNAPSHOT_FOLDER)) {
+            return Double.MAX_VALUE;
+        }
         long secondsRemaining = Duration.between(clock.instant(), target).getSeconds();
         if (secondsRemaining < 1) {
             // skip file system checks when unnecessary

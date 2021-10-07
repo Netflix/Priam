@@ -143,8 +143,8 @@ public class S3FileSystem extends S3FileSystemBase {
             AtomicInteger partsPut = new AtomicInteger(0);
             long compressedFileSize = 0;
 
-            double targetThroughput = throughputController.getDesiredThroughput(path, target);
-            dynamicRateLimiter.setRate(targetThroughput);
+            double newRate = throughputController.getDesiredThroughput(path, target);
+            dynamicRateLimiter.setRate(newRate);
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);

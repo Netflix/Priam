@@ -1,26 +1,23 @@
 package com.netflix.priam.backup;
 
+import com.netflix.priam.config.IConfiguration;
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
-import java.nio.file.FileVisitor;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import javax.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class BackupThroughputController implements ThroughputController {
 
-    private static final Logger logger = LoggerFactory.getLogger(BackupThroughputController.class);
     private final Clock clock;
+    private final IConfiguration config;
 
     @Inject
-    BackupThroughputController(Clock clock) {
+    BackupThroughputController(IConfiguration config, Clock clock) {
         this.clock = clock;
+        this.config = config;
     }
 
     @Override
@@ -30,14 +27,14 @@ public class BackupThroughputController implements ThroughputController {
             // skip file system checks when unnecessary
             return Double.MAX_VALUE;
         }
-        long totalBytes = getTotalSize(path.getBackupDirectory());
+        long totalBytes = getTotalSize();
         return totalBytes < 1 ? Double.MAX_VALUE : (double) totalBytes / secondsRemaining;
     }
 
-    private long getTotalSize(Path dir) {
+    private long getTotalSize() {
         BackupFileVisitor fileVisitor = new BackupFileVisitor();
         try {
-            Files.walkFileTree(dir, fileVisitor);
+            Files.walkFileTree(Paths.get(config.getDataFileLocation()), fileVisitor);
         } catch (IOException e) {
             // BackupFileVisitor is happy with an estimate and won't produce these in practice.
         }
@@ -54,7 +51,9 @@ public class BackupThroughputController implements ThroughputController {
 
         @Override
         public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-            totalBytes += attrs.size();
+            if (file.toString().contains(AbstractBackup.SNAPSHOT_FOLDER) && attrs.isRegularFile()) {
+                totalBytes += attrs.size();
+            }
             return FileVisitResult.CONTINUE;
         }
 

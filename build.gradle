@@ -14,6 +14,19 @@ googleJavaFormat {
 ext.githubProjectName = 'Priam'
 
 allprojects {
+    tasks.withType(Test).configureEach {
+        maxParallelForks = 4
+    }
+
+    tasks.withType(Test).configureEach {
+        forkEvery = 100
+    }
+
+    tasks.withType(Test).configureEach {
+        reports.html.required = false
+        reports.junitXml.required = false
+    }
+
     apply plugin: 'jacoco'
     apply plugin: 'java'
 

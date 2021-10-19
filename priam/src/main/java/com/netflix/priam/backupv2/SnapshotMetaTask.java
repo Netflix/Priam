@@ -37,8 +37,9 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Set;
@@ -87,6 +88,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final ExecutorService threadPool;
     private final IConfiguration config;
     private final Clock clock;
+    private final IBackupRestoreConfig backupRestoreConfig;
 
     private enum MetaStep {
         META_GENERATION,
@@ -105,13 +107,15 @@ public class SnapshotMetaTask extends AbstractBackup {
             InstanceIdentity instanceIdentity,
             IBackupStatusMgr snapshotStatusMgr,
             CassandraOperations cassandraOperations,
-            Clock clock) {
+            Clock clock,
+            IBackupRestoreConfig backupRestoreConfig) {
         super(config, backupFileSystemCtx, pathFactory);
         this.config = config;
         this.instanceIdentity = instanceIdentity;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
         this.clock = clock;
+        this.backupRestoreConfig = backupRestoreConfig;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
@@ -261,6 +265,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         // (like we exhausted the wait time for upload)
         File[] snapshotDirectories = backupDir.listFiles();
         if (snapshotDirectories != null) {
+            Instant target = getUploadTarget();
             for (File snapshotDirectory : snapshotDirectories) {
                 // Is it a valid SNAPSHOT_PREFIX
                 if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
@@ -270,8 +275,6 @@ public class SnapshotMetaTask extends AbstractBackup {
                     FileUtils.deleteQuietly(snapshotDirectory);
                     continue;
                 }
-
-                Instant target = getUploadTarget();
 
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
@@ -294,8 +297,19 @@ public class SnapshotMetaTask extends AbstractBackup {
     }
 
     private Instant getUploadTarget() {
-        return clock.instant()
-                .plus(config.getTargetDurationToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
+        Duration targetDuration = config.getTargetMinutesToCompleteSnaphotUpload();
+        Instant targetInstant = clock.instant().plus(targetDuration);
+        try {
+            return earliest(
+                    targetInstant,
+                    getTimer(backupRestoreConfig).getTrigger().getNextFireTime().toInstant());
+        } catch (Exception e) {
+            return targetInstant;
+        }
+    }
+
+    private Instant earliest(Instant... instants) {
+        return Arrays.stream(instants).min(Instant::compareTo).get();
     }
 
     private Void deleteIfEmpty(File dir) {

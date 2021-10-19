@@ -23,6 +23,8 @@ import com.google.inject.ImplementedBy;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.tuner.GCType;
 import java.io.File;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -1149,8 +1151,8 @@ public interface IConfiguration {
     }
 
     /** returns how long a snapshot backup should take to upload in minutes */
-    default int getTargetDurationToCompleteSnaphotUpload() {
-        return 0;
+    default Duration getTargetMinutesToCompleteSnaphotUpload() {
+        return Duration.of(0, ChronoUnit.MINUTES);
     }
 
     /**

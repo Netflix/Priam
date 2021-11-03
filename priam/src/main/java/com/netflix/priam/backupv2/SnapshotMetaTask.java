@@ -36,9 +36,11 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.Optional;
@@ -89,6 +91,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final IConfiguration config;
     private final Clock clock;
     private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupVerification backupVerification;
 
     private enum MetaStep {
         META_GENERATION,
@@ -108,7 +111,8 @@ public class SnapshotMetaTask extends AbstractBackup {
             IBackupStatusMgr snapshotStatusMgr,
             CassandraOperations cassandraOperations,
             Clock clock,
-            IBackupRestoreConfig backupRestoreConfig) {
+            IBackupRestoreConfig backupRestoreConfig,
+            BackupVerification backupVerification) {
         super(config, backupFileSystemCtx, pathFactory);
         this.config = config;
         this.instanceIdentity = instanceIdentity;
@@ -116,6 +120,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         this.cassandraOperations = cassandraOperations;
         this.clock = clock;
         this.backupRestoreConfig = backupRestoreConfig;
+        this.backupVerification = backupVerification;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
@@ -130,10 +135,10 @@ public class SnapshotMetaTask extends AbstractBackup {
      * @param config {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get
      *     configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for snapshot meta service.
-     * @throws Exception if the configuration is not set correctly or are not valid. This is to
-     *     ensure we fail-fast.
+     * @throws IllegalArgumentException if the configuration is not set correctly or are not valid.
+     *     This is to ensure we fail-fast.
      */
-    public static TaskTimer getTimer(IBackupRestoreConfig config) throws Exception {
+    public static TaskTimer getTimer(IBackupRestoreConfig config) throws IllegalArgumentException {
         return CronTimer.getCronTimer(JOBNAME, config.getSnapshotMetaServiceCronExpression());
     }
 
@@ -297,15 +302,25 @@ public class SnapshotMetaTask extends AbstractBackup {
     }
 
     private Instant getUploadTarget() {
-        Duration targetDuration = config.getTargetMinutesToCompleteSnaphotUpload();
-        Instant targetInstant = clock.instant().plus(targetDuration);
+        Instant target =
+                clock.instant()
+                        .plus(config.getTargetMinutesToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
+        Duration verificationSLO =
+                Duration.ofHours(backupRestoreConfig.getBackupVerificationSLOInHours());
+        Instant verificationDeadline =
+                backupVerification
+                        .getLatestVerfifiedBackupTime()
+                        .map(backupTime -> backupTime.plus(verificationSLO))
+                        .orElse(Instant.MAX);
+        Instant nextSnapshotTime;
+        TaskTimer timer = getTimer(backupRestoreConfig);
         try {
-            return earliest(
-                    targetInstant,
-                    getTimer(backupRestoreConfig).getTrigger().getNextFireTime().toInstant());
-        } catch (Exception e) {
-            return targetInstant;
+            nextSnapshotTime =
+                    timer == null ? Instant.MAX : timer.getTrigger().getNextFireTime().toInstant();
+        } catch (IllegalArgumentException | ParseException e) {
+            nextSnapshotTime = Instant.MAX;
         }
+        return earliest(target, verificationDeadline, nextSnapshotTime);
     }
 
     private Instant earliest(Instant... instants) {

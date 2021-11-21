@@ -40,11 +40,9 @@ import java.text.ParseException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -53,6 +51,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,6 +77,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private static final String CASSANDRA_SCHEMA_FILE = "schema.cql";
+    private static final TimeZone UTC = TimeZone.getTimeZone(ZoneId.of("UTC"));
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
@@ -302,9 +302,9 @@ public class SnapshotMetaTask extends AbstractBackup {
     }
 
     private Instant getUploadTarget() {
+        Instant now = clock.instant();
         Instant target =
-                clock.instant()
-                        .plus(config.getTargetMinutesToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
+                now.plus(config.getTargetMinutesToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
         Duration verificationSLO =
                 Duration.ofHours(backupRestoreConfig.getBackupVerificationSLOInHours());
         Instant verificationDeadline =
@@ -313,11 +313,14 @@ public class SnapshotMetaTask extends AbstractBackup {
                         .map(backupTime -> backupTime.plus(verificationSLO))
                         .orElse(Instant.MAX);
         Instant nextSnapshotTime;
-        TaskTimer timer = getTimer(backupRestoreConfig);
         try {
+            CronExpression snapshotCron =
+                    new CronExpression(backupRestoreConfig.getSnapshotMetaServiceCronExpression());
+            snapshotCron.setTimeZone(UTC);
+            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(Instant.now()));
             nextSnapshotTime =
-                    timer == null ? Instant.MAX : timer.getTrigger().getNextFireTime().toInstant();
-        } catch (IllegalArgumentException | ParseException e) {
+                    nextSnapshotDate == null ? Instant.MAX : nextSnapshotDate.toInstant();
+        } catch (ParseException e) {
             nextSnapshotTime = Instant.MAX;
         }
         return earliest(target, verificationDeadline, nextSnapshotTime);

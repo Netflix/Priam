@@ -1,5 +1,6 @@
 package com.netflix.priam.backup;
 
+import com.google.common.util.concurrent.RateLimiter;
 import com.netflix.priam.config.IConfiguration;
 import java.io.IOException;
 import java.nio.file.*;
@@ -9,32 +10,45 @@ import java.time.Duration;
 import java.time.Instant;
 import javax.inject.Inject;
 
-public class BackupThroughputController implements ThroughputController {
+public class BackupDynamicRateLimiter implements DynamicRateLimiter {
 
     private final Clock clock;
     private final IConfiguration config;
+    private final RateLimiter rateLimiter;
 
     @Inject
-    BackupThroughputController(IConfiguration config, Clock clock) {
+    BackupDynamicRateLimiter(IConfiguration config, Clock clock) {
         this.clock = clock;
         this.config = config;
+        this.rateLimiter = RateLimiter.create(Double.MAX_VALUE);
     }
 
     @Override
-    public double getDesiredThroughput(AbstractBackupPath path, Instant target) {
-        if (!path.getBackupFile().getAbsolutePath().contains(AbstractBackup.SNAPSHOT_FOLDER)) {
-            return Double.MAX_VALUE;
+    public void acquire(AbstractBackupPath path, Instant target, int permits) {
+        if (target.equals(Instant.EPOCH)
+                || !path.getBackupFile()
+                        .getAbsolutePath()
+                        .contains(AbstractBackup.SNAPSHOT_FOLDER)) {
+            return;
         }
         long secondsRemaining = Duration.between(clock.instant(), target).getSeconds();
         if (secondsRemaining < 1) {
             // skip file system checks when unnecessary
-            return Double.MAX_VALUE;
+            return;
         }
-        long totalBytes = getTotalSize();
-        return totalBytes < 1 ? Double.MAX_VALUE : (double) totalBytes / secondsRemaining;
+        long bytesRemaining = getBytesRemaining();
+        if (bytesRemaining < 1) {
+            return;
+        }
+        double newRate = (double) bytesRemaining / secondsRemaining;
+        double oldRate = rateLimiter.getRate();
+        if ((Math.abs(newRate - oldRate) / oldRate) > config.getRateLimitChangeThreshold()) {
+            rateLimiter.setRate(newRate);
+        }
+        rateLimiter.acquire(permits);
     }
 
-    private long getTotalSize() {
+    private long getBytesRemaining() {
         BackupFileVisitor fileVisitor = new BackupFileVisitor();
         try {
             Files.walkFileTree(Paths.get(config.getDataFileLocation()), fileVisitor);

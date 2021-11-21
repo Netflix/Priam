@@ -2,7 +2,7 @@ package com.netflix.priam.backup;
 
 import java.time.Instant;
 
-public class FakeThroughputController implements ThroughputController {
+public class FakeDynamicRateLimiter implements DynamicRateLimiter {
     @Override
     public double getDesiredThroughput(AbstractBackupPath dir, Instant target) {
         return Double.MAX_VALUE;

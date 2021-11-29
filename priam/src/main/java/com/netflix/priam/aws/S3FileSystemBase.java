@@ -19,11 +19,7 @@ import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
 import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
 import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.lifecycle.LifecycleAndOperator;
-import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
-import com.amazonaws.services.s3.model.lifecycle.LifecyclePredicateVisitor;
-import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
-import com.amazonaws.services.s3.model.lifecycle.LifecycleTagPredicate;
+import com.amazonaws.services.s3.model.lifecycle.*;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Provider;
@@ -141,7 +137,15 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         public void visit(LifecycleTagPredicate lifecycleTagPredicate) {}
 
         @Override
+        public void visit(
+                LifecycleObjectSizeGreaterThanPredicate lifecycleObjectSizeGreaterThanPredicate) {}
+
+        @Override
         public void visit(LifecycleAndOperator lifecycleAndOperator) {}
+
+        @Override
+        public void visit(
+                LifecycleObjectSizeLessThanPredicate lifecycleObjectSizeLessThanPredicate) {}
     }
 
     private Optional<Rule> getBucketLifecycleRule(List<Rule> rules, String prefix) {

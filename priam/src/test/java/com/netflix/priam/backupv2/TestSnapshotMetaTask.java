@@ -23,21 +23,15 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
-import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.BackupFileUtils;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.ParseException;
 import java.time.Instant;
-import java.time.ZoneId;
-import java.util.Date;
-import java.util.TimeZone;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +40,6 @@ public class TestSnapshotMetaTask {
     private static final Logger logger =
             LoggerFactory.getLogger(TestSnapshotMetaTask.class.getName());
     private static Path dummyDataDirectoryLocation;
-    private static TimeZone UTC = TimeZone.getTimeZone(ZoneId.of("UTC"));
     private final IConfiguration configuration;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final SnapshotMetaTask snapshotMetaService;
@@ -67,23 +60,6 @@ public class TestSnapshotMetaTask {
     public void setUp() {
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
         BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
-    }
-
-    @Test
-    public void testCronTimer() throws Exception {
-        String cronExpression = "0 20 22 3 11 ? 2022";
-        TaskTimer timer = CronTimer.getCronTimer("FOO", cronExpression);
-        Instant nextSnapshotTime;
-        try {
-            CronExpression snapshotCron = new CronExpression(cronExpression);
-            snapshotCron.setTimeZone(UTC);
-            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(Instant.now()));
-            nextSnapshotTime =
-                    nextSnapshotDate == null ? Instant.MAX : nextSnapshotDate.toInstant();
-        } catch (ParseException e) {
-            nextSnapshotTime = Instant.MAX;
-        }
-        int gonnaBreak = 0;
     }
 
     @Test

@@ -19,7 +19,6 @@ import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
 import com.google.common.collect.Lists;
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -53,7 +52,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3EncryptedFileSystem.class);
     private final IFileCryptography encryptor;
     private final DynamicRateLimiter dynamicRateLimiter;
-    private final RateLimiter rateLimiter;
 
     @Inject
     public S3EncryptedFileSystem(
@@ -75,7 +73,6 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
                         .withCredentials(cred.getAwsCredentialProvider())
                         .withRegion(instanceInfo.getRegion())
                         .build();
-        this.rateLimiter = RateLimiter.create(Double.MAX_VALUE);
     }
 
     @Override

@@ -125,25 +125,18 @@ public class IncrementalBackup extends AbstractBackup {
 
         // Next, upload secondary indexes
         fileType = BackupFileType.SECONDARY_INDEX_V2;
-        logger.info("now working on secondary indexes");
         for (File directory : getSecondaryIndexDirectories(backupDir)) {
-            logger.info("uploading files in " + directory.getAbsolutePath());
             futures = uploadAndDeleteAllFiles(directory, fileType, config.enableAsyncIncremental());
             if (futures.stream().allMatch(ListenableFuture::isDone)) {
-                logger.info("all files were uploaded or there were no files");
                 deleteIfEmpty(directory);
             } else {
-                logger.info("waiting for files to finish uploading");
                 Futures.whenAllComplete(futures)
                         .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
             }
         }
-        logger.info("finished working on secondary indexes");
     }
 
     private Void deleteIfEmpty(File dir) {
-        logger.info("size of " + dir.getAbsolutePath() + " is " + FileUtils.sizeOfDirectory(dir));
-        logger.info("now deleting " + dir.getAbsolutePath());
         if (FileUtils.sizeOfDirectory(dir) == 0) FileUtils.deleteQuietly(dir);
         return null;
     }

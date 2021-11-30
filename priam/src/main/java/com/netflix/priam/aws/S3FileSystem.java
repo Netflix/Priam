@@ -20,7 +20,6 @@ import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Preconditions;
-import com.google.common.util.concurrent.RateLimiter;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -57,7 +56,6 @@ public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
     private final DynamicRateLimiter dynamicRateLimiter;
-    private final RateLimiter rateLimiter;
 
     @Inject
     public S3FileSystem(
@@ -76,7 +74,6 @@ public class S3FileSystem extends S3FileSystemBase {
                         .withRegion(instanceInfo.getRegion())
                         .build();
         this.dynamicRateLimiter = dynamicRateLimiter;
-        this.rateLimiter = RateLimiter.create(Double.MAX_VALUE);
     }
 
     @Override

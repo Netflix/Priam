@@ -4,7 +4,5 @@ import java.time.Instant;
 
 public class FakeDynamicRateLimiter implements DynamicRateLimiter {
     @Override
-    public double getDesiredThroughput(AbstractBackupPath dir, Instant target) {
-        return Double.MAX_VALUE;
-    }
+    public void acquire(AbstractBackupPath dir, Instant target, int tokens) {}
 }

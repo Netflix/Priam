@@ -301,7 +301,8 @@ public class SnapshotMetaTask extends AbstractBackup {
         String columnFamily = getColumnFamily(backupDir);
         switch (metaStep) {
             case META_GENERATION:
-                generateMetaFile(keyspace, columnFamily, backupDir);
+                generateMetaFile(keyspace, columnFamily, backupDir)
+                        .ifPresent(this::deleteUploadedFiles);
                 break;
             case UPLOAD_FILES:
                 uploadAllFiles(backupDir);
@@ -311,14 +312,14 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
     }
 
-    private void generateMetaFile(
+    private Optional<ColumnfamilyResult> generateMetaFile(
             final String keyspace, final String columnFamily, final File backupDir)
             throws Exception {
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
         // Process this snapshot folder for the given columnFamily
         if (snapshotDir == null) {
             logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
-            return;
+            return Optional.empty();
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
@@ -334,8 +335,18 @@ public class SnapshotMetaTask extends AbstractBackup {
 
         ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
         logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
-        dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
+        ColumnfamilyResult result =
+                dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
+        return Optional.of(result);
+    }
+
+    private void deleteUploadedFiles(ColumnfamilyResult result) {
+        result.getSstables()
+                .stream()
+                .flatMap(sstable -> sstable.getSstableComponents().stream())
+                .filter(file -> Boolean.TRUE.equals(file.getIsUploaded()))
+                .forEach(file -> FileUtils.deleteQuietly(file.getFileName().toFile()));
     }
 
     private ImmutableSetMultimap<String, AbstractBackupPath> getSSTables(

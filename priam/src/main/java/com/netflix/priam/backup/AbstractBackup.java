@@ -37,6 +37,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
@@ -65,6 +66,12 @@ public abstract class AbstractBackup extends Task {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
+    /** Overload that uploads files without any custom throttling */
+    protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
+            final File parent, final BackupFileType type, boolean async) throws Exception {
+        return uploadAndDeleteAllFiles(parent, type, async, Instant.EPOCH);
+    }
+
     /**
      * Upload files in the specified dir. Does not delete the file in case of error. The files are
      * uploaded serially or async based on flag provided.
@@ -72,18 +79,20 @@ public abstract class AbstractBackup extends Task {
      * @param parent Parent dir
      * @param type Type of file (META, SST, SNAP etc)
      * @param async Upload the file(s) in async fashion if enabled.
+     * @param target target time of completion of the batch of files
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
     protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
-            final File parent, final BackupFileType type, boolean async) throws Exception {
+            final File parent, final BackupFileType type, boolean async, Instant target)
+            throws Exception {
         ImmutableSet<AbstractBackupPath> backupPaths = getBackupPaths(parent, type);
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
         for (AbstractBackupPath bp : backupPaths) {
-            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
+            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10, target));
             else {
-                fs.uploadAndDelete(bp, 10);
+                fs.uploadAndDelete(bp, 10, target);
                 futures.add(Futures.immediateFuture(bp));
             }
         }

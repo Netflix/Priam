@@ -16,17 +16,15 @@ package com.netflix.priam.identity.config;
 import com.amazonaws.services.ec2.AmazonEC2;
 import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
 import com.amazonaws.services.ec2.model.*;
+import com.amazonaws.util.EC2MetadataUtils;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.utils.RetryableCallable;
-import com.netflix.priam.utils.SystemUtils;
 import java.util.List;
-import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +32,12 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class AWSInstanceInfo implements InstanceInfo {
     private static final Logger logger = LoggerFactory.getLogger(AWSInstanceInfo.class);
-    static final String PUBLIC_HOSTNAME_URL =
-            "http://169.254.169.254/latest/meta-data/public-hostname";
-    static final String LOCAL_HOSTNAME_URL =
-            "http://169.254.169.254/latest/meta-data/local-hostname";
-    static final String PUBLIC_HOSTIP_URL = "http://169.254.169.254/latest/meta-data/public-ipv4";
-    static final String LOCAL_HOSTIP_URL = "http://169.254.169.254/latest/meta-data/local-ipv4";
+
+    static final String PUBLIC_HOSTNAME_URL = "/latest/meta-data/public-hostname";
+    static final String LOCAL_HOSTNAME_URL = "/latest/meta-data/local-hostname";
+    static final String PUBLIC_HOSTIP_URL = "/latest/meta-data/public-ipv4";
+    static final String LOCAL_HOSTIP_URL = "/latest/meta-data/local-ipv4";
+
     private JSONObject identityDocument = null;
     private String privateIp;
     private String hostIP;
@@ -61,9 +59,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getPrivateIP() {
         if (privateIp == null) {
-            privateIp =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/local-ipv4");
+            privateIp = EC2MetadataUtils.getPrivateIpAddress();
         }
         return privateIp;
     }
@@ -71,9 +67,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getRac() {
         if (rac == null) {
-            rac =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/placement/availability-zone");
+            rac = EC2MetadataUtils.getAvailabilityZone();
         }
         return rac;
     }
@@ -98,9 +92,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getInstanceId() {
         if (instanceId == null) {
-            instanceId =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/instance-id");
+            instanceId = EC2MetadataUtils.getInstanceId();
         }
         return instanceId;
     }
@@ -108,41 +100,21 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getInstanceType() {
         if (instanceType == null) {
-            instanceType =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/meta-data/instance-type");
+            instanceType = EC2MetadataUtils.getInstanceType();
         }
         return instanceType;
     }
 
     private String getMac() {
         if (mac == null) {
-            mac =
-                    SystemUtils.getDataFromUrl(
-                                    "http://169.254.169.254/latest/meta-data/network/interfaces/macs/")
-                            .trim();
+            mac = EC2MetadataUtils.getNetworkInterfaces().get(0).getMacAddress();
         }
         return mac;
     }
 
     @Override
     public String getRegion() {
-        try {
-            getIdentityDocument();
-            return this.identityDocument.getString("region");
-        } catch (JSONException e) {
-            // If there is any issue in getting region, use AZ as backup.
-            return getRac().substring(0, getRac().length() - 1);
-        }
-    }
-
-    private void getIdentityDocument() throws JSONException {
-        if (this.identityDocument == null) {
-            String jsonStr =
-                    SystemUtils.getDataFromUrl(
-                            "http://169.254.169.254/latest/dynamic/instance-identity/document");
-            this.identityDocument = new JSONObject(jsonStr);
-        }
+        return EC2MetadataUtils.getEC2InstanceRegion();
     }
 
     @Override
@@ -152,12 +124,7 @@ public class AWSInstanceInfo implements InstanceInfo {
 
         if (vpcId == null)
             try {
-                vpcId =
-                        SystemUtils.getDataFromUrl(
-                                        "http://169.254.169.254/latest/meta-data/network/interfaces/macs/"
-                                                + nacId
-                                                + "vpc-id")
-                                .trim();
+                vpcId = EC2MetadataUtils.getNetworkInterfaces().get(0).getVpcId();
             } catch (Exception e) {
                 logger.info(
                         "Vpc id does not exist for running instance, not fatal as running instance maybe not be in vpc.  Msg: {}",
@@ -211,9 +178,9 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getHostname() {
         if (hostName == null) {
+            String publicHostName = tryGetDataFromUrl(PUBLIC_HOSTNAME_URL);
             hostName =
-                    tryGetDataFromUrl(PUBLIC_HOSTNAME_URL)
-                            .orElse(SystemUtils.getDataFromUrl(LOCAL_HOSTNAME_URL));
+                    publicHostName == null ? tryGetDataFromUrl(LOCAL_HOSTNAME_URL) : publicHostName;
         }
         return hostName;
     }
@@ -221,18 +188,17 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getHostIP() {
         if (hostIP == null) {
-            hostIP =
-                    tryGetDataFromUrl(PUBLIC_HOSTIP_URL)
-                            .orElse(SystemUtils.getDataFromUrl(LOCAL_HOSTIP_URL));
+            String publicHostIP = tryGetDataFromUrl(PUBLIC_HOSTIP_URL);
+            hostIP = publicHostIP == null ? tryGetDataFromUrl(LOCAL_HOSTIP_URL) : publicHostIP;
         }
         return hostIP;
     }
 
-    Optional<String> tryGetDataFromUrl(String url) {
+    String tryGetDataFromUrl(String url) {
         try {
-            return Optional.of(SystemUtils.getDataFromUrl(url));
+            return EC2MetadataUtils.getData(url);
         } catch (Exception e) {
-            return Optional.empty();
+            return null;
         }
     }
 }

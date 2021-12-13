@@ -40,6 +40,7 @@ allprojects {
       compile 'com.google.code.findbugs:jsr305:3.0.2'
         
       // AWS Services
+      compile 'com.amazonaws:aws-java-sdk-core:latest.release'
       compile 'com.amazonaws:aws-java-sdk-s3:latest.release'
       compile 'com.amazonaws:aws-java-sdk-sns:latest.release'
       compile 'com.amazonaws:aws-java-sdk-ec2:latest.release'

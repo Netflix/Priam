@@ -1,9 +1,7 @@
 package com.netflix.priam.identity.config;
 
 import com.google.common.truth.Truth;
-import com.netflix.priam.utils.SystemUtils;
 import mockit.Expectations;
-import mockit.Mocked;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -21,10 +19,10 @@ public class TestAWSInstanceInfo {
     }
 
     @Test
-    public void testPublicHostIP(@Mocked SystemUtils systemUtils) {
-        new Expectations() {
+    public void testPublicHostIP() {
+        new Expectations(instanceInfo) {
             {
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTIP_URL);
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTIP_URL);
                 result = "1.2.3.4";
             }
         };
@@ -32,12 +30,12 @@ public class TestAWSInstanceInfo {
     }
 
     @Test
-    public void testMissingPublicHostIP(@Mocked SystemUtils systemUtils) {
-        new Expectations() {
+    public void testMissingPublicHostIP() {
+        new Expectations(instanceInfo) {
             {
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTIP_URL);
-                result = new RuntimeException();
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.LOCAL_HOSTIP_URL);
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTIP_URL);
+                result = null;
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.LOCAL_HOSTIP_URL);
                 result = "1.2.3.4";
             }
         };
@@ -45,10 +43,10 @@ public class TestAWSInstanceInfo {
     }
 
     @Test
-    public void testPublicHostname(@Mocked SystemUtils systemUtils) {
-        new Expectations() {
+    public void testPublicHostname() {
+        new Expectations(instanceInfo) {
             {
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTNAME_URL);
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTNAME_URL);
                 result = "hostname";
             }
         };
@@ -56,12 +54,12 @@ public class TestAWSInstanceInfo {
     }
 
     @Test
-    public void testMissingPublicHostname(@Mocked SystemUtils systemUtils) {
-        new Expectations() {
+    public void testMissingPublicHostname() {
+        new Expectations(instanceInfo) {
             {
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTNAME_URL);
-                result = new RuntimeException();
-                SystemUtils.getDataFromUrl(AWSInstanceInfo.LOCAL_HOSTNAME_URL);
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.PUBLIC_HOSTNAME_URL);
+                result = null;
+                instanceInfo.tryGetDataFromUrl(AWSInstanceInfo.LOCAL_HOSTNAME_URL);
                 result = "hostname";
             }
         };

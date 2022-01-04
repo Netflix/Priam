@@ -41,8 +41,6 @@ public class FakeConfiguration implements IConfiguration {
     private boolean skipUpdatingOthersIngressRules;
     private boolean skipIngressUnlessIPIsPublic;
 
-    public Map<String, String> fakeProperties = new HashMap<>();
-
     public FakeConfiguration() {
         this("my_fake_cluster");
     }
@@ -185,12 +183,12 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public String getProperty(String key, String defaultValue) {
-        return fakeProperties.getOrDefault(key, defaultValue);
+        return (String) fakeConfig.getOrDefault(key, defaultValue);
     }
 
     @Override
     public String getMergedConfigurationDirectory() {
-        return fakeProperties.getOrDefault("priam_test_config", "/tmp/priam_test_config");
+        return (String) fakeConfig.getOrDefault("priam_test_config", "/tmp/priam_test_config");
     }
 
     @Override
@@ -284,5 +282,10 @@ public class FakeConfiguration implements IConfiguration {
 
     public void setSkipIngressUnlessIPIsPublic(boolean skipIngressUnlessIPIsPublic) {
         this.skipIngressUnlessIPIsPublic = skipIngressUnlessIPIsPublic;
+    }
+
+    @Override
+    public int getBackupThreads() {
+        return (Integer) fakeConfig.get("Priam.backup.threads");
     }
 }

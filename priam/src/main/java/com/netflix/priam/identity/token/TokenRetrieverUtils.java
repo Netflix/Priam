@@ -39,7 +39,7 @@ public class TokenRetrieverUtils {
         // Avoid other regions instances to avoid communication over public ip address.
         List<? extends PriamInstance> eligibleInstances =
                 allIds.stream()
-                        .filter(priamInstance -> !priamInstance.getToken().equalsIgnoreCase(token))
+                        .filter(priamInstance -> !token.equalsIgnoreCase(priamInstance.getToken()))
                         .filter(priamInstance -> priamInstance.getDC().equalsIgnoreCase(dc))
                         .collect(Collectors.toList());
         // We want to get IP from min 1, max 3 instances to ensure we are not relying on

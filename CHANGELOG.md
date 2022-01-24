@@ -1,4 +1,8 @@
 # Changelog
+## 2022/01/24 3.1.113
+(#978) Quick fix that re-enables local bootstrapping
+NOTE: UpdateSecuritySettings will be deprecated in an upcoming release.
+
 ## 2022/01/04 3.1.112
 (#976) Use IMDSV2 to get instance metadata
 

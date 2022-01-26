@@ -1,4 +1,8 @@
 # Changelog
+## 2022/01/25 3.1.114
+(#980) Cache region in AWSInstanceInfo to avoid throttling.
+NOTE: UpdateSecuritySettings will be deprecated in an upcoming release.
+
 ## 2022/01/24 3.1.113
 (#978) Quick fix that re-enables local bootstrapping
 NOTE: UpdateSecuritySettings will be deprecated in an upcoming release.

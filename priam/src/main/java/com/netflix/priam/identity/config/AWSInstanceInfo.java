@@ -46,6 +46,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     private String instanceId;
     private String instanceType;
     private String mac;
+    private String region;
     private String availabilityZone;
     private ICredential credential;
     private String vpcId;
@@ -114,7 +115,10 @@ public class AWSInstanceInfo implements InstanceInfo {
 
     @Override
     public String getRegion() {
-        return EC2MetadataUtils.getEC2InstanceRegion();
+        if (region == null) {
+            region = EC2MetadataUtils.getEC2InstanceRegion();
+        }
+        return region;
     }
 
     @Override

@@ -1,6 +1,9 @@
 # Changelog
-## 2022/01/25 3.11.87
+## 2022/01/25 3.11.88
 (#979) Cache region in AWSInstanceInfo to avoid throttling.
+
+## 2022/01/25 3.11.87
+Botched release. Disregard
 
 ## 2022/01/04 3.11.86
 (#977) Use IMDSV2 to get instance metadata

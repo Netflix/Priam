@@ -48,6 +48,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     private String instanceId;
     private String instanceType;
     private String mac;
+    private String region;
     private String availabilityZone;
     private ICredential credential;
     private String vpcId;
@@ -127,13 +128,16 @@ public class AWSInstanceInfo implements InstanceInfo {
 
     @Override
     public String getRegion() {
-        try {
-            getIdentityDocument();
-            return this.identityDocument.getString("region");
-        } catch (JSONException e) {
-            // If there is any issue in getting region, use AZ as backup.
-            return getRac().substring(0, getRac().length() - 1);
+        if (region == null) {
+            try {
+                getIdentityDocument();
+                region = this.identityDocument.getString("region");
+            } catch (JSONException e) {
+                // If there is any issue in getting region, use AZ as backup.
+                return getRac().substring(0, getRac().length() - 1);
+            }
         }
+        return region;
     }
 
     private void getIdentityDocument() throws JSONException {

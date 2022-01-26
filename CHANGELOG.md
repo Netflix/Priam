@@ -1,4 +1,16 @@
 # Changelog
+## 2022/01/24 3.1.113
+(#978) Quick fix that re-enables local bootstrapping
+NOTE: UpdateSecuritySettings will be deprecated in an upcoming release.
+
+## 2022/01/04 3.1.112
+(#976) Use IMDSV2 to get instance metadata
+
+## 2021/08/31 3.1.111
+(#972) Throw in case of gossip mismatch when determining replace_ip in assigned token case
+(#969) Make getPublicIP and getPublicHostname fail elegantly when those attributes are absent.
+(#968) Delete empty incremental backup files rather than throwing when we try to rate limit them.
+
 ## 2021/06/11 3.1.110
 (#953) Fixing integer overflow problem in restore
 

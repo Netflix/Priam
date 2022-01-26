@@ -1,4 +1,7 @@
 # Changelog
+## 2022/01/04 3.11.86
+(#977) Use IMDSV2 to get instance metadata
+
 ## 2021/08/31 3.11.85
 (#973) Throw in case of gossip mismatch when determining replace_ip in assigned token case.
 (#970) Make getPublicIP and getPublicHostname fail elegantly when those attributes are absent.

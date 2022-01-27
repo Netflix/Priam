@@ -25,8 +25,8 @@ import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.utils.FifoQueue;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 public class StreamingTest {
 
@@ -34,8 +34,8 @@ public class StreamingTest {
     public void testFifoAddAndRemove() {
         FifoQueue<Long> queue = new FifoQueue<>(10);
         for (long i = 0; i < 100; i++) queue.adjustAndAdd(i);
-        Assert.assertEquals(10, queue.size());
-        Assert.assertEquals(new Long(90), queue.first());
+        Assertions.assertEquals(10, queue.size());
+        Assertions.assertEquals(new Long(90), queue.first());
     }
 
     @Test
@@ -94,25 +94,25 @@ public class StreamingTest {
                         + region
                         + "/fakecluster/123456/201108290000"
                         + "/SNAP/ks1/cf2/f129.db");
-        Assert.assertTrue(queue.contains(path));
+        Assertions.assertTrue(queue.contains(path));
         path.parseRemote(
                 "test_backup/"
                         + region
                         + "/fakecluster/123456/201108290000"
                         + "/SNAP/ks1/cf2/f229.db");
-        Assert.assertTrue(queue.contains(path));
+        Assertions.assertTrue(queue.contains(path));
         path.parseRemote(
                 "test_backup/"
                         + region
                         + "/fakecluster/123456/201108290000"
                         + "/SNAP/ks1/cf2/f329.db");
-        Assert.assertTrue(queue.contains(path));
+        Assertions.assertTrue(queue.contains(path));
 
         path.parseRemote(
                 "test_backup/"
                         + region
                         + "/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
-        Assert.assertEquals(path, queue.first());
+        Assertions.assertEquals(path, queue.first());
     }
 
     @Test

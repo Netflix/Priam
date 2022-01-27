@@ -16,7 +16,7 @@
  */
 package com.netflix.priam.resources;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.netflix.priam.PriamServer;
 import com.netflix.priam.config.FakeConfiguration;
@@ -26,8 +26,8 @@ import java.util.Map;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PriamConfigTest {
     private @Mocked PriamServer priamServer;
@@ -36,7 +36,7 @@ public class PriamConfigTest {
 
     private FakeConfiguration fakeConfiguration;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         resource = new PriamConfig(priamServer);
         fakeConfiguration = new FakeConfiguration("cass_test");

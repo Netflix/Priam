@@ -30,8 +30,8 @@ import mockit.Mock;
 import mockit.MockUp;
 import mockit.Mocked;
 import org.apache.cassandra.tools.NodeProbe;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 3/1/19. */
 public class TestCassandraOperations {
@@ -66,18 +66,18 @@ public class TestCassandraOperations {
         };
         List<Map<String, String>> gossipInfoList = cassandraOperations.gossipInfo();
         System.out.println(gossipInfoList);
-        Assert.assertEquals(7, gossipInfoList.size());
+        Assertions.assertEquals(7, gossipInfoList.size());
         gossipInfoList
                 .stream()
                 .forEach(
                         gossipInfo -> {
-                            Assert.assertEquals("us-east", gossipInfo.get("DC"));
-                            Assert.assertNotNull(gossipInfo.get("PUBLIC_IP"));
-                            Assert.assertEquals("1565153", gossipInfo.get("HEARTBEAT"));
+                            Assertions.assertEquals("us-east", gossipInfo.get("DC"));
+                            Assertions.assertNotNull(gossipInfo.get("PUBLIC_IP"));
+                            Assertions.assertEquals("1565153", gossipInfo.get("HEARTBEAT"));
                             if (gossipInfo.get("STATUS").equalsIgnoreCase("NORMAL"))
-                                Assert.assertNotNull(gossipInfo.get("TOKENS"));
+                                Assertions.assertNotNull(gossipInfo.get("TOKENS"));
                             if (gossipInfo.get("PUBLIC_IP").equalsIgnoreCase("127.0.0.1"))
-                                Assert.assertEquals("[123,234]", gossipInfo.get("TOKENS"));
+                                Assertions.assertEquals("[123,234]", gossipInfo.get("TOKENS"));
                         });
     }
 }

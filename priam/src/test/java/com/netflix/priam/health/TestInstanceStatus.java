@@ -20,15 +20,15 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.Status;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Test InstanceState Created by aagrawal on 9/22/17. */
 public class TestInstanceStatus {
     private TestInstanceState testInstanceState;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
         InstanceState instanceState = injector.getInstance(InstanceState.class);
@@ -38,61 +38,61 @@ public class TestInstanceStatus {
     @Test
     public void testHealth() {
         // Verify good health.
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(false, true, true, true, true, true, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(false, true, true, true, true, false, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(false, true, true, true, false, true, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(true, false, true, true, false, true, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(true, true, false, true, true, true, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(true, true, true, false, true, true, true, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(true, true, true, true, true, true, false, true)
                         .isHealthy());
-        Assert.assertTrue(
+        Assertions.assertTrue(
                 testInstanceState
                         .setParams(true, true, true, true, false, false, true, true)
                         .isHealthy());
 
         // Negative health case scenarios.
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, false, true, true, false, true, true, true)
                         .isHealthy());
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, true, false, true, true, true, true, true)
                         .isHealthy());
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, true, true, false, true, true, true, true)
                         .isHealthy());
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, true, true, true, true, true, false, true)
                         .isHealthy());
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, true, true, true, false, false, true, true)
                         .isHealthy());
-        Assert.assertFalse(
+        Assertions.assertFalse(
                 testInstanceState
                         .setParams(false, true, true, true, false, false, true, false)
                         .isHealthy());

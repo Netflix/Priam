@@ -18,8 +18,8 @@ import mockit.Capturing;
 import mockit.Expectations;
 import mockit.Mocked;
 import mockit.Verifications;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestBackupNotificationMgr {
     private Injector injector;
@@ -27,7 +27,7 @@ public class TestBackupNotificationMgr {
     private Provider<AbstractBackupPath> abstractBackupPathProvider;
     private IConfiguration configuration;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         if (injector == null) {
             injector = Guice.createInjector(new BRTestModule());

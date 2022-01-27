@@ -17,7 +17,7 @@
 
 package com.netflix.priam.backup.identity;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
@@ -25,7 +25,7 @@ import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
 import java.util.List;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class DoubleRingTest extends InstanceTestUtils {
 

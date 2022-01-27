@@ -19,8 +19,8 @@ package com.netflix.priam.configSource;
 
 import com.google.common.collect.ImmutableList;
 import java.util.List;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,7 +34,7 @@ public final class AbstractConfigSourceTest {
         source.set("foo", "bar,baz, qux ");
         final List<String> values = source.getList("foo");
         LOGGER.info("Values {}", values);
-        Assert.assertEquals(ImmutableList.of("bar", "baz", "qux"), values);
+        Assertions.assertEquals(ImmutableList.of("bar", "baz", "qux"), values);
     }
 
     @Test
@@ -43,7 +43,7 @@ public final class AbstractConfigSourceTest {
         source.set("foo", "bar");
         final List<String> values = source.getList("foo");
         LOGGER.info("Values {}", values);
-        Assert.assertEquals(ImmutableList.of("bar"), values);
+        Assertions.assertEquals(ImmutableList.of("bar"), values);
     }
 
     @Test
@@ -52,6 +52,6 @@ public final class AbstractConfigSourceTest {
         source.set("foo", "\tbar ");
         final List<String> values = source.getList("foo");
         LOGGER.info("Values {}", values);
-        Assert.assertEquals(ImmutableList.of("bar"), values);
+        Assertions.assertEquals(ImmutableList.of("bar"), values);
     }
 }

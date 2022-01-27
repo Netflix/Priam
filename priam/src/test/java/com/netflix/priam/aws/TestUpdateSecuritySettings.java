@@ -9,8 +9,8 @@ import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /* Tests of {@link UpdateSecuritySettings.java} */
 public class TestUpdateSecuritySettings {
@@ -22,7 +22,7 @@ public class TestUpdateSecuritySettings {
     private FakeConfiguration config;
     private FakeIPConverter ipConverter;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Injector injector = Guice.createInjector(new TestModule());
         factory = injector.getInstance(IPriamInstanceFactory.class);

@@ -17,8 +17,8 @@
 
 package com.netflix.priam.configSource;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,12 +31,12 @@ public final class PropertiesConfigSourceTest {
         PropertiesConfigSource configSource = new PropertiesConfigSource("conf/Priam.properties");
         configSource.initialize("asgName", "region");
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 "\"/tmp/commitlog\"", configSource.get("Priam.backup.commitlog.location"));
-        Assert.assertEquals(7102, configSource.get("Priam.thrift.port", 0));
+        Assertions.assertEquals(7102, configSource.get("Priam.thrift.port", 0));
         // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(13, configSource.size());
+        Assertions.assertEquals(13, configSource.size());
     }
 
     @Test
@@ -46,16 +46,16 @@ public final class PropertiesConfigSourceTest {
 
         // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(13, configSource.size());
+        Assertions.assertEquals(13, configSource.size());
 
         configSource.set("foo", "bar");
 
-        Assert.assertEquals(14, configSource.size());
+        Assertions.assertEquals(14, configSource.size());
 
-        Assert.assertEquals("bar", configSource.get("foo"));
+        Assertions.assertEquals("bar", configSource.get("foo"));
 
-        Assert.assertEquals(7102, configSource.get("Priam.thrift.port", 0));
+        Assertions.assertEquals(7102, configSource.get("Priam.thrift.port", 0));
         configSource.set("Priam.thrift.port", Integer.toString(10));
-        Assert.assertEquals(10, configSource.get("Priam.thrift.port", 0));
+        Assertions.assertEquals(10, configSource.get("Priam.thrift.port", 0));
     }
 }

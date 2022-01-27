@@ -17,8 +17,8 @@
 
 package com.netflix.priam.utils;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 12/1/18. */
 public class TestSystemUtils {
@@ -27,6 +27,6 @@ public class TestSystemUtils {
     public void testGetDataFromUrl() {
         String dummyurl = "https://jsonplaceholder.typicode.com/todos/1";
         String response = SystemUtils.getDataFromUrl(dummyurl);
-        Assert.assertNotNull(response);
+        Assertions.assertNotNull(response);
     }
 }

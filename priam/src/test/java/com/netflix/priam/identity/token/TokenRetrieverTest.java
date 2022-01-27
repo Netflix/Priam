@@ -41,8 +41,8 @@ import java.util.stream.IntStream;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 3/1/19. */
 public class TokenRetrieverTest {

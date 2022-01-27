@@ -37,9 +37,9 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 12/5/18. */
 public class TestMetaV2Proxy {
@@ -62,19 +62,19 @@ public class TestMetaV2Proxy {
     @Test
     public void testMetaPrefix() {
         // Null date range
-        Assert.assertEquals(getPrefix() + "/META_V2", metaProxy.getMetaPrefix(null));
+        Assertions.assertEquals(getPrefix() + "/META_V2", metaProxy.getMetaPrefix(null));
         Instant now = Instant.now();
         // No end date.
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 getPrefix() + "/META_V2/" + now.toEpochMilli(),
                 metaProxy.getMetaPrefix(new DateUtil.DateRange(now, null)));
         // No start date
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 getPrefix() + "/META_V2",
                 metaProxy.getMetaPrefix(new DateUtil.DateRange(null, Instant.now())));
         long start = 1834567890L;
         long end = 1834877776L;
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 getPrefix() + "/META_V2/1834",
                 metaProxy.getMetaPrefix(
                         new DateUtil.DateRange(
@@ -88,7 +88,7 @@ public class TestMetaV2Proxy {
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(metaPath.toFile(), AbstractBackupPath.BackupFileType.META_V2);
 
-        Assert.assertTrue(metaProxy.isMetaFileValid(abstractBackupPath).valid);
+        Assertions.assertTrue(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
         List<String> fileToAdd = getRemoteFakeFiles();
@@ -105,11 +105,11 @@ public class TestMetaV2Proxy {
                         .toString());
 
         metaPath = backupUtils.createMeta(fileToAdd, snapshotInstant);
-        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
+        Assertions.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
         FileUtils.deleteQuietly(metaPath.toFile());
 
         metaPath = Paths.get(configuration.getDataFileLocation(), "meta_v2_201801010000.json");
-        Assert.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
+        Assertions.assertFalse(metaProxy.isMetaFileValid(abstractBackupPath).valid);
     }
 
     @Test
@@ -119,7 +119,7 @@ public class TestMetaV2Proxy {
         Path metaPath = backupUtils.createMeta(remoteFiles, snapshotInstant);
         List<String> filesFromMeta = metaProxy.getSSTFilesFromMeta(metaPath);
         filesFromMeta.removeAll(remoteFiles);
-        Assert.assertTrue(filesFromMeta.isEmpty());
+        Assertions.assertTrue(filesFromMeta.isEmpty());
     }
 
     @Test
@@ -131,7 +131,7 @@ public class TestMetaV2Proxy {
             System.out.println(incrementals.next());
             i++;
         }
-        Assert.assertEquals(3, i);
+        Assertions.assertEquals(3, i);
     }
 
     @Test
@@ -141,16 +141,16 @@ public class TestMetaV2Proxy {
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828420000L)));
-        Assert.assertEquals(1, metas.size());
-        Assert.assertEquals("meta_v2_202812071801.json", metas.get(0).getFileName());
-        Assert.assertTrue(fs.doesRemoteFileExist(Paths.get(metas.get(0).getRemotePath())));
+        Assertions.assertEquals(1, metas.size());
+        Assertions.assertEquals("meta_v2_202812071801.json", metas.get(0).getFileName());
+        Assertions.assertTrue(fs.doesRemoteFileExist(Paths.get(metas.get(0).getRemotePath())));
 
         metas =
                 metaProxy.findMetaFiles(
                         new DateUtil.DateRange(
                                 Instant.ofEpochMilli(1859824860000L),
                                 Instant.ofEpochMilli(1859828460000L)));
-        Assert.assertEquals(2, metas.size());
+        Assertions.assertEquals(2, metas.size());
     }
 
     @Test
@@ -232,7 +232,7 @@ public class TestMetaV2Proxy {
         return files.stream().map(Path::toString).collect(Collectors.toList());
     }
 
-    @After
+    @AfterEach
     public void cleanup() throws IOException {
         FileUtils.cleanDirectory(new File(configuration.getDataFileLocation()));
     }
@@ -241,14 +241,14 @@ public class TestMetaV2Proxy {
     public void testCleanupOldMetaFiles() throws IOException {
         generateDummyMetaFiles();
         Path dataDir = Paths.get(configuration.getDataFileLocation());
-        Assert.assertEquals(4, dataDir.toFile().listFiles().length);
+        Assertions.assertEquals(4, dataDir.toFile().listFiles().length);
 
         // clean the directory
         metaProxy.cleanupOldMetaFiles();
 
-        Assert.assertEquals(1, dataDir.toFile().listFiles().length);
+        Assertions.assertEquals(1, dataDir.toFile().listFiles().length);
         Path dummy = Paths.get(dataDir.toString(), "dummy.tmp");
-        Assert.assertTrue(dummy.toFile().exists());
+        Assertions.assertTrue(dummy.toFile().exists());
     }
 
     private void generateDummyMetaFiles() throws IOException {

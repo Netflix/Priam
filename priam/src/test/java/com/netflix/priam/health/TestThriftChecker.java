@@ -6,9 +6,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class TestThriftChecker {
     private FakeConfiguration config;
@@ -16,7 +16,7 @@ public class TestThriftChecker {
 
     @Mocked private Process mockProcess;
 
-    @Before
+    @BeforeEach
     public void TestThriftChecker() {
         config = new FakeConfiguration();
         thriftChecker = new ThriftChecker(config);
@@ -25,13 +25,13 @@ public class TestThriftChecker {
     @Test
     public void testThriftServerIsListeningDisabled() {
         config.setCheckThriftServerIsListening(false);
-        Assert.assertTrue(thriftChecker.isThriftServerListening());
+        Assertions.assertTrue(thriftChecker.isThriftServerListening());
     }
 
     @Test
     public void testThriftServerIsNotListening() {
         config.setCheckThriftServerIsListening(true);
-        Assert.assertFalse(thriftChecker.isThriftServerListening());
+        Assertions.assertFalse(thriftChecker.isThriftServerListening());
     }
 
     @Test
@@ -56,7 +56,7 @@ public class TestThriftChecker {
             }
         };
 
-        Assert.assertTrue(thriftChecker.isThriftServerListening());
+        Assertions.assertTrue(thriftChecker.isThriftServerListening());
     }
 
     @Test
@@ -81,6 +81,6 @@ public class TestThriftChecker {
             }
         };
 
-        Assert.assertTrue(thriftChecker.isThriftServerListening());
+        Assertions.assertTrue(thriftChecker.isThriftServerListening());
     }
 }

@@ -24,14 +24,14 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.CassMonitorMetrics;
 import java.io.IOException;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CassandraProcessManagerTest {
     private CassandraProcessManager cpm;
 
-    @Before
+    @BeforeEach
     public void setup() {
         IConfiguration config = new FakeConfiguration("test_cluster");
         InstanceState instanceState =
@@ -48,7 +48,7 @@ public class CassandraProcessManagerTest {
         try {
             p = new ProcessBuilder("ls", "/tmppppp").start();
             int exitValue = p.waitFor();
-            Assert.assertTrue(0 != exitValue);
+            Assertions.assertTrue(0 != exitValue);
             cpm.logProcessOutput(p);
         } catch (IOException ioe) {
             if (p != null) cpm.logProcessOutput(p);
@@ -60,7 +60,7 @@ public class CassandraProcessManagerTest {
     public void logProcessOutput_GoodApp() throws IOException, InterruptedException {
         Process p = new ProcessBuilder("true").start();
         int exitValue = p.waitFor();
-        Assert.assertEquals(0, exitValue);
+        Assertions.assertEquals(0, exitValue);
         cpm.logProcessOutput(p);
     }
 }

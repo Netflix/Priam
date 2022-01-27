@@ -31,7 +31,7 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.FileUtils;
-import org.junit.*;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +46,7 @@ public class TestBackup {
     private static final Logger logger = LoggerFactory.getLogger(TestBackup.class);
     private static final Set<String> expectedFiles = new HashSet<>();
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() throws InterruptedException, IOException {
         new MockNodeProbe();
         injector = Guice.createInjector(new BRTestModule());
@@ -56,7 +56,7 @@ public class TestBackup {
                                 Key.get(IBackupFileSystem.class, Names.named("backup")));
     }
 
-    @AfterClass
+    @AfterAll
     public static void cleanup() throws IOException {
         File file = new File("target/data");
         FileUtils.deleteQuietly(file);
@@ -91,9 +91,9 @@ public class TestBackup {
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(4, filesystem.uploadedFiles.size());
+        Assertions.assertEquals(4, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
-            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+            Assertions.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
 
     @Test
@@ -159,9 +159,9 @@ public class TestBackup {
         }
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(6, filesystem.uploadedFiles.size());
+        Assertions.assertEquals(6, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
-            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
+            Assertions.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }
 
     private static void generateIncrementalFiles() {
@@ -200,7 +200,7 @@ public class TestBackup {
     }
 
     // Mock Nodeprobe class
-    @Ignore
+    @Disabled
     static class MockNodeProbe extends MockUp<NodeProbe> {
 
         @Mock

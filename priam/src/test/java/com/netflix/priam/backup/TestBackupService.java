@@ -35,9 +35,9 @@ import java.time.Instant;
 import java.util.Set;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.quartz.SchedulerException;
 
 /** Created by aagrawal on 3/10/19. */
@@ -51,7 +51,7 @@ public class TestBackupService {
         this.cassandraTunerService = injector.getInstance(CassandraTunerService.class);
     }
 
-    @Before
+    @BeforeEach
     public void cleanup() throws SchedulerException {
         scheduler.getScheduler().clear();
     }
@@ -98,14 +98,14 @@ public class TestBackupService {
                 new BackupService(
                         configuration, backupRestoreConfig, scheduler, cassandraTunerService);
         backupService.scheduleService();
-        Assert.assertEquals(0, scheduler.getScheduler().getJobKeys(null).size());
+        Assertions.assertEquals(0, scheduler.getScheduler().getJobKeys(null).size());
 
         // snapshot V1 name should not be there.
         Set<Path> backupPaths =
                 AbstractBackup.getBackupDirectories(configuration, AbstractBackup.SNAPSHOT_FOLDER);
         for (Path backupPath : backupPaths) {
-            Assert.assertTrue(Files.exists(Paths.get(backupPath.toString(), snapshotName)));
-            Assert.assertFalse(Files.exists(Paths.get(backupPath.toString(), snapshotV1Name)));
+            Assertions.assertTrue(Files.exists(Paths.get(backupPath.toString(), snapshotName)));
+            Assertions.assertFalse(Files.exists(Paths.get(backupPath.toString(), snapshotV1Name)));
         }
     }
 
@@ -125,7 +125,7 @@ public class TestBackupService {
                 new BackupService(
                         configuration, backupRestoreConfig, scheduler, cassandraTunerService);
         backupService.scheduleService();
-        Assert.assertEquals(2, scheduler.getScheduler().getJobKeys(null).size());
+        Assertions.assertEquals(2, scheduler.getScheduler().getJobKeys(null).size());
     }
 
     @Test
@@ -144,7 +144,7 @@ public class TestBackupService {
                 new BackupService(
                         configuration, backupRestoreConfig, scheduler, cassandraTunerService);
         backupService.scheduleService();
-        Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
+        Assertions.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
     }
 
     @Test
@@ -173,11 +173,11 @@ public class TestBackupService {
                 new BackupService(
                         configuration, backupRestoreConfig, scheduler, cassandraTunerService);
         backupService.scheduleService();
-        Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
+        Assertions.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
 
         System.out.println("After updated");
         backupService.onChangeUpdateService();
         System.out.println(scheduler.getScheduler().getJobKeys(null));
-        Assert.assertEquals(2, scheduler.getScheduler().getJobKeys(null).size());
+        Assertions.assertEquals(2, scheduler.getScheduler().getJobKeys(null).size());
     }
 }

@@ -43,11 +43,11 @@ import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
 import java.util.Collections;
-import org.junit.Ignore;
+import org.junit.jupiter.api.Disabled;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
-@Ignore
+@Disabled
 public class BRTestModule extends AbstractModule {
 
     @Override

@@ -17,9 +17,7 @@
 
 package com.netflix.priam.resources;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.google.common.collect.ImmutableList;
 import com.google.inject.Guice;
@@ -35,8 +33,8 @@ import java.util.List;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class CassandraConfigTest {
     private @Mocked PriamServer priamServer;
@@ -44,7 +42,7 @@ public class CassandraConfigTest {
     private CassandraConfig resource;
     private InstanceIdentity instanceIdentity;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         CassMonitorMetrics cassMonitorMetrics =
                 Guice.createInjector(new BRTestModule()).getInstance(CassMonitorMetrics.class);
@@ -264,31 +262,39 @@ public class CassandraConfigTest {
         }
     }
 
-    @Test(expected = IOException.class)
+    @Test
     public void doubleRing_ioExceptionInRestore() throws Exception {
-        new Expectations() {
-            {
-                doubleRing.backup();
-                result = new IOException();
-                doubleRing.restore();
-                result = new IOException();
-            }
-        };
+        assertThrows(
+                IOException.class,
+                () -> {
+                    new Expectations() {
+                        {
+                            doubleRing.backup();
+                            result = new IOException();
+                            doubleRing.restore();
+                            result = new IOException();
+                        }
+                    };
 
-        resource.doubleRing();
+                    resource.doubleRing();
+                });
     }
 
-    @Test(expected = ClassNotFoundException.class)
+    @Test
     public void doubleRing_classNotFoundExceptionInRestore() throws Exception {
-        new Expectations() {
-            {
-                doubleRing.backup();
-                result = new IOException();
-                doubleRing.restore();
-                result = new ClassNotFoundException();
-            }
-        };
+        assertThrows(
+                ClassNotFoundException.class,
+                () -> {
+                    new Expectations() {
+                        {
+                            doubleRing.backup();
+                            result = new IOException();
+                            doubleRing.restore();
+                            result = new ClassNotFoundException();
+                        }
+                    };
 
-        resource.doubleRing();
+                    resource.doubleRing();
+                });
     }
 }

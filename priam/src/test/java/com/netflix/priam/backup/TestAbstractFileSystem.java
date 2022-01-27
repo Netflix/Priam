@@ -35,9 +35,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * The goal of this class is to test common functionality which are encapsulated in
@@ -52,7 +52,7 @@ public class TestAbstractFileSystem {
     private FailureFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
 
-    @Before
+    @BeforeEach
     public void setBackupMetrics() {
         if (injector == null) injector = Guice.createInjector(new BRTestModule());
 
@@ -86,7 +86,7 @@ public class TestAbstractFileSystem {
             }
         } catch (BackupRestoreException e) {
             // Verify the failure metric for upload is incremented.
-            Assert.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
+            Assertions.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
         }
     }
 
@@ -115,7 +115,7 @@ public class TestAbstractFileSystem {
             failureFileSystem.downloadFile(getDummyPath(), "", 2);
         } catch (BackupRestoreException e) {
             // Verify the failure metric for download is incremented.
-            Assert.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
+            Assertions.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
         }
     }
 
@@ -123,8 +123,8 @@ public class TestAbstractFileSystem {
     public void testUpload() throws Exception {
         File file = generateFiles(1, 1, 1).iterator().next();
         myFileSystem.uploadAndDelete(getDummyPath(file.toPath()), 2);
-        Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
-        Assert.assertFalse(file.exists());
+        Assertions.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
+        Assertions.assertFalse(file.exists());
     }
 
     @Test
@@ -132,15 +132,15 @@ public class TestAbstractFileSystem {
         // Dummy download
         myFileSystem.downloadFile(getDummyPath(), "", 2);
         // Verify the success metric for download is incremented.
-        Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
+        Assertions.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
     }
 
     @Test
     public void testAsyncUpload() throws Exception {
         File file = generateFiles(1, 1, 1).iterator().next();
         myFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2).get();
-        Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
-        Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
+        Assertions.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
+        Assertions.assertEquals(0, myFileSystem.getUploadTasksQueued());
     }
 
     @Test
@@ -158,10 +158,10 @@ public class TestAbstractFileSystem {
             future.get();
         }
         // 2. Success metric is incremented correctly
-        Assert.assertEquals(files.size(), (int) backupMetrics.getValidUploads().actualCount());
+        Assertions.assertEquals(files.size(), (int) backupMetrics.getValidUploads().actualCount());
 
         // 3. The task queue is empty after upload is finished.
-        Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
+        Assertions.assertEquals(0, myFileSystem.getUploadTasksQueued());
     }
 
     @Test
@@ -196,7 +196,7 @@ public class TestAbstractFileSystem {
         }
         // 2. Verify the success metric for upload is not same as size, i.e. some amount of
         // de-duping happened.
-        Assert.assertNotEquals(size, (int) backupMetrics.getValidUploads().actualCount());
+        Assertions.assertNotEquals(size, (int) backupMetrics.getValidUploads().actualCount());
     }
 
     @Test
@@ -212,10 +212,10 @@ public class TestAbstractFileSystem {
                 // 1. Future get returns error message.
 
                 // 2. Verify the failure metric for upload is incremented.
-                Assert.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
+                Assertions.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
 
                 // 3. The task queue is empty after upload is finished.
-                Assert.assertEquals(0, failureFileSystem.getUploadTasksQueued());
+                Assertions.assertEquals(0, failureFileSystem.getUploadTasksQueued());
                 break;
             }
         }
@@ -227,9 +227,9 @@ public class TestAbstractFileSystem {
         Future<Path> future = myFileSystem.asyncDownloadFile(getDummyPath(), 2);
         future.get();
         // 1. Verify the success metric for download is incremented.
-        Assert.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
+        Assertions.assertEquals(1, (int) backupMetrics.getValidDownloads().actualCount());
         // 2. Verify the queue size is '0' after success.
-        Assert.assertEquals(0, myFileSystem.getDownloadTasksQueued());
+        Assertions.assertEquals(0, myFileSystem.getDownloadTasksQueued());
     }
 
     @Test
@@ -247,10 +247,10 @@ public class TestAbstractFileSystem {
         }
 
         // 2. Success metric is incremented correctly -> exactly 1000 times.
-        Assert.assertEquals(totalFiles, (int) backupMetrics.getValidDownloads().actualCount());
+        Assertions.assertEquals(totalFiles, (int) backupMetrics.getValidDownloads().actualCount());
 
         // 3. The task queue is empty after download is finished.
-        Assert.assertEquals(0, myFileSystem.getDownloadTasksQueued());
+        Assertions.assertEquals(0, myFileSystem.getDownloadTasksQueued());
     }
 
     @Test
@@ -260,7 +260,7 @@ public class TestAbstractFileSystem {
             future.get();
         } catch (Exception e) {
             // Verify the failure metric for upload is incremented.
-            Assert.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
+            Assertions.assertEquals(1, (int) backupMetrics.getInvalidDownloads().count());
         }
     }
 

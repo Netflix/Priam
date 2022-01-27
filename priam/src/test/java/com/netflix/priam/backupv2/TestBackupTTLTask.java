@@ -40,9 +40,9 @@ import java.util.List;
 import java.util.Map;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 12/17/18. */
 public class TestBackupTTLTask {
@@ -135,7 +135,7 @@ public class TestBackupTTLTask {
         return path.getRemotePath();
     }
 
-    @After
+    @AfterEach
     public void cleanup() {
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
         backupFileSystem.cleanup();
@@ -157,19 +157,19 @@ public class TestBackupTTLTask {
         List<String> remoteFiles = getAllFiles();
 
         // Confirm the files.
-        Assert.assertEquals(8, remoteFiles.size());
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-7-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META1")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
+        Assertions.assertEquals(8, remoteFiles.size());
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-7-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("META1")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
         // Remains because of GRACE PERIOD.
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
 
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
     }
 
     @Test
@@ -181,19 +181,19 @@ public class TestBackupTTLTask {
 
         List<String> remoteFiles = getAllFiles();
         // Confirm the files.
-        Assert.assertEquals(6, remoteFiles.size());
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-7-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
+        Assertions.assertEquals(6, remoteFiles.size());
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-4-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-6-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-7-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("META2")));
         // GRACE PERIOD files.
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
-        Assert.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-3-Data.db")));
+        Assertions.assertTrue(remoteFiles.contains(allFilesMap.get("mc-5-Data.db")));
 
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
-        Assert.assertFalse(remoteFiles.contains(allFilesMap.get("META1")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("mc-1-Data.db")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("mc-2-Data.db")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("META0")));
+        Assertions.assertFalse(remoteFiles.contains(allFilesMap.get("META1")));
     }
 
     @Test

@@ -16,41 +16,41 @@
  */
 package com.netflix.priam.config;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.TestModule;
+import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 public class PriamConfigurationPersisterTest {
     private static PriamConfigurationPersister persister;
 
-    @Rule public TemporaryFolder folder = new TemporaryFolder();
+    @TempDir public File folder;
 
     private FakeConfiguration fakeConfiguration;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Injector injector = Guice.createInjector(new TestModule());
         fakeConfiguration = (FakeConfiguration) injector.getInstance(IConfiguration.class);
-        fakeConfiguration.fakeProperties.put("priam_test_config", folder.getRoot().getPath());
+        fakeConfiguration.fakeProperties.put("priam_test_config", folder.getPath());
 
         if (persister == null) persister = injector.getInstance(PriamConfigurationPersister.class);
     }
 
-    @After
+    @AfterEach
     public void cleanUp() {
         fakeConfiguration.fakeProperties.clear();
     }
@@ -58,7 +58,7 @@ public class PriamConfigurationPersisterTest {
     @Test
     @SuppressWarnings("unchecked")
     public void execute() throws Exception {
-        Path structuredJson = Paths.get(folder.getRoot().getPath(), "structured.json");
+        Path structuredJson = Paths.get(folder.getPath(), "structured.json");
 
         persister.execute();
         assertTrue(structuredJson.toFile().exists());

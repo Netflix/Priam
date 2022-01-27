@@ -29,9 +29,9 @@ import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,7 +56,7 @@ public class TestSnapshotMetaTask {
         instanceInfo = injector.getInstance(InstanceInfo.class);
     }
 
-    @Before
+    @BeforeEach
     public void setUp() {
         dummyDataDirectoryLocation = Paths.get(configuration.getDataFileLocation());
         BackupFileUtils.cleanupDir(dummyDataDirectoryLocation);
@@ -65,16 +65,16 @@ public class TestSnapshotMetaTask {
     @Test
     public void testSnapshotMetaServiceEnabled() throws Exception {
         TaskTimer taskTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
-        Assert.assertNotNull(taskTimer);
+        Assertions.assertNotNull(taskTimer);
     }
 
     @Test
     public void testMetaFileName() throws Exception {
         String fileName = MetaFileInfo.getMetaFileName(DateUtil.getInstant());
         Path path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName);
-        Assert.assertTrue(metaFileReader.isValidMetaFile(path));
+        Assertions.assertTrue(metaFileReader.isValidMetaFile(path));
         path = Paths.get(dummyDataDirectoryLocation.toFile().getAbsolutePath(), fileName + ".tmp");
-        Assert.assertFalse(metaFileReader.isValidMetaFile(path));
+        Assertions.assertFalse(metaFileReader.isValidMetaFile(path));
     }
 
     private void test(int noOfSstables, int noOfKeyspaces, int noOfCf) throws Exception {
@@ -91,10 +91,10 @@ public class TestSnapshotMetaTask {
         snapshotMetaService.setSnapshotName(snapshotName);
         Path metaFileLocation =
                 snapshotMetaService.processSnapshot(snapshotInstant).getMetaFilePath();
-        Assert.assertNotNull(metaFileLocation);
-        Assert.assertTrue(metaFileLocation.toFile().exists());
-        Assert.assertTrue(metaFileLocation.toFile().isFile());
-        Assert.assertEquals(
+        Assertions.assertNotNull(metaFileLocation);
+        Assertions.assertTrue(metaFileLocation.toFile().exists());
+        Assertions.assertTrue(metaFileLocation.toFile().isFile());
+        Assertions.assertEquals(
                 snapshotInstant.getEpochSecond(),
                 (metaFileLocation.toFile().lastModified() / 1000));
 
@@ -103,10 +103,10 @@ public class TestSnapshotMetaTask {
         metaFileReader.readMeta(metaFileLocation);
 
         MetaFileInfo metaFileInfo = metaFileReader.getMetaFileInfo();
-        Assert.assertEquals(1, metaFileInfo.getVersion());
-        Assert.assertEquals(configuration.getAppName(), metaFileInfo.getAppName());
-        Assert.assertEquals(instanceInfo.getRac(), metaFileInfo.getRack());
-        Assert.assertEquals(instanceInfo.getRegion(), metaFileInfo.getRegion());
+        Assertions.assertEquals(1, metaFileInfo.getVersion());
+        Assertions.assertEquals(configuration.getAppName(), metaFileInfo.getAppName());
+        Assertions.assertEquals(instanceInfo.getRac(), metaFileInfo.getRack());
+        Assertions.assertEquals(instanceInfo.getRegion(), metaFileInfo.getRegion());
 
         // Cleanup
         metaFileLocation.toFile().delete();
@@ -133,7 +133,7 @@ public class TestSnapshotMetaTask {
 
         @Override
         public void process(ColumnfamilyResult columnfamilyResult) {
-            Assert.assertEquals(noOfSstables, columnfamilyResult.getSstables().size());
+            Assertions.assertEquals(noOfSstables, columnfamilyResult.getSstables().size());
         }
     }
 }

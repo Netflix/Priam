@@ -28,9 +28,9 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import mockit.*;
 import org.apache.cassandra.tools.NodeProbe;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 7/18/17. */
 public class TestCassandraMonitor {
@@ -45,7 +45,7 @@ public class TestCassandraMonitor {
     @Mocked private NodeProbe nodeProbe;
     @Mocked private ICassandraProcess cassProcess;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         Injector injector = Guice.createInjector(new BRTestModule());
         config = injector.getInstance(IConfiguration.class);
@@ -63,13 +63,13 @@ public class TestCassandraMonitor {
     public void testCassandraMonitor() throws Exception {
         monitor.execute();
 
-        Assert.assertFalse(CassandraMonitor.hasCassadraStarted());
+        Assertions.assertFalse(CassandraMonitor.hasCassadraStarted());
 
         CassandraMonitor.setIsCassadraStarted();
-        Assert.assertTrue(CassandraMonitor.hasCassadraStarted());
+        Assertions.assertTrue(CassandraMonitor.hasCassadraStarted());
 
         monitor.execute();
-        Assert.assertFalse(CassandraMonitor.hasCassadraStarted());
+        Assertions.assertFalse(CassandraMonitor.hasCassadraStarted());
     }
 
     @Test
@@ -111,8 +111,8 @@ public class TestCassandraMonitor {
 
         monitor.execute();
 
-        Assert.assertTrue(!instanceState.shouldCassandraBeAlive());
-        Assert.assertTrue(instanceState.isCassandraProcessAlive());
+        Assertions.assertTrue(!instanceState.shouldCassandraBeAlive());
+        Assertions.assertTrue(instanceState.isCassandraProcessAlive());
         new Verifications() {
             {
                 cassProcess.start(anyBoolean);

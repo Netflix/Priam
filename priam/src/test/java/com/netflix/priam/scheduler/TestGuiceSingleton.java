@@ -21,7 +21,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Singleton;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public class TestGuiceSingleton {
     @Test

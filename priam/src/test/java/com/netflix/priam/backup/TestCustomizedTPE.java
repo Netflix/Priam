@@ -21,8 +21,8 @@ import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import java.util.concurrent.Callable;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.atomic.AtomicInteger;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +48,7 @@ public class TestCustomizedTPE {
                             });
         }
         startTest.sleepTillEmpty();
-        Assert.assertEquals(100, count.get());
+        Assertions.assertEquals(100, count.get());
     }
 
     @Test
@@ -67,6 +67,6 @@ public class TestCustomizedTPE {
         } catch (RuntimeException ex) {
             success = true;
         }
-        Assert.assertTrue("Failure to timeout...", success);
+        Assertions.assertTrue(success, "Failure to timeout...");
     }
 }

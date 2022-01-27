@@ -16,14 +16,12 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
 import org.apache.commons.io.FileUtils;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.Parameterized;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
-@RunWith(Parameterized.class)
 public class TestAbstractBackup {
     private static final String COMPRESSED_DATA = "compressed-1234-Data.db";
     private static final String COMPRESSION_INFO = "compressed-1234-CompressionInfo.db";
@@ -39,17 +37,17 @@ public class TestAbstractBackup {
                     RANDOM_COMPONENT);
 
     private static final String DIRECTORY = "target/data/ks/cf/backup/";
-    private final AbstractBackup abstractBackup;
-    private final FakeConfiguration fakeConfiguration;
-    private final String tablePart;
-    private final CompressionType compressionAlgorithm;
+    private AbstractBackup abstractBackup;
+    private FakeConfiguration fakeConfiguration;
+    private String tablePart;
+    private CompressionType compressionAlgorithm;
 
-    @BeforeClass
+    @BeforeAll
     public static void setUp() throws IOException {
         FileUtils.forceMkdir(new File(DIRECTORY));
     }
 
-    @Before
+    @BeforeEach
     public void createFiles() throws IOException {
         for (String tablePart : TABLE_PARTS) {
             File file = Paths.get(DIRECTORY, tablePart).toFile();
@@ -61,12 +59,11 @@ public class TestAbstractBackup {
         }
     }
 
-    @AfterClass
+    @AfterAll
     public static void tearDown() throws IOException {
         FileUtils.deleteDirectory(new File(DIRECTORY));
     }
 
-    @Parameterized.Parameters
     public static Collection<Object[]> data() {
         return Arrays.asList(
                 new Object[][] {
@@ -88,7 +85,8 @@ public class TestAbstractBackup {
                 });
     }
 
-    public TestAbstractBackup(BackupsToCompress which, String tablePart, CompressionType algo) {
+    public void initTestAbstractBackup(
+            BackupsToCompress which, String tablePart, CompressionType algo) {
         this.tablePart = tablePart;
         this.compressionAlgorithm = algo;
         Injector injector = Guice.createInjector(new BRTestModule());
@@ -111,8 +109,11 @@ public class TestAbstractBackup {
                 };
     }
 
-    @Test
-    public void testCorrectCompressionType() throws Exception {
+    @MethodSource("data")
+    @ParameterizedTest
+    public void testCorrectCompressionType(
+            BackupsToCompress which, String tablePart, CompressionType algo) throws Exception {
+        initTestAbstractBackup(which, tablePart, algo);
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
         ImmutableSet<AbstractBackupPath> paths =

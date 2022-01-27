@@ -17,8 +17,8 @@
 
 package com.netflix.priam.resources;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.config.IConfiguration;
@@ -29,8 +29,8 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
 import mockit.Mocked;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 public class PriamInstanceResourceTest {
     private static final String APP_NAME = "myApp";
@@ -41,7 +41,7 @@ public class PriamInstanceResourceTest {
     private @Mocked InstanceInfo instanceInfo;
     private PriamInstanceResource resource;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         resource = new PriamInstanceResource(config, factory, instanceInfo);
     }

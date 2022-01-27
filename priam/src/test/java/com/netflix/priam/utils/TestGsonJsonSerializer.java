@@ -21,8 +21,8 @@ import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.health.InstanceState;
 import java.time.LocalDateTime;
 import java.util.Calendar;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,8 +42,8 @@ public class TestGsonJsonSerializer {
         BackupMetadata metadata1 =
                 GsonJsonSerializer.getGson().fromJson(json, BackupMetadata.class);
         LOG.info(metadata1.toString());
-        Assert.assertEquals(metadata.getSnapshotDate(), metadata1.getSnapshotDate());
-        Assert.assertEquals(metadata.getToken(), metadata1.getToken());
+        Assertions.assertEquals(metadata.getSnapshotDate(), metadata1.getSnapshotDate());
+        Assertions.assertEquals(metadata.getToken(), metadata1.getToken());
     }
 
     @Test
@@ -59,9 +59,10 @@ public class TestGsonJsonSerializer {
                         .fromJson(restoreStatus.toString(), InstanceState.RestoreStatus.class);
         LOG.info(restoreStatus1.toString());
 
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 restoreStatus.getExecutionStartTime(), restoreStatus1.getExecutionStartTime());
-        Assert.assertEquals(restoreStatus.getStartDateRange(), restoreStatus1.getStartDateRange());
-        Assert.assertEquals(restoreStatus.getEndDateRange(), restoreStatus1.getEndDateRange());
+        Assertions.assertEquals(
+                restoreStatus.getStartDateRange(), restoreStatus1.getStartDateRange());
+        Assertions.assertEquals(restoreStatus.getEndDateRange(), restoreStatus1.getEndDateRange());
     }
 }

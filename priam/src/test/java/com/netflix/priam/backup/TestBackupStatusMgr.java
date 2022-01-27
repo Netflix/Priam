@@ -31,11 +31,7 @@ import java.util.List;
 import java.util.Optional;
 import org.apache.commons.io.FileUtils;
 import org.joda.time.DateTime;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.jupiter.api.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,7 +42,7 @@ public class TestBackupStatusMgr {
     private static IBackupStatusMgr backupStatusMgr;
     private final String backupDate = "201812011000";
 
-    @BeforeClass
+    @BeforeAll
     public static void setup() {
         Injector injector = Guice.createInjector(new BRTestModule());
         // cleanup old saved file, if any
@@ -54,8 +50,8 @@ public class TestBackupStatusMgr {
         backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
     }
 
-    @Before
-    @After
+    @BeforeEach
+    @AfterEach
     public void cleanup() {
         FileUtils.deleteQuietly(new File(configuration.getBackupStatusFileLoc()));
     }
@@ -91,15 +87,15 @@ public class TestBackupStatusMgr {
         backupStatusMgr.start(backupMetadata);
         Optional<BackupMetadata> backupMetadata1 =
                 backupStatusMgr.locate(startTime).stream().findFirst();
-        Assert.assertNull(backupMetadata1.get().getLastValidated());
+        Assertions.assertNull(backupMetadata1.get().getLastValidated());
         backupMetadata.setLastValidated(Calendar.getInstance().getTime());
         backupMetadata.setCassandraSnapshotSuccess(true);
         backupMetadata.setSnapshotLocation("random");
         backupStatusMgr.update(backupMetadata);
         backupMetadata1 = backupStatusMgr.locate(startTime).stream().findFirst();
-        Assert.assertNotNull(backupMetadata1.get().getLastValidated());
-        Assert.assertTrue(backupMetadata1.get().isCassandraSnapshotSuccess());
-        Assert.assertEquals("random", backupMetadata1.get().getSnapshotLocation());
+        Assertions.assertNotNull(backupMetadata1.get().getLastValidated());
+        Assertions.assertTrue(backupMetadata1.get().isCassandraSnapshotSuccess());
+        Assertions.assertEquals("random", backupMetadata1.get().getSnapshotLocation());
     }
 
     @Test
@@ -110,19 +106,19 @@ public class TestBackupStatusMgr {
                 new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", startTime);
         backupStatusMgr.start(backupMetadata);
         List<BackupMetadata> metadataList = backupStatusMgr.locate(startTime);
-        Assert.assertNotNull(metadataList);
-        Assert.assertTrue(!metadataList.isEmpty());
-        Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(startTime, metadataList.get(0).getStart());
+        Assertions.assertNotNull(metadataList);
+        Assertions.assertTrue(!metadataList.isEmpty());
+        Assertions.assertEquals(1, metadataList.size());
+        Assertions.assertEquals(startTime, metadataList.get(0).getStart());
         logger.info("Snapshot start: {}", metadataList.get(0));
 
         backupStatusMgr.finish(backupMetadata);
         metadataList = backupStatusMgr.locate(startTime);
-        Assert.assertNotNull(metadataList);
-        Assert.assertTrue(!metadataList.isEmpty());
-        Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(Status.FINISHED, metadataList.get(0).getStatus());
-        Assert.assertTrue(metadataList.get(0).getCompleted() != null);
+        Assertions.assertNotNull(metadataList);
+        Assertions.assertTrue(!metadataList.isEmpty());
+        Assertions.assertEquals(1, metadataList.size());
+        Assertions.assertEquals(Status.FINISHED, metadataList.get(0).getStatus());
+        Assertions.assertTrue(metadataList.get(0).getCompleted() != null);
         logger.info("Snapshot finished: {}", metadataList.get(0));
     }
 
@@ -134,19 +130,19 @@ public class TestBackupStatusMgr {
                 new BackupMetadata(BackupVersion.SNAPSHOT_BACKUP, "123", startTime);
         backupStatusMgr.start(backupMetadata);
         List<BackupMetadata> metadataList = backupStatusMgr.locate(startTime);
-        Assert.assertNotNull(metadataList);
-        Assert.assertTrue(!metadataList.isEmpty());
-        Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(startTime, metadataList.get(0).getStart());
+        Assertions.assertNotNull(metadataList);
+        Assertions.assertTrue(!metadataList.isEmpty());
+        Assertions.assertEquals(1, metadataList.size());
+        Assertions.assertEquals(startTime, metadataList.get(0).getStart());
         logger.info("Snapshot start: {}", metadataList.get(0));
 
         backupStatusMgr.failed(backupMetadata);
         metadataList = backupStatusMgr.locate(startTime);
-        Assert.assertNotNull(metadataList);
-        Assert.assertTrue(!metadataList.isEmpty());
-        Assert.assertEquals(1, metadataList.size());
-        Assert.assertEquals(Status.FAILED, metadataList.get(0).getStatus());
-        Assert.assertTrue(metadataList.get(0).getCompleted() != null);
+        Assertions.assertNotNull(metadataList);
+        Assertions.assertTrue(!metadataList.isEmpty());
+        Assertions.assertEquals(1, metadataList.size());
+        Assertions.assertEquals(Status.FAILED, metadataList.get(0).getStatus());
+        Assertions.assertTrue(metadataList.get(0).getCompleted() != null);
         logger.info("Snapshot failed: {}", metadataList.get(0));
     }
 
@@ -165,7 +161,7 @@ public class TestBackupStatusMgr {
         }
 
         List<BackupMetadata> metadataList = backupStatusMgr.locate(startTime);
-        Assert.assertEquals(noOfEntries, metadataList.size());
+        Assertions.assertEquals(noOfEntries, metadataList.size());
         logger.info(metadataList.toString());
 
         // Ensure that list is always maintained from latest to eldest
@@ -173,7 +169,7 @@ public class TestBackupStatusMgr {
         for (BackupMetadata backupMetadata : metadataList) {
             if (latest == null) latest = backupMetadata.getStart();
             else {
-                Assert.assertTrue(backupMetadata.getStart().before(latest));
+                Assertions.assertTrue(backupMetadata.getStart().before(latest));
                 latest = backupMetadata.getStart();
             }
         }
@@ -194,7 +190,7 @@ public class TestBackupStatusMgr {
         }
 
         // Verify there is only capacity entries
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 backupStatusMgr.getCapacity(), backupStatusMgr.getAllSnapshotStatus().size());
     }
 
@@ -213,7 +209,7 @@ public class TestBackupStatusMgr {
                                                 start.plus(12, ChronoUnit.HOURS))));
 
         Optional<BackupMetadata> backupMetadata = list.stream().findFirst();
-        Assert.assertEquals(
+        Assertions.assertEquals(
                 start.plus(4, ChronoUnit.HOURS), backupMetadata.get().getStart().toInstant());
     }
 
@@ -227,7 +223,7 @@ public class TestBackupStatusMgr {
                         .stream()
                         .findFirst();
 
-        Assert.assertFalse(backupMetadata.isPresent());
+        Assertions.assertFalse(backupMetadata.isPresent());
 
         backupStatusMgr.failed(getBackupMetaData(DateUtil.parseInstant(backupDate), Status.FAILED));
         backupMetadata =
@@ -237,7 +233,7 @@ public class TestBackupStatusMgr {
                                 new DateRange(backupDate + "," + backupDate))
                         .stream()
                         .findFirst();
-        Assert.assertFalse(backupMetadata.isPresent());
+        Assertions.assertFalse(backupMetadata.isPresent());
     }
 
     @Test

@@ -17,8 +17,8 @@
 
 package com.netflix.priam.configSource;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,14 +32,14 @@ public final class CompositeConfigSourceTest {
         IConfigSource configSource = new CompositeConfigSource(memoryConfigSource);
         configSource.initialize("foo", "bar");
 
-        Assert.assertEquals(0, configSource.size());
+        Assertions.assertEquals(0, configSource.size());
         configSource.set("foo", "bar");
-        Assert.assertEquals(1, configSource.size());
-        Assert.assertEquals("bar", configSource.get("foo"));
+        Assertions.assertEquals(1, configSource.size());
+        Assertions.assertEquals("bar", configSource.get("foo"));
 
         // verify that the writes went to mem source.
-        Assert.assertEquals(1, memoryConfigSource.size());
-        Assert.assertEquals("bar", memoryConfigSource.get("foo"));
+        Assertions.assertEquals(1, memoryConfigSource.size());
+        Assertions.assertEquals("bar", memoryConfigSource.get("foo"));
     }
 
     @Test
@@ -52,12 +52,12 @@ public final class CompositeConfigSourceTest {
         m3.set("baz", "baz");
 
         IConfigSource configSource = new CompositeConfigSource(m1, m2, m3);
-        Assert.assertEquals(3, configSource.size());
-        Assert.assertEquals("foo", configSource.get("foo"));
-        Assert.assertEquals("bar", configSource.get("bar"));
-        Assert.assertEquals("baz", configSource.get("baz"));
+        Assertions.assertEquals(3, configSource.size());
+        Assertions.assertEquals("foo", configSource.get("foo"));
+        Assertions.assertEquals("bar", configSource.get("bar"));
+        Assertions.assertEquals("baz", configSource.get("baz"));
 
         // read default
-        Assert.assertEquals("test", configSource.get("doesnotexist", "test"));
+        Assertions.assertEquals("test", configSource.get("doesnotexist", "test"));
     }
 }

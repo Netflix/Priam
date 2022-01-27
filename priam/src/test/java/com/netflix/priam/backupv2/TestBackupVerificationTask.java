@@ -34,9 +34,9 @@ import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
 import mockit.*;
-import org.junit.Before;
-import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /** Created by aagrawal on 2/1/19. */
 public class TestBackupVerificationTask {
@@ -45,7 +45,7 @@ public class TestBackupVerificationTask {
     @Mocked private BackupVerification backupVerification;
     @Mocked private BackupNotificationMgr backupNotificationMgr;
 
-    @Before
+    @BeforeEach
     public void setUp() {
         new MockBackupVerification();
         new MockBackupNotificationMgr();

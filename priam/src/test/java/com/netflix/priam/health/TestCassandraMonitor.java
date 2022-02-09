@@ -91,8 +91,6 @@ public class TestCassandraMonitor {
                 result = true;
                 nodeProbe.isNativeTransportRunning();
                 result = true;
-                nodeProbe.isThriftServerRunning();
-                result = true;
             }
         };
         // Mock out the ps call

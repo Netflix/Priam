@@ -151,15 +151,13 @@ public class InstanceState {
 
     private void setHealthy() {
         this.isHealthy.set(
-            isRestoring() ||
-                (isCassandraProcessAlive() &&
-                    isRequiredDirectoriesExist() &&
-                    isGossipActive() &&
-                    isYmlWritten() &&
-                    isHealthyOverride() &&
-                    isNativeTransportActive()
-                )
-        );
+                isRestoring()
+                        || (isCassandraProcessAlive()
+                                && isRequiredDirectoriesExist()
+                                && isGossipActive()
+                                && isYmlWritten()
+                                && isHealthyOverride()
+                                && isNativeTransportActive()));
     }
 
     public boolean isYmlWritten() {

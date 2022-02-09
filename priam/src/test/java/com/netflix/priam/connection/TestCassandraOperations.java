@@ -58,7 +58,7 @@ public class TestCassandraOperations {
         String gossipInfoFromNodetool = FileUtils.getContentsAsString(new File(gossipInfo1));
         new Expectations() {
             {
-                nodeProbe.getGossipInfo();
+                nodeProbe.getGossipInfo(false);
                 result = gossipInfoFromNodetool;
                 nodeProbe.getTokens("127.0.0.1");
                 result = "123,234";

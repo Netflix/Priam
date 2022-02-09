@@ -48,7 +48,7 @@ public class CassandraOperations implements ICassandraOperations {
             new RetryableCallable<Void>(6, 10000) {
                 public Void retriableCall() throws Exception {
                     JMXNodeTool nodetool = JMXNodeTool.instance(configuration);
-                    nodetool.takeSnapshot(snapshotName, null);
+                    nodetool.takeSnapshot(snapshotName, null, Collections.emptyMap());
                     return null;
                 }
             }.call();
@@ -141,7 +141,7 @@ public class CassandraOperations implements ICassandraOperations {
                         "Exception in fetching c* jmx tool .  Msg: {}", e.getLocalizedMessage(), e);
                 throw e;
             }
-            String gossipInfoLines[] = nodeTool.getGossipInfo().split("/");
+            String gossipInfoLines[] = nodeTool.getGossipInfo(false).split("/");
             Arrays.stream(gossipInfoLines)
                     .forEach(
                             gossipInfoLine -> {

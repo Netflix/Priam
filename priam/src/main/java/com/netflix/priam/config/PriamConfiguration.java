@@ -409,7 +409,8 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getJVMOptionsFileLocation() {
-        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm-server.options");
+        return config.get(
+                PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm-server.options");
     }
 
     public String getAuthenticator() {

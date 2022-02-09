@@ -39,37 +39,21 @@ public class TestInstanceStatus {
     public void testHealth() {
         // Verify good health.
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(false, true, true, true,  true, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(false, true, true, true,  false, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(false, true, true, true, true, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(false, true, true, true, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(true, false, true, true, true, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(true, false, true, true, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(true, true, false, true,  true, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(true, true, false, true, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(true, true, true, false,  true, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(true, true, true, false, true, true, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(true, true, true, true,  true, false, true)
-                        .isHealthy());
+                testInstanceState.setParams(true, true, true, true, true, false, true).isHealthy());
         Assert.assertTrue(
-                testInstanceState
-                        .setParams(true, true, true, true, false, true, true)
-                        .isHealthy());
+                testInstanceState.setParams(true, true, true, true, false, true, true).isHealthy());
 
         // Negative health case scenarios.
         Assert.assertFalse(
@@ -78,7 +62,7 @@ public class TestInstanceStatus {
                         .isHealthy());
         Assert.assertFalse(
                 testInstanceState
-                        .setParams(false, true, false, true,  true, true, true)
+                        .setParams(false, true, false, true, true, true, true)
                         .isHealthy());
         Assert.assertFalse(
                 testInstanceState
@@ -86,15 +70,15 @@ public class TestInstanceStatus {
                         .isHealthy());
         Assert.assertFalse(
                 testInstanceState
-                        .setParams(false, true, true, true,  true, false, true)
+                        .setParams(false, true, true, true, true, false, true)
                         .isHealthy());
         Assert.assertFalse(
                 testInstanceState
-                        .setParams(false, true, true, true,  false, true, true)
+                        .setParams(false, true, true, true, false, true, true)
                         .isHealthy());
         Assert.assertFalse(
                 testInstanceState
-                        .setParams(false, true, true, true,  false, true, false)
+                        .setParams(false, true, true, true, false, true, false)
                         .isHealthy());
     }
 

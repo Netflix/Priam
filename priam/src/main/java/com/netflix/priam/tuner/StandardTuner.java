@@ -62,8 +62,6 @@ public class StandardTuner implements ICassandraTuner {
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
-        map.put("start_rpc", config.isThriftEnabled());
-        map.put("rpc_port", config.getThriftPort());
         map.put("start_native_transport", config.isNativeTransportEnabled());
         map.put("native_transport_port", config.getNativeTransportPort());
         map.put("listen_address", hostname);
@@ -113,9 +111,6 @@ public class StandardTuner implements ICassandraTuner {
         map.put("concurrent_writes", config.getConcurrentWritesCnt());
         map.put("concurrent_compactors", config.getConcurrentCompactorsCnt());
 
-        map.put("rpc_server_type", config.getRpcServerType());
-        map.put("rpc_min_threads", config.getRpcMinThreads());
-        map.put("rpc_max_threads", config.getRpcMaxThreads());
         // Add private ip address as broadcast_rpc_address. This will ensure that COPY function
         // works correctly.
         map.put("broadcast_rpc_address", instanceInfo.getPrivateIP());

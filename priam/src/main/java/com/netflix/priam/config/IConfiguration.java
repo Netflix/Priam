@@ -220,11 +220,6 @@ public interface IConfiguration {
         return 7001;
     }
 
-    /** @return Cassandra's thrift port */
-    default int getThriftPort() {
-        return 9160;
-    }
-
     /** @return Port for CQL binary transport. */
     default int getNativeTransportPort() {
         return 9042;
@@ -621,10 +616,6 @@ public interface IConfiguration {
         return true;
     }
 
-    default boolean isThriftEnabled() {
-        return true;
-    }
-
     default boolean isNativeTransportEnabled() {
         return true;
     }
@@ -639,18 +630,6 @@ public interface IConfiguration {
 
     default int getConcurrentCompactorsCnt() {
         return Runtime.getRuntime().availableProcessors();
-    }
-
-    default String getRpcServerType() {
-        return "hsha";
-    }
-
-    default int getRpcMinThreads() {
-        return 16;
-    }
-
-    default int getRpcMaxThreads() {
-        return 2048;
     }
 
     /*

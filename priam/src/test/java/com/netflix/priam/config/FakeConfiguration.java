@@ -152,7 +152,7 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public String getJVMOptionsFileLocation() {
-        return "src/test/resources/conf/jvm.options";
+        return "src/test/resources/conf/jvm-server.options";
     }
 
     public String getCommitLogBackupPropsFile() {

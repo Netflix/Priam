@@ -166,11 +166,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getThriftPort() {
-        return config.get(PRIAM_PRE + ".thrift.port", 9160);
-    }
-
-    @Override
     public int getStoragePort() {
         return config.get(PRIAM_PRE + ".storage.port", 7000);
     }
@@ -414,7 +409,7 @@ public class PriamConfiguration implements IConfiguration {
 
     @Override
     public String getJVMOptionsFileLocation() {
-        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm.options");
+        return config.get(PRIAM_PRE + ".jvm.options.location", getCassHome() + "/conf/jvm-server.options");
     }
 
     public String getAuthenticator() {
@@ -491,10 +486,6 @@ public class PriamConfiguration implements IConfiguration {
         return config.get(PRIAM_PRE + ".dsnitchEnabled", true);
     }
 
-    public boolean isThriftEnabled() {
-        return config.get(PRIAM_PRE + ".thrift.enabled", true);
-    }
-
     public boolean isNativeTransportEnabled() {
         return config.get(PRIAM_PRE + ".nativeTransport.enabled", false);
     }
@@ -510,18 +501,6 @@ public class PriamConfiguration implements IConfiguration {
     public int getConcurrentCompactorsCnt() {
         int cpus = Runtime.getRuntime().availableProcessors();
         return config.get(PRIAM_PRE + ".concurrentCompactors", cpus);
-    }
-
-    public String getRpcServerType() {
-        return config.get(PRIAM_PRE + ".rpc.server.type", "hsha");
-    }
-
-    public int getRpcMinThreads() {
-        return config.get(PRIAM_PRE + ".rpc.min.threads", 16);
-    }
-
-    public int getRpcMaxThreads() {
-        return config.get(PRIAM_PRE + ".rpc.max.threads", 2048);
     }
 
     @Override

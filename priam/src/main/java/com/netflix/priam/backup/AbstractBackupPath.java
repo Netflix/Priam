@@ -33,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
 @ImplementedBy(RemoteBackupPath.class)
@@ -91,6 +92,7 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private Date uploadedTs;
     private CompressionType compression = CompressionType.SNAPPY;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
+    private boolean isIncremental;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
@@ -122,6 +124,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (BackupFileType.isDataFile(type)) {
             this.keyspace = parts[0];
             this.columnFamily = parts[1];
+        }
+        if (BackupFileType.isDataFile(type)) {
+            Optional<BackupFolder> folder = BackupFolder.fromName(parts[2]);
+            this.isIncremental = folder.filter(BackupFolder.BACKUPS::equals).isPresent();
         }
 
         /*
@@ -305,6 +311,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public void setEncryption(String encryption) {
         this.encryption = CryptographyAlgorithm.valueOf(encryption);
+    }
+
+    public boolean isIncremental() {
+        return isIncremental;
     }
 
     @Override

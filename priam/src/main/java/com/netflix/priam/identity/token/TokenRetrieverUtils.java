@@ -16,7 +16,7 @@ import org.slf4j.LoggerFactory;
 
 /** Common utilities for token retrieval. */
 public class TokenRetrieverUtils {
-    private static final Logger logger = LoggerFactory.getLogger(TokenRetrieverBase.class);
+    private static final Logger logger = LoggerFactory.getLogger(TokenRetrieverUtils.class);
     private static final String STATUS_URL_FORMAT = "http://%s:8080/Priam/REST/v1/cassadmin/status";
 
     /**

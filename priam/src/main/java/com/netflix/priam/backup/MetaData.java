@@ -61,7 +61,7 @@ public class MetaData {
             fr.write(jsonObj.toJSONString());
         }
         AbstractBackupPath backupfile = decorateMetaJson(metafile, snapshotName);
-        fs.uploadAndDelete(backupfile, 10);
+        fs.uploadAndDelete(backupfile, false /* async */);
         addToRemotePath(backupfile.getRemotePath());
         return backupfile;
     }

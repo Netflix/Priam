@@ -43,6 +43,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -92,11 +93,13 @@ public class TestS3FileSystem {
     @Test
     public void testFileUpload() throws Exception {
         MockS3PartUploader.setup();
-        IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
+        AbstractFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
-        fs.uploadAndDelete(backupfile, 0);
+        // temporary hack to allow tests to complete in a timely fashion
+        // This will be removed once we stop inheriting from AbstractFileSystem
+        fs.uploadAndDeleteInternal(backupfile, Instant.EPOCH, 0 /* retries */);
         Assert.assertEquals(1, backupMetrics.getUploadRate().count() - noOfFilesUploaded);
     }
 
@@ -106,7 +109,7 @@ public class TestS3FileSystem {
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SST_V2);
-        fs.uploadAndDelete(backupfile, 0);
+        fs.uploadAndDelete(backupfile, false /* async */);
         Assert.assertTrue(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
         // Lets delete the file now.
         List<Path> deleteFiles = Lists.newArrayList();
@@ -124,7 +127,9 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadAndDelete(backupfile, 0);
+            // temporary hack to allow tests to complete in a timely fashion
+            // This will be removed once we stop inheriting from AbstractFileSystem
+            fs.uploadAndDeleteInternal(backupfile, Instant.EPOCH, 0 /* retries */);
         } catch (BackupRestoreException e) {
             // ignore
         }
@@ -141,7 +146,9 @@ public class TestS3FileSystem {
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SNAP);
         try {
-            fs.uploadAndDelete(backupfile, 0);
+            // temporary hack to allow tests to complete in a timely fashion
+            // This will be removed once we stop inheriting from AbstractFileSystem
+            fs.uploadAndDeleteInternal(backupfile, Instant.EPOCH, 0 /* retries */);
         } catch (BackupRestoreException e) {
             // ignore
         }

@@ -20,7 +20,6 @@ import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
@@ -86,15 +85,10 @@ public abstract class AbstractBackup extends Task {
     protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
             final File parent, final BackupFileType type, boolean async, Instant target)
             throws Exception {
-        ImmutableSet<AbstractBackupPath> backupPaths = getBackupPaths(parent, type);
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
-        for (AbstractBackupPath bp : backupPaths) {
-            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10, target));
-            else {
-                fs.uploadAndDelete(bp, 10, target);
-                futures.add(Futures.immediateFuture(bp));
-            }
+        for (AbstractBackupPath bp : getBackupPaths(parent, type)) {
+            futures.add(fs.uploadAndDelete(bp, target, async));
         }
         return futures.build();
     }

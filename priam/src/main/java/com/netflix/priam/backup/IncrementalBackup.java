@@ -21,7 +21,6 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
@@ -45,20 +44,21 @@ public class IncrementalBackup extends AbstractBackup {
     public static final String JOBNAME = "IncrementalBackup";
     private final BackupRestoreUtil backupRestoreUtil;
     private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupHelper backupHelper;
 
     @Inject
     public IncrementalBackup(
             IConfiguration config,
             IBackupRestoreConfig backupRestoreConfig,
-            Provider<AbstractBackupPath> pathFactory,
-            IFileSystemContext backupFileSystemCtx) {
-        super(config, backupFileSystemCtx, pathFactory);
+            BackupHelper backupHelper) {
+        super(config);
         // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
         // uploaded)
         this.backupRestoreConfig = backupRestoreConfig;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
+        this.backupHelper = backupHelper;
     }
 
     @Override
@@ -120,13 +120,16 @@ public class IncrementalBackup extends AbstractBackup {
 
         // upload SSTables and components
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
-                uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+                backupHelper.uploadAndDeleteAllFiles(
+                        backupDir, fileType, config.enableAsyncIncremental());
         Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
 
         // Next, upload secondary indexes
         fileType = BackupFileType.SECONDARY_INDEX_V2;
         for (File directory : getSecondaryIndexDirectories(backupDir)) {
-            futures = uploadAndDeleteAllFiles(directory, fileType, config.enableAsyncIncremental());
+            futures =
+                    backupHelper.uploadAndDeleteAllFiles(
+                            directory, fileType, config.enableAsyncIncremental());
             if (futures.stream().allMatch(ListenableFuture::isDone)) {
                 deleteIfEmpty(directory);
             } else {

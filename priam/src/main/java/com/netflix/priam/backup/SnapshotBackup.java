@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.ForgottenFilesManager;
@@ -61,19 +60,20 @@ public class SnapshotBackup extends AbstractBackup {
     private Instant snapshotInstant = DateUtil.getInstant();
     private List<AbstractBackupPath> abstractBackupPaths = null;
     private final CassandraOperations cassandraOperations;
+    private final BackupHelper backupHelper;
     private static final Lock lock = new ReentrantLock();
 
     @Inject
     public SnapshotBackup(
             IConfiguration config,
-            Provider<AbstractBackupPath> pathFactory,
+            BackupHelper backupHelper,
             MetaData metaData,
-            IFileSystemContext backupFileSystemCtx,
             IBackupStatusMgr snapshotStatusMgr,
             InstanceIdentity instanceIdentity,
             CassandraOperations cassandraOperations,
             ForgottenFilesManager forgottenFilesManager) {
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config);
+        this.backupHelper = backupHelper;
         this.metaData = metaData;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.instanceIdentity = instanceIdentity;
@@ -212,7 +212,7 @@ public class SnapshotBackup extends AbstractBackup {
         // Add files to this dir
 
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
-                uploadAndDeleteAllFiles(
+                backupHelper.uploadAndDeleteAllFiles(
                         snapshotDir, BackupFileType.SNAP, config.enableAsyncSnapshot());
         for (Future<AbstractBackupPath> future : futures) {
             abstractBackupPaths.add(future.get());

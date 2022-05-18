@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Objects;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -24,7 +25,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
 @RunWith(Parameterized.class)
-public class TestAbstractBackup {
+public class TestBackupHelperImpl {
     private static final String COMPRESSED_DATA = "compressed-1234-Data.db";
     private static final String COMPRESSION_INFO = "compressed-1234-CompressionInfo.db";
     private static final String UNCOMPRESSED_DATA = "uncompressed-1234-Data.db";
@@ -39,8 +40,7 @@ public class TestAbstractBackup {
                     RANDOM_COMPONENT);
 
     private static final String DIRECTORY = "target/data/ks/cf/backup/";
-    private final AbstractBackup abstractBackup;
-    private final FakeConfiguration fakeConfiguration;
+    private final BackupHelperImpl backupHelper;
     private final String tablePart;
     private final CompressionType compressionAlgorithm;
 
@@ -88,27 +88,16 @@ public class TestAbstractBackup {
                 });
     }
 
-    public TestAbstractBackup(BackupsToCompress which, String tablePart, CompressionType algo) {
+    public TestBackupHelperImpl(BackupsToCompress which, String tablePart, CompressionType algo) {
         this.tablePart = tablePart;
         this.compressionAlgorithm = algo;
         Injector injector = Guice.createInjector(new BRTestModule());
-        fakeConfiguration = (FakeConfiguration) injector.getInstance(IConfiguration.class);
+        FakeConfiguration fakeConfiguration =
+                (FakeConfiguration) injector.getInstance(IConfiguration.class);
         fakeConfiguration.setFakeConfig("Priam.backupsToCompress", which);
         IFileSystemContext context = injector.getInstance(IFileSystemContext.class);
         Provider<AbstractBackupPath> pathFactory = injector.getProvider(AbstractBackupPath.class);
-        abstractBackup =
-                new AbstractBackup(fakeConfiguration, context, pathFactory) {
-                    @Override
-                    protected void processColumnFamily(File dir) {}
-
-                    @Override
-                    public void execute() {}
-
-                    @Override
-                    public String getName() {
-                        return null;
-                    }
-                };
+        backupHelper = new BackupHelperImpl(fakeConfiguration, context, pathFactory);
     }
 
     @Test
@@ -116,7 +105,7 @@ public class TestAbstractBackup {
         File parent = new File(DIRECTORY);
         AbstractBackupPath.BackupFileType backupFileType = AbstractBackupPath.BackupFileType.SST_V2;
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
-                abstractBackup.uploadAndDeleteAllFiles(parent, backupFileType, false);
+                backupHelper.uploadAndDeleteAllFiles(parent, backupFileType, false);
         AbstractBackupPath abstractBackupPath = null;
         for (ListenableFuture<AbstractBackupPath> future : futures) {
             if (future.get().getFileName().equals(tablePart)) {
@@ -124,6 +113,7 @@ public class TestAbstractBackup {
                 break;
             }
         }
-        Truth.assertThat(abstractBackupPath.getCompression()).isEqualTo(compressionAlgorithm);
+        Truth.assertThat(Objects.requireNonNull(abstractBackupPath).getCompression())
+                .isEqualTo(compressionAlgorithm);
     }
 }

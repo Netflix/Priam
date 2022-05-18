@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
@@ -27,14 +26,15 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /*
  * Incremental/SSTable backup
@@ -45,20 +45,21 @@ public class IncrementalBackup extends AbstractBackup {
     public static final String JOBNAME = "IncrementalBackup";
     private final BackupRestoreUtil backupRestoreUtil;
     private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupHelper backupHelper;
 
     @Inject
     public IncrementalBackup(
             IConfiguration config,
             IBackupRestoreConfig backupRestoreConfig,
-            Provider<AbstractBackupPath> pathFactory,
-            IFileSystemContext backupFileSystemCtx) {
-        super(config, backupFileSystemCtx, pathFactory);
+            BackupHelper backupHelper) {
+        super(config);
         // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
         // uploaded)
         this.backupRestoreConfig = backupRestoreConfig;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
+        this.backupHelper = backupHelper;
     }
 
     @Override
@@ -124,7 +125,8 @@ public class IncrementalBackup extends AbstractBackup {
         }
         // upload SSTables and components
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
-                uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+            backupHelper.uploadAndDeleteAllFiles(
+                backupDir, fileType, config.enableAsyncIncremental());
         for (ListenableFuture<AbstractBackupPath> future : futures) {
             future.get();
         }

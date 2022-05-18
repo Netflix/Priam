@@ -18,7 +18,6 @@ package com.netflix.priam.backupv2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -28,6 +27,14 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
+import org.apache.commons.io.FileUtils;
+import org.quartz.CronExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
@@ -40,18 +47,8 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
-import org.apache.commons.io.FileUtils;
-import org.quartz.CronExpression;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * This service will run on CRON as specified by {@link
@@ -89,6 +86,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final Clock clock;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupVerification backupVerification;
+    private final BackupHelper backupHelper;
 
     private enum MetaStep {
         META_GENERATION,
@@ -100,8 +98,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     @Inject
     SnapshotMetaTask(
             IConfiguration config,
-            IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> pathFactory,
+            BackupHelper backupHelper,
             MetaFileWriterBuilder metaFileWriter,
             @Named("v2") IMetaProxy metaProxy,
             InstanceIdentity instanceIdentity,
@@ -110,8 +107,9 @@ public class SnapshotMetaTask extends AbstractBackup {
             Clock clock,
             IBackupRestoreConfig backupRestoreConfig,
             BackupVerification backupVerification) {
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config);
         this.config = config;
+        this.backupHelper = backupHelper;
         this.instanceIdentity = instanceIdentity;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
@@ -281,7 +279,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                uploadAndDeleteAllFiles(snapshotDirectory, type, true, target);
+                backupHelper.uploadAndDeleteAllFiles(snapshotDirectory, type, target, true);
             }
         }
     }
@@ -372,7 +370,8 @@ public class SnapshotMetaTask extends AbstractBackup {
             File snapshotDir, AbstractBackupPath.BackupFileType type) throws IOException {
         ImmutableSetMultimap.Builder<String, AbstractBackupPath> ssTables =
                 ImmutableSetMultimap.builder();
-        getBackupPaths(snapshotDir, type)
+        backupHelper
+                .getBackupPaths(snapshotDir, type)
                 .forEach(bp -> getPrefix(bp.getBackupFile()).ifPresent(p -> ssTables.put(p, bp)));
         return ssTables.build();
     }

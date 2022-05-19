@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 public class BackupHelperImpl implements BackupHelper {
 
     private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
+    private static final String DATA_SUFFIX = "-Data.db";
     private final Provider<AbstractBackupPath> pathFactory;
     private final IBackupFileSystem fs;
     private final IConfiguration config;
@@ -74,12 +75,14 @@ public class BackupHelperImpl implements BackupHelper {
                         .map(name -> name.substring(0, name.lastIndexOf('-')))
                         .collect(toSet());
         final ImmutableSet.Builder<AbstractBackupPath> bps = ImmutableSet.builder();
+        ImmutableSet.Builder<AbstractBackupPath> dataFiles = ImmutableSet.builder();
         for (File file : files) {
             final AbstractBackupPath bp = pathFactory.get();
             bp.parseLocal(file, type);
             bp.setCompression(getCorrectCompressionAlgorithm(bp, compressedFilePrefixes));
-            bps.add(bp);
+            (file.getAbsolutePath().endsWith(DATA_SUFFIX) ? dataFiles : bps).add(bp);
         }
+        bps.addAll(dataFiles.build());
         return bps.build();
     }
 

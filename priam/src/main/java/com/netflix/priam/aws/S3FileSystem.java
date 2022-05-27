@@ -37,6 +37,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.SystemUtils;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -197,11 +198,16 @@ public class S3FileSystem extends S3FileSystemBase {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         ObjectMetadata metadata = getObjectMetadata(localFile);
         metadata.setContentLength(chunk.length);
-        return new PutObjectRequest(
-                config.getBackupPrefix(),
-                path.getRemotePath(),
-                new ByteArrayInputStream(chunk),
-                metadata);
+        PutObjectRequest put =
+                new PutObjectRequest(
+                        config.getBackupPrefix(),
+                        path.getRemotePath(),
+                        new ByteArrayInputStream(chunk),
+                        metadata);
+        if (config.addMD5ToBackupUploads()) {
+            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+        }
+        return put;
     }
 
     private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {

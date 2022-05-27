@@ -24,7 +24,6 @@ import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,7 +31,6 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
     private final AmazonS3 client;
     private final DataPart dataPart;
     private final List<PartETag> partETags;
-    private AtomicInteger partsUploaded = null; // num of data parts successfully uploaded
 
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     private static final int MAX_RETRIES = 5;
@@ -43,15 +41,6 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
         this.client = client;
         this.dataPart = dp;
         this.partETags = partETags;
-    }
-
-    public S3PartUploader(
-            AmazonS3 client, DataPart dp, List<PartETag> partETags, AtomicInteger partsUploaded) {
-        super(DEFAULT_MIN_SLEEP_MS, BoundedExponentialRetryCallable.MAX_SLEEP, MAX_RETRIES);
-        this.client = client;
-        this.dataPart = dp;
-        this.partETags = partETags;
-        this.partsUploaded = partsUploaded;
     }
 
     private Void uploadPart() throws AmazonClientException, BackupRestoreException {
@@ -69,7 +58,6 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
             throw new BackupRestoreException(
                     "Unable to match MD5 for part " + dataPart.getPartNo());
         partETags.add(partETag);
-        if (this.partsUploaded != null) this.partsUploaded.incrementAndGet();
         return null;
     }
 

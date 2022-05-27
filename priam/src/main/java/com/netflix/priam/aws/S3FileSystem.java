@@ -18,7 +18,7 @@ package com.netflix.priam.aws;
 
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
-import com.google.common.base.Preconditions;
+import com.google.api.client.util.Lists;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -41,18 +41,14 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.concurrent.Future;
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Implementation of IBackupFileSystem for S3 */
 @Singleton
 public class S3FileSystem extends S3FileSystemBase {
-    private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
     private final DynamicRateLimiter dynamicRateLimiter;
 
@@ -120,40 +116,34 @@ public class S3FileSystem extends S3FileSystemBase {
     private long uploadMultipart(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
-        String remotePath = path.getRemotePath();
-        String prefix = config.getBackupPrefix();
-        InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(prefix, remotePath)
-                        .withObjectMetadata(getObjectMetadata(localPath.toFile()));
-        String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
-        DataPart part = new DataPart(prefix, remotePath, uploadId);
-        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
+        S3MultipartManager manager =
+                S3MultipartManager.create(
+                        s3Client,
+                        config.getBackupPrefix(),
+                        path.getRemotePath(),
+                        getObjectMetadata(localPath.toFile()));
 
         try (InputStream in = new FileInputStream(localPath.toFile())) {
             Iterator<byte[]> chunks =
                     new ChunkedStream(in, getChunkSize(localPath), path.getCompression());
             int partNum = 0;
             long compressedFileSize = 0;
-
+            List<Future<PartETag>> eTagFutures = Lists.newArrayList();
             while (chunks.hasNext()) {
                 byte[] chunk = chunks.next();
                 rateLimiter.acquire(chunk.length);
                 dynamicRateLimiter.acquire(path, target, chunk.length);
-                DataPart dp = new DataPart(++partNum, chunk, prefix, remotePath, uploadId);
-                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags);
                 compressedFileSize += chunk.length;
-                // TODO: output Future<Etag> instead, collect them here, wait for all below
-                executor.submit(partUploader);
+                eTagFutures.add(executor.submit(manager.getUploadTask(++partNum, chunk)));
             }
-
-            executor.sleepTillEmpty();
-            Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
-                    new S3PartUploader(s3Client, part, partETags).completeUpload();
-            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
+            List<PartETag> partETags = Lists.newArrayList();
+            for (Future<PartETag> future : eTagFutures) {
+                partETags.add(future.get());
+            }
+            checkSuccessfulUpload(manager.completeUpload(partETags), localPath);
             return compressedFileSize;
         } catch (Exception e) {
-            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            manager.abortUpload();
             throw new BackupRestoreException("Error uploading file: " + localPath, e);
         }
     }

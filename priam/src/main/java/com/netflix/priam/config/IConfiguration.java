@@ -1161,6 +1161,7 @@ public interface IConfiguration {
         return 0.1;
     }
 
+    /** @return whether the Content-MD5 header should be added to single part uploads. */
     default boolean addMD5ToBackupUploads() {
         return false;
     }

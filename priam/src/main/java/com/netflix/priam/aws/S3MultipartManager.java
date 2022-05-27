@@ -24,65 +24,62 @@ import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.ByteArrayInputStream;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
+public class S3MultipartManager {
     private final AmazonS3 client;
-    private final DataPart dataPart;
-    private final List<PartETag> partETags;
+    private final String bucketName;
+    private final String key;
+    private final String uploadId;
 
-    private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     private static final int MAX_RETRIES = 5;
-    private static final int DEFAULT_MIN_SLEEP_MS = 200;
+    private static final long MAX_SLEEP = 10_000L;
+    private static final long DEFAULT_MIN_SLEEP_MS = 200L;
 
-    public S3PartUploader(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
-        super(DEFAULT_MIN_SLEEP_MS, BoundedExponentialRetryCallable.MAX_SLEEP, MAX_RETRIES);
+    public static S3MultipartManager create(
+            AmazonS3 client, String prefix, String remotePath, ObjectMetadata metadata) {
+        InitiateMultipartUploadRequest initRequest =
+                new InitiateMultipartUploadRequest(prefix, remotePath).withObjectMetadata(metadata);
+        return new S3MultipartManager(client, client.initiateMultipartUpload(initRequest));
+    }
+
+    private S3MultipartManager(AmazonS3 client, InitiateMultipartUploadResult context) {
         this.client = client;
-        this.dataPart = dp;
-        this.partETags = partETags;
+        this.bucketName = context.getBucketName();
+        this.key = context.getKey();
+        this.uploadId = context.getUploadId();
     }
 
-    private Void uploadPart() throws AmazonClientException, BackupRestoreException {
-        UploadPartRequest req = new UploadPartRequest();
-        req.setBucketName(dataPart.getBucketName());
-        req.setKey(dataPart.getS3key());
-        req.setUploadId(dataPart.getUploadID());
-        req.setPartNumber(dataPart.getPartNo());
-        req.setPartSize(dataPart.getPartData().length);
-        req.setMd5Digest(SystemUtils.toBase64(dataPart.getMd5()));
-        req.setInputStream(new ByteArrayInputStream(dataPart.getPartData()));
-        UploadPartResult res = client.uploadPart(req);
-        PartETag partETag = res.getPartETag();
-        if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.getMd5())))
-            throw new BackupRestoreException(
-                    "Unable to match MD5 for part " + dataPart.getPartNo());
-        partETags.add(partETag);
-        return null;
+    public BoundedExponentialRetryCallable<PartETag> getUploadTask(int partNumber, byte[] data) {
+        return new BoundedExponentialRetryCallable<PartETag>(
+                DEFAULT_MIN_SLEEP_MS, MAX_SLEEP, MAX_RETRIES) {
+            @Override
+            protected PartETag retriableCall()
+                    throws AmazonClientException, BackupRestoreException {
+                byte[] md5 = SystemUtils.md5(data);
+                UploadPartResult result =
+                        client.uploadPart(
+                                new UploadPartRequest()
+                                        .withBucketName(bucketName)
+                                        .withKey(key)
+                                        .withUploadId(uploadId)
+                                        .withPartNumber(partNumber)
+                                        .withPartSize(data.length)
+                                        .withMD5Digest(SystemUtils.toBase64(md5))
+                                        .withInputStream(new ByteArrayInputStream(data)));
+                PartETag partETag = result.getPartETag();
+                if (!partETag.getETag().equals(SystemUtils.toHex(md5)))
+                    throw new BackupRestoreException("Unable to match MD5 for part " + partNumber);
+                return partETag;
+            }
+        };
     }
 
-    public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException {
-        CompleteMultipartUploadRequest compRequest =
-                new CompleteMultipartUploadRequest(
-                        dataPart.getBucketName(),
-                        dataPart.getS3key(),
-                        dataPart.getUploadID(),
-                        partETags);
-        return client.completeMultipartUpload(compRequest);
+    public CompleteMultipartUploadResult completeUpload(List<PartETag> partETags) {
+        return client.completeMultipartUpload(
+                new CompleteMultipartUploadRequest(bucketName, key, uploadId, partETags));
     }
 
-    // Abort
     public void abortUpload() {
-        AbortMultipartUploadRequest abortRequest =
-                new AbortMultipartUploadRequest(
-                        dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID());
-        client.abortMultipartUpload(abortRequest);
-    }
-
-    @Override
-    public Void retriableCall() throws AmazonClientException, BackupRestoreException {
-        logger.debug(
-                "Picked up part {} size {}", dataPart.getPartNo(), dataPart.getPartData().length);
-        return uploadPart();
+        client.abortMultipartUpload(new AbortMultipartUploadRequest(bucketName, key, uploadId));
     }
 }

@@ -3,10 +3,11 @@ package com.netflix.priam.backup;
 import com.google.common.base.Preconditions;
 import com.google.common.util.concurrent.RateLimiter;
 import com.netflix.priam.config.IConfiguration;
+
+import javax.inject.Inject;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import javax.inject.Inject;
 
 public class BackupDynamicRateLimiter implements DynamicRateLimiter {
 

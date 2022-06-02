@@ -93,7 +93,7 @@ public class IncrementalBackup extends AbstractBackup {
                             && (SnapshotBackup.isBackupEnabled(configuration)
                                     || (backupRestoreConfig.enableV2Backups()
                                             && SnapshotMetaTask.isBackupEnabled(
-                                                    configuration, backupRestoreConfig))));
+                                                    backupRestoreConfig))));
             logger.info("Incremental backups are enabled: {}", enabled);
 
             if (!enabled) {

@@ -789,4 +789,14 @@ public class PriamConfiguration implements IConfiguration {
     public boolean permitDirectTokenAssignmentWithGossipMismatch() {
         return config.get(PRIAM_PRE + ".permitDirectTokenAssignmentWithGossipMismatch", false);
     }
+
+    @Override
+    public int getTargetMinutesToCompleteSnaphotUpload() {
+        return config.get(PRIAM_PRE + ".snapshotUploadDuration", 0);
+    }
+
+    @Override
+    public double getRateLimitChangeThreshold() {
+        return config.get(PRIAM_PRE + ".rateLimitChangeThreshold", 0.1);
+    }
 }

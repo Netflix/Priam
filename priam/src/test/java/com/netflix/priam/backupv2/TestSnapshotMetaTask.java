@@ -64,7 +64,7 @@ public class TestSnapshotMetaTask {
 
     @Test
     public void testSnapshotMetaServiceEnabled() throws Exception {
-        TaskTimer taskTimer = SnapshotMetaTask.getTimer(configuration, backupRestoreConfig);
+        TaskTimer taskTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
         Assert.assertNotNull(taskTimer);
     }
 

@@ -65,7 +65,7 @@ public class MetaFileWriterBuilder {
     }
 
     public interface DataStep {
-        DataStep addColumnfamilyResult(
+        ColumnfamilyResult addColumnfamilyResult(
                 String keyspace,
                 String columnFamily,
                 ImmutableMultimap<String, AbstractBackupPath> sstables)
@@ -142,7 +142,7 @@ public class MetaFileWriterBuilder {
          *
          * @throws IOException if unable to write to the file or if JSON is not valid
          */
-        public DataStep addColumnfamilyResult(
+        public ColumnfamilyResult addColumnfamilyResult(
                 String keyspace,
                 String columnFamily,
                 ImmutableMultimap<String, AbstractBackupPath> sstables)
@@ -151,8 +151,9 @@ public class MetaFileWriterBuilder {
             if (jsonWriter == null)
                 throw new NullPointerException(
                         "addColumnfamilyResult: Json Writer in MetaFileWriter is null. This should not happen!");
-            jsonWriter.jsonValue(toColumnFamilyResult(keyspace, columnFamily, sstables).toString());
-            return this;
+            ColumnfamilyResult result = toColumnFamilyResult(keyspace, columnFamily, sstables);
+            jsonWriter.jsonValue(result.toString());
+            return result;
         }
 
         /**

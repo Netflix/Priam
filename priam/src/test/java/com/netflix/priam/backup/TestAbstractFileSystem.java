@@ -29,6 +29,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -284,7 +285,8 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+                throws BackupRestoreException {
             throw new BackupRestoreException(
                     "User injected failure file system error for testing upload. Local path: "
                             + path.getBackupFile().getAbsolutePath());
@@ -315,7 +317,8 @@ public class TestAbstractFileSystem {
         }
 
         @Override
-        protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+        protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+                throws BackupRestoreException {
             try {
                 Thread.sleep(random.nextInt(20));
             } catch (InterruptedException e) {

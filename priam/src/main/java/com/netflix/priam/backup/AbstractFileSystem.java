@@ -38,6 +38,7 @@ import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -157,16 +158,17 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     @Override
     public ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry) throws RejectedExecutionException {
+            final AbstractBackupPath path, final int retry, Instant target)
+            throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadAndDelete(path, retry);
+                    uploadAndDelete(path, retry, target);
                     return path;
                 });
     }
 
     @Override
-    public void uploadAndDelete(final AbstractBackupPath path, final int retry)
+    public void uploadAndDelete(final AbstractBackupPath path, final int retry, Instant target)
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
@@ -189,7 +191,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
                                 public Long retriableCall() throws Exception {
-                                    return uploadFileImpl(path);
+                                    return uploadFileImpl(path, target);
                                 }
                             }.call();
 
@@ -270,7 +272,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 
-    protected abstract long uploadFileImpl(final AbstractBackupPath path)
+    protected abstract long uploadFileImpl(final AbstractBackupPath path, Instant target)
             throws BackupRestoreException;
 
     @Override

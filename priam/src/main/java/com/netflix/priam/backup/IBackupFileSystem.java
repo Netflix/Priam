@@ -19,6 +19,7 @@ package com.netflix.priam.backup;
 import com.google.common.util.concurrent.ListenableFuture;
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -55,6 +56,12 @@ public interface IBackupFileSystem {
     Future<Path> asyncDownloadFile(final AbstractBackupPath path, final int retry)
             throws BackupRestoreException, RejectedExecutionException;
 
+    /** Overload that uploads as fast as possible without any custom throttling */
+    default void uploadAndDelete(AbstractBackupPath path, int retry)
+            throws FileNotFoundException, BackupRestoreException {
+        uploadAndDelete(path, retry, Instant.EPOCH);
+    }
+
     /**
      * Upload the local file to its remote counterpart. Both locations are embedded within the path
      * parameter. De-duping of the file to upload will always be done by comparing the
@@ -66,13 +73,21 @@ public interface IBackupFileSystem {
      * @param path Backup path representing a local and remote file pair
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
+     * @param target The target time of completion of all files in the upload.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
      *     readable or remote file system errors.
      * @throws FileNotFoundException If a file as denoted by localPath is not available or is a
      *     directory.
      */
-    void uploadAndDelete(AbstractBackupPath path, int retry)
+    void uploadAndDelete(AbstractBackupPath path, int retry, Instant target)
             throws FileNotFoundException, BackupRestoreException;
+
+    /** Overload that uploads as fast as possible without any custom throttling */
+    default ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
+            final AbstractBackupPath path, final int retry)
+            throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
+        return asyncUploadAndDelete(path, retry, Instant.EPOCH);
+    }
 
     /**
      * Upload the local file denoted by localPath in async fashion to the remote file system at
@@ -81,6 +96,7 @@ public interface IBackupFileSystem {
      * @param path AbstractBackupPath to be used to send backup notifications only.
      * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
      *     exactly once.
+     * @param target The target time of completion of all files in the upload.
      * @return The future of the async job to monitor the progress of the job. This will be null if
      *     file was de-duped for upload.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
@@ -91,7 +107,7 @@ public interface IBackupFileSystem {
      *     to add the work to the queue.
      */
     ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry)
+            final AbstractBackupPath path, final int retry, Instant target)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**

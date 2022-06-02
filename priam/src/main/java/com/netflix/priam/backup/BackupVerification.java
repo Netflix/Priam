@@ -23,6 +23,7 @@ import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +41,7 @@ public class BackupVerification {
     private final IMetaProxy metaV2Proxy;
     private final IBackupStatusMgr backupStatusMgr;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private BackupVerificationResult latestResult;
 
     @Inject
     BackupVerification(
@@ -83,14 +85,14 @@ public class BackupVerification {
         for (BackupMetadata backupMetadata : metadata) {
             if (backupMetadata.getLastValidated() != null && !force) {
                 // Backup is already validated. Nothing to do.
-                BackupVerificationResult result = new BackupVerificationResult();
-                result.valid = true;
-                result.manifestAvailable = true;
-                result.snapshotInstant = backupMetadata.getStart().toInstant();
+                latestResult = new BackupVerificationResult();
+                latestResult.valid = true;
+                latestResult.manifestAvailable = true;
+                latestResult.snapshotInstant = backupMetadata.getStart().toInstant();
                 Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
-                result.remotePath =
+                latestResult.remotePath =
                         snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
-                return Optional.of(result);
+                return Optional.of(latestResult);
             }
             BackupVerificationResult backupVerificationResult =
                     verifyBackup(metaProxy, backupMetadata);
@@ -102,9 +104,11 @@ public class BackupVerification {
             if (backupVerificationResult.valid) {
                 backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
                 backupStatusMgr.update(backupMetadata);
+                latestResult = backupVerificationResult;
                 return Optional.of(backupVerificationResult);
             }
         }
+        latestResult = null;
         return Optional.empty();
     }
 
@@ -143,6 +147,11 @@ public class BackupVerification {
             }
         }
         return result;
+    }
+
+    /** returns the latest valid backup verification result if we have found one within the SLO * */
+    public Optional<Instant> getLatestVerfifiedBackupTime() {
+        return latestResult == null ? Optional.empty() : Optional.of(latestResult.snapshotInstant);
     }
 
     private BackupVerificationResult verifyBackup(

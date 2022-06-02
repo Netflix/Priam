@@ -37,6 +37,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.SystemUtils;
 import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -172,45 +173,55 @@ public class S3FileSystem extends S3FileSystemBase {
 
     protected long uploadFileImpl(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
-        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
-        String remotePath = path.getRemotePath();
-        long chunkSize = config.getBackupChunkSize();
-        File localFile = localPath.toFile();
-        if (localFile.length() >= chunkSize) return uploadMultipart(path, target);
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        if (localFile.length() >= config.getBackupChunkSize()) return uploadMultipart(path, target);
+        byte[] chunk = getFileContents(path);
+        // C* snapshots may have empty files. That is probably unintentional.
+        if (chunk.length > 0) {
+            rateLimiter.acquire(chunk.length);
+            dynamicRateLimiter.acquire(path, target, chunk.length);
+        }
+        try {
+            new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+                @Override
+                public PutObjectResult retriableCall() {
+                    return s3Client.putObject(generatePut(path, chunk));
+                }
+            }.call();
+        } catch (Exception e) {
+            throw new BackupRestoreException("Error uploading file: " + localFile.getName(), e);
+        }
+        return chunk.length;
+    }
 
-        String prefix = config.getBackupPrefix();
-        if (logger.isDebugEnabled()) logger.debug("PUTing {}/{}", prefix, remotePath);
+    private PutObjectRequest generatePut(AbstractBackupPath path, byte[] chunk) {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        ObjectMetadata metadata = getObjectMetadata(localFile);
+        metadata.setContentLength(chunk.length);
+        PutObjectRequest put =
+                new PutObjectRequest(
+                        config.getBackupPrefix(),
+                        path.getRemotePath(),
+                        new ByteArrayInputStream(chunk),
+                        metadata);
+        if (config.addMD5ToBackupUploads()) {
+            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+        }
+        return put;
+    }
 
+    private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
                 InputStream in = new BufferedInputStream(new FileInputStream(localFile))) {
-            Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
+            Iterator<byte[]> chunks =
+                    new ChunkedStream(in, config.getBackupChunkSize(), path.getCompression());
             while (chunks.hasNext()) {
                 byteArrayOutputStream.write(chunks.next());
             }
-            byte[] chunk = byteArrayOutputStream.toByteArray();
-            long compressedFileSize = chunk.length;
-            // C* snapshots may have empty files. That is probably unintentional.
-            if (chunk.length > 0) {
-                rateLimiter.acquire(chunk.length);
-                dynamicRateLimiter.acquire(path, target, chunk.length);
-            }
-            ObjectMetadata objectMetadata = getObjectMetadata(localFile);
-            objectMetadata.setContentLength(chunk.length);
-            ByteArrayInputStream inputStream = new ByteArrayInputStream(chunk);
-            PutObjectRequest putObjectRequest =
-                    new PutObjectRequest(prefix, remotePath, inputStream, objectMetadata);
-            PutObjectResult upload =
-                    new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
-                        @Override
-                        public PutObjectResult retriableCall() {
-                            return s3Client.putObject(putObjectRequest);
-                        }
-                    }.call();
-            if (logger.isDebugEnabled())
-                logger.debug("Put: {} with etag: {}", remotePath, upload.getETag());
-            return compressedFileSize;
+            return byteArrayOutputStream.toByteArray();
         } catch (Exception e) {
-            throw new BackupRestoreException("Error uploading file: " + localFile.getName(), e);
+            throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
         }
     }
 }

@@ -282,6 +282,8 @@ public class SnapshotMetaTask extends AbstractBackup {
                     continue;
                 }
 
+                Instant target = getUploadTarget();
+
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.

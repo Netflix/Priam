@@ -16,10 +16,10 @@
  */
 package com.netflix.priam.backup;
 
-import static java.util.stream.Collectors.toSet;
-
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -28,6 +28,10 @@ import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -35,12 +39,14 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.time.Instant;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.Future;
 import java.util.stream.Stream;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static java.util.stream.Collectors.toSet;
 
 /** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
@@ -63,6 +69,12 @@ public abstract class AbstractBackup extends Task {
         this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
+    /** Overload that uploads files without any custom throttling */
+    protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
+            final File parent, final BackupFileType type, boolean async) throws Exception {
+        return uploadAndDeleteAllFiles(parent, type, async, Instant.EPOCH);
+    }
+
     /**
      * Upload files in the specified dir. Does not delete the file in case of error. The files are
      * uploaded serially or async based on flag provided.
@@ -70,19 +82,22 @@ public abstract class AbstractBackup extends Task {
      * @param parent Parent dir
      * @param type Type of file (META, SST, SNAP etc)
      * @param async Upload the file(s) in async fashion if enabled.
-     * @param waitForCompletion wait for completion for all files to upload if using async API. If
-     *     `false` it will queue the files and return with no guarantee to upload.
+     * @param target target time of completion of the batch of files
      * @return List of files that are successfully uploaded as part of backup
      * @throws Exception when there is failure in uploading files.
      */
-    protected ImmutableSet<AbstractBackupPath> upload(
-            final File parent, final BackupFileType type, boolean async, boolean waitForCompletion)
+    protected ImmutableList<ListenableFuture<AbstractBackupPath>> uploadAndDeleteAllFiles(
+            final File parent, final BackupFileType type, boolean async, Instant target)
             throws Exception {
-        ImmutableSet<AbstractBackupPath> bps = getBackupPaths(parent, type);
-        final List<Future<AbstractBackupPath>> futures = Lists.newArrayList();
-        for (AbstractBackupPath bp : bps) {
-            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10));
-            else fs.uploadAndDelete(bp, 10);
+        ImmutableSet<AbstractBackupPath> backupPaths = getBackupPaths(parent, type);
+        final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
+                ImmutableList.builder();
+        for (AbstractBackupPath bp : backupPaths) {
+            if (async) futures.add(fs.asyncUploadAndDelete(bp, 10, target));
+            else {
+                fs.uploadAndDelete(bp, 10, target);
+                futures.add(Futures.immediateFuture(bp));
+            }
         }
 
         // Wait for all files to be uploaded.

@@ -34,6 +34,7 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.*;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -236,7 +237,8 @@ public class GoogleEncryptedFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         throw new UnsupportedOperationException();
     }
 

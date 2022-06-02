@@ -279,4 +279,11 @@ public class FakeConfiguration implements IConfiguration {
     public void setSkipIngressUnlessIPIsPublic(boolean skipIngressUnlessIPIsPublic) {
         this.skipIngressUnlessIPIsPublic = skipIngressUnlessIPIsPublic;
     }
+
+    @Override
+    public int getBackupThreads() {
+        return (Integer)
+                fakeConfig.getOrDefault(
+                        "Priam.backup.threads", IConfiguration.super.getBackupThreads());
+    }
 }

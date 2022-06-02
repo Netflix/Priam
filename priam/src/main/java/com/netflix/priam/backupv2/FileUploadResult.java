@@ -73,6 +73,14 @@ public class FileUploadResult {
         isUploaded = uploaded;
     }
 
+    public Boolean getIsUploaded() {
+        return isUploaded;
+    }
+
+    public Path getFileName() {
+        return fileName;
+    }
+
     public String getBackupPath() {
         return backupPath;
     }

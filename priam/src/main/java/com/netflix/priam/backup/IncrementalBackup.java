@@ -16,6 +16,10 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -26,7 +30,9 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
+import java.io.FileFilter;
 import java.nio.file.Path;
+import java.util.Optional;
 import java.util.Set;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
@@ -113,7 +119,14 @@ public class IncrementalBackup extends AbstractBackup {
     protected void processColumnFamily(File backupDir) throws Exception {
         BackupFileType fileType =
                 backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
-        deleteEmptyFiles(backupDir);
-        upload(backupDir, fileType, config.enableAsyncIncremental(), true);
+        // delete empty files to adapt to 2.1
+        FileFilter filter = (file) -> file.isFile() && file.canWrite() && file.length() == 0L;
+        for (File file : Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {})) {
+            FileUtils.deleteQuietly(file);
+        }
+        // upload SSTables and components
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
+        Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
     }
 }

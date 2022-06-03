@@ -16,6 +16,8 @@
  */
 package com.netflix.priam.backup;
 
+import static java.util.stream.Collectors.toSet;
+
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.Futures;
@@ -28,12 +30,7 @@ import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
-import java.io.FileFilter;
 import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -41,12 +38,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.HashSet;
-import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Future;
 import java.util.stream.Stream;
-
-import static java.util.stream.Collectors.toSet;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Abstract Backup class for uploading files to backup location */
 public abstract class AbstractBackup extends Task {
@@ -99,14 +94,7 @@ public abstract class AbstractBackup extends Task {
                 futures.add(Futures.immediateFuture(bp));
             }
         }
-
-        // Wait for all files to be uploaded.
-        if (async && waitForCompletion) {
-            for (Future<AbstractBackupPath> future : futures)
-                future.get(); // This might throw exception if there is any error
-        }
-
-        return bps;
+        return futures.build();
     }
 
     protected ImmutableSet<AbstractBackupPath> getBackupPaths(File dir, BackupFileType type)
@@ -190,11 +178,11 @@ public abstract class AbstractBackup extends Task {
     }
 
     protected String getColumnFamily(File backupDir) {
-        return backupDir.toPath().getParent().getFileName().toString().split("-")[0];
+        return backupDir.getParentFile().getName().split("-")[0];
     }
 
     protected String getKeyspace(File backupDir) {
-        return backupDir.toPath().getParent().getParent().getFileName().toString();
+        return backupDir.getParentFile().getParentFile().getName();
     }
 
     /**
@@ -241,12 +229,5 @@ public abstract class AbstractBackup extends Task {
 
     protected static boolean isAReadableDirectory(File dir) {
         return dir.exists() && dir.isDirectory() && dir.canRead();
-    }
-
-    protected static void deleteEmptyFiles(File dir) {
-        FileFilter filter = (file) -> file.isFile() && file.canWrite() && file.length() == 0L;
-        for (File file : Optional.ofNullable(dir.listFiles(filter)).orElse(new File[] {})) {
-            FileUtils.deleteQuietly(file);
-        }
     }
 }

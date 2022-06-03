@@ -17,7 +17,6 @@
 package com.netflix.priam.backup;
 
 import com.google.common.util.concurrent.ListenableFuture;
-
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.time.Instant;

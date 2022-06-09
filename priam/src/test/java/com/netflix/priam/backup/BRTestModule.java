@@ -34,7 +34,10 @@ import com.netflix.priam.cryptography.IFileCryptography;
 import com.netflix.priam.cryptography.pgp.PgpCryptography;
 import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
-import com.netflix.priam.identity.*;
+import com.netflix.priam.identity.FakeMembership;
+import com.netflix.priam.identity.FakePriamInstanceFactory;
+import com.netflix.priam.identity.IMembership;
+import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.restore.IPostRestoreHook;
@@ -42,6 +45,9 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.Collections;
 import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
@@ -83,5 +89,7 @@ public class BRTestModule extends AbstractModule {
         bind(Registry.class).toInstance(new DefaultRegistry());
         bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
+        bind(DynamicRateLimiter.class).to(FakeDynamicRateLimiter.class);
+        bind(Clock.class).toInstance(Clock.fixed(Instant.EPOCH, ZoneId.systemDefault()));
     }
 }

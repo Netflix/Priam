@@ -20,6 +20,9 @@ package com.netflix.priam.backup;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.ListeningExecutorService;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -35,6 +38,7 @@ import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -61,7 +65,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
-    private final ThreadPoolExecutor fileUploadExecutor;
+    private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
@@ -93,10 +97,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 .withName(backupMetrics.uploadQueueSize)
                 .monitorSize(uploadQueue);
         this.fileUploadExecutor =
-                new BlockingSubmitThreadPoolExecutor(
-                        configuration.getBackupThreads(),
-                        uploadQueue,
-                        configuration.getUploadTimeout());
+                MoreExecutors.listeningDecorator(
+                        new BlockingSubmitThreadPoolExecutor(
+                                configuration.getBackupThreads(),
+                                uploadQueue,
+                                configuration.getUploadTimeout()));
 
         BlockingQueue<Runnable> downloadQueue =
                 new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
@@ -152,17 +157,18 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException;
 
     @Override
-    public Future<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry) throws RejectedExecutionException {
+    public ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
+            final AbstractBackupPath path, final int retry, Instant target)
+            throws RejectedExecutionException {
         return fileUploadExecutor.submit(
                 () -> {
-                    uploadAndDelete(path, retry);
+                    uploadAndDelete(path, retry, target);
                     return path;
                 });
     }
 
     @Override
-    public void uploadAndDelete(final AbstractBackupPath path, final int retry)
+    public void uploadAndDelete(final AbstractBackupPath path, final int retry, Instant target)
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
@@ -185,7 +191,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                             new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
                                 @Override
                                 public Long retriableCall() throws Exception {
-                                    return uploadFileImpl(path);
+                                    return uploadFileImpl(path, target);
                                 }
                             }.call();
 
@@ -266,7 +272,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     protected abstract boolean doesRemoteFileExist(Path remotePath);
 
-    protected abstract long uploadFileImpl(final AbstractBackupPath path)
+    protected abstract long uploadFileImpl(final AbstractBackupPath path, Instant target)
             throws BackupRestoreException;
 
     @Override

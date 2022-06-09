@@ -28,6 +28,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
 import org.json.simple.JSONArray;
 
@@ -166,7 +167,8 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         uploadedFiles.add(path.getBackupFile().getAbsolutePath());
         addFile(path.getRemotePath());
         return path.getBackupFile().length();

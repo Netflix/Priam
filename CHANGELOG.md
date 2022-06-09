@@ -1,4 +1,9 @@
 # Changelog
+## 2022/06/09 3.1.115
+*UpdateSecuritySettings will be removed in the next release*
+(#975 backport) Dynamic Rate Limiting of Snapshots.
+(#985 backport) Optionally Add Content-MD5 header to uploads of files smaller than the backupChunkSize.
+
 ## 2022/01/25 3.1.114
 (#980) Cache region in AWSInstanceInfo to avoid throttling.
 NOTE: UpdateSecuritySettings will be deprecated in an upcoming release.

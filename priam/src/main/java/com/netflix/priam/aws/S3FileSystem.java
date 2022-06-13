@@ -176,11 +176,8 @@ public class S3FileSystem extends S3FileSystemBase {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         if (localFile.length() >= config.getBackupChunkSize()) return uploadMultipart(path, target);
         byte[] chunk = getFileContents(path);
-        // C* snapshots may have empty files. That is probably unintentional.
-        if (chunk.length > 0) {
-            rateLimiter.acquire(chunk.length);
-            dynamicRateLimiter.acquire(path, target, chunk.length);
-        }
+        rateLimiter.acquire(chunk.length);
+        dynamicRateLimiter.acquire(path, target, chunk.length);
         try {
             new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                 @Override

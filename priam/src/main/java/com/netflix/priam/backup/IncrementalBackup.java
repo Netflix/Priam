@@ -17,9 +17,7 @@
 package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
@@ -127,6 +125,8 @@ public class IncrementalBackup extends AbstractBackup {
         // upload SSTables and components
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
                 uploadAndDeleteAllFiles(backupDir, fileType, config.enableAsyncIncremental());
-        Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
+        for (ListenableFuture<AbstractBackupPath> future : futures) {
+            future.get();
+        }
     }
 }

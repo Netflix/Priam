@@ -1,4 +1,7 @@
 # Changelog
+## 2022/06/13 3.1.116
+(#987) Remove unsupported method and subtle logic change from recent backports
+
 ## 2022/06/09 3.1.115
 *UpdateSecuritySettings will be removed in the next release*
 (#975 backport) Dynamic Rate Limiting of Snapshots.

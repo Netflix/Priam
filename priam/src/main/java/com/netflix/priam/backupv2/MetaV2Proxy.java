@@ -217,8 +217,8 @@ public class MetaV2Proxy implements IMetaProxy {
         private BackupVerificationResult verificationResult = new BackupVerificationResult();
 
         @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
-            for (ColumnfamilyResult.SSTableResult ssTableResult :
+        public void process(ColumnFamilyResult columnfamilyResult) {
+            for (ColumnFamilyResult.SSTableResult ssTableResult :
                     columnfamilyResult.getSstables()) {
                 for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
                     if (fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath()))) {
@@ -235,8 +235,8 @@ public class MetaV2Proxy implements IMetaProxy {
         private List<String> backupRemotePaths = new ArrayList<>();
 
         @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
-            for (ColumnfamilyResult.SSTableResult ssTableResult :
+        public void process(ColumnFamilyResult columnfamilyResult) {
+            for (ColumnFamilyResult.SSTableResult ssTableResult :
                     columnfamilyResult.getSstables()) {
                 for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
                     backupRemotePaths.add(fileUploadResult.getBackupPath());

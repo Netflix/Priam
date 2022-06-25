@@ -69,6 +69,7 @@ public class BackupTTLTask extends Task {
     private static final Lock lock = new ReentrantLock();
     private final int BATCH_SIZE = 1000;
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
+    private final DeletionFilter deletionFilter;
 
     @Inject
     public BackupTTLTask(
@@ -77,13 +78,15 @@ public class BackupTTLTask extends Task {
             @Named("v2") IMetaProxy metaProxy,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider,
-            InstanceState instanceState) {
+            InstanceState instanceState,
+            DeletionFilter deletionFilter) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.metaProxy = metaProxy;
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         this.instanceState = instanceState;
+        this.deletionFilter = deletionFilter;
     }
 
     @Override
@@ -189,7 +192,9 @@ public class BackupTTLTask extends Task {
                 }
 
                 if (!filesInMeta.containsKey(abstractBackupPath.getRemotePath())) {
-                    deleteFile(abstractBackupPath, false);
+                    if (deletionFilter.shouldDelete(abstractBackupPath.getLastModified())) {
+                        deleteFile(abstractBackupPath, false);
+                    }
                 } else {
                     if (logger.isDebugEnabled())
                         logger.debug(

@@ -23,12 +23,12 @@ import java.util.Set;
  * This is a POJO to encapsulate all the SSTables for a given column family. Created by aagrawal on
  * 7/1/18.
  */
-public class ColumnfamilyResult {
+public class ColumnFamilyResult {
     private String keyspaceName;
     private String columnfamilyName;
     private List<SSTableResult> sstables = new ArrayList<>();
 
-    public ColumnfamilyResult(String keyspaceName, String columnfamilyName) {
+    public ColumnFamilyResult(String keyspaceName, String columnfamilyName) {
         this.keyspaceName = keyspaceName;
         this.columnfamilyName = columnfamilyName;
     }

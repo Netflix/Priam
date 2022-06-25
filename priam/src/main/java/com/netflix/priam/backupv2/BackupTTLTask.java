@@ -246,7 +246,7 @@ public class BackupTTLTask extends Task {
 
     private class MetaFileWalker extends MetaFileReader {
         @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
+        public void process(ColumnFamilyResult columnfamilyResult) {
             columnfamilyResult
                     .getSstables()
                     .forEach(

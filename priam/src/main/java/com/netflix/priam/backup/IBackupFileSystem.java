@@ -143,8 +143,8 @@ public interface IBackupFileSystem {
     Iterator<AbstractBackupPath> listPrefixes(Date date);
 
     /**
-     * List all the files with the given prefix, delimiter, and marker. This should never return
-     * null.
+     * List all the files with the given prefix, delimiter, and marker. Files should be returned
+     * ordered by last modified time descending. This should never return null.
      *
      * @param prefix Common prefix of the elements to search in the backup file system.
      * @param delimiter All the object will end with this delimiter.

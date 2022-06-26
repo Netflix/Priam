@@ -132,7 +132,7 @@ public class TestSnapshotMetaTask {
         }
 
         @Override
-        public void process(ColumnfamilyResult columnfamilyResult) {
+        public void process(ColumnFamilyResult columnfamilyResult) {
             Assert.assertEquals(noOfSstables, columnfamilyResult.getSstables().size());
         }
     }

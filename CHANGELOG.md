@@ -1,4 +1,8 @@
 # Changelog
+## 2022/06/26 3.1.117
+*UpdateSecuritySettings will be removed in the next release*
+(#993) Add hook to optionally skip deletion for files added within a certain window.
+
 ## 2022/06/13 3.1.116
 (#987) Remove unsupported method and subtle logic change from recent backports
 

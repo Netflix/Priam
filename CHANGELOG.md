@@ -1,4 +1,8 @@
 # Changelog
+## 2022/06/26 3.11.90
+*UpdateSecuritySettings will be removed in the next release*
+(#992) Add hook to optionally skip deletion for files added within a certain window.
+
 ## 2022/06/02 3.11.89
 *UpdateSecuritySettings will be removed in the next release*
 (#975) Dynamic Rate Limiting of Snapshots.

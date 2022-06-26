@@ -337,7 +337,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
     }
 
-    private Optional<ColumnfamilyResult> generateMetaFile(
+    private Optional<ColumnFamilyResult> generateMetaFile(
             final String keyspace, final String columnFamily, final File backupDir)
             throws Exception {
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
@@ -354,13 +354,13 @@ public class SnapshotMetaTask extends AbstractBackup {
 
         ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
         logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
-        ColumnfamilyResult result =
+        ColumnFamilyResult result =
                 dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
         return Optional.of(result);
     }
 
-    private void deleteUploadedFiles(ColumnfamilyResult result) {
+    private void deleteUploadedFiles(ColumnFamilyResult result) {
         result.getSstables()
                 .stream()
                 .flatMap(sstable -> sstable.getSstableComponents().stream())

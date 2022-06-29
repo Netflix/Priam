@@ -65,7 +65,7 @@ public class MetaFileWriterBuilder {
     }
 
     public interface DataStep {
-        DataStep addColumnfamilyResult(
+        ColumnFamilyResult addColumnfamilyResult(
                 String keyspace,
                 String columnFamily,
                 ImmutableMultimap<String, AbstractBackupPath> sstables)
@@ -137,12 +137,12 @@ public class MetaFileWriterBuilder {
         }
 
         /**
-         * Add {@link ColumnfamilyResult} after it has been processed so it can be streamed to
+         * Add {@link ColumnFamilyResult} after it has been processed so it can be streamed to
          * meta.json. Streaming write to meta.json is required so we don't get Priam OOM.
          *
          * @throws IOException if unable to write to the file or if JSON is not valid
          */
-        public DataStep addColumnfamilyResult(
+        public ColumnFamilyResult addColumnfamilyResult(
                 String keyspace,
                 String columnFamily,
                 ImmutableMultimap<String, AbstractBackupPath> sstables)
@@ -151,8 +151,9 @@ public class MetaFileWriterBuilder {
             if (jsonWriter == null)
                 throw new NullPointerException(
                         "addColumnfamilyResult: Json Writer in MetaFileWriter is null. This should not happen!");
-            jsonWriter.jsonValue(toColumnFamilyResult(keyspace, columnFamily, sstables).toString());
-            return this;
+            ColumnFamilyResult result = toColumnFamilyResult(keyspace, columnFamily, sstables);
+            jsonWriter.jsonValue(result.toString());
+            return result;
         }
 
         /**
@@ -210,11 +211,11 @@ public class MetaFileWriterBuilder {
             return abstractBackupPath.getRemotePath();
         }
 
-        private ColumnfamilyResult toColumnFamilyResult(
+        private ColumnFamilyResult toColumnFamilyResult(
                 String keyspace,
                 String columnFamily,
                 ImmutableMultimap<String, AbstractBackupPath> sstables) {
-            ColumnfamilyResult columnfamilyResult = new ColumnfamilyResult(keyspace, columnFamily);
+            ColumnFamilyResult columnfamilyResult = new ColumnFamilyResult(keyspace, columnFamily);
             sstables.keySet()
                     .stream()
                     .map(k -> toSSTableResult(k, sstables.get(k)))
@@ -222,9 +223,9 @@ public class MetaFileWriterBuilder {
             return columnfamilyResult;
         }
 
-        private ColumnfamilyResult.SSTableResult toSSTableResult(
+        private ColumnFamilyResult.SSTableResult toSSTableResult(
                 String prefix, ImmutableCollection<AbstractBackupPath> sstable) {
-            ColumnfamilyResult.SSTableResult ssTableResult = new ColumnfamilyResult.SSTableResult();
+            ColumnFamilyResult.SSTableResult ssTableResult = new ColumnFamilyResult.SSTableResult();
             ssTableResult.setPrefix(prefix);
             ssTableResult.setSstableComponents(
                     ImmutableSet.copyOf(

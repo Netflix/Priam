@@ -137,11 +137,11 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         public void visit(LifecycleTagPredicate lifecycleTagPredicate) {}
 
         @Override
-        public void visit(LifecycleAndOperator lifecycleAndOperator) {}
-
-        @Override
         public void visit(
                 LifecycleObjectSizeGreaterThanPredicate lifecycleObjectSizeGreaterThanPredicate) {}
+
+        @Override
+        public void visit(LifecycleAndOperator lifecycleAndOperator) {}
 
         @Override
         public void visit(

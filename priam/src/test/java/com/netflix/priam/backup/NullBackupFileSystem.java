@@ -23,6 +23,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import java.nio.file.Path;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -72,7 +73,8 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    protected long uploadFileImpl(AbstractBackupPath path) throws BackupRestoreException {
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         return 0;
     }
 }

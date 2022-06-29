@@ -36,10 +36,13 @@ import java.io.IOException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.text.ParseException;
+import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
-import java.util.Set;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.locks.Lock;
@@ -48,6 +51,7 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
+import org.quartz.CronExpression;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,6 +77,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
     private static final String CASSANDRA_SCHEMA_FILE = "schema.cql";
+    private static final TimeZone UTC = TimeZone.getTimeZone(ZoneId.of("UTC"));
     private final BackupRestoreUtil backupRestoreUtil;
     private final MetaFileWriterBuilder metaFileWriter;
     private MetaFileWriterBuilder.DataStep dataStep;
@@ -83,6 +88,10 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final IBackupStatusMgr snapshotStatusMgr;
     private final InstanceIdentity instanceIdentity;
     private final ExecutorService threadPool;
+    private final IConfiguration config;
+    private final Clock clock;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupVerification backupVerification;
 
     private enum MetaStep {
         META_GENERATION,
@@ -100,11 +109,18 @@ public class SnapshotMetaTask extends AbstractBackup {
             @Named("v2") IMetaProxy metaProxy,
             InstanceIdentity instanceIdentity,
             IBackupStatusMgr snapshotStatusMgr,
-            CassandraOperations cassandraOperations) {
+            CassandraOperations cassandraOperations,
+            Clock clock,
+            IBackupRestoreConfig backupRestoreConfig,
+            BackupVerification backupVerification) {
         super(config, backupFileSystemCtx, pathFactory);
+        this.config = config;
         this.instanceIdentity = instanceIdentity;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
+        this.clock = clock;
+        this.backupRestoreConfig = backupRestoreConfig;
+        this.backupVerification = backupVerification;
         backupRestoreUtil =
                 new BackupRestoreUtil(
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
@@ -116,31 +132,22 @@ public class SnapshotMetaTask extends AbstractBackup {
     /**
      * Interval between generating snapshot meta file using {@link SnapshotMetaTask}.
      *
-     * @param backupRestoreConfig {@link
-     *     IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get configuration details
-     *     from priam. Use "-1" to disable the service.
-     * @param config configuration to get the data folder.
+     * @param config {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get
+     *     configuration details from priam. Use "-1" to disable the service.
      * @return the timer to be used for snapshot meta service.
-     * @throws Exception if the configuration is not set correctly or are not valid. This is to
-     *     ensure we fail-fast.
+     * @throws IllegalArgumentException if the configuration is not set correctly or are not valid.
+     *     This is to ensure we fail-fast.
      */
-    public static TaskTimer getTimer(
-            IConfiguration config, IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        TaskTimer timer =
-                CronTimer.getCronTimer(
-                        JOBNAME, backupRestoreConfig.getSnapshotMetaServiceCronExpression());
-        if (timer == null) {
-            cleanOldBackups(config);
-        }
-        return timer;
+    public static TaskTimer getTimer(IBackupRestoreConfig config) throws IllegalArgumentException {
+        return CronTimer.getCronTimer(JOBNAME, config.getSnapshotMetaServiceCronExpression());
     }
 
-    private static void cleanOldBackups(IConfiguration config) throws Exception {
+    static void cleanOldBackups(IConfiguration config) throws Exception {
         // Clean up all the backup directories, if any.
         Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
         for (Path backupDirPath : backupPaths)
             try (DirectoryStream<Path> directoryStream =
-                    Files.newDirectoryStream(backupDirPath, path -> Files.isDirectory(path))) {
+                    Files.newDirectoryStream(backupDirPath, Files::isDirectory)) {
                 for (Path backupDir : directoryStream) {
                     if (backupDir.toFile().getName().startsWith(SNAPSHOT_PREFIX)) {
                         FileUtils.deleteDirectory(backupDir.toFile());
@@ -149,10 +156,9 @@ public class SnapshotMetaTask extends AbstractBackup {
             }
     }
 
-    public static boolean isBackupEnabled(
-            IConfiguration configuration, IBackupRestoreConfig backupRestoreConfig)
+    public static boolean isBackupEnabled(IBackupRestoreConfig backupRestoreConfig)
             throws Exception {
-        return (getTimer(configuration, backupRestoreConfig) != null);
+        return (getTimer(backupRestoreConfig) != null);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {
@@ -194,7 +200,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
 
         // Save start snapshot status
-        Instant snapshotInstant = DateUtil.getInstant();
+        Instant snapshotInstant = clock.instant();
         String token = instanceIdentity.getInstance().getToken();
         BackupMetadata backupMetadata =
                 new BackupMetadata(
@@ -264,6 +270,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         // (like we exhausted the wait time for upload)
         File[] snapshotDirectories = backupDir.listFiles();
         if (snapshotDirectories != null) {
+            Instant target = getUploadTarget();
             for (File snapshotDirectory : snapshotDirectories) {
                 // Is it a valid SNAPSHOT_PREFIX
                 if (!snapshotDirectory.getName().startsWith(SNAPSHOT_PREFIX)
@@ -278,13 +285,13 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                uploadAndDeleteAllFiles(snapshotDirectory, type, true);
+                uploadAndDeleteAllFiles(snapshotDirectory, type, true, target);
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
-                    futures = uploadAndDeleteAllFiles(subDir, type, true);
+                    futures = uploadAndDeleteAllFiles(subDir, type, true, target);
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
                     }
@@ -292,6 +299,35 @@ public class SnapshotMetaTask extends AbstractBackup {
                 }
             }
         }
+    }
+
+    private Instant getUploadTarget() {
+        Instant now = clock.instant();
+        Instant target =
+                now.plus(config.getTargetMinutesToCompleteSnaphotUpload(), ChronoUnit.MINUTES);
+        Duration verificationSLO =
+                Duration.ofHours(backupRestoreConfig.getBackupVerificationSLOInHours());
+        Instant verificationDeadline =
+                backupVerification
+                        .getLatestVerfifiedBackupTime()
+                        .map(backupTime -> backupTime.plus(verificationSLO))
+                        .orElse(Instant.MAX);
+        Instant nextSnapshotTime;
+        try {
+            CronExpression snapshotCron =
+                    new CronExpression(backupRestoreConfig.getSnapshotMetaServiceCronExpression());
+            snapshotCron.setTimeZone(UTC);
+            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(Instant.now()));
+            nextSnapshotTime =
+                    nextSnapshotDate == null ? Instant.MAX : nextSnapshotDate.toInstant();
+        } catch (ParseException e) {
+            nextSnapshotTime = Instant.MAX;
+        }
+        return earliest(target, verificationDeadline, nextSnapshotTime);
+    }
+
+    private Instant earliest(Instant... instants) {
+        return Arrays.stream(instants).min(Instant::compareTo).get();
     }
 
     private Void deleteIfEmpty(File dir) {
@@ -305,7 +341,8 @@ public class SnapshotMetaTask extends AbstractBackup {
         String columnFamily = getColumnFamily(backupDir);
         switch (metaStep) {
             case META_GENERATION:
-                generateMetaFile(keyspace, columnFamily, backupDir);
+                generateMetaFile(keyspace, columnFamily, backupDir)
+                        .ifPresent(this::deleteUploadedFiles);
                 break;
             case UPLOAD_FILES:
                 uploadAllFiles(backupDir);
@@ -315,14 +352,14 @@ public class SnapshotMetaTask extends AbstractBackup {
         }
     }
 
-    private void generateMetaFile(
+    private Optional<ColumnFamilyResult> generateMetaFile(
             final String keyspace, final String columnFamily, final File backupDir)
             throws Exception {
         File snapshotDir = getValidSnapshot(backupDir, snapshotName);
         // Process this snapshot folder for the given columnFamily
         if (snapshotDir == null) {
             logger.warn("{} folder does not contain {} snapshots", backupDir, snapshotName);
-            return;
+            return Optional.empty();
         }
 
         logger.debug("Scanning for all SSTables in: {}", snapshotDir.getAbsolutePath());
@@ -338,8 +375,18 @@ public class SnapshotMetaTask extends AbstractBackup {
 
         ImmutableSetMultimap<String, AbstractBackupPath> sstables = builder.build();
         logger.debug("Processing {} sstables from {}.{}", keyspace, columnFamily, sstables.size());
-        dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
+        ColumnFamilyResult result =
+                dataStep.addColumnfamilyResult(keyspace, columnFamily, sstables);
         logger.debug("Finished processing KS: {}, CF: {}", keyspace, columnFamily);
+        return Optional.of(result);
+    }
+
+    private void deleteUploadedFiles(ColumnFamilyResult result) {
+        result.getSstables()
+                .stream()
+                .flatMap(sstable -> sstable.getSstableComponents().stream())
+                .filter(file -> Boolean.TRUE.equals(file.getIsUploaded()))
+                .forEach(file -> FileUtils.deleteQuietly(file.getFileName().toFile()));
     }
 
     private ImmutableSetMultimap<String, AbstractBackupPath> getSSTables(

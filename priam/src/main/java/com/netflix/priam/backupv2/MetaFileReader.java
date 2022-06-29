@@ -70,7 +70,7 @@ public abstract class MetaFileReader {
                     while (jsonReader.hasNext())
                         process(
                                 GsonJsonSerializer.getGson()
-                                        .fromJson(jsonReader, ColumnfamilyResult.class));
+                                        .fromJson(jsonReader, ColumnFamilyResult.class));
                     jsonReader.endArray();
             }
         }
@@ -82,10 +82,10 @@ public abstract class MetaFileReader {
     /**
      * Process the columnfamily result obtained after reading meta file.
      *
-     * @param columnfamilyResult {@link ColumnfamilyResult} POJO containing the column family data
+     * @param columnfamilyResult {@link ColumnFamilyResult} POJO containing the column family data
      *     (all SSTables references) obtained from meta.json.
      */
-    public abstract void process(ColumnfamilyResult columnfamilyResult);
+    public abstract void process(ColumnFamilyResult columnfamilyResult);
 
     /**
      * Returns if it is a valid meta file name.

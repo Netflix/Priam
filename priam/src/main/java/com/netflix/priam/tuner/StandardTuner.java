@@ -117,7 +117,7 @@ public class StandardTuner implements ICassandraTuner {
 
         map.put("tombstone_warn_threshold", config.getTombstoneWarnThreshold());
         map.put("tombstone_failure_threshold", config.getTombstoneFailureThreshold());
-        map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
+        //        map.put("streaming_socket_timeout_in_ms", config.getStreamingSocketTimeoutInMS());
 
         map.put("memtable_cleanup_threshold", config.getMemtableCleanupThreshold());
         map.put(

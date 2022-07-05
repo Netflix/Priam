@@ -317,7 +317,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             CronExpression snapshotCron =
                     new CronExpression(backupRestoreConfig.getSnapshotMetaServiceCronExpression());
             snapshotCron.setTimeZone(UTC);
-            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(Instant.now()));
+            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(now));
             nextSnapshotTime =
                     nextSnapshotDate == null ? Instant.MAX : nextSnapshotDate.toInstant();
         } catch (ParseException e) {

@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.compress.CompressionType;
+import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -96,13 +97,17 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private Instant lastModified;
     private Instant creationTime;
     private Date uploadedTs;
-    private CompressionType compression = CompressionType.SNAPPY;
+    private CompressionType compression;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
     private boolean isIncremental;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
         this.config = config;
+        this.compression =
+                config.getBackupsToCompress() == BackupsToCompress.NONE
+                        ? CompressionType.NONE
+                        : CompressionType.SNAPPY;
     }
 
     public void parseLocal(File file, BackupFileType type) {

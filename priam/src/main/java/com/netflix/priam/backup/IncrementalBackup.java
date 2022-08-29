@@ -26,15 +26,14 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.FileFilter;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
+import org.apache.commons.io.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*
  * Incremental/SSTable backup
@@ -125,8 +124,8 @@ public class IncrementalBackup extends AbstractBackup {
         }
         // upload SSTables and components
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
-            backupHelper.uploadAndDeleteAllFiles(
-                backupDir, fileType, config.enableAsyncIncremental());
+                backupHelper.uploadAndDeleteAllFiles(
+                        backupDir, fileType, config.enableAsyncIncremental());
         for (ListenableFuture<AbstractBackupPath> future : futures) {
             future.get();
         }

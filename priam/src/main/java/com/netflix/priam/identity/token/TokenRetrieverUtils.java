@@ -60,12 +60,11 @@ public class TokenRetrieverUtils {
         InferredTokenOwnership inferredTokenOwnership = new InferredTokenOwnership();
         int matchedGossipInstances = 0, reachableInstances = 0;
         for (PriamInstance instance : eligibleInstances) {
-            logger.info(
-                    "Calling getIp on hostname[{}] and token[{}]", instance.getHostName(), token);
+            logger.info("Finding down nodes from ip[{}]; token[{}]", instance.getHostIP(), token);
 
             try {
                 TokenInformation tokenInformation =
-                        getTokenInformation(instance.getHostName(), token);
+                        getTokenInformation(instance.getHostIP(), token);
                 reachableInstances++;
 
                 if (inferredTokenOwnership.getTokenInformation() == null) {
@@ -113,11 +112,11 @@ public class TokenRetrieverUtils {
     }
 
     // helper method to get the token owner IP from a Cassandra node.
-    private static TokenInformation getTokenInformation(String host, String token)
+    private static TokenInformation getTokenInformation(String ip, String token)
             throws GossipParseException {
         String response = null;
         try {
-            response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, host));
+            response = SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, ip));
             JSONObject jsonObject = (JSONObject) new JSONParser().parse(response);
             JSONArray liveNodes = (JSONArray) jsonObject.get("live");
             JSONObject tokenToEndpointMap = (JSONObject) jsonObject.get("tokenToEndpointMap");
@@ -129,12 +128,11 @@ public class TokenRetrieverUtils {
             return new TokenInformation(endpointInfo, isLive);
         } catch (RuntimeException e) {
             throw new GossipParseException(
-                    String.format("Error in reaching out to host: [%s]", host), e);
+                    String.format("Error in reaching out to host: [%s]", ip), e);
         } catch (ParseException e) {
             throw new GossipParseException(
                     String.format(
-                            "Error in parsing gossip response [%s] from host: [%s]",
-                            response, host),
+                            "Error in parsing gossip response [%s] from host: [%s]", response, ip),
                     e);
         }
     }

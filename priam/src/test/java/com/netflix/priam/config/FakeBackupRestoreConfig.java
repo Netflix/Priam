@@ -29,4 +29,9 @@ public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     public boolean enableV2Restore() {
         return false;
     }
+
+    @Override
+    public int getBackupTTLMonitorPeriodInSec() {
+        return 0; // avoids sleeping altogether in tests.
+    }
 }

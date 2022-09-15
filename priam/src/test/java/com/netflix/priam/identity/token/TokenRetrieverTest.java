@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import mockit.Expectations;
 import mockit.Mocked;
+import org.apache.commons.lang3.math.Fraction;
 import org.codehaus.jettison.json.JSONObject;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
@@ -395,6 +396,35 @@ public class TokenRetrieverTest {
         Truth.assertThat(getTokenRetriever().get().getHostIP()).isEqualTo("127.0.0.0");
     }
 
+    @Test
+    public void testRingPositionFirst(@Mocked SystemUtils systemUtils) throws Exception {
+        getInstances(6);
+        create(0, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 0 + "");
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getRingPosition()).isEqualTo(Fraction.getFraction(0, 7));
+    }
+
+    @Test
+    public void testRingPositionMiddle(@Mocked SystemUtils systemUtils) throws Exception {
+        getInstances(3);
+        create(4, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 4 + "");
+        createByIndex(5);
+        createByIndex(6);
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getRingPosition()).isEqualTo(Fraction.getFraction(3, 6));
+    }
+
+    @Test
+    public void testRingPositionLast(@Mocked SystemUtils systemUtils) throws Exception {
+        getInstances(6);
+        create(7, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "az1", 7 + "");
+        TokenRetriever tokenRetriever = getTokenRetriever();
+        tokenRetriever.get();
+        Truth.assertThat(tokenRetriever.getRingPosition()).isEqualTo(Fraction.getFraction(6, 7));
+    }
+
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {
         JSONObject jsonObject = new JSONObject();
         try {
@@ -408,16 +438,18 @@ public class TokenRetrieverTest {
 
     private List<PriamInstance> getInstances(int noOfInstances) {
         List<PriamInstance> allInstances = Lists.newArrayList();
-        for (int i = 1; i <= noOfInstances; i++)
-            allInstances.add(
-                    create(
-                            i,
-                            String.format("instance_id_%d", i),
-                            String.format("hostname_%d", i),
-                            String.format("127.0.0.%d", i),
-                            instanceInfo.getRac(),
-                            i + ""));
+        for (int i = 1; i <= noOfInstances; i++) allInstances.add(createByIndex(i));
         return allInstances;
+    }
+
+    private PriamInstance createByIndex(int index) {
+        return create(
+                index,
+                String.format("instance_id_%d", index),
+                String.format("hostname_%d", index),
+                String.format("127.0.0.%d", index),
+                instanceInfo.getRac(),
+                index + "");
     }
 
     private Set<String> getRacMembership(int noOfInstances) {

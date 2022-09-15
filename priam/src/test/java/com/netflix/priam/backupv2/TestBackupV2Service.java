@@ -25,6 +25,7 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.IService;
+import com.netflix.priam.identity.token.ITokenRetriever;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.tuner.CassandraTunerService;
 import com.netflix.priam.tuner.TuneCassandra;
@@ -47,12 +48,14 @@ public class TestBackupV2Service {
     private final PriamScheduler scheduler;
     private final SnapshotMetaTask snapshotMetaTask;
     private final CassandraTunerService cassandraTunerService;
+    private final ITokenRetriever tokenRetriever;
 
     public TestBackupV2Service() {
         Injector injector = Guice.createInjector(new BRTestModule());
         scheduler = injector.getInstance(PriamScheduler.class);
         snapshotMetaTask = injector.getInstance(SnapshotMetaTask.class);
         cassandraTunerService = injector.getInstance(CassandraTunerService.class);
+        tokenRetriever = injector.getInstance(ITokenRetriever.class);
     }
 
     @Before
@@ -103,7 +106,8 @@ public class TestBackupV2Service {
                         backupRestoreConfig,
                         scheduler,
                         snapshotMetaTask,
-                        cassandraTunerService);
+                        cassandraTunerService,
+                        tokenRetriever);
         backupService.scheduleService();
         Assert.assertTrue(scheduler.getScheduler().getJobGroupNames().isEmpty());
 
@@ -142,7 +146,8 @@ public class TestBackupV2Service {
                         backupRestoreConfig,
                         scheduler,
                         snapshotMetaTask,
-                        cassandraTunerService);
+                        cassandraTunerService,
+                        tokenRetriever);
         backupService.scheduleService();
         Assert.assertEquals(4, scheduler.getScheduler().getJobKeys(null).size());
     }
@@ -171,7 +176,8 @@ public class TestBackupV2Service {
                         backupRestoreConfig,
                         scheduler,
                         snapshotMetaTask,
-                        cassandraTunerService);
+                        cassandraTunerService,
+                        tokenRetriever);
         backupService.scheduleService();
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
     }
@@ -208,7 +214,8 @@ public class TestBackupV2Service {
                         backupRestoreConfig,
                         scheduler,
                         snapshotMetaTask,
-                        cassandraTunerService);
+                        cassandraTunerService,
+                        tokenRetriever);
         backupService.scheduleService();
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
 

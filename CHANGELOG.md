@@ -1,4 +1,10 @@
 # Changelog
+## 2022/09/14 3.11.91
+(#997) Revert "CASS-2805 Add hook to optionally skip deletion for files added within a certain window. (#992)"
+(#1001) Use IP to get gossip info rather than hostname.
+(#1002) Spread deletes over the interval depending on where the node is in the ring.
+(#966) Remove UpdateSecuritySettings
+
 ## 2022/06/26 3.11.90
 *UpdateSecuritySettings will be removed in the next release*
 (#992) Add hook to optionally skip deletion for files added within a certain window.

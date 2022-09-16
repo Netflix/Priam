@@ -13,6 +13,7 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -87,11 +88,11 @@ public class TokenRetriever implements ITokenRetriever {
     @Override
     public Fraction getRingPosition() throws Exception {
         get();
-        long tokenAsLong = Long.parseLong(priamInstance.getToken());
+        BigInteger token = new BigInteger(priamInstance.getToken());
         ImmutableSet<PriamInstance> nodes = factory.getAllIds(config.getAppName());
         long ringPosition =
                 nodes.stream()
-                        .filter(node -> Long.parseLong(node.getToken()) < tokenAsLong)
+                        .filter(node -> token.compareTo(new BigInteger(node.getToken())) > 0)
                         .count();
         return Fraction.getFraction(Math.toIntExact(ringPosition), nodes.size());
     }

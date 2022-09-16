@@ -1,4 +1,7 @@
 # Changelog
+## 2022/09/15 3.1.119
+(#1004) RandomPartitioner creates tokens that don't always fit into a long so we use BigInteger to store and compare them.
+
 ## 2022/09/14 3.1.118
 (#996) Revert "CASS-2805 Add hook to optionally skip deletion for files added within a certain window. (#993)"
 (#1000) Use IP to get gossip info rather than hostname.

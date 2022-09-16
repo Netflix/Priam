@@ -113,4 +113,15 @@ public interface IBackupRestoreConfig {
     default String getBackupNotifyComponentIncludeList() {
         return StringUtils.EMPTY;
     }
+
+    /**
+     * Returns ',' separated list of attribute names. If not empty, adds the specified attributes to
+     * MessageAttributes in the backup notifications. SNS filter policy needs keys in
+     * MessageAttributes in order to filter based on those keys.
+     *
+     * @return
+     */
+    default String getBackupNotificationAdditionalMessageAttrs() {
+        return StringUtils.EMPTY;
+    }
 }

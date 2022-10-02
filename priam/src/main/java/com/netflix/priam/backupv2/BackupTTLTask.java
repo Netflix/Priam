@@ -67,7 +67,7 @@ public class BackupTTLTask extends Task {
     private static final Lock lock = new ReentrantLock();
     private final int BATCH_SIZE = 1000;
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
-    private final int maxWaitSeconds;
+    private final int maxWaitMillis;
 
     @Inject
     public BackupTTLTask(
@@ -85,8 +85,9 @@ public class BackupTTLTask extends Task {
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         this.instanceState = instanceState;
-        this.maxWaitSeconds =
-                backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
+        this.maxWaitMillis =
+                1_000
+                        * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
                         / tokenRetriever.getRingPosition().getDenominator();
     }
 
@@ -107,7 +108,7 @@ public class BackupTTLTask extends Task {
         }
 
         // Sleep a random amount but not so long that it will spill into the next token's turn.
-        if (maxWaitSeconds > 0) Thread.sleep(new Random().nextInt(maxWaitSeconds));
+        if (maxWaitMillis > 0) Thread.sleep(new Random().nextInt(maxWaitMillis));
 
         try {
             filesInMeta.clear();

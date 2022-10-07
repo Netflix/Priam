@@ -57,46 +57,24 @@ public interface IBackupFileSystem {
             throws BackupRestoreException, RejectedExecutionException;
 
     /** Overload that uploads as fast as possible without any custom throttling */
-    default void uploadAndDelete(AbstractBackupPath path, int retry)
+    default void uploadAndDelete(AbstractBackupPath path, boolean async)
             throws FileNotFoundException, BackupRestoreException {
-        uploadAndDelete(path, retry, Instant.EPOCH);
+        uploadAndDelete(path, Instant.EPOCH, async);
     }
 
     /**
-     * Upload the local file to its remote counterpart. Both locations are embedded within the path
-     * parameter. De-duping of the file to upload will always be done by comparing the
-     * files-in-progress to be uploaded. This may result in this particular request to not to be
-     * executed e.g. if any other thread has given the same file to upload and that file is in
-     * internal queue. Note that de-duping is best effort and is not always guaranteed as we try to
-     * avoid lock on read/write of the files-in-progress. Once uploaded, files are deleted.
-     *
-     * @param path Backup path representing a local and remote file pair
-     * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
-     *     exactly once.
-     * @param target The target time of completion of all files in the upload.
-     * @throws BackupRestoreException in case of failure to upload for any reason including file not
-     *     readable or remote file system errors.
-     * @throws FileNotFoundException If a file as denoted by localPath is not available or is a
-     *     directory.
-     */
-    void uploadAndDelete(AbstractBackupPath path, int retry, Instant target)
-            throws FileNotFoundException, BackupRestoreException;
-
-    /** Overload that uploads as fast as possible without any custom throttling */
-    default ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry)
-            throws FileNotFoundException, RejectedExecutionException, BackupRestoreException {
-        return asyncUploadAndDelete(path, retry, Instant.EPOCH);
-    }
-
-    /**
-     * Upload the local file denoted by localPath in async fashion to the remote file system at
-     * location denoted by remotePath.
+     * Upload the local file to its remote counterpart in an optionally async fashion. Both
+     * locations are embedded within the path parameter. De-duping of the file to upload will always
+     * be done by comparing the files-in-progress to be uploaded. This may result in this particular
+     * request to not to be executed e.g. if any other thread has given the same file to upload and
+     * that file is in internal queue. Note that de-duping is best effort and is not always
+     * guaranteed as we try to avoid lock on read/write of the files-in-progress. Once uploaded,
+     * files are deleted. Uploads are retried 10 times.
      *
      * @param path AbstractBackupPath to be used to send backup notifications only.
-     * @param retry No of times to retry to upload a file. If &lt;1, it will try to upload file
-     *     exactly once.
      * @param target The target time of completion of all files in the upload.
+     * @param async boolean to determine whether the call should block or return immediately and
+     *     upload asynchronously
      * @return The future of the async job to monitor the progress of the job. This will be null if
      *     file was de-duped for upload.
      * @throws BackupRestoreException in case of failure to upload for any reason including file not
@@ -106,8 +84,8 @@ public interface IBackupFileSystem {
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
      *     to add the work to the queue.
      */
-    ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry, Instant target)
+    ListenableFuture<AbstractBackupPath> uploadAndDelete(
+            final AbstractBackupPath path, Instant target, boolean async)
             throws FileNotFoundException, RejectedExecutionException, BackupRestoreException;
 
     /**

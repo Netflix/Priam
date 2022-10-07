@@ -14,7 +14,6 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
@@ -32,12 +31,8 @@ public class CommitLogBackupTask extends AbstractBackup {
     private final CommitLogBackup clBackup;
 
     @Inject
-    public CommitLogBackupTask(
-            IConfiguration config,
-            Provider<AbstractBackupPath> pathFactory,
-            CommitLogBackup clBackup,
-            IFileSystemContext backupFileSystemCtx) {
-        super(config, backupFileSystemCtx, pathFactory);
+    public CommitLogBackupTask(IConfiguration config, CommitLogBackup clBackup) {
+        super(config);
         this.clBackup = clBackup;
     }
 

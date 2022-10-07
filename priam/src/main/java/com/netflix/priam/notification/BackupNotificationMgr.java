@@ -127,6 +127,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 jsonObject.put("uploadstatus", uploadStatus);
                 jsonObject.put("compression", abp.getCompression().name());
                 jsonObject.put("encryption", abp.getEncryption().name());
+                jsonObject.put("isincremental", abp.isIncremental());
 
                 // SNS Attributes for filtering messages. Cluster name and backup file type.
                 Map<String, MessageAttributeValue> messageAttributes =

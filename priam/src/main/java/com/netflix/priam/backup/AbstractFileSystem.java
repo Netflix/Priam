@@ -17,9 +17,11 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
@@ -157,19 +159,21 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
             throws BackupRestoreException;
 
     @Override
-    public ListenableFuture<AbstractBackupPath> asyncUploadAndDelete(
-            final AbstractBackupPath path, final int retry, Instant target)
-            throws RejectedExecutionException {
-        return fileUploadExecutor.submit(
-                () -> {
-                    uploadAndDelete(path, retry, target);
-                    return path;
-                });
+    public ListenableFuture<AbstractBackupPath> uploadAndDelete(
+            final AbstractBackupPath path, Instant target, boolean async)
+            throws RejectedExecutionException, BackupRestoreException {
+        if (async) {
+            return fileUploadExecutor.submit(
+                    () -> uploadAndDeleteInternal(path, target, 10 /* retries */));
+        } else {
+            return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
+        }
     }
 
-    @Override
-    public void uploadAndDelete(final AbstractBackupPath path, final int retry, Instant target)
-            throws BackupRestoreException {
+    @VisibleForTesting
+    public AbstractBackupPath uploadAndDeleteInternal(
+            final AbstractBackupPath path, Instant target, int retry)
+            throws RejectedExecutionException, BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
         Preconditions.checkArgument(
@@ -188,7 +192,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
                     notifyEventStart(new BackupEvent(path));
                     uploadedFileSize =
-                            new BoundedExponentialRetryCallable<Long>(500, 10000, retry) {
+                            new BoundedExponentialRetryCallable<Long>(
+                                    500 /* minSleep */, 10000 /* maxSleep */, retry) {
                                 @Override
                                 public Long retriableCall() throws Exception {
                                     return uploadFileImpl(path, target);
@@ -233,6 +238,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                 tasksQueued.remove(localPath);
             }
         } else logger.info("Already in queue, no-op.  File: {}", localPath);
+        return path;
     }
 
     private void addObjectCache(Path remotePath) {

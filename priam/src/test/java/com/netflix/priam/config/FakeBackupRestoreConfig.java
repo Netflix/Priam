@@ -13,6 +13,9 @@
  */
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableList;
+import java.util.List;
+
 /** Created by aagrawal on 6/26/18. */
 public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     @Override
@@ -33,5 +36,10 @@ public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     @Override
     public int getBackupTTLMonitorPeriodInSec() {
         return 0; // avoids sleeping altogether in tests.
+    }
+
+    @Override
+    public List<String> getBackupNotificationAdditionalMessageAttrs() {
+        return ImmutableList.of();
     }
 }

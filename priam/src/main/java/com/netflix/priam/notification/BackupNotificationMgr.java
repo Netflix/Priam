@@ -73,11 +73,11 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("region", instanceInfo.getRegion());
             jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", instanceIdentity.getInstance().getToken());
-            jsonObject.put("backuptype", "SNAPSHOT_VERIFIED");
+            jsonObject.put(
+                    "backuptype", AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED.name());
             jsonObject.put("snapshotInstant", backupVerificationResult.snapshotInstant);
             // SNS Attributes for filtering messages. Cluster name and backup file type.
-            Map<String, MessageAttributeValue> messageAttributes =
-                    getMessageAttributes(AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED);
+            Map<String, MessageAttributeValue> messageAttributes = getMessageAttributes(jsonObject);
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {
@@ -88,21 +88,26 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         }
     }
 
-    private Map<String, MessageAttributeValue> getMessageAttributes(
-            AbstractBackupPath.BackupFileType backupFileType) {
-        // SNS Attributes for filtering messages. Cluster name and backup file type.
+    private Map<String, MessageAttributeValue> getMessageAttributes(JSONObject message)
+            throws JSONException {
+        // SNS Attributes for filtering messages
         Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-        messageAttributes.putIfAbsent(
-                "s3clustername",
-                new MessageAttributeValue()
-                        .withDataType("String")
-                        .withStringValue(config.getAppName()));
-        messageAttributes.putIfAbsent(
-                "backuptype",
-                new MessageAttributeValue()
-                        .withDataType("String")
-                        .withStringValue(backupFileType.name()));
+        // Always include these default attributes
+        ArrayList<String> attrs = new ArrayList<>(Arrays.asList("s3clustername", "backuptype"));
+        List<String> additionalAttrs =
+                this.backupRestoreConfig.getBackupNotificationAdditionalMessageAttrs();
+        attrs.addAll(additionalAttrs);
+        for (String attr : attrs) {
+            if (message.has(attr)) {
+                Object value = message.get(attr);
+                messageAttributes.putIfAbsent(attr, toStringAttribute(String.valueOf(value)));
+            }
+        }
         return messageAttributes;
+    }
+
+    private MessageAttributeValue toStringAttribute(String value) {
+        return new MessageAttributeValue().withDataType("String").withStringValue(value);
     }
 
     private void notify(AbstractBackupPath abp, String uploadStatus) {
@@ -131,7 +136,8 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
 
                 // SNS Attributes for filtering messages. Cluster name and backup file type.
                 Map<String, MessageAttributeValue> messageAttributes =
-                        getMessageAttributes(abp.getType());
+                        getMessageAttributes(jsonObject);
+
                 this.notificationService.notify(jsonObject.toString(), messageAttributes);
             } else {
                 logger.debug(

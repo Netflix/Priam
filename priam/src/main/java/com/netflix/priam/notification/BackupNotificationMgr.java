@@ -14,7 +14,6 @@
 package com.netflix.priam.notification;
 
 import com.amazonaws.services.sns.model.MessageAttributeValue;
-import com.google.common.base.Splitter;
 import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
@@ -23,10 +22,7 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
-import java.nio.ByteBuffer;
-import java.time.Instant;
 import java.util.*;
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -77,12 +73,11 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             jsonObject.put("region", instanceInfo.getRegion());
             jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", instanceIdentity.getInstance().getToken());
-            jsonObject.put("backuptype", "SNAPSHOT_VERIFIED");
+            jsonObject.put(
+                    "backuptype", AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED.name());
             jsonObject.put("snapshotInstant", backupVerificationResult.snapshotInstant);
             // SNS Attributes for filtering messages. Cluster name and backup file type.
-            Map<String, MessageAttributeValue> messageAttributes =
-                    getMessageAttributes(
-                            AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED, jsonObject);
+            Map<String, MessageAttributeValue> messageAttributes = getMessageAttributes(jsonObject);
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {
@@ -93,57 +88,26 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         }
     }
 
-    private Map<String, MessageAttributeValue> getMessageAttributes(
-            AbstractBackupPath.BackupFileType backupFileType, JSONObject additionalAttributes) {
-        // SNS Attributes for filtering messages. Cluster name and backup file type.
+    private Map<String, MessageAttributeValue> getMessageAttributes(JSONObject message)
+            throws JSONException {
+        // SNS Attributes for filtering messages
         Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-        messageAttributes.putIfAbsent(
-                "s3clustername",
-                new MessageAttributeValue()
-                        .withDataType("String")
-                        .withStringValue(config.getAppName()));
-        messageAttributes.putIfAbsent(
-                "backuptype",
-                new MessageAttributeValue()
-                        .withDataType("String")
-                        .withStringValue(backupFileType.name()));
-
-        String additionalAttrs =
+        // Always include these default attributes
+        ArrayList<String> attrs = new ArrayList<>(Arrays.asList("s3clustername", "backuptype"));
+        List<String> additionalAttrs =
                 this.backupRestoreConfig.getBackupNotificationAdditionalMessageAttrs();
-        if (!StringUtils.isBlank(additionalAttrs)) {
-            try {
-                List<String> attrs =
-                        Splitter.on(",")
-                                .omitEmptyStrings()
-                                .trimResults()
-                                .splitToList(additionalAttrs);
-                for (String attr : attrs) {
-                    Object value = additionalAttributes.get(attr);
-                    if (value != null) {
-                        // Does not handle all data types
-                        if ("Instant".equals(value.getClass().getSimpleName())) {
-                            byte[] byteValue = SerializationUtils.serialize((Instant) value);
-                            messageAttributes.putIfAbsent(
-                                    attr,
-                                    new MessageAttributeValue()
-                                            .withDataType("Binary")
-                                            .withBinaryValue(ByteBuffer.wrap(byteValue)));
-                        } else {
-                            messageAttributes.putIfAbsent(
-                                    attr,
-                                    new MessageAttributeValue()
-                                            .withDataType("String")
-                                            .withStringValue(value.toString()));
-                        }
-                    }
-                }
-            } catch (Exception e) {
-                logger.debug(
-                        "Exception occurred while processing of additional message attributes", e);
+        attrs.addAll(additionalAttrs);
+        for (String attr : attrs) {
+            if (message.has(attr)) {
+                Object value = message.get(attr);
+                messageAttributes.putIfAbsent(attr, toStringAttribute(String.valueOf(value)));
             }
         }
-
         return messageAttributes;
+    }
+
+    private MessageAttributeValue toStringAttribute(String value) {
+        return new MessageAttributeValue().withDataType("String").withStringValue(value);
     }
 
     private void notify(AbstractBackupPath abp, String uploadStatus) {
@@ -171,7 +135,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
 
                 // SNS Attributes for filtering messages. Cluster name and backup file type.
                 Map<String, MessageAttributeValue> messageAttributes =
-                        getMessageAttributes(abp.getType(), jsonObject);
+                        getMessageAttributes(jsonObject);
 
                 this.notificationService.notify(jsonObject.toString(), messageAttributes);
             } else {

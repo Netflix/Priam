@@ -13,7 +13,9 @@
  */
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableList;
 import com.google.inject.ImplementedBy;
+import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -121,7 +123,7 @@ public interface IBackupRestoreConfig {
      *
      * @return
      */
-    default String getBackupNotificationAdditionalMessageAttrs() {
-        return StringUtils.EMPTY;
+    default List<String> getBackupNotificationAdditionalMessageAttrs() {
+        return ImmutableList.of();
     }
 }

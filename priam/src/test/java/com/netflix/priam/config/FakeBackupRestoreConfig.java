@@ -13,6 +13,8 @@
  */
 package com.netflix.priam.config;
 
+import com.google.common.collect.ImmutableSet;
+
 /** Created by aagrawal on 6/26/18. */
 public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     @Override
@@ -33,5 +35,10 @@ public class FakeBackupRestoreConfig implements IBackupRestoreConfig {
     @Override
     public int getBackupTTLMonitorPeriodInSec() {
         return 0; // avoids sleeping altogether in tests.
+    }
+
+    @Override
+    public ImmutableSet<String> getBackupNotificationAdditionalMessageAttrs() {
+        return ImmutableSet.of();
     }
 }

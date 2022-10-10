@@ -90,20 +90,15 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
 
     private Map<String, MessageAttributeValue> getMessageAttributes(JSONObject message)
             throws JSONException {
-        // SNS Attributes for filtering messages
-        Map<String, MessageAttributeValue> messageAttributes = new HashMap<>();
-        // Always include these default attributes
-        ArrayList<String> attrs = new ArrayList<>(Arrays.asList("s3clustername", "backuptype"));
-        List<String> additionalAttrs =
-                this.backupRestoreConfig.getBackupNotificationAdditionalMessageAttrs();
-        attrs.addAll(additionalAttrs);
-        for (String attr : attrs) {
+        Map<String, MessageAttributeValue> attributes = new HashMap<>();
+        attributes.put("s3clustername", toStringAttribute(message.getString("s3clustername")));
+        attributes.put("backuptype", toStringAttribute(message.getString("backuptype")));
+        for (String attr : backupRestoreConfig.getBackupNotificationAdditionalMessageAttrs()) {
             if (message.has(attr)) {
-                Object value = message.get(attr);
-                messageAttributes.putIfAbsent(attr, toStringAttribute(String.valueOf(value)));
+                attributes.put(attr, toStringAttribute(String.valueOf(message.get(attr))));
             }
         }
-        return messageAttributes;
+        return attributes;
     }
 
     private MessageAttributeValue toStringAttribute(String value) {

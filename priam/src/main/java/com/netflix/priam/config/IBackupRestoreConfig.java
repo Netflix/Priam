@@ -13,10 +13,8 @@
  */
 package com.netflix.priam.config;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
-import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 
 /**
@@ -118,11 +116,10 @@ public interface IBackupRestoreConfig {
     }
 
     /**
-     * Returns ',' separated list of attribute names. If not empty, adds the specified attributes to
-     * MessageAttributes in the backup notifications. SNS filter policy needs keys in
-     * MessageAttributes in order to filter based on those keys.
+     * Returns a set of attribute names to add to MessageAttributes in the backup notifications. SNS
+     * filter policy needs keys in MessageAttributes in order to filter based on those keys.
      *
-     * @return
+     * @return A set of attributes to include in MessageAttributes.
      */
     default ImmutableSet<String> getBackupNotificationAdditionalMessageAttrs() {
         return ImmutableSet.of();

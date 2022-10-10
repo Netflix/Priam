@@ -14,8 +14,8 @@
 package com.netflix.priam.config;
 
 import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.configSource.IConfigSource;
-import java.util.List;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
@@ -65,8 +65,8 @@ public class BackupRestoreConfig implements IBackupRestoreConfig {
     }
 
     @Override
-    public List<String> getBackupNotificationAdditionalMessageAttrs() {
+    public ImmutableSet<String> getBackupNotificationAdditionalMessageAttrs() {
         String value = config.get("priam.backupNotifyAdditionalMessageAttrs", StringUtils.EMPTY);
-        return Splitter.on(",").omitEmptyStrings().trimResults().splitToList(value);
+        return ImmutableSet.copyOf(Splitter.on(",").omitEmptyStrings().trimResults().split(value));
     }
 }

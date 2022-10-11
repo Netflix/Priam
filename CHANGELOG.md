@@ -1,4 +1,9 @@
 # Changelog
+## 2022/10/10 3.1.120
+(#1011) Allow user to specify additional message attributes to send in SNS backup notifications. 
+(#998) Identify incrementals, optionally skip metafile compression, and upload data files last.
+(#1008) Pass millis to sleep instead of seconds.
+
 ## 2022/09/15 3.1.119
 (#1004) RandomPartitioner creates tokens that don't always fit into a long so we use BigInteger to store and compare them.
 

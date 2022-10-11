@@ -1,4 +1,9 @@
 # Changelog
+## 2022/10/10 3.11.93
+(#1006) Adding ability to add more keys in the message attributes for backup notification messages.
+(#999) Identify incrementals, optionally skip metafile compression, and upload data files last.
+(#1009) Pass millis to sleep instead of seconds.
+
 ## 2022/09/15 3.11.92
 (#1005) RandomPartitioner creates tokens that don't always fit into a long so we use BigInteger to store and compare them.
 

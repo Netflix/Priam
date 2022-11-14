@@ -368,7 +368,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
-        for (File directory : getSecondaryIndexDirectories(backupDir)) {
+        for (File directory : getSecondaryIndexDirectories(snapshotDir)) {
             builder.putAll(
                     getSSTables(directory, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }

@@ -1166,6 +1166,16 @@ public interface IConfiguration {
     }
 
     /**
+     * If a backup file's last-modified time is before this time, revert to SNAPPY compression.
+     * Otherwise, choose compression using the default logic based on getBackupsToCompress().
+     *
+     * @return the milliseconds since the epoch of the transition time.
+     */
+    default long getCompressionTransitionEpochMillis() {
+        return 0L;
+    }
+
+    /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also
      * exposed via HTTP at v1/config/unstructured/X

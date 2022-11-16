@@ -13,6 +13,8 @@ import com.netflix.priam.config.IConfiguration;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Objects;
@@ -123,6 +125,7 @@ public class TestBackupHelperImpl {
 
     public static class ProgrammaticTests {
         private final BackupHelperImpl backupHelper;
+        private final FakeConfiguration config;
 
         @BeforeClass
         public static void setUp() throws IOException {
@@ -144,12 +147,11 @@ public class TestBackupHelperImpl {
 
         public ProgrammaticTests() {
             Injector injector = Guice.createInjector(new BRTestModule());
-            FakeConfiguration fakeConfiguration =
-                    (FakeConfiguration) injector.getInstance(IConfiguration.class);
+            config = (FakeConfiguration) injector.getInstance(IConfiguration.class);
             IFileSystemContext context = injector.getInstance(IFileSystemContext.class);
             Provider<AbstractBackupPath> pathFactory =
                     injector.getProvider(AbstractBackupPath.class);
-            backupHelper = new BackupHelperImpl(fakeConfiguration, context, pathFactory);
+            backupHelper = new BackupHelperImpl(config, context, pathFactory);
         }
 
         @Test
@@ -176,6 +178,34 @@ public class TestBackupHelperImpl {
                             .limit(2)
                             .noneMatch(p -> p.getBackupFile().getName().endsWith("-Data.db"));
             Truth.assertThat(nonDataFilesComeFirst).isTrue();
+        }
+
+        @Test
+        public void testNeverCompressedOldFilesAreCompressed() throws IOException {
+            AbstractBackupPath.BackupFileType fileType = AbstractBackupPath.BackupFileType.SST_V2;
+            long transitionInstant = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();
+            config.setCompressionTransitionEpochMillis(transitionInstant);
+            config.setFakeConfig("Priam.backupsToCompress", BackupsToCompress.NONE);
+            boolean backupsAreCompressed =
+                    backupHelper
+                            .getBackupPaths(new File(DIRECTORY), fileType)
+                            .stream()
+                            .allMatch(p -> p.getCompression() == CompressionType.SNAPPY);
+            Truth.assertThat(backupsAreCompressed).isTrue();
+        }
+
+        @Test
+        public void testOptionallyCompressedOldFilesAreCompressed() throws IOException {
+            AbstractBackupPath.BackupFileType fileType = AbstractBackupPath.BackupFileType.SST_V2;
+            long transitionInstant = Instant.now().plus(1, ChronoUnit.DAYS).toEpochMilli();
+            config.setCompressionTransitionEpochMillis(transitionInstant);
+            config.setFakeConfig("Priam.backupsToCompress", BackupsToCompress.IF_REQUIRED);
+            boolean backupsAreCompressed =
+                    backupHelper
+                            .getBackupPaths(new File(DIRECTORY), fileType)
+                            .stream()
+                            .allMatch(p -> p.getCompression() == CompressionType.SNAPPY);
+            Truth.assertThat(backupsAreCompressed).isTrue();
         }
     }
 }

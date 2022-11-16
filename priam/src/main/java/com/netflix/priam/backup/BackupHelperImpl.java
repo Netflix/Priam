@@ -88,7 +88,9 @@ public class BackupHelperImpl implements BackupHelper {
 
     private CompressionType getCorrectCompressionAlgorithm(
             AbstractBackupPath path, Set<String> compressedFiles) {
-        if (!AbstractBackupPath.BackupFileType.isV2(path.getType())) {
+        if (!AbstractBackupPath.BackupFileType.isV2(path.getType())
+                || path.getLastModified().toEpochMilli()
+                        < config.getCompressionTransitionEpochMillis()) {
             return CompressionType.SNAPPY;
         }
         String file = path.getFileName();

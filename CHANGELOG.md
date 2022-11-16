@@ -1,4 +1,8 @@
 # Changelog
+## 2022/11/15 3.11.94
+(#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
+(#1012) Ensure SI files get into meta file properly.
+
 ## 2022/10/10 3.11.93
 (#1006) Adding ability to add more keys in the message attributes for backup notification messages.
 (#999) Identify incrementals, optionally skip metafile compression, and upload data files last.

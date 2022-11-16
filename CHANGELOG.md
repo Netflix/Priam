@@ -1,4 +1,7 @@
 # Changelog
+## 2022/11/15 3.1.121
+(#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
+
 ## 2022/10/10 3.1.120
 (#1011) Allow user to specify additional message attributes to send in SNS backup notifications. 
 (#998) Identify incrementals, optionally skip metafile compression, and upload data files last.

@@ -225,13 +225,13 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
-                notifyEventFailure(new BackupEvent(path));
                 logger.error(
-                        "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
+                        "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace:",
                         localPath,
                         remotePath,
                         e.getMessage(),
-                        e.getStackTrace());
+                        e);
+                notifyEventFailure(new BackupEvent(path));
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.

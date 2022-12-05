@@ -23,7 +23,9 @@ import com.google.inject.Injector;
 import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.utils.BackupFileUtils;
 import java.io.File;
 import java.nio.file.Path;
@@ -52,6 +54,7 @@ public class TestAbstractFileSystem {
     private BackupNotificationMgr backupNotificationMgr;
     private FailureFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
+    private MyEventObserver myEventObserver;
 
     @Before
     public void setBackupMetrics() {
@@ -69,11 +72,15 @@ public class TestAbstractFileSystem {
             failureFileSystem =
                     new FailureFileSystem(
                             configuration, backupMetrics, backupNotificationMgr, pathProvider);
-
-        if (myFileSystem == null)
+        if (myEventObserver == null) {
+            myEventObserver = new MyEventObserver();
+        }
+        if (myFileSystem == null) {
             myFileSystem =
                     new MyFileSystem(
                             configuration, backupMetrics, backupNotificationMgr, pathProvider);
+            myFileSystem.addObserver(myEventObserver);
+        }
 
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
     }
@@ -85,6 +92,7 @@ public class TestAbstractFileSystem {
             for (File file : files) {
                 failureFileSystem.uploadAndDelete(getDummyPath(file.toPath()), false /* async */);
             }
+            Assert.fail("Expected BackupRestoreException");
         } catch (BackupRestoreException e) {
             // Verify the failure metric for upload is incremented.
             Assert.assertEquals(1, (int) backupMetrics.getInvalidUploads().count());
@@ -270,6 +278,18 @@ public class TestAbstractFileSystem {
         }
     }
 
+    @Test
+    public void testSkipsPastFailureOnNotify() throws Exception {
+        myEventObserver.failOnEvent(true);
+        int initialUploads = (int) backupMetrics.getValidUploads().actualCount();
+        File file = generateFiles(1, 1, 1).iterator().next();
+        myFileSystem.uploadAndDelete(getDummyPath(file.toPath()), false /* async */);
+        Assert.assertEquals(
+                initialUploads + 1, (int) backupMetrics.getValidUploads().actualCount());
+        Assert.assertFalse(file.exists());
+        myEventObserver.failOnEvent(false);
+    }
+
     class FailureFileSystem extends NullBackupFileSystem {
 
         @Inject
@@ -298,7 +318,43 @@ public class TestAbstractFileSystem {
         }
     }
 
-    class MyFileSystem extends NullBackupFileSystem {
+    static class MyEventObserver implements EventObserver<BackupEvent> {
+        private boolean fail;
+
+        public void failOnEvent(boolean fail) {
+            this.fail = fail;
+        }
+
+        @Override
+        public void updateEventStart(BackupEvent event) {
+            if (fail) {
+                throw new RuntimeException("User-generated failure");
+            }
+        }
+
+        @Override
+        public void updateEventFailure(BackupEvent event) {
+            if (fail) {
+                throw new RuntimeException("User-generated failure");
+            }
+        }
+
+        @Override
+        public void updateEventSuccess(BackupEvent event) {
+            if (fail) {
+                throw new RuntimeException("User-generated failure");
+            }
+        }
+
+        @Override
+        public void updateEventStop(BackupEvent event) {
+            if (fail) {
+                throw new RuntimeException("User-generated failure");
+            }
+        }
+    }
+
+    static class MyFileSystem extends NullBackupFileSystem {
 
         private final Random random = new Random();
 

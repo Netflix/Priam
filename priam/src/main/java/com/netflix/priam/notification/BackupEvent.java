@@ -38,4 +38,9 @@ public class BackupEvent {
     public void setAbstractBackupPath(AbstractBackupPath abstractBackupPath) {
         this.abstractBackupPath = abstractBackupPath;
     }
+
+    @Override
+    public String toString() {
+        return "BackupEvent{" + "abstractBackupPath=" + abstractBackupPath + '}';
+    }
 }

@@ -46,6 +46,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
@@ -351,22 +352,22 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
     @Override
     public void notifyEventStart(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
+        observers.forEach(o -> executeObserverNoException(event, o::updateEventStart));
     }
 
     @Override
     public void notifyEventSuccess(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
+        observers.forEach(o -> executeObserverNoException(event, o::updateEventSuccess));
     }
 
     @Override
     public void notifyEventFailure(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
+        observers.forEach(o -> executeObserverNoException(event, o::updateEventFailure));
     }
 
     @Override
     public void notifyEventStop(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
+        observers.forEach(o -> executeObserverNoException(event, o::updateEventStop));
     }
 
     @Override
@@ -382,5 +383,14 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
     @Override
     public void clearCache() {
         objectCache.invalidateAll();
+    }
+
+    private void executeObserverNoException(BackupEvent event, Consumer<BackupEvent> consumer) {
+        try {
+            consumer.accept(event);
+        } catch (Throwable t) {
+            logger.warn("Error executing consumer {} for event {}", consumer, event, t);
+        }
+        ;
     }
 }

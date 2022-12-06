@@ -19,8 +19,10 @@ package com.netflix.priam.backupv2;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.util.concurrent.FutureCallback;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -285,7 +287,27 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                backupHelper.uploadAndDeleteAllFiles(snapshotDirectory, type, target, true);
+                backupHelper
+                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, true)
+                        .forEach(
+                                future ->
+                                        Futures.addCallback(
+                                                future,
+                                                new FutureCallback<AbstractBackupPath>() {
+                                                    @Override
+                                                    public void onSuccess(
+                                                            AbstractBackupPath result) {}
+
+                                                    @Override
+                                                    public void onFailure(Throwable t) {
+                                                        logger.error(
+                                                                "Error executing backup task for SST_V2, snapshotDir={}, target={} ",
+                                                                snapshotDirectory,
+                                                                target,
+                                                                t);
+                                                    }
+                                                },
+                                                MoreExecutors.directExecutor()));
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;

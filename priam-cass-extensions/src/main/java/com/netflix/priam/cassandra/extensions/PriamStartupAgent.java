@@ -84,7 +84,7 @@ public class PriamStartupAgent {
         if (isReplace) {
             System.out.println(
                     "Detect cassandra version : " + FBUtilities.getReleaseVersionString());
-                System.setProperty("cassandra.replace_address_first_boot", replacedIp);
+            System.setProperty("cassandra.replace_address_first_boot", replacedIp);
         }
     }
 

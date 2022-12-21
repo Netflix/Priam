@@ -1,4 +1,22 @@
 # Changelog
+## 2022/11/15 3.11.94
+(#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
+(#1012) Ensure SI files get into meta file properly.
+
+## 2022/10/10 3.11.93
+(#1006) Adding ability to add more keys in the message attributes for backup notification messages.
+(#999) Identify incrementals, optionally skip metafile compression, and upload data files last.
+(#1009) Pass millis to sleep instead of seconds.
+
+## 2022/09/15 3.11.92
+(#1005) RandomPartitioner creates tokens that don't always fit into a long so we use BigInteger to store and compare them.
+
+## 2022/09/14 3.11.91
+(#997) Revert "CASS-2805 Add hook to optionally skip deletion for files added within a certain window. (#992)"
+(#1001) Use IP to get gossip info rather than hostname.
+(#1002) Spread deletes over the interval depending on where the node is in the ring.
+(#966) Remove UpdateSecuritySettings
+
 ## 2022/06/26 3.11.90
 *UpdateSecuritySettings will be removed in the next release*
 (#992) Add hook to optionally skip deletion for files added within a certain window.

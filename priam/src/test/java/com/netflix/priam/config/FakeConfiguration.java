@@ -40,6 +40,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean skipDeletingOthersIngressRules;
     private boolean skipUpdatingOthersIngressRules;
     private boolean skipIngressUnlessIPIsPublic;
+    private long compressionTransitionEpochMillis;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -291,5 +292,14 @@ public class FakeConfiguration implements IConfiguration {
         return (Integer)
                 fakeConfig.getOrDefault(
                         "Priam.backup.threads", IConfiguration.super.getBackupThreads());
+    }
+
+    public void setCompressionTransitionEpochMillis(long transitionTime) {
+        compressionTransitionEpochMillis = transitionTime;
+    }
+
+    @Override
+    public long getCompressionTransitionEpochMillis() {
+        return compressionTransitionEpochMillis;
     }
 }

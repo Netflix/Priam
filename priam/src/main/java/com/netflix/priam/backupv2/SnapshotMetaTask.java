@@ -21,7 +21,6 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -92,6 +91,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final Clock clock;
     private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupVerification backupVerification;
+    private final BackupHelper backupHelper;
 
     private enum MetaStep {
         META_GENERATION,
@@ -103,8 +103,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     @Inject
     SnapshotMetaTask(
             IConfiguration config,
-            IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> pathFactory,
+            BackupHelper backupHelper,
             MetaFileWriterBuilder metaFileWriter,
             @Named("v2") IMetaProxy metaProxy,
             InstanceIdentity instanceIdentity,
@@ -113,8 +112,9 @@ public class SnapshotMetaTask extends AbstractBackup {
             Clock clock,
             IBackupRestoreConfig backupRestoreConfig,
             BackupVerification backupVerification) {
-        super(config, backupFileSystemCtx, pathFactory);
+        super(config);
         this.config = config;
+        this.backupHelper = backupHelper;
         this.instanceIdentity = instanceIdentity;
         this.snapshotStatusMgr = snapshotStatusMgr;
         this.cassandraOperations = cassandraOperations;
@@ -285,13 +285,13 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                uploadAndDeleteAllFiles(snapshotDirectory, type, true, target);
+                backupHelper.uploadAndDeleteAllFiles(snapshotDirectory, type, target, true);
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
-                    futures = uploadAndDeleteAllFiles(subDir, type, true, target);
+                    futures = backupHelper.uploadAndDeleteAllFiles(subDir, type, target, true);
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
                     }
@@ -317,7 +317,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             CronExpression snapshotCron =
                     new CronExpression(backupRestoreConfig.getSnapshotMetaServiceCronExpression());
             snapshotCron.setTimeZone(UTC);
-            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(Instant.now()));
+            Date nextSnapshotDate = snapshotCron.getNextValidTimeAfter(Date.from(now));
             nextSnapshotTime =
                     nextSnapshotDate == null ? Instant.MAX : nextSnapshotDate.toInstant();
         } catch (ParseException e) {
@@ -368,7 +368,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         builder.putAll(getSSTables(snapshotDir, AbstractBackupPath.BackupFileType.SST_V2));
 
         // Next, add secondary indexes
-        for (File directory : getSecondaryIndexDirectories(backupDir)) {
+        for (File directory : getSecondaryIndexDirectories(snapshotDir)) {
             builder.putAll(
                     getSSTables(directory, AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2));
         }
@@ -393,7 +393,8 @@ public class SnapshotMetaTask extends AbstractBackup {
             File snapshotDir, AbstractBackupPath.BackupFileType type) throws IOException {
         ImmutableSetMultimap.Builder<String, AbstractBackupPath> ssTables =
                 ImmutableSetMultimap.builder();
-        getBackupPaths(snapshotDir, type)
+        backupHelper
+                .getBackupPaths(snapshotDir, type)
                 .forEach(bp -> getPrefix(bp.getBackupFile()).ifPresent(p -> ssTables.put(p, bp)));
         return ssTables.build();
     }

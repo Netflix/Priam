@@ -22,11 +22,10 @@ import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.IService;
+import com.netflix.priam.identity.token.ITokenRetriever;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.CassandraTunerService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.
@@ -38,7 +37,7 @@ public class BackupV2Service implements IService {
     private final IBackupRestoreConfig backupRestoreConfig;
     private final SnapshotMetaTask snapshotMetaTask;
     private final CassandraTunerService cassandraTunerService;
-    private static final Logger logger = LoggerFactory.getLogger(BackupV2Service.class);
+    private final ITokenRetriever tokenRetriever;
 
     @Inject
     public BackupV2Service(
@@ -46,12 +45,14 @@ public class BackupV2Service implements IService {
             IBackupRestoreConfig backupRestoreConfig,
             PriamScheduler scheduler,
             SnapshotMetaTask snapshotMetaService,
-            CassandraTunerService cassandraTunerService) {
+            CassandraTunerService cassandraTunerService,
+            ITokenRetriever tokenRetriever) {
         this.configuration = configuration;
         this.backupRestoreConfig = backupRestoreConfig;
         this.scheduler = scheduler;
         this.snapshotMetaTask = snapshotMetaService;
         this.cassandraTunerService = cassandraTunerService;
+        this.tokenRetriever = tokenRetriever;
     }
 
     @Override
@@ -68,8 +69,9 @@ public class BackupV2Service implements IService {
             snapshotMetaTask.uploadFiles();
 
             // Schedule the TTL service
-            scheduleTask(
-                    scheduler, BackupTTLTask.class, BackupTTLTask.getTimer(backupRestoreConfig));
+            TaskTimer timer =
+                    BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
+            scheduleTask(scheduler, BackupTTLTask.class, timer);
 
             // Schedule the backup verification service
             scheduleTask(

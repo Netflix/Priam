@@ -20,14 +20,11 @@ package com.netflix.priam.backupv2;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IFileSystemContext;
-import com.netflix.priam.backup.Status;
+import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
+import com.netflix.priam.identity.token.TokenRetriever;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -41,6 +38,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import javax.inject.Named;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.math.Fraction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +67,7 @@ public class BackupTTLTask extends Task {
     private static final Lock lock = new ReentrantLock();
     private final int BATCH_SIZE = 1000;
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
-    private final DeletionFilter deletionFilter;
+    private final int maxWaitMillis;
 
     @Inject
     public BackupTTLTask(
@@ -79,14 +77,18 @@ public class BackupTTLTask extends Task {
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider,
             InstanceState instanceState,
-            DeletionFilter deletionFilter) {
+            TokenRetriever tokenRetriever)
+            throws Exception {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.metaProxy = metaProxy;
         this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         this.instanceState = instanceState;
-        this.deletionFilter = deletionFilter;
+        this.maxWaitMillis =
+                1_000
+                        * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
+                        / tokenRetriever.getRingPosition().getDenominator();
     }
 
     @Override
@@ -104,6 +106,9 @@ public class BackupTTLTask extends Task {
             logger.warn("{} is already running! Try again later.", JOBNAME);
             throw new Exception(JOBNAME + " already running");
         }
+
+        // Sleep a random amount but not so long that it will spill into the next token's turn.
+        if (maxWaitMillis > 0) Thread.sleep(new Random().nextInt(maxWaitMillis));
 
         try {
             filesInMeta.clear();
@@ -192,9 +197,7 @@ public class BackupTTLTask extends Task {
                 }
 
                 if (!filesInMeta.containsKey(abstractBackupPath.getRemotePath())) {
-                    if (deletionFilter.shouldDelete(abstractBackupPath.getLastModified())) {
-                        deleteFile(abstractBackupPath, false);
-                    }
+                    deleteFile(abstractBackupPath, false);
                 } else {
                     if (logger.isDebugEnabled())
                         logger.debug(
@@ -244,9 +247,11 @@ public class BackupTTLTask extends Task {
      * @throws Exception if the configuration is not set correctly or are not valid. This is to
      *     ensure we fail-fast.
      */
-    public static TaskTimer getTimer(IBackupRestoreConfig backupRestoreConfig) throws Exception {
-        return SimpleTimer.getSimpleTimer(
-                JOBNAME, backupRestoreConfig.getBackupTTLMonitorPeriodInSec() * 1000);
+    public static TaskTimer getTimer(
+            IBackupRestoreConfig backupRestoreConfig, Fraction ringPosition) throws Exception {
+        int period = backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
+        Instant start = Instant.ofEpochSecond((long) (period * ringPosition.doubleValue()));
+        return new SimpleTimer(JOBNAME, period, start);
     }
 
     private class MetaFileWalker extends MetaFileReader {

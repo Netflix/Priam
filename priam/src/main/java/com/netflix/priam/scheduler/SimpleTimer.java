@@ -16,12 +16,11 @@
  */
 package com.netflix.priam.scheduler;
 
+import com.google.common.base.Preconditions;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Date;
-import org.quartz.Scheduler;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
+import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +41,21 @@ public class SimpleTimer implements TaskTimer {
                                         .withIntervalInMilliseconds(interval)
                                         .repeatForever()
                                         .withMisfireHandlingInstructionFireNow())
+                        .build();
+    }
+
+    /** Run forever every @period seconds starting at @start */
+    public SimpleTimer(String name, int period, Instant start) {
+        Preconditions.checkArgument(period > 0);
+        Preconditions.checkArgument(start.compareTo(Instant.EPOCH) >= 0);
+        this.trigger =
+                TriggerBuilder.newTrigger()
+                        .withIdentity(name)
+                        .withSchedule(
+                                CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
+                                        .withMisfireHandlingInstructionFireAndProceed()
+                                        .withIntervalInSeconds(period))
+                        .startAt(Date.from(start))
                         .build();
     }
 

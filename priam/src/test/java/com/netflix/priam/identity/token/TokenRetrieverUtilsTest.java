@@ -85,21 +85,21 @@ public class TokenRetrieverUtilsTest {
                 SystemUtils.getDataFromUrl(
                         withArgThat(
                                 allOf(
-                                        not(String.format(STATUS_URL_FORMAT, "fakeHost-0")),
-                                        not(String.format(STATUS_URL_FORMAT, "fakeHost-2")),
-                                        not(String.format(STATUS_URL_FORMAT, "fakeHost-5")))));
+                                        not(String.format(STATUS_URL_FORMAT, "127.0.0.0")),
+                                        not(String.format(STATUS_URL_FORMAT, "127.0.0.2")),
+                                        not(String.format(STATUS_URL_FORMAT, "127.0.0.5")))));
                 result = getStatus(myliveInstances, tokenToEndpointMap);
                 minTimes = 0;
 
-                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-0"));
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "127.0.0.0"));
                 result = getStatus(liveInstances, tokenToEndpointMap);
                 minTimes = 0;
 
-                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-2"));
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "127.0.0.2"));
                 result = getStatus(liveInstances, tokenToEndpointMap);
                 minTimes = 0;
 
-                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-5"));
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "127.0.0.5"));
                 result = null;
                 minTimes = 0;
             }
@@ -129,11 +129,11 @@ public class TokenRetrieverUtilsTest {
 
         new Expectations() {
             {
-                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-0"));
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "127.0.0.0"));
                 result = getStatus(myLiveInstances, myTokenToEndpointMap);
                 minTimes = 0;
 
-                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "fakeHost-2"));
+                SystemUtils.getDataFromUrl(String.format(STATUS_URL_FORMAT, "127.0.0.2"));
                 result = getStatus(myLiveInstances, alteredMap);
                 minTimes = 0;
             }

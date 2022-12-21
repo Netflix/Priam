@@ -24,6 +24,7 @@ import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.compress.CompressionType;
+import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.CryptographyAlgorithm;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -35,6 +36,7 @@ import java.nio.file.Path;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.Date;
+import java.util.Optional;
 import org.apache.commons.lang3.StringUtils;
 
 @ImplementedBy(RemoteBackupPath.class)
@@ -95,12 +97,17 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     private Instant lastModified;
     private Instant creationTime;
     private Date uploadedTs;
-    private CompressionType compression = CompressionType.SNAPPY;
+    private CompressionType compression;
     private CryptographyAlgorithm encryption = CryptographyAlgorithm.PLAINTEXT;
+    private boolean isIncremental;
 
     public AbstractBackupPath(IConfiguration config, InstanceIdentity instanceIdentity) {
         this.instanceIdentity = instanceIdentity;
         this.config = config;
+        this.compression =
+                config.getBackupsToCompress() == BackupsToCompress.NONE
+                        ? CompressionType.NONE
+                        : CompressionType.SNAPPY;
     }
 
     public void parseLocal(File file, BackupFileType type) {
@@ -130,10 +137,14 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
             this.keyspace = parts[0];
             this.columnFamily = parts[1];
         }
-        if (type == BackupFileType.SECONDARY_INDEX_V2) {
-            Integer index = BackupFolder.fromName(parts[2]).map(FOLDER_POSITIONS::get).orElse(null);
-            Preconditions.checkNotNull(index, "Unrecognized backup folder " + parts[2]);
-            this.indexDir = parts[index];
+        if (BackupFileType.isDataFile(type)) {
+            Optional<BackupFolder> folder = BackupFolder.fromName(parts[2]);
+            this.isIncremental = folder.filter(BackupFolder.BACKUPS::equals).isPresent();
+            if (type == BackupFileType.SECONDARY_INDEX_V2) {
+                Integer index = folder.map(FOLDER_POSITIONS::get).orElse(null);
+                Preconditions.checkNotNull(index, "Unrecognized backup folder " + parts[2]);
+                this.indexDir = parts[index];
+            }
         }
 
         /*
@@ -321,6 +332,10 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public void setEncryption(String encryption) {
         this.encryption = CryptographyAlgorithm.valueOf(encryption);
+    }
+
+    public boolean isIncremental() {
+        return isIncremental;
     }
 
     @Override

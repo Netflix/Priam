@@ -83,7 +83,7 @@ public class TestAbstractFileSystem {
         try {
             Collection<File> files = generateFiles(1, 1, 1);
             for (File file : files) {
-                failureFileSystem.uploadAndDelete(getDummyPath(file.toPath()), 2);
+                failureFileSystem.uploadAndDelete(getDummyPath(file.toPath()), false /* async */);
             }
         } catch (BackupRestoreException e) {
             // Verify the failure metric for upload is incremented.
@@ -123,7 +123,7 @@ public class TestAbstractFileSystem {
     @Test
     public void testUpload() throws Exception {
         File file = generateFiles(1, 1, 1).iterator().next();
-        myFileSystem.uploadAndDelete(getDummyPath(file.toPath()), 2);
+        myFileSystem.uploadAndDelete(getDummyPath(file.toPath()), false /* async */);
         Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
         Assert.assertFalse(file.exists());
     }
@@ -139,7 +139,9 @@ public class TestAbstractFileSystem {
     @Test
     public void testAsyncUpload() throws Exception {
         File file = generateFiles(1, 1, 1).iterator().next();
-        myFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2).get();
+        myFileSystem
+                .uploadAndDelete(getDummyPath(file.toPath()), Instant.EPOCH, true /* async */)
+                .get();
         Assert.assertEquals(1, (int) backupMetrics.getValidUploads().actualCount());
         Assert.assertEquals(0, myFileSystem.getUploadTasksQueued());
     }
@@ -151,7 +153,9 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 20);
         List<Future<AbstractBackupPath>> futures = new ArrayList<>();
         for (File file : files) {
-            futures.add(myFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2));
+            futures.add(
+                    myFileSystem.uploadAndDelete(
+                            getDummyPath(file.toPath()), Instant.EPOCH, true /* async */));
         }
 
         // Verify all the work is finished.
@@ -178,7 +182,7 @@ public class TestAbstractFileSystem {
         for (int i = 0; i < size; i++) {
             torun.add(
                     () -> {
-                        myFileSystem.uploadAndDelete(abstractBackupPath, 2);
+                        myFileSystem.uploadAndDelete(abstractBackupPath, false /* async */);
                         return Boolean.TRUE;
                     });
         }
@@ -206,7 +210,8 @@ public class TestAbstractFileSystem {
         Collection<File> files = generateFiles(1, 1, 1);
         for (File file : files) {
             Future<AbstractBackupPath> future =
-                    failureFileSystem.asyncUploadAndDelete(getDummyPath(file.toPath()), 2);
+                    failureFileSystem.uploadAndDelete(
+                            getDummyPath(file.toPath()), Instant.EPOCH, true /* async */);
             try {
                 future.get();
             } catch (Exception e) {

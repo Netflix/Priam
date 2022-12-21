@@ -13,12 +13,14 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import java.math.BigInteger;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
+import org.apache.commons.lang3.math.Fraction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,6 +41,7 @@ public class TokenRetriever implements ITokenRetriever {
     private InstanceInfo myInstanceInfo;
     private boolean isTokenPregenerated = false;
     private String replacedIp;
+    private PriamInstance priamInstance;
 
     @Inject
     public TokenRetriever(
@@ -59,15 +62,17 @@ public class TokenRetriever implements ITokenRetriever {
 
     @Override
     public PriamInstance get() throws Exception {
-        PriamInstance myInstance = grabPreAssignedToken();
-        if (myInstance == null) {
-            myInstance = grabExistingToken();
+        if (priamInstance == null) {
+            priamInstance = grabPreAssignedToken();
         }
-        if (myInstance == null) {
-            myInstance = grabNewToken();
+        if (priamInstance == null) {
+            priamInstance = grabExistingToken();
         }
-        logger.info("My instance: {}", myInstance);
-        return myInstance;
+        if (priamInstance == null) {
+            priamInstance = grabNewToken();
+        }
+        logger.info("My instance: {}", priamInstance);
+        return priamInstance;
     }
 
     @Override
@@ -78,6 +83,18 @@ public class TokenRetriever implements ITokenRetriever {
     @Override
     public boolean isTokenPregenerated() {
         return isTokenPregenerated;
+    }
+
+    @Override
+    public Fraction getRingPosition() throws Exception {
+        get();
+        BigInteger token = new BigInteger(priamInstance.getToken());
+        ImmutableSet<PriamInstance> nodes = factory.getAllIds(config.getAppName());
+        long ringPosition =
+                nodes.stream()
+                        .filter(node -> token.compareTo(new BigInteger(node.getToken())) > 0)
+                        .count();
+        return Fraction.getFraction(Math.toIntExact(ringPosition), nodes.size());
     }
 
     private PriamInstance grabPreAssignedToken() throws Exception {

@@ -65,7 +65,7 @@ public class CommitLogBackup {
 
                 if (snapshotName != null) bp.time = DateUtil.getDate(snapshotName);
 
-                fs.uploadAndDelete(bp, 10);
+                fs.uploadAndDelete(bp, false /* async */);
                 bps.add(bp);
                 addToRemotePath(bp.getRemotePath());
             } catch (Exception e) {

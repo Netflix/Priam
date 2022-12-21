@@ -55,7 +55,7 @@ allprojects {
       compile 'com.googlecode.json-simple:json-simple:1.1.1'
       compile 'org.xerial.snappy:snappy-java:1.1.7.3'
       compile 'org.yaml:snakeyaml:1.25'
-      compile 'org.apache.cassandra:cassandra-all:4.0.0'
+      compile 'org.apache.cassandra:cassandra-all:4.1.0'
       compile 'javax.ws.rs:jsr311-api:1.1.1'
       compile 'joda-time:joda-time:2.10.1'
       compile 'org.apache.commons:commons-configuration2:2.4'

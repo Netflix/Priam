@@ -17,34 +17,31 @@
 
 package com.netflix.priam.notification;
 
-/**
- * Subscriber who wishes to receive event notifications from the {@link EventGenerator} Created by
- * aagrawal on 8/11/17.
- */
+/** Subscriber who wishes to receive event notifications. */
 public interface EventObserver<T> {
     /**
-     * Notification of an event start from the {@link EventGenerator}
+     * Notification of an event star
      *
      * @param event Event for which notification was sent.
      */
     void updateEventStart(T event);
 
     /**
-     * Notification of an event failure from the {@link EventGenerator}
+     * Notification of an event failure.
      *
      * @param event Event for which notification was sent.
      */
     void updateEventFailure(T event);
 
     /**
-     * Notification of an event success from the {@link EventGenerator}
+     * Notification of an event success.
      *
      * @param event Event for which notification was sent.
      */
     void updateEventSuccess(T event);
 
     /**
-     * Notification of an event stop from the {@link EventGenerator}
+     * Notification of an event stop.
      *
      * @param event Event for which notification was sent.
      */

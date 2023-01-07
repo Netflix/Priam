@@ -32,8 +32,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventGenerator;
-import com.netflix.priam.notification.EventObserver;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
@@ -59,16 +57,15 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Created by aagrawal on 8/30/18.
  */
-public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
+public abstract class AbstractFileSystem implements IBackupFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
     protected final Provider<AbstractBackupPath> pathProvider;
-    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers =
-            new CopyOnWriteArrayList<>();
     private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
     private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
+    private final BackupNotificationMgr backupNotificationMgr;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
@@ -83,8 +80,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         this.configuration = configuration;
         this.backupMetrics = backupMetrics;
         this.pathProvider = pathProvider;
-        // Add notifications.
-        this.addObserver(backupNotificationMgr);
+        this.backupNotificationMgr = backupNotificationMgr;
         this.objectCache =
                 CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
@@ -335,38 +331,16 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                                 || abstractBackupPath.getTime().equals(start));
     }
 
-    @Override
-    public final void addObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null) throw new NullPointerException("observer must not be null.");
-
-        observers.addIfAbsent(observer);
+    private void notifyEventStart(BackupEvent event) {
+        backupNotificationMgr.updateEventStart(event);
     }
 
-    @Override
-    public void removeObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null) throw new NullPointerException("observer must not be null.");
-
-        observers.remove(observer);
+    private void notifyEventSuccess(BackupEvent event) {
+        backupNotificationMgr.updateEventSuccess(event);
     }
 
-    @Override
-    public void notifyEventStart(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
-    }
-
-    @Override
-    public void notifyEventSuccess(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
-    }
-
-    @Override
-    public void notifyEventFailure(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
-    }
-
-    @Override
-    public void notifyEventStop(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
+    private void notifyEventFailure(BackupEvent event) {
+        backupNotificationMgr.updateEventFailure(event);
     }
 
     @Override

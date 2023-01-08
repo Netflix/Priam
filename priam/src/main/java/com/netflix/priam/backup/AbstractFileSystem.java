@@ -30,8 +30,8 @@ import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
+import com.netflix.priam.notification.UploadStatus;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
@@ -186,7 +186,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
 
                 // Upload file if it not present at remote location.
                 if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
-                    notifyEventStart(new BackupEvent(path));
+                    backupNotificationMgr.notify(path, UploadStatus.STARTED);
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(
                                     500 /* minSleep */, 10000 /* maxSleep */, retry) {
@@ -204,7 +204,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
                     path.setCompressedFileSize(uploadedFileSize);
-                    notifyEventSuccess(new BackupEvent(path));
+                    backupNotificationMgr.notify(path, UploadStatus.SUCCESS);
                 } else {
                     // file is already uploaded to remote file system.
                     logger.info("File: {} already present on remoteFileSystem.", remotePath);
@@ -221,7 +221,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
-                notifyEventFailure(new BackupEvent(path));
+                backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 logger.error(
                         "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
                         localPath,
@@ -329,18 +329,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                         (abstractBackupPath.getTime().after(start)
                                         && abstractBackupPath.getTime().before(till))
                                 || abstractBackupPath.getTime().equals(start));
-    }
-
-    private void notifyEventStart(BackupEvent event) {
-        backupNotificationMgr.updateEventStart(event);
-    }
-
-    private void notifyEventSuccess(BackupEvent event) {
-        backupNotificationMgr.updateEventSuccess(event);
-    }
-
-    private void notifyEventFailure(BackupEvent event) {
-        backupNotificationMgr.updateEventFailure(event);
     }
 
     @Override

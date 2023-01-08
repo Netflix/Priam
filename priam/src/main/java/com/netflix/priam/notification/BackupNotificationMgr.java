@@ -36,9 +36,6 @@ import org.slf4j.LoggerFactory;
  */
 public class BackupNotificationMgr {
 
-    private static final String SUCCESS_VAL = "success";
-    private static final String FAILED_VAL = "failed";
-    private static final String STARTED = "started";
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
     private final IBackupRestoreConfig backupRestoreConfig;
@@ -105,7 +102,7 @@ public class BackupNotificationMgr {
         return new MessageAttributeValue().withDataType("String").withStringValue(value);
     }
 
-    private void notify(AbstractBackupPath abp, String uploadStatus) {
+    public void notify(AbstractBackupPath abp, UploadStatus uploadStatus) {
         JSONObject jsonObject = new JSONObject();
         try {
             Set<AbstractBackupPath.BackupFileType> updatedNotifiedBackupFileTypeSet =
@@ -124,7 +121,7 @@ public class BackupNotificationMgr {
                 jsonObject.put("uncompressfilesize", abp.getSize());
                 jsonObject.put("compressfilesize", abp.getCompressedFileSize());
                 jsonObject.put("backuptype", abp.getType().name());
-                jsonObject.put("uploadstatus", uploadStatus);
+                jsonObject.put("uploadstatus", uploadStatus.name().toLowerCase());
                 jsonObject.put("compression", abp.getCompression().name());
                 jsonObject.put("encryption", abp.getEncryption().name());
                 jsonObject.put("isincremental", abp.isIncremental());
@@ -172,17 +169,5 @@ public class BackupNotificationMgr {
             }
         }
         return Collections.unmodifiableSet(this.notifiedBackupFileTypesSet);
-    }
-
-    public void updateEventStart(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), STARTED);
-    }
-
-    public void updateEventFailure(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), FAILED_VAL);
-    }
-
-    public void updateEventSuccess(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), SUCCESS_VAL);
     }
 }

@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Created by vinhn on 10/30/16.
  */
-public class BackupNotificationMgr implements EventObserver<BackupEvent> {
+public class BackupNotificationMgr {
 
     private static final String SUCCESS_VAL = "success";
     private static final String FAILED_VAL = "failed";
@@ -174,23 +174,15 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         return Collections.unmodifiableSet(this.notifiedBackupFileTypesSet);
     }
 
-    @Override
     public void updateEventStart(BackupEvent event) {
         notify(event.getAbstractBackupPath(), STARTED);
     }
 
-    @Override
     public void updateEventFailure(BackupEvent event) {
         notify(event.getAbstractBackupPath(), FAILED_VAL);
     }
 
-    @Override
     public void updateEventSuccess(BackupEvent event) {
         notify(event.getAbstractBackupPath(), SUCCESS_VAL);
-    }
-
-    @Override
-    public void updateEventStop(BackupEvent event) {
-        // Do nothing.
     }
 }

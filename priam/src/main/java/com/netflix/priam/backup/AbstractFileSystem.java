@@ -221,13 +221,13 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
-                backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 logger.error(
                         "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
                         localPath,
                         remotePath,
                         e.getMessage(),
                         e.getStackTrace());
+                backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.

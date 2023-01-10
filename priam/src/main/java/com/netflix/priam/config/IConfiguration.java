@@ -46,7 +46,7 @@ public interface IConfiguration {
 
     /** @return Path to jvm.options file. This is used to pass JVM options to Cassandra. */
     default String getJVMOptionsFileLocation() {
-        return getCassHome() + "/conf/jvm.options";
+        return getCassHome() + "/conf/jvm-server.options";
     }
 
     /**
@@ -853,9 +853,9 @@ public interface IConfiguration {
         return 100000;
     }
 
-    /** @return streaming_socket_timeout_in_ms in C* yaml */
-    default int getStreamingSocketTimeoutInMS() {
-        return 86400000;
+    /** @return streaming_keep_alive_period in seconds in C* yaml */
+    default int getStreamingKeepAlivePeriod() {
+        return 300;
     }
 
     /**
@@ -1080,11 +1080,6 @@ public interface IConfiguration {
      */
     default boolean usePrivateIP() {
         return getSnitch().equals("org.apache.cassandra.locator.GossipingPropertyFileSnitch");
-    }
-
-    /** @return true to check is thrift listening on the rpc_port. */
-    default boolean checkThriftServerIsListening() {
-        return false;
     }
 
     /**

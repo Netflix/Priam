@@ -653,8 +653,8 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public int getStreamingSocketTimeoutInMS() {
-        return config.get(PRIAM_PRE + ".streaming.socket.timeout.ms", 86400000);
+    public int getStreamingKeepAlivePeriod() {
+        return config.get(PRIAM_PRE + ".streaming.socket.keepalive.s", 300);
     }
 
     @Override
@@ -758,11 +758,6 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getDiskAccessMode() {
         return config.get(PRIAM_PRE + ".diskAccessMode", "auto");
-    }
-
-    @Override
-    public boolean checkThriftServerIsListening() {
-        return config.get(PRIAM_PRE + ".checkThriftServerIsListening", false);
     }
 
     @Override

@@ -36,7 +36,6 @@ public class FakeConfiguration implements IConfiguration {
     private ImmutableList<String> racs;
     private boolean usePrivateIp;
     private String diskAccessMode;
-    private boolean checkThriftIsListening;
     private boolean skipDeletingOthersIngressRules;
     private boolean skipUpdatingOthersIngressRules;
     private boolean skipIngressUnlessIPIsPublic;
@@ -270,15 +269,6 @@ public class FakeConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean checkThriftServerIsListening() {
-        return checkThriftIsListening;
-    }
-
-    public void setCheckThriftServerIsListening(boolean checkThriftServerIsListening) {
-        this.checkThriftIsListening = checkThriftServerIsListening;
-    }
-
-    @Override
     public boolean skipIngressUnlessIPIsPublic() {
         return this.skipIngressUnlessIPIsPublic;
     }
@@ -301,5 +291,10 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public long getCompressionTransitionEpochMillis() {
         return compressionTransitionEpochMillis;
+    }
+
+    @Override
+    public int getStreamingKeepAlivePeriod() {
+        return 300;
     }
 }

@@ -34,11 +34,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Created by vinhn on 10/30/16.
  */
-public class BackupNotificationMgr implements EventObserver<BackupEvent> {
+public class BackupNotificationMgr {
 
-    private static final String SUCCESS_VAL = "success";
-    private static final String FAILED_VAL = "failed";
-    private static final String STARTED = "started";
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
     private final IBackupRestoreConfig backupRestoreConfig;
@@ -105,7 +102,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         return new MessageAttributeValue().withDataType("String").withStringValue(value);
     }
 
-    private void notify(AbstractBackupPath abp, String uploadStatus) {
+    public void notify(AbstractBackupPath abp, UploadStatus uploadStatus) {
         JSONObject jsonObject = new JSONObject();
         try {
             Set<AbstractBackupPath.BackupFileType> updatedNotifiedBackupFileTypeSet =
@@ -124,7 +121,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 jsonObject.put("uncompressfilesize", abp.getSize());
                 jsonObject.put("compressfilesize", abp.getCompressedFileSize());
                 jsonObject.put("backuptype", abp.getType().name());
-                jsonObject.put("uploadstatus", uploadStatus);
+                jsonObject.put("uploadstatus", uploadStatus.name().toLowerCase());
                 jsonObject.put("compression", abp.getCompression().name());
                 jsonObject.put("encryption", abp.getEncryption().name());
                 jsonObject.put("isincremental", abp.isIncremental());
@@ -172,25 +169,5 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             }
         }
         return Collections.unmodifiableSet(this.notifiedBackupFileTypesSet);
-    }
-
-    @Override
-    public void updateEventStart(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), STARTED);
-    }
-
-    @Override
-    public void updateEventFailure(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), FAILED_VAL);
-    }
-
-    @Override
-    public void updateEventSuccess(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), SUCCESS_VAL);
-    }
-
-    @Override
-    public void updateEventStop(BackupEvent event) {
-        // Do nothing.
     }
 }

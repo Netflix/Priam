@@ -35,7 +35,7 @@ public final class PropertiesConfigSourceTest {
                 "\"/tmp/commitlog\"", configSource.get("Priam.backup.commitlog.location"));
         // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(12, configSource.size());
+        Assert.assertEquals(11, configSource.size());
     }
 
     @Test
@@ -43,13 +43,13 @@ public final class PropertiesConfigSourceTest {
         PropertiesConfigSource configSource = new PropertiesConfigSource("conf/Priam.properties");
         configSource.initialize("asgName", "region");
 
-        // File has 13 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
+        // File has 12 lines, but line 6 is "Priam.jmx.port7501", so it gets filtered out with empty
         // string check.
-        Assert.assertEquals(12, configSource.size());
+        Assert.assertEquals(11, configSource.size());
 
         configSource.set("foo", "bar");
 
-        Assert.assertEquals(13, configSource.size());
+        Assert.assertEquals(12, configSource.size());
 
         Assert.assertEquals("bar", configSource.get("foo"));
     }

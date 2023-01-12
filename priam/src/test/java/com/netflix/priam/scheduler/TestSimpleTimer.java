@@ -1,11 +1,12 @@
 package com.netflix.priam.scheduler;
 
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
 import com.google.common.truth.Truth;
 import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import org.junit.Assert;
 import org.junit.Test;
 import org.quartz.Trigger;
 
@@ -20,7 +21,7 @@ public class TestSimpleTimer {
 
     @Test
     public void startBeforeEpoch() {
-        Assert.assertThrows(
+        assertThrows(
                 IllegalArgumentException.class,
                 () -> new SimpleTimer("foo", PERIOD, Instant.EPOCH.minus(5, ChronoUnit.SECONDS)));
     }
@@ -38,13 +39,12 @@ public class TestSimpleTimer {
 
     @Test
     public void negativePeriod() {
-        Assert.assertThrows(
-                IllegalArgumentException.class, () -> new SimpleTimer("foo", -PERIOD, START));
+        assertThrows(IllegalArgumentException.class, () -> new SimpleTimer("foo", -PERIOD, START));
     }
 
     @Test
     public void zeroPeriod() {
-        Assert.assertThrows(IllegalArgumentException.class, () -> new SimpleTimer("foo", 0, START));
+        assertThrows(IllegalArgumentException.class, () -> new SimpleTimer("foo", 0, START));
     }
 
     private void assertions(Trigger trigger, Instant start) {

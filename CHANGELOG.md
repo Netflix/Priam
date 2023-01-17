@@ -1,4 +1,242 @@
 # Changelog
+## 2022/11/15 3.11.94
+(#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
+(#1012) Ensure SI files get into meta file properly.
+
+## 2022/10/10 3.11.93
+(#1006) Adding ability to add more keys in the message attributes for backup notification messages.
+(#999) Identify incrementals, optionally skip metafile compression, and upload data files last.
+(#1009) Pass millis to sleep instead of seconds.
+
+## 2022/09/15 3.11.92
+(#1005) RandomPartitioner creates tokens that don't always fit into a long so we use BigInteger to store and compare them.
+
+## 2022/09/14 3.11.91
+(#997) Revert "CASS-2805 Add hook to optionally skip deletion for files added within a certain window. (#992)"
+(#1001) Use IP to get gossip info rather than hostname.
+(#1002) Spread deletes over the interval depending on where the node is in the ring.
+(#966) Remove UpdateSecuritySettings
+
+## 2022/06/26 3.11.90
+*UpdateSecuritySettings will be removed in the next release*
+(#992) Add hook to optionally skip deletion for files added within a certain window.
+
+## 2022/06/02 3.11.89
+*UpdateSecuritySettings will be removed in the next release*
+(#975) Dynamic Rate Limiting of Snapshots.
+(#985) Optionally Add Content-MD5 header to uploads of files smaller than the backupChunkSize.
+
+## 2022/01/25 3.11.88
+(#979) Cache region in AWSInstanceInfo to avoid throttling.
+
+## 2022/01/25 3.11.87
+Botched release. Disregard
+
+## 2022/01/04 3.11.86
+(#977) Use IMDSV2 to get instance metadata
+
+## 2021/08/31 3.11.85
+(#973) Throw in case of gossip mismatch when determining replace_ip in assigned token case.
+(#970) Make getPublicIP and getPublicHostname fail elegantly when those attributes are absent.
+
+## 2021/08/18 3.11.84
+(#961) Ensure SI backup directories are deleted when empty
+
+## 2021/07/28 3.11.83
+(#960) Fix bug in metafile generation where column family names are printed in place of keyspace names.
+
+## 2021/07/11 3.11.82
+(#955) Upload and delete any backup directory starting with a '.'
+
+## 2021/06/11 3.11.81
+(#952) Fixing integer overflow problem in restore.
+
+## 2021/06/07 3.11.80
+(#948) Reverting back to previous behavior of omitting milliseconds in backup last modified times.
+
+## 2021/05/25 3.11.79
+(#922) Optionally skip compression of backups
+(#943) Optionally make extra check to ensure Thrift server is actually listening on the rpc_port
+(#944) Make disk_access_mode a first class configuration option
+(#941) Delete secondary index backup directories after uploading
+(#940) Improve operator control over creation of ingress rules
+
+## 2021/05/12 3.11.78
+Improve operator control over creation of ingress rules
+
+## 2021/03/17 3.11.77
+(#913) Store Private IPs in the token database when the snitch is GPFS.
+
+## 2021/03/09 3.11.76
+(#918) Adding support for custom override for role_manager.
+
+## 2020/11/09 3.11.73
+(#911) Backup secondary index files.
+
+## 2020/09/30 3.11.72
+(#908, #910) Stop explicitly filtering OpsCenter keyspace when backing up. Remove more noisy log statements.
+
+## 2020/09/08 3.11.71
+(#902) Remove noisy log statements from CassandraAdmin.
+
+## 2020/08/11 3.11.70
+(#901) Throw when gossip unanimously says token is already owned by a live node.
+
+## 2020/07/15 3.11.69
+(#894) Fix the inferTokenOwnership information. This will provide all the details to the caller method so they can make decision rather than throwing any exception.
+(#897) Make BackupVerificationTask log and emit when there is no verified backup within SLO. Cease requiring the backup to be fully in S3.
+
+## 2020/07/02 3.11.68
+(#891) Adding an exception in the replace-ip path when a node attempts to bootstrap to an existing token because of a stale state.
+
+## 2020/06/04 3.11.67
+Re-releasing 3.11.66
+
+## 2020/06/03 3.11.66
+(#881) Porting PropertiesFileTuner to the 3.11 branch.
+
+## 2020/05/26 3.11.65
+(#884) Adding support for upstream C* log directory env variable. 
+
+## 2020/05/19 3.11.64
+Re-re-releasing 3.11.62
+
+## 2020/05/19 3.11.63
+Re-releasing 3.11.62
+
+## 2020/05/19 3.11.62
+(#878) Fixing BackupServletV2 endpoints that were broken because of an underlying dependency change from the release 3.11.59.
+
+## 2020/05/18 3.11.61
+This is a re-release of v3.11.60 that failed to be uploaded.
+
+## 2020/05/18 3.11.60
+(#870) Fixing PriamConfig endpoints that were broken because of an underlying dependency change from the last release.
+
+## 2020/05/05 3.11.59
+(#860, #864) Fixing the bug in the backup verification strategy to only page when there is no valid backup in the specified date range (SLO window) And also disable lifecyle rule for backup if backup v1 is disabled.
+
+## 2020/04/22 3.11.58
+(#850) Modifying the backup verification strategy to verify all unverified backups in the specified date range vs the old implementation that verified the latest backup in the specified date range. Also adding a hook in StandardTuner to allow for subclasses to add custom Cassandra parameters
+
+## 2020/02/21 3.11.57
+(#844, #839) Implementation of a filter for Backup Notification. The filter can be controlled using the configuration "priam.backupNotifyComponentIncludeList"
+
+## 2019/10/24 3.11.56
+(#836) Move flush and compactions to Service Layer. This allows us to "hot" reload the jobs when configurations change.
+(#836) Send SNAPSHOT_VERIFIED message when a snapshot is verified and ready to be consumed by downward dependencies.
+
+## 2019/08/23 3.11.55
+(#832) Travis build fails for oraclejdk8. Migration to openjdk8
+
+## 2019/10/16 3.11.54
+(#834) Removing functionality of creating incremental manifest file in backup V1 as it is not used. 
+(#834) Bug fix: When meta file do not exist for TTL in backup v2 we should not be throwing NPE. 
+(#834) Bug fix: Fix X-Y-Z issue using gossip status information instead of gossip state. Note that gossip status is (JOINING/LEAVING/NORMAL) while gossip state is (UP/DOWN). Gossip state is calculated individually by all the Cassandra instances using gossip status. 
+
+## 2019/06/07 3.11.53
+(#826): Rollback the fixes to use Gossip info while grabbing dead and pre-assigned tokens. Gossip info doesn't not reflect the correct cluster state always. A node marked with status as NORMAL in the Gossip info could actually be down. This can be checked using nt ring. This change will unblock the nodes from joining the ring.
+
+## 2019/05/28 3.11.52
+(#824): Use replace_address instead of replace_address_first_boot. replace_address always try to bootstrap Cassandra in replace mode even when the previous bootstrap is successful. replace_address_first_boot tries to bootstrap normally if the node already bootstrapped successfully.
+
+## 2019/05/14 3.11.51
+(#818) Changing the list in TokenRetrievalUtils to use wildcards.
+
+## 2019/05/13 3.11.50
+(#816) Priam will check Cassandra gossip information while grabbing pre-assigned token to decide if it should start Cassandra in bootstrap mode or in replace mode.
+(#816) At most 3 random nodes are used to get the gossip information.
+(#816) Moved token owner inferring logic based on Cassandra gossip into a util class.
+(#816) Refactored InstanceIdentity.init() method.
+
+## 2019/04/29 3.11.49
+(#815) Update the backup service based on configuration changes.
+(#812) Expose the list of files from backups as API call.
+(#809) Run TTL for backup based on a simple timer to avoid S3 delete API call throttle.
+(#815) API to clear the local filesystem cache.
+(#815) Bug fix: Increment backup failure metric when no backup is found.
+(#809) Bug fix: No backup verification job during restore.
+
+## 2019/03/19 3.11.48
+(#807) Fix X->Y->Z issue. Replace nodes when gossip actually converges.
+
+## 2019/03/13 3.11.47
+(#804) Write-thru cache in AbstractFileSystem.
+(#803) Take care of issue - C* snapshot w.r.t. filesystem is not "sync" in nature.
+
+## 2019/03/05 3.11.46
+(#794) Fix for forgotten file
+(#798) Use older API for prefix filtering (backup TTL), if prefix is available.
+(#800) Send notifications only when we upload a file.
+
+## 2019/02/27 3.11.45
+(#793) S3 - BucketLifecycleConfiguration has `prefix` method removed from latest library.
+
+## 2019/02/27 3.11.44
+(#791) BackupServlet had an API call of backup status which was producing output which was not JSON.
+
+## 2019/02/15 3.11.43
+(#784): BackupVerificationService
+(#781): Put a cache for the getObjectExist API call to S3. This will help keep the cost of this call at bay.
+(#781): Put a rate limiter for getObjectExist API call to S3 so we can limit the no. of calls.
+(#784): Provide an override method to force Priam to replace a particular IP.
+
+## 2019/02/08 3.11.42
+(#777)Do not check existence of file if it is not SST_V2. S3 may decide to slow down and throw an error. Best not to do s3 object check (API) if it is not required.
+
+## 2019/02/07 3.11.41
+(#775) Do not throw NPE when no backup is found for the requested date.
+
+## 2019/01/30 3.11.39
+(#765) Add metrics on CassandraConfig resource calls
+(#768) Support configure/tune complex parameters in cassandra.yaml 
+(#770) Add Cass SNAPSHOT JMX status, snapshot version, last validated timestamp. Changes to Servlet API and new APIs. 
+
+## 2019/01/11 3.11.38
+(#761) Add new file format (SST_V2) and methods to get/parse remote locations.
+(#761) Upload files from SnapshotMetaService in backup version 2.0, if enabled.
+(#761) Process older SNAPSHOT_V2 at the restart of Priam.
+(#767) Backup Verification for Backup 2.0.
+(#767) Restore for Backup 2.0
+(#767) Some API changes for Snapshot Verification
+(#767) Remove deprecated code like flush hour or snapshot hour.
+
+## 2018/10/29 3.11.37
+* Bug Fix: SnapshotMetaService can leave snapshots if there is any error. 
+* Bug Fix: SnapshotMetaService should continue building snapshot even if an unexpected file is found in snapshot. 
+* More cleanup of IConfiguration and moving code to appropriate places. 
+
+## 2018/10/26 3.11.36
+* (#747) Aggregate InstanceData in InstanceInfo and pull information about running instance 
+
+## 2018/10/17 3.11.35
+* (#739) BugFix: Null pointer exception while traversing filesystem. 
+* (#737) Google java format validator addition. Use ./gradlew goJF to fix the formatting before sending PR. 
+* (#740) Last but not least, a new logo for Priam. 
+
+## 2018/10/08 3.11.33
+***WARNING*** THIS IS A BREAKING RELEASE 
+### New Feature
+* (#731) Restores will be async in nature by default. 
+* (#731) Support for async snapshots via configuration - `priam.async.snapshot`. Similar support for async incrementals via configuration - `priam.async.incremental`. 
+* (#731) Better metrics for upload and download to/from remote file system. 
+* (#731) Better support for include/exclude keyspaces/columnfamilies from backup, incremental backup and restores. 
+* (#731) Expose priam configuration over HTTP and persist at regular interval (CRON) to local file system for automation/tooling. 
+### Bug fix
+* (#731) Metrics are incremented only once and in a central location at AbstractFileSystem. 
+* (#731) Remove deprecated AWS API Calls.
+### Breaking changes
+* (#731) Removal of MBeans to collect metrics from S3FileSystem. They were unreliable and incorrect. 
+* (#731) Update to backup configurations :- isIncrBackupParallelEnabled, getIncrementalBkupMaxConsumers, getIncrementalBkupQueueSize. They are renamed to ensure naming consistency. Refer to wiki for more details. 
+* (#731) Changes to backup/restore configuration :- getSnapshotKeyspaceFilters, getSnapshotCFFilter, getIncrementalKeyspaceFilters, getIncrementalCFFilter, getRestoreKeyspaceFilter, getRestoreCFFilter. They are now centralized to ensure that we can support both include and exclude keyspaces/CF. Refer to wiki for more details. 
+
+## 2018/10/02 3.11.32
+* (#727) Bug Fix: Continue uploading incrementals when parallel incrementals is enabled and file fails to upload. 
+* (#718) Add last modified time to S3 Object Metadata. 
+
+## 2018/09/10 3.11.31 
+* (#715) Bug Fix: Fix the bootstrap issue. Do not provide yourself as seed node if cluster is already up and running as it will lead to data loss. 
+
 ## 2018/08/20 3.11.30
 ***WARNING*** THIS IS A BREAKING RELEASE
 ### New Feature

@@ -16,30 +16,29 @@
  */
 package com.netflix.priam.scheduler;
 
-import com.google.common.base.Throwables;
 import com.netflix.priam.config.IConfiguration;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.quartz.Job;
 import org.quartz.JobExecutionContext;
 import org.quartz.JobExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.management.MBeanServer;
-import javax.management.ObjectName;
-import java.lang.management.ManagementFactory;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * Task class that should be implemented by all cron tasks. Jobconf will contain
- * any instance specific data
+ * Task class that should be implemented by all cron tasks. Jobconf will contain any instance
+ * specific data
  *
- * NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to failure
+ * <p>NOTE: Constructor must not throw any exception. This will cause Quartz to set the job to
+ * failure
  */
-public abstract class Task implements Job, TaskMBean {
+public abstract class Task implements Job {
     public STATE status = STATE.DONE;
 
     public enum STATE {
-        ERROR, RUNNING, DONE, NOT_APPLICABLE
+        ERROR,
+        RUNNING,
+        DONE,
+        NOT_APPLICABLE
     }
 
     protected final IConfiguration config;
@@ -49,53 +48,31 @@ public abstract class Task implements Job, TaskMBean {
     private final AtomicInteger executions = new AtomicInteger();
 
     protected Task(IConfiguration config) {
-        this(config, ManagementFactory.getPlatformMBeanServer());
-    }
-
-    protected Task(IConfiguration config, MBeanServer mBeanServer) {
         this.config = config;
-        // TODO: don't do mbean registration here
-        String mbeanName = "com.priam.scheduler:type=" + this.getClass().getName();
-        try {
-            mBeanServer.registerMBean(this, new ObjectName(mbeanName));
-            initialize();
-        } catch (Exception e) {
-            throw Throwables.propagate(e);
-        }
     }
 
-
-    /**
-     * This method has to be implemented and cannot thow any exception.
-     */
+    /** This method has to be implemented and cannot throw any exception. */
     public void initialize() throws ExecutionException {
         // nothing to initialize
     }
 
     public abstract void execute() throws Exception;
 
-    /**
-     * Main method to execute a task
-     */
+    /** Main method to execute a task */
     public void execute(JobExecutionContext context) throws JobExecutionException {
         executions.incrementAndGet();
         try {
-            if (status == STATE.RUNNING)
-                return;
+            if (status == STATE.RUNNING) return;
             status = STATE.RUNNING;
             execute();
 
-        } catch (Exception e) {
-            status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of {}", e.getMessage(), e);
-            errors.incrementAndGet();
         } catch (Throwable e) {
             status = STATE.ERROR;
-            logger.error("Couldnt execute the task because of {}", e.getMessage(), e);
+            logger.error("Could not execute the task: {} because of {}", getName(), e.getMessage());
+            e.printStackTrace();
             errors.incrementAndGet();
         }
-        if (status != STATE.ERROR)
-            status = STATE.DONE;
+        if (status != STATE.ERROR) status = STATE.DONE;
     }
 
     public STATE state() {
@@ -111,5 +88,4 @@ public abstract class Task implements Job, TaskMBean {
     }
 
     public abstract String getName();
-
 }

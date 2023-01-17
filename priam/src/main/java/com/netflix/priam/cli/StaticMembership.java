@@ -16,17 +16,15 @@
  */
 package com.netflix.priam.cli;
 
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.IMembership;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Collection;
+import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
-import java.util.Properties;
 
 public class StaticMembership implements IMembership {
     private static final String MEMBERSHIP_PRE = "membership.";
@@ -37,7 +35,7 @@ public class StaticMembership implements IMembership {
 
     private static final Logger logger = LoggerFactory.getLogger(StaticMembership.class);
 
-    private List<String> racMembership;
+    private ImmutableSet<String> racMembership;
     private int racCount;
 
     public StaticMembership() throws IOException {
@@ -57,26 +55,25 @@ public class StaticMembership implements IMembership {
         for (String name : config.stringPropertyNames()) {
             if (name.startsWith(INSTANCES_PRE)) {
                 racCount += 1;
-                if (name == INSTANCES_PRE + racName)
-                    racMembership = Arrays.asList(config.getProperty(name).split(","));
+                if (name.equals(INSTANCES_PRE + racName))
+                    racMembership = ImmutableSet.copyOf(config.getProperty(name).split(","));
             }
         }
     }
 
     @Override
-    public List<String> getRacMembership() {
+    public ImmutableSet<String> getRacMembership() {
         return racMembership;
     }
 
     @Override
-    public List<String> getCrossAccountRacMembership() {
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         return null;
     }
 
     @Override
     public int getRacMembershipSize() {
-        if (racMembership == null)
-            return 0;
+        if (racMembership == null) return 0;
         return racMembership.size();
     }
 
@@ -86,19 +83,16 @@ public class StaticMembership implements IMembership {
     }
 
     @Override
-    public void addACL(Collection<String> listIPs, int from, int to) {
-    }
+    public void addACL(Collection<String> listIPs, int from, int to) {}
 
     @Override
-    public void removeACL(Collection<String> listIPs, int from, int to) {
-    }
+    public void removeACL(Collection<String> listIPs, int from, int to) {}
 
     @Override
-    public List<String> listACL(int from, int to) {
+    public ImmutableSet<String> listACL(int from, int to) {
         return null;
     }
 
     @Override
-    public void expandRacMembership(int count) {
-    }
+    public void expandRacMembership(int count) {}
 }

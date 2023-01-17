@@ -20,9 +20,8 @@ package com.netflix.priam.tuner.dse;
 import com.google.inject.ImplementedBy;
 
 /**
- * This is intended for tuning audit log settings.
- * Audit log settings file change between cassandra version from log4j to yaml.
- * Created by aagrawal on 8/8/17.
+ * This is intended for tuning audit log settings. Audit log settings file change between cassandra
+ * version from log4j to yaml. Created by aagrawal on 8/8/17.
  */
 @ImplementedBy(AuditLogTunerYaml.class)
 interface IAuditLogTuner {

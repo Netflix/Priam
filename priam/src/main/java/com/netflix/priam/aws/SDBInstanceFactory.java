@@ -17,41 +17,40 @@
 package com.netflix.priam.aws;
 
 import com.amazonaws.AmazonServiceException;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
+import java.util.*;
+import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-
 /**
- * SimpleDB based instance factory. Requires 'InstanceIdentity' domain to be
- * created ahead
+ * SimpleDB based instance instanceIdentity. Requires 'InstanceIdentity' domain to be created ahead
  */
 @Singleton
-public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> {
+public class SDBInstanceFactory implements IPriamInstanceFactory {
     private static final Logger logger = LoggerFactory.getLogger(SDBInstanceFactory.class);
 
-    private final IConfiguration config;
     private final SDBInstanceData dao;
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public SDBInstanceFactory(IConfiguration config, SDBInstanceData dao) {
-        this.config = config;
+    public SDBInstanceFactory(SDBInstanceData dao, InstanceInfo instanceInfo) {
         this.dao = dao;
+        this.instanceInfo = instanceInfo;
     }
 
     @Override
-    public List<PriamInstance> getAllIds(String appName) {
-        List<PriamInstance> return_ = new ArrayList<PriamInstance>();
-        for (PriamInstance instance : dao.getAllIds(appName)) {
-            return_.add(instance);
-        }
-        sort(return_);
-        return return_;
+    public ImmutableSet<PriamInstance> getAllIds(String appName) {
+        return ImmutableSet.copyOf(
+                dao.getAllIds(appName)
+                        .stream()
+                        .sorted((Comparator.comparingInt(PriamInstance::getId)))
+                        .collect(Collectors.toList()));
     }
 
     @Override
@@ -60,18 +59,29 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     }
 
     @Override
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
+    public PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token) {
         try {
-            PriamInstance ins = makePriamInstance(app, id, instanceID, hostname, ip, rac, volumes, token);
+            PriamInstance ins =
+                    makePriamInstance(app, id, instanceID, hostname, ip, rac, volumes, token);
             // remove old data node which are dead.
             if (app.endsWith("-dead")) {
                 try {
-                    PriamInstance oldData = dao.getInstance(app, config.getDC(), id);
+                    PriamInstance oldData = dao.getInstance(app, instanceInfo.getRegion(), id);
                     // clean up a very old data...
-                    if (null != oldData && oldData.getUpdatetime() < (System.currentTimeMillis() - (3 * 60 * 1000)))
+                    if (null != oldData
+                            && oldData.getUpdatetime()
+                                    < (System.currentTimeMillis() - (3 * 60 * 1000)))
                         dao.deregisterInstance(oldData);
                 } catch (Exception ex) {
-                    //Do nothing
+                    // Do nothing
                     logger.error(ex.getMessage(), ex);
                 }
             }
@@ -93,36 +103,24 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
     }
 
     @Override
-    public void update(PriamInstance inst) {
+    public void update(PriamInstance orig, PriamInstance inst) {
         try {
-            dao.createInstance(inst);
+            dao.updateInstance(orig, inst);
         } catch (AmazonServiceException e) {
             throw new RuntimeException("Unable to update/create priam instance", e);
         }
     }
 
-    @Override
-    public void sort(List<PriamInstance> return_) {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>() {
-
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2) {
-
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
-        };
-        Collections.sort(return_, comparator);
-    }
-
-    @Override
-    public void attachVolumes(PriamInstance instance, String mountPath, String device) {
-        // TODO Auto-generated method stub
-    }
-
-    private PriamInstance makePriamInstance(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String token) {
-        Map<String, Object> v = (volumes == null) ? new HashMap<String, Object>() : volumes;
+    private PriamInstance makePriamInstance(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String token) {
+        Map<String, Object> v = (volumes == null) ? new HashMap<>() : volumes;
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
         ins.setRac(rac);
@@ -130,7 +128,7 @@ public class SDBInstanceFactory implements IPriamInstanceFactory<PriamInstance> 
         ins.setHostIP(ip);
         ins.setId(id);
         ins.setInstanceId(instanceID);
-        ins.setDC(config.getDC());
+        ins.setDC(instanceInfo.getRegion());
         ins.setToken(token);
         ins.setVolumes(v);
         return ins;

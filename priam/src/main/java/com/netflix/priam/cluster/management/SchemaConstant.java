@@ -17,12 +17,9 @@
 package com.netflix.priam.cluster.management;
 
 import com.google.common.collect.ImmutableSet;
-
 import java.util.Set;
 
-/**
- * Created by aagrawal on 3/6/18.
- */
+/** Created by aagrawal on 3/6/18. */
 class SchemaConstant {
     private static final String SYSTEM_KEYSPACE_NAME = "system";
     private static final String SCHEMA_KEYSPACE_NAME = "system_schema";
@@ -32,9 +29,15 @@ class SchemaConstant {
     private static final String DSE_SYSTEM = "dse_system";
 
     private static final Set<String> SYSTEM_KEYSPACE_NAMES =
-            ImmutableSet.of(SYSTEM_KEYSPACE_NAME, SCHEMA_KEYSPACE_NAME, TRACE_KEYSPACE_NAME, AUTH_KEYSPACE_NAME, DISTRIBUTED_KEYSPACE_NAME, DSE_SYSTEM);
+            ImmutableSet.of(
+                    SYSTEM_KEYSPACE_NAME,
+                    SCHEMA_KEYSPACE_NAME,
+                    TRACE_KEYSPACE_NAME,
+                    AUTH_KEYSPACE_NAME,
+                    DISTRIBUTED_KEYSPACE_NAME,
+                    DSE_SYSTEM);
 
-    public static final boolean isSystemKeyspace(String keyspace){
+    public static final boolean isSystemKeyspace(String keyspace) {
         return SYSTEM_KEYSPACE_NAMES.contains(keyspace.toLowerCase());
     }
 }

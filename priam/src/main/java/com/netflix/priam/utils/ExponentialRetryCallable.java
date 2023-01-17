@@ -16,18 +16,17 @@
  */
 package com.netflix.priam.utils;
 
+import java.util.concurrent.CancellationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CancellationException;
-
 public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T> {
-    public final static long MAX_SLEEP = 240000;
-    public final static long MIN_SLEEP = 200;
+    public static final long MAX_SLEEP = 240000;
+    public static final long MIN_SLEEP = 200;
 
     private static final Logger logger = LoggerFactory.getLogger(ExponentialRetryCallable.class);
-    private long max;
-    private long min;
+    private final long max;
+    private final long min;
 
     public ExponentialRetryCallable() {
         this.max = MAX_SLEEP;
@@ -40,7 +39,7 @@ public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T> {
     }
 
     public T call() throws Exception {
-        long delay = min;// ms
+        long delay = min; // ms
         while (true) {
             try {
                 return retriableCall();
@@ -58,5 +57,4 @@ public abstract class ExponentialRetryCallable<T> extends RetryableCallable<T> {
             }
         }
     }
-
 }

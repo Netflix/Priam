@@ -17,76 +17,60 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
-import com.netflix.priam.identity.IMembership;
+public class FakeMembership implements IMembership {
 
-public class FakeMembership implements IMembership
-{
+    private ImmutableSet<String> instances;
+    private Set<String> acl;
 
-    private List<String> instances;
-
-    public FakeMembership(List<String> priamInstances)
-    {
-        this.instances = priamInstances;
-    }
-    
-    public void setInstances( List<String> priamInstances)
-    {
-        this.instances = priamInstances;
+    public FakeMembership(List<String> priamInstances) {
+        this.instances = ImmutableSet.copyOf(priamInstances);
+        this.acl = new HashSet<>();
     }
 
     @Override
-    public List<String> getRacMembership()
-    {
+    public ImmutableSet<String> getRacMembership() {
         return instances;
     }
-    
-    @Override
-    public List<String> getCrossAccountRacMembership()
-    {
-       return null;	
-    }
-
 
     @Override
-    public int getRacMembershipSize()
-    {
-        return 3;
-    }
-
-    @Override
-    public int getRacCount()
-    {
-        return 3;
-    }
-
-    @Override
-    public void addACL(Collection<String> listIPs, int from, int to)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void removeACL(Collection<String> listIPs, int from, int to)
-    {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public List<String> listACL(int from, int to)
-    {
-        // TODO Auto-generated method stub
+    public ImmutableSet<String> getCrossAccountRacMembership() {
         return null;
     }
 
     @Override
-    public void expandRacMembership(int count)
-    {
+    public int getRacMembershipSize() {
+        return 3;
+    }
+
+    @Override
+    public int getRacCount() {
+        return 3;
+    }
+
+    @Override
+    public void addACL(Collection<String> listIPs, int from, int to) {
+        acl.addAll(listIPs);
+    }
+
+    @Override
+    public void removeACL(Collection<String> listIPs, int from, int to) {
+        acl.removeAll(listIPs);
+    }
+
+    @Override
+    public ImmutableSet<String> listACL(int from, int to) {
+        return ImmutableSet.copyOf(acl);
+    }
+
+    @Override
+    public void expandRacMembership(int count) {
         // TODO Auto-generated method stub
-        
+
     }
 }

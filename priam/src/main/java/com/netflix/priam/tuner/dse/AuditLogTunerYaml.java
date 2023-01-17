@@ -18,24 +18,20 @@
 package com.netflix.priam.tuner.dse;
 
 import com.google.inject.Inject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.Map;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.Yaml;
 
-/**
- * Dse tuner for audit log via YAML. Use this for DSE version 4.x
- * Created by aagrawal on 8/8/17.
- */
+/** Dse tuner for audit log via YAML. Use this for DSE version 4.x Created by aagrawal on 8/8/17. */
 public class AuditLogTunerYaml implements IAuditLogTuner {
 
-    private IDseConfiguration dseConfig;
+    private final IDseConfiguration dseConfig;
     private static final String AUDIT_LOG_DSE_ENTRY = "audit_logging_options";
     private static final Logger logger = LoggerFactory.getLogger(AuditLogTunerYaml.class);
 
@@ -50,12 +46,15 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
         Yaml yaml = new Yaml(options);
         String dseYaml = dseConfig.getDseYamlLocation();
         try {
-            Map<String, Object> map = (Map<String, Object>) yaml.load(new FileInputStream(dseYaml));
+            Map<String, Object> map = yaml.load(new FileInputStream(dseYaml));
 
             if (map.containsKey(AUDIT_LOG_DSE_ENTRY)) {
-                Boolean isEnabled = (Boolean) ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).get("enabled");
+                Boolean isEnabled =
+                        (Boolean)
+                                ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).get("enabled");
 
-                // Enable/disable audit logging (need this in addition to log4j-server.properties settings)
+                // Enable/disable audit logging (need this in addition to log4j-server.properties
+                // settings)
                 if (dseConfig.isAuditLogEnabled()) {
                     if (!isEnabled) {
                         ((Map<String, Object>) map.get(AUDIT_LOG_DSE_ENTRY)).put("enabled", true);
@@ -70,9 +69,12 @@ public class AuditLogTunerYaml implements IAuditLogTuner {
             }
             yaml.dump(map, new FileWriter(dseYaml));
         } catch (FileNotFoundException fileNotFound) {
-            logger.error("FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml);
+            logger.error(
+                    "FileNotFound while trying to read yaml audit log for tuning: {}", dseYaml);
         } catch (IOException e) {
-            logger.error("IOException while trying to write yaml file for audit log tuning: {}", dseYaml);
+            logger.error(
+                    "IOException while trying to write yaml file for audit log tuning: {}",
+                    dseYaml);
         }
     }
 }

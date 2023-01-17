@@ -18,20 +18,20 @@ package com.netflix.priam.backupv2;
 
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
-
 import java.time.Instant;
 import java.util.List;
 
-/**
- * This POJO class encapsulates the information for a meta file.
- */
+/** This POJO class encapsulates the information for a meta file. */
 public class MetaFileInfo {
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     public static final String META_FILE_PREFIX = "meta_v2_";
+
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     public static final String META_FILE_SUFFIX = ".json";
+
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     public static final String META_FILE_INFO = "info";
+
     @GsonJsonSerializer.PriamAnnotation.GsonIgnore
     public static final String META_FILE_DATA = "data";
 
@@ -95,6 +95,8 @@ public class MetaFileInfo {
     }
 
     public static String getMetaFileName(Instant instant) {
-        return MetaFileInfo.META_FILE_PREFIX + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, instant) + MetaFileInfo.META_FILE_SUFFIX;
+        return MetaFileInfo.META_FILE_PREFIX
+                + DateUtil.formatInstant(DateUtil.yyyyMMddHHmm, instant)
+                + MetaFileInfo.META_FILE_SUFFIX;
     }
 }

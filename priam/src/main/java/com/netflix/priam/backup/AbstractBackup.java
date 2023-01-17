@@ -16,181 +16,125 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.common.collect.Lists;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.SystemUtils;
+import java.io.File;
+import java.io.FileFilter;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.List;
-
-/**
- * Abstract Backup class for uploading files to backup location
- */
-public abstract class AbstractBackup extends Task{
+/** Abstract Backup class for uploading files to backup location */
+public abstract class AbstractBackup extends Task {
     private static final Logger logger = LoggerFactory.getLogger(AbstractBackup.class);
-    public static final String INCREMENTAL_BACKUP_FOLDER = "backups";
+    static final String INCREMENTAL_BACKUP_FOLDER = "backups";
     public static final String SNAPSHOT_FOLDER = "snapshots";
 
-    protected final Provider<AbstractBackupPath> pathFactory;
-
-    protected IBackupFileSystem fs;
-
     @Inject
-    public AbstractBackup(IConfiguration config, IFileSystemContext backupFileSystemCtx,
-                          Provider<AbstractBackupPath> pathFactory) {
+    public AbstractBackup(IConfiguration config) {
         super(config);
-        this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileStrategy(config);
     }
 
-    /**
-     * A means to override the type of backup strategy chosen via BackupFileSystemContext
-     */
-    protected void setFileSystem(IBackupFileSystem fs) {
-        this.fs = fs;
-    }
-
-    /**
-     * Upload files in the specified dir. Does not delete the file in case of
-     * error.  The files are uploaded serially.
-     *
-     * @param parent Parent dir
-     * @param type   Type of file (META, SST, SNAP etc)
-     * @return List of files that are successfully uploaded as part of backup
-     * @throws Exception when there is failure in uploading files.
-     */
-    List<AbstractBackupPath> upload(File parent, final BackupFileType type) throws Exception {
-        final List<AbstractBackupPath> bps = Lists.newArrayList();
-        for (final File file : parent.listFiles()) {
-            //== decorate file with metadata
-            final AbstractBackupPath bp = pathFactory.get();
-            bp.parseLocal(file, type);
-
-            try {
-                logger.info("About to upload file {} for backup", file.getCanonicalFile());
-
-                AbstractBackupPath abp = new RetryableCallable<AbstractBackupPath>(3, RetryableCallable.DEFAULT_WAIT_TIME) {
-                    public AbstractBackupPath retriableCall() throws Exception {
-                        upload(bp);
-                        file.delete();
-                        return bp;
-                    }
-                }.call();
-
-                if (abp != null)
-                    bps.add(abp);
-
-                addToRemotePath(abp.getRemotePath());
-            } catch (Exception e) {
-                //Throw exception to the caller. This will allow them to take appropriate decision.
-                logger.error("Failed to upload local file {} within CF {}.", file.getCanonicalFile(), parent.getAbsolutePath(), e);
-                throw e;
-            }
-        }
-        return bps;
-    }
-
-
-    /**
-     * Upload specified file (RandomAccessFile) with retries
-     *
-     * @param bp backup path to be uploaded.
-     */
-    protected void upload(final AbstractBackupPath bp) throws Exception {
-        new RetryableCallable<Void>() {
-            @Override
-            public Void retriableCall() throws Exception {
-                java.io.InputStream is = null;
-                try {
-                    is = bp.localReader();
-                    if (is == null) {
-                        throw new NullPointerException("Unable to get handle on file: " + bp.fileName);
-                    }
-                    fs.upload(bp, is);
-                    bp.setCompressedFileSize(fs.getBytesUploaded());
-                    return null;
-                } catch (Exception e) {
-                    logger.error("Exception uploading local file {},  releasing handle, and will retry.", bp.backupFile.getCanonicalFile());
-                    if (is != null) {
-                        is.close();
-                    }
-                    throw e;
-                }
-
-            }
-        }.call();
-    }
-
-    protected final void initiateBackup(String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
+    protected final void initiateBackup(
+            String monitoringFolder, BackupRestoreUtil backupRestoreUtil) throws Exception {
 
         File dataDir = new File(config.getDataFileLocation());
-        if (!dataDir.exists()) {
-            throw new IllegalArgumentException("The configured 'data file location' does not exist: "
-                    + config.getDataFileLocation());
+        if (!dataDir.exists() || !dataDir.isDirectory()) {
+            throw new IllegalArgumentException(
+                    "The configured 'data file location' does not exist or is not a directory: "
+                            + config.getDataFileLocation());
         }
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
-        for (File keyspaceDir : dataDir.listFiles()) {
-            if (keyspaceDir.isFile())
-                continue;
+        File[] keyspaceDirectories = dataDir.listFiles();
+        if (keyspaceDirectories == null) return;
+
+        for (File keyspaceDir : keyspaceDirectories) {
+            if (keyspaceDir.isFile()) continue;
 
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
+            File[] columnFamilyDirectories = keyspaceDir.listFiles();
+            if (columnFamilyDirectories == null) continue;
 
-            for (File columnFamilyDir : keyspaceDir.listFiles()) {
+            for (File columnFamilyDir : columnFamilyDirectories) {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
-
-                if (!isValidBackupDir(keyspaceDir, backupDir)) {
-                    continue;
+                if (isAReadableDirectory(backupDir)) {
+                    String columnFamilyName = getColumnFamily(backupDir);
+                    if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
+                        // Clean the backup/snapshot directory else files will keep getting
+                        // accumulated.
+                        SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
+                    } else {
+                        processColumnFamily(backupDir);
+                    }
                 }
+            } // end processing all CFs for keyspace
+        } // end processing keyspaces under the C* data dir
+    }
 
-                String columnFamilyName = columnFamilyDir.getName().split("-")[0];
-                if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyDir.getName())) {
-                    //Clean the backup/snapshot directory else files will keep getting accumulated.
-                    SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
-                    continue;
-                }
+    protected String getColumnFamily(File backupDir) {
+        return backupDir.getParentFile().getName().split("-")[0];
+    }
 
-                processColumnFamily(keyspaceDir.getName(), columnFamilyName, backupDir);
-
-            } //end processing all CFs for keyspace
-        } //end processing keyspaces under the C* data dir
-
+    protected String getKeyspace(File backupDir) {
+        return backupDir.getParentFile().getParentFile().getName();
     }
 
     /**
      * Process the columnfamily in a given snapshot/backup directory.
      *
-     * @param keyspace     Name of the keyspace
-     * @param columnFamily Name of the columnfamily
-     * @param backupDir    Location of the backup/snapshot directory in that columnfamily.
+     * @param backupDir Location of the backup/snapshot directory in that columnfamily.
      * @throws Exception throws exception if there is any error in process the directory.
      */
-    protected abstract void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception;
-
+    protected abstract void processColumnFamily(File backupDir) throws Exception;
 
     /**
-     * Filters unwanted keyspaces
+     * Get all the backup directories for Cassandra.
+     *
+     * @param config to get the location of the data folder.
+     * @param monitoringFolder folder where cassandra backup's are configured.
+     * @return Set of the path(s) containing the backup folder for each columnfamily.
+     * @throws Exception incase of IOException.
      */
-    private boolean isValidBackupDir(File keyspaceDir, File backupDir) {
-        if (!backupDir.isDirectory() && !backupDir.exists())
-            return false;
-        String keyspaceName = keyspaceDir.getName();
-        if (BackupRestoreUtil.FILTER_KEYSPACE.contains(keyspaceName)) {
-            logger.debug("{} is not consider a valid keyspace backup directory, will be bypass.", keyspaceName);
-            return false;
-        }
-
-        return true;
+    public static Set<Path> getBackupDirectories(IConfiguration config, String monitoringFolder)
+            throws Exception {
+        HashSet<Path> backupPaths = new HashSet<>();
+        if (config.getDataFileLocation() == null) return backupPaths;
+        Path dataPath = Paths.get(config.getDataFileLocation());
+        if (Files.exists(dataPath) && Files.isDirectory(dataPath))
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(dataPath, path -> Files.isDirectory(path))) {
+                for (Path keyspaceDirPath : directoryStream) {
+                    try (DirectoryStream<Path> keyspaceStream =
+                            Files.newDirectoryStream(
+                                    keyspaceDirPath, path -> Files.isDirectory(path))) {
+                        for (Path columnfamilyDirPath : keyspaceStream) {
+                            Path backupDirPath =
+                                    Paths.get(columnfamilyDirPath.toString(), monitoringFolder);
+                            if (Files.exists(backupDirPath) && Files.isDirectory(backupDirPath)) {
+                                logger.debug("Backup folder: {}", backupDirPath);
+                                backupPaths.add(backupDirPath);
+                            }
+                        }
+                    }
+                }
+            }
+        return backupPaths;
     }
 
-    /**
-     * Adds Remote path to the list of Remote Paths
-     */
-    protected abstract void addToRemotePath(String remotePath);
+    protected static File[] getSecondaryIndexDirectories(File backupDir) {
+        FileFilter filter = (file) -> file.getName().startsWith(".") && isAReadableDirectory(file);
+        return Optional.ofNullable(backupDir.listFiles(filter)).orElse(new File[] {});
+    }
+
+    protected static boolean isAReadableDirectory(File dir) {
+        return dir.exists() && dir.isDirectory() && dir.canRead();
+    }
 }

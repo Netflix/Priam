@@ -16,57 +16,96 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backup.IMessageObserver.BACKUP_MESSAGE_TYPE;
+import com.netflix.priam.backupv2.SnapshotMetaTask;
+import com.netflix.priam.config.IBackupRestoreConfig;
+import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
+import java.io.File;
+import java.nio.file.Path;
+import java.util.Set;
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
 
 /*
  * Incremental/SSTable backup
  */
 @Singleton
-public class IncrementalBackup extends AbstractBackup implements IIncrementalBackup {
+public class IncrementalBackup extends AbstractBackup {
     private static final Logger logger = LoggerFactory.getLogger(IncrementalBackup.class);
     public static final String JOBNAME = "IncrementalBackup";
-    private final List<String> incrementalRemotePaths = new ArrayList<String>();
-    private IncrementalMetaData metaData;
-    private BackupRestoreUtil backupRestoreUtil;
-    private static List<IMessageObserver> observers = new ArrayList<IMessageObserver>();
+    private final BackupRestoreUtil backupRestoreUtil;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupHelper backupHelper;
 
     @Inject
-    public IncrementalBackup(IConfiguration config, Provider<AbstractBackupPath> pathFactory, IFileSystemContext backupFileSystemCtx
-            , IncrementalMetaData metaData) {
-        super(config, backupFileSystemCtx, pathFactory);
-        this.metaData = metaData; //a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully uploaded)
-        backupRestoreUtil = new BackupRestoreUtil(config.getIncrementalKeyspaceFilters(), config.getIncrementalCFFilter());
+    public IncrementalBackup(
+            IConfiguration config,
+            IBackupRestoreConfig backupRestoreConfig,
+            BackupHelper backupHelper) {
+        super(config);
+        // a means to upload audit trail (via meta_cf_yyyymmddhhmm.json) of files successfully
+        // uploaded)
+        this.backupRestoreConfig = backupRestoreConfig;
+        backupRestoreUtil =
+                new BackupRestoreUtil(
+                        config.getIncrementalIncludeCFList(), config.getIncrementalExcludeCFList());
+        this.backupHelper = backupHelper;
     }
 
     @Override
     public void execute() throws Exception {
-        //Clearing remotePath List
-        incrementalRemotePaths.clear();
+        // Clearing remotePath List
         initiateBackup(INCREMENTAL_BACKUP_FOLDER, backupRestoreUtil);
-        if (incrementalRemotePaths.size() > 0) {
-            notifyObservers();
+    }
+
+    /** Run every 10 Sec */
+    public static TaskTimer getTimer(
+            IConfiguration config, IBackupRestoreConfig backupRestoreConfig) {
+        if (IncrementalBackup.isEnabled(config, backupRestoreConfig))
+            return new SimpleTimer(JOBNAME, 10L * 1000);
+        return null;
+    }
+
+    private static void cleanOldBackups(IConfiguration configuration) throws Exception {
+        Set<Path> backupPaths =
+                AbstractBackup.getBackupDirectories(configuration, INCREMENTAL_BACKUP_FOLDER);
+        for (Path backupDirPath : backupPaths) {
+            FileUtils.cleanDirectory(backupDirPath.toFile());
         }
     }
 
+    public static boolean isEnabled(
+            IConfiguration configuration, IBackupRestoreConfig backupRestoreConfig) {
+        boolean enabled = false;
+        try {
+            // Once backup 1.0 is gone, we should not check for enableV2Backups.
+            enabled =
+                    (configuration.isIncrementalBackupEnabled()
+                            && (SnapshotBackup.isBackupEnabled(configuration)
+                                    || (backupRestoreConfig.enableV2Backups()
+                                            && SnapshotMetaTask.isBackupEnabled(
+                                                    backupRestoreConfig))));
+            logger.info("Incremental backups are enabled: {}", enabled);
 
-    /**
-     * Run every 10 Sec
-     */
-    public static TaskTimer getTimer() {
-        return new SimpleTimer(JOBNAME, 10L * 1000);
+            if (!enabled) {
+                // Clean up the incremental backup folder.
+                cleanOldBackups(configuration);
+            }
+        } catch (Exception e) {
+            logger.error(
+                    "Error while trying to find if incremental backup is enabled: "
+                            + e.getMessage());
+        }
+        return enabled;
     }
 
     @Override
@@ -74,52 +113,34 @@ public class IncrementalBackup extends AbstractBackup implements IIncrementalBac
         return JOBNAME;
     }
 
-    public static void addObserver(IMessageObserver observer) {
-        observers.add(observer);
-    }
+    @Override
+    protected void processColumnFamily(File backupDir) throws Exception {
+        BackupFileType fileType =
+                backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
 
-    public static void removeObserver(IMessageObserver observer) {
-        observers.remove(observer);
-    }
+        // upload SSTables and components
+        ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
+                backupHelper.uploadAndDeleteAllFiles(
+                        backupDir, fileType, config.enableAsyncIncremental());
+        Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
 
-    private void notifyObservers() {
-        for (IMessageObserver observer : observers) {
-            if (observer != null) {
-                logger.debug("Updating incremental observers now ...");
-                observer.update(BACKUP_MESSAGE_TYPE.INCREMENTAL, incrementalRemotePaths);
-            } else
-                logger.info("Observer is Null, hence can not notify ...");
+        // Next, upload secondary indexes
+        fileType = BackupFileType.SECONDARY_INDEX_V2;
+        for (File directory : getSecondaryIndexDirectories(backupDir)) {
+            futures =
+                    backupHelper.uploadAndDeleteAllFiles(
+                            directory, fileType, config.enableAsyncIncremental());
+            if (futures.stream().allMatch(ListenableFuture::isDone)) {
+                deleteIfEmpty(directory);
+            } else {
+                Futures.whenAllComplete(futures)
+                        .call(() -> deleteIfEmpty(directory), MoreExecutors.directExecutor());
+            }
         }
     }
 
-    @Override
-    protected void processColumnFamily(String keyspace, String columnFamily, File backupDir) throws Exception {
-        List<AbstractBackupPath> uploadedFiles = upload(backupDir, BackupFileType.SST);
-
-        if (!uploadedFiles.isEmpty()) {
-            String incrementalUploadTime = AbstractBackupPath.formatDate(uploadedFiles.get(0).getTime()); //format of yyyymmddhhmm (e.g. 201505060901)
-            String metaFileName = "meta_" + backupDir.getParent() + "_" + incrementalUploadTime;
-            logger.info("Uploading meta file for incremental backup: {}", metaFileName);
-            this.metaData.setMetaFileName(metaFileName);
-            this.metaData.set(uploadedFiles, incrementalUploadTime);
-            logger.info("Uploaded meta file for incremental backup: {}", metaFileName);
-        }
-
+    private Void deleteIfEmpty(File dir) {
+        if (FileUtils.sizeOfDirectory(dir) == 0) FileUtils.deleteQuietly(dir);
+        return null;
     }
-
-    @Override
-    protected void addToRemotePath(String remotePath) {
-        incrementalRemotePaths.add(remotePath);
-    }
-
-    @Override
-    public long getNumPendingFiles() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public String getJobName() {
-        return JOBNAME;
-    }
-
 }

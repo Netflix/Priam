@@ -1,8 +1,22 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package com.netflix.priam.backup
 
 import com.netflix.priam.config.FakeConfiguration
-import com.netflix.priam.scheduler.SchedulerType
-import com.netflix.priam.scheduler.UnsupportedTypeException
 import spock.lang.Specification
 import spock.lang.Unroll
 
@@ -11,26 +25,22 @@ import spock.lang.Unroll
  */
 @Unroll
 class TestBackupScheduler extends Specification {
-    def "IsBackupEnabled for SchedulerType #schedulerType with hour #configHour and CRON #configCRON is #result"() {
+    def "IsBackupEnabled CRON #configCRON is #result"() {
         expect:
-        SnapshotBackup.isBackupEnabled(new BackupConfiguration(schedulerType, configCRON, configHour)) == result
+        SnapshotBackup.isBackupEnabled(new BackupConfiguration(configCRON)) == result
 
         where:
-        schedulerType | configCRON        | configHour  || result
-        "hour"        | null              | -1          || false
-        "hour"        | "0 0 9 1/1 * ? *" | -1          || false
-        "hour"        | null              | 1           || true
-        "cron"        | "-1"              | 1           || false
-        "cron"        | "-1"              | -1          || false
-        "cron"        | "0 0 9 1/1 * ? *" | -1          || true
+        configCRON        || result
+        "-1"              || false
+        "0 0 9 1/1 * ? *" || true
     }
 
     def "Exception for illegal value of Snapshot CRON expression , #configCRON"() {
         when:
-        SnapshotBackup.isBackupEnabled(new BackupConfiguration("cron", configCRON, 1))
+        SnapshotBackup.isBackupEnabled(new BackupConfiguration(configCRON))
 
         then:
-        def error = thrown(expectedException)
+        thrown(expectedException)
 
         where:
         configCRON || expectedException
@@ -38,39 +48,25 @@ class TestBackupScheduler extends Specification {
         "0 9 1/1 * ? *"|| Exception
     }
 
-    def "Validate CRON for backup for SchedulerType #schedulerType with hour #configHour and CRON #configCRON is #result"() {
+    def "Validate CRON for backup CRON #configCRON is #result"() {
         expect:
-        SnapshotBackup.getTimer(new BackupConfiguration(schedulerType, configCRON, configHour)).cronExpression == result
+        SnapshotBackup.getTimer(new BackupConfiguration(configCRON)).cronExpression == result
 
         where:
-        schedulerType | configCRON        | configHour  || result
-        "hour"        | null              | 1           ||  "0 1 1 * * ?"
-        "cron"        | "0 0 9 1/1 * ? *" | -1          ||  "0 0 9 1/1 * ? *"
+        configCRON        || result
+        "0 0 9 1/1 * ? *" ||  "0 0 9 1/1 * ? *"
     }
 
     private class BackupConfiguration extends FakeConfiguration {
-        private String backupSchedulerType, backupCronExpression
-        private int backupHour
+        private String backupCronExpression
 
-        BackupConfiguration(String backupSchedulerType, String backupCronExpression, int backupHour) {
+        BackupConfiguration(String backupCronExpression) {
             this.backupCronExpression = backupCronExpression
-            this.backupSchedulerType = backupSchedulerType
-            this.backupHour = backupHour
-        }
-
-        @Override
-        SchedulerType getBackupSchedulerType() throws UnsupportedTypeException {
-            return SchedulerType.lookup(backupSchedulerType)
         }
 
         @Override
         String getBackupCronExpression() {
             return backupCronExpression
-        }
-
-        @Override
-        int getBackupHour() {
-            return backupHour
         }
     }
 

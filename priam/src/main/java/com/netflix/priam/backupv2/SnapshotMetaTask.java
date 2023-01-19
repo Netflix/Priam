@@ -18,6 +18,10 @@ package com.netflix.priam.backupv2;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableSetMultimap;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -278,7 +282,9 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
-                backupHelper.uploadAndDeleteAllFiles(snapshotDirectory, type, target, true);
+                backupHelper
+                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, true)
+                        .forEach(future -> addCallback(future, snapshotDirectory));
             }
         }
     }
@@ -400,5 +406,19 @@ public class SnapshotMetaTask extends AbstractBackup {
     @VisibleForTesting
     void setSnapshotName(String snapshotName) {
         this.snapshotName = snapshotName;
+    }
+
+    private static void addCallback(ListenableFuture<AbstractBackupPath> future, File snapshotDir) {
+        FutureCallback<AbstractBackupPath> callback =
+                new FutureCallback<AbstractBackupPath>() {
+                    @Override
+                    public void onSuccess(AbstractBackupPath result) {}
+
+                    @Override
+                    public void onFailure(Throwable t) {
+                        logger.error("Error uploading contents of snapshotDir {}", snapshotDir, t);
+                    }
+                };
+        Futures.addCallback(future, callback, MoreExecutors.directExecutor());
     }
 }

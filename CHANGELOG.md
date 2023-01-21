@@ -1,4 +1,9 @@
 # Changelog
+## 2023/1/21 3.11.95
+Log backup failures rather than ignoring them. (#1025) 
+Use synchronized list for thread-safety (#1018) 
+Remove redundant interfaces and swap log and notification lines on backup failure. (#1019) 
+
 ## 2022/11/15 3.11.94
 (#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
 (#1012) Ensure SI files get into meta file properly.

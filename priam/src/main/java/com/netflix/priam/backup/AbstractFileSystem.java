@@ -226,7 +226,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                         localPath,
                         remotePath,
                         e.getMessage(),
-                        e.getStackTrace());
+                        e);
                 backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 throw new BackupRestoreException(e.getMessage());
             } finally {

@@ -17,59 +17,48 @@
 
 package com.netflix.priam.backup.identity;
 
-import java.util.List;
+import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
+import java.util.List;
+import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
-public class DoubleRingTest extends InstanceTestUtils
-{
+public class DoubleRingTest extends InstanceTestUtils {
 
     @Test
-    public void testDouble() throws Exception
-    {
+    public void testDouble() throws Exception {
         createInstances();
         int originalSize = factory.getAllIds(config.getAppName()).size();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
-        List<PriamInstance> doubled = factory.getAllIds(config.getAppName());
-        factory.sort(doubled);
-
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
+        ImmutableSet<PriamInstance> doubled = factory.getAllIds(config.getAppName());
         assertEquals(originalSize * 2, doubled.size());
-        validate(doubled);
+        validate(doubled.asList());
     }
 
-    private void validate(List<PriamInstance> doubled)
-    {
+    private void validate(List<PriamInstance> doubled) {
         List<String> validator = Lists.newArrayList();
-        for (int i = 0; i < doubled.size(); i++)
-        {
-            validator.add(tokenManager.createToken(i, doubled.size(), config.getDC()));
-            
+        for (int i = 0; i < doubled.size(); i++) {
+            validator.add(tokenManager.createToken(i, doubled.size(), instanceInfo.getRegion()));
         }
-        
-        for (int i = 0; i < doubled.size(); i++)
-        {
+
+        for (int i = 0; i < doubled.size(); i++) {
             PriamInstance ins = doubled.get(i);
             assertEquals(validator.get(i), ins.getToken());
-            int id = ins.getId() - tokenManager.regionOffset(config.getDC());
+            int id = ins.getId() - tokenManager.regionOffset(instanceInfo.getRegion());
             System.out.println(ins);
-            if (0 != id % 2)
-                assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
+            if (0 != id % 2) assertEquals(ins.getInstanceId(), InstanceIdentity.DUMMY_INSTANCE_ID);
         }
     }
 
     @Test
-    public void testBR() throws Exception
-    {
+    public void testBR() throws Exception {
         createInstances();
         int intialSize = factory.getAllIds(config.getAppName()).size();
-        DoubleRing ring = new DoubleRing(config, factory, tokenManager);
+        DoubleRing ring = new DoubleRing(config, factory, tokenManager, instanceInfo);
         ring.backup();
         ring.doubleSlots();
         assertEquals(intialSize * 2, factory.getAllIds(config.getAppName()).size());

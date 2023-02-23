@@ -17,16 +17,20 @@
 package com.netflix.priam.scheduler;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
-
 import java.util.concurrent.*;
 
 public class NamedThreadPoolExecutor extends ThreadPoolExecutor {
     public NamedThreadPoolExecutor(int poolSize, String poolName) {
-        this(poolSize, poolName, new LinkedBlockingQueue<Runnable>());
+        this(poolSize, poolName, new LinkedBlockingQueue<>());
     }
 
     public NamedThreadPoolExecutor(int poolSize, String poolName, BlockingQueue<Runnable> queue) {
-        super(poolSize, poolSize, 1000, TimeUnit.MILLISECONDS, queue,
+        super(
+                poolSize,
+                poolSize,
+                1000,
+                TimeUnit.MILLISECONDS,
+                queue,
                 new ThreadFactoryBuilder().setDaemon(true).setNameFormat(poolName + "-%d").build(),
                 new LocalRejectedExecutionHandler(queue));
     }
@@ -44,10 +48,9 @@ public class NamedThreadPoolExecutor extends ThreadPoolExecutor {
                     throw new RejectedExecutionException("ThreadPoolExecutor has shut down");
 
                 try {
-                    if (queue.offer(task, 1000, TimeUnit.MILLISECONDS))
-                        break;
+                    if (queue.offer(task, 1000, TimeUnit.MILLISECONDS)) break;
                 } catch (InterruptedException e) {
-                    //NOP
+                    // NOP
                 }
             }
         }

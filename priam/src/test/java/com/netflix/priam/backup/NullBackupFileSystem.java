@@ -17,72 +17,64 @@
 
 package com.netflix.priam.backup;
 
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.Date;
+import com.google.inject.Inject;
+import com.google.inject.Provider;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupNotificationMgr;
+import java.nio.file.Path;
+import java.time.Instant;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
+public class NullBackupFileSystem extends AbstractFileSystem {
 
-public class NullBackupFileSystem implements IBackupFileSystem
-{
+    @Inject
+    public NullBackupFileSystem(
+            IConfiguration configuration,
+            BackupMetrics backupMetrics,
+            BackupNotificationMgr backupNotificationMgr,
+            Provider<AbstractBackupPath> pathProvider) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+    }
 
-    @Override
-    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till)
-    {
-        return null;
+    public void shutdown() {
+        // NOP
     }
 
     @Override
-    public int getActivecount()
-    {
-        return 0;
-    }
-
-    public void shutdown()
-    {
-        //NOP
-    }
-
-    @Override
-    public long getBytesUploaded() {
+    public long getFileSize(String remotePath) throws BackupRestoreException {
         return 0;
     }
 
     @Override
-    public long getAWSSlowDownExceptionCounter() {
-        return 0;
+    public void deleteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        // Do nothing.
     }
 
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
-    {
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
+        return Collections.emptyIterator();
     }
 
     @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
-    {
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date)
-    {
-        return null;
-    }
-
-    @Override
-    public void cleanup()
-    {
+    public void cleanup() {
         // TODO Auto-generated method stub
-        
     }
 
-	@Override
-	public void download(AbstractBackupPath path, OutputStream os,
-			String filePath) throws BackupRestoreException {
-		// TODO Auto-generated method stub
-		
-	}
+    @Override
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
+            throws BackupRestoreException {}
+
+    @Override
+    protected boolean doesRemoteFileExist(Path remotePath) {
+        return false;
+    }
+
+    @Override
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
+        return 0;
+    }
 }

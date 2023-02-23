@@ -17,89 +17,88 @@
 
 package com.netflix.priam.tuner;
 
-import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import javax.inject.Singleton;
 
 /**
- * List of Garbage collection parameters for CMS/G1GC. This list is used to automatically enable/disable configurations, if found in jvm.options.
- * Created by aagrawal on 8/23/17.
+ * List of Garbage collection parameters for CMS/G1GC. This list is used to automatically
+ * enable/disable configurations, if found in jvm.options. Created by aagrawal on 8/23/17.
  */
 @Singleton
 public class GCTuner {
-//    private Set<String> commonOptions = new HashSet<>(Arrays.asList(
-//            "-XX:ParallelGCThreads",
-//            "-XX:ConcGCThreads",
-//            "-XX:+ParallelRefProcEnabled",
-//            "-XX:+AlwaysPreTouch",
-//            "-XX:+UseTLAB",
-//            "-XX:+ResizeTLAB",
-//            "-XX:-UseBiasedLocking"
-//    ));
+    //    private Set<String> commonOptions = new HashSet<>(Arrays.asList(
+    //            "-XX:ParallelGCThreads",
+    //            "-XX:ConcGCThreads",
+    //            "-XX:+ParallelRefProcEnabled",
+    //            "-XX:+AlwaysPreTouch",
+    //            "-XX:+UseTLAB",
+    //            "-XX:+ResizeTLAB",
+    //            "-XX:-UseBiasedLocking"
+    //    ));
 
-    private static final Set<String> cmsOptions = new HashSet<>(Arrays.asList(
-            "-XX:+UseConcMarkSweepGC",
-            "-XX:+UseParNewGC",
-            "-XX:+UseParallelGC",
-            "-XX:+CMSConcurrentMTEnabled",
-            "-XX:CMSInitiatingOccupancyFraction",
-            "-XX:+UseCMSInitiatingOccupancyOnly",
-            "-XX:+CMSClassUnloadingEnabled",
-            "-XX:+CMSIncrementalMode",
-            "-XX:+CMSPermGenSweepingEnabled",
-            "-XX:+ExplicitGCInvokesConcurrent",
-            "-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses",
-            "-XX:+DisableExplicitGC",
-            "-XX:+CMSParallelRemarkEnabled",
-            "-XX:SurvivorRatio",
-            "-XX:MaxTenuringThreshold",
-            "-XX:CMSWaitDuration",
-            "-XX:+CMSParallelInitialMarkEnabled",
-            "-XX:+CMSEdenChunksRecordAlways"
-    ));
+    private static final Set<String> cmsOptions =
+            new HashSet<>(
+                    Arrays.asList(
+                            "-XX:+UseConcMarkSweepGC",
+                            "-XX:+UseParNewGC",
+                            "-XX:+UseParallelGC",
+                            "-XX:+CMSConcurrentMTEnabled",
+                            "-XX:CMSInitiatingOccupancyFraction",
+                            "-XX:+UseCMSInitiatingOccupancyOnly",
+                            "-XX:+CMSClassUnloadingEnabled",
+                            "-XX:+CMSIncrementalMode",
+                            "-XX:+CMSPermGenSweepingEnabled",
+                            "-XX:+ExplicitGCInvokesConcurrent",
+                            "-XX:+ExplicitGCInvokesConcurrentAndUnloadsClasses",
+                            "-XX:+DisableExplicitGC",
+                            "-XX:+CMSParallelRemarkEnabled",
+                            "-XX:SurvivorRatio",
+                            "-XX:MaxTenuringThreshold",
+                            "-XX:CMSWaitDuration",
+                            "-XX:+CMSParallelInitialMarkEnabled",
+                            "-XX:+CMSEdenChunksRecordAlways"));
 
-    private static final Set<String> g1gcOptions = new HashSet<>(Arrays.asList(
-            "-XX:+UseG1GC",
-            "-XX:G1HeapRegionSize",
-            "-XX:MaxGCPauseMillis",
-            "-XX:G1NewSizePercent",
-            "-XX:G1MaxNewSizePercent",
-            "-XX:-ResizePLAB",
-            "-XX:InitiatingHeapOccupancyPercent",
-            "-XX:G1MixedGCLiveThresholdPercent",
-            "-XX:G1HeapWastePercent",
-            "-XX:G1MixedGCCountTarget",
-            "-XX:G1OldCSetRegionThresholdPercent",
-            "-XX:G1ReservePercent",
-            "-XX:SoftRefLRUPolicyMSPerMB",
-            "-XX:G1ConcRefinementThreads",
-            "-XX:MaxGCPauseMillis",
-            "-XX:+UnlockExperimentalVMOptions",
-            "-XX:NewRatio",
-            "-XX:G1RSetUpdatingPauseTimePercent"
-    ));
+    private static final Set<String> g1gcOptions =
+            new HashSet<>(
+                    Arrays.asList(
+                            "-XX:+UseG1GC",
+                            "-XX:G1HeapRegionSize",
+                            "-XX:MaxGCPauseMillis",
+                            "-XX:G1NewSizePercent",
+                            "-XX:G1MaxNewSizePercent",
+                            "-XX:-ResizePLAB",
+                            "-XX:InitiatingHeapOccupancyPercent",
+                            "-XX:G1MixedGCLiveThresholdPercent",
+                            "-XX:G1HeapWastePercent",
+                            "-XX:G1MixedGCCountTarget",
+                            "-XX:G1OldCSetRegionThresholdPercent",
+                            "-XX:G1ReservePercent",
+                            "-XX:SoftRefLRUPolicyMSPerMB",
+                            "-XX:G1ConcRefinementThreads",
+                            "-XX:MaxGCPauseMillis",
+                            "-XX:+UnlockExperimentalVMOptions",
+                            "-XX:NewRatio",
+                            "-XX:G1RSetUpdatingPauseTimePercent"));
 
-    final static GCType getGCType(String option) {
-        if (cmsOptions.contains(option))
-            return GCType.CMS;
+    static final GCType getGCType(String option) {
+        if (cmsOptions.contains(option)) return GCType.CMS;
 
-        if (g1gcOptions.contains(option))
-            return GCType.G1GC;
+        if (g1gcOptions.contains(option)) return GCType.G1GC;
 
         return null;
     }
 
-    final static GCType getGCType(JVMOption jvmOption)
-    {
+    static final GCType getGCType(JVMOption jvmOption) {
         return getGCType(jvmOption.getJvmOption());
     }
 
-    public Set<String> getCmsOptions(){
+    public Set<String> getCmsOptions() {
         return cmsOptions;
     }
 
-    public Set<String> getG1gcOptions(){
+    public Set<String> getG1gcOptions() {
         return g1gcOptions;
     }
 }

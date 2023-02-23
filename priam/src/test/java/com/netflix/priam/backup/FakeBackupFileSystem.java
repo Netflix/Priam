@@ -20,169 +20,157 @@ package com.netflix.priam.backup;
 import com.google.inject.Inject;
 import com.google.inject.Provider;
 import com.google.inject.Singleton;
-import com.netflix.priam.aws.S3BackupPath;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import org.apache.commons.io.IOUtils;
-import org.json.simple.JSONArray;
-
+import com.netflix.priam.aws.RemoteBackupPath;
+import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.merics.BackupMetrics;
+import com.netflix.priam.notification.BackupNotificationMgr;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.nio.file.Path;
+import java.time.Instant;
 import java.util.*;
+import org.json.simple.JSONArray;
 
 @Singleton
-public class FakeBackupFileSystem implements IBackupFileSystem
-{
-    private List<AbstractBackupPath> flist;
-    public Set<String> downloadedFiles;
-    public Set<String> uploadedFiles;
-    public String baseDir, region, clusterName;
+public class FakeBackupFileSystem extends AbstractFileSystem {
+    private List<AbstractBackupPath> flist = new ArrayList<>();
+    public Set<String> downloadedFiles = new HashSet<>();
+    public Set<String> uploadedFiles = new HashSet<>();
+    private String baseDir;
+    private String region;
+    private String clusterName;
 
     @Inject
-    Provider<S3BackupPath> pathProvider;
+    public FakeBackupFileSystem(
+            IConfiguration configuration,
+            BackupMetrics backupMetrics,
+            BackupNotificationMgr backupNotificationMgr,
+            Provider<AbstractBackupPath> pathProvider) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+    }
 
-    public void setupTest(List<String> files)
-    {
+    public void setupTest(List<String> files) {
         clearTest();
-        flist = new ArrayList<AbstractBackupPath>();
-        for (String file : files)
-        {
-            S3BackupPath path = pathProvider.get();
+        for (String file : files) {
+            AbstractBackupPath path = pathProvider.get();
             path.parseRemote(file);
             flist.add(path);
         }
-        downloadedFiles = new HashSet<String>();
-        uploadedFiles = new HashSet<String>();
     }
 
-    public void setupTest()
-    {
-        clearTest();
-        flist = new ArrayList<AbstractBackupPath>();
-        downloadedFiles = new HashSet<String>();
-        uploadedFiles = new HashSet<String>();
+    private void clearTest() {
+        flist.clear();
+        downloadedFiles.clear();
+        uploadedFiles.clear();
     }
 
-    public void clearTest()
-    {
-        if (flist != null)
-            flist.clear();
-        if (downloadedFiles != null)
-            downloadedFiles.clear();
-    }
-
-    public void addFile(String file)
-    {
-        S3BackupPath path = pathProvider.get();
+    public void addFile(String file) {
+        AbstractBackupPath path = pathProvider.get();
         path.parseRemote(file);
         flist.add(path);
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public void download(AbstractBackupPath path, OutputStream os) throws BackupRestoreException
-    {
-        try
-        {
-            if (path.type == BackupFileType.META)
-            {
-                // List all files and generate the file
-                FileWriter fr = new FileWriter(path.newRestoreFile());
-                try
-                {
-                    JSONArray jsonObj = new JSONArray();
-                    for (AbstractBackupPath filePath : flist)
-                    {
-                        if (filePath.type == BackupFileType.SNAP)
-                            jsonObj.add(filePath.getRemotePath());
-                    }
-                    fr.write(jsonObj.toJSONString());
-                }
-                finally
-                {
-                    IOUtils.closeQuietly(fr);
-                }
-            }
-            downloadedFiles.add(path.getRemotePath());
-            System.out.println("Downloading " + path.getRemotePath());
-        }
-        catch (IOException io)
-        {
-            throw new BackupRestoreException(io.getMessage(), io);
-        }
-    }
+    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till) {
+        String[] paths = bucket.split(String.valueOf(RemoteBackupPath.PATH_SEP));
 
-    @Override
-    public void upload(AbstractBackupPath path, InputStream in) throws BackupRestoreException
-    {
-        uploadedFiles.add(path.backupFile.getAbsolutePath());
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> list(String bucket, Date start, Date till)
-    {
-        String[] paths = bucket.split(String.valueOf(S3BackupPath.PATH_SEP));
-        
-        if( paths.length > 1){
+        if (paths.length > 1) {
             baseDir = paths[1];
             region = paths[2];
             clusterName = paths[3];
         }
-        
-        List<AbstractBackupPath> tmpList = new ArrayList<AbstractBackupPath>();
-        for (AbstractBackupPath path : flist)
-        {
 
-            if ((path.time.after(start) && path.time.before(till)) || path.time.equals(start)
-                && path.baseDir.equals(baseDir) && path.clusterName.equals(clusterName) && path.region.equals(region))
-            {
-                 tmpList.add(path);
+        List<AbstractBackupPath> tmpList = new ArrayList<>();
+        for (AbstractBackupPath path : flist) {
+
+            if ((path.time.after(start) && path.time.before(till))
+                    || path.time.equals(start)
+                            && path.baseDir.equals(baseDir)
+                            && path.clusterName.equals(clusterName)
+                            && path.region.equals(region)) {
+                tmpList.add(path);
             }
         }
         return tmpList.iterator();
     }
 
     @Override
-    public int getActivecount()
-    {
-        // TODO Auto-generated method stub
+    public Iterator<String> listFileSystem(String prefix, String delimiter, String marker) {
+        ArrayList<String> items = new ArrayList<>();
+        flist.stream()
+                .forEach(
+                        abstractBackupPath -> {
+                            if (abstractBackupPath.getRemotePath().startsWith(prefix))
+                                items.add(abstractBackupPath.getRemotePath());
+                        });
+        return items.iterator();
+    }
+
+    public void shutdown() {
+        // nop
+    }
+
+    @Override
+    public long getFileSize(String remotePath) throws BackupRestoreException {
         return 0;
     }
 
-    public void shutdown()
-    {
-        //nop
+    @Override
+    public boolean doesRemoteFileExist(Path remotePath) {
+        for (AbstractBackupPath abstractBackupPath : flist) {
+            if (abstractBackupPath.getRemotePath().equalsIgnoreCase(remotePath.toString()))
+                return true;
+        }
+        return false;
     }
 
     @Override
-    public long getBytesUploaded() {
-        return 0;
+    public void deleteFiles(List<Path> remotePaths) throws BackupRestoreException {
+        remotePaths
+                .stream()
+                .forEach(
+                        remotePath -> {
+                            AbstractBackupPath path = pathProvider.get();
+                            path.parseRemote(remotePath.toString());
+                            flist.remove(path);
+                        });
     }
 
     @Override
-    public long getAWSSlowDownExceptionCounter() {
-        return 0;
+    public void cleanup() {
+        clearTest();
     }
 
     @Override
-    public Iterator<AbstractBackupPath> listPrefixes(Date date)
-    {
-        // TODO Auto-generated method stub
-        return null;
+    protected void downloadFileImpl(AbstractBackupPath path, String suffix)
+            throws BackupRestoreException {
+        File localFile = new File(path.newRestoreFile().getAbsolutePath() + suffix);
+        if (path.getType() == AbstractBackupPath.BackupFileType.META) {
+            // List all files and generate the file
+            try (FileWriter fr = new FileWriter(localFile)) {
+                JSONArray jsonObj = new JSONArray();
+                for (AbstractBackupPath filePath : flist) {
+                    if (filePath.type == AbstractBackupPath.BackupFileType.SNAP
+                            && filePath.time.equals(path.time)) {
+                        jsonObj.add(filePath.getRemotePath());
+                    }
+                }
+                fr.write(jsonObj.toJSONString());
+                fr.flush();
+            } catch (IOException io) {
+                throw new BackupRestoreException(io.getMessage(), io);
+            }
+        }
+        downloadedFiles.add(path.getRemotePath());
     }
 
     @Override
-    public void cleanup()
-    {
-        // TODO Auto-generated method stub
-        
+    protected long uploadFileImpl(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
+        uploadedFiles.add(path.getBackupFile().getAbsolutePath());
+        addFile(path.getRemotePath());
+        return path.getBackupFile().length();
     }
-
-	@Override
-	public void download(AbstractBackupPath path, OutputStream os,
-			String diskPath) throws BackupRestoreException {
-        download(path, os);
-	}
-
 }

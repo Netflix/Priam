@@ -16,25 +16,23 @@
  */
 package com.netflix.priam.configSource;
 
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.Properties;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static com.google.common.base.Preconditions.checkNotNull;
-
-/**
- * Loads the 'Priam.properties' file as a source.
- */
+/** Loads the 'Priam.properties' file as a source. */
 public class PropertiesConfigSource extends AbstractConfigSource {
-    private static final Logger logger = LoggerFactory.getLogger(PropertiesConfigSource.class.getName());
+    private static final Logger logger =
+            LoggerFactory.getLogger(PropertiesConfigSource.class.getName());
 
     private static final String DEFAULT_PRIAM_PROPERTIES = "Priam.properties";
 
@@ -57,8 +55,8 @@ public class PropertiesConfigSource extends AbstractConfigSource {
     }
 
     @Override
-    public void intialize(final String asgName, final String region) {
-        super.intialize(asgName, region);
+    public void initialize(final String asgName, final String region) {
+        super.initialize(asgName, region);
         Properties properties = new Properties();
         URL url = PropertiesConfigSource.class.getClassLoader().getResource(priamFile);
         if (url != null) {
@@ -84,7 +82,6 @@ public class PropertiesConfigSource extends AbstractConfigSource {
         data.put(key, value);
     }
 
-
     @Override
     public int size() {
         return data.size();
@@ -96,7 +93,7 @@ public class PropertiesConfigSource extends AbstractConfigSource {
     }
 
     /**
-     * Clones all the values from the properties.  If the value is null, it will be ignored.
+     * Clones all the values from the properties. If the value is null, it will be ignored.
      *
      * @param properties to clone
      */

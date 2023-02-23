@@ -16,24 +16,21 @@
  */
 package com.netflix.priam.configSource;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
-import org.apache.commons.lang3.StringUtils;
-
-import java.util.List;
-
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * Base implementations for most methods on {@link IConfigSource}.
- */
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
+import java.util.List;
+import org.apache.commons.lang3.StringUtils;
+
+/** Base implementations for most methods on {@link IConfigSource}. */
 public abstract class AbstractConfigSource implements IConfigSource {
 
     private String asgName;
     private String region;
 
     @Override
-    public void intialize(final String asgName, final String region) {
+    public void initialize(final String asgName, final String region) {
         this.asgName = checkNotNull(asgName, "ASG name is not defined");
         this.region = checkNotNull(region, "Region is not defined");
     }
@@ -174,5 +171,4 @@ public abstract class AbstractConfigSource implements IConfigSource {
         }
         return list;
     }
-
 }

@@ -16,25 +16,26 @@
  */
 package com.netflix.priam.scheduler;
 
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
 /**
- * {@link ThreadPoolExecutor} that will block in the {@code submit()} method
- * until the task can be successfully added to the queue.
+ * {@link ThreadPoolExecutor} that will block in the {@code submit()} method until the task can be
+ * successfully added to the queue.
  */
 public class BlockingSubmitThreadPoolExecutor extends ThreadPoolExecutor {
     private static final long DEFAULT_SLEEP = 100;
     private static final long DEFAULT_KEEP_ALIVE = 100;
-    private static final Logger logger = LoggerFactory.getLogger(BlockingSubmitThreadPoolExecutor.class);
-    private BlockingQueue<Runnable> queue;
-    private long giveupTime;
-    private AtomicInteger active;
+    private static final Logger logger =
+            LoggerFactory.getLogger(BlockingSubmitThreadPoolExecutor.class);
+    private final BlockingQueue<Runnable> queue;
+    private final long giveupTime;
+    private final AtomicInteger active;
 
-    public BlockingSubmitThreadPoolExecutor(int maximumPoolSize, BlockingQueue<Runnable> workQueue, long timeoutAdding) {
+    public BlockingSubmitThreadPoolExecutor(
+            int maximumPoolSize, BlockingQueue<Runnable> workQueue, long timeoutAdding) {
         super(maximumPoolSize, maximumPoolSize, DEFAULT_KEEP_ALIVE, TimeUnit.SECONDS, workQueue);
         this.queue = workQueue;
         this.giveupTime = timeoutAdding;
@@ -42,9 +43,8 @@ public class BlockingSubmitThreadPoolExecutor extends ThreadPoolExecutor {
     }
 
     /**
-     * This is a thread safe way to avoid rejection exception... this is
-     * implemented because we might want to hold the incoming requests till
-     * there is a free thread.
+     * This is a thread safe way to avoid rejection exception... this is implemented because we
+     * might want to hold the incoming requests till there is a free thread.
      */
     @Override
     public <T> Future<T> submit(Callable<T> task) {
@@ -73,9 +73,7 @@ public class BlockingSubmitThreadPoolExecutor extends ThreadPoolExecutor {
         active.decrementAndGet();
     }
 
-    /**
-     * blocking call to test if the threads are done or not.
-     */
+    /** blocking call to test if the threads are done or not. */
     public void sleepTillEmpty() {
         long timeout = 0;
 
@@ -84,7 +82,8 @@ public class BlockingSubmitThreadPoolExecutor extends ThreadPoolExecutor {
                 if (timeout <= giveupTime) {
                     Thread.sleep(DEFAULT_SLEEP);
                     timeout += DEFAULT_SLEEP;
-                    logger.debug("After Sleeping for empty: {}, Count: {}", +queue.size(), active.get());
+                    logger.debug(
+                            "After Sleeping for empty: {}, Count: {}", +queue.size(), active.get());
                 } else {
                     throw new RuntimeException("Timed out because TPE is too busy...");
                 }
@@ -92,6 +91,5 @@ public class BlockingSubmitThreadPoolExecutor extends ThreadPoolExecutor {
                 throw new RuntimeException(e);
             }
         }
-
     }
 }

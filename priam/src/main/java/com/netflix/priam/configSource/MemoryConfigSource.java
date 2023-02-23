@@ -17,7 +17,6 @@
 package com.netflix.priam.configSource;
 
 import com.google.common.collect.Maps;
-
 import java.util.Map;
 
 public final class MemoryConfigSource extends AbstractConfigSource {

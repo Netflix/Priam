@@ -18,21 +18,20 @@ package com.netflix.priam.cli;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.config.IConfiguration;
 
 public class Application {
-    static private Injector injector;
+    private static Injector injector;
 
     static Injector getInjector() {
-        if (injector == null)
-            injector = Guice.createInjector(new LightGuiceModule());
+        if (injector == null) injector = Guice.createInjector(new LightGuiceModule());
         return injector;
     }
 
     static void initialize() {
         IConfiguration conf = getInjector().getInstance(IConfiguration.class);
-        conf.intialize();
+        conf.initialize();
     }
 
     static void shutdownAdditionalThreads() {

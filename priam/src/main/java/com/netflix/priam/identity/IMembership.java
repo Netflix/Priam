@@ -16,15 +16,14 @@
  */
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.ImplementedBy;
 import com.netflix.priam.aws.AWSMembership;
-
 import java.util.Collection;
-import java.util.List;
 
 /**
- * Interface to manage membership meta information such as size of RAC, list of
- * nodes in RAC etc. Also perform ACL updates used in multi-regional clusters
+ * Interface to manage membership meta information such as size of RAC, list of nodes in RAC etc.
+ * Also perform ACL updates used in multi-regional clusters
  */
 @ImplementedBy(AWSMembership.class)
 public interface IMembership {
@@ -33,19 +32,17 @@ public interface IMembership {
      *
      * @return
      */
-    List<String> getRacMembership();
+    ImmutableSet<String> getRacMembership();
 
-    /**
-     * @return Size of current RAC
-     */
+    /** @return Size of current RAC */
     int getRacMembershipSize();
 
     /**
-     * Get a list of Instances in the cross-account but current RAC
+     * Get a set of Instances in the cross-account but current RAC
      *
      * @return
      */
-    List<String> getCrossAccountRacMembership();
+    ImmutableSet<String> getCrossAccountRacMembership();
 
     /**
      * Number of RACs
@@ -77,7 +74,7 @@ public interface IMembership {
      *
      * @return
      */
-    List<String> listACL(int from, int to);
+    ImmutableSet<String> listACL(int from, int to);
 
     /**
      * Expand the membership size by 1.

@@ -1,5 +1,10 @@
 plugins {
-    id 'nebula.netflixoss' version '5.1.1'
+    id 'nebula.netflixoss' version '9.1.0'
+    id 'com.github.sherter.google-java-format' version '0.8'
+}
+
+googleJavaFormat {
+    options style: 'AOSP'
 }
 
 ext.githubProjectName = 'Priam'
@@ -11,7 +16,7 @@ allprojects {
     group = 'com.netflix.priam'
 
     repositories {
-        jcenter()
+        mavenCentral()
         google()
     }
 
@@ -22,50 +27,60 @@ allprojects {
     }
 
     dependencies {
-      compile 'org.apache.commons:commons-lang3:3.5'
+      compile 'org.apache.commons:commons-lang3:3.8.1'
       compile 'org.apache.commons:commons-text:1.8'
       compile 'commons-logging:commons-logging:1.2'
-      compile 'org.apache.commons:commons-collections4:4.1'
+      compile 'org.apache.commons:commons-collections4:4.2'
       compile 'commons-io:commons-io:2.6'
       compile 'commons-cli:commons-cli:1.4'
-      compile 'commons-httpclient:commons-httpclient:3.1'
       compile 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
       compile 'com.sun.jersey:jersey-json:1.19.4'
       compile 'com.sun.jersey:jersey-bundle:1.19.4'
       compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
       compile 'com.google.guava:guava:21.0'
       compile 'com.google.code.findbugs:jsr305:3.0.2'
-      compile 'com.amazonaws:aws-java-sdk:1.11.386'
-      compile 'com.google.inject:guice:4.1.0'
-      compile 'com.google.inject.extensions:guice-servlet:4.1.0'
+        
+      // AWS Services
+      compile 'com.amazonaws:aws-java-sdk-core:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-s3:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-sns:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-ec2:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-sts:latest.release'
+      compile 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
+        
+      compile 'com.google.inject:guice:4.2.2'
+      compile 'com.google.inject.extensions:guice-servlet:4.2.2'
       compile 'org.quartz-scheduler:quartz:2.3.0'
       compile 'com.googlecode.json-simple:json-simple:1.1.1'
-      compile 'org.xerial.snappy:snappy-java:1.1.2.6'
-      compile 'org.yaml:snakeyaml:1.19'
-      compile 'org.apache.cassandra:cassandra-all:4.0-alpha3'
+      compile 'org.xerial.snappy:snappy-java:1.1.7.3'
+      compile 'org.yaml:snakeyaml:1.25'
+      compile 'org.apache.cassandra:cassandra-all:4.1.0'
       compile 'javax.ws.rs:jsr311-api:1.1.1'
-      compile 'joda-time:joda-time:2.9.9'
-      compile 'org.apache.commons:commons-configuration2:2.1.1'
-      compile 'xerces:xercesImpl:2.11.0'
-      compile 'net.java.dev.jna:jna:4.4.0'
-      compile 'org.apache.httpcomponents:httpclient:4.5.3'
-      compile 'org.apache.httpcomponents:httpcore:4.4.6'
+      compile 'joda-time:joda-time:2.10.1'
+      compile 'org.apache.commons:commons-configuration2:2.4'
+      compile 'xerces:xercesImpl:2.12.0'
+      compile 'net.java.dev.jna:jna:5.2.0'
+      compile 'org.apache.httpcomponents:httpclient:4.5.6'
+      compile 'org.apache.httpcomponents:httpcore:4.4.11'
       compile 'com.ning:compress-lzf:1.0.4'
-      compile 'com.google.code.gson:gson:2.8.2'
-      compile 'org.slf4j:slf4j-api:1.7.25'
-      compile 'org.slf4j:slf4j-log4j12:1.7.25'
+      compile 'com.google.code.gson:gson:2.8.5'
+      compile 'org.slf4j:slf4j-api:1.7.28'
+      compile 'org.slf4j:slf4j-log4j12:1.7.28'
       compile 'org.bouncycastle:bcprov-jdk16:1.46'
       compile 'org.bouncycastle:bcpg-jdk16:1.46'
-      compile ('com.google.appengine.tools:appengine-gcs-client:0.7') {
+      compile ('com.google.appengine.tools:appengine-gcs-client:0.8') {
           exclude module: 'guava'
       }
-      compile 'com.google.apis:google-api-services-storage:v1-rev100-1.22.0'
-      compile 'com.google.http-client:google-http-client-jackson2:1.22.0'
-      compile 'com.netflix.spectator:spectator-api:0.74.2'
+      compile 'com.google.apis:google-api-services-storage:v1-rev141-1.25.0'
+      compile 'com.google.http-client:google-http-client-jackson2:1.28.0'
+      compile 'com.netflix.spectator:spectator-api:0.96.0'
       compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
-      testCompile 'org.jmockit:jmockit:1.31'
+        testCompile 'org.jmockit:jmockit:1.38'
       testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
-      testCompile 'junit:junit:4.12'
+      testCompile "com.google.truth:truth:1.0.1"
+      testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+      testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     }
 
     sourceCompatibility = JavaVersion.VERSION_1_8

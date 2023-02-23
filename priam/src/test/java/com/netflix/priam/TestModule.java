@@ -32,6 +32,8 @@ import com.netflix.priam.identity.FakeMembership;
 import com.netflix.priam.identity.FakePriamInstanceFactory;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
+import com.netflix.priam.identity.config.FakeInstanceInfo;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
@@ -40,21 +42,23 @@ import org.junit.Ignore;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
 
-
 @Ignore
-public class TestModule extends AbstractModule
-{
+public class TestModule extends AbstractModule {
 
     @Override
-    protected void configure()
-    {
-        bind(IConfiguration.class).toInstance(
-                new FakeConfiguration(FakeConfiguration.FAKE_REGION, "fake-app", "az1", "fakeInstance1"));
+    protected void configure() {
+        bind(IConfiguration.class).toInstance(new FakeConfiguration("fake-app"));
         bind(IBackupRestoreConfig.class).to(FakeBackupRestoreConfig.class);
-        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class);
+        bind(InstanceInfo.class)
+                .toInstance(new FakeInstanceInfo("fakeInstance1", "az1", "us-east-1"));
+
+        bind(IPriamInstanceFactory.class).to(FakePriamInstanceFactory.class).in(Scopes.SINGLETON);
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).in(Scopes.SINGLETON);
-        bind(IMembership.class).toInstance(new FakeMembership(
-                ImmutableList.of("fakeInstance1", "fakeInstance2", "fakeInstance3")));
+        bind(IMembership.class)
+                .toInstance(
+                        new FakeMembership(
+                                ImmutableList.of(
+                                        "fakeInstance1", "fakeInstance2", "fakeInstance3")));
         bind(ICredential.class).to(FakeCredentials.class).in(Scopes.SINGLETON);
         bind(IBackupFileSystem.class).to(NullBackupFileSystem.class);
         bind(Sleeper.class).to(FakeSleeper.class);

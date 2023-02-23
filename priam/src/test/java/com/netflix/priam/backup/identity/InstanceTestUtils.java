@@ -18,45 +18,35 @@
 package com.netflix.priam.backup.identity;
 
 import com.netflix.priam.config.FakeConfiguration;
-import com.netflix.priam.identity.FakeMembership;
-import com.netflix.priam.identity.FakePriamInstanceFactory;
-import com.netflix.priam.identity.IMembership;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.InstanceEnvIdentity;
-import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.token.DeadTokenRetriever;
-import com.netflix.priam.identity.token.NewTokenRetriever;
-import com.netflix.priam.identity.token.PreGeneratedTokenRetriever;
+import com.netflix.priam.identity.*;
+import com.netflix.priam.identity.config.FakeInstanceInfo;
+import com.netflix.priam.identity.config.InstanceInfo;
+import com.netflix.priam.identity.token.ITokenRetriever;
+import com.netflix.priam.identity.token.TokenRetriever;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.ITokenManager;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.TokenManager;
-
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Before;
 import org.junit.Ignore;
 
-import java.util.ArrayList;
-import java.util.List;
-
 @Ignore
-public abstract class InstanceTestUtils
-{
+public abstract class InstanceTestUtils {
 
-    List<String> instances = new ArrayList<String>();
-    IMembership membership;
+    private final List<String> instances = new ArrayList<>();
+    private IMembership membership;
     FakeConfiguration config;
     IPriamInstanceFactory factory;
     InstanceIdentity identity;
-    Sleeper sleeper;
-    DeadTokenRetriever deadTokenRetriever;
-    PreGeneratedTokenRetriever preGeneratedTokenRetriever;
-	NewTokenRetriever newTokenRetriever;
-  	ITokenManager tokenManager;
-  	InstanceEnvIdentity insEnvIdentity;  
+    private Sleeper sleeper;
+    ITokenManager tokenManager;
+    InstanceInfo instanceInfo;
+    private final String region = "us-east-1";
 
     @Before
-    public void setup()
-    {
+    public void setup() throws Exception {
         instances.add("fakeinstance1");
         instances.add("fakeinstance2");
         instances.add("fakeinstance3");
@@ -68,38 +58,33 @@ public abstract class InstanceTestUtils
         instances.add("fakeinstance9");
 
         membership = new FakeMembership(instances);
-        config = new FakeConfiguration("fake", "fake-app", "az1", "fakeinstance1");
+        config = new FakeConfiguration("fake-app");
+        instanceInfo = new FakeInstanceInfo("fakeinstance1", "az1", region);
         tokenManager = new TokenManager(config);
-        factory = new FakePriamInstanceFactory(config);
+        factory = new FakePriamInstanceFactory(instanceInfo);
         sleeper = new FakeSleeper();
-        this.deadTokenRetriever = new DeadTokenRetriever(factory, membership, config, sleeper, insEnvIdentity);
-        this.preGeneratedTokenRetriever = new PreGeneratedTokenRetriever(factory, membership, config, sleeper);
-        this.newTokenRetriever = new NewTokenRetriever(factory, membership, config, sleeper, tokenManager);
+        identity = createInstanceIdentity(instanceInfo.getRac(), instanceInfo.getInstanceId());
     }
 
-    public void createInstances() throws Exception
-    {
+    public void createInstances() throws Exception {
         createInstanceIdentity("az1", "fakeinstance1");
         createInstanceIdentity("az1", "fakeinstance2");
         createInstanceIdentity("az1", "fakeinstance3");
-        // try next region
+        // try next zone
         createInstanceIdentity("az2", "fakeinstance4");
         createInstanceIdentity("az2", "fakeinstance5");
         createInstanceIdentity("az2", "fakeinstance6");
-        // next region
+        // next zone
         createInstanceIdentity("az3", "fakeinstance7");
         createInstanceIdentity("az3", "fakeinstance8");
         createInstanceIdentity("az3", "fakeinstance9");
     }
 
-    protected InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception
-    {
-        config.zone = zone;
-        config.instance_id = instanceId;
-        return new InstanceIdentity(factory, membership, config, sleeper, new TokenManager(config)
-        , this.deadTokenRetriever
-        , this.preGeneratedTokenRetriever
-        , this.newTokenRetriever
-        );
+    InstanceIdentity createInstanceIdentity(String zone, String instanceId) throws Exception {
+        InstanceInfo newInstanceInfo = new FakeInstanceInfo(instanceId, zone, region);
+        ITokenRetriever tokenRetriever =
+                new TokenRetriever(
+                        factory, membership, config, newInstanceInfo, sleeper, tokenManager);
+        return new InstanceIdentity(factory, membership, config, newInstanceInfo, tokenRetriever);
     }
 }

@@ -22,16 +22,15 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class CompositeConfigSourceTest 
-{
-    private static final Logger LOGGER = LoggerFactory.getLogger(CompositeConfigSourceTest.class.getName());
+public final class CompositeConfigSourceTest {
+    private static final Logger LOGGER =
+            LoggerFactory.getLogger(CompositeConfigSourceTest.class.getName());
 
     @Test
-    public void read() 
-    {
+    public void read() {
         MemoryConfigSource memoryConfigSource = new MemoryConfigSource();
         IConfigSource configSource = new CompositeConfigSource(memoryConfigSource);
-        configSource.intialize("foo", "bar");
+        configSource.initialize("foo", "bar");
 
         Assert.assertEquals(0, configSource.size());
         configSource.set("foo", "bar");
@@ -44,8 +43,7 @@ public final class CompositeConfigSourceTest
     }
 
     @Test
-    public void readMultiple() 
-    {
+    public void readMultiple() {
         MemoryConfigSource m1 = new MemoryConfigSource();
         m1.set("foo", "foo");
         MemoryConfigSource m2 = new MemoryConfigSource();

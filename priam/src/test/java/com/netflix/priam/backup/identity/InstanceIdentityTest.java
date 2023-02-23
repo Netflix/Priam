@@ -17,27 +17,21 @@
 
 package com.netflix.priam.backup.identity;
 
+import static org.junit.Assert.*;
+
+import com.google.common.collect.ImmutableList;
 import com.netflix.priam.identity.DoubleRing;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.PriamInstance;
-
 import org.junit.Test;
 
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-public class InstanceIdentityTest extends InstanceTestUtils
-{
+public class InstanceIdentityTest extends InstanceTestUtils {
 
     @Test
-    public void testCreateToken() throws Exception
-    {
+    public void testCreateToken() throws Exception {
 
         identity = createInstanceIdentity("az1", "fakeinstance1");
-        int hash = tokenManager.regionOffset(config.getDC());
+        int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         assertEquals(0, identity.getInstance().getId() - hash);
 
         identity = createInstanceIdentity("az1", "fakeinstance2");
@@ -46,7 +40,7 @@ public class InstanceIdentityTest extends InstanceTestUtils
         identity = createInstanceIdentity("az1", "fakeinstance3");
         assertEquals(6, identity.getInstance().getId() - hash);
 
-        // try next region
+        // try next zone
         identity = createInstanceIdentity("az2", "fakeinstance4");
         assertEquals(1, identity.getInstance().getId() - hash);
 
@@ -66,10 +60,9 @@ public class InstanceIdentityTest extends InstanceTestUtils
         identity = createInstanceIdentity("az3", "fakeinstance9");
         assertEquals(8, identity.getInstance().getId() - hash);
     }
-    
+
     @Test
-    public void testGetSeedsAutobootstrapTrue() throws Exception
-    {
+    public void testGetSeedsAutobootstrapTrue() throws Exception {
         boolean previous = (Boolean) config.getFakeConfig("auto_bootstrap");
         try {
             config.setFakeConfig("auto_bootstrap", true);
@@ -80,12 +73,10 @@ public class InstanceIdentityTest extends InstanceTestUtils
         } finally {
             config.setFakeConfig("auto_bootstrap", previous);
         }
-
     }
 
     @Test
-    public void testGetSeedsAutobootstrapFalse() throws Exception
-    {
+    public void testGetSeedsAutobootstrapFalse() throws Exception {
         boolean previous = (Boolean) config.getFakeConfig("auto_bootstrap");
         try {
             config.setFakeConfig("auto_bootstrap", false);
@@ -99,41 +90,30 @@ public class InstanceIdentityTest extends InstanceTestUtils
     }
 
     @Test
-    public void testDoubleSlots() throws Exception
-    {
+    public void testDoubleSlots() throws Exception {
         createInstances();
-        int before = factory.getAllIds("fake-app").size();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
-        List<PriamInstance> lst = factory.getAllIds(config.getAppName());
-        // sort it so it will look good if you want to print it.
-        factory.sort(lst);
-        for (int i = 0; i < lst.size(); i++)
-        {
+        int before = factory.getAllIds(config.getAppName()).size();
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
+        ImmutableList<PriamInstance> lst = factory.getAllIds(config.getAppName()).asList();
+        for (int i = 0; i < lst.size(); i++) {
             System.out.println(lst.get(i));
-            if (0 == i % 2)
-                continue;
+            if (0 == i % 2) continue;
             assertEquals(InstanceIdentity.DUMMY_INSTANCE_ID, lst.get(i).getInstanceId());
         }
         assertEquals(before * 2, lst.size());
     }
 
     @Test
-    public void testDoubleGrap() throws Exception
-    {
+    public void testDoubleGrap() throws Exception {
         createInstances();
-        new DoubleRing(config, factory, tokenManager).doubleSlots();
-        config.zone = "az1";
-        config.instance_id = "fakeinstancex";
-        int hash = tokenManager.regionOffset(config.getDC());
+        new DoubleRing(config, factory, tokenManager, instanceInfo).doubleSlots();
+        int hash = tokenManager.regionOffset(instanceInfo.getRegion());
         identity = createInstanceIdentity("az1", "fakeinstancex");
         printInstance(identity.getInstance(), hash);
     }
 
-    public void printInstance(PriamInstance ins, int hash)
-    {
+    public void printInstance(PriamInstance ins, int hash) {
         System.out.println("ID: " + (ins.getId() - hash));
         System.out.println("PayLoad: " + ins.getToken());
-
     }
-
 }

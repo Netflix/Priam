@@ -1,11 +1,27 @@
+/*
+ * Copyright 2017 Netflix, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
 package com.netflix.priam.cluser.management
 
 import com.google.inject.Guice
-import com.netflix.priam.config.FakeConfiguration
 import com.netflix.priam.backup.BRTestModule
 import com.netflix.priam.cluster.management.Compaction
-import com.netflix.priam.defaultimpl.CassandraOperations
-import com.netflix.priam.utils.CassandraMonitor
+import com.netflix.priam.config.FakeConfiguration
+import com.netflix.priam.connection.CassandraOperations
+import com.netflix.priam.health.CassandraMonitor
 import mockit.Mock
 import mockit.MockUp
 import spock.lang.Shared
@@ -132,8 +148,9 @@ class TestCompaction extends Specification {
         1 || 0
     }
 
-    private int concurrentRuns(int size) {
-        CassandraMonitor.setIsCassadraStarted();
+
+    private static int concurrentRuns(int size) {
+        CassandraMonitor.setIsCassadraStarted()
         ExecutorService threads = Executors.newFixedThreadPool(size)
         List<Callable<Boolean>> torun = new ArrayList<>(size)
         for (int i = 0; i < size; i++) {
@@ -156,7 +173,7 @@ class TestCompaction extends Specification {
             //We expect exception here.
             try{
                 fut.get()
-            }catch(Exception e){
+            }catch(Exception ignored){
                 noOfBadRun++
             }
         }

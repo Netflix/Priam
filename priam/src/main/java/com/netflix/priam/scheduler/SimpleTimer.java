@@ -16,52 +16,88 @@
  */
 package com.netflix.priam.scheduler;
 
-import org.quartz.Scheduler;
-import org.quartz.SimpleScheduleBuilder;
-import org.quartz.Trigger;
-import org.quartz.TriggerBuilder;
-
+import com.google.common.base.Preconditions;
 import java.text.ParseException;
+import java.time.Instant;
 import java.util.Date;
+import org.quartz.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * SimpleTimer allows jobs to run starting from specified time occurring at
- * regular frequency's. Frequency of the execution timestamp since epoch.
+ * SimpleTimer allows jobs to run starting from specified time occurring at regular frequency's.
+ * Frequency of the execution timestamp since epoch.
  */
 public class SimpleTimer implements TaskTimer {
-    private Trigger trigger;
+    private static final Logger logger = LoggerFactory.getLogger(SimpleTimer.class);
+    private final Trigger trigger;
 
     public SimpleTimer(String name, long interval) {
-        this.trigger = TriggerBuilder.newTrigger()
-                .withIdentity(name)
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withIntervalInMilliseconds(interval)
-                        .repeatForever().withMisfireHandlingInstructionFireNow())
-                .build();
-        //.new SimpleTrigger(name, SimpleTrigger.REPEAT_INDEFINITELY, interval);
+        this.trigger =
+                TriggerBuilder.newTrigger()
+                        .withIdentity(name)
+                        .withSchedule(
+                                SimpleScheduleBuilder.simpleSchedule()
+                                        .withIntervalInMilliseconds(interval)
+                                        .repeatForever()
+                                        .withMisfireHandlingInstructionFireNow())
+                        .build();
     }
 
-    /**
-     * Run once at given time...
-     */
+    /** Run forever every @period seconds starting at @start */
+    public SimpleTimer(String name, int period, Instant start) {
+        Preconditions.checkArgument(period > 0);
+        Preconditions.checkArgument(start.compareTo(Instant.EPOCH) >= 0);
+        this.trigger =
+                TriggerBuilder.newTrigger()
+                        .withIdentity(name)
+                        .withSchedule(
+                                CalendarIntervalScheduleBuilder.calendarIntervalSchedule()
+                                        .withMisfireHandlingInstructionFireAndProceed()
+                                        .withIntervalInSeconds(period))
+                        .startAt(Date.from(start))
+                        .build();
+    }
+
+    /** Run once at given time... */
     public SimpleTimer(String name, String group, long startTime) {
-        this.trigger = TriggerBuilder.newTrigger()
-                .withIdentity(name, group)
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
-                .startAt(new Date(startTime))
-                .build();
-        //new SimpleTrigger(name, group, new Date(startTime));
+        this.trigger =
+                TriggerBuilder.newTrigger()
+                        .withIdentity(name, group)
+                        .withSchedule(
+                                SimpleScheduleBuilder.simpleSchedule()
+                                        .withMisfireHandlingInstructionFireNow())
+                        .startAt(new Date(startTime))
+                        .build();
     }
 
-    /**
-     * Run immediatly and dont do that again.
-     */
+    /** Run immediatly and dont do that again. */
     public SimpleTimer(String name) {
-        this.trigger = TriggerBuilder.newTrigger()
-                .withIdentity(name, Scheduler.DEFAULT_GROUP)
-                .withSchedule(SimpleScheduleBuilder.simpleSchedule().withMisfireHandlingInstructionFireNow())
-                .startNow()
-                .build();
-        //new SimpleTrigger(name, Scheduler.DEFAULT_GROUP);
+        this.trigger =
+                TriggerBuilder.newTrigger()
+                        .withIdentity(name, Scheduler.DEFAULT_GROUP)
+                        .withSchedule(
+                                SimpleScheduleBuilder.simpleSchedule()
+                                        .withMisfireHandlingInstructionFireNow())
+                        .startNow()
+                        .build();
+    }
+
+    public static SimpleTimer getSimpleTimer(final String jobName, final long interval)
+            throws IllegalArgumentException {
+        SimpleTimer simpleTimer = null;
+
+        if (interval <= 0) {
+            logger.info(
+                    "Skipping {} as it is disabled via setting {} to {}.",
+                    jobName,
+                    jobName,
+                    interval);
+        } else {
+            simpleTimer = new SimpleTimer(jobName, interval);
+            logger.info("Starting {} with interval of {}", jobName, interval);
+        }
+        return simpleTimer;
     }
 
     public Trigger getTrigger() throws ParseException {

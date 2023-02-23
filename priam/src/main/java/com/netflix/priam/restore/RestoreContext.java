@@ -1,16 +1,14 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.restore;
@@ -37,37 +35,48 @@ public class RestoreContext {
         this.scheduler = scheduler;
     }
 
-    public boolean isRestoreEnabled(){
+    public boolean isRestoreEnabled() {
         return !StringUtils.isEmpty(config.getRestoreSnapshot());
     }
 
     public void restore() throws Exception {
-        if (!isRestoreEnabled())
-            return;
+        if (!isRestoreEnabled()) return;
 
-        //Restore is required.
+        // Restore is required.
         if (StringUtils.isEmpty(config.getRestoreSourceType()) && !config.isRestoreEncrypted()) {
-            //Restore is needed and it will be done from the primary AWS account
-            scheduler.addTask(Restore.JOBNAME, Restore.class, Restore.getTimer());//restore from the AWS primary acct
+            // Restore is needed and it will be done from the primary AWS account
+            scheduler.addTask(
+                    Restore.JOBNAME,
+                    Restore.class,
+                    Restore.getTimer()); // restore from the AWS primary acct
             logger.info("Scheduled task " + Restore.JOBNAME);
         } else if (config.isRestoreEncrypted()) {
             SourceType sourceType = SourceType.lookup(config.getRestoreSourceType(), true, false);
 
-            if (sourceType == null)
-            {
-                scheduler.addTask(EncryptedRestoreStrategy.JOBNAME, EncryptedRestoreStrategy.class, EncryptedRestoreStrategy.getTimer());
+            if (sourceType == null) {
+                scheduler.addTask(
+                        EncryptedRestoreStrategy.JOBNAME,
+                        EncryptedRestoreStrategy.class,
+                        EncryptedRestoreStrategy.getTimer());
                 logger.info("Scheduled task " + Restore.JOBNAME);
                 return;
             }
 
             switch (sourceType) {
                 case AWSCROSSACCT:
-                    scheduler.addTask(AwsCrossAccountCryptographyRestoreStrategy.JOBNAME, AwsCrossAccountCryptographyRestoreStrategy.class, AwsCrossAccountCryptographyRestoreStrategy.getTimer());
-                    logger.info("Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
+                    scheduler.addTask(
+                            AwsCrossAccountCryptographyRestoreStrategy.JOBNAME,
+                            AwsCrossAccountCryptographyRestoreStrategy.class,
+                            AwsCrossAccountCryptographyRestoreStrategy.getTimer());
+                    logger.info(
+                            "Scheduled task " + AwsCrossAccountCryptographyRestoreStrategy.JOBNAME);
                     break;
 
                 case GOOGLE:
-                    scheduler.addTask(GoogleCryptographyRestoreStrategy.JOBNAME, GoogleCryptographyRestoreStrategy.class, GoogleCryptographyRestoreStrategy.getTimer());
+                    scheduler.addTask(
+                            GoogleCryptographyRestoreStrategy.JOBNAME,
+                            GoogleCryptographyRestoreStrategy.class,
+                            GoogleCryptographyRestoreStrategy.getTimer());
                     logger.info("Scheduled task " + GoogleCryptographyRestoreStrategy.JOBNAME);
                     break;
             }
@@ -75,7 +84,8 @@ public class RestoreContext {
     }
 
     enum SourceType {
-        AWSCROSSACCT("AWSCROSSACCT"), GOOGLE("GOOGLE");
+        AWSCROSSACCT("AWSCROSSACCT"),
+        GOOGLE("GOOGLE");
 
         private static final Logger logger = LoggerFactory.getLogger(SourceType.class);
 
@@ -85,12 +95,16 @@ public class RestoreContext {
             this.sourceType = sourceType.toUpperCase();
         }
 
-        public static SourceType lookup(String sourceType, boolean acceptNullOrEmpty, boolean acceptIllegalValue) throws UnsupportedTypeException {
+        public static SourceType lookup(
+                String sourceType, boolean acceptNullOrEmpty, boolean acceptIllegalValue)
+                throws UnsupportedTypeException {
             if (StringUtils.isEmpty(sourceType))
-                if (acceptNullOrEmpty)
-                    return null;
+                if (acceptNullOrEmpty) return null;
                 else {
-                    String message = String.format("%s is not a supported SourceType. Supported values are %s", sourceType, getSupportedValues());
+                    String message =
+                            String.format(
+                                    "%s is not a supported SourceType. Supported values are %s",
+                                    sourceType, getSupportedValues());
                     logger.error(message);
                     throw new UnsupportedTypeException(message);
                 }
@@ -98,10 +112,15 @@ public class RestoreContext {
             try {
                 return SourceType.valueOf(sourceType.toUpperCase());
             } catch (IllegalArgumentException ex) {
-                String message = String.format("%s is not a supported SourceType. Supported values are %s", sourceType, getSupportedValues());
+                String message =
+                        String.format(
+                                "%s is not a supported SourceType. Supported values are %s",
+                                sourceType, getSupportedValues());
 
                 if (acceptIllegalValue) {
-                    message = message + ". Since acceptIllegalValue is set to True, returning NULL instead.";
+                    message =
+                            message
+                                    + ". Since acceptIllegalValue is set to True, returning NULL instead.";
                     logger.error(message);
                     return null;
                 }
@@ -111,13 +130,11 @@ public class RestoreContext {
             }
         }
 
-
         private static String getSupportedValues() {
-            StringBuffer supportedValues = new StringBuffer();
+            StringBuilder supportedValues = new StringBuilder();
             boolean first = true;
             for (SourceType type : SourceType.values()) {
-                if (!first)
-                    supportedValues.append(",");
+                if (!first) supportedValues.append(",");
                 supportedValues.append(type);
                 first = false;
             }

@@ -1,152 +1,165 @@
 /**
  * Copyright 2017 Netflix, Inc.
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
+ *
+ * <p>Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy of the License at
+ *
+ * <p>http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * <p>Unless required by applicable law or agreed to in writing, software distributed under the
+ * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either
+ * express or implied. See the License for the specific language governing permissions and
  * limitations under the License.
  */
 package com.netflix.priam.backup;
 
 import com.google.inject.Inject;
+import com.google.inject.Provider;
 import com.google.inject.Singleton;
 import com.google.inject.name.Named;
-import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil;
-import org.apache.commons.collections4.CollectionUtils;
-import org.json.simple.parser.JSONParser;
+import com.netflix.priam.utils.DateUtil.DateRange;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.stream.Collectors;
-
 /**
- * Created by aagrawal on 2/16/17.
- * This class validates the backup by doing listing of files in the backup destination and comparing with meta.json by downloading from the location.
- * Input: BackupMetadata that needs to be verified.
- * Since one backupmetadata can have multiple start time, provide one startTime if interested in verifying one particular backup.
- * Leave startTime as null to get the latest snapshot for the provided BackupMetadata.
+ * Created by aagrawal on 2/16/17. This class validates the backup by doing listing of files in the
+ * backup destination and comparing with meta.json by downloading from the location. Input:
+ * BackupMetadata that needs to be verified.
  */
 @Singleton
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private IBackupFileSystem bkpStatusFs;
-    private IConfiguration config;
+    private final IMetaProxy metaV1Proxy;
+    private final IMetaProxy metaV2Proxy;
+    private final IBackupStatusMgr backupStatusMgr;
+    private final Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private BackupVerificationResult latestResult;
 
     @Inject
-    BackupVerification(@Named("backup_status") IBackupFileSystem bkpStatusFs, IConfiguration config) {
-        this.bkpStatusFs = bkpStatusFs;
-        this.config = config;
+    BackupVerification(
+            @Named("v1") IMetaProxy metaV1Proxy,
+            @Named("v2") IMetaProxy metaV2Proxy,
+            IBackupStatusMgr backupStatusMgr,
+            Provider<AbstractBackupPath> abstractBackupPathProvider) {
+        this.metaV1Proxy = metaV1Proxy;
+        this.metaV2Proxy = metaV2Proxy;
+        this.backupStatusMgr = backupStatusMgr;
+        this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    public BackupVerificationResult verifyBackup(List<BackupMetadata> metadata, Date startTime) {
-        BackupVerificationResult result = new BackupVerificationResult();
+    public IMetaProxy getMetaProxy(BackupVersion backupVersion) {
+        switch (backupVersion) {
+            case SNAPSHOT_BACKUP:
+                return metaV1Proxy;
+            case SNAPSHOT_META_SERVICE:
+                return metaV2Proxy;
+        }
 
-        if (metadata == null || metadata.isEmpty())
-            return result;
+        return null;
+    }
 
-        result.snapshotAvailable = true;
-        // All the dates should be same.
-        result.selectedDate = metadata.get(0).getSnapshotDate();
+    public Optional<BackupVerificationResult> verifyBackup(
+            BackupVersion backupVersion, boolean force, DateRange dateRange)
+            throws UnsupportedTypeException, IllegalArgumentException {
+        IMetaProxy metaProxy = getMetaProxy(backupVersion);
+        if (metaProxy == null) {
+            throw new UnsupportedTypeException(
+                    "BackupVersion type: " + backupVersion + " is not supported");
+        }
 
-        List<String> backups = metadata.stream().map(backupMetadata ->
-                DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart())).collect(Collectors.toList());
-        logger.info("Snapshots found for {} : [{}]", result.selectedDate, backups);
+        if (dateRange == null) {
+            throw new IllegalArgumentException("dateRange provided is null");
+        }
 
-        //find the latest date (default) or verify if one provided
-        Date latestDate = null;
+        List<BackupMetadata> metadata =
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
+        if (metadata == null || metadata.isEmpty()) return Optional.empty();
         for (BackupMetadata backupMetadata : metadata) {
-            if (latestDate == null || latestDate.before(backupMetadata.getStart()))
-                latestDate = backupMetadata.getStart();
-
-            if (startTime != null &&
-                    DateUtil.formatyyyyMMddHHmm(backupMetadata.getStart()).equals(DateUtil.formatyyyyMMddHHmm(startTime))) {
-                latestDate = startTime;
-                break;
+            if (backupMetadata.getLastValidated() != null && !force) {
+                // Backup is already validated. Nothing to do.
+                latestResult = new BackupVerificationResult();
+                latestResult.valid = true;
+                latestResult.manifestAvailable = true;
+                latestResult.snapshotInstant = backupMetadata.getStart().toInstant();
+                Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
+                latestResult.remotePath =
+                        snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
+                return Optional.of(latestResult);
+            }
+            BackupVerificationResult backupVerificationResult =
+                    verifyBackup(metaProxy, backupMetadata);
+            if (logger.isDebugEnabled())
+                logger.debug(
+                        "BackupVerification: metadata: {}, result: {}",
+                        backupMetadata,
+                        backupVerificationResult);
+            if (backupVerificationResult.valid) {
+                backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+                backupStatusMgr.update(backupMetadata);
+                latestResult = backupVerificationResult;
+                return Optional.of(backupVerificationResult);
             }
         }
+        latestResult = null;
+        return Optional.empty();
+    }
 
-        result.snapshotTime = DateUtil.formatyyyyMMddHHmm(latestDate);
-        logger.info("Latest/Requested snapshot date found: {}, for selected/provided date: {}", result.snapshotTime, result.selectedDate);
-
-        //Get Backup File Iterator
-        String prefix = config.getBackupPrefix();
-        logger.info("Looking for meta file in the location:  {}", prefix);
-
-        Date strippedMsSnapshotTime = DateUtil.getDate(result.snapshotTime);
-        Iterator<AbstractBackupPath> backupfiles = bkpStatusFs.list(prefix, strippedMsSnapshotTime, strippedMsSnapshotTime);
-        //Return validation fail if backup filesystem listing failed.
-        if (!backupfiles.hasNext()) {
-            logger.warn("ERROR: No files available while doing backup filesystem listing. Declaring the verification failed.");
-            return result;
+    public List<BackupVerificationResult> verifyAllBackups(
+            BackupVersion backupVersion, DateRange dateRange)
+            throws UnsupportedTypeException, IllegalArgumentException {
+        IMetaProxy metaProxy = getMetaProxy(backupVersion);
+        if (metaProxy == null) {
+            throw new UnsupportedTypeException(
+                    "BackupVersion type: " + backupVersion + " is not supported");
         }
 
-        result.backupFileListAvail = true;
-
-        List<AbstractBackupPath> metas = new LinkedList<>();
-        List<String> s3Listing = new ArrayList<>();
-
-        while (backupfiles.hasNext()) {
-            AbstractBackupPath path = backupfiles.next();
-            if (path.getFileName().equalsIgnoreCase("meta.json"))
-                metas.add(path);
-            else
-                s3Listing.add(path.getRemotePath());
+        if (dateRange == null) {
+            throw new IllegalArgumentException("dateRange provided is null");
         }
 
-        if (metas.size() == 0) {
-            logger.error("No meta found for snapshotdate: {}", DateUtil.formatyyyyMMddHHmm(latestDate));
-            return result;
+        List<BackupVerificationResult> result = new ArrayList<>();
+
+        List<BackupMetadata> metadata =
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
+        if (metadata == null || metadata.isEmpty()) return result;
+        for (BackupMetadata backupMetadata : metadata) {
+            if (backupMetadata.getLastValidated() == null) {
+                BackupVerificationResult backupVerificationResult =
+                        verifyBackup(metaProxy, backupMetadata);
+                if (logger.isDebugEnabled())
+                    logger.debug(
+                            "BackupVerification: metadata: {}, result: {}",
+                            backupMetadata,
+                            backupVerificationResult);
+                if (backupVerificationResult.valid) {
+                    backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+                    backupStatusMgr.update(backupMetadata);
+                    result.add(backupVerificationResult);
+                }
+            }
         }
-
-        result.metaFileFound = true;
-        //Download meta.json from backup location and uncompress it.
-        List<String> metaFileList = new ArrayList<>();
-        try {
-            Path metaFileLocation = FileSystems.getDefault().getPath(config.getDataFileLocation(), "tmp_meta.json");
-            bkpStatusFs.download(metas.get(0), new FileOutputStream(metaFileLocation.toFile()));
-            logger.info("Meta file successfully downloaded to localhost: {}", metaFileLocation.toString());
-
-            JSONParser jsonParser = new JSONParser();
-            org.json.simple.JSONArray fileList = (org.json.simple.JSONArray) jsonParser.parse(new FileReader(metaFileLocation.toFile()));
-            for (int i = 0; i < fileList.size(); i++)
-                metaFileList.add(fileList.get(i).toString());
-
-        } catch (Exception e) {
-            logger.error("Error while fetching meta.json from path: {}", metas.get(0), e);
-            return result;
-        }
-
-        if (metaFileList.isEmpty() && s3Listing.isEmpty()) {
-            logger.info("Uncommon Scenario: Both meta file and backup filesystem listing is empty. Considering this as success");
-            result.valid = true;
-            return result;
-        }
-
-        //Atleast meta file or s3 listing contains some file.
-        result.filesInS3Only = new ArrayList<>(s3Listing);
-        result.filesInS3Only.removeAll(metaFileList);
-        result.filesInMetaOnly = new ArrayList<>(metaFileList);
-        result.filesInMetaOnly.removeAll(s3Listing);
-        result.filesMatched = (ArrayList<String>) CollectionUtils.intersection(metaFileList, s3Listing);
-
-        //There could be a scenario that backupfilesystem has more files than meta file. e.g. some leftover objects
-        if (result.filesInMetaOnly.size() == 0)
-            result.valid = true;
-
         return result;
+    }
+
+    /** returns the latest valid backup verification result if we have found one within the SLO * */
+    public Optional<Instant> getLatestVerfifiedBackupTime() {
+        return latestResult == null ? Optional.empty() : Optional.of(latestResult.snapshotInstant);
+    }
+
+    private BackupVerificationResult verifyBackup(
+            IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
+        Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());
+        metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseRemote(metadataLocation.toString());
+        return metaProxy.isMetaFileValid(abstractBackupPath);
     }
 }

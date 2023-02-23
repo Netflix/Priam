@@ -17,41 +17,52 @@
 
 package com.netflix.priam.identity;
 
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
 import com.google.inject.Inject;
-import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.identity.IPriamInstanceFactory;
-import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.InstanceInfo;
+import groovy.lang.Singleton;
+import java.util.Comparator;
+import java.util.Map;
+import java.util.stream.Collectors;
 
-import java.util.*;
-
-public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInstance>
-{
-    private final Map<Integer,PriamInstance> instances = Maps.newHashMap();
-    private final IConfiguration config;
+@Singleton
+public class FakePriamInstanceFactory implements IPriamInstanceFactory {
+    private final Map<Integer, PriamInstance> instances = Maps.newHashMap();
+    private final InstanceInfo instanceInfo;
 
     @Inject
-    public FakePriamInstanceFactory(IConfiguration config)
-    {
-        this.config = config;
+    public FakePriamInstanceFactory(InstanceInfo instanceInfo) {
+        this.instanceInfo = instanceInfo;
     }
 
     @Override
-    public List<PriamInstance> getAllIds(String appName)
-    {
-        List<PriamInstance> result = new ArrayList<>(instances.values());
-        sort(result);
-        return result;
+    public ImmutableSet<PriamInstance> getAllIds(String appName) {
+        return appName.endsWith("-dead")
+                ? ImmutableSet.of()
+                : ImmutableSet.copyOf(
+                        instances
+                                .values()
+                                .stream()
+                                .sorted(Comparator.comparingInt(PriamInstance::getId))
+                                .collect(Collectors.toList()));
     }
-    
+
     @Override
     public PriamInstance getInstance(String appName, String dc, int id) {
-      return instances.get(id);
+        return instances.get(id);
     }
 
     @Override
-    public PriamInstance create(String app, int id, String instanceID, String hostname, String ip, String rac, Map<String, Object> volumes, String payload)
-    {
+    public PriamInstance create(
+            String app,
+            int id,
+            String instanceID,
+            String hostname,
+            String ip,
+            String rac,
+            Map<String, Object> volumes,
+            String payload) {
         PriamInstance ins = new PriamInstance();
         ins.setApp(app);
         ins.setRac(rac);
@@ -60,46 +71,18 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
         ins.setInstanceId(instanceID);
         ins.setToken(payload);
         ins.setVolumes(volumes);
-        ins.setDC(config.getDC());
+        ins.setDC(instanceInfo.getRegion());
         instances.put(id, ins);
         return ins;
     }
 
     @Override
-    public void delete(PriamInstance inst)
-    {
+    public void delete(PriamInstance inst) {
         instances.remove(inst.getId());
     }
 
     @Override
-    public void update(PriamInstance inst)
-    {
+    public void update(PriamInstance orig, PriamInstance inst) {
         instances.put(inst.getId(), inst);
     }
-
- 
-    @Override
-    public void sort(List<PriamInstance> return_)
-    {
-        Comparator<? super PriamInstance> comparator = new Comparator<PriamInstance>()
-        {
-
-            @Override
-            public int compare(PriamInstance o1, PriamInstance o2)
-            {
-                Integer c1 = o1.getId();
-                Integer c2 = o2.getId();
-                return c1.compareTo(c2);
-            }
-        };
-        Collections.sort(return_, comparator);
-    }
-
-    @Override
-    public void attachVolumes(PriamInstance instance, String mountPath, String device)
-    {
-        // TODO Auto-generated method stub
-    }
-
-
 }

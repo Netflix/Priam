@@ -18,13 +18,13 @@
 package com.netflix.priam.scheduler;
 
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
 import com.netflix.priam.TestModule;
 import com.netflix.priam.config.IConfiguration;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;

@@ -16,8 +16,6 @@
  */
 package com.netflix.priam;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.ClusterManagementService;
@@ -33,6 +31,8 @@ import com.netflix.priam.tuner.CassandraTunerService;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.IOException;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

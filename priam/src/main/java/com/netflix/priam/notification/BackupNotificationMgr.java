@@ -14,7 +14,6 @@
 package com.netflix.priam.notification;
 
 import com.amazonaws.services.sns.model.MessageAttributeValue;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.BackupVerificationResult;
@@ -23,6 +22,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
 import java.util.*;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;

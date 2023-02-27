@@ -18,7 +18,6 @@
 package com.netflix.priam.backupv2;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -28,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import javax.inject.Inject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.io.FileUtils;

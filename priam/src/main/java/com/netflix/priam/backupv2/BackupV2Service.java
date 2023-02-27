@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -26,6 +25,7 @@ import com.netflix.priam.identity.token.ITokenRetriever;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.CassandraTunerService;
+import javax.inject.Inject;
 
 /**
  * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.

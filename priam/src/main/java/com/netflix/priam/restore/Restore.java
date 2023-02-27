@@ -16,10 +16,6 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
@@ -32,6 +28,10 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.Sleeper;
 import java.nio.file.Path;
 import java.util.concurrent.Future;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

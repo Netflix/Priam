@@ -13,12 +13,12 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import java.io.File;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

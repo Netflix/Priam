@@ -19,9 +19,7 @@ package com.netflix.priam.backupv2;
 
 import com.google.common.collect.ImmutableSetMultimap;
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.config.IConfiguration;
@@ -31,6 +29,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 
 /** Created by aagrawal on 12/17/18. */

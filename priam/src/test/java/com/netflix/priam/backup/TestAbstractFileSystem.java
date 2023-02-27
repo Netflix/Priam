@@ -18,9 +18,7 @@
 package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
-import com.google.inject.Inject;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -35,6 +33,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.*;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.junit.Assert;
 import org.junit.Before;

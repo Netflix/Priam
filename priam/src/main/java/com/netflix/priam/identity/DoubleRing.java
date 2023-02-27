@@ -16,13 +16,13 @@
  */
 package com.netflix.priam.identity;
 
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.ITokenManager;
 import java.io.*;
 import java.util.Set;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

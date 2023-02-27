@@ -18,8 +18,6 @@
 package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.utils.DateUtil;
@@ -28,6 +26,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

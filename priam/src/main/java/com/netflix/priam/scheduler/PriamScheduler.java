@@ -16,10 +16,10 @@
  */
 package com.netflix.priam.scheduler;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.utils.Sleeper;
 import java.text.ParseException;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -19,7 +19,6 @@ package com.netflix.priam.aws;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backup.BRTestModule;
@@ -30,6 +29,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Instant;
+import javax.inject.Provider;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;

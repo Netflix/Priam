@@ -17,9 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
@@ -30,6 +27,9 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.util.*;
+import javax.inject.Inject;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.json.simple.JSONArray;
 
 @Singleton

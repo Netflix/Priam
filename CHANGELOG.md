@@ -1,4 +1,7 @@
 # Changelog
+## 2023/2/27 3.1.123
+Switch from com.google.inject to JSR-330 javax.inject annotations for better compatibility (#1029)
+
 ## 2023/1/21 3.1.122
 Log backup failures rather than ignoring them. (#1026) 
 Remove redundant interfaces and swap log and notification lines in the case of backup failure. (#1023) 

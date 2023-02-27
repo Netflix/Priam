@@ -17,9 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -36,7 +33,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.math.Fraction;
 import org.slf4j.Logger;

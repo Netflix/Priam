@@ -13,10 +13,6 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil;
@@ -25,6 +21,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.*;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

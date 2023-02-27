@@ -16,15 +16,15 @@
  */
 package com.netflix.priam.aws;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.RetryableCallable;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
 
 /** Updates the cleanup policy for the bucket */
 @Singleton

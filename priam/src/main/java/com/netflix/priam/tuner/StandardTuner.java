@@ -14,7 +14,6 @@
 package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

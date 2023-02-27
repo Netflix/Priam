@@ -13,7 +13,6 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.MetaData;
@@ -34,6 +33,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
+import javax.inject.Provider;
 import org.bouncycastle.util.io.Streams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

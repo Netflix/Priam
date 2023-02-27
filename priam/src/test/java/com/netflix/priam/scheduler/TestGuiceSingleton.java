@@ -20,7 +20,7 @@ package com.netflix.priam.scheduler;
 import com.google.inject.AbstractModule;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Singleton;
+import javax.inject.Singleton;
 import org.junit.Test;
 
 public class TestGuiceSingleton {

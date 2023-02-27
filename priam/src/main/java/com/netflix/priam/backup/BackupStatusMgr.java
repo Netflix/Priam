@@ -13,8 +13,6 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.MaxSizeHashMap;
@@ -22,6 +20,8 @@ import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

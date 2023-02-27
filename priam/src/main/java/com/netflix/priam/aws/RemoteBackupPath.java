@@ -20,7 +20,6 @@ import com.google.api.client.util.Lists;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
@@ -33,6 +32,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Inject;
 
 /**
  * Represents location of an object on the remote file system. All the objects will be keyed with a

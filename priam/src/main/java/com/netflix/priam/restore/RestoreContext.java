@@ -13,10 +13,10 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

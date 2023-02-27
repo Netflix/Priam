@@ -19,12 +19,12 @@ package com.netflix.priam.identity;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Maps;
-import com.google.inject.Inject;
 import com.netflix.priam.identity.config.InstanceInfo;
-import groovy.lang.Singleton;
 import java.util.Comparator;
 import java.util.Map;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 @Singleton
 public class FakePriamInstanceFactory implements IPriamInstanceFactory {

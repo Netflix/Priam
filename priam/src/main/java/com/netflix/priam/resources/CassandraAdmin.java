@@ -17,7 +17,6 @@
 package com.netflix.priam.resources;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.netflix.priam.cluster.management.Compaction;
 import com.netflix.priam.cluster.management.Flush;
 import com.netflix.priam.compress.SnappyCompression;
@@ -32,6 +31,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

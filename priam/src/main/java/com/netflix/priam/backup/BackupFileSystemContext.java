@@ -13,9 +13,9 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.netflix.priam.config.IConfiguration;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 public class BackupFileSystemContext implements IFileSystemContext {
 

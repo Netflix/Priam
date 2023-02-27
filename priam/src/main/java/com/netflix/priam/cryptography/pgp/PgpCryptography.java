@@ -13,7 +13,6 @@
  */
 package com.netflix.priam.cryptography.pgp;
 
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cryptography.IFileCryptography;
 import java.io.*;
@@ -22,6 +21,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.util.Date;
 import java.util.Iterator;
+import javax.inject.Inject;
 import org.apache.commons.io.IOUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.*;

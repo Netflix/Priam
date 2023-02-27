@@ -13,10 +13,10 @@
  */
 package com.netflix.priam.resources;
 
-import com.google.inject.Inject;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.restore.Restore;
 import com.netflix.priam.utils.DateUtil;
+import javax.inject.Inject;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

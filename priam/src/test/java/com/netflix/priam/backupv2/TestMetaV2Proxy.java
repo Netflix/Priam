@@ -19,7 +19,6 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.BackupRestoreException;
@@ -36,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;

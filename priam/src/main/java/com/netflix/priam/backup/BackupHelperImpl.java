@@ -5,8 +5,6 @@ import static java.util.stream.Collectors.toSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
@@ -17,6 +15,8 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class BackupHelperImpl implements BackupHelper {
 

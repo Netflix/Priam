@@ -13,9 +13,9 @@
  */
 package com.netflix.priam.resources;
 
-import com.google.inject.Inject;
 import com.netflix.priam.identity.IMembership;
 import java.util.Collections;
+import javax.inject.Inject;
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;

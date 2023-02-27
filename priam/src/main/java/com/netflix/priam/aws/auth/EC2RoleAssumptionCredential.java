@@ -15,10 +15,10 @@ package com.netflix.priam.aws.auth;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 
 public class EC2RoleAssumptionCredential implements ICredential {

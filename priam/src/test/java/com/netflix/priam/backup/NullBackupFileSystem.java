@@ -17,8 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -27,6 +25,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Provider;
 
 public class NullBackupFileSystem extends AbstractFileSystem {
 

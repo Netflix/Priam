@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
 import com.netflix.priam.aws.UpdateCleanupPolicy;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -25,6 +24,7 @@ import com.netflix.priam.defaultimpl.IService;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.CassandraTunerService;
+import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

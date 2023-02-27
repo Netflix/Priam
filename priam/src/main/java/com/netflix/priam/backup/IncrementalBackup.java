@@ -18,8 +18,6 @@ package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.util.concurrent.ListenableFuture;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.config.IBackupRestoreConfig;
@@ -31,6 +29,8 @@ import java.io.FileFilter;
 import java.nio.file.Path;
 import java.util.Optional;
 import java.util.Set;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

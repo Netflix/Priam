@@ -17,8 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -33,6 +31,8 @@ import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -20,11 +20,11 @@ package com.netflix.priam.config;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Lists;
-import com.google.inject.Singleton;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Singleton;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration {

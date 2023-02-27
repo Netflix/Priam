@@ -17,13 +17,13 @@
 
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.utils.MaxSizeHashMap;
 import java.io.*;
 import java.util.LinkedList;
 import java.util.Map;
+import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

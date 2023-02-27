@@ -19,7 +19,6 @@ package com.netflix.priam.backupv2;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
 import com.netflix.priam.backup.FakeBackupFileSystem;
@@ -38,6 +37,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Provider;
 import mockit.Expectations;
 import mockit.Mocked;
 import org.junit.After;

@@ -17,8 +17,6 @@
 
 package com.netflix.priam.resources;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.BackupV2Service;
@@ -33,13 +31,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 import javax.inject.Named;
-import javax.ws.rs.DefaultValue;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
+import javax.inject.Provider;
+import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import org.slf4j.Logger;

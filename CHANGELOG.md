@@ -1,4 +1,7 @@
 # Changelog
+## 2023/02/28 3.11.96
+Switch from com.google.inject to JSR-330 javax.inject annotations for better compatibility (#1030)
+
 ## 2023/1/21 3.11.95
 Log backup failures rather than ignoring them. (#1025) 
 Use synchronized list for thread-safety (#1018) 

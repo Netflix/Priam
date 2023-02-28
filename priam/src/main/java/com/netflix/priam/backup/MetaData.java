@@ -16,8 +16,6 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -27,6 +25,8 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
 import org.slf4j.Logger;

@@ -13,11 +13,11 @@
  */
 package com.netflix.priam.merics;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.DistributionSummary;
 import com.netflix.spectator.api.Registry;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** Created by vinhn on 2/13/17. */
 @Singleton

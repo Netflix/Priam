@@ -19,11 +19,11 @@ package com.netflix.priam.utils;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.Ordering;
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import java.math.BigInteger;
 import java.util.Collections;
 import java.util.List;
+import javax.inject.Inject;
 
 public class TokenManager implements ITokenManager {
     public static final BigInteger MINIMUM_TOKEN_RANDOM = BigInteger.ZERO;

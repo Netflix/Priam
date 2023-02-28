@@ -16,8 +16,8 @@
  */
 package com.netflix.priam.scheduler;
 
-import com.google.inject.Inject;
 import com.google.inject.Injector;
+import javax.inject.Inject;
 import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;

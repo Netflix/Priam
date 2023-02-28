@@ -16,7 +16,6 @@ package com.netflix.priam.tuner.dse;
 import static com.netflix.priam.tuner.dse.IDseConfiguration.NodeType;
 import static org.apache.cassandra.locator.SnitchProperties.RACKDC_PROPERTY_FILENAME;
 
-import com.google.inject.Inject;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -25,6 +24,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.Reader;
 import java.util.Properties;
+import javax.inject.Inject;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

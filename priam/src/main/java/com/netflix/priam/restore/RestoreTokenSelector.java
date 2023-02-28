@@ -16,8 +16,6 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.utils.ITokenManager;
@@ -26,6 +24,8 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 /** Runs algorithms as finding closest token from a list of token (in a backup) */
 public class RestoreTokenSelector {

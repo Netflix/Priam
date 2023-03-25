@@ -24,7 +24,6 @@ import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.io.File;
@@ -89,26 +88,6 @@ public class TestBackupVerification {
         new MockMetaV1Proxy();
         new MockMetaV2Proxy();
         FileUtils.deleteQuietly(new File(configuration.getBackupStatusFileLoc()));
-    }
-
-    @Test
-    public void illegalDateRange() throws UnsupportedTypeException {
-        try {
-            backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, false, null);
-            Assert.assertTrue(false);
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
-        }
-    }
-
-    @Test
-    public void illegalDateRangeBackupDateRange() throws UnsupportedTypeException {
-        try {
-            backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_BACKUP, null);
-            Assert.assertTrue(false);
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
-        }
     }
 
     @Test

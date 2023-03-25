@@ -69,10 +69,6 @@ public class BackupVerification {
             BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        if (dateRange == null) {
-            throw new IllegalArgumentException("dateRange provided is null");
-        }
-
         List<BackupMetadata> metadata =
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
         if (metadata == null || metadata.isEmpty()) return Optional.empty();
@@ -109,12 +105,7 @@ public class BackupVerification {
     public List<BackupVerificationResult> verifyAllBackups(
             BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        if (dateRange == null) {
-            throw new IllegalArgumentException("dateRange provided is null");
-        }
-
         List<BackupVerificationResult> result = new ArrayList<>();
-
         List<BackupMetadata> metadata =
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
         if (metadata == null || metadata.isEmpty()) return result;

@@ -82,13 +82,10 @@ public class BackupVerification {
                         snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
                 return Optional.of(latestResult);
             }
-            BackupVerificationResult backupVerificationResult =
-                    verifyBackup(metaProxy, backupMetadata);
-            if (backupVerificationResult.valid) {
-                backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
-                backupStatusMgr.update(backupMetadata);
-                latestResult = backupVerificationResult;
-                return Optional.of(backupVerificationResult);
+            Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
+            if (result.isPresent()) {
+                latestResult = result.get();
+                return result;
             }
         }
         latestResult = null;
@@ -102,13 +99,7 @@ public class BackupVerification {
         for (BackupMetadata backupMetadata :
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
             if (backupMetadata.getLastValidated() == null) {
-                BackupVerificationResult backupVerificationResult =
-                        verifyBackup(metaProxy, backupMetadata);
-                if (backupVerificationResult.valid) {
-                    backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
-                    backupStatusMgr.update(backupMetadata);
-                    result.add(backupVerificationResult);
-                }
+                verifyBackup(metaProxy, backupMetadata).ifPresent(result::add);
             }
         }
         return result;
@@ -119,12 +110,18 @@ public class BackupVerification {
         return latestResult == null ? Optional.empty() : Optional.of(latestResult.snapshotInstant);
     }
 
-    private BackupVerificationResult verifyBackup(
+    private Optional<BackupVerificationResult> verifyBackup(
             IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
         Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());
         metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseRemote(metadataLocation.toString());
-        return metaProxy.isMetaFileValid(abstractBackupPath);
+        BackupVerificationResult result = metaProxy.isMetaFileValid(abstractBackupPath);
+        if (result.valid) {
+            latestBackupMetaData.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+            backupStatusMgr.update(latestBackupMetaData);
+            return Optional.of(result);
+        }
+        return Optional.empty();
     }
 }

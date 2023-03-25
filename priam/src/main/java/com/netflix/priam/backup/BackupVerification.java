@@ -74,13 +74,14 @@ public class BackupVerification {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         for (BackupMetadata backupMetadata :
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
-            if (backupMetadata.getLastValidated() != null && !force) {
+            if (backupMetadata.getLastValidated() == null || force) {
+                Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
+                if (result.isPresent()) {
+                    return result;
+                }
+            } else {
                 updateLatestResult(backupMetadata);
                 return Optional.of(latestResult);
-            }
-            Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
-            if (result.isPresent()) {
-                return result;
             }
         }
         latestResult = null;

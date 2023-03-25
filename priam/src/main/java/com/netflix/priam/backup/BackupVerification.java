@@ -14,7 +14,6 @@
 package com.netflix.priam.backup;
 
 import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.nio.file.Path;
@@ -68,13 +67,8 @@ public class BackupVerification {
 
     public Optional<BackupVerificationResult> verifyBackup(
             BackupVersion backupVersion, boolean force, DateRange dateRange)
-            throws UnsupportedTypeException, IllegalArgumentException {
+            throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        if (metaProxy == null) {
-            throw new UnsupportedTypeException(
-                    "BackupVersion type: " + backupVersion + " is not supported");
-        }
-
         if (dateRange == null) {
             throw new IllegalArgumentException("dateRange provided is null");
         }
@@ -113,14 +107,8 @@ public class BackupVerification {
     }
 
     public List<BackupVerificationResult> verifyAllBackups(
-            BackupVersion backupVersion, DateRange dateRange)
-            throws UnsupportedTypeException, IllegalArgumentException {
+            BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        if (metaProxy == null) {
-            throw new UnsupportedTypeException(
-                    "BackupVersion type: " + backupVersion + " is not supported");
-        }
-
         if (dateRange == null) {
             throw new IllegalArgumentException("dateRange provided is null");
         }

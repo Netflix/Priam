@@ -75,19 +75,11 @@ public class BackupVerification {
         for (BackupMetadata backupMetadata :
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
             if (backupMetadata.getLastValidated() != null && !force) {
-                // Backup is already validated. Nothing to do.
-                latestResult = new BackupVerificationResult();
-                latestResult.valid = true;
-                latestResult.manifestAvailable = true;
-                latestResult.snapshotInstant = backupMetadata.getStart().toInstant();
-                Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
-                latestResult.remotePath =
-                        snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
+                updateLatestResult(backupMetadata);
                 return Optional.of(latestResult);
             }
             Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
             if (result.isPresent()) {
-                latestResult = result.get();
                 return result;
             }
         }
@@ -121,11 +113,25 @@ public class BackupVerification {
         abstractBackupPath.parseRemote(metadataLocation.toString());
         BackupVerificationResult result = metaProxy.isMetaFileValid(abstractBackupPath);
         if (result.valid) {
+            updateLatestResult(latestBackupMetaData);
             Date now = new Date(DateUtil.getInstant().toEpochMilli());
             latestBackupMetaData.setLastValidated(now);
             backupStatusMgr.update(latestBackupMetaData);
             return Optional.of(result);
         }
         return Optional.empty();
+    }
+
+    private void updateLatestResult(BackupMetadata backupMetadata) {
+        Instant snapshotInstant = backupMetadata.getStart().toInstant();
+        if (latestResult == null || latestResult.snapshotInstant.isBefore(snapshotInstant)) {
+            latestResult = new BackupVerificationResult();
+            latestResult.valid = true;
+            latestResult.manifestAvailable = true;
+            latestResult.snapshotInstant = backupMetadata.getStart().toInstant();
+            Path snapshotLocation = Paths.get(backupMetadata.getSnapshotLocation());
+            latestResult.remotePath =
+                    snapshotLocation.subpath(1, snapshotLocation.getNameCount()).toString();
+        }
     }
 }

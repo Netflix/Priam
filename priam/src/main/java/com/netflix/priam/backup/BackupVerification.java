@@ -19,7 +19,10 @@ import com.netflix.priam.utils.DateUtil.DateRange;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
@@ -65,7 +68,7 @@ public class BackupVerification {
         return null;
     }
 
-    public Optional<BackupVerificationResult> verifyBackup(
+    public Optional<BackupVerificationResult> findLatestVerifiedBackup(
             BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
@@ -92,7 +95,7 @@ public class BackupVerification {
         return Optional.empty();
     }
 
-    public List<BackupVerificationResult> verifyAllBackups(
+    public List<BackupVerificationResult> verifyBackupsInRange(
             BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         List<BackupVerificationResult> result = new ArrayList<>();
@@ -118,7 +121,8 @@ public class BackupVerification {
         abstractBackupPath.parseRemote(metadataLocation.toString());
         BackupVerificationResult result = metaProxy.isMetaFileValid(abstractBackupPath);
         if (result.valid) {
-            latestBackupMetaData.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
+            Date now = new Date(DateUtil.getInstant().toEpochMilli());
+            latestBackupMetaData.setLastValidated(now);
             backupStatusMgr.update(latestBackupMetaData);
             return Optional.of(result);
         }

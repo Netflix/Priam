@@ -85,7 +85,8 @@ public class BackupVerificationTask extends Task {
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
         DateRange dateRange = new DateRange(slo, now);
         List<BackupVerificationResult> verificationResults =
-                backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
+                backupVerification.verifyBackupsInRange(
+                        BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
 
         verificationResults.forEach(
                 result -> {
@@ -97,7 +98,8 @@ public class BackupVerificationTask extends Task {
                 });
 
         if (!backupVerification
-                .verifyBackup(BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
+                .findLatestVerifiedBackup(
+                        BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
                 .isPresent()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",

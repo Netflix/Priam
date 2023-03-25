@@ -93,14 +93,14 @@ public class TestBackupVerification {
     @Test
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.findLatestVerifiedBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.findLatestVerifiedBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
@@ -110,12 +110,12 @@ public class TestBackupVerification {
     @Test
     public void noBackupDateRange() throws Exception {
         List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResults.size() > 0);
 
         backupVerificationResults =
-                backupVerification.verifyAllBackups(
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResults.size() > 0);
@@ -153,7 +153,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 1.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.findLatestVerifiedBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -185,7 +185,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 1.0
         List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
@@ -215,7 +215,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 2.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.findLatestVerifiedBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -235,7 +235,7 @@ public class TestBackupVerification {
 
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.findLatestVerifiedBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -264,7 +264,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 2.0
         List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());

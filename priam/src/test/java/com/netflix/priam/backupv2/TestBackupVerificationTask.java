@@ -148,12 +148,13 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupVerification.verifyBackup((BackupVersion) any, anyBoolean, (DateRange) any);
+                backupVerification.findLatestVerifiedBackup(
+                        (BackupVersion) any, anyBoolean, (DateRange) any);
                 maxTimes = 0;
             }
 
             {
-                backupVerification.verifyAllBackups((BackupVersion) any, (DateRange) any);
+                backupVerification.verifyBackupsInRange((BackupVersion) any, (DateRange) any);
                 maxTimes = 0;
             }
 

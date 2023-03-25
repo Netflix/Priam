@@ -219,7 +219,8 @@ public class BackupServlet {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, force, dateRange);
+                backupVerification.findLatestVerifiedBackup(
+                        BackupVersion.SNAPSHOT_BACKUP, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

@@ -86,11 +86,6 @@ public class BackupVerification {
             }
             BackupVerificationResult backupVerificationResult =
                     verifyBackup(metaProxy, backupMetadata);
-            if (logger.isDebugEnabled())
-                logger.debug(
-                        "BackupVerification: metadata: {}, result: {}",
-                        backupMetadata,
-                        backupVerificationResult);
             if (backupVerificationResult.valid) {
                 backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
                 backupStatusMgr.update(backupMetadata);
@@ -113,11 +108,6 @@ public class BackupVerification {
             if (backupMetadata.getLastValidated() == null) {
                 BackupVerificationResult backupVerificationResult =
                         verifyBackup(metaProxy, backupMetadata);
-                if (logger.isDebugEnabled())
-                    logger.debug(
-                            "BackupVerification: metadata: {}, result: {}",
-                            backupMetadata,
-                            backupVerificationResult);
                 if (backupVerificationResult.valid) {
                     backupMetadata.setLastValidated(new Date(DateUtil.getInstant().toEpochMilli()));
                     backupStatusMgr.update(backupMetadata);

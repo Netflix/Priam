@@ -69,10 +69,8 @@ public class BackupVerification {
             BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        List<BackupMetadata> metadata =
-                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
-        if (metadata == null || metadata.isEmpty()) return Optional.empty();
-        for (BackupMetadata backupMetadata : metadata) {
+        for (BackupMetadata backupMetadata :
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
             if (backupMetadata.getLastValidated() != null && !force) {
                 // Backup is already validated. Nothing to do.
                 latestResult = new BackupVerificationResult();
@@ -101,10 +99,8 @@ public class BackupVerification {
             BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
         List<BackupVerificationResult> result = new ArrayList<>();
-        List<BackupMetadata> metadata =
-                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange);
-        if (metadata == null || metadata.isEmpty()) return result;
-        for (BackupMetadata backupMetadata : metadata) {
+        for (BackupMetadata backupMetadata :
+                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
             if (backupMetadata.getLastValidated() == null) {
                 BackupVerificationResult backupVerificationResult =
                         verifyBackup(metaProxy, backupMetadata);

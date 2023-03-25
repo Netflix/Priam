@@ -160,6 +160,13 @@ public class StandardTunerTest {
     }
 
     @Test
+    public void testAutoSnapshot() throws Exception {
+        boolean autoSnapshot = true;
+        Map map = applyFakeConfiguration(new FakeConfiguration().setAutoSnapshot(autoSnapshot));
+        Assert.assertEquals(autoSnapshot, map.get("auto_snapshot"));
+    }
+
+    @Test
     public void testRoleManagerOverride() throws Exception {
         String roleManagerOverride = "org.apache.cassandra.auth.CustomRoleManager";
         Map map =

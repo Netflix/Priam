@@ -1156,6 +1156,9 @@ public interface IConfiguration {
         return 0L;
     }
 
+    /** @return whether to enable auto_snapshot */
+    boolean getAutoSnapshot();
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

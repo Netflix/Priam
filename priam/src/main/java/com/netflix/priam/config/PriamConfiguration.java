@@ -774,4 +774,9 @@ public class PriamConfiguration implements IConfiguration {
     public double getRateLimitChangeThreshold() {
         return config.get(PRIAM_PRE + ".rateLimitChangeThreshold", 0.1);
     }
+
+    @Override
+    public boolean getAutoSnapshot() {
+        return config.get(PRIAM_PRE + ".autoSnapshot", false);
+    }
 }

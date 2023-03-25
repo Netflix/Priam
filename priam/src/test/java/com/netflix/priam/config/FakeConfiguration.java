@@ -40,6 +40,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean skipUpdatingOthersIngressRules;
     private boolean skipIngressUnlessIPIsPublic;
     private long compressionTransitionEpochMillis;
+    private boolean autoSnapshot;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -301,5 +302,15 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public int getStreamingKeepAlivePeriod() {
         return 300;
+    }
+
+    public FakeConfiguration setAutoSnapshot(boolean autoSnapshot) {
+        this.autoSnapshot = autoSnapshot;
+        return this;
+    }
+
+    @Override
+    public boolean getAutoSnapshot() {
+        return autoSnapshot;
     }
 }

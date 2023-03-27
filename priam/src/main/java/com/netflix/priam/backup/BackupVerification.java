@@ -88,17 +88,18 @@ public class BackupVerification {
         return Optional.empty();
     }
 
-    public List<BackupVerificationResult> verifyBackupsInRange(
+    public List<BackupMetadata> verifyBackupsInRange(
             BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        List<BackupVerificationResult> result = new ArrayList<>();
+        List<BackupMetadata> results = new ArrayList<>();
         for (BackupMetadata backupMetadata :
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
-            if (backupMetadata.getLastValidated() == null) {
-                verifyBackup(metaProxy, backupMetadata).ifPresent(result::add);
+            if (backupMetadata.getLastValidated() != null
+                    || verifyBackup(metaProxy, backupMetadata).isPresent()) {
+                results.add(backupMetadata);
             }
         }
-        return result;
+        return results;
     }
 
     /** returns the latest valid backup verification result if we have found one within the SLO * */

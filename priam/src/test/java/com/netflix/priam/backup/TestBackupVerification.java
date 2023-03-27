@@ -109,7 +109,7 @@ public class TestBackupVerification {
 
     @Test
     public void noBackupDateRange() throws Exception {
-        List<BackupVerificationResult> backupVerificationResults =
+        List<BackupMetadata> backupVerificationResults =
                 backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResults.size() > 0);
@@ -184,15 +184,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion1DateRange() throws Exception {
         setUp();
         // Verify for backup version 1.0
-        List<BackupVerificationResult> backupVerificationResults =
+        List<BackupMetadata> backupVerificationResults =
                 backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults
-                .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
@@ -263,15 +260,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion2DateRange() throws Exception {
         setUp();
         // Verify for backup version 2.0
-        List<BackupVerificationResult> backupVerificationResults =
+        List<BackupMetadata> backupVerificationResults =
                 backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults
-                .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,

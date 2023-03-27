@@ -84,23 +84,24 @@ public class BackupVerificationTask extends Task {
         Instant slo =
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
         DateRange dateRange = new DateRange(slo, now);
-        List<BackupVerificationResult> verificationResults =
+        List<BackupMetadata> verifiedBackups =
                 backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
 
-        verificationResults.forEach(
-                result -> {
-                    logger.info(
-                            "Sending {} message for backup: {}",
-                            AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                            result.snapshotInstant);
-                    backupNotificationMgr.notify(result.remotePath, result.snapshotInstant);
-                });
+        verifiedBackups
+                .stream()
+                .filter(result -> result.getLastValidated().toInstant().isAfter(now))
+                .forEach(
+                        result -> {
+                            logger.info(
+                                    "Sending {} message for backup: {}",
+                                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                                    result.getSnapshotLocation());
+                            backupNotificationMgr.notify(
+                                    result.getSnapshotLocation(), result.getStart().toInstant());
+                        });
 
-        if (!backupVerification
-                .findLatestVerifiedBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
-                .isPresent()) {
+        if (verifiedBackups.isEmpty()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());

@@ -157,7 +157,7 @@ public class BackupServletV2Test {
     public void testValidate() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
@@ -177,7 +177,7 @@ public class BackupServletV2Test {
     public void testValidateNoBackups() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
@@ -196,7 +196,7 @@ public class BackupServletV2Test {
     public void testValidateV2SnapshotByDate() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));

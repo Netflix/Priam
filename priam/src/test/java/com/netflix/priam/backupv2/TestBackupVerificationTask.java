@@ -30,6 +30,8 @@ import com.netflix.priam.utils.DateUtil.DateRange;
 import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.List;
 import java.util.Optional;
 import javax.inject.Inject;
@@ -59,9 +61,14 @@ public class TestBackupVerificationTask {
     private static final class MockBackupVerification extends MockUp<BackupVerification> {
         private static boolean throwError;
         private static ImmutableList<BackupVerificationResult> results;
+        private static ImmutableList<BackupMetadata> verifiedBackups;
 
         public static void setResults(BackupVerificationResult... newResults) {
             results = ImmutableList.copyOf(newResults);
+        }
+
+        public static void setVerifiedBackups(BackupMetadata... newVerifiedBackups) {
+            verifiedBackups = ImmutableList.copyOf(newVerifiedBackups);
         }
 
         public static void shouldThrow(boolean newThrowError) {
@@ -69,15 +76,15 @@ public class TestBackupVerificationTask {
         }
 
         @Mock
-        public List<BackupVerificationResult> verifyAllBackups(
+        public List<BackupMetadata> verifyBackupsInRange(
                 BackupVersion backupVersion, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
-            return results;
+            return verifiedBackups;
         }
 
         @Mock
-        public Optional<BackupVerificationResult> verifyBackup(
+        public Optional<BackupVerificationResult> verifyLatestBackup(
                 BackupVersion backupVersion, boolean force, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
@@ -97,27 +104,35 @@ public class TestBackupVerificationTask {
     @Test
     public void validBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setResults(getValidBackupVerificationResult());
+        MockBackupVerification.setVerifiedBackups(getRecentlyValidatedMetadata());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 times = 1;
             }
         };
     }
 
     @Test
-    public void invalidBackups() throws Exception {
+    public void invalidBackups() {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setResults(getInvalidBackupVerificationResult());
+        MockBackupVerification.setVerifiedBackups(getInvalidBackupMetadata());
+        Assertions.assertThrows(
+                NullPointerException.class, () -> backupVerificationService.execute());
+    }
+
+    @Test
+    public void previouslyVerifiedBackups() throws Exception {
+        MockBackupVerification.shouldThrow(false);
+        MockBackupVerification.setVerifiedBackups(getPreviouslyValidatedMetadata());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
-                times = 1;
+                backupNotificationMgr.notify(anyString, (Instant) any);
+                times = 0;
             }
         };
     }
@@ -125,12 +140,12 @@ public class TestBackupVerificationTask {
     @Test
     public void noBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setResults();
+        MockBackupVerification.setVerifiedBackups();
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(1);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 maxTimes = 0;
             }
         };
@@ -148,39 +163,34 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupVerification.verifyBackup((BackupVersion) any, anyBoolean, (DateRange) any);
+                backupVerification.verifyBackupsInRange((BackupVersion) any, (DateRange) any);
                 maxTimes = 0;
             }
 
             {
-                backupVerification.verifyAllBackups((BackupVersion) any, (DateRange) any);
-                maxTimes = 0;
-            }
-
-            {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 maxTimes = 0;
             }
         };
     }
 
-    private static BackupVerificationResult getInvalidBackupVerificationResult() {
-        BackupVerificationResult result = new BackupVerificationResult();
-        result.valid = false;
-        result.manifestAvailable = true;
-        result.remotePath = "some_random";
-        result.filesMatched = 123;
-        result.snapshotInstant = Instant.EPOCH;
-        return result;
+    private static BackupMetadata getInvalidBackupMetadata() {
+        return new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
     }
 
-    private static BackupVerificationResult getValidBackupVerificationResult() {
-        BackupVerificationResult result = new BackupVerificationResult();
-        result.valid = true;
-        result.manifestAvailable = true;
-        result.remotePath = "some_random";
-        result.filesMatched = 123;
-        result.snapshotInstant = Instant.EPOCH;
-        return result;
+    private static BackupMetadata getPreviouslyValidatedMetadata() {
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
+        backupMetadata.setLastValidated(
+                new Date(Instant.now().minus(1, ChronoUnit.HOURS).toEpochMilli()));
+        return backupMetadata;
+    }
+
+    private static BackupMetadata getRecentlyValidatedMetadata() {
+        BackupMetadata backupMetadata =
+                new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
+        backupMetadata.setLastValidated(
+                new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()));
+        return backupMetadata;
     }
 }

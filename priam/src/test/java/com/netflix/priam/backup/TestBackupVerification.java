@@ -93,14 +93,14 @@ public class TestBackupVerification {
     @Test
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
@@ -153,7 +153,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 1.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -212,7 +212,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 2.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -232,7 +232,7 @@ public class TestBackupVerification {
 
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));

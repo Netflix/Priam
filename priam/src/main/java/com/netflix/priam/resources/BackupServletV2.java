@@ -125,7 +125,7 @@ public class BackupServletV2 {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.findLatestVerifiedBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()

@@ -84,7 +84,7 @@ public class TestBackupVerificationTask {
         }
 
         @Mock
-        public Optional<BackupVerificationResult> findLatestVerifiedBackup(
+        public Optional<BackupVerificationResult> verifyLatestBackup(
                 BackupVersion backupVersion, boolean force, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");

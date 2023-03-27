@@ -68,7 +68,7 @@ public class BackupVerification {
         return null;
     }
 
-    public Optional<BackupVerificationResult> findLatestVerifiedBackup(
+    public Optional<BackupVerificationResult> verifyLatestBackup(
             BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);

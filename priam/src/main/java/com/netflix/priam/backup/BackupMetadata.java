@@ -34,9 +34,9 @@ public final class BackupMetadata implements Serializable {
     private BackupVersion backupVersion;
     private String snapshotLocation;
 
-    public BackupMetadata(BackupVersion backupVersion, String token, Date start) throws Exception {
+    public BackupMetadata(BackupVersion backupVersion, String token, Date start) {
         if (start == null || token == null || StringUtils.isEmpty(token))
-            throw new Exception(
+            throw new IllegalArgumentException(
                     String.format(
                             "Invalid Input: Token: %s or start date: %s is null or empty.",
                             token, start));

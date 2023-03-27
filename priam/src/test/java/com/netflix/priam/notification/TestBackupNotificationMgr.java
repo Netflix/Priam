@@ -5,7 +5,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import java.nio.file.Path;
@@ -296,23 +295,12 @@ public class TestBackupNotificationMgr {
                 maxTimes = 1;
             }
         };
-        BackupVerificationResult backupVerificationResult = getBackupVerificationResult();
-        backupNotificationMgr.notify(backupVerificationResult);
+        backupNotificationMgr.notify("some_random", Instant.EPOCH);
         new Verifications() {
             {
                 notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
                 maxTimes = 1;
             }
         };
-    }
-
-    private static BackupVerificationResult getBackupVerificationResult() {
-        BackupVerificationResult result = new BackupVerificationResult();
-        result.valid = true;
-        result.manifestAvailable = true;
-        result.remotePath = "some_random";
-        result.filesMatched = 123;
-        result.snapshotInstant = Instant.EPOCH;
-        return result;
     }
 }

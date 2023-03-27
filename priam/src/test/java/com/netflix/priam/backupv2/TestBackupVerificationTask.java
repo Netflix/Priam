@@ -102,7 +102,7 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 times = 1;
             }
         };
@@ -116,7 +116,7 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 times = 1;
             }
         };
@@ -130,7 +130,7 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(1);
         new Verifications() {
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 maxTimes = 0;
             }
         };
@@ -159,7 +159,7 @@ public class TestBackupVerificationTask {
             }
 
             {
-                backupNotificationMgr.notify((BackupVerificationResult) any);
+                backupNotificationMgr.notify(anyString, (Instant) any);
                 maxTimes = 0;
             }
         };

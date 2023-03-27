@@ -16,11 +16,11 @@ package com.netflix.priam.notification;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
+import java.time.Instant;
 import java.util.*;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -61,26 +61,27 @@ public class BackupNotificationMgr {
         this.notifiedBackupFileTypes = "";
     }
 
-    public void notify(BackupVerificationResult backupVerificationResult) {
+    public void notify(String remotePath, Instant snapshotInstant) {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("s3bucketname", this.config.getBackupPrefix());
             jsonObject.put("s3clustername", config.getAppName());
-            jsonObject.put("s3namespace", backupVerificationResult.remotePath);
+            jsonObject.put("s3namespace", remotePath);
             jsonObject.put("region", instanceInfo.getRegion());
             jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", instanceIdentity.getInstance().getToken());
             jsonObject.put(
                     "backuptype", AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED.name());
-            jsonObject.put("snapshotInstant", backupVerificationResult.snapshotInstant);
+            jsonObject.put("snapshotInstant", snapshotInstant);
             // SNS Attributes for filtering messages. Cluster name and backup file type.
             Map<String, MessageAttributeValue> messageAttributes = getMessageAttributes(jsonObject);
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {
             logger.error(
-                    "JSON exception during generation of notification for snapshot verification: {}. Msg: {}",
-                    backupVerificationResult,
+                    "JSON exception during generation of notification for snapshot verification: {}. path: {}, time: {}",
+                    remotePath,
+                    snapshotInstant,
                     exception.getLocalizedMessage());
         }
     }

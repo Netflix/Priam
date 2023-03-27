@@ -94,7 +94,7 @@ public class BackupVerificationTask extends Task {
                             "Sending {} message for backup: {}",
                             AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
                             result.snapshotInstant);
-                    backupNotificationMgr.notify(result);
+                    backupNotificationMgr.notify(result.remotePath, result.snapshotInstant);
                 });
 
         if (!backupVerification

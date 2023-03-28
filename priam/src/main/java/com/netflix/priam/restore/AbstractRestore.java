@@ -114,10 +114,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         return (isRestoreMode && isBackedupRac);
     }
 
-    public void setRestoreConfiguration(String restoreIncludeCFList, String restoreExcludeCFList) {
-        backupRestoreUtil.setFilters(restoreIncludeCFList, restoreExcludeCFList);
-    }
-
     private List<Future<Path>> download(
             Iterator<AbstractBackupPath> fsIterator, boolean waitForCompletion) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();

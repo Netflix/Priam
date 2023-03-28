@@ -40,7 +40,6 @@ public class BackupRestoreUtil {
     private Map<String, List<String>> includeFilter;
     private Map<String, List<String>> excludeFilter;
 
-    public static final List<String> FILTER_KEYSPACE = Collections.singletonList("OpsCenter");
     private static final Map<String, List<String>> FILTER_COLUMN_FAMILY =
             ImmutableMap.of(
                     "system",
@@ -49,15 +48,8 @@ public class BackupRestoreUtil {
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {
-        setFilters(configIncludeFilter, configExcludeFilter);
-    }
-
-    public BackupRestoreUtil setFilters(String configIncludeFilter, String configExcludeFilter) {
         includeFilter = getFilter(configIncludeFilter);
         excludeFilter = getFilter(configExcludeFilter);
-        logger.info("Exclude filter set: {}", configExcludeFilter);
-        logger.info("Include filter set: {}", configIncludeFilter);
-        return this;
     }
 
     public static Optional<AbstractBackupPath> getLatestValidMetaPath(

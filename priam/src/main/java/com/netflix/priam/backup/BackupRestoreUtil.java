@@ -30,12 +30,9 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Helper methods applicable to both backup and restore */
 public class BackupRestoreUtil {
-    private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
     private Map<String, List<String>> includeFilter;
     private Map<String, List<String>> excludeFilter;
@@ -110,8 +107,7 @@ public class BackupRestoreUtil {
                 columnFamilyFilter.put(keyspaceName, existingCfs);
             } else {
                 throw new IllegalArgumentException(
-                        "Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: "
-                                + cfFilter);
+                        "Invalid format: " + cfFilter + ". \"keyspace.columnfamily\" is required.");
             }
         }
         return columnFamilyFilter;
@@ -133,22 +129,12 @@ public class BackupRestoreUtil {
             if (excludeFilter.containsKey(keyspace)
                     && (excludeFilter.get(keyspace).isEmpty()
                             || excludeFilter.get(keyspace).contains(columnFamilyName))) {
-                logger.debug(
-                        "Skipping: keyspace: {}, CF: {} is part of exclude list.",
-                        keyspace,
-                        columnFamilyName);
                 return true;
             }
         if (includeFilter != null)
-            if (!(includeFilter.containsKey(keyspace)
+            return !(includeFilter.containsKey(keyspace)
                     && (includeFilter.get(keyspace).isEmpty()
-                            || includeFilter.get(keyspace).contains(columnFamilyName)))) {
-                logger.debug(
-                        "Skipping: keyspace: {}, CF: {} is not part of include list.",
-                        keyspace,
-                        columnFamilyName);
-                return true;
-            }
+                            || includeFilter.get(keyspace).contains(columnFamilyName)));
         return false;
     }
 }

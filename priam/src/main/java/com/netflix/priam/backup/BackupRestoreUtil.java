@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backup;
 
+import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
@@ -58,14 +59,13 @@ public class BackupRestoreUtil {
                 .findFirst();
     }
 
-    public static List<AbstractBackupPath> getAllFiles(
+    public static List<AbstractBackupPath> getMostRecentSnapshotPaths(
             AbstractBackupPath latestValidMetaFile,
-            DateUtil.DateRange dateRange,
             IMetaProxy metaProxy,
             Provider<AbstractBackupPath> pathProvider)
             throws Exception {
         Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile);
-        List<AbstractBackupPath> allFiles =
+        List<AbstractBackupPath> snapshotPaths =
                 metaProxy
                         .getSSTFilesFromMeta(metaFile)
                         .stream()
@@ -77,16 +77,19 @@ public class BackupRestoreUtil {
                                 })
                         .collect(Collectors.toList());
         FileUtils.deleteQuietly(metaFile.toFile());
+        return snapshotPaths;
+    }
 
+    public static List<AbstractBackupPath> getIncrementalPaths(
+            AbstractBackupPath latestValidMetaFile,
+            DateUtil.DateRange dateRange,
+            IMetaProxy metaProxy) {
         Instant snapshotTime;
         if (metaProxy instanceof MetaV2Proxy) snapshotTime = latestValidMetaFile.getLastModified();
         else snapshotTime = latestValidMetaFile.getTime().toInstant();
         DateUtil.DateRange incrementalDateRange =
                 new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
-        Iterator<AbstractBackupPath> incremental = metaProxy.getIncrementals(incrementalDateRange);
-        while (incremental.hasNext()) allFiles.add(incremental.next());
-
-        return allFiles;
+        return Lists.newArrayList(metaProxy.getIncrementals(incrementalDateRange));
     }
 
     public static Map<String, List<String>> getFilter(String inputFilter)

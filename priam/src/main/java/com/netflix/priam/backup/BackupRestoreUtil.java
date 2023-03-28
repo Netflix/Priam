@@ -34,8 +34,8 @@ import org.apache.commons.lang3.StringUtils;
 /** Helper methods applicable to both backup and restore */
 public class BackupRestoreUtil {
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
-    private Map<String, List<String>> includeFilter;
-    private Map<String, List<String>> excludeFilter;
+    private final Map<String, List<String>> includeFilter;
+    private final Map<String, List<String>> excludeFilter;
 
     private static final Map<String, List<String>> FILTER_COLUMN_FAMILY =
             ImmutableMap.of(
@@ -89,7 +89,7 @@ public class BackupRestoreUtil {
         return allFiles;
     }
 
-    public static final Map<String, List<String>> getFilter(String inputFilter)
+    public static Map<String, List<String>> getFilter(String inputFilter)
             throws IllegalArgumentException {
         if (StringUtils.isEmpty(inputFilter)) return null;
         final Map<String, List<String>> columnFamilyFilter = new HashMap<>();

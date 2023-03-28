@@ -33,7 +33,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 8/14/17. */
+/** Helper methods applicable to both backup and restore */
 public class BackupRestoreUtil {
     private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
@@ -54,18 +54,11 @@ public class BackupRestoreUtil {
 
     public static Optional<AbstractBackupPath> getLatestValidMetaPath(
             IMetaProxy metaProxy, DateUtil.DateRange dateRange) {
-        // Get a list of manifest files.
-        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
-
-        // Find a valid manifest file.
-        for (AbstractBackupPath meta : metas) {
-            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
-            if (result.valid) {
-                return Optional.of(meta);
-            }
-        }
-
-        return Optional.empty();
+        return metaProxy
+                .findMetaFiles(dateRange)
+                .stream()
+                .filter(meta -> metaProxy.isMetaFileValid(meta).valid)
+                .findFirst();
     }
 
     public static List<AbstractBackupPath> getAllFiles(
@@ -74,9 +67,7 @@ public class BackupRestoreUtil {
             IMetaProxy metaProxy,
             Provider<AbstractBackupPath> pathProvider)
             throws Exception {
-        // Download the meta.json file.
         Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile);
-        // Parse meta.json file to find the files required to download from this snapshot.
         List<AbstractBackupPath> allFiles =
                 metaProxy
                         .getSSTFilesFromMeta(metaFile)
@@ -88,14 +79,11 @@ public class BackupRestoreUtil {
                                     return path;
                                 })
                         .collect(Collectors.toList());
-
         FileUtils.deleteQuietly(metaFile.toFile());
 
-        // Download incremental SSTables after the snapshot meta file.
         Instant snapshotTime;
         if (metaProxy instanceof MetaV2Proxy) snapshotTime = latestValidMetaFile.getLastModified();
         else snapshotTime = latestValidMetaFile.getTime().toInstant();
-
         DateUtil.DateRange incrementalDateRange =
                 new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
         Iterator<AbstractBackupPath> incremental = metaProxy.getIncrementals(incrementalDateRange);
@@ -107,27 +95,19 @@ public class BackupRestoreUtil {
     public static final Map<String, List<String>> getFilter(String inputFilter)
             throws IllegalArgumentException {
         if (StringUtils.isEmpty(inputFilter)) return null;
-
-        final Map<String, List<String>> columnFamilyFilter =
-                new HashMap<>(); // key: keyspace, value: a list of CFs within the keyspace
-
+        final Map<String, List<String>> columnFamilyFilter = new HashMap<>();
         String[] filters = inputFilter.split(",");
-        for (String cfFilter :
-                filters) { // process filter of form keyspace.* or keyspace.columnfamily
+        for (String cfFilter : filters) {
             if (columnFamilyFilterPattern.matcher(cfFilter).find()) {
-
                 String[] filter = cfFilter.split("\\.");
                 String keyspaceName = filter[0];
                 String columnFamilyName = filter[1];
-
                 if (columnFamilyName.contains("-"))
                     columnFamilyName = columnFamilyName.substring(0, columnFamilyName.indexOf("-"));
-
                 List<String> existingCfs =
                         columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
                 if (!columnFamilyName.equalsIgnoreCase("*")) existingCfs.add(columnFamilyName);
                 columnFamilyFilter.put(keyspaceName, existingCfs);
-
             } else {
                 throw new IllegalArgumentException(
                         "Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: "
@@ -146,12 +126,9 @@ public class BackupRestoreUtil {
      */
     public final boolean isFiltered(String keyspace, String columnFamilyDir) {
         if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir)) return false;
-
         String columnFamilyName = columnFamilyDir.split("-")[0];
-        // column family is in list of global CF filter
         if (FILTER_COLUMN_FAMILY.containsKey(keyspace)
                 && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName)) return true;
-
         if (excludeFilter != null)
             if (excludeFilter.containsKey(keyspace)
                     && (excludeFilter.get(keyspace).isEmpty()
@@ -162,7 +139,6 @@ public class BackupRestoreUtil {
                         columnFamilyName);
                 return true;
             }
-
         if (includeFilter != null)
             if (!(includeFilter.containsKey(keyspace)
                     && (includeFilter.get(keyspace).isEmpty()
@@ -173,7 +149,6 @@ public class BackupRestoreUtil {
                         columnFamilyName);
                 return true;
             }
-
         return false;
     }
 }

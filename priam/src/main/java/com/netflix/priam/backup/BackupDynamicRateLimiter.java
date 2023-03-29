@@ -16,7 +16,7 @@ public class BackupDynamicRateLimiter implements DynamicRateLimiter {
     private final RateLimiter rateLimiter;
 
     @Inject
-    BackupDynamicRateLimiter(IConfiguration config, Clock clock, DirectorySize dirSize) {
+    public BackupDynamicRateLimiter(IConfiguration config, Clock clock, DirectorySize dirSize) {
         this.clock = clock;
         this.config = config;
         this.dirSize = dirSize;

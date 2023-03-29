@@ -19,7 +19,7 @@ import java.util.Map;
 
 /** Service to notify of a message. Created by vinhn on 11/3/16. */
 @ImplementedBy(AWSSnsNotificationService.class)
-interface INotificationService {
+public interface INotificationService {
     /**
      * Notify the message.
      *

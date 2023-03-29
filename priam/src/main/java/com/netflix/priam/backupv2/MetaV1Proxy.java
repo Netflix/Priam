@@ -41,7 +41,7 @@ public class MetaV1Proxy implements IMetaProxy {
     private final IBackupFileSystem fs;
 
     @Inject
-    MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
+    public MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
         fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 

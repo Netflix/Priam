@@ -114,10 +114,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         return (isRestoreMode && isBackedupRac);
     }
 
-    public void setRestoreConfiguration(String restoreIncludeCFList, String restoreExcludeCFList) {
-        backupRestoreUtil.setFilters(restoreIncludeCFList, restoreExcludeCFList);
-    }
-
     private List<Future<Path>> download(
             Iterator<AbstractBackupPath> fsIterator, boolean waitForCompletion) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();
@@ -247,8 +243,13 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                     .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
 
             List<AbstractBackupPath> allFiles =
-                    BackupRestoreUtil.getAllFiles(
-                            latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
+                    BackupRestoreUtil.getMostRecentSnapshotPaths(
+                            latestValidMetaFile.get(), metaProxy, pathProvider);
+            if (!config.skipIncrementalRestore()) {
+                allFiles.addAll(
+                        BackupRestoreUtil.getIncrementalPaths(
+                                latestValidMetaFile.get(), dateRange, metaProxy));
+            }
 
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();

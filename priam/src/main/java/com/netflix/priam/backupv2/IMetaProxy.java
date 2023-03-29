@@ -77,10 +77,8 @@ public interface IMetaProxy {
      *
      * @param dateRange the time period to scan in the remote file system for incremental files.
      * @return iterator containing the list of path on the remote file system satisfying criteria.
-     * @throws BackupRestoreException if there is an issue contacting remote file system.
      */
-    Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
-            throws BackupRestoreException;
+    Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange);
 
     /**
      * Validate that all the files mentioned in the meta file actually exists on remote file system.

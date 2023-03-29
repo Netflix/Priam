@@ -44,7 +44,7 @@ public class BackupVerification {
     private BackupVerificationResult latestResult;
 
     @Inject
-    BackupVerification(
+    public BackupVerification(
             @Named("v1") IMetaProxy metaV1Proxy,
             @Named("v2") IMetaProxy metaV2Proxy,
             IBackupStatusMgr backupStatusMgr,

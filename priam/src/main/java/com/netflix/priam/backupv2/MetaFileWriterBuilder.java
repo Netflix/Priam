@@ -52,7 +52,7 @@ public class MetaFileWriterBuilder {
     private static final Logger logger = LoggerFactory.getLogger(MetaFileWriterBuilder.class);
 
     @Inject
-    MetaFileWriterBuilder(MetaFileWriter metaFileWriter) {
+    public MetaFileWriterBuilder(MetaFileWriter metaFileWriter) {
         this.metaFileWriter = metaFileWriter;
     }
 
@@ -93,7 +93,7 @@ public class MetaFileWriterBuilder {
         private Path metaFilePath;
 
         @Inject
-        private MetaFileWriter(
+        public MetaFileWriter(
                 IConfiguration configuration,
                 InstanceIdentity instanceIdentity,
                 Provider<AbstractBackupPath> pathFactory,

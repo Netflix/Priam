@@ -99,7 +99,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private MetaStep metaStep = MetaStep.META_GENERATION;
 
     @Inject
-    SnapshotMetaTask(
+    public SnapshotMetaTask(
             IConfiguration config,
             BackupHelper backupHelper,
             MetaFileWriterBuilder metaFileWriter,

@@ -147,8 +147,11 @@ public class BackupServletV2 {
             return Response.ok("No valid meta found!").build();
         }
         List<AbstractBackupPath> allFiles =
-                BackupRestoreUtil.getAllFiles(
-                        latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
+                BackupRestoreUtil.getMostRecentSnapshotPaths(
+                        latestValidMetaFile.get(), metaProxy, pathProvider);
+        allFiles.addAll(
+                BackupRestoreUtil.getIncrementalPaths(
+                        latestValidMetaFile.get(), dateRange, metaProxy));
 
         return Response.ok(
                         GsonJsonSerializer.getGson()

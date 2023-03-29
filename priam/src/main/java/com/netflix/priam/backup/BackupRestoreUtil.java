@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.google.api.client.util.Lists;
 import com.google.common.collect.ImmutableMap;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
@@ -89,7 +88,9 @@ public class BackupRestoreUtil {
         else snapshotTime = latestValidMetaFile.getTime().toInstant();
         DateUtil.DateRange incrementalDateRange =
                 new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
-        return Lists.newArrayList(metaProxy.getIncrementals(incrementalDateRange));
+        List<AbstractBackupPath> incrementalPaths = new ArrayList<>();
+        metaProxy.getIncrementals(incrementalDateRange).forEachRemaining(incrementalPaths::add);
+        return incrementalPaths;
     }
 
     public static Map<String, List<String>> getFilter(String inputFilter)

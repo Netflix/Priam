@@ -1,4 +1,7 @@
 # Changelog
+## 2023/03/29 3.11.97
+Minor changes to some Java constructors to public for better dependency injection. (#1036)
+
 ## 2023/02/28 3.11.96
 Switch from com.google.inject to JSR-330 javax.inject annotations for better compatibility (#1030)
 

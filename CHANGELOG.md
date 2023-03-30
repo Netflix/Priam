@@ -1,5 +1,8 @@
 # Changelog
 ## 2023/03/29 3.11.97
+Reveal property to enable auto_snapshot. (#1031)
+Fix backup verification race condition causing missing notifications (#1034)
+Reveal hook to allow operators to restore just to the most recent snapshot (#1035)
 Minor changes to some Java constructors to public for better dependency injection. (#1036)
 
 ## 2023/02/28 3.11.96

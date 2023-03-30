@@ -45,7 +45,7 @@ public class MetaV2Proxy implements IMetaProxy {
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
 
     @Inject
-    MetaV2Proxy(
+    public MetaV2Proxy(
             IConfiguration configuration,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {

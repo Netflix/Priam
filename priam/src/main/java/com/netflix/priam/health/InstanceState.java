@@ -53,7 +53,7 @@ public class InstanceState {
     private final RestoreStatus restoreStatus;
 
     @Inject
-    InstanceState(RestoreStatus restoreStatus) {
+    public InstanceState(RestoreStatus restoreStatus) {
         this.restoreStatus = restoreStatus;
     }
 

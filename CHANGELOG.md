@@ -1,4 +1,7 @@
 # Changelog
+## 2023/03/30 3.11.98
+Change the CassandraOperations constructor to be public (#1037)
+
 ## 2023/03/29 3.11.97
 Reveal property to enable auto_snapshot. (#1031)
 Fix backup verification race condition causing missing notifications (#1034)

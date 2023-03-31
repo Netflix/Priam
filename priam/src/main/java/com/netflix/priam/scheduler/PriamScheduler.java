@@ -100,7 +100,10 @@ public class PriamScheduler {
     }
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {
-        jobFactory.newJob(taskclass).execute(null);
+        // Create a new instance of the task using reflection
+        Task taskInstance = taskclass.getDeclaredConstructor().newInstance();
+        // Call the execute method on the instance
+        taskInstance.execute(null);
     }
 
     public void deleteTask(String name) throws SchedulerException {

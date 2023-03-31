@@ -17,6 +17,7 @@
 
 package com.netflix.priam.backupv2;
 
+import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackup;
@@ -72,6 +73,8 @@ public class TestBackupV2Service {
             {
                 backupRestoreConfig.getSnapshotMetaServiceCronExpression();
                 result = "-1";
+                backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
+                result = 600;
                 configuration.getDataFileLocation();
                 result = "target/data";
             }
@@ -109,7 +112,7 @@ public class TestBackupV2Service {
                         cassandraTunerService,
                         tokenRetriever);
         backupService.scheduleService();
-        Assert.assertTrue(scheduler.getScheduler().getJobGroupNames().isEmpty());
+        Truth.assertThat(scheduler.getScheduler().getJobGroupNames()).hasSize(1);
 
         // snapshot V2 name should not be there.
         Set<Path> backupPaths =
@@ -220,6 +223,6 @@ public class TestBackupV2Service {
         Assert.assertEquals(3, scheduler.getScheduler().getJobKeys(null).size());
 
         backupService.onChangeUpdateService();
-        Assert.assertEquals(0, scheduler.getScheduler().getJobKeys(null).size());
+        Assert.assertEquals(1, scheduler.getScheduler().getJobKeys(null).size());
     }
 }

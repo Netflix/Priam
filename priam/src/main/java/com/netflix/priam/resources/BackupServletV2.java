@@ -17,6 +17,8 @@
 
 package com.netflix.priam.resources;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.BackupV2Service;
@@ -121,19 +123,12 @@ public class BackupServletV2 {
     @Path("/validate/{daterange}")
     public Response validateV2SnapshotByDate(
             @PathParam("daterange") String daterange,
-            @DefaultValue("false") @QueryParam("force") boolean force)
-            throws Exception {
+            @DefaultValue("false") @QueryParam("force") boolean force) {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
-        Optional<BackupVerificationResult> result =
-                backupVerification.verifyLatestBackup(
+        ImmutableMap<BackupMetadata, ImmutableSet<String>> result =
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
-        if (!result.isPresent()) {
-            return Response.noContent()
-                    .entity("No valid meta found for provided time range")
-                    .build();
-        }
-
-        return Response.ok(result.get().toString()).build();
+        return Response.ok(GsonJsonSerializer.getGson().toJson(result)).build();
     }
 
     @GET

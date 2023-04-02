@@ -17,7 +17,8 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -31,9 +32,7 @@ import com.netflix.spectator.api.Counter;
 import com.netflix.spectator.api.Registry;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import javax.inject.Inject;
 import mockit.*;
 import org.junit.Before;
@@ -56,19 +55,24 @@ public class TestBackupVerificationTask {
         badVerifications =
                 injector.getInstance(Registry.class)
                         .counter(Metrics.METRIC_PREFIX + "backup.verification.failure");
+        MockBackupVerification.clearMissingFiles();
     }
 
     private static final class MockBackupVerification extends MockUp<BackupVerification> {
         private static boolean throwError;
-        private static ImmutableList<BackupVerificationResult> results;
-        private static ImmutableList<BackupMetadata> verifiedBackups;
+        private static final Map<BackupMetadata, ImmutableSet<String>> verifiedBackups;
 
-        public static void setResults(BackupVerificationResult... newResults) {
-            results = ImmutableList.copyOf(newResults);
+        static {
+            verifiedBackups = new HashMap<>();
         }
 
-        public static void setVerifiedBackups(BackupMetadata... newVerifiedBackups) {
-            verifiedBackups = ImmutableList.copyOf(newVerifiedBackups);
+        public static void updateMissingFiles(
+                BackupMetadata newVerifiedBackups, ImmutableSet<String> missingFiles) {
+            verifiedBackups.put(newVerifiedBackups, missingFiles);
+        }
+
+        public static void clearMissingFiles() {
+            verifiedBackups.clear();
         }
 
         public static void shouldThrow(boolean newThrowError) {
@@ -76,19 +80,11 @@ public class TestBackupVerificationTask {
         }
 
         @Mock
-        public List<BackupMetadata> verifyBackupsInRange(
-                BackupVersion backupVersion, DateRange dateRange)
-                throws UnsupportedTypeException, IllegalArgumentException {
-            if (throwError) throw new IllegalArgumentException("DummyError");
-            return verifiedBackups;
-        }
-
-        @Mock
-        public Optional<BackupVerificationResult> verifyLatestBackup(
+        public ImmutableMap<BackupMetadata, ImmutableSet<String>> findMissingBackupFilesInRange(
                 BackupVersion backupVersion, boolean force, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
-            return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+            return ImmutableMap.copyOf(verifiedBackups);
         }
     }
 
@@ -104,7 +100,8 @@ public class TestBackupVerificationTask {
     @Test
     public void validBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setVerifiedBackups(getRecentlyValidatedMetadata());
+        MockBackupVerification.updateMissingFiles(
+                getRecentlyValidatedMetadata(), ImmutableSet.of());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
@@ -116,17 +113,25 @@ public class TestBackupVerificationTask {
     }
 
     @Test
-    public void invalidBackups() {
+    public void invalidBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setVerifiedBackups(getInvalidBackupMetadata());
-        Assertions.assertThrows(
-                NullPointerException.class, () -> backupVerificationService.execute());
+        MockBackupVerification.updateMissingFiles(
+                getInvalidBackupMetadata(), ImmutableSet.of("foo"));
+        backupVerificationService.execute();
+        Truth.assertThat(badVerifications.count()).isEqualTo(1);
+        new Verifications() {
+            {
+                backupNotificationMgr.notify(anyString, (Instant) any);
+                times = 0;
+            }
+        };
     }
 
     @Test
     public void previouslyVerifiedBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setVerifiedBackups(getPreviouslyValidatedMetadata());
+        MockBackupVerification.updateMissingFiles(
+                getPreviouslyValidatedMetadata(), ImmutableSet.of());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
@@ -140,7 +145,6 @@ public class TestBackupVerificationTask {
     @Test
     public void noBackups() throws Exception {
         MockBackupVerification.shouldThrow(false);
-        MockBackupVerification.setVerifiedBackups();
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(1);
         new Verifications() {
@@ -163,7 +167,8 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupVerification.verifyBackupsInRange((BackupVersion) any, (DateRange) any);
+                backupVerification.findMissingBackupFilesInRange(
+                        (BackupVersion) any, anyBoolean, (DateRange) any);
                 maxTimes = 0;
             }
 

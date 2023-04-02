@@ -2,6 +2,8 @@ package com.netflix.priam.resources;
 
 import static org.junit.Assert.assertEquals;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.*;
@@ -154,14 +156,14 @@ public class BackupServletV2Test {
     }
 
     @Test
-    public void testValidate() throws Exception {
+    public void testValidate() {
         new Expectations() {
             {
-                backupVerification.verifyLatestBackup(
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
-                result = Optional.of(getBackupVerificationResult());
+                result = getBackupsWithAllFiles();
             }
         };
         Response response =
@@ -169,46 +171,28 @@ public class BackupServletV2Test {
                         new DateUtil.DateRange(Instant.now(), Instant.now()).toString(), true);
         assertEquals(200, response.getStatus());
         assertEquals(
-                GsonJsonSerializer.getGson().toJson(getBackupVerificationResult()),
+                GsonJsonSerializer.getGson().toJson(getBackupsWithAllFiles()),
                 response.getEntity().toString());
     }
 
     @Test
-    public void testValidateNoBackups() throws Exception {
+    public void testValidateNoBackups() {
         new Expectations() {
             {
-                backupVerification.verifyLatestBackup(
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
-                result = Optional.empty();
+                result = getBackupsWithMissingFiles();
             }
         };
         Response response =
                 resource.validateV2SnapshotByDate(
                         new DateUtil.DateRange(Instant.now(), Instant.now()).toString(), true);
-        assertEquals(204, response.getStatus());
-        assertEquals(
-                response.getEntity().toString(), "No valid meta found for provided time range");
-    }
-
-    @Test
-    public void testValidateV2SnapshotByDate() throws Exception {
-        new Expectations() {
-            {
-                backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        anyBoolean,
-                        new DateUtil.DateRange((Instant) any, (Instant) any));
-                result = Optional.of(getBackupVerificationResult());
-            }
-        };
-        Response response =
-                resource.validateV2SnapshotByDate(
-                        new DateUtil.DateRange(Instant.now(), Instant.now()).toString(), true);
+        System.out.println(response.getEntity().toString());
         assertEquals(200, response.getStatus());
         assertEquals(
-                GsonJsonSerializer.getGson().toJson(getBackupVerificationResult()),
+                GsonJsonSerializer.getGson().toJson(getBackupsWithMissingFiles()),
                 response.getEntity().toString());
     }
 
@@ -290,17 +274,15 @@ public class BackupServletV2Test {
                 response.getEntity().toString());
     }
 
-    private static BackupVerificationResult getBackupVerificationResult() {
-        BackupVerificationResult result = new BackupVerificationResult();
-        result.valid = true;
-        result.manifestAvailable = true;
-        result.remotePath = "some_random";
-        result.filesMatched = 123;
-        result.snapshotInstant = Instant.EPOCH;
-        return result;
+    private static ImmutableMap<BackupMetadata, ImmutableSet<String>> getBackupsWithAllFiles() {
+        return ImmutableMap.of(getBackupMetaData(), ImmutableSet.of());
     }
 
-    private static BackupMetadata getBackupMetaData() throws Exception {
+    private static ImmutableMap<BackupMetadata, ImmutableSet<String>> getBackupsWithMissingFiles() {
+        return ImmutableMap.of(getBackupMetaData(), ImmutableSet.of("foo"));
+    }
+
+    private static BackupMetadata getBackupMetaData() {
         BackupMetadata backupMetadata =
                 new BackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,

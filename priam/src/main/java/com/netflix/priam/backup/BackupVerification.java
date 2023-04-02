@@ -13,6 +13,8 @@
  */
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
@@ -68,38 +70,21 @@ public class BackupVerification {
         return null;
     }
 
-    public Optional<BackupVerificationResult> verifyLatestBackup(
+    public ImmutableMap<BackupMetadata, ImmutableSet<String>> findMissingBackupFilesInRange(
             BackupVersion backupVersion, boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = getMetaProxy(backupVersion);
+        ImmutableMap.Builder<BackupMetadata, ImmutableSet<String>> mapBuilder =
+                ImmutableMap.builder();
         for (BackupMetadata backupMetadata :
                 backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
-            if (backupMetadata.getLastValidated() == null || force) {
-                Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
-                if (result.isPresent()) {
-                    return result;
-                }
-            } else {
-                updateLatestResult(backupMetadata);
-                return Optional.of(latestResult);
-            }
+            List<String> missingFiles =
+                    backupMetadata.getLastValidated() == null || force
+                            ? verifyBackup(metaProxy, backupMetadata).filesInMetaOnly
+                            : new ArrayList<>();
+            mapBuilder.put(backupMetadata, ImmutableSet.copyOf(missingFiles));
         }
-        latestResult = null;
-        return Optional.empty();
-    }
-
-    public List<BackupMetadata> verifyBackupsInRange(
-            BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
-        IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        List<BackupMetadata> results = new ArrayList<>();
-        for (BackupMetadata backupMetadata :
-                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
-            if (backupMetadata.getLastValidated() != null
-                    || verifyBackup(metaProxy, backupMetadata).isPresent()) {
-                results.add(backupMetadata);
-            }
-        }
-        return results;
+        return mapBuilder.build();
     }
 
     /** returns the latest valid backup verification result if we have found one within the SLO * */
@@ -107,7 +92,7 @@ public class BackupVerification {
         return latestResult == null ? Optional.empty() : Optional.of(latestResult.snapshotInstant);
     }
 
-    private Optional<BackupVerificationResult> verifyBackup(
+    private BackupVerificationResult verifyBackup(
             IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
         Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());
         metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
@@ -119,9 +104,8 @@ public class BackupVerification {
             Date now = new Date(DateUtil.getInstant().toEpochMilli());
             latestBackupMetaData.setLastValidated(now);
             backupStatusMgr.update(latestBackupMetaData);
-            return Optional.of(result);
         }
-        return Optional.empty();
+        return result;
     }
 
     private void updateLatestResult(BackupMetadata backupMetadata) {

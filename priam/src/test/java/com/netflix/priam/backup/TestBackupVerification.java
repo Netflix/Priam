@@ -17,6 +17,9 @@
 
 package com.netflix.priam.backup;
 
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
@@ -31,9 +34,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Date;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import mockit.Mock;
 import mockit.MockUp;
 import org.apache.commons.io.FileUtils;
@@ -91,34 +92,43 @@ public class TestBackupVerification {
     }
 
     @Test
-    public void noBackup() throws Exception {
-        Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+    public void noBackup() {
+        ImmutableMap<BackupMetadata, ImmutableSet<String>> missingFiles =
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResultOptinal.isPresent());
+        Truth.assertThat(missingFiles).isEmpty();
 
-        backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+        missingFiles =
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResultOptinal.isPresent());
+        Truth.assertThat(missingFiles).isEmpty();
     }
 
     @Test
     public void noBackupDateRange() throws Exception {
-        List<BackupMetadata> backupVerificationResults =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResults.size() > 0);
+        long foundBackups =
+                backupVerification
+                        .findMissingBackupFilesInRange(
+                                BackupVersion.SNAPSHOT_BACKUP,
+                                false /* force */,
+                                new DateRange(Instant.now(), Instant.now()))
+                        .entrySet()
+                        .size();
+        Truth.assertThat(foundBackups).isEqualTo(0L);
 
-        backupVerificationResults =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        new DateRange(Instant.now(), Instant.now()));
-        Assert.assertFalse(backupVerificationResults.size() > 0);
+        foundBackups =
+                backupVerification
+                        .findMissingBackupFilesInRange(
+                                BackupVersion.SNAPSHOT_META_SERVICE,
+                                false /* force */,
+                                new DateRange(Instant.now(), Instant.now()))
+                        .entrySet()
+                        .size();
+        Truth.assertThat(foundBackups).isEqualTo(0L);
     }
 
     private void setUp() throws Exception {
@@ -152,13 +162,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion1() throws Exception {
         setUp();
         // Verify for backup version 1.0
-        Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+        ImmutableMap<BackupMetadata, ImmutableSet<String>> missingFiles =
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
+        Truth.assertThat(missingFiles.values().stream().allMatch(Set::isEmpty)).isTrue();
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
                         .getLatestBackupMetadata(
@@ -184,12 +193,17 @@ public class TestBackupVerification {
     public void verifyBackupVersion1DateRange() throws Exception {
         setUp();
         // Verify for backup version 1.0
-        List<BackupMetadata> backupVerificationResults =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_BACKUP,
-                        new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupVerificationResults.isEmpty());
-        Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
+        long missingFilesCount =
+                backupVerification
+                        .findMissingBackupFilesInRange(
+                                BackupVersion.SNAPSHOT_BACKUP,
+                                false /* force */,
+                                new DateRange(backupDate + "," + backupDateEnd))
+                        .values()
+                        .stream()
+                        .filter(AbstractCollection::isEmpty)
+                        .count();
+        Truth.assertThat(missingFilesCount).isEqualTo(numFakeBackups);
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
@@ -211,14 +225,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion2() throws Exception {
         setUp();
         // Verify for backup version 2.0
-        Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+        ImmutableMap<BackupMetadata, ImmutableSet<String>> missingFiles =
+                backupVerification.findMissingBackupFilesInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
-        Assert.assertEquals("some_random", backupVerificationResultOptinal.get().remotePath);
+        Truth.assertThat(missingFiles.values().stream().allMatch(Set::isEmpty)).isTrue();
 
         Optional<BackupMetadata> backupMetadata =
                 backupStatusMgr
@@ -229,21 +241,6 @@ public class TestBackupVerification {
                         .findFirst();
         Assert.assertTrue(backupMetadata.isPresent());
         Assert.assertNotNull(backupMetadata.get().getLastValidated());
-
-        // Retry the verification, it should not try and re-verify
-        backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        false,
-                        new DateRange(backupDate + "," + backupDate));
-        Assert.assertTrue(backupVerificationResultOptinal.isPresent());
-        Assert.assertEquals(
-                DateUtil.parseInstant(backupDate),
-                backupVerificationResultOptinal.get().snapshotInstant);
-        Assert.assertNotEquals("some_random", backupVerificationResultOptinal.get().remotePath);
-        Assert.assertEquals(
-                location.subpath(1, location.getNameCount()).toString(),
-                backupVerificationResultOptinal.get().remotePath);
 
         backupMetadata =
                 backupStatusMgr
@@ -260,12 +257,17 @@ public class TestBackupVerification {
     public void verifyBackupVersion2DateRange() throws Exception {
         setUp();
         // Verify for backup version 2.0
-        List<BackupMetadata> backupVerificationResults =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        new DateRange(backupDate + "," + backupDateEnd));
-        Assert.assertTrue(!backupVerificationResults.isEmpty());
-        Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
+        long missingFilesCount =
+                backupVerification
+                        .findMissingBackupFilesInRange(
+                                BackupVersion.SNAPSHOT_META_SERVICE,
+                                false /* force */,
+                                new DateRange(backupDate + "," + backupDateEnd))
+                        .values()
+                        .stream()
+                        .filter(AbstractCollection::isEmpty)
+                        .count();
+        Truth.assertThat(missingFilesCount).isEqualTo(numFakeBackups);
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,

@@ -101,7 +101,7 @@ public class PriamScheduler {
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {
         // Create a new instance of the task using reflection
-        Task taskInstance = taskclass.getDeclaredConstructor().newInstance();
+        Task taskInstance = taskclass.getConstructor().newInstance();
         // Call the execute method on the instance
         taskInstance.execute(null);
     }

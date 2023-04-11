@@ -1,4 +1,7 @@
-# Changelog
+# Changelog 
+## 2023/04/11 3.11.99
+Change the interface of EC2RoleAssumptionCredential (#1042)
+
 ## 2023/03/30 3.11.98
 Change the CassandraOperations constructor to be public (#1037)
 

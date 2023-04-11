@@ -29,10 +29,11 @@ public class EC2RoleAssumptionCredential implements ICredential {
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
-    public EC2RoleAssumptionCredential(ICredential cred, IConfiguration config) {
+    public EC2RoleAssumptionCredential(ICredential cred, IConfiguration config, InstanceInfo instanceInfo) {
         this.cred = cred;
         this.config = config;
-        this.instanceInfo = new AWSInstanceInfo(cred);
+        this.instanceInfo = instanceInfo;
+        // Fake
     }
 
     @Override

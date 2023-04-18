@@ -42,6 +42,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean skipIngressUnlessIPIsPublic;
     private long compressionTransitionEpochMillis;
     private boolean autoSnapshot;
+    private String partitioner;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -312,5 +313,14 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public boolean getAutoSnapshot() {
         return autoSnapshot;
+    }
+
+    public void setPartitioner(String partitioner) {
+        this.partitioner = partitioner;
+    }
+
+    @Override
+    public String getPartitioner() {
+        return partitioner;
     }
 }

@@ -125,7 +125,7 @@ public class BackupServletV2 {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
@@ -147,8 +147,11 @@ public class BackupServletV2 {
             return Response.ok("No valid meta found!").build();
         }
         List<AbstractBackupPath> allFiles =
-                BackupRestoreUtil.getAllFiles(
-                        latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
+                BackupRestoreUtil.getMostRecentSnapshotPaths(
+                        latestValidMetaFile.get(), metaProxy, pathProvider);
+        allFiles.addAll(
+                BackupRestoreUtil.getIncrementalPaths(
+                        latestValidMetaFile.get(), dateRange, metaProxy));
 
         return Response.ok(
                         GsonJsonSerializer.getGson()

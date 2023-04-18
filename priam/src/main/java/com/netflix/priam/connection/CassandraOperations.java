@@ -30,7 +30,7 @@ public class CassandraOperations implements ICassandraOperations {
     private final IConfiguration configuration;
 
     @Inject
-    CassandraOperations(IConfiguration configuration) {
+    public CassandraOperations(IConfiguration configuration) {
         this.configuration = configuration;
     }
 

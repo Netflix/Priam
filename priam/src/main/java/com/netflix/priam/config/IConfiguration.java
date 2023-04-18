@@ -1174,6 +1174,11 @@ public interface IConfiguration {
     /** @return whether to enable auto_snapshot */
     boolean getAutoSnapshot();
 
+    /** @return whether incremental backups should be skipped in a restore */
+    default boolean skipIncrementalRestore() {
+        return false;
+    }
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

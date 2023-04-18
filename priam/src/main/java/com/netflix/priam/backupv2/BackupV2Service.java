@@ -68,20 +68,19 @@ public class BackupV2Service implements IService {
             // restart.
             snapshotMetaTask.uploadFiles();
 
-            // Schedule the TTL service
-            TaskTimer timer =
-                    BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
-            scheduleTask(scheduler, BackupTTLTask.class, timer);
-
             // Schedule the backup verification service
             scheduleTask(
                     scheduler,
                     BackupVerificationTask.class,
                     BackupVerificationTask.getTimer(backupRestoreConfig));
         } else {
-            scheduler.deleteTask(BackupTTLTask.JOBNAME);
             scheduler.deleteTask(BackupVerificationTask.JOBNAME);
         }
+
+        // Schedule the TTL service
+        TaskTimer timer =
+                BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
+        scheduleTask(scheduler, BackupTTLTask.class, timer);
 
         // Start the Incremental backup schedule if enabled
         scheduleTask(

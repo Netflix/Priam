@@ -39,6 +39,7 @@ import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /** Created by aagrawal on 12/5/18. */
@@ -57,6 +58,11 @@ public class TestMetaV2Proxy {
         backupUtils = new TestBackupUtils();
         metaProxy = injector.getInstance(MetaV2Proxy.class);
         abstractBackupPathProvider = injector.getProvider(AbstractBackupPath.class);
+    }
+
+    @Before
+    public void setUp() {
+        new File(configuration.getDataFileLocation()).mkdirs();
     }
 
     @Test

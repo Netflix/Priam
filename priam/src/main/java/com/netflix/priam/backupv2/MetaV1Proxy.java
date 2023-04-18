@@ -41,7 +41,7 @@ public class MetaV1Proxy implements IMetaProxy {
     private final IBackupFileSystem fs;
 
     @Inject
-    MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
+    public MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
         fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 
@@ -169,8 +169,7 @@ public class MetaV1Proxy implements IMetaProxy {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
-            throws BackupRestoreException {
+    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange) {
         String prefix = fs.getPrefix().toString();
         Iterator<AbstractBackupPath> iterator =
                 fs.list(

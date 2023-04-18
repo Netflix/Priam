@@ -147,7 +147,8 @@ public class TokenRetriever implements ITokenRetriever {
         }.call();
     }
 
-    private PriamInstance grabNewToken() throws Exception {
+    @VisibleForTesting
+    PriamInstance grabNewToken() throws Exception {
         Preconditions.checkState(config.isCreateNewTokenEnable());
         return new RetryableCallable<PriamInstance>() {
             @Override
@@ -155,28 +156,46 @@ public class TokenRetriever implements ITokenRetriever {
                 set(100, 100);
                 logger.info("Trying to generate a new token");
                 sleeper.sleep(new Random().nextInt(15000));
-                String myRegion = myInstanceInfo.getRegion();
-                // this offset ensures the nodes are spread far away from the other regions.
-                int regionOffset = tokenManager.regionOffset(myRegion);
-                String myRac = myInstanceInfo.getRac();
-                List<String> racs = config.getRacs();
-                int mySlot =
-                        factory.getAllIds(config.getAppName())
-                                .stream()
-                                .filter(i -> i.getRac().equals(myRac))
-                                .map(PriamInstance::getId)
-                                .max(Integer::compareTo)
-                                .map(id -> racs.size() + Math.max(id, regionOffset) - regionOffset)
-                                .orElseGet(
-                                        () -> {
-                                            Preconditions.checkState(racs.contains(myRac));
-                                            return racs.indexOf(myRac);
-                                        });
-                int instanceCount = membership.getRacCount() * membership.getRacMembershipSize();
-                String newToken = tokenManager.createToken(mySlot, instanceCount, myRegion);
-                return createToken(mySlot + regionOffset, newToken);
+                return generateNewToken();
             }
         }.call();
+    }
+
+    @VisibleForTesting
+    PriamInstance generateNewToken() {
+        String myRegion = myInstanceInfo.getRegion();
+        // this offset ensures the nodes are spread far away from the other regions.
+        int regionOffset = tokenManager.regionOffset(myRegion);
+        String myRac = myInstanceInfo.getRac();
+        List<String> racs = config.getRacs();
+        ImmutableSet<PriamInstance> allIds = factory.getAllIds(config.getAppName());
+        int mySlot =
+                allIds.stream()
+                        .filter(i -> i.getRac().equals(myRac))
+                        .map(PriamInstance::getId)
+                        .max(Integer::compareTo)
+                        .map(id -> racs.size() + Math.max(id, regionOffset) - regionOffset)
+                        .orElseGet(
+                                () -> {
+                                    Preconditions.checkState(racs.contains(myRac));
+                                    return racs.indexOf(myRac);
+                                });
+        int instanceCount = membership.getRacCount() * membership.getRacMembershipSize();
+        String newToken = tokenManager.createToken(mySlot, instanceCount, myRegion);
+        while (newTokenIsADuplicate(newToken, allIds)) {
+            newToken = new BigInteger(newToken).add(BigInteger.ONE).toString();
+        }
+        return createToken(mySlot + regionOffset, newToken);
+    }
+
+    private boolean newTokenIsADuplicate(String newToken, ImmutableSet<PriamInstance> instances) {
+        for (PriamInstance priamInstance : instances) {
+            if (newToken.equals(priamInstance.getToken())) {
+                Preconditions.checkState(!myInstanceInfo.getRegion().equals(priamInstance.getDC()));
+                return true;
+            }
+        }
+        return false;
     }
 
     private String getReplacedIpForAssignedToken(

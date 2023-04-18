@@ -17,9 +17,7 @@
 
 package com.netflix.priam.identity.token;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -29,6 +27,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.SystemUtils;
@@ -42,6 +41,7 @@ import mockit.Expectations;
 import mockit.Mocked;
 import org.apache.commons.lang3.math.Fraction;
 import org.codehaus.jettison.json.JSONObject;
+import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -261,7 +261,7 @@ public class TokenRetrieverTest {
 
     @Test
     public void testNewTokenFailureWhenMyRacIsNotInCluster() {
-        ((FakeConfiguration) configuration).setRacs("az2", "az3");
+        ((FakeConfiguration) configuration).setRacs(ImmutableSet.of("az2", "az3"));
         create(0, "iid_0", "host_0", "127.0.0.0", "az2", 0 + "");
         create(1, "iid_1", "host_1", "127.0.0.1", "az2", 1 + "");
         new Expectations() {
@@ -423,6 +423,43 @@ public class TokenRetrieverTest {
         TokenRetriever tokenRetriever = getTokenRetriever();
         tokenRetriever.get();
         Truth.assertThat(tokenRetriever.getRingPosition()).isEqualTo(Fraction.getFraction(6, 7));
+    }
+
+    @Test
+    public void testThrowOnDuplicateTokenInSameRegion() {
+        prepareTokenGenerationTest();
+        create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-east-1d", 1808575600 + "");
+        Assert.assertThrows(
+                IllegalStateException.class, () -> getTokenRetriever().generateNewToken());
+    }
+
+    @Test
+    public void testIncrementDuplicateTokenInDifferentRegion() {
+        prepareTokenGenerationTest();
+        create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-west-2a", 1808575600 + "");
+        Truth.assertThat(getTokenRetriever().generateNewToken()).isEqualTo("1808575601");
+    }
+
+    private void prepareTokenGenerationTest() {
+        ((FakeConfiguration) configuration).setCreateNewToken(true);
+        ((FakeConfiguration) configuration)
+                .setPartitioner("org.apache.cassandra.dht.RandomPartitioner");
+        ((FakeConfiguration) configuration)
+                .setRacs(ImmutableSet.of("us-east-1c", "us-east-1d", "us-east-1e"));
+        ((FakeInstanceInfo) instanceInfo).setRegion("us-east-1");
+        ((FakeInstanceInfo) instanceInfo).setRac("us-east-1c");
+        new Expectations() {
+            {
+                membership.getRacMembershipSize();
+                result = 2;
+            }
+        };
+        new Expectations() {
+            {
+                membership.getRacCount();
+                result = 3;
+            }
+        };
     }
 
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {

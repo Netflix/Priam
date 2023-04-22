@@ -92,4 +92,11 @@ public class FakePriamInstanceFactory implements IPriamInstanceFactory<PriamInst
     public void attachVolumes(PriamInstance instance, String mountPath, String device) {
         // TODO Auto-generated method stub
     }
+
+    public void printInstances() {
+        instances.values()
+            .stream()
+            .sorted(Comparator.comparing(PriamInstance::getRac).thenComparing(PriamInstance::getToken))
+            .forEach(pi -> System.out.println(pi.getId() + " " + pi.getRac() + " " + pi.getToken()));
+    }
 }

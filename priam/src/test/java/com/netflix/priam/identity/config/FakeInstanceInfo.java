@@ -94,4 +94,12 @@ public class FakeInstanceInfo implements InstanceInfo {
     public InstanceEnvironment getInstanceEnvironment() {
         return InstanceEnvironment.VPC;
     }
+
+    public void setRac(String rac) {
+        this.availabilityZone = rac;
+    }
+
+    public void setRegion(String region) {
+        this.region = region;
+    }
 }

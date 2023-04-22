@@ -29,6 +29,8 @@ public class FakeConfiguration implements IConfiguration {
     private String restorePrefix = "";
     public Map<String, Object> fakeConfig;
     private String roleManager = "";
+    private String partitioner;
+    private List<String> racs;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -80,16 +82,12 @@ public class FakeConfiguration implements IConfiguration {
 
     @Override
     public List<String> getRacs() {
-        return Optional
-            .ofNullable((List<String>) getFakeConfig("Priam.zones.available"))
-            .orElse(Arrays.asList("az1", "az2", "az3"));
+        return racs;
     }
 
     @Override
     public String getPartitioner() {
-        return Optional
-            .ofNullable((String) getFakeConfig("Priam.partitioner"))
-            .orElse("org.apache.cassandra.dht.RandomPartitioner");
+        return partitioner;
     }
 
     @Override
@@ -207,5 +205,13 @@ public class FakeConfiguration implements IConfiguration {
 
     public String getDC() {
         return "us-east-1";
+    }
+
+    public void setPartitioner(String partitioner) {
+        this.partitioner = partitioner;
+    }
+
+    public void setRacs(ImmutableSet<String> racs) {
+        this.racs = racs.asList();
     }
 }

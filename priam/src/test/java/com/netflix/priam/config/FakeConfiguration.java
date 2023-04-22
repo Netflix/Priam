@@ -31,6 +31,7 @@ public class FakeConfiguration implements IConfiguration {
     private String roleManager = "";
     private String partitioner;
     private List<String> racs;
+    private boolean createNewToken;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -192,6 +193,15 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getRoleManager() {
         return this.roleManager;
+    }
+
+    @Override
+    public boolean isCreateNewTokenEnable() {
+        return createNewToken;
+    }
+
+    public void setCreateNewToken(boolean createNewToken) {
+        this.createNewToken = createNewToken;
     }
 
     public FakeConfiguration setRoleManager(String roleManager) {

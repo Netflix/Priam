@@ -22,9 +22,10 @@ import org.quartz.Job;
 import org.quartz.JobDetail;
 import org.quartz.Scheduler;
 import org.quartz.SchedulerException;
+import org.quartz.spi.JobFactory;
 import org.quartz.spi.TriggerFiredBundle;
 
-public class GuiceJobFactory implements PriamJobFactory {
+public class GuiceJobFactory implements JobFactory {
     public final Injector guice;
 
     @Inject
@@ -35,11 +36,7 @@ public class GuiceJobFactory implements PriamJobFactory {
     @Override
     public Job newJob(TriggerFiredBundle bundle, Scheduler scheduler) throws SchedulerException {
         JobDetail jobDetail = bundle.getJobDetail();
-        return newJob((Class<? extends Task>) jobDetail.getJobClass());
-    }
-
-    @Override
-    public Job newJob(Class<? extends Task> jobClass) {
+        Class<?> jobClass = jobDetail.getJobClass();
         Job job = (Job) guice.getInstance(jobClass);
         guice.injectMembers(job);
         return job;

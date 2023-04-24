@@ -29,15 +29,15 @@ import org.slf4j.LoggerFactory;
 public class PriamScheduler {
     private static final Logger logger = LoggerFactory.getLogger(PriamScheduler.class);
     private final Scheduler scheduler;
-    private final PriamJobFactory jobProvider;
+    private final GuiceJobFactory jobFactory;
     private final Sleeper sleeper;
 
     @Inject
-    public PriamScheduler(SchedulerFactory factory, PriamJobFactory jobProvider, Sleeper sleeper) {
+    public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory, Sleeper sleeper) {
         try {
             this.scheduler = factory.getScheduler();
-            this.scheduler.setJobFactory(jobProvider);
-            this.jobProvider = jobProvider;
+            this.scheduler.setJobFactory(jobFactory);
+            this.jobFactory = jobFactory;
         } catch (SchedulerException e) {
             throw new RuntimeException(e);
         }
@@ -100,7 +100,7 @@ public class PriamScheduler {
     }
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {
-        jobProvider.newJob(taskclass).execute(null);
+        jobFactory.guice.getInstance(taskclass).execute(null);
     }
 
     public void deleteTask(String name) throws SchedulerException {

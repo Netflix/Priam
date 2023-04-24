@@ -59,54 +59,24 @@ public class NewTokenRetriever extends TokenRetrieverBase implements INewTokenRe
     @Override
     public PriamInstance get() throws Exception {
 
-        logger.info("Generating my own and new token");
         // Sleep random interval - upto 15 sec
         sleeper.sleep(new Random().nextInt(15000));
         int hash = tokenManager.regionOffset(instanceInfo.getRegion());
-        // use this hash so that the nodes are spread far away from the other
+        // use this hash so that the nodes are spred far away from the other
         // regions.
 
         int max = hash;
-        List<PriamInstance> allInstances = factory.getAllIds(config.getAppName());
-        for (PriamInstance data : allInstances)
-            max =
-                    (data.getRac().equals(instanceInfo.getRac()) && (data.getId() > max))
-                            ? data.getId()
-                            : max;
+        for (PriamInstance data : factory.getAllIds(config.getAppName()))
+            max = (data.getRac().equals(instanceInfo.getRac()) && (data.getId() > max)) ? data.getId() : max;
         int maxSlot = max - hash;
-        int my_slot;
+        int my_slot = 0;
+        if (hash == max && locMap.get(instanceInfo.getRac()).size() == 0)
+            my_slot = config.getRacs().indexOf(instanceInfo.getRac()) + maxSlot;
+        else
+            my_slot = config.getRacs().size() + maxSlot;
 
-        if (hash == max && locMap.get(instanceInfo.getRac()).size() == 0) {
-            int idx = config.getRacs().indexOf(instanceInfo.getRac());
-            if (idx < 0)
-                throw new Exception(
-                        String.format(
-                                "Rac %s is not in Racs %s",
-                                instanceInfo.getRac(), config.getRacs()));
-            my_slot = idx + maxSlot;
-        } else my_slot = config.getRacs().size() + maxSlot;
-
-        logger.info(
-                "Trying to createToken with slot {} with rac count {} with rac membership size {} with dc {}",
-                my_slot,
-                membership.getRacCount(),
-                membership.getRacMembershipSize(),
-                instanceInfo.getRegion());
-        String payload =
-                tokenManager.createToken(
-                        my_slot,
-                        membership.getRacCount(),
-                        membership.getRacMembershipSize(),
-                        instanceInfo.getRegion());
-        return factory.create(
-                config.getAppName(),
-                my_slot + hash,
-                instanceInfo.getInstanceId(),
-                instanceInfo.getHostname(),
-                instanceInfo.getHostIP(),
-                instanceInfo.getRac(),
-                null,
-                payload);
+        String payload = tokenManager.createToken(my_slot, membership.getRacCount(), membership.getRacMembershipSize(), instanceInfo.getRegion());
+        return factory.create(config.getAppName(), my_slot + hash, instanceInfo.getInstanceId(), instanceInfo.getHostname(), instanceInfo.getHostIP(), instanceInfo.getRac(), null, payload);
     }
 
     /*

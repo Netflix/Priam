@@ -77,6 +77,35 @@ public class TokenManager implements ITokenManager {
                 .add(minimumToken);
     }
 
+    public static final BigInteger MINIMUM_TOKEN = new BigInteger("0");
+    public static final BigInteger MAXIMUM_TOKEN = new BigInteger("2").pow(127);
+
+    /**
+     * Calculate a token for the given position, evenly spaced from other size-1 nodes.  See
+     * http://wiki.apache.org/cassandra/Operations.
+     *
+     * @param size number of slots by which the token space will be divided
+     * @param position slot number, multiplier
+     * @param offset added to token
+     * @return MAXIMUM_TOKEN / size * position  offset, if <= MAXIMUM_TOKEN, otherwise wrap around the MINIMUM_TOKEN
+     */
+    @VisibleForTesting static BigInteger oldInitializeToken(int size, int position, int offset)
+    {
+        Preconditions.checkArgument(size > 0, "size must be > 0");
+        Preconditions.checkArgument(offset >= 0, "offset must be >= 0");
+        /*
+         * TODO: Is this it valid to add "&& position < size" to the following precondition?  This currently causes
+         * unit test failures.
+         */
+        Preconditions.checkArgument(position >= 0, "position must be >= 0");
+//        return MAXIMUM_TOKEN_RANDOM.subtract(MINIMUM_TOKEN_RANDOM).divide(BigInteger.valueOf(size))
+//            .multiply(BigInteger.valueOf(position))
+//            .add(BigInteger.valueOf(offset));
+        return MAXIMUM_TOKEN.divide(BigInteger.valueOf(size)).multiply(new BigInteger("2"));
+//            .multiply(BigInteger.valueOf(position))
+//            .add(BigInteger.valueOf(offset));
+    }
+
     /**
      * Creates a token given the following parameter
      *

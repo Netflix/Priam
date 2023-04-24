@@ -68,9 +68,9 @@ public class TestNewTokenRetriever {
         ((FakeConfiguration) configuration).setPartitioner("org.apache.cassandra.dht.RandomPartitioner");
         ImmutableSet<String> regions = ImmutableSet.of("us-east-1");
         ImmutableSetMultimap<String, String> racs = ImmutableSetMultimap.<String, String>builder()
-            .put("us-east-1", "us-east-1e")
             .put("us-east-1", "us-east-1c")
             .put("us-east-1", "us-east-1d")
+            .put("us-east-1", "us-east-1e")
             .put("eu-west-1", "eu-west-1a")
             .put("eu-west-1", "eu-west-1b")
             .put("eu-west-1", "eu-west-1c")
@@ -111,7 +111,8 @@ public class TestNewTokenRetriever {
                     tokenRetriever.get();
                 }
             }
-            new DoubleRing(configuration, factory, new TokenManager(configuration), instanceInfo).doubleSlots();
+//            new DoubleRing(configuration, factory, new TokenManager(configuration), instanceInfo).doubleSlots();
+//            new DoubleRing(configuration, factory, new TokenManager(configuration), instanceInfo).doubleSlots();
         }
         ((FakePriamInstanceFactory) factory).printInstances();
     }

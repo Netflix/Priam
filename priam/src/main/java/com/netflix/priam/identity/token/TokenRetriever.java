@@ -190,7 +190,12 @@ public class TokenRetriever implements ITokenRetriever {
     private boolean newTokenIsADuplicate(String newToken, ImmutableSet<PriamInstance> instances) {
         for (PriamInstance priamInstance : instances) {
             if (newToken.equals(priamInstance.getToken())) {
-                Preconditions.checkState(!myInstanceInfo.getRegion().equals(priamInstance.getDC()));
+                if (myInstanceInfo.getRegion().equals(priamInstance.getDC())) {
+                    throw new IllegalStateException(
+                            String.format(
+                                    "Trying to add token %s to %s but it already exists in %s",
+                                    newToken, myInstanceInfo.getRegion(), priamInstance.getDC()));
+                }
                 return true;
             }
         }

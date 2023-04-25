@@ -1,4 +1,13 @@
 # Changelog
+## 2023/4/25 3.1.124
+*V1 Backups will be removed in the next release*
+Increment cross regional duplicate tokens to replicate the policy we have been applying manually. (#1048)
+Fix Github CI by explicitly creating necessary directories. (#1045)
+Always TTL backups. (#1038)
+Fix backup verification race condition causing missing notifications (#1034)
+Reveal hook to allow operators to restore just to the most recent snapshot (#1035)
+Reveal property to enable auto_snapshot. (#1031)
+
 ## 2023/2/27 3.1.123
 Switch from com.google.inject to JSR-330 javax.inject annotations for better compatibility (#1029)
 

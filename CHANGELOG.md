@@ -1,4 +1,8 @@
 # Changelog 
+## 2023/04/25 3.11.101
+*V1 Backups will be removed in the next release*
+Increment cross regional duplicate tokens to replicate the policy we have been applying manually. (#1048)
+
 ## 2023/04/24 3.11.100
 Always TTL backups. (#1038)
 Fix Github CI by explicitly creating necessary directories. (#1045)

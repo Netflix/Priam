@@ -17,7 +17,6 @@ import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
-import com.netflix.priam.identity.config.AWSInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -30,10 +29,11 @@ public class EC2RoleAssumptionCredential implements ICredential {
     private AWSCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
-    public EC2RoleAssumptionCredential(ICredential cred, IConfiguration config) {
+    public EC2RoleAssumptionCredential(
+            ICredential cred, IConfiguration config, InstanceInfo instanceInfo) {
         this.cred = cred;
         this.config = config;
-        this.instanceInfo = new AWSInstanceInfo(cred);
+        this.instanceInfo = instanceInfo;
     }
 
     @Override

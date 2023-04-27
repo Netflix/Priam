@@ -30,7 +30,9 @@ import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -84,21 +86,28 @@ public class BackupVerificationTask extends Task {
         Instant slo =
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
         DateRange dateRange = new DateRange(slo, now);
-        List<BackupMetadata> verifiedBackups =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
+        Set<BackupMetadata> verifiedBackups =
+                backupVerification
+                        .findMissingBackupFilesInRange(
+                                BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
+                        .entrySet()
+                        .stream()
+                        .filter(entry -> entry.getValue().isEmpty())
+                        .map(Map.Entry::getKey)
+                        .collect(Collectors.toSet());
 
         verifiedBackups
                 .stream()
-                .filter(result -> result.getLastValidated().toInstant().isAfter(now))
+                .filter(metadata -> metadata.getLastValidated().toInstant().isAfter(now))
                 .forEach(
-                        result -> {
+                        metadata -> {
                             logger.info(
                                     "Sending {} message for backup: {}",
                                     AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                    result.getSnapshotLocation());
+                                    metadata.getSnapshotLocation());
                             backupNotificationMgr.notify(
-                                    result.getSnapshotLocation(), result.getStart().toInstant());
+                                    metadata.getSnapshotLocation(),
+                                    metadata.getStart().toInstant());
                         });
 
         if (verifiedBackups.isEmpty()) {

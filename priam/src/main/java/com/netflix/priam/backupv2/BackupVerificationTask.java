@@ -88,6 +88,13 @@ public class BackupVerificationTask extends Task {
                 backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
 
+        verifiedBackups.forEach(
+                result ->
+                        logger.info(
+                                "last validated = {}, now = {}",
+                                result.getLastValidated().toInstant(),
+                                now));
+        verifiedBackups.forEach(result -> logger.info("{}", result));
         verifiedBackups
                 .stream()
                 .filter(result -> result.getLastValidated().toInstant().isAfter(now))

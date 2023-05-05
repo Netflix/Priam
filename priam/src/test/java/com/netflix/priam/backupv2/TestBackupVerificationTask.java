@@ -191,6 +191,7 @@ public class TestBackupVerificationTask {
                 new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
         backupMetadata.setLastValidated(
                 new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()));
+        backupMetadata.setSnapshotLocation("bucket/path/to/file.db");
         return backupMetadata;
     }
 }

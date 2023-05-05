@@ -50,7 +50,7 @@ public class CassandraMonitor extends Task {
     private final IThriftChecker thriftChecker;
 
     @Inject
-    protected CassandraMonitor(
+    public CassandraMonitor(
             IConfiguration config,
             InstanceState instanceState,
             ICassandraProcess cassProcess,

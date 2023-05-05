@@ -1,5 +1,5 @@
 # Changelog
-## 2023/5/5 3.1.125
+## 2023/5/5 3.1.126
 Fix snapshot location regression in SNS messages. #1055
 
 ## 2023/4/25 3.1.124

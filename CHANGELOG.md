@@ -1,4 +1,7 @@
 # Changelog
+## 2023/5/5 3.1.125
+Fix snapshot location regression in SNS messages. #1055
+
 ## 2023/4/25 3.1.124
 *V1 Backups will be removed in the next release*
 Increment cross regional duplicate tokens to replicate the policy we have been applying manually. (#1048)

@@ -28,6 +28,8 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -93,12 +95,17 @@ public class BackupVerificationTask extends Task {
                 .filter(result -> result.getLastValidated().toInstant().isAfter(now))
                 .forEach(
                         result -> {
+                            Path snapshotLocation = Paths.get(result.getSnapshotLocation());
+                            String snapshotKey =
+                                    snapshotLocation
+                                            .subpath(1, snapshotLocation.getNameCount())
+                                            .toString();
                             logger.info(
                                     "Sending {} message for backup: {}",
                                     AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                    result.getSnapshotLocation());
+                                    snapshotKey);
                             backupNotificationMgr.notify(
-                                    result.getSnapshotLocation(), result.getStart().toInstant());
+                                    snapshotKey, result.getStart().toInstant());
                         });
 
         if (verifiedBackups.isEmpty()) {

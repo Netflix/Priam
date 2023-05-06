@@ -1,4 +1,7 @@
-# Changelog 
+# Changelog
+## 2023/05/05 3.11.104
+Change the constructor of the CassandraMonitor to be public. #1056
+
 ## 2023/05/05 3.11.103
 Fix snapshot location regression in SNS messages. #1054
 

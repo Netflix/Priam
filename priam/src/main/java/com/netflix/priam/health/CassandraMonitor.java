@@ -49,7 +49,7 @@ public class CassandraMonitor extends Task {
     private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    protected CassandraMonitor(
+    public CassandraMonitor(
             IConfiguration config,
             InstanceState instanceState,
             ICassandraProcess cassProcess,

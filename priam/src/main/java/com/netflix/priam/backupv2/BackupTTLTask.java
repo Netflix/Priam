@@ -22,6 +22,7 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.token.TokenRetriever;
+import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.scheduler.SimpleTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -56,18 +57,19 @@ import org.slf4j.LoggerFactory;
 @Singleton
 public class BackupTTLTask extends Task {
     private static final Logger logger = LoggerFactory.getLogger(BackupTTLTask.class);
-    private IBackupRestoreConfig backupRestoreConfig;
-    private IMetaProxy metaProxy;
-    private IBackupFileSystem fileSystem;
-    private Provider<AbstractBackupPath> abstractBackupPathProvider;
-    private InstanceState instanceState;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final IMetaProxy metaProxy;
+    private final IBackupFileSystem fileSystem;
+    private final Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private final InstanceState instanceState;
     public static final String JOBNAME = "BackupTTLService";
-    private Map<String, Boolean> filesInMeta = new HashMap<>();
-    private List<Path> filesToDelete = new ArrayList<>();
+    private final Map<String, Boolean> filesInMeta = new HashMap<>();
+    private final List<Path> filesToDelete = new ArrayList<>();
     private static final Lock lock = new ReentrantLock();
-    private final int BATCH_SIZE = 1000;
+    private static final int BATCH_SIZE = 1000;
     private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
     private final int maxWaitMillis;
+    private final BackupMetrics backupMetrics;
 
     @Inject
     public BackupTTLTask(
@@ -77,7 +79,8 @@ public class BackupTTLTask extends Task {
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider,
             InstanceState instanceState,
-            TokenRetriever tokenRetriever)
+            TokenRetriever tokenRetriever,
+            BackupMetrics backupMetrics)
             throws Exception {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
@@ -89,6 +92,7 @@ public class BackupTTLTask extends Task {
                 1_000
                         * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
                         / tokenRetriever.getRingPosition().getDenominator();
+        this.backupMetrics = backupMetrics;
     }
 
     @Override
@@ -221,6 +225,8 @@ public class BackupTTLTask extends Task {
 
         if (forceClear || filesToDelete.size() >= BATCH_SIZE) {
             fileSystem.deleteRemoteFiles(filesToDelete);
+            backupMetrics.incrementBackupTtlFiles(filesToDelete.size());
+            logger.info("Deleted(TTL-ed) {} META backup files", filesToDelete.size());
             filesToDelete.clear();
         }
     }

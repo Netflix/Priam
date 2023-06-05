@@ -52,13 +52,16 @@ public class JVMOptionsTuner {
      * @throws Exception when encountered with invalid configured GC type. {@link
      *     IConfiguration#getGCType()}
      */
-    public void updateAndSaveJVMOptions(final String outputFile) throws Exception {
-        List<String> configuredJVMOptions = updateJVMOptions();
+    public void updateAndSaveJVMOptions(final String outputFile, final String versionOutputFile)
+            throws Exception {
+        Map<String, List<String>> Options = updateJVMOptions();
 
         if (logger.isInfoEnabled()) {
             StringBuffer buffer = new StringBuffer("\n");
-            configuredJVMOptions.stream().forEach(line -> buffer.append(line).append("\n"));
-            logger.info("Updating jvm.options with following values: " + buffer.toString());
+            Options.get("configuredJVMOptions")
+                    .stream()
+                    .forEach(line -> buffer.append(line).append("\n"));
+            logger.info("Updating jvm-server.options with following values: " + buffer.toString());
         }
 
         // Verify we can write to output file and it is not directory.
@@ -67,8 +70,27 @@ public class JVMOptionsTuner {
             throw new Exception("Not enough permissions to write to file: " + outputFile);
         }
 
-        // Write jvm.options back to override defaults.
-        Files.write(new File(outputFile).toPath(), configuredJVMOptions);
+        // Write jvm-server.options back to override defaults.
+        Files.write(new File(outputFile).toPath(), Options.get("configuredJVMOptions"));
+
+        // Update jdk version specific options
+        if (logger.isInfoEnabled()) {
+            StringBuffer buffer = new StringBuffer("\n");
+            Options.get("configuredJVMVersionOptions")
+                    .stream()
+                    .forEach(line -> buffer.append(line).append("\n"));
+            logger.info("Updating jvm8-server.options with following values: " + buffer.toString());
+        }
+
+        // Verify we can write to version specific output file and it is not directory.
+        File versionFile = new File(versionOutputFile);
+        if (versionFile.exists() && !versionFile.canWrite()) {
+            throw new Exception("Not enough permissions to write to file: " + versionOutputFile);
+        }
+
+        // Write jvm8-server.options back to override version specific defaults.
+        Files.write(
+                new File(versionOutputFile).toPath(), Options.get("configuredJVMVersionOptions"));
     }
 
     /**
@@ -80,9 +102,13 @@ public class JVMOptionsTuner {
      * @throws Exception when encountered with invalid configured GC type. {@link
      *     IConfiguration#getGCType()}
      */
-    protected List<String> updateJVMOptions() throws Exception {
+    protected Map<String, List<String>> updateJVMOptions() throws Exception {
         File jvmOptionsFile = new File(config.getJVMOptionsFileLocation());
         validate(jvmOptionsFile);
+
+        File jvmVersionOptionsFile = new File(config.getJVMVersionOptionsFileLocation());
+        validate(jvmVersionOptionsFile);
+
         final GCType configuredGC = config.getGCType();
 
         final Map<String, JVMOption> excludeSet =
@@ -94,7 +120,7 @@ public class JVMOptionsTuner {
 
         // Don't use streams for processing as upsertSet jvm options needs to be removed if we find
         // them
-        // already in jvm.options file.
+        // already in jvm-server.options file.
         List<String> optionsFromFile =
                 Files.lines(jvmOptionsFile.toPath()).collect(Collectors.toList());
         List<String> configuredOptions = new LinkedList<>();
@@ -103,7 +129,16 @@ public class JVMOptionsTuner {
                     updateConfigurationValue(line, configuredGC, upsertSet, excludeSet));
         }
 
-        // Add all the upserts(inserts only left) from config.
+        // Process the list for version specific options file.
+        List<String> optionsFromVersionFile =
+                Files.lines(jvmVersionOptionsFile.toPath()).collect(Collectors.toList());
+        List<String> configuredVersionOptions = new LinkedList<>();
+        for (String line : optionsFromVersionFile) {
+            configuredVersionOptions.add(
+                    updateConfigurationValue(line, configuredGC, upsertSet, excludeSet));
+        }
+
+        // Add all the upserts(inserts only left) from config to generic options file.
         if (upsertSet != null && !upsertSet.isEmpty()) {
 
             configuredOptions.add("#################");
@@ -118,7 +153,10 @@ public class JVMOptionsTuner {
                             .collect(Collectors.toList()));
         }
 
-        return configuredOptions;
+        HashMap<String, List<String>> options = new HashMap<String, List<String>>() {};
+        options.put("configuredJVMOptions", configuredOptions);
+        options.put("configuredJVMVersionOptions", configuredVersionOptions);
+        return options;
     }
 
     private void setHeapSetting(String configuredValue, JVMOption option) {

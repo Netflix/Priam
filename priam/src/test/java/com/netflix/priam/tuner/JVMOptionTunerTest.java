@@ -35,7 +35,7 @@ public class JVMOptionTunerTest {
     @Test
     public void testCMS() throws Exception {
         config = new GCConfiguration(GCType.CMS, null, null, null, null);
-        List<JVMOption> jvmOptionMap = getConfiguredJVMOptions(config);
+        List<JVMOption> jvmOptionMap = getConfiguredJVMVersionOptions(config);
         // Validate that all CMS options should be uncommented.
         long failedVerification =
                 jvmOptionMap
@@ -57,7 +57,7 @@ public class JVMOptionTunerTest {
     @Test
     public void testG1GC() throws Exception {
         config = new GCConfiguration(GCType.G1GC, null, null, null, null);
-        List<JVMOption> jvmOptionMap = getConfiguredJVMOptions(config);
+        List<JVMOption> jvmOptionMap = getConfiguredJVMVersionOptions(config);
         // Validate that all G1GC options should be uncommented.
         long failedVerification =
                 jvmOptionMap
@@ -101,9 +101,10 @@ public class JVMOptionTunerTest {
                         xmnOption.getValue(),
                         xmxOption.getValue());
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
+        List<JVMOption> jvmVersionOptions = getConfiguredJVMVersionOptions(config);
 
         // Verify all the options do exist.
-        assertTrue(jvmOptions.contains(option3));
+        assertTrue(jvmVersionOptions.contains(option3));
         assertTrue(jvmOptions.contains(option2));
         assertTrue(jvmOptions.contains(option1));
 
@@ -131,11 +132,12 @@ public class JVMOptionTunerTest {
                                 + option3.toJVMOptionString());
         config = new GCConfiguration(GCType.CMS, buffer.toString(), null, "3G", "12G");
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
+        List<JVMOption> jvmVersionOptions = getConfiguredJVMVersionOptions(config);
 
         // Verify all the options do not exist.
-        assertFalse(jvmOptions.contains(option3));
-        assertFalse(jvmOptions.contains(option2));
-        assertFalse(jvmOptions.contains(option1));
+        assertFalse(jvmVersionOptions.contains(option3));
+        assertFalse(jvmVersionOptions.contains(option2));
+        assertFalse(jvmVersionOptions.contains(option1));
 
         // Verify that Xmn is present since CMS needs tuning of young gen heap
         assertTrue(jvmOptions.contains(maxHeap));
@@ -167,6 +169,7 @@ public class JVMOptionTunerTest {
                 new GCConfiguration(
                         GCType.G1GC, exclude.toString(), upsert.toString(), "3G", "12G");
         List<JVMOption> jvmOptions = getConfiguredJVMOptions(config);
+        List<JVMOption> jvmVersionOptions = getConfiguredJVMVersionOptions(config);
 
         // Verify upserts exist
         assertTrue(jvmOptions.contains(option1));
@@ -174,9 +177,9 @@ public class JVMOptionTunerTest {
 
         // Verify exclude exist. This is to prove that if an element is in EXCLUDE, it will always
         // be excluded.
-        assertFalse(jvmOptions.contains(option3));
-        assertFalse(jvmOptions.contains(option4));
-        assertFalse(jvmOptions.contains(option5));
+        assertFalse(jvmVersionOptions.contains(option3));
+        assertFalse(jvmVersionOptions.contains(option4));
+        assertFalse(jvmVersionOptions.contains(option5));
 
         // Verify that Xmn is not present since G1GC autotunes the young gen heap
         assertTrue(jvmOptions.contains(maxHeap));
@@ -193,7 +196,8 @@ public class JVMOptionTunerTest {
     private List<JVMOption> getConfiguredJVMOptions(IConfiguration config, boolean filter)
             throws Exception {
         tuner = new JVMOptionsTuner(config);
-        List<String> configuredJVMOptions = tuner.updateJVMOptions();
+        Map<String, List<String>> options = tuner.updateJVMOptions();
+        List<String> configuredJVMOptions = options.get("configuredJVMOptions");
         if (filter) {
             return configuredJVMOptions
                     .stream()
@@ -203,6 +207,30 @@ public class JVMOptionTunerTest {
                     .collect(Collectors.toList());
         } else {
             return configuredJVMOptions.stream().map(JVMOption::parse).collect(Collectors.toList());
+        }
+    }
+
+    private List<JVMOption> getConfiguredJVMVersionOptions(IConfiguration config) throws Exception {
+        return getConfiguredJVMVersionOptions(config, true);
+    }
+
+    private List<JVMOption> getConfiguredJVMVersionOptions(IConfiguration config, boolean filter)
+            throws Exception {
+        tuner = new JVMOptionsTuner(config);
+        Map<String, List<String>> options = tuner.updateJVMOptions();
+        List<String> configuredJVMVersionOptions = options.get("configuredJVMVersionOptions");
+        if (filter) {
+            return configuredJVMVersionOptions
+                    .stream()
+                    .map(JVMOption::parse)
+                    .filter(jvmOption -> (jvmOption != null))
+                    .filter(jvmOption -> !jvmOption.isCommented())
+                    .collect(Collectors.toList());
+        } else {
+            return configuredJVMVersionOptions
+                    .stream()
+                    .map(JVMOption::parse)
+                    .collect(Collectors.toList());
         }
     }
 

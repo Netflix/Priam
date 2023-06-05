@@ -155,6 +155,11 @@ public class FakeConfiguration implements IConfiguration {
         return "src/test/resources/conf/jvm-server.options";
     }
 
+    @Override
+    public String getJVMVersionOptionsFileLocation() {
+        return "src/test/resources/conf/jvm8-server.options";
+    }
+
     public String getCommitLogBackupPropsFile() {
         return getCassHome() + "/conf/commitlog_archiving.properties";
     }

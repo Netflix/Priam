@@ -50,6 +50,13 @@ public interface IConfiguration {
     }
 
     /**
+     * @return Path to jvm8-server.options file. This is used to pass JVM GC options to Cassandra.
+     */
+    default String getJVMVersionOptionsFileLocation() {
+        return getCassHome() + "/conf/jvm8-server.options";
+    }
+
+    /**
      * @return Type of garbage collection mechanism to use for Cassandra. Supported values are
      *     CMS,G1GC
      */

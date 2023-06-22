@@ -26,6 +26,7 @@ import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.CassandraTunerService;
 import javax.inject.Inject;
+import org.apache.commons.lang3.math.Fraction;
 
 /**
  * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.
@@ -76,10 +77,13 @@ public class BackupV2Service implements IService {
         } else {
             scheduler.deleteTask(BackupVerificationTask.JOBNAME);
         }
-
         // Schedule the TTL service
-        TaskTimer timer =
-                BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
+        // We cannot get the ring position in a local bootstrap scenario
+        Fraction ringPosition =
+                configuration.isLocalBootstrapEnabled()
+                        ? Fraction.ONE_HALF
+                        : tokenRetriever.getRingPosition();
+        TaskTimer timer = BackupTTLTask.getTimer(backupRestoreConfig, ringPosition);
         scheduleTask(scheduler, BackupTTLTask.class, timer);
 
         // Start the Incremental backup schedule if enabled

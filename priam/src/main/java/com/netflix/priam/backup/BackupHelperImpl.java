@@ -17,9 +17,12 @@ import java.util.Set;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Provider;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BackupHelperImpl implements BackupHelper {
 
+    private static final Logger logger = LoggerFactory.getLogger(BackupHelperImpl.class);
     private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
     private static final String DATA_SUFFIX = "-Data.db";
     private final Provider<AbstractBackupPath> pathFactory;
@@ -56,7 +59,9 @@ public class BackupHelperImpl implements BackupHelper {
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
         for (AbstractBackupPath bp : getBackupPaths(parent, type)) {
+            logger.info(String.format("@@@ getting upload future for %s", bp.getFileName()));
             futures.add(fs.uploadAndDelete(bp, target, async));
+            logger.info(String.format("@@@ upload future for %s obtained", bp.getFileName()));
         }
         return futures.build();
     }

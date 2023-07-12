@@ -21,6 +21,7 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
@@ -83,7 +84,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         this.backupNotificationMgr = backupNotificationMgr;
         this.objectCache =
                 CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
-        tasksQueued = new ConcurrentHashMap<>().newKeySet();
+        tasksQueued = Sets.newConcurrentHashSet();
+
         /*
         Note: We are using different queue for upload and download as with Backup V2.0 we might download all the meta
         files for "sync" feature which might compete with backups for scheduling.
@@ -159,8 +161,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             final AbstractBackupPath path, Instant target, boolean async)
             throws RejectedExecutionException, BackupRestoreException {
         if (async) {
-            return fileUploadExecutor.submit(
-                    () -> uploadAndDeleteInternal(path, target, 10 /* retries */));
+            logger.info(String.format("@@@ submitting to executor %s", path.getFileName()));
+            Callable<AbstractBackupPath> callable =
+                    () -> uploadAndDeleteInternal(path, target, 10 /* retries */);
+            return fileUploadExecutor.submit(callable);
         } else {
             return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
         }

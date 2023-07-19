@@ -71,7 +71,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     // file system. This is to ensure that we don't make too many API calls to remote file system.
     private final Cache<Path, Boolean> objectCache;
 
-    @Inject
     public AbstractFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
@@ -89,6 +88,16 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         files for "sync" feature which might compete with backups for scheduling.
         Also, we may want to have different TIMEOUT for each kind of operation (upload/download) based on our file system choices.
         */
+
+        logger.info("Initializing AbstractFileSystem ...");
+        // Get the current thread's stack trace
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+
+        // Loop through each stack trace element
+        for (StackTraceElement element : stackTraceElements) {
+            logger.info(element.toString());
+        }
+
         BlockingQueue<Runnable> uploadQueue =
                 new ArrayBlockingQueue<>(configuration.getBackupQueueSize());
         PolledMeter.using(backupMetrics.getRegistry())

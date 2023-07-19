@@ -8,10 +8,14 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -19,7 +23,7 @@ import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class BackupHelperImpl implements BackupHelper {
-
+    private static final Logger logger = LoggerFactory.getLogger(BackupHelperImpl.class);
     private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
     private static final String DATA_SUFFIX = "-Data.db";
     private final Provider<AbstractBackupPath> pathFactory;
@@ -56,6 +60,8 @@ public class BackupHelperImpl implements BackupHelper {
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
         for (AbstractBackupPath bp : getBackupPaths(parent, type)) {
+            logger.info(String.format("AbstractBackupPath: %s, localPath: %s", bp, Paths.get(bp.getBackupFile().getAbsolutePath())));
+
             futures.add(fs.uploadAndDelete(bp, target, async));
         }
         return futures.build();

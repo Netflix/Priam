@@ -167,6 +167,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     public ListenableFuture<AbstractBackupPath> uploadAndDelete(
             final AbstractBackupPath path, Instant target, boolean async)
             throws RejectedExecutionException, BackupRestoreException {
+        logger.info(String.format("uploadAndDelete path: %s", path));
         if (async) {
             return fileUploadExecutor.submit(
                     () -> uploadAndDeleteInternal(path, target, 10 /* retries */));

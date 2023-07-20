@@ -60,7 +60,8 @@ import org.slf4j.LoggerFactory;
  * This service will run on CRON as specified by {@link
  * IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} The intent of this service is to run
  * a full snapshot on Cassandra, get the list of the SSTables on disk and then create a
- * manifest.json file which will encapsulate the list of the files i.e. capture filesystem at a
+ * manifest.json file which will e
+ * ncapsulate the list of the files i.e. capture filesystem at a
  * moment in time. This manifest.json file will ensure the true filesystem status is exposed (for
  * external entities) and will be used in future for Priam Backup Version 2 where a file is not
  * uploaded to backup file system unless SSTable has been modified. This will lead to huge reduction
@@ -287,15 +288,18 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
+
+                logger.info("enableAsyncSnapshot: {}", config.enableAsyncSnapshot());
+
                 backupHelper
-                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, true)
+                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, config.enableAsyncSnapshot())
                         .forEach(future -> addCallback(future, snapshotDirectory));
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
-                    futures = backupHelper.uploadAndDeleteAllFiles(subDir, type, target, true);
+                    futures = backupHelper.uploadAndDeleteAllFiles(subDir, type, target, config.enableAsyncSnapshot());
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
                     }

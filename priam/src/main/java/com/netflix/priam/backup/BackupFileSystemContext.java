@@ -31,8 +31,7 @@ public class BackupFileSystemContext implements IFileSystemContext {
     }
 
     @Inject
-    public BackupFileSystemContext(
-            @Named("backup") IBackupFileSystem fs) {
+    public BackupFileSystemContext(@Named("backup") IBackupFileSystem fs) {
         this.fs = fs;
     }
 

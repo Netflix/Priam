@@ -288,14 +288,14 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
                 backupHelper
-                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, true)
+                        .uploadAndDeleteAllFiles(snapshotDirectory, type, target, config.enableAsyncSnapshot())
                         .forEach(future -> addCallback(future, snapshotDirectory));
 
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
                 for (File subDir : getSecondaryIndexDirectories(snapshotDirectory)) {
-                    futures = backupHelper.uploadAndDeleteAllFiles(subDir, type, target, true);
+                    futures = backupHelper.uploadAndDeleteAllFiles(subDir, type, target, config.enableAsyncSnapshot());
                     if (futures.isEmpty()) {
                         deleteIfEmpty(subDir);
                     }

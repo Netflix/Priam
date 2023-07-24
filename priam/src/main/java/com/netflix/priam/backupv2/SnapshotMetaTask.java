@@ -289,8 +289,6 @@ public class SnapshotMetaTask extends AbstractBackup {
                 // is to ensure that next run happens on time.
                 AbstractBackupPath.BackupFileType type = AbstractBackupPath.BackupFileType.SST_V2;
 
-                logger.info("enableAsyncSnapshot: {}", config.enableAsyncSnapshot());
-
                 backupHelper
                         .uploadAndDeleteAllFiles(snapshotDirectory, type, target, config.enableAsyncSnapshot())
                         .forEach(future -> addCallback(future, snapshotDirectory));

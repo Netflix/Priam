@@ -30,6 +30,10 @@ public class BackupFileSystemContext implements IFileSystemContext {
         this.encryptedFs = encryptedFs;
     }
 
+    public BackupFileSystemContext(@Named("backup") IBackupFileSystem fs) {
+        this.fs = fs;
+    }
+
     public IBackupFileSystem getFileStrategy(IConfiguration config) {
 
         if (!config.isEncryptBackupEnabled()) {

@@ -103,12 +103,17 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         PolledMeter.using(backupMetrics.getRegistry())
                 .withName(backupMetrics.uploadQueueSize)
                 .monitorSize(uploadQueue);
+
+        BlockingSubmitThreadPoolExecutor bsExecutor = new BlockingSubmitThreadPoolExecutor(
+                configuration.getBackupThreads(),
+                uploadQueue,
+                configuration.getUploadTimeout());
+        logger.info("bsExecutor: {}", bsExecutor);
+
         this.fileUploadExecutor =
-                MoreExecutors.listeningDecorator(
-                        new BlockingSubmitThreadPoolExecutor(
-                                configuration.getBackupThreads(),
-                                uploadQueue,
-                                configuration.getUploadTimeout()));
+                MoreExecutors.listeningDecorator(bsExecutor);
+
+        logger.info("fileUploadExecutor: {}", fileUploadExecutor);
 
         BlockingQueue<Runnable> downloadQueue =
                 new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
@@ -169,8 +174,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             throws RejectedExecutionException, BackupRestoreException {
         logger.info(String.format("uploadAndDelete path: %s, async: %s", Paths.get(path.getBackupFile().getAbsolutePath()), async));
         if (async) {
-            return fileUploadExecutor.submit(
+            ListenableFuture<AbstractBackupPath> res = fileUploadExecutor.submit(
                     () -> uploadAndDeleteInternal(path, target, 10 /* retries */));
+            logger.info("Return for {}: {}", Paths.get(path.getBackupFile().getAbsolutePath()), res);
+            return res;
         } else {
             return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
         }
@@ -184,6 +191,15 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         File localFile = localPath.toFile();
 
         logger.info(String.format("uploadAndDeleteInternal: %s", localPath));
+        StringBuilder sb = new StringBuilder();
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        for (StackTraceElement element : stackTraceElements) {
+            sb.append(element.toString());
+            sb.append("\n");
+        }
+        // remove the last line
+        sb.setLength(sb.length() - 1);
+        logger.info(sb.toString());
 
         Preconditions.checkArgument(
                 localFile.exists(), String.format("Can't upload nonexistent %s", localPath));

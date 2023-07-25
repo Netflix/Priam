@@ -39,13 +39,19 @@ import com.netflix.spectator.api.NoopRegistry;
 import com.netflix.spectator.api.Registry;
 import org.quartz.SchedulerFactory;
 import org.quartz.impl.StdSchedulerFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class PriamGuiceModule extends AbstractModule {
+    protected static final Logger logger = LoggerFactory.getLogger(PriamGuiceModule.class);
+
     @Override
     protected void configure() {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
 
         bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
+        logger.info("[chengw]: {}", Thread.currentThread().getStackTrace());
+
         bind(IBackupFileSystem.class)
                 .annotatedWith(Names.named("encryptedbackup"))
                 .to(S3EncryptedFileSystem.class);

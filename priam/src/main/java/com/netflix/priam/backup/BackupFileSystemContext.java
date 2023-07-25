@@ -30,7 +30,6 @@ public class BackupFileSystemContext implements IFileSystemContext {
         this.encryptedFs = encryptedFs;
     }
 
-    @Inject
     public BackupFileSystemContext(
             @Named("backup") IBackupFileSystem fs) {
         this.fs = fs;

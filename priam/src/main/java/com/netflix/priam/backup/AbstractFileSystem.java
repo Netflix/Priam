@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
-import javax.inject.Inject;
 import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -63,6 +62,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
+
     private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
     private final BackupNotificationMgr backupNotificationMgr;
@@ -104,27 +104,28 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                 .withName(backupMetrics.uploadQueueSize)
                 .monitorSize(uploadQueue);
 
-        BlockingSubmitThreadPoolExecutor bsExecutor = new BlockingSubmitThreadPoolExecutor(
+        BlockingSubmitThreadPoolExecutor uploadExecutor = new BlockingSubmitThreadPoolExecutor(
                 configuration.getBackupThreads(),
                 uploadQueue,
                 configuration.getUploadTimeout());
-        logger.info("bsExecutor: {}", bsExecutor);
+        logger.info("uploadExecutor: {}", uploadExecutor);
 
-        this.fileUploadExecutor =
-                MoreExecutors.listeningDecorator(bsExecutor);
+        this.fileUploadExecutor = MoreExecutors.listeningDecorator(uploadExecutor);
 
-        logger.info("fileUploadExecutor: {}", fileUploadExecutor);
+        logger.info("fileUploadExecutor: {}", this.fileUploadExecutor);
 
         BlockingQueue<Runnable> downloadQueue =
                 new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
         PolledMeter.using(backupMetrics.getRegistry())
                 .withName(backupMetrics.downloadQueueSize)
                 .monitorSize(downloadQueue);
-        this.fileDownloadExecutor =
-                new BlockingSubmitThreadPoolExecutor(
-                        configuration.getRestoreThreads(),
-                        downloadQueue,
-                        configuration.getDownloadTimeout());
+        BlockingSubmitThreadPoolExecutor downloadExecutor = new BlockingSubmitThreadPoolExecutor(
+                configuration.getRestoreThreads(),
+                downloadQueue,
+                configuration.getDownloadTimeout());
+        logger.info("downloadExecutor: {}", downloadExecutor);
+
+        this.fileDownloadExecutor = downloadExecutor;
     }
 
     @Override
@@ -174,10 +175,9 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             throws RejectedExecutionException, BackupRestoreException {
         logger.info(String.format("uploadAndDelete path: %s, async: %s", Paths.get(path.getBackupFile().getAbsolutePath()), async));
         if (async) {
-            ListenableFuture<AbstractBackupPath> res = fileUploadExecutor.submit(
+            return fileUploadExecutor.submit(
                     () -> uploadAndDeleteInternal(path, target, 10 /* retries */));
-            logger.info("Return for {}: {}", Paths.get(path.getBackupFile().getAbsolutePath()), res);
-            return res;
+
         } else {
             return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
         }
@@ -191,15 +191,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         File localFile = localPath.toFile();
 
         logger.info(String.format("uploadAndDeleteInternal: %s", localPath));
-        StringBuilder sb = new StringBuilder();
-        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
-        for (StackTraceElement element : stackTraceElements) {
-            sb.append(element.toString());
-            sb.append("\n");
-        }
-        // remove the last line
-        sb.setLength(sb.length() - 1);
-        logger.info(sb.toString());
 
         Preconditions.checkArgument(
                 localFile.exists(), String.format("Can't upload nonexistent %s", localPath));

@@ -4,6 +4,7 @@ import static java.util.stream.Collectors.toSet;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
@@ -17,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -59,10 +61,16 @@ public class BackupHelperImpl implements BackupHelper {
             throws Exception {
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
+
         for (AbstractBackupPath bp : getBackupPaths(parent, type)) {
             logger.info(String.format("Before AbstractBackupPath: %s, localPath: %s", bp, Paths.get(bp.getBackupFile().getAbsolutePath())));
 
             futures.add(fs.uploadAndDelete(bp, target, async));
+
+            ImmutableList<ListenableFuture<AbstractBackupPath>> futuresList = futures.build();
+            ListenableFuture<List<AbstractBackupPath>> allFutures = Futures.allAsList(futuresList);
+
+            List<AbstractBackupPath> allResults = allFutures.get();
 
             logger.info(String.format("After AbstractBackupPath: %s, localPath: %s", bp, Paths.get(bp.getBackupFile().getAbsolutePath())));
 

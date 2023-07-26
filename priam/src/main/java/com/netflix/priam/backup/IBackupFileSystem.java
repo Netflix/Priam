@@ -17,6 +17,7 @@
 package com.netflix.priam.backup;
 
 import com.google.common.util.concurrent.ListenableFuture;
+
 import java.io.FileNotFoundException;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -71,18 +72,18 @@ public interface IBackupFileSystem {
      * guaranteed as we try to avoid lock on read/write of the files-in-progress. Once uploaded,
      * files are deleted. Uploads are retried 10 times.
      *
-     * @param path AbstractBackupPath to be used to send backup notifications only.
+     * @param path   AbstractBackupPath to be used to send backup notifications only.
      * @param target The target time of completion of all files in the upload.
-     * @param async boolean to determine whether the call should block or return immediately and
-     *     upload asynchronously
+     * @param async  boolean to determine whether the call should block or return immediately and
+     *               upload asynchronously
      * @return The future of the async job to monitor the progress of the job. This will be null if
-     *     file was de-duped for upload.
-     * @throws BackupRestoreException in case of failure to upload for any reason including file not
-     *     readable or remote file system errors.
-     * @throws FileNotFoundException If a file as denoted by localPath is not available or is a
-     *     directory.
+     * file was de-duped for upload.
+     * @throws BackupRestoreException     in case of failure to upload for any reason including file not
+     *                                    readable or remote file system errors.
+     * @throws FileNotFoundException      If a file as denoted by localPath is not available or is a
+     *                                    directory.
      * @throws RejectedExecutionException if the queue is full and TIMEOUT is reached while trying
-     *     to add the work to the queue.
+     *                                    to add the work to the queue.
      */
     ListenableFuture<AbstractBackupPath> uploadAndDelete(
             final AbstractBackupPath path, Instant target, boolean async)

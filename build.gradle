@@ -36,7 +36,7 @@ allprojects {
       compile 'com.sun.jersey:jersey-json:1.19.4'
       compile 'com.sun.jersey:jersey-bundle:1.19.4'
       compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
-      compile 'com.google.guava:guava:21.0'
+      //compile 'com.google.guava:guava:21.0'
       compile 'com.google.code.findbugs:jsr305:3.0.2'
         
       // AWS Services

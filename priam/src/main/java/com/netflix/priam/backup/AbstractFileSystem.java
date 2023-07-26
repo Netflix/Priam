@@ -177,7 +177,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         if (async) {
             return fileUploadExecutor.submit(
                     () -> {
-                        logger.info("uploadAndDeleteCallable path: {}", Paths.get(path.getBackupFile().getAbsolutePath()));
+                        logger.info("uploadAndDeleteCallableV2 path: {}", Paths.get(path.getBackupFile().getAbsolutePath()));
                         try {
                             return uploadAndDeleteInternal(path, target, 10 /* retries */);
                         } catch (BackupRestoreException e) {

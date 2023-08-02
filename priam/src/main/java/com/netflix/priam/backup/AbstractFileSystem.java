@@ -175,11 +175,12 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             throws RejectedExecutionException, BackupRestoreException {
         logger.info(String.format("uploadAndDelete path: %s, async: %s", Paths.get(path.getBackupFile().getAbsolutePath()), async));
         if (async) {
+
             return fileUploadExecutor.submit(
                     () -> {
-                        logger.info("uploadAndDeleteCallableV2 path: {}", Paths.get(path.getBackupFile().getAbsolutePath()));
+                        // logger.info("uploadAndDeleteCallableV2 path: {}", Paths.get(path.getBackupFile().getAbsolutePath()));
                         try {
-                            return uploadAndDeleteInternal(path, target, 10 /* retries */);
+                            return uploadAndDeleteInternal(path, target, 10);
                         } catch (BackupRestoreException e) {
                             logger.info("uploadAndDeleteCallable exception path: {}", Paths.get(path.getBackupFile().getAbsolutePath()), e);
                             throw e;
@@ -187,9 +188,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                     });
 
         } else {
-            return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
+            return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10));
         }
     }
+
 
     @VisibleForTesting
     public AbstractBackupPath uploadAndDeleteInternal(
@@ -198,7 +200,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
 
-        logger.info(String.format("uploadAndDeleteInternal: %s", localPath));
+        // logger.info(String.format("uploadAndDeleteInternal: %s", localPath));
 
         Preconditions.checkArgument(
                 localFile.exists(), String.format("Can't upload nonexistent %s", localPath));

@@ -1,4 +1,7 @@
 # Changelog
+## 2023/08/03 3.1.127
+Add config for Cassandra disk_failure_policy #1066
+
 ## 2023/5/5 3.1.126
 Fix snapshot location regression in SNS messages. #1055
 

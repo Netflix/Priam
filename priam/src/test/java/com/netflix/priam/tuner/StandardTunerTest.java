@@ -174,6 +174,15 @@ public class StandardTunerTest {
         Assert.assertEquals(roleManagerOverride, map.get("role_manager"));
     }
 
+    @Test
+    public void testDiskFailurePolicy() throws Exception {
+        String diskFailurePolicy = "stop_paranoid";
+        Map map =
+                applyFakeConfiguration(
+                        new FakeConfiguration().setDiskFailurePolicy(diskFailurePolicy));
+        Assert.assertEquals(diskFailurePolicy, map.get("disk_failure_policy"));
+    }
+
     private Map applyFakeConfiguration(FakeConfiguration fakeConfiguration) throws Exception {
         StandardTuner tuner =
                 new StandardTuner(fakeConfiguration, backupRestoreConfig, instanceInfo);

@@ -59,6 +59,7 @@ public class StandardTuner implements ICassandraTuner {
         Yaml yaml = new Yaml(options);
         File yamlFile = new File(yamlLocation);
         Map map = yaml.load(new FileInputStream(yamlFile));
+
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
@@ -130,6 +131,7 @@ public class StandardTuner implements ICassandraTuner {
                 config.getCompactionLargePartitionWarnThresholdInMB());
         map.put("disk_access_mode", config.getDiskAccessMode());
         map.put("auto_snapshot", config.getAutoSnapshot());
+        map.put("disk_failure_policy", config.getDiskFailurePolicy());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

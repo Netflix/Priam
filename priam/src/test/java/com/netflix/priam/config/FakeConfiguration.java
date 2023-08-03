@@ -43,6 +43,7 @@ public class FakeConfiguration implements IConfiguration {
     private long compressionTransitionEpochMillis;
     private boolean autoSnapshot;
     private String partitioner;
+    private String diskFailurePolicy;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -322,5 +323,15 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getPartitioner() {
         return partitioner;
+    }
+
+    public FakeConfiguration setDiskFailurePolicy(String diskFailurePolicy) {
+        this.diskFailurePolicy = diskFailurePolicy;
+        return this;
+    }
+
+    @Override
+    public String getDiskFailurePolicy() {
+        return this.diskFailurePolicy;
     }
 }

@@ -1,4 +1,7 @@
 # Changelog
+## 2023/08/03 3.11.106
+Add config for Cassandra disk_failure_policy #1066
+
 ## 2023/07/24 3.11.105
 Add constructor for BackupFileSystemContext #1064
 

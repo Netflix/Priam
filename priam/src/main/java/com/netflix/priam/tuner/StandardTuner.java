@@ -127,6 +127,7 @@ public class StandardTuner implements ICassandraTuner {
                 "compaction_large_partition_warning_threshold_mb",
                 config.getCompactionLargePartitionWarnThresholdInMB());
         map.put("auto_snapshot", config.getAutoSnapshot());
+        map.put("disk_failure_policy", config.getDiskFailurePolicy());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

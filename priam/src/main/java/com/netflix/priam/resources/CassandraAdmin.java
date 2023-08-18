@@ -113,7 +113,7 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool info being called");
-        return Response.ok(nodeTool.info(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(nodeTool.info().toString(), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
@@ -139,7 +139,7 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool ring being called");
-        return Response.ok(nodeTool.ring(keyspace), MediaType.APPLICATION_JSON).build();
+        return Response.ok(nodeTool.ring(keyspace).toString(), MediaType.APPLICATION_JSON).build();
     }
 
     @GET
@@ -152,7 +152,8 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException").build();
         }
         logger.debug("node tool status being called");
-        return Response.ok(nodeTool.statusInformation(), MediaType.APPLICATION_JSON).build();
+        return Response.ok(nodeTool.statusInformation().toString(), MediaType.APPLICATION_JSON)
+                .build();
     }
 
     @GET
@@ -163,7 +164,7 @@ public class CassandraAdmin {
         try {
             flush.execute();
             rootObj.put("Flushed", true);
-            return Response.ok().entity(rootObj).build();
+            return Response.ok().entity(rootObj.toString()).build();
         } catch (Exception e) {
             try {
                 rootObj.put("status", "ERROR");
@@ -171,7 +172,7 @@ public class CassandraAdmin {
             } catch (Exception e1) {
                 return Response.status(503).entity("FlushError").build();
             }
-            return Response.status(503).entity(rootObj).build();
+            return Response.status(503).entity(rootObj.toString()).build();
         }
     }
 
@@ -183,7 +184,7 @@ public class CassandraAdmin {
         try {
             compaction.execute();
             rootObj.put("Compacted", true);
-            return Response.ok().entity(rootObj).build();
+            return Response.ok().entity(rootObj.toString()).build();
         } catch (Exception e) {
             try {
                 rootObj.put("status", "ERROR");
@@ -191,7 +192,7 @@ public class CassandraAdmin {
             } catch (Exception e1) {
                 return Response.status(503).entity("CompactionError").build();
             }
-            return Response.status(503).entity(rootObj).build();
+            return Response.status(503).entity(rootObj.toString()).build();
         }
     }
 
@@ -237,7 +238,7 @@ public class CassandraAdmin {
             return Response.status(503).entity("JMXConnectionException").build();
         }
         return Response.ok(
-                        new JSONArray().put(nodeTool.getReleaseVersion()),
+                        new JSONArray().put(nodeTool.getReleaseVersion()).toString(),
                         MediaType.APPLICATION_JSON)
                 .build();
     }

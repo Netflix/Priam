@@ -1,4 +1,7 @@
 # Changelog
+## 2023/08/18 3.11.107
+Fix Gson serilization issue #1067
+
 ## 2023/08/03 3.11.106
 Add config for Cassandra disk_failure_policy #1066
 

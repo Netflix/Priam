@@ -59,9 +59,15 @@ public class BackupHelperImpl implements BackupHelper {
         final ImmutableList.Builder<ListenableFuture<AbstractBackupPath>> futures =
                 ImmutableList.builder();
         for (AbstractBackupPath bp : getBackupPaths(parent, type)) {
-            logger.info(String.format("@@@ getting upload future for %s", bp.getFileName()));
+            logger.info(
+                    String.format(
+                            "@@@ getting upload future for %s",
+                            bp.getBackupFile().getAbsolutePath()));
             futures.add(fs.uploadAndDelete(bp, target, async));
-            logger.info(String.format("@@@ upload future for %s obtained", bp.getFileName()));
+            logger.info(
+                    String.format(
+                            "@@@ upload future for %s obtained",
+                            bp.getBackupFile().getAbsolutePath()));
         }
         return futures.build();
     }

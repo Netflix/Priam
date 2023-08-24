@@ -22,12 +22,8 @@ public class BackupFileSystemContext implements IFileSystemContext {
     private IBackupFileSystem fs = null, encryptedFs = null;
 
     @Inject
-    public BackupFileSystemContext(
-            @Named("backup") IBackupFileSystem fs,
-            @Named("encryptedbackup") IBackupFileSystem encryptedFs) {
-
+    public BackupFileSystemContext(@Named("backup") IBackupFileSystem fs) {
         this.fs = fs;
-        this.encryptedFs = encryptedFs;
     }
 
     public IBackupFileSystem getFileStrategy(IConfiguration config) {

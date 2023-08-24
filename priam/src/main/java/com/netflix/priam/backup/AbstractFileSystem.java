@@ -102,6 +102,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                                 configuration.getBackupThreads(),
                                 uploadQueue,
                                 configuration.getUploadTimeout()));
+        logger.info("fileUploadExecutor : {}", fileUploadExecutor);
 
         BlockingQueue<Runnable> downloadQueue =
                 new ArrayBlockingQueue<>(configuration.getDownloadQueueSize());
@@ -161,9 +162,19 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             final AbstractBackupPath path, Instant target, boolean async)
             throws RejectedExecutionException, BackupRestoreException {
         if (async) {
-            logger.info(String.format("@@@ submitting to executor %s", path.getFileName()));
+            logger.info(
+                    String.format(
+                            "@@@ submitting to executor %s",
+                            path.getBackupFile().getAbsolutePath()));
             Callable<AbstractBackupPath> callable =
-                    () -> uploadAndDeleteInternal(path, target, 10 /* retries */);
+                    () -> uploadAndDeleteInternal(path, target, 10 /* retries
+                     */);
+            //                    () -> {
+            //                        throw new RuntimeException(
+            //                                String.format(
+            //                                        "@@@ force failing %s",
+            //                                        path.getBackupFile().getAbsolutePath()));
+            //                    };
             return fileUploadExecutor.submit(callable);
         } else {
             return Futures.immediateFuture(uploadAndDeleteInternal(path, target, 10 /* retries */));
@@ -176,6 +187,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             throws RejectedExecutionException, BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         File localFile = localPath.toFile();
+        logger.info("@@@ validating file exists and is a file: {}", localPath);
         Preconditions.checkArgument(
                 localFile.exists(), String.format("Can't upload nonexistent %s", localPath));
         Preconditions.checkArgument(

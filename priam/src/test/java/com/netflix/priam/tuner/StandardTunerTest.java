@@ -183,6 +183,16 @@ public class StandardTunerTest {
         Assert.assertEquals(diskFailurePolicy, map.get("disk_failure_policy"));
     }
 
+    @Test
+    public void testBlockForPeersTimeoutInSecs_normal() throws Exception {
+        int blockForPeersTimeoutInSecs = 240;
+        Map map =
+                applyFakeConfiguration(
+                        new FakeConfiguration()
+                                .setBlockForPeersTimeoutInSecs(blockForPeersTimeoutInSecs));
+        Assert.assertEquals(blockForPeersTimeoutInSecs, map.get("block_for_peers_timeout_in_secs"));
+    }
+
     private Map applyFakeConfiguration(FakeConfiguration fakeConfiguration) throws Exception {
         StandardTuner tuner =
                 new StandardTuner(fakeConfiguration, backupRestoreConfig, instanceInfo);

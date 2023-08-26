@@ -44,6 +44,7 @@ public class FakeConfiguration implements IConfiguration {
     private boolean autoSnapshot;
     private String partitioner;
     private String diskFailurePolicy;
+    private int blockForPeersTimeoutInSecs;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -333,5 +334,15 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public String getDiskFailurePolicy() {
         return this.diskFailurePolicy;
+    }
+
+    public FakeConfiguration setBlockForPeersTimeoutInSecs(int timeout) {
+        this.blockForPeersTimeoutInSecs = timeout;
+        return this;
+    }
+
+    @Override
+    public int getBlockForPeersTimeoutInSecs() {
+        return this.blockForPeersTimeoutInSecs;
     }
 }

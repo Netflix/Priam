@@ -1168,6 +1168,11 @@ public interface IConfiguration {
         return "stop";
     }
 
+    /** @return how long to wait for neighboring peer connectivity at startup * */
+    default int getBlockForPeersTimeoutInSecs() {
+        return 10;
+    }
+
     /**
      * Escape hatch for getting any arbitrary property by key This is useful so we don't have to
      * keep adding methods to this interface for every single configuration option ever. Also

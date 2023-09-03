@@ -132,6 +132,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("disk_access_mode", config.getDiskAccessMode());
         map.put("auto_snapshot", config.getAutoSnapshot());
         map.put("disk_failure_policy", config.getDiskFailurePolicy());
+        map.put("block_for_peers_timeout_in_secs", config.getBlockForPeersTimeoutInSecs());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

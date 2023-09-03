@@ -1,4 +1,7 @@
 # Changelog
+## 2023/09/02 3.11.108
+Tune block_for_peers_timeout_in_secs #1069
+
 ## 2023/08/18 3.11.107
 Fix Gson serilization issue #1067
 

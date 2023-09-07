@@ -17,6 +17,8 @@
 
 package com.netflix.priam.identity.token;
 
+import static org.junit.Assert.fail;
+
 import com.google.common.collect.*;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
@@ -41,7 +43,6 @@ import mockit.Expectations;
 import mockit.Mocked;
 import org.apache.commons.lang3.math.Fraction;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -429,8 +430,12 @@ public class TokenRetrieverTest {
     public void testThrowOnDuplicateTokenInSameRegion() {
         prepareTokenGenerationTest();
         create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-east-1d", 1808575600 + "");
-        Assert.assertThrows(
-                IllegalStateException.class, () -> getTokenRetriever().generateNewToken());
+        try {
+            getTokenRetriever().generateNewToken();
+        } catch (IllegalStateException e) {
+            return;
+        }
+        fail();
     }
 
     @Test

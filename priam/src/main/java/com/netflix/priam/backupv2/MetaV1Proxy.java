@@ -18,7 +18,6 @@
 package com.netflix.priam.backupv2;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -28,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
+import javax.inject.Inject;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.io.FileUtils;
@@ -41,7 +41,7 @@ public class MetaV1Proxy implements IMetaProxy {
     private final IBackupFileSystem fs;
 
     @Inject
-    MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
+    public MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
         fs = backupFileSystemCtx.getFileStrategy(configuration);
     }
 
@@ -169,8 +169,7 @@ public class MetaV1Proxy implements IMetaProxy {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
-            throws BackupRestoreException {
+    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange) {
         String prefix = fs.getPrefix().toString();
         Iterator<AbstractBackupPath> iterator =
                 fs.list(

@@ -17,8 +17,6 @@
 package com.netflix.priam.config;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.configSource.IConfigSource;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
@@ -27,6 +25,8 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -773,5 +773,10 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public double getRateLimitChangeThreshold() {
         return config.get(PRIAM_PRE + ".rateLimitChangeThreshold", 0.1);
+    }
+
+    @Override
+    public boolean getAutoSnapshot() {
+        return config.get(PRIAM_PRE + ".autoSnapshot", false);
     }
 }

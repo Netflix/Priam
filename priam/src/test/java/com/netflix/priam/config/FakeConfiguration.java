@@ -19,11 +19,11 @@ package com.netflix.priam.config;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.Singleton;
 import java.io.File;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import javax.inject.Singleton;
 
 @Singleton
 public class FakeConfiguration implements IConfiguration {
@@ -40,6 +40,10 @@ public class FakeConfiguration implements IConfiguration {
     private boolean skipUpdatingOthersIngressRules;
     private boolean skipIngressUnlessIPIsPublic;
     private long compressionTransitionEpochMillis;
+    private boolean autoSnapshot;
+    private String partitioner;
+    private String diskFailurePolicy;
+    private int blockForPeersTimeoutInSecs;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -301,5 +305,44 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public int getStreamingKeepAlivePeriod() {
         return 300;
+    }
+
+    public FakeConfiguration setAutoSnapshot(boolean autoSnapshot) {
+        this.autoSnapshot = autoSnapshot;
+        return this;
+    }
+
+    @Override
+    public boolean getAutoSnapshot() {
+        return autoSnapshot;
+    }
+
+    public void setPartitioner(String partitioner) {
+        this.partitioner = partitioner;
+    }
+
+    @Override
+    public String getPartitioner() {
+        return partitioner;
+    }
+
+    public FakeConfiguration setDiskFailurePolicy(String diskFailurePolicy) {
+        this.diskFailurePolicy = diskFailurePolicy;
+        return this;
+    }
+
+    @Override
+    public String getDiskFailurePolicy() {
+        return this.diskFailurePolicy;
+    }
+
+    public FakeConfiguration setBlockForPeersTimeoutInSecs(int timeout) {
+        this.blockForPeersTimeoutInSecs = timeout;
+        return this;
+    }
+
+    @Override
+    public int getBlockForPeersTimeoutInSecs() {
+        return this.blockForPeersTimeoutInSecs;
     }
 }

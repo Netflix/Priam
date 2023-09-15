@@ -16,8 +16,6 @@
  */
 package com.netflix.priam.restore;
 
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.backupv2.IMetaProxy;
@@ -28,7 +26,10 @@ import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.utils.*;
+import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.RetryableCallable;
+import com.netflix.priam.utils.Sleeper;
+import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -37,7 +38,9 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
+import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -109,10 +112,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 (CollectionUtils.isEmpty(conf.getBackupRacs())
                         || conf.getBackupRacs().contains(instanceInfo.getRac()));
         return (isRestoreMode && isBackedupRac);
-    }
-
-    public void setRestoreConfiguration(String restoreIncludeCFList, String restoreExcludeCFList) {
-        backupRestoreUtil.setFilters(restoreIncludeCFList, restoreExcludeCFList);
     }
 
     private List<Future<Path>> download(
@@ -244,8 +243,13 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                     .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
 
             List<AbstractBackupPath> allFiles =
-                    BackupRestoreUtil.getAllFiles(
-                            latestValidMetaFile.get(), dateRange, metaProxy, pathProvider);
+                    BackupRestoreUtil.getMostRecentSnapshotPaths(
+                            latestValidMetaFile.get(), metaProxy, pathProvider);
+            if (!config.skipIncrementalRestore()) {
+                allFiles.addAll(
+                        BackupRestoreUtil.getIncrementalPaths(
+                                latestValidMetaFile.get(), dateRange, metaProxy));
+            }
 
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();

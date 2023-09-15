@@ -13,9 +13,9 @@
  */
 package com.netflix.priam.backup;
 
-import com.google.inject.Inject;
-import com.google.inject.name.Named;
 import com.netflix.priam.config.IConfiguration;
+import javax.inject.Inject;
+import javax.inject.Named;
 
 public class BackupFileSystemContext implements IFileSystemContext {
 
@@ -28,6 +28,10 @@ public class BackupFileSystemContext implements IFileSystemContext {
 
         this.fs = fs;
         this.encryptedFs = encryptedFs;
+    }
+
+    public BackupFileSystemContext(@Named("backup") IBackupFileSystem fs) {
+        this.fs = fs;
     }
 
     public IBackupFileSystem getFileStrategy(IConfiguration config) {

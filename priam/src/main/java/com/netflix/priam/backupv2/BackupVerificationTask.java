@@ -17,8 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -30,9 +28,13 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,21 +86,29 @@ public class BackupVerificationTask extends Task {
         Instant slo =
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
         DateRange dateRange = new DateRange(slo, now);
-        List<BackupVerificationResult> verificationResults =
-                backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
+        List<BackupMetadata> verifiedBackups =
+                backupVerification.verifyBackupsInRange(
+                        BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
 
-        verificationResults.forEach(
-                result -> {
-                    logger.info(
-                            "Sending {} message for backup: {}",
-                            AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                            result.snapshotInstant);
-                    backupNotificationMgr.notify(result);
-                });
+        verifiedBackups
+                .stream()
+                .filter(result -> result.getLastValidated().toInstant().isAfter(now))
+                .forEach(
+                        result -> {
+                            Path snapshotLocation = Paths.get(result.getSnapshotLocation());
+                            String snapshotKey =
+                                    snapshotLocation
+                                            .subpath(1, snapshotLocation.getNameCount())
+                                            .toString();
+                            logger.info(
+                                    "Sending {} message for backup: {}",
+                                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
+                                    snapshotKey);
+                            backupNotificationMgr.notify(
+                                    snapshotKey, result.getStart().toInstant());
+                        });
 
-        if (!backupVerification
-                .verifyBackup(BackupVersion.SNAPSHOT_META_SERVICE, false /* force */, dateRange)
-                .isPresent()) {
+        if (verifiedBackups.isEmpty()) {
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());

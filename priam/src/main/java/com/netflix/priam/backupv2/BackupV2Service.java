@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -26,6 +25,7 @@ import com.netflix.priam.identity.token.ITokenRetriever;
 import com.netflix.priam.scheduler.PriamScheduler;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.tuner.CassandraTunerService;
+import javax.inject.Inject;
 
 /**
  * Encapsulate the backup service 2.0 - Execute all the tasks required to run backup service.
@@ -68,20 +68,19 @@ public class BackupV2Service implements IService {
             // restart.
             snapshotMetaTask.uploadFiles();
 
-            // Schedule the TTL service
-            TaskTimer timer =
-                    BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
-            scheduleTask(scheduler, BackupTTLTask.class, timer);
-
             // Schedule the backup verification service
             scheduleTask(
                     scheduler,
                     BackupVerificationTask.class,
                     BackupVerificationTask.getTimer(backupRestoreConfig));
         } else {
-            scheduler.deleteTask(BackupTTLTask.JOBNAME);
             scheduler.deleteTask(BackupVerificationTask.JOBNAME);
         }
+
+        // Schedule the TTL service
+        TaskTimer timer =
+                BackupTTLTask.getTimer(backupRestoreConfig, tokenRetriever.getRingPosition());
+        scheduleTask(scheduler, BackupTTLTask.class, timer);
 
         // Start the Incremental backup schedule if enabled
         scheduleTask(

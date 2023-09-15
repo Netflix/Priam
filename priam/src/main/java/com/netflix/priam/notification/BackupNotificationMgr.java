@@ -14,15 +14,15 @@
 package com.netflix.priam.notification;
 
 import com.amazonaws.services.sns.model.MessageAttributeValue;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.identity.config.InstanceInfo;
+import java.time.Instant;
 import java.util.*;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.codehaus.jettison.json.JSONException;
 import org.codehaus.jettison.json.JSONObject;
@@ -34,11 +34,8 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Created by vinhn on 10/30/16.
  */
-public class BackupNotificationMgr implements EventObserver<BackupEvent> {
+public class BackupNotificationMgr {
 
-    private static final String SUCCESS_VAL = "success";
-    private static final String FAILED_VAL = "failed";
-    private static final String STARTED = "started";
     private static final Logger logger = LoggerFactory.getLogger(BackupNotificationMgr.class);
     private final IConfiguration config;
     private final IBackupRestoreConfig backupRestoreConfig;
@@ -64,26 +61,27 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         this.notifiedBackupFileTypes = "";
     }
 
-    public void notify(BackupVerificationResult backupVerificationResult) {
+    public void notify(String remotePath, Instant snapshotInstant) {
         JSONObject jsonObject = new JSONObject();
         try {
             jsonObject.put("s3bucketname", this.config.getBackupPrefix());
             jsonObject.put("s3clustername", config.getAppName());
-            jsonObject.put("s3namespace", backupVerificationResult.remotePath);
+            jsonObject.put("s3namespace", remotePath);
             jsonObject.put("region", instanceInfo.getRegion());
             jsonObject.put("rack", instanceInfo.getRac());
             jsonObject.put("token", instanceIdentity.getInstance().getToken());
             jsonObject.put(
                     "backuptype", AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED.name());
-            jsonObject.put("snapshotInstant", backupVerificationResult.snapshotInstant);
+            jsonObject.put("snapshotInstant", snapshotInstant);
             // SNS Attributes for filtering messages. Cluster name and backup file type.
             Map<String, MessageAttributeValue> messageAttributes = getMessageAttributes(jsonObject);
 
             this.notificationService.notify(jsonObject.toString(), messageAttributes);
         } catch (JSONException exception) {
             logger.error(
-                    "JSON exception during generation of notification for snapshot verification: {}. Msg: {}",
-                    backupVerificationResult,
+                    "JSON exception during generation of notification for snapshot verification: {}. path: {}, time: {}",
+                    remotePath,
+                    snapshotInstant,
                     exception.getLocalizedMessage());
         }
     }
@@ -105,7 +103,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
         return new MessageAttributeValue().withDataType("String").withStringValue(value);
     }
 
-    private void notify(AbstractBackupPath abp, String uploadStatus) {
+    public void notify(AbstractBackupPath abp, UploadStatus uploadStatus) {
         JSONObject jsonObject = new JSONObject();
         try {
             Set<AbstractBackupPath.BackupFileType> updatedNotifiedBackupFileTypeSet =
@@ -124,7 +122,7 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
                 jsonObject.put("uncompressfilesize", abp.getSize());
                 jsonObject.put("compressfilesize", abp.getCompressedFileSize());
                 jsonObject.put("backuptype", abp.getType().name());
-                jsonObject.put("uploadstatus", uploadStatus);
+                jsonObject.put("uploadstatus", uploadStatus.name().toLowerCase());
                 jsonObject.put("compression", abp.getCompression().name());
                 jsonObject.put("encryption", abp.getEncryption().name());
                 jsonObject.put("isincremental", abp.isIncremental());
@@ -172,25 +170,5 @@ public class BackupNotificationMgr implements EventObserver<BackupEvent> {
             }
         }
         return Collections.unmodifiableSet(this.notifiedBackupFileTypesSet);
-    }
-
-    @Override
-    public void updateEventStart(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), STARTED);
-    }
-
-    @Override
-    public void updateEventFailure(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), FAILED_VAL);
-    }
-
-    @Override
-    public void updateEventSuccess(BackupEvent event) {
-        notify(event.getAbstractBackupPath(), SUCCESS_VAL);
-    }
-
-    @Override
-    public void updateEventStop(BackupEvent event) {
-        // Do nothing.
     }
 }

@@ -4,7 +4,6 @@ import static org.junit.Assert.assertEquals;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
@@ -22,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import javax.inject.Provider;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import mockit.Expectations;
@@ -157,7 +157,7 @@ public class BackupServletV2Test {
     public void testValidate() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
@@ -177,7 +177,7 @@ public class BackupServletV2Test {
     public void testValidateNoBackups() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
@@ -196,7 +196,7 @@ public class BackupServletV2Test {
     public void testValidateV2SnapshotByDate() throws Exception {
         new Expectations() {
             {
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         anyBoolean,
                         new DateUtil.DateRange((Instant) any, (Instant) any));

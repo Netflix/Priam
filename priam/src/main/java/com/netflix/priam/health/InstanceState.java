@@ -16,14 +16,14 @@
  */
 package com.netflix.priam.health;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.time.LocalDateTime;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /**
  * Contains the state of the health of processed managed by Priam, and maintains the isHealthy flag
@@ -52,7 +52,7 @@ public class InstanceState {
     private final RestoreStatus restoreStatus;
 
     @Inject
-    InstanceState(RestoreStatus restoreStatus) {
+    public InstanceState(RestoreStatus restoreStatus) {
         this.restoreStatus = restoreStatus;
     }
 

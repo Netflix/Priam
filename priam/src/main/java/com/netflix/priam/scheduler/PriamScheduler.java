@@ -16,10 +16,10 @@
  */
 package com.netflix.priam.scheduler;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.utils.Sleeper;
 import java.text.ParseException;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.quartz.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,11 +29,11 @@ import org.slf4j.LoggerFactory;
 public class PriamScheduler {
     private static final Logger logger = LoggerFactory.getLogger(PriamScheduler.class);
     private final Scheduler scheduler;
-    private final GuiceJobFactory jobFactory;
+    private final PriamJobFactory jobFactory;
     private final Sleeper sleeper;
 
     @Inject
-    public PriamScheduler(SchedulerFactory factory, GuiceJobFactory jobFactory, Sleeper sleeper) {
+    public PriamScheduler(SchedulerFactory factory, PriamJobFactory jobFactory, Sleeper sleeper) {
         try {
             this.scheduler = factory.getScheduler();
             this.scheduler.setJobFactory(jobFactory);
@@ -100,7 +100,7 @@ public class PriamScheduler {
     }
 
     public void runTaskNow(Class<? extends Task> taskclass) throws Exception {
-        jobFactory.guice.getInstance(taskclass).execute(null);
+        jobFactory.newJob(taskclass).execute(null);
     }
 
     public void deleteTask(String name) throws SchedulerException {

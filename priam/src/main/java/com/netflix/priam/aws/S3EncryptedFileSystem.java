@@ -18,11 +18,6 @@ import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadRequest;
 import com.amazonaws.services.s3.model.InitiateMultipartUploadResult;
 import com.amazonaws.services.s3.model.PartETag;
-import com.google.common.collect.Lists;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
-import com.google.inject.Singleton;
-import com.google.inject.name.Named;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.DynamicRateLimiter;
@@ -39,8 +34,14 @@ import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -116,7 +117,7 @@ public class S3EncryptedFileSystem extends S3FileSystemBase {
         DataPart part =
                 new DataPart(config.getBackupPrefix(), remotePath, initResponse.getUploadId());
         // Metadata on number of parts to be uploaded
-        List<PartETag> partETags = Lists.newArrayList();
+        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
 
         // Read chunks from src, compress it, and write to temp file
         File compressedDstFile = new File(localPath.toString() + ".compressed");

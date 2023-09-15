@@ -24,7 +24,6 @@ import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import java.io.File;
@@ -92,36 +91,16 @@ public class TestBackupVerification {
     }
 
     @Test
-    public void illegalDateRange() throws UnsupportedTypeException {
-        try {
-            backupVerification.verifyBackup(BackupVersion.SNAPSHOT_BACKUP, false, null);
-            Assert.assertTrue(false);
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
-        }
-    }
-
-    @Test
-    public void illegalDateRangeBackupDateRange() throws UnsupportedTypeException {
-        try {
-            backupVerification.verifyAllBackups(BackupVersion.SNAPSHOT_BACKUP, null);
-            Assert.assertTrue(false);
-        } catch (IllegalArgumentException e) {
-            Assert.assertTrue(true);
-        }
-    }
-
-    @Test
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
 
         backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(Instant.now(), Instant.now()));
@@ -130,13 +109,13 @@ public class TestBackupVerification {
 
     @Test
     public void noBackupDateRange() throws Exception {
-        List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+        List<BackupMetadata> backupVerificationResults =
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP, new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResults.size() > 0);
 
         backupVerificationResults =
-                backupVerification.verifyAllBackups(
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResults.size() > 0);
@@ -174,7 +153,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 1.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_BACKUP,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -205,15 +184,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion1DateRange() throws Exception {
         setUp();
         // Verify for backup version 1.0
-        List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+        List<BackupMetadata> backupVerificationResults =
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_BACKUP,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults
-                .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_BACKUP,
@@ -236,7 +212,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 2.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -256,7 +232,7 @@ public class TestBackupVerification {
 
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
-                backupVerification.verifyBackup(
+                backupVerification.verifyLatestBackup(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         false,
                         new DateRange(backupDate + "," + backupDate));
@@ -284,15 +260,12 @@ public class TestBackupVerification {
     public void verifyBackupVersion2DateRange() throws Exception {
         setUp();
         // Verify for backup version 2.0
-        List<BackupVerificationResult> backupVerificationResults =
-                backupVerification.verifyAllBackups(
+        List<BackupMetadata> backupVerificationResults =
+                backupVerification.verifyBackupsInRange(
                         BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(backupDate + "," + backupDateEnd));
         Assert.assertTrue(!backupVerificationResults.isEmpty());
         Assert.assertTrue(backupVerificationResults.size() == numFakeBackups);
-        backupVerificationResults
-                .stream()
-                .forEach(b -> Assert.assertEquals(Instant.EPOCH, b.snapshotInstant));
         List<BackupMetadata> backupMetadata =
                 backupStatusMgr.getLatestBackupMetadata(
                         BackupVersion.SNAPSHOT_META_SERVICE,

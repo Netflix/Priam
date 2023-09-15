@@ -14,7 +14,6 @@
 package com.netflix.priam.tuner;
 
 import com.google.common.collect.Lists;
-import com.google.inject.Inject;
 import com.netflix.priam.backup.IncrementalBackup;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -25,6 +24,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +59,7 @@ public class StandardTuner implements ICassandraTuner {
         Yaml yaml = new Yaml(options);
         File yamlFile = new File(yamlLocation);
         Map map = yaml.load(new FileInputStream(yamlFile));
+
         map.put("cluster_name", config.getAppName());
         map.put("storage_port", config.getStoragePort());
         map.put("ssl_storage_port", config.getSSLStoragePort());
@@ -124,6 +125,9 @@ public class StandardTuner implements ICassandraTuner {
                 "compaction_large_partition_warning_threshold_mb",
                 config.getCompactionLargePartitionWarnThresholdInMB());
         map.put("disk_access_mode", config.getDiskAccessMode());
+        map.put("auto_snapshot", config.getAutoSnapshot());
+        map.put("disk_failure_policy", config.getDiskFailurePolicy());
+        map.put("block_for_peers_timeout_in_secs", config.getBlockForPeersTimeoutInSecs());
 
         List<?> seedp = (List) map.get("seed_provider");
         Map<String, String> m = (Map<String, String>) seedp.get(0);

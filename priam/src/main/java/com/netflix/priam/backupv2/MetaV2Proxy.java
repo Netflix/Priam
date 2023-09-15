@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backupv2;
 
-import com.google.inject.Provider;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -28,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
@@ -45,7 +45,7 @@ public class MetaV2Proxy implements IMetaProxy {
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
 
     @Inject
-    MetaV2Proxy(
+    public MetaV2Proxy(
             IConfiguration configuration,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
@@ -79,8 +79,7 @@ public class MetaV2Proxy implements IMetaProxy {
     }
 
     @Override
-    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange)
-            throws BackupRestoreException {
+    public Iterator<AbstractBackupPath> getIncrementals(DateUtil.DateRange dateRange) {
         String incrementalPrefix = getMatch(dateRange, AbstractBackupPath.BackupFileType.SST_V2);
         String marker =
                 getMatch(

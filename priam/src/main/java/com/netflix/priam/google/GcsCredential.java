@@ -14,9 +14,9 @@
 package com.netflix.priam.google;
 
 import com.amazonaws.auth.AWSCredentialsProvider;
-import com.google.inject.Inject;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
+import javax.inject.Inject;
 
 /*
  * A generic implementation of fetch keys as plaintext.  The key values are used with Google Cloud Storage.  Users may

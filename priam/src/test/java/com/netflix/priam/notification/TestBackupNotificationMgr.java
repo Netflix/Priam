@@ -3,10 +3,8 @@ package com.netflix.priam.notification;
 import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BRTestModule;
-import com.netflix.priam.backup.BackupVerificationResult;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import java.nio.file.Path;
@@ -14,6 +12,7 @@ import java.nio.file.Paths;
 import java.text.ParseException;
 import java.time.Instant;
 import java.util.Map;
+import javax.inject.Provider;
 import mockit.Capturing;
 import mockit.Expectations;
 import mockit.Mocked;
@@ -69,8 +68,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -111,8 +109,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -153,8 +150,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -195,8 +191,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -237,8 +232,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -279,8 +273,7 @@ public class TestBackupNotificationMgr {
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.META_V2);
-        BackupEvent backupEvent = new BackupEvent(abstractBackupPath);
-        backupNotificationMgr.updateEventStart(backupEvent);
+        backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
@@ -302,23 +295,12 @@ public class TestBackupNotificationMgr {
                 maxTimes = 1;
             }
         };
-        BackupVerificationResult backupVerificationResult = getBackupVerificationResult();
-        backupNotificationMgr.notify(backupVerificationResult);
+        backupNotificationMgr.notify("some_random", Instant.EPOCH);
         new Verifications() {
             {
                 notificationService.notify(anyString, (Map<String, MessageAttributeValue>) any);
                 maxTimes = 1;
             }
         };
-    }
-
-    private static BackupVerificationResult getBackupVerificationResult() {
-        BackupVerificationResult result = new BackupVerificationResult();
-        result.valid = true;
-        result.manifestAvailable = true;
-        result.remotePath = "some_random";
-        result.filesMatched = 123;
-        result.snapshotInstant = Instant.EPOCH;
-        return result;
     }
 }

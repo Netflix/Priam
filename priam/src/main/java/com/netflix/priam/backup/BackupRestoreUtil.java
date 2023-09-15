@@ -18,8 +18,6 @@
 package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.utils.DateUtil;
@@ -28,19 +26,17 @@ import java.time.Instant;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-/** Created by aagrawal on 8/14/17. */
+/** Helper methods applicable to both backup and restore */
 public class BackupRestoreUtil {
-    private static final Logger logger = LoggerFactory.getLogger(BackupRestoreUtil.class);
     private static final Pattern columnFamilyFilterPattern = Pattern.compile(".\\..");
-    private Map<String, List<String>> includeFilter;
-    private Map<String, List<String>> excludeFilter;
+    private final Map<String, List<String>> includeFilter;
+    private final Map<String, List<String>> excludeFilter;
 
-    public static final List<String> FILTER_KEYSPACE = Collections.singletonList("OpsCenter");
     private static final Map<String, List<String>> FILTER_COLUMN_FAMILY =
             ImmutableMap.of(
                     "system",
@@ -49,43 +45,26 @@ public class BackupRestoreUtil {
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {
-        setFilters(configIncludeFilter, configExcludeFilter);
-    }
-
-    public BackupRestoreUtil setFilters(String configIncludeFilter, String configExcludeFilter) {
         includeFilter = getFilter(configIncludeFilter);
         excludeFilter = getFilter(configExcludeFilter);
-        logger.info("Exclude filter set: {}", configExcludeFilter);
-        logger.info("Include filter set: {}", configIncludeFilter);
-        return this;
     }
 
     public static Optional<AbstractBackupPath> getLatestValidMetaPath(
             IMetaProxy metaProxy, DateUtil.DateRange dateRange) {
-        // Get a list of manifest files.
-        List<AbstractBackupPath> metas = metaProxy.findMetaFiles(dateRange);
-
-        // Find a valid manifest file.
-        for (AbstractBackupPath meta : metas) {
-            BackupVerificationResult result = metaProxy.isMetaFileValid(meta);
-            if (result.valid) {
-                return Optional.of(meta);
-            }
-        }
-
-        return Optional.empty();
+        return metaProxy
+                .findMetaFiles(dateRange)
+                .stream()
+                .filter(meta -> metaProxy.isMetaFileValid(meta).valid)
+                .findFirst();
     }
 
-    public static List<AbstractBackupPath> getAllFiles(
+    public static List<AbstractBackupPath> getMostRecentSnapshotPaths(
             AbstractBackupPath latestValidMetaFile,
-            DateUtil.DateRange dateRange,
             IMetaProxy metaProxy,
             Provider<AbstractBackupPath> pathProvider)
             throws Exception {
-        // Download the meta.json file.
         Path metaFile = metaProxy.downloadMetaFile(latestValidMetaFile);
-        // Parse meta.json file to find the files required to download from this snapshot.
-        List<AbstractBackupPath> allFiles =
+        List<AbstractBackupPath> snapshotPaths =
                 metaProxy
                         .getSSTFilesFromMeta(metaFile)
                         .stream()
@@ -96,50 +75,43 @@ public class BackupRestoreUtil {
                                     return path;
                                 })
                         .collect(Collectors.toList());
-
         FileUtils.deleteQuietly(metaFile.toFile());
+        return snapshotPaths;
+    }
 
-        // Download incremental SSTables after the snapshot meta file.
+    public static List<AbstractBackupPath> getIncrementalPaths(
+            AbstractBackupPath latestValidMetaFile,
+            DateUtil.DateRange dateRange,
+            IMetaProxy metaProxy) {
         Instant snapshotTime;
         if (metaProxy instanceof MetaV2Proxy) snapshotTime = latestValidMetaFile.getLastModified();
         else snapshotTime = latestValidMetaFile.getTime().toInstant();
-
         DateUtil.DateRange incrementalDateRange =
                 new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
-        Iterator<AbstractBackupPath> incremental = metaProxy.getIncrementals(incrementalDateRange);
-        while (incremental.hasNext()) allFiles.add(incremental.next());
-
-        return allFiles;
+        List<AbstractBackupPath> incrementalPaths = new ArrayList<>();
+        metaProxy.getIncrementals(incrementalDateRange).forEachRemaining(incrementalPaths::add);
+        return incrementalPaths;
     }
 
-    public static final Map<String, List<String>> getFilter(String inputFilter)
+    public static Map<String, List<String>> getFilter(String inputFilter)
             throws IllegalArgumentException {
         if (StringUtils.isEmpty(inputFilter)) return null;
-
-        final Map<String, List<String>> columnFamilyFilter =
-                new HashMap<>(); // key: keyspace, value: a list of CFs within the keyspace
-
+        final Map<String, List<String>> columnFamilyFilter = new HashMap<>();
         String[] filters = inputFilter.split(",");
-        for (String cfFilter :
-                filters) { // process filter of form keyspace.* or keyspace.columnfamily
+        for (String cfFilter : filters) {
             if (columnFamilyFilterPattern.matcher(cfFilter).find()) {
-
                 String[] filter = cfFilter.split("\\.");
                 String keyspaceName = filter[0];
                 String columnFamilyName = filter[1];
-
                 if (columnFamilyName.contains("-"))
                     columnFamilyName = columnFamilyName.substring(0, columnFamilyName.indexOf("-"));
-
                 List<String> existingCfs =
                         columnFamilyFilter.getOrDefault(keyspaceName, new ArrayList<>());
                 if (!columnFamilyName.equalsIgnoreCase("*")) existingCfs.add(columnFamilyName);
                 columnFamilyFilter.put(keyspaceName, existingCfs);
-
             } else {
                 throw new IllegalArgumentException(
-                        "Column family filter format is not valid.  Format needs to be \"keyspace.columnfamily\".  Invalid input: "
-                                + cfFilter);
+                        "Invalid format: " + cfFilter + ". \"keyspace.columnfamily\" is required.");
             }
         }
         return columnFamilyFilter;
@@ -154,34 +126,19 @@ public class BackupRestoreUtil {
      */
     public final boolean isFiltered(String keyspace, String columnFamilyDir) {
         if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir)) return false;
-
         String columnFamilyName = columnFamilyDir.split("-")[0];
-        // column family is in list of global CF filter
         if (FILTER_COLUMN_FAMILY.containsKey(keyspace)
                 && FILTER_COLUMN_FAMILY.get(keyspace).contains(columnFamilyName)) return true;
-
         if (excludeFilter != null)
             if (excludeFilter.containsKey(keyspace)
                     && (excludeFilter.get(keyspace).isEmpty()
                             || excludeFilter.get(keyspace).contains(columnFamilyName))) {
-                logger.debug(
-                        "Skipping: keyspace: {}, CF: {} is part of exclude list.",
-                        keyspace,
-                        columnFamilyName);
                 return true;
             }
-
         if (includeFilter != null)
-            if (!(includeFilter.containsKey(keyspace)
+            return !(includeFilter.containsKey(keyspace)
                     && (includeFilter.get(keyspace).isEmpty()
-                            || includeFilter.get(keyspace).contains(columnFamilyName)))) {
-                logger.debug(
-                        "Skipping: keyspace: {}, CF: {} is not part of include list.",
-                        keyspace,
-                        columnFamilyName);
-                return true;
-            }
-
+                            || includeFilter.get(keyspace).contains(columnFamilyName)));
         return false;
     }
 }

@@ -1,4 +1,52 @@
 # Changelog
+## 2023/09/02 3.11.108
+Tune block_for_peers_timeout_in_secs #1069
+
+## 2023/08/18 3.11.107
+Fix Gson serilization issue #1067
+
+## 2023/08/03 3.11.106
+Add config for Cassandra disk_failure_policy #1066
+
+## 2023/07/24 3.11.105
+Add constructor for BackupFileSystemContext #1064
+
+## 2023/05/05 3.11.104
+Change the constructor of the CassandraMonitor to be public. #1056
+
+## 2023/05/05 3.11.103
+Fix snapshot location regression in SNS messages. #1054
+
+## 2023/04/25 3.11.101
+*V1 Backups will be removed in the next release*
+Increment cross regional duplicate tokens to replicate the policy we have been applying manually. (#1048)
+
+## 2023/04/24 3.11.100
+Always TTL backups. (#1038)
+Fix Github CI by explicitly creating necessary directories. (#1045)
+Change the interface of PriamScheduler. (#1049)
+Minor name change in the PriamScheduler. (#1051)
+
+## 2023/04/11 3.11.99
+Change the interface of EC2RoleAssumptionCredential (#1042)
+
+## 2023/03/30 3.11.98
+Change the CassandraOperations constructor to be public (#1037)
+
+## 2023/03/29 3.11.97
+Reveal property to enable auto_snapshot. (#1031)
+Fix backup verification race condition causing missing notifications (#1034)
+Reveal hook to allow operators to restore just to the most recent snapshot (#1035)
+Minor changes to some Java constructors to public for better dependency injection. (#1036)
+
+## 2023/02/28 3.11.96
+Switch from com.google.inject to JSR-330 javax.inject annotations for better compatibility (#1030)
+
+## 2023/1/21 3.11.95
+Log backup failures rather than ignoring them. (#1025) 
+Use synchronized list for thread-safety (#1018) 
+Remove redundant interfaces and swap log and notification lines on backup failure. (#1019) 
+
 ## 2022/11/15 3.11.94
 (#1013) Create operator-specifiable time such that if a backup file was written before then it is automatically compressed using SNAPPY before upload.
 (#1012) Ensure SI files get into meta file properly.

@@ -13,12 +13,12 @@
  */
 package com.netflix.priam.merics;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.spectator.api.Gauge;
 import com.netflix.spectator.api.Registry;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.util.concurrent.atomic.AtomicLong;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 
 /** @author vchella */
 @Singleton

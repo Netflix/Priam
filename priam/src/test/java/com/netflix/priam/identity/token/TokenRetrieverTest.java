@@ -17,9 +17,9 @@
 
 package com.netflix.priam.identity.token;
 
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.google.common.collect.Lists;
+import static org.junit.Assert.fail;
+
+import com.google.common.collect.*;
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
@@ -29,6 +29,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.IPriamInstanceFactory;
 import com.netflix.priam.identity.PriamInstance;
+import com.netflix.priam.identity.config.FakeInstanceInfo;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.SystemUtils;
@@ -423,6 +424,47 @@ public class TokenRetrieverTest {
         TokenRetriever tokenRetriever = getTokenRetriever();
         tokenRetriever.get();
         Truth.assertThat(tokenRetriever.getRingPosition()).isEqualTo(Fraction.getFraction(6, 7));
+    }
+
+    @Test
+    public void testThrowOnDuplicateTokenInSameRegion() {
+        prepareTokenGenerationTest();
+        create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-east-1d", 1808575600 + "");
+        try {
+            getTokenRetriever().generateNewToken();
+        } catch (IllegalStateException e) {
+            return;
+        }
+        fail();
+    }
+
+    @Test
+    public void testIncrementDuplicateTokenInDifferentRegion() {
+        ((FakeInstanceInfo) instanceInfo).setRegion("us-west-2");
+        create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-west-2a", 1808575600 + "");
+        prepareTokenGenerationTest();
+        Truth.assertThat(getTokenRetriever().generateNewToken().getToken()).isEqualTo("1808575601");
+    }
+
+    private void prepareTokenGenerationTest() {
+        ((FakeConfiguration) configuration).setCreateNewToken(true);
+        ((FakeConfiguration) configuration)
+                .setPartitioner("org.apache.cassandra.dht.RandomPartitioner");
+        ((FakeConfiguration) configuration).setRacs("us-east-1c", "us-east-1d", "us-east-1e");
+        ((FakeInstanceInfo) instanceInfo).setRegion("us-east-1");
+        ((FakeInstanceInfo) instanceInfo).setRac("us-east-1c");
+        new Expectations() {
+            {
+                membership.getRacMembershipSize();
+                result = 2;
+            }
+        };
+        new Expectations() {
+            {
+                membership.getRacCount();
+                result = 3;
+            }
+        };
     }
 
     private String getStatus(List<String> liveInstances, Map<String, String> tokenToEndpointMap) {

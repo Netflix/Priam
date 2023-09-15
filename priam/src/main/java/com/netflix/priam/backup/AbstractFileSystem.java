@@ -25,15 +25,11 @@ import com.google.common.util.concurrent.Futures;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
-import com.google.inject.Inject;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupEvent;
 import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.EventGenerator;
-import com.netflix.priam.notification.EventObserver;
+import com.netflix.priam.notification.UploadStatus;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
@@ -46,6 +42,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.*;
+import javax.inject.Inject;
+import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
@@ -59,16 +57,15 @@ import org.slf4j.LoggerFactory;
  *
  * <p>Created by aagrawal on 8/30/18.
  */
-public abstract class AbstractFileSystem implements IBackupFileSystem, EventGenerator<BackupEvent> {
+public abstract class AbstractFileSystem implements IBackupFileSystem {
     private static final Logger logger = LoggerFactory.getLogger(AbstractFileSystem.class);
     protected final Provider<AbstractBackupPath> pathProvider;
-    private final CopyOnWriteArrayList<EventObserver<BackupEvent>> observers =
-            new CopyOnWriteArrayList<>();
     private final IConfiguration configuration;
     protected final BackupMetrics backupMetrics;
     private final Set<Path> tasksQueued;
     private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
+    private final BackupNotificationMgr backupNotificationMgr;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
@@ -83,8 +80,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
         this.configuration = configuration;
         this.backupMetrics = backupMetrics;
         this.pathProvider = pathProvider;
-        // Add notifications.
-        this.addObserver(backupNotificationMgr);
+        this.backupNotificationMgr = backupNotificationMgr;
         this.objectCache =
                 CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
@@ -190,7 +186,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
                 // Upload file if it not present at remote location.
                 if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
-                    notifyEventStart(new BackupEvent(path));
+                    backupNotificationMgr.notify(path, UploadStatus.STARTED);
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(
                                     500 /* minSleep */, 10000 /* maxSleep */, retry) {
@@ -208,7 +204,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
                     path.setCompressedFileSize(uploadedFileSize);
-                    notifyEventSuccess(new BackupEvent(path));
+                    backupNotificationMgr.notify(path, UploadStatus.SUCCESS);
                 } else {
                     // file is already uploaded to remote file system.
                     logger.info("File: {} already present on remoteFileSystem.", remotePath);
@@ -225,13 +221,13 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
 
             } catch (Exception e) {
                 backupMetrics.incrementInvalidUploads();
-                notifyEventFailure(new BackupEvent(path));
                 logger.error(
                         "Error while uploading file: {} to location: {}. Exception: Msg: [{}], Trace: {}",
                         localPath,
                         remotePath,
                         e.getMessage(),
-                        e.getStackTrace());
+                        e);
+                backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.
@@ -333,40 +329,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem, EventGene
                         (abstractBackupPath.getTime().after(start)
                                         && abstractBackupPath.getTime().before(till))
                                 || abstractBackupPath.getTime().equals(start));
-    }
-
-    @Override
-    public final void addObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null) throw new NullPointerException("observer must not be null.");
-
-        observers.addIfAbsent(observer);
-    }
-
-    @Override
-    public void removeObserver(EventObserver<BackupEvent> observer) {
-        if (observer == null) throw new NullPointerException("observer must not be null.");
-
-        observers.remove(observer);
-    }
-
-    @Override
-    public void notifyEventStart(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStart(event));
-    }
-
-    @Override
-    public void notifyEventSuccess(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventSuccess(event));
-    }
-
-    @Override
-    public void notifyEventFailure(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventFailure(event));
-    }
-
-    @Override
-    public void notifyEventStop(BackupEvent event) {
-        observers.forEach(eventObserver -> eventObserver.updateEventStop(event));
     }
 
     @Override

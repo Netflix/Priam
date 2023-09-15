@@ -16,8 +16,6 @@
  */
 package com.netflix.priam.health;
 
-import com.google.inject.Inject;
-import com.google.inject.Singleton;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -30,6 +28,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.concurrent.atomic.AtomicBoolean;
+import javax.inject.Inject;
+import javax.inject.Singleton;
 import org.apache.cassandra.tools.NodeProbe;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -49,7 +49,7 @@ public class CassandraMonitor extends Task {
     private final CassMonitorMetrics cassMonitorMetrics;
 
     @Inject
-    protected CassandraMonitor(
+    public CassandraMonitor(
             IConfiguration config,
             InstanceState instanceState,
             ICassandraProcess cassProcess,

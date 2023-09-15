@@ -160,11 +160,37 @@ public class StandardTunerTest {
     }
 
     @Test
+    public void testAutoSnapshot() throws Exception {
+        boolean autoSnapshot = true;
+        Map map = applyFakeConfiguration(new FakeConfiguration().setAutoSnapshot(autoSnapshot));
+        Assert.assertEquals(autoSnapshot, map.get("auto_snapshot"));
+    }
+
+    @Test
     public void testRoleManagerOverride() throws Exception {
         String roleManagerOverride = "org.apache.cassandra.auth.CustomRoleManager";
         Map map =
                 applyFakeConfiguration(new FakeConfiguration().setRoleManager(roleManagerOverride));
         Assert.assertEquals(roleManagerOverride, map.get("role_manager"));
+    }
+
+    @Test
+    public void testDiskFailurePolicy() throws Exception {
+        String diskFailurePolicy = "stop_paranoid";
+        Map map =
+                applyFakeConfiguration(
+                        new FakeConfiguration().setDiskFailurePolicy(diskFailurePolicy));
+        Assert.assertEquals(diskFailurePolicy, map.get("disk_failure_policy"));
+    }
+
+    @Test
+    public void testBlockForPeersTimeoutInSecs_normal() throws Exception {
+        int blockForPeersTimeoutInSecs = 240;
+        Map map =
+                applyFakeConfiguration(
+                        new FakeConfiguration()
+                                .setBlockForPeersTimeoutInSecs(blockForPeersTimeoutInSecs));
+        Assert.assertEquals(blockForPeersTimeoutInSecs, map.get("block_for_peers_timeout_in_secs"));
     }
 
     private Map applyFakeConfiguration(FakeConfiguration fakeConfiguration) throws Exception {

@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.ImmutableSet;
 import com.google.gson.stream.JsonWriter;
-import com.google.inject.Provider;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.IFileSystemContext;
@@ -36,6 +35,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
+import javax.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -52,7 +52,7 @@ public class MetaFileWriterBuilder {
     private static final Logger logger = LoggerFactory.getLogger(MetaFileWriterBuilder.class);
 
     @Inject
-    MetaFileWriterBuilder(MetaFileWriter metaFileWriter) {
+    public MetaFileWriterBuilder(MetaFileWriter metaFileWriter) {
         this.metaFileWriter = metaFileWriter;
     }
 
@@ -93,7 +93,7 @@ public class MetaFileWriterBuilder {
         private Path metaFilePath;
 
         @Inject
-        private MetaFileWriter(
+        public MetaFileWriter(
                 IConfiguration configuration,
                 InstanceIdentity instanceIdentity,
                 Provider<AbstractBackupPath> pathFactory,

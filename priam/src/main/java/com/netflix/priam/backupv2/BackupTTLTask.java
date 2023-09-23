@@ -28,6 +28,7 @@ import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
@@ -76,8 +77,8 @@ public class BackupTTLTask extends Task {
             @Named("v2") IMetaProxy metaProxy,
             IFileSystemContext backupFileSystemCtx,
             Provider<AbstractBackupPath> abstractBackupPathProvider,
-            InstanceState instanceState,
-            TokenRetriever tokenRetriever)
+            TokenRetriever tokenRetriever,
+            InstanceState instanceState)
             throws Exception {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
@@ -86,9 +87,11 @@ public class BackupTTLTask extends Task {
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         this.instanceState = instanceState;
         this.maxWaitMillis =
-                1_000
-                        * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
-                        / tokenRetriever.getRingPosition().getDenominator();
+                configuration.isLocalBootstrapEnabled()
+                        ? Math.toIntExact(Duration.ofSeconds(1).toMillis())
+                        : 1_000
+                                * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
+                                / tokenRetriever.getRingPosition().getDenominator();
     }
 
     @Override

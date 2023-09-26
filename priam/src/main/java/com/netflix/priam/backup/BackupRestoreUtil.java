@@ -41,7 +41,12 @@ public class BackupRestoreUtil {
             ImmutableMap.of(
                     "system",
                     Arrays.asList(
-                            "local", "peers", "hints", "compactions_in_progress", "LocationInfo"));
+                            "local",
+                            "peers",
+                            "peers_v2",
+                            "hints",
+                            "compactions_in_progress",
+                            "LocationInfo"));
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {

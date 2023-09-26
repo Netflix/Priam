@@ -25,6 +25,7 @@ import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.connection.JMXConnectionException;
 import com.netflix.priam.connection.JMXNodeTool;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.health.InstanceState;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -56,18 +57,22 @@ public class CassandraAdmin {
     private final Compaction compaction;
     private final CassandraOperations cassandraOperations;
 
+    private final InstanceState instanceState;
+
     @Inject
     public CassandraAdmin(
             IConfiguration config,
             ICassandraProcess cassProcess,
             Flush flush,
             Compaction compaction,
-            CassandraOperations cassandraOperations) {
+            CassandraOperations cassandraOperations,
+            InstanceState instanceState) {
         this.config = config;
         this.cassProcess = cassProcess;
         this.flush = flush;
         this.compaction = compaction;
         this.cassandraOperations = cassandraOperations;
+        this.instanceState = instanceState;
     }
 
     @GET
@@ -145,6 +150,12 @@ public class CassandraAdmin {
     @GET
     @Path("/status")
     public Response statusInfo() throws JSONException {
+        if (!instanceState.isGossipActive() && !instanceState.isNativeTransportActive()) {
+            // if native is active but gossip isn't we still want to return to show that
+            // there is a problem. but if both gossip and native are down the instance is
+            // either starting up or shutting down and this is not meaningful yet
+            return Response.status(503).entity("Gossip is not yet active").build();
+        }
         JMXNodeTool nodeTool;
         try {
             nodeTool = JMXNodeTool.instance(config);

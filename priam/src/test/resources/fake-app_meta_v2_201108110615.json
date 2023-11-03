@@ -1,0 +1,34 @@
+{
+  "info": {
+    "version": 1,
+    "appName": "fake-app",
+    "region": "us-east-1",
+    "rack": "us-east-1c",
+    "backupIdentifier": [
+      "1808575600"
+    ]
+  },
+  "data": [
+    {
+      "keyspaceName": "ks1",
+      "columnfamilyName": "cf1",
+      "sstables": [
+        {
+          "prefix": "me-3-big",
+          "sstableComponents": [
+            {
+              "fileName": "me-3-big-Data.db",
+              "lastModifiedTime": 1313043000000,
+              "fileCreationTime": 1313043000000,
+              "fileSizeOnDisk": 4921307,
+              "compression": "SNAPPY",
+              "encryption": "PLAINTEXT",
+              "isUploaded": false,
+              "backupPath": "test_backup/1049_fake-app/1808575600/SST_V2/1313043000000/ks1/cf1/SNAPPY/PLAINTEXT/me-3-big-Data.db"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

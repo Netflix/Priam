@@ -62,7 +62,7 @@ public class BackupServletV2 {
             SnapshotMetaTask snapshotMetaService,
             BackupTTLTask backupTTLService,
             IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx,
+            IBackupFileSystem fileSystem,
             @Named("v2") IMetaProxy metaV2Proxy,
             Provider<AbstractBackupPath> pathProvider,
             BackupV2Service backupService) {
@@ -70,7 +70,7 @@ public class BackupServletV2 {
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
         this.backupTTLService = backupTTLService;
-        this.fs = backupFileSystemCtx.getFileStrategy(configuration);
+        this.fs = fileSystem;
         this.metaProxy = metaV2Proxy;
         this.pathProvider = pathProvider;
         this.backupService = backupService;
@@ -110,7 +110,6 @@ public class BackupServletV2 {
         Instant instant = DateUtil.parseInstant(date);
         List<BackupMetadata> metadataList =
                 backupStatusMgr.getLatestBackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(
                                 instant,
                                 instant.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)));
@@ -125,8 +124,7 @@ public class BackupServletV2 {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
+                backupVerification.verifyLatestBackup(force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

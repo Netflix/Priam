@@ -17,7 +17,6 @@
 package com.netflix.priam.utils;
 
 import com.netflix.priam.backup.BackupMetadata;
-import com.netflix.priam.backup.BackupVersion;
 import com.netflix.priam.health.InstanceState;
 import java.time.LocalDateTime;
 import java.util.Calendar;
@@ -33,9 +32,7 @@ public class TestGsonJsonSerializer {
 
     @Test
     public void testBackupMetaData() throws Exception {
-        BackupMetadata metadata =
-                new BackupMetadata(
-                        BackupVersion.SNAPSHOT_BACKUP, "123", Calendar.getInstance().getTime());
+        BackupMetadata metadata = new BackupMetadata("123", Calendar.getInstance().getTime());
         String json = metadata.toString();
         LOG.info(json);
         // Deserialize it.

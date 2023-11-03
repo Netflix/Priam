@@ -95,7 +95,7 @@ public class TestS3FileSystem {
         MockS3PartUploader.setup();
         AbstractFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.META_V2);
         long noOfFilesUploaded = backupMetrics.getUploadRate().count();
         // temporary hack to allow tests to complete in a timely fashion
         // This will be removed once we stop inheriting from AbstractFileSystem
@@ -125,7 +125,7 @@ public class TestS3FileSystem {
         long noOfFailures = backupMetrics.getInvalidUploads().count();
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.META_V2);
         try {
             // temporary hack to allow tests to complete in a timely fashion
             // This will be removed once we stop inheriting from AbstractFileSystem
@@ -144,7 +144,7 @@ public class TestS3FileSystem {
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         fs.setS3Client(new MockAmazonS3Client().getMockInstance());
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(localFile(), BackupFileType.SNAP);
+        backupfile.parseLocal(localFile(), BackupFileType.META_V2);
         try {
             // temporary hack to allow tests to complete in a timely fashion
             // This will be removed once we stop inheriting from AbstractFileSystem

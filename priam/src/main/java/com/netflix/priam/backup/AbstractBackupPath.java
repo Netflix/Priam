@@ -48,26 +48,16 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public enum BackupFileType {
         CL,
-        META,
         META_V2,
         SECONDARY_INDEX_V2,
-        SNAP,
         SNAPSHOT_VERIFIED,
-        SST,
         SST_V2;
 
         private static ImmutableSet<BackupFileType> DATA_FILE_TYPES =
-                ImmutableSet.of(SECONDARY_INDEX_V2, SNAP, SST, SST_V2);
-
-        private static ImmutableSet<BackupFileType> V2_FILE_TYPES =
-                ImmutableSet.of(SECONDARY_INDEX_V2, SST_V2, META_V2);
+                ImmutableSet.of(SECONDARY_INDEX_V2, SST_V2);
 
         public static boolean isDataFile(BackupFileType type) {
             return DATA_FILE_TYPES.contains(type);
-        }
-
-        public static boolean isV2(BackupFileType type) {
-            return V2_FILE_TYPES.contains(type);
         }
 
         public static BackupFileType fromString(String s) throws BackupRestoreException {
@@ -88,7 +78,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     protected String token;
     protected String region;
     protected String indexDir;
-    protected Date time;
     private long size; // uncompressed file size
     private long compressedFileSize = 0;
     protected final InstanceIdentity instanceIdentity;
@@ -136,8 +125,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         if (BackupFileType.isDataFile(type)) {
             this.keyspace = parts[0];
             this.columnFamily = parts[1];
-        }
-        if (BackupFileType.isDataFile(type)) {
             Optional<BackupFolder> folder = BackupFolder.fromName(parts[2]);
             this.isIncremental = folder.filter(BackupFolder.BACKUPS::equals).isPresent();
             if (type == BackupFileType.SECONDARY_INDEX_V2) {
@@ -146,16 +133,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
                 this.indexDir = parts[index];
             }
         }
-
-        /*
-        1. For old style snapshots, make this value to time at which backup was executed.
-        2. This is to ensure that all the files from the snapshot are uploaded under single directory in remote file system.
-        3. For META files we always override the time field via @link{Metadata#decorateMetaJson}
-        */
-        this.time =
-                type == BackupFileType.SNAP
-                        ? DateUtil.getDate(parts[3])
-                        : new Date(lastModified.toEpochMilli());
     }
 
     /** Given a date range, find a common string prefix Eg: 20120212, 20120213 = 2012021 */
@@ -180,7 +157,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
                         PATH_JOINER.join(dataDir, keyspace, columnFamily, indexDir, fileName);
                 return_ = new File(restoreFileName);
                 break;
-            case META:
             case META_V2:
                 return_ = new File(PATH_JOINER.join(config.getDataFileLocation(), fileName));
                 break;
@@ -252,14 +228,6 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
 
     public String getRegion() {
         return region;
-    }
-
-    public Date getTime() {
-        return time;
-    }
-
-    public void setTime(Date time) {
-        this.time = time;
     }
 
     /*

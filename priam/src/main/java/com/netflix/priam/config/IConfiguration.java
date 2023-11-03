@@ -298,18 +298,6 @@ public interface IConfiguration {
     }
 
     /**
-     * Cron expression to be used for snapshot backups.
-     *
-     * @return Backup cron expression for snapshots
-     * @see <a
-     *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
-     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
-     */
-    default String getBackupCronExpression() {
-        return "0 0 12 1/1 * ? *";
-    }
-
-    /**
      * Column Family(ies), comma delimited, to include during snapshot backup. Note 1: The expected
      * format is keyspace.cfname. If no value is provided then snapshot contains all KS,CF(s) Note
      * 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace.
@@ -573,40 +561,6 @@ public interface IConfiguration {
     /** @return possible values: all, dc, none */
     default String getInternodeCompression() {
         return "all";
-    }
-
-    /**
-     * Enable/disable backup/restore of commit logs.
-     *
-     * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default:
-     *     false.
-     */
-    default boolean isBackingUpCommitLogs() {
-        return false;
-    }
-
-    default String getCommitLogBackupPropsFile() {
-        return getCassHome() + "/conf/commitlog_archiving.properties";
-    }
-
-    default String getCommitLogBackupArchiveCmd() {
-        return "/bin/ln %path /mnt/data/backup/%name";
-    }
-
-    default String getCommitLogBackupRestoreCmd() {
-        return "/bin/mv %from %to";
-    }
-
-    default String getCommitLogBackupRestoreFromDirs() {
-        return "/mnt/data/backup/commitlog/";
-    }
-
-    default String getCommitLogBackupRestorePointInTime() {
-        return StringUtils.EMPTY;
-    }
-
-    default int maxCommitLogsRestore() {
-        return 10;
     }
 
     default boolean isClientSslEnabled() {

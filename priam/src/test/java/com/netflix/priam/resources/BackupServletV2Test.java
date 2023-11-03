@@ -158,9 +158,7 @@ public class BackupServletV2Test {
         new Expectations() {
             {
                 backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        anyBoolean,
-                        new DateUtil.DateRange((Instant) any, (Instant) any));
+                        anyBoolean, new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = Optional.of(getBackupVerificationResult());
             }
         };
@@ -178,9 +176,7 @@ public class BackupServletV2Test {
         new Expectations() {
             {
                 backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        anyBoolean,
-                        new DateUtil.DateRange((Instant) any, (Instant) any));
+                        anyBoolean, new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = Optional.empty();
             }
         };
@@ -197,9 +193,7 @@ public class BackupServletV2Test {
         new Expectations() {
             {
                 backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        anyBoolean,
-                        new DateUtil.DateRange((Instant) any, (Instant) any));
+                        anyBoolean, new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = Optional.of(getBackupVerificationResult());
             }
         };
@@ -211,28 +205,6 @@ public class BackupServletV2Test {
                 GsonJsonSerializer.getGson().toJson(getBackupVerificationResult()),
                 response.getEntity().toString());
     }
-
-    //    @Test
-    //    public void testListDateRange() throws Exception {
-    //        Optional<AbstractBackupPath> abstractBackupPath = getAbstractBackupPath();
-    //        String dateRange = String.format("%s,%s",
-    //                new SimpleDateFormat("yyyymmddhhmm").format(new Date())
-    //                , new SimpleDateFormat("yyyymmddhhmm").format(new Date()));
-    //        new Expectations() {{
-    //                backupRestoreUtil.getLatestValidMetaPath(metaV2Proxy,
-    //                        new DateUtil.DateRange((Instant) any, (Instant) any)); result =
-    // abstractBackupPath;
-    //
-    //                backupRestoreUtil.getAllFiles(
-    //                        abstractBackupPath.get(),
-    //                        new DateUtil.DateRange((Instant) any, (Instant) any), metaV2Proxy,
-    //                        pathProvider); result = getBackupPathList();
-    //        }};
-    //
-    //        Response response =
-    //                resource.list(dateRange);
-    //        assertEquals(200, response.getStatus());
-    //    }
 
     @Test
     public void testListDateRangeNoBackups() throws Exception {
@@ -261,7 +233,6 @@ public class BackupServletV2Test {
         new Expectations() {
             {
                 backupStatusMgr.getLatestBackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = backupMetadataList;
             }
@@ -278,7 +249,6 @@ public class BackupServletV2Test {
         new Expectations() {
             {
                 backupStatusMgr.getLatestBackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateUtil.DateRange((Instant) any, (Instant) any));
                 result = new ArrayList<>();
             }
@@ -303,9 +273,7 @@ public class BackupServletV2Test {
     private static BackupMetadata getBackupMetaData() throws Exception {
         BackupMetadata backupMetadata =
                 new BackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        "123",
-                        new Date(DateUtil.parseInstant(backupDate).toEpochMilli()));
+                        "123", new Date(DateUtil.parseInstant(backupDate).toEpochMilli()));
         backupMetadata.setCompleted(
                 new Date(
                         DateUtil.parseInstant(backupDate)
@@ -314,45 +282,5 @@ public class BackupServletV2Test {
         backupMetadata.setStatus(Status.FINISHED);
         backupMetadata.setSnapshotLocation(location.toString());
         return backupMetadata;
-    }
-
-    private static Optional<AbstractBackupPath> getAbstractBackupPath() throws Exception {
-        Path path =
-                Paths.get(
-                        configuration.getDataFileLocation(),
-                        "keyspace1",
-                        "columnfamily1",
-                        "backup",
-                        "mc-1234-Data.db");
-        AbstractBackupPath abstractBackupPath = pathProvider.get();
-        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
-        return Optional.of(abstractBackupPath);
-    }
-
-    private static List<AbstractBackupPath> getBackupPathList() throws Exception {
-        List<AbstractBackupPath> abstractBackupPathList = new ArrayList<>();
-        Path path =
-                Paths.get(
-                        configuration.getDataFileLocation(),
-                        "keyspace1",
-                        "columnfamily1",
-                        "backup",
-                        "mc-1234-Data.db");
-        AbstractBackupPath abstractBackupPath1 = pathProvider.get();
-        abstractBackupPath1.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
-        abstractBackupPathList.add(abstractBackupPath1);
-
-        path =
-                Paths.get(
-                        configuration.getDataFileLocation(),
-                        "keyspace1",
-                        "columnfamily1",
-                        "backup",
-                        "mc-1234-Data.db");
-        AbstractBackupPath abstractBackupPath2 = pathProvider.get();
-        abstractBackupPath2.parseLocal(
-                path.toFile(), AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED);
-        abstractBackupPathList.add(abstractBackupPath2);
-        return abstractBackupPathList;
     }
 }

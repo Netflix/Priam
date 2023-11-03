@@ -23,7 +23,6 @@ import java.io.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import javax.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -156,9 +155,6 @@ public class StandardTuner implements ICassandraTuner {
         logger.info(yaml.dump(map));
         yaml.dump(map, new FileWriter(yamlFile));
 
-        // TODO: port commit log backups to the PropertiesFileTuner implementation
-        configureCommitLogBackups();
-
         PropertiesFileTuner propertyTuner = new PropertiesFileTuner(config);
         for (String propertyFile : config.getTunablePropertyFiles()) {
             propertyTuner.updateAndSaveProperties(propertyFile);
@@ -223,22 +219,6 @@ public class StandardTuner implements ICassandraTuner {
         // the server-side (internode) ssl settings
         Map serverEnc = (Map) map.get("server_encryption_options");
         serverEnc.put("internode_encryption", config.getInternodeEncryption());
-    }
-
-    protected void configureCommitLogBackups() {
-        if (!config.isBackingUpCommitLogs()) return;
-        Properties props = new Properties();
-        props.put("archive_command", config.getCommitLogBackupArchiveCmd());
-        props.put("restore_command", config.getCommitLogBackupRestoreCmd());
-        props.put("restore_directories", config.getCommitLogBackupRestoreFromDirs());
-        props.put("restore_point_in_time", config.getCommitLogBackupRestorePointInTime());
-
-        try (FileOutputStream fos =
-                new FileOutputStream(new File(config.getCommitLogBackupPropsFile()))) {
-            props.store(fos, "cassandra commit log archive props, as written by priam");
-        } catch (IOException e) {
-            logger.error("Could not store commitlog_archiving.properties", e);
-        }
     }
 
     public void updateAutoBootstrap(String yamlFile, boolean autobootstrap) throws IOException {

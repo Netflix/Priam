@@ -213,11 +213,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getBackupCronExpression() {
-        return config.get(PRIAM_PRE + ".backup.cron", "0 0 12 1/1 * ? *"); // Backup daily at 12
-    }
-
-    @Override
     public GCType getGCType() throws UnsupportedTypeException {
         String gcType = config.get(PRIAM_PRE + ".gc.type", GCType.CMS.getGcType());
         return GCType.lookup(gcType);
@@ -439,44 +434,6 @@ public class PriamConfiguration implements IConfiguration {
 
     public String getInternodeCompression() {
         return config.get(PRIAM_PRE + ".internodeCompression", "all");
-    }
-
-    @Override
-    public boolean isBackingUpCommitLogs() {
-        return config.get(PRIAM_PRE + ".clbackup.enabled", false);
-    }
-
-    @Override
-    public String getCommitLogBackupPropsFile() {
-        return config.get(
-                PRIAM_PRE + ".clbackup.propsfile",
-                getCassHome() + "/conf/commitlog_archiving.properties");
-    }
-
-    @Override
-    public String getCommitLogBackupArchiveCmd() {
-        return config.get(
-                PRIAM_PRE + ".clbackup.archiveCmd", "/bin/ln %path /mnt/data/backup/%name");
-    }
-
-    @Override
-    public String getCommitLogBackupRestoreCmd() {
-        return config.get(PRIAM_PRE + ".clbackup.restoreCmd", "/bin/mv %from %to");
-    }
-
-    @Override
-    public String getCommitLogBackupRestoreFromDirs() {
-        return config.get(PRIAM_PRE + ".clbackup.restoreDirs", "/mnt/data/backup/commitlog/");
-    }
-
-    @Override
-    public String getCommitLogBackupRestorePointInTime() {
-        return config.get(PRIAM_PRE + ".clbackup.restoreTime", "");
-    }
-
-    @Override
-    public int maxCommitLogsRestore() {
-        return config.get(PRIAM_PRE + ".clrestore.max", 10);
     }
 
     public boolean isClientSslEnabled() {

@@ -16,7 +16,6 @@
  */
 package com.netflix.priam;
 
-import com.netflix.priam.backup.BackupService;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.cluster.management.ClusterManagementService;
 import com.netflix.priam.config.IConfiguration;
@@ -46,7 +45,6 @@ public class PriamServer implements IService {
     private final ICassandraProcess cassProcess;
     private final RestoreContext restoreContext;
     private final IService backupV2Service;
-    private final IService backupService;
     private final IService cassandraTunerService;
     private final IService clusterManagementService;
     private static final int CASSANDRA_MONITORING_INITIAL_DELAY = 10;
@@ -60,7 +58,6 @@ public class PriamServer implements IService {
             Sleeper sleeper,
             ICassandraProcess cassProcess,
             RestoreContext restoreContext,
-            BackupService backupService,
             BackupV2Service backupV2Service,
             CassandraTunerService cassandraTunerService,
             ClusterManagementService clusterManagementService) {
@@ -70,7 +67,6 @@ public class PriamServer implements IService {
         this.sleeper = sleeper;
         this.cassProcess = cassProcess;
         this.restoreContext = restoreContext;
-        this.backupService = backupService;
         this.backupV2Service = backupV2Service;
         this.cassandraTunerService = cassandraTunerService;
         this.clusterManagementService = clusterManagementService;
@@ -129,9 +125,6 @@ public class PriamServer implements IService {
                 scheduler,
                 PriamConfigurationPersister.class,
                 PriamConfigurationPersister.getTimer(config));
-
-        // Set up V1 Snapshot Service
-        backupService.scheduleService();
 
         // Set up V2 Snapshot Service
         backupV2Service.scheduleService();

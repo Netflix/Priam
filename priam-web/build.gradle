@@ -1,11 +1,11 @@
 plugins {
-    id 'org.akhikhl.gretty' version '1.4.2'
+    id 'org.gretty' version '3.1.0'
 }
 
 apply plugin: 'war'
 
 dependencies {
-    compile project(':priam')
-    compile project(':priam-dse-extensions')
-    compile project(':priam-cass-extensions')
+    implementation project(':priam')
+    implementation project(':priam-dse-extensions')
+    implementation project(':priam-cass-extensions')
 }

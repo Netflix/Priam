@@ -1,4 +1,3 @@
 dependencies {
-    compile project(':priam')
-    testCompile project(path: ':priam')
+    implementation project(':priam')
 }

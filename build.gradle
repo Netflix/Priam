@@ -1,11 +1,7 @@
 plugins {
-    id 'nebula.netflixoss' version '9.1.0'
-    id 'com.github.sherter.google-java-format' version '0.8'
+    id 'nebula.netflixoss' version '11.5.0'
 }
 
-googleJavaFormat {
-    options style: 'AOSP'
-}
 
 ext.githubProjectName = 'Priam'
 
@@ -26,62 +22,65 @@ allprojects {
     }
 
     dependencies {
-      compile 'org.apache.commons:commons-lang3:3.8.1'
-      compile 'org.apache.commons:commons-text:1.8'
-      compile 'commons-logging:commons-logging:1.2'
-      compile 'org.apache.commons:commons-collections4:4.2'
-      compile 'commons-io:commons-io:2.6'
-      compile 'commons-cli:commons-cli:1.4'
-      compile 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
-      compile 'com.sun.jersey:jersey-json:1.19.4'
-      compile 'com.sun.jersey:jersey-bundle:1.19.4'
-      compile 'com.sun.jersey.contribs:jersey-guice:1.19.4'
-      compile 'com.google.guava:guava:21.0'
-      compile 'com.google.code.findbugs:jsr305:3.0.2'
+      implementation 'org.apache.commons:commons-lang3:3.8.1'
+      implementation 'org.apache.commons:commons-text:1.8'
+      implementation 'commons-logging:commons-logging:1.2'
+      implementation 'org.apache.commons:commons-collections4:4.2'
+      implementation 'commons-io:commons-io:2.6'
+      implementation 'commons-cli:commons-cli:1.4'
+      implementation 'com.sun.jersey.contribs:jersey-multipart:1.19.4'
+      implementation 'com.sun.jersey:jersey-json:1.19.4'
+      implementation 'com.sun.jersey:jersey-bundle:1.19.4'
+      implementation 'com.sun.jersey.contribs:jersey-guice:1.19.4'
+      implementation 'com.google.guava:guava:21.0'
+      implementation 'com.google.code.findbugs:jsr305:3.0.2'
         
       // AWS Services
-      compile 'com.amazonaws:aws-java-sdk-core:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-s3:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-sns:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-ec2:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-sts:latest.release'
-      compile 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-core:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-s3:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-sns:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-ec2:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
         
-      compile 'com.google.inject:guice:4.2.2'
-      compile 'com.google.inject.extensions:guice-servlet:4.2.2'
-      compile 'org.quartz-scheduler:quartz:2.3.0'
-      compile 'com.googlecode.json-simple:json-simple:1.1.1'
-      compile 'org.xerial.snappy:snappy-java:1.1.7.3'
-      compile 'org.yaml:snakeyaml:1.25'
-      compile 'org.apache.cassandra:cassandra-all:3.0.17'
-      compile 'javax.ws.rs:jsr311-api:1.1.1'
-      compile 'joda-time:joda-time:2.10.1'
-      compile 'org.apache.commons:commons-configuration2:2.4'
-      compile 'xerces:xercesImpl:2.12.0'
-      compile 'net.java.dev.jna:jna:5.2.0'
-      compile 'org.apache.httpcomponents:httpclient:4.5.6'
-      compile 'org.apache.httpcomponents:httpcore:4.4.11'
-      compile 'com.ning:compress-lzf:1.0.4'
-      compile 'com.google.code.gson:gson:2.8.5'
-      compile 'org.slf4j:slf4j-api:1.7.28'
-      compile 'org.slf4j:slf4j-log4j12:1.7.28'
-      compile 'org.bouncycastle:bcprov-jdk16:1.46'
-      compile 'org.bouncycastle:bcpg-jdk16:1.46'
-      compile ('com.google.appengine.tools:appengine-gcs-client:0.8') {
+      implementation 'com.google.inject:guice:4.2.2'
+      implementation 'com.google.inject.extensions:guice-servlet:4.2.2'
+      implementation 'org.quartz-scheduler:quartz:2.3.0'
+      implementation 'com.googlecode.json-simple:json-simple:1.1.1'
+      implementation 'org.xerial.snappy:snappy-java:1.1.7.3'
+      implementation 'org.yaml:snakeyaml:1.25'
+      implementation 'org.apache.cassandra:cassandra-all:3.0.17'
+      implementation 'javax.ws.rs:jsr311-api:1.1.1'
+      implementation 'joda-time:joda-time:2.10.1'
+      implementation 'org.apache.commons:commons-configuration2:2.4'
+      implementation 'xerces:xercesImpl:2.12.0'
+      implementation 'net.java.dev.jna:jna:5.2.0'
+      implementation 'org.apache.httpcomponents:httpclient:4.5.6'
+      implementation 'org.apache.httpcomponents:httpcore:4.4.11'
+      implementation 'com.ning:compress-lzf:1.0.4'
+      implementation 'com.google.code.gson:gson:2.8.5'
+      implementation 'org.slf4j:slf4j-api:1.7.28'
+      implementation 'org.slf4j:slf4j-log4j12:1.7.28'
+      implementation 'org.bouncycastle:bcprov-jdk16:1.46'
+      implementation 'org.bouncycastle:bcpg-jdk16:1.46'
+      implementation ('com.google.appengine.tools:appengine-gcs-client:0.8') {
           exclude module: 'guava'
       }
-      compile 'com.google.apis:google-api-services-storage:v1-rev141-1.25.0'
-      compile 'com.google.http-client:google-http-client-jackson2:1.28.0'
-      compile 'com.netflix.spectator:spectator-api:0.96.0'
+      implementation 'com.google.apis:google-api-services-storage:v1-rev141-1.25.0'
+      implementation 'com.google.http-client:google-http-client-jackson2:1.28.0'
+      implementation 'com.netflix.spectator:spectator-api:0.96.0'
       compileOnly 'javax.servlet:javax.servlet-api:3.1.0'
-        testCompile 'org.jmockit:jmockit:1.38'
-      testCompile "org.spockframework:spock-core:1.1-groovy-2.4"
-      testCompile "com.google.truth:truth:1.0.1"
+      testImplementation 'org.jmockit:jmockit:1.38'
+      testImplementation "org.spockframework:spock-core:1.1-groovy-2.4"
+      testImplementation "com.google.truth:truth:1.0.1"
       testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
       testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
     }
 
-    sourceCompatibility = JavaVersion.VERSION_1_8
-    targetCompatibility = JavaVersion.VERSION_1_8
+    java {
+        toolchain {
+            languageVersion = JavaLanguageVersion.of(8)
+        }
+    }
 }

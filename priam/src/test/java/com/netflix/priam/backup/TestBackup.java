@@ -21,7 +21,6 @@ import com.google.common.collect.Iterators;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.google.inject.Key;
-import com.google.inject.name.Names;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -47,48 +46,26 @@ import org.slf4j.LoggerFactory;
  * @author Praveen Sadhu
  */
 public class TestBackup {
-    private static Injector injector;
-    private static FakeBackupFileSystem filesystem;
+    private Injector injector;
+    private FakeBackupFileSystem filesystem;
     private static final Logger logger = LoggerFactory.getLogger(TestBackup.class);
     private static final Set<String> expectedFiles = new HashSet<>();
 
     @BeforeClass
     public static void setup() throws InterruptedException, IOException {
         new MockNodeProbe();
+    }
+
+    @Before
+    public void init() {
         injector = Guice.createInjector(new BRTestModule());
-        filesystem =
-                (FakeBackupFileSystem)
-                        injector.getInstance(
-                                Key.get(IBackupFileSystem.class, Names.named("backup")));
+        filesystem = (FakeBackupFileSystem) injector.getInstance(Key.get(IBackupFileSystem.class));
     }
 
     @AfterClass
     public static void cleanup() throws IOException {
         File file = new File("target/data");
         FileUtils.deleteQuietly(file);
-    }
-
-    @Test
-    public void testSnapshotBackup() throws Exception {
-        filesystem.cleanup();
-        SnapshotBackup backup = injector.getInstance(SnapshotBackup.class);
-
-        //
-        //        backup.execute();
-        //        Assert.assertEquals(3, filesystem.uploadedFiles.size());
-        //        System.out.println("***** "+filesystem.uploadedFiles.size());
-        //        boolean metafile = false;
-        //        for (String filePath : expectedFiles)
-        //            Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
-        //
-        //        for(String filepath : filesystem.uploadedFiles){
-        //            if( filepath.endsWith("meta.json")){
-        //                metafile = true;
-        //                break;
-        //            }
-        //        }
-        //        Assert.assertTrue(metafile);
-
     }
 
     @Test

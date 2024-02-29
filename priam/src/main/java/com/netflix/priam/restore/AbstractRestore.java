@@ -21,7 +21,6 @@ import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
@@ -70,14 +69,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final IPostRestoreHook postRestoreHook;
 
     @Inject
-    @Named("v1")
-    IMetaProxy metaV1Proxy;
-
-    @Inject
     @Named("v2")
     IMetaProxy metaV2Proxy;
-
-    @Inject IBackupRestoreConfig backupRestoreConfig;
 
     public AbstractRestore(
             IConfiguration config,
@@ -177,8 +170,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         }
 
         Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
-        IMetaProxy metaProxy = metaV1Proxy;
-        if (backupRestoreConfig.enableV2Restore()) metaProxy = metaV2Proxy;
+        IMetaProxy metaProxy = metaV2Proxy;
 
         // Set the restore status.
         instanceState.getRestoreStatus().resetStatus();

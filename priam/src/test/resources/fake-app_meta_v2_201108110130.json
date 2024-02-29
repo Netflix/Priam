@@ -1,0 +1,65 @@
+{
+  "info": {
+    "version": 1,
+    "appName": "fake-app",
+    "region": "us-east-1",
+    "rack": "us-east-1c",
+    "backupIdentifier": [
+      "1808575600"
+    ]
+  },
+  "data": [
+    {
+      "keyspaceName": "ks1",
+      "columnfamilyName": "cf1",
+      "sstables": [
+        {
+          "prefix": "me-1-big",
+          "sstableComponents": [
+            {
+              "fileName": "me-1-big-Data.db",
+              "lastModifiedTime": 1313022601000,
+              "fileCreationTime": 1313022601000,
+              "fileSizeOnDisk": 4921307,
+              "compression": "SNAPPY",
+              "encryption": "PLAINTEXT",
+              "isUploaded": false,
+              "backupPath": "test_backup/1049_fake-app/1808575600/SST_V2/1313022601000/ks1/cf1/SNAPPY/PLAINTEXT/me-1-big-Data.db"
+            },
+            {
+              "fileName": "me-1-big-Index.db",
+              "lastModifiedTime": 1313022601000,
+              "fileCreationTime": 1313022601000,
+              "fileSizeOnDisk": 1828266,
+              "compression": "SNAPPY",
+              "encryption": "PLAINTEXT",
+              "isUploaded": false,
+              "backupPath": "test_backup/1049_fake-app/1808575600/SST_V2/1313022601000/ks1/cf1/SNAPPY/PLAINTEXT/me-1-big-Index.db"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "keyspaceName": "ks2",
+      "columnfamilyName": "cf1",
+      "sstables": [
+        {
+          "prefix": "me-2-big",
+          "sstableComponents": [
+            {
+              "fileName": "me-2-big-Data.db",
+              "lastModifiedTime": 1313022601000,
+              "fileCreationTime": 1313022601000,
+              "fileSizeOnDisk": 4921307,
+              "compression": "SNAPPY",
+              "encryption": "PLAINTEXT",
+              "isUploaded": false,
+              "backupPath": "test_backup/1049_fake-app/1808575600/SST_V2/1313022601000/ks2/cf1/SNAPPY/PLAINTEXT/me-2-big-Data.db"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

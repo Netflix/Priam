@@ -213,11 +213,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public String getBackupCronExpression() {
-        return config.get(PRIAM_PRE + ".backup.cron", "0 0 12 1/1 * ? *"); // Backup daily at 12
-    }
-
-    @Override
     public GCType getGCType() throws UnsupportedTypeException {
         String gcType = config.get(PRIAM_PRE + ".gc.type", GCType.CMS.getGcType());
         return GCType.lookup(gcType);

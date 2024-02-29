@@ -110,7 +110,6 @@ public class BackupServletV2 {
         Instant instant = DateUtil.parseInstant(date);
         List<BackupMetadata> metadataList =
                 backupStatusMgr.getLatestBackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
                         new DateRange(
                                 instant,
                                 instant.plus(1, ChronoUnit.DAYS).truncatedTo(ChronoUnit.DAYS)));
@@ -125,8 +124,7 @@ public class BackupServletV2 {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyLatestBackup(
-                        BackupVersion.SNAPSHOT_META_SERVICE, force, dateRange);
+                backupVerification.verifyLatestBackup(force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

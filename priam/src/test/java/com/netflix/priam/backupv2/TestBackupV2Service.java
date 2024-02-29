@@ -139,8 +139,6 @@ public class TestBackupV2Service {
                 result = true;
                 configuration.isIncrementalBackupEnabled();
                 result = true;
-                configuration.getBackupCronExpression();
-                result = "-1";
             }
         };
         IService backupService =
@@ -207,8 +205,6 @@ public class TestBackupV2Service {
                 result = "-1";
                 backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
                 result = 600;
-                configuration.getBackupCronExpression();
-                result = "-1";
             }
         };
         IService backupService =

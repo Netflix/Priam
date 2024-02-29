@@ -20,7 +20,6 @@ package com.netflix.priam.backup;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
@@ -67,13 +66,6 @@ public class TestBackupVerification {
         backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
     }
 
-    static class MockMetaV1Proxy extends MockUp<MetaV1Proxy> {
-        @Mock
-        public BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath) {
-            return getBackupVerificationResult();
-        }
-    }
-
     static class MockMetaV2Proxy extends MockUp<MetaV2Proxy> {
         @Mock
         public BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath) {
@@ -84,7 +76,6 @@ public class TestBackupVerification {
     @Before
     @After
     public void cleanup() {
-        new MockMetaV1Proxy();
         new MockMetaV2Proxy();
         FileUtils.deleteQuietly(new File(configuration.getBackupStatusFileLoc()));
     }

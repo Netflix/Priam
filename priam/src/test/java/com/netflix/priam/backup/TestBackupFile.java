@@ -22,13 +22,8 @@ import com.google.inject.Injector;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.DateUtil;
-import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.sql.Date;
-import java.text.ParseException;
 import org.apache.commons.io.FileUtils;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -42,40 +37,24 @@ public class TestBackupFile {
     @BeforeClass
     public static void setup() throws IOException {
         injector = Guice.createInjector(new BRTestModule());
-        File file =
-                new File("target/data/Keyspace1/Standard1/", "Keyspace1-Standard1-ia-5-Data.db");
-        if (!file.exists()) {
-            File dir1 = new File("target/data/Keyspace1/Standard1/");
-            if (!dir1.exists()) dir1.mkdirs();
-            byte b = 8;
-            long oneKB = (1024L);
-            System.out.println(oneKB);
-            BufferedOutputStream bos1 = new BufferedOutputStream(new FileOutputStream(file));
-            for (long i = 0; i < oneKB; i++) {
-                bos1.write(b);
-            }
-            bos1.flush();
-            bos1.close();
-        }
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        factory.getInstance().setToken("1234567"); // Token
+        factory.getInstance().setToken("1234567");
         region = factory.getInstanceInfo().getRegion();
     }
 
     @AfterClass
     public static void cleanup() throws IOException {
-        File file = new File("Keyspace1-Standard1-ia-5-Data.db");
-        FileUtils.deleteQuietly(file);
+        FileUtils.deleteDirectory(new File("target"));
     }
 
     @Test
-    public void testBackupFileCreation() throws ParseException {
-        // Test snapshot file
-        String snapshotfile =
-                "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db";
+    public void testBackupFileCreation() throws IOException {
+        File file =
+                createFile(
+                        "target/data/Keyspace1/Standard1/snapshots/201108082320/Keyspace1-Standard1-ia-5-Data.db");
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(new File(snapshotfile), BackupFileType.SNAP);
-        Assert.assertEquals(BackupFileType.SNAP, backupfile.type);
+        backupfile.parseLocal(file, BackupFileType.SST_V2);
+        Assert.assertEquals(BackupFileType.SST_V2, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
@@ -83,50 +62,50 @@ public class TestBackupFile {
         Assert.assertEquals(region, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
         Assert.assertEquals(
-                "casstestbackup/"
-                        + region
-                        + "/fake-app/1234567/201108082320/SNAP/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db",
+                "casstestbackup/1049_fake-app/1234567/SST_V2/1699206297000/Keyspace1/Standard1/SNAPPY/PLAINTEXT/Keyspace1-Standard1-ia-5-Data.db",
                 backupfile.getRemotePath());
     }
 
     @Test
-    public void testIncBackupFileCreation() throws ParseException {
-        // Test incremental file
-        File bfile = new File("target/data/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db");
+    public void testIncBackupFileCreation() throws IOException {
+        File file =
+                createFile(
+                        "target/data/Keyspace1/Standard1/backups/Keyspace1-Standard1-ia-5-Data.db");
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(bfile, BackupFileType.SST);
-        Assert.assertEquals(BackupFileType.SST, backupfile.type);
+        backupfile.parseLocal(file, BackupFileType.SST_V2);
+        Assert.assertEquals(BackupFileType.SST_V2, backupfile.type);
         Assert.assertEquals("Keyspace1", backupfile.keyspace);
         Assert.assertEquals("Standard1", backupfile.columnFamily);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(region, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
-        String datestr = DateUtil.formatyyyyMMddHHmm(new Date(bfile.lastModified()));
         Assert.assertEquals(
-                "casstestbackup/"
-                        + region
-                        + "/fake-app/1234567/"
-                        + datestr
-                        + "/SST/Keyspace1/Standard1/Keyspace1-Standard1-ia-5-Data.db",
+                "casstestbackup/1049_fake-app/1234567/SST_V2/1699206297000/Keyspace1/Standard1/SNAPPY/PLAINTEXT/Keyspace1-Standard1-ia-5-Data.db",
                 backupfile.getRemotePath());
     }
 
     @Test
-    public void testMetaFileCreation() throws ParseException {
-        // Test snapshot file
-        String filestr = "cass/data/1234567.meta";
-        File bfile = new File(filestr);
+    public void testMetaFileCreation() throws IOException {
+        File file = createFile("target/data/1234567.meta");
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(bfile, BackupFileType.META);
-        backupfile.setTime(DateUtil.getDate("201108082320"));
-        Assert.assertEquals(BackupFileType.META, backupfile.type);
+        backupfile.parseLocal(file, BackupFileType.META_V2);
+        Assert.assertEquals(BackupFileType.META_V2, backupfile.type);
         Assert.assertEquals("1234567", backupfile.token);
         Assert.assertEquals("fake-app", backupfile.clusterName);
         Assert.assertEquals(region, backupfile.region);
         Assert.assertEquals("casstestbackup", backupfile.baseDir);
         Assert.assertEquals(
-                "casstestbackup/" + region + "/fake-app/1234567/201108082320/META/1234567.meta",
+                "casstestbackup/1049_fake-app/1234567/META_V2/1699206297000/SNAPPY/PLAINTEXT/1234567.meta",
                 backupfile.getRemotePath());
+    }
+
+    private File createFile(String path) throws IOException {
+        File file = new File(path);
+        File dir = file.getParentFile();
+        dir.mkdirs();
+        file.createNewFile();
+        file.setLastModified(1699206297000L);
+        return file;
     }
 }

@@ -25,7 +25,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import javax.inject.Inject;
-import javax.inject.Named;
 
 /** Runs algorithms as finding closest token from a list of token (in a backup) */
 public class RestoreTokenSelector {
@@ -33,7 +32,7 @@ public class RestoreTokenSelector {
     private final IBackupFileSystem fs;
 
     @Inject
-    public RestoreTokenSelector(ITokenManager tokenManager, @Named("backup") IBackupFileSystem fs) {
+    public RestoreTokenSelector(ITokenManager tokenManager, IBackupFileSystem fs) {
 
         this.tokenManager = tokenManager;
         this.fs = fs;

@@ -18,8 +18,6 @@ package com.netflix.priam.defaultimpl;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
-import com.netflix.priam.aws.S3CrossAccountFileSystem;
-import com.netflix.priam.aws.S3EncryptedFileSystem;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
 import com.netflix.priam.aws.auth.IS3Credential;
@@ -29,12 +27,6 @@ import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.cred.ICredential;
-import com.netflix.priam.cred.ICredentialGeneric;
-import com.netflix.priam.cryptography.IFileCryptography;
-import com.netflix.priam.cryptography.pgp.PgpCredential;
-import com.netflix.priam.cryptography.pgp.PgpCryptography;
-import com.netflix.priam.google.GcsCredential;
-import com.netflix.priam.google.GoogleEncryptedFileSystem;
 import com.netflix.spectator.api.NoopRegistry;
 import com.netflix.spectator.api.Registry;
 import org.quartz.SchedulerFactory;
@@ -45,31 +37,13 @@ public class PriamGuiceModule extends AbstractModule {
     protected void configure() {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
 
-        bind(IBackupFileSystem.class).annotatedWith(Names.named("backup")).to(S3FileSystem.class);
-        bind(IBackupFileSystem.class)
-                .annotatedWith(Names.named("encryptedbackup"))
-                .to(S3EncryptedFileSystem.class);
-
-        bind(S3CrossAccountFileSystem.class);
-
-        bind(IBackupFileSystem.class)
-                .annotatedWith(Names.named("gcsencryptedbackup"))
-                .to(GoogleEncryptedFileSystem.class);
+        bind(IBackupFileSystem.class).to(S3FileSystem.class);
         bind(IS3Credential.class)
                 .annotatedWith(Names.named("awss3roleassumption"))
                 .to(S3RoleAssumptionCredential.class);
         bind(ICredential.class)
                 .annotatedWith(Names.named("awsec2roleassumption"))
                 .to(EC2RoleAssumptionCredential.class);
-        bind(IFileCryptography.class)
-                .annotatedWith(Names.named("filecryptoalgorithm"))
-                .to(PgpCryptography.class);
-        bind(ICredentialGeneric.class)
-                .annotatedWith(Names.named("gcscredential"))
-                .to(GcsCredential.class);
-        bind(ICredentialGeneric.class)
-                .annotatedWith(Names.named("pgpcredential"))
-                .to(PgpCredential.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
         bind(Registry.class).toInstance(new NoopRegistry());

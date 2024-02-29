@@ -76,8 +76,7 @@ public class TestBackupVerificationTask {
         }
 
         @Mock
-        public List<BackupMetadata> verifyBackupsInRange(
-                BackupVersion backupVersion, DateRange dateRange)
+        public List<BackupMetadata> verifyBackupsInRange(DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
             return verifiedBackups;
@@ -85,7 +84,7 @@ public class TestBackupVerificationTask {
 
         @Mock
         public Optional<BackupVerificationResult> verifyLatestBackup(
-                BackupVersion backupVersion, boolean force, DateRange dateRange)
+                boolean force, DateRange dateRange)
                 throws UnsupportedTypeException, IllegalArgumentException {
             if (throwError) throw new IllegalArgumentException("DummyError");
             return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
@@ -163,7 +162,7 @@ public class TestBackupVerificationTask {
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
         new Verifications() {
             {
-                backupVerification.verifyBackupsInRange((BackupVersion) any, (DateRange) any);
+                backupVerification.verifyBackupsInRange((DateRange) any);
                 maxTimes = 0;
             }
 
@@ -175,20 +174,18 @@ public class TestBackupVerificationTask {
     }
 
     private static BackupMetadata getInvalidBackupMetadata() {
-        return new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
+        return new BackupMetadata("12345", new Date());
     }
 
     private static BackupMetadata getPreviouslyValidatedMetadata() {
-        BackupMetadata backupMetadata =
-                new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
+        BackupMetadata backupMetadata = new BackupMetadata("12345", new Date());
         backupMetadata.setLastValidated(
                 new Date(Instant.now().minus(1, ChronoUnit.HOURS).toEpochMilli()));
         return backupMetadata;
     }
 
     private static BackupMetadata getRecentlyValidatedMetadata() {
-        BackupMetadata backupMetadata =
-                new BackupMetadata(BackupVersion.SNAPSHOT_META_SERVICE, "12345", new Date());
+        BackupMetadata backupMetadata = new BackupMetadata("12345", new Date());
         backupMetadata.setLastValidated(
                 new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()));
         backupMetadata.setSnapshotLocation("bucket/path/to/file.db");

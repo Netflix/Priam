@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 public class BackupVerification {
 
     private static final Logger logger = LoggerFactory.getLogger(BackupVerification.class);
-    private final IMetaProxy metaV1Proxy;
     private final IMetaProxy metaV2Proxy;
     private final IBackupStatusMgr backupStatusMgr;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
@@ -47,33 +46,18 @@ public class BackupVerification {
 
     @Inject
     public BackupVerification(
-            @Named("v1") IMetaProxy metaV1Proxy,
             @Named("v2") IMetaProxy metaV2Proxy,
             IBackupStatusMgr backupStatusMgr,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
-        this.metaV1Proxy = metaV1Proxy;
         this.metaV2Proxy = metaV2Proxy;
         this.backupStatusMgr = backupStatusMgr;
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    public IMetaProxy getMetaProxy(BackupVersion backupVersion) {
-        switch (backupVersion) {
-            case SNAPSHOT_BACKUP:
-                return metaV1Proxy;
-            case SNAPSHOT_META_SERVICE:
-                return metaV2Proxy;
-        }
-
-        return null;
-    }
-
-    public Optional<BackupVerificationResult> verifyLatestBackup(
-            BackupVersion backupVersion, boolean force, DateRange dateRange)
+    public Optional<BackupVerificationResult> verifyLatestBackup(boolean force, DateRange dateRange)
             throws IllegalArgumentException {
-        IMetaProxy metaProxy = getMetaProxy(backupVersion);
-        for (BackupMetadata backupMetadata :
-                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
+        IMetaProxy metaProxy = metaV2Proxy;
+        for (BackupMetadata backupMetadata : backupStatusMgr.getLatestBackupMetadata(dateRange)) {
             if (backupMetadata.getLastValidated() == null || force) {
                 Optional<BackupVerificationResult> result = verifyBackup(metaProxy, backupMetadata);
                 if (result.isPresent()) {
@@ -88,12 +72,11 @@ public class BackupVerification {
         return Optional.empty();
     }
 
-    public List<BackupMetadata> verifyBackupsInRange(
-            BackupVersion backupVersion, DateRange dateRange) throws IllegalArgumentException {
-        IMetaProxy metaProxy = getMetaProxy(backupVersion);
+    public List<BackupMetadata> verifyBackupsInRange(DateRange dateRange)
+            throws IllegalArgumentException {
+        IMetaProxy metaProxy = metaV2Proxy;
         List<BackupMetadata> results = new ArrayList<>();
-        for (BackupMetadata backupMetadata :
-                backupStatusMgr.getLatestBackupMetadata(backupVersion, dateRange)) {
+        for (BackupMetadata backupMetadata : backupStatusMgr.getLatestBackupMetadata(dateRange)) {
             if (backupMetadata.getLastValidated() != null
                     || verifyBackup(metaProxy, backupMetadata).isPresent()) {
                 results.add(backupMetadata);

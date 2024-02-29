@@ -27,16 +27,17 @@ import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.NamedThreadPoolExecutor;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
+import org.bouncycastle.util.io.Streams;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Provider;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.Future;
 import java.util.concurrent.ThreadPoolExecutor;
-import javax.inject.Provider;
-import org.bouncycastle.util.io.Streams;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Provides common functionality applicable to all restore strategies */
 public abstract class EncryptedRestoreBase extends AbstractRestore {
@@ -73,7 +74,6 @@ public abstract class EncryptedRestoreBase extends AbstractRestore {
                 instanceIdentity,
                 tokenSelector,
                 cassProcess,
-                metaData,
                 instanceState,
                 postRestoreHook);
 

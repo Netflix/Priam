@@ -577,40 +577,6 @@ public interface IConfiguration {
         return "all";
     }
 
-    /**
-     * Enable/disable backup/restore of commit logs.
-     *
-     * @return boolean value true if commit log backup/restore is enabled, false otherwise. Default:
-     *     false.
-     */
-    default boolean isBackingUpCommitLogs() {
-        return false;
-    }
-
-    default String getCommitLogBackupPropsFile() {
-        return getCassHome() + "/conf/commitlog_archiving.properties";
-    }
-
-    default String getCommitLogBackupArchiveCmd() {
-        return "/bin/ln %path /mnt/data/backup/%name";
-    }
-
-    default String getCommitLogBackupRestoreCmd() {
-        return "/bin/mv %from %to";
-    }
-
-    default String getCommitLogBackupRestoreFromDirs() {
-        return "/mnt/data/backup/commitlog/";
-    }
-
-    default String getCommitLogBackupRestorePointInTime() {
-        return StringUtils.EMPTY;
-    }
-
-    default int maxCommitLogsRestore() {
-        return 10;
-    }
-
     default boolean isClientSslEnabled() {
         return false;
     }

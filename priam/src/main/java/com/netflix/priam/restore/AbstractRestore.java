@@ -16,8 +16,10 @@
  */
 package com.netflix.priam.restore;
 
-import com.netflix.priam.backup.*;
-import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreUtil;
+import com.netflix.priam.backup.IBackupFileSystem;
+import com.netflix.priam.backup.Status;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
@@ -29,7 +31,6 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -66,7 +67,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final RestoreTokenSelector tokenSelector;
     private final ICassandraProcess cassProcess;
     private final InstanceState instanceState;
-    private final MetaData metaData;
     private final IPostRestoreHook postRestoreHook;
 
     @Inject
@@ -88,7 +88,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             InstanceIdentity instanceIdentity,
             RestoreTokenSelector tokenSelector,
             ICassandraProcess cassProcess,
-            MetaData metaData,
             InstanceState instanceState,
             IPostRestoreHook postRestoreHook) {
         super(config);
@@ -98,7 +97,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         this.instanceIdentity = instanceIdentity;
         this.tokenSelector = tokenSelector;
         this.cassProcess = cassProcess;
-        this.metaData = metaData;
         this.instanceState = instanceState;
         backupRestoreUtil =
                 new BackupRestoreUtil(
@@ -147,22 +145,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
     private void waitForCompletion(List<Future<Path>> futureList) throws Exception {
         for (Future<Path> future : futureList) future.get();
-    }
-
-    private List<Future<Path>> downloadCommitLogs(
-            Iterator<AbstractBackupPath> fsIterator, int lastN, boolean waitForCompletion)
-            throws Exception {
-        if (fsIterator == null) return null;
-
-        BoundedList<AbstractBackupPath> bl = new BoundedList(lastN);
-        while (fsIterator.hasNext()) {
-            AbstractBackupPath temp = fsIterator.next();
-            if (temp.getType() == BackupFileType.CL) {
-                bl.add(temp);
-            }
-        }
-
-        return download(bl.iterator(), waitForCompletion);
     }
 
     private void stopCassProcess() throws IOException {
@@ -254,24 +236,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();
             futureList.addAll(download(allFiles.iterator(), false));
-
-            // Downloading CommitLogs
-            // Note for Backup V2.0 we do not backup commit logs, as saving them is cost-expensive.
-            if (config.isBackingUpCommitLogs()) {
-                logger.info(
-                        "Delete all backuped commitlog files in {}",
-                        config.getBackupCommitLogLocation());
-                SystemUtils.cleanupDir(config.getBackupCommitLogLocation(), null);
-
-                logger.info("Delete all commitlog files in {}", config.getCommitLogLocation());
-                SystemUtils.cleanupDir(config.getCommitLogLocation(), null);
-                String prefix = fs.getPrefix().toString();
-                Iterator<AbstractBackupPath> commitLogPathIterator =
-                        fs.list(prefix, latestValidMetaFile.get().getTime(), endTime);
-                futureList.addAll(
-                        downloadCommitLogs(
-                                commitLogPathIterator, config.maxCommitLogsRestore(), false));
-            }
 
             // Wait for all the futures to finish.
             waitForCompletion(futureList);

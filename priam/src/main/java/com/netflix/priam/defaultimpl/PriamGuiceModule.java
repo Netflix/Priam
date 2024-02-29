@@ -24,7 +24,6 @@ import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.backupv2.MetaV1Proxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.spectator.api.NoopRegistry;
@@ -44,7 +43,6 @@ public class PriamGuiceModule extends AbstractModule {
         bind(ICredential.class)
                 .annotatedWith(Names.named("awsec2roleassumption"))
                 .to(EC2RoleAssumptionCredential.class);
-        bind(IMetaProxy.class).annotatedWith(Names.named("v1")).to(MetaV1Proxy.class);
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
         bind(Registry.class).toInstance(new NoopRegistry());
     }

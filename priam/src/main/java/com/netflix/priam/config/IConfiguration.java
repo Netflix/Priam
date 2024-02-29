@@ -300,18 +300,6 @@ public interface IConfiguration {
     }
 
     /**
-     * Cron expression to be used for snapshot backups.
-     *
-     * @return Backup cron expression for snapshots
-     * @see <a
-     *     href="http://www.quartz-scheduler.org/documentation/quartz-2.x/tutorials/crontrigger.html">quartz-scheduler</a>
-     * @see <a href="http://www.cronmaker.com">http://www.cronmaker.com</a> To build new cron timer
-     */
-    default String getBackupCronExpression() {
-        return "0 0 12 1/1 * ? *";
-    }
-
-    /**
      * Column Family(ies), comma delimited, to include during snapshot backup. Note 1: The expected
      * format is keyspace.cfname. If no value is provided then snapshot contains all KS,CF(s) Note
      * 2: CF name allows special character "*" to denote all the columnfamilies in a given keyspace.

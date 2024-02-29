@@ -90,10 +90,8 @@ public class IncrementalBackup extends AbstractBackup {
             // Once backup 1.0 is gone, we should not check for enableV2Backups.
             enabled =
                     (configuration.isIncrementalBackupEnabled()
-                            && (SnapshotBackup.isBackupEnabled(configuration)
-                                    || (backupRestoreConfig.enableV2Backups()
-                                            && SnapshotMetaTask.isBackupEnabled(
-                                                    backupRestoreConfig))));
+                            && (backupRestoreConfig.enableV2Backups()
+                                    && SnapshotMetaTask.isBackupEnabled(backupRestoreConfig)));
             logger.info("Incremental backups are enabled: {}", enabled);
 
             if (!enabled) {
@@ -115,21 +113,18 @@ public class IncrementalBackup extends AbstractBackup {
 
     @Override
     protected void processColumnFamily(File backupDir) throws Exception {
-        BackupFileType fileType =
-                backupRestoreConfig.enableV2Backups() ? BackupFileType.SST_V2 : BackupFileType.SST;
-
         // upload SSTables and components
         ImmutableList<ListenableFuture<AbstractBackupPath>> futures =
                 backupHelper.uploadAndDeleteAllFiles(
-                        backupDir, fileType, config.enableAsyncIncremental());
+                        backupDir, BackupFileType.SST_V2, config.enableAsyncIncremental());
         Futures.whenAllComplete(futures).call(() -> null, MoreExecutors.directExecutor());
 
         // Next, upload secondary indexes
-        fileType = BackupFileType.SECONDARY_INDEX_V2;
+        boolean async = config.enableAsyncIncremental();
         for (File directory : getSecondaryIndexDirectories(backupDir)) {
             futures =
                     backupHelper.uploadAndDeleteAllFiles(
-                            directory, fileType, config.enableAsyncIncremental());
+                            directory, BackupFileType.SECONDARY_INDEX_V2, async);
             if (futures.stream().allMatch(ListenableFuture::isDone)) {
                 deleteIfEmpty(directory);
             } else {

@@ -26,6 +26,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.List;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Provider;
 import org.apache.commons.io.FileUtils;
 import org.json.simple.JSONArray;
@@ -45,11 +46,11 @@ public class MetaData {
     @Inject
     public MetaData(
             Provider<AbstractBackupPath> pathFactory,
-            IFileSystemContext backupFileSystemCtx,
+            @Named("backup") IBackupFileSystem fileSystem,
             IConfiguration config) {
 
         this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileStrategy(config);
+        this.fs = fileSystem;
     }
 
     public AbstractBackupPath set(List<AbstractBackupPath> bps, String snapshotName)

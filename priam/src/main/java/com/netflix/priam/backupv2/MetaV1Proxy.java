@@ -18,7 +18,10 @@
 package com.netflix.priam.backupv2;
 
 import com.google.common.collect.Lists;
-import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.BackupVerificationResult;
+import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.FileReader;
@@ -28,6 +31,7 @@ import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
 import javax.inject.Inject;
+import javax.inject.Named;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.io.FileUtils;
@@ -41,8 +45,9 @@ public class MetaV1Proxy implements IMetaProxy {
     private final IBackupFileSystem fs;
 
     @Inject
-    public MetaV1Proxy(IConfiguration configuration, IFileSystemContext backupFileSystemCtx) {
-        fs = backupFileSystemCtx.getFileStrategy(configuration);
+    public MetaV1Proxy(
+            IConfiguration configuration, @Named("backup") IBackupFileSystem fileSystem) {
+        fs = fileSystem;
     }
 
     @Override

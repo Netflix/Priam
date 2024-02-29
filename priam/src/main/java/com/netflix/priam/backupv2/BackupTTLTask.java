@@ -75,7 +75,7 @@ public class BackupTTLTask extends Task {
             IConfiguration configuration,
             IBackupRestoreConfig backupRestoreConfig,
             @Named("v2") IMetaProxy metaProxy,
-            IFileSystemContext backupFileSystemCtx,
+            IBackupFileSystem filesystem,
             Provider<AbstractBackupPath> abstractBackupPathProvider,
             TokenRetriever tokenRetriever,
             InstanceState instanceState)
@@ -83,7 +83,7 @@ public class BackupTTLTask extends Task {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.metaProxy = metaProxy;
-        this.fileSystem = backupFileSystemCtx.getFileStrategy(configuration);
+        this.fileSystem = filesystem;
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         this.instanceState = instanceState;
         this.maxWaitMillis =

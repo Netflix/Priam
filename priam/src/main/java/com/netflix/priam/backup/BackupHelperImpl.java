@@ -28,12 +28,10 @@ public class BackupHelperImpl implements BackupHelper {
 
     @Inject
     public BackupHelperImpl(
-            IConfiguration config,
-            IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> pathFactory) {
+            IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory) {
         this.config = config;
         this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileStrategy(config);
+        this.fs = fs;
     }
 
     /**

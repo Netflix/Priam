@@ -98,10 +98,10 @@ public class TestBackupHelperImpl {
             FakeConfiguration fakeConfiguration =
                     (FakeConfiguration) injector.getInstance(IConfiguration.class);
             fakeConfiguration.setFakeConfig("Priam.backupsToCompress", which);
-            IFileSystemContext context = injector.getInstance(IFileSystemContext.class);
+            IBackupFileSystem fileSystem = injector.getInstance(IBackupFileSystem.class);
             Provider<AbstractBackupPath> pathFactory =
                     injector.getProvider(AbstractBackupPath.class);
-            backupHelper = new BackupHelperImpl(fakeConfiguration, context, pathFactory);
+            backupHelper = new BackupHelperImpl(fakeConfiguration, fileSystem, pathFactory);
         }
 
         @Test
@@ -148,10 +148,10 @@ public class TestBackupHelperImpl {
         public ProgrammaticTests() {
             Injector injector = Guice.createInjector(new BRTestModule());
             config = (FakeConfiguration) injector.getInstance(IConfiguration.class);
-            IFileSystemContext context = injector.getInstance(IFileSystemContext.class);
+            IBackupFileSystem fileSystem = injector.getInstance(IBackupFileSystem.class);
             Provider<AbstractBackupPath> pathFactory =
                     injector.getProvider(AbstractBackupPath.class);
-            backupHelper = new BackupHelperImpl(config, context, pathFactory);
+            backupHelper = new BackupHelperImpl(config, fileSystem, pathFactory);
         }
 
         @Test

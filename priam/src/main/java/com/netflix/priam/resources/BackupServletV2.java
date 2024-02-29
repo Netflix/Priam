@@ -62,7 +62,7 @@ public class BackupServletV2 {
             SnapshotMetaTask snapshotMetaService,
             BackupTTLTask backupTTLService,
             IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx,
+            IBackupFileSystem fileSystem,
             @Named("v2") IMetaProxy metaV2Proxy,
             Provider<AbstractBackupPath> pathProvider,
             BackupV2Service backupService) {
@@ -70,7 +70,7 @@ public class BackupServletV2 {
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
         this.backupTTLService = backupTTLService;
-        this.fs = backupFileSystemCtx.getFileStrategy(configuration);
+        this.fs = fileSystem;
         this.metaProxy = metaV2Proxy;
         this.pathProvider = pathProvider;
         this.backupService = backupService;

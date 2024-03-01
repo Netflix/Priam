@@ -19,13 +19,15 @@ package com.netflix.priam.backupv2;
 
 import com.netflix.priam.backup.*;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.utils.DateUtil;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.FilterIterator;
@@ -40,18 +42,22 @@ import org.slf4j.LoggerFactory;
 /** Do any management task for meta files. Created by aagrawal on 8/2/18. */
 public class MetaV2Proxy implements IMetaProxy {
     private static final Logger logger = LoggerFactory.getLogger(MetaV2Proxy.class);
+    private static final String BACKUP_PATH = "\"backupPath\": \"";
     private final Path metaFileDirectory;
     private final IBackupFileSystem fs;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private final IBackupStatusMgr backupStatusMgr;
 
     @Inject
     public MetaV2Proxy(
             IConfiguration configuration,
             IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> abstractBackupPathProvider) {
+            Provider<AbstractBackupPath> abstractBackupPathProvider,
+            IBackupStatusMgr backupStatusMgr) {
         fs = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         metaFileDirectory = Paths.get(configuration.getDataFileLocation());
+        this.backupStatusMgr = backupStatusMgr;
     }
 
     @Override
@@ -178,16 +184,30 @@ public class MetaV2Proxy implements IMetaProxy {
     }
 
     @Override
-    public List<String> getSSTFilesFromMeta(Path localMetaPath) throws Exception {
-        MetaFileBackupWalker metaFileBackupWalker = new MetaFileBackupWalker();
-        metaFileBackupWalker.readMeta(localMetaPath);
-        return metaFileBackupWalker.backupRemotePaths;
+    public List<String> getSSTFilesFromMeta(Path localMetaPath) throws IOException {
+        try (BufferedReader reader = Files.newBufferedReader(localMetaPath)) {
+            return reader.lines()
+                .filter(line -> line.contains(BACKUP_PATH))
+                .map(
+                    line ->
+                        line.substring(
+                            line.indexOf(BACKUP_PATH) + BACKUP_PATH.length(),
+                            line.length() - 1))
+                .collect(Collectors.toList());
+        }
     }
 
     @Override
     public BackupVerificationResult isMetaFileValid(AbstractBackupPath metaBackupPath) {
-        MetaFileBackupValidator metaFileBackupValidator = new MetaFileBackupValidator();
-        BackupVerificationResult result = metaFileBackupValidator.verificationResult;
+        Instant time = metaBackupPath.getCreationTime();
+        BackupMetadata foo =
+            backupStatusMgr.getLatestBackupMetadata(
+                BackupVersion.SNAPSHOT_META_SERVICE, new DateUtil.DateRange(time, time))
+                .stream()
+                .filter(metadata ->
+                    metadata.getSnapshotLocation().equals(metaBackupPath.getRemotePath()
+                    && metadata.getLastValidated() != null)).map(BackupMetadata.)
+        BackupVerificationResult result = new BackupVerificationResult();
         result.remotePath = metaBackupPath.getRemotePath();
         result.snapshotInstant = metaBackupPath.getLastModified();
 
@@ -195,8 +215,13 @@ public class MetaV2Proxy implements IMetaProxy {
         try {
             metaFile = downloadMetaFile(metaBackupPath);
             result.manifestAvailable = true;
-
-            metaFileBackupValidator.readMeta(metaFile);
+            for (String backupPath : getSSTFilesFromMeta(metaFile)) {
+                if (fs.checkObjectExists(Paths.get(backupPath))) {
+                    result.filesMatched++;
+                } else {
+                    result.filesInMetaOnly.add(backupPath);
+                }
+            }
             result.valid = (result.filesInMetaOnly.isEmpty());
         } catch (FileNotFoundException fne) {
             logger.error(fne.getLocalizedMessage());
@@ -210,37 +235,5 @@ public class MetaV2Proxy implements IMetaProxy {
             if (metaFile != null) FileUtils.deleteQuietly(metaFile.toFile());
         }
         return result;
-    }
-
-    private class MetaFileBackupValidator extends MetaFileReader {
-        private BackupVerificationResult verificationResult = new BackupVerificationResult();
-
-        @Override
-        public void process(ColumnFamilyResult columnfamilyResult) {
-            for (ColumnFamilyResult.SSTableResult ssTableResult :
-                    columnfamilyResult.getSstables()) {
-                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
-                    if (fs.checkObjectExists(Paths.get(fileUploadResult.getBackupPath()))) {
-                        verificationResult.filesMatched++;
-                    } else {
-                        verificationResult.filesInMetaOnly.add(fileUploadResult.getBackupPath());
-                    }
-                }
-            }
-        }
-    }
-
-    private class MetaFileBackupWalker extends MetaFileReader {
-        private List<String> backupRemotePaths = new ArrayList<>();
-
-        @Override
-        public void process(ColumnFamilyResult columnfamilyResult) {
-            for (ColumnFamilyResult.SSTableResult ssTableResult :
-                    columnfamilyResult.getSstables()) {
-                for (FileUploadResult fileUploadResult : ssTableResult.getSstableComponents()) {
-                    backupRemotePaths.add(fileUploadResult.getBackupPath());
-                }
-            }
-        }
     }
 }

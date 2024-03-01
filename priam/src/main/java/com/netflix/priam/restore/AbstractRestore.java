@@ -42,7 +42,6 @@ import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -218,13 +217,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
 
-            // Stop cassandra if its running
-            stopCassProcess();
-
-            // Cleanup local data
-            File dataDir = new File(config.getDataFileLocation());
-            if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
-
             // Find latest valid meta file.
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
@@ -242,20 +234,23 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                     .getRestoreStatus()
                     .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
 
+            logger.info("@@@ getting file paths from {} ", latestValidMetaFile.get().getFileName());
             List<AbstractBackupPath> allFiles =
                     BackupRestoreUtil.getMostRecentSnapshotPaths(
                             latestValidMetaFile.get(), metaProxy, pathProvider);
+            logger.info(
+                    "@@@ got {} snapshot paths. now getting incremental paths", allFiles.size());
             if (!config.skipIncrementalRestore()) {
                 allFiles.addAll(
                         BackupRestoreUtil.getIncrementalPaths(
                                 latestValidMetaFile.get(), dateRange, metaProxy));
             }
 
+            logger.info("@@@ Downloading {} files total", allFiles.size());
             // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>();
             futureList.addAll(download(allFiles.iterator(), false));
 
-            // Downloading CommitLogs
             // Note for Backup V2.0 we do not backup commit logs, as saving them is cost-expensive.
             if (config.isBackingUpCommitLogs()) {
                 logger.info(
@@ -273,23 +268,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                                 commitLogPathIterator, config.maxCommitLogsRestore(), false));
             }
 
+            logger.info("@@@ waiting for downloads to finish");
             // Wait for all the futures to finish.
             waitForCompletion(futureList);
 
-            // Given that files are restored now, kick off post restore hook
-            logger.info("Starting post restore hook");
-            postRestoreHook.execute();
-            logger.info("Completed executing post restore hook");
-
+            logger.info("@@@ downloads done");
             // Declare restore as finished.
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
-
-            // Start cassandra if restore is successful.
-            if (!config.doesCassandraStartManually()) cassProcess.start(true);
-            else
-                logger.info(
-                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());

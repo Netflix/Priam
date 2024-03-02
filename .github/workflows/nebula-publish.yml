@@ -41,7 +41,7 @@ jobs:
           NETFLIX_OSS_REPO_PASSWORD: ${{ secrets.ORG_NETFLIXOSS_PASSWORD }}
       - name: Publish release
         if: (!contains(github.ref, '-rc.'))
-        run: ./gradlew --info -Prelease.useLastTag=true final
+        run: ./gradlew --info -x test -Prelease.useLastTag=true final
         env:
           NETFLIX_OSS_SONATYPE_USERNAME: ${{ secrets.ORG_SONATYPE_USERNAME }}
           NETFLIX_OSS_SONATYPE_PASSWORD: ${{ secrets.ORG_SONATYPE_PASSWORD }}

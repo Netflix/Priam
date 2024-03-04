@@ -43,18 +43,16 @@ public class StreamingTest {
         Injector injector = Guice.createInjector(new BRTestModule());
         IConfiguration conf = injector.getInstance(IConfiguration.class);
         InstanceIdentity factory = injector.getInstance(InstanceIdentity.class);
-        String region = factory.getInstanceInfo().getRegion();
 
         FifoQueue<AbstractBackupPath> queue = new FifoQueue<>(10);
         for (int i = 10; i < 30; i++) {
             RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
                     "test_backup/"
-                            + region
-                            + "/fakecluster/123456/201108"
+                            + "1941_fakecluster/123456/SST_V2/201108"
                             + i
                             + "0000"
-                            + "/SNAP/ks1/cf2/f1"
+                            + "/ks1/cf2/SNAPPY/PLAINTEXT/f1"
                             + i
                             + ".db");
             queue.adjustAndAdd(path);
@@ -63,12 +61,10 @@ public class StreamingTest {
         for (int i = 10; i < 30; i++) {
             RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
-                    "test_backup/"
-                            + region
-                            + "/fakecluster/123456/201108"
+                    "test_backup/1941_fakecluster/123456/SST_V2/201108"
                             + i
                             + "0000"
-                            + "/SNAP/ks1/cf2/f2"
+                            + "/ks1/cf2/SNAPPY/PLAINTEXT/f2"
                             + i
                             + ".db");
             queue.adjustAndAdd(path);
@@ -77,12 +73,10 @@ public class StreamingTest {
         for (int i = 10; i < 30; i++) {
             RemoteBackupPath path = new RemoteBackupPath(conf, factory);
             path.parseRemote(
-                    "test_backup/"
-                            + region
-                            + "/fakecluster/123456/201108"
+                    "test_backup/1941_fakecluster/123456/SST_V2/201108"
                             + i
                             + "0000"
-                            + "/SNAP/ks1/cf2/f3"
+                            + "/ks1/cf2/SNAPPY/PLAINTEXT/f3"
                             + i
                             + ".db");
             queue.adjustAndAdd(path);
@@ -90,43 +84,19 @@ public class StreamingTest {
 
         RemoteBackupPath path = new RemoteBackupPath(conf, factory);
         path.parseRemote(
-                "test_backup/"
-                        + region
-                        + "/fakecluster/123456/201108290000"
-                        + "/SNAP/ks1/cf2/f129.db");
+                "test_backup"
+                        + "/1941_fakecluster/123456/SST_V2/201108290000"
+                        + "/ks1/cf2/SNAPPY/PLAINTEXT/f129.db");
         Assert.assertTrue(queue.contains(path));
         path.parseRemote(
-                "test_backup/"
-                        + region
-                        + "/fakecluster/123456/201108290000"
-                        + "/SNAP/ks1/cf2/f229.db");
+                "test_backup"
+                        + "/1941_fakecluster/123456/SST_V2/201108290000"
+                        + "/ks1/cf2/SNAPPY/PLAINTEXT/f229.db");
         Assert.assertTrue(queue.contains(path));
         path.parseRemote(
-                "test_backup/"
-                        + region
-                        + "/fakecluster/123456/201108290000"
-                        + "/SNAP/ks1/cf2/f329.db");
+                "test_backup"
+                        + "/1941_fakecluster/123456/SST_V2/201108290000"
+                        + "/ks1/cf2/SNAPPY/PLAINTEXT/f329.db");
         Assert.assertTrue(queue.contains(path));
-
-        path.parseRemote(
-                "test_backup/"
-                        + region
-                        + "/fakecluster/123456/201108260000/SNAP/ks1/cf2/f326.db To: cass/data/ks1/cf2/f326.db");
-        Assert.assertEquals(path, queue.first());
-    }
-
-    @Test
-    public void testIgnoreIndexFiles() {
-        String[] testInputs =
-                new String[] {
-                    "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Digest.sha1",
-                    "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Filter.db",
-                    "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Data.db",
-                    "User_Authentication_Audit.User_Authentication_Audit_appkey_idx-hc-93-Statistics.db",
-                    "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Filter.db",
-                    "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Digest.sha1",
-                    "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Statistics.db",
-                    "CS_Agents.CS_Agents_supervisorEmpSk_idx-hc-1-Data.db"
-                };
     }
 }

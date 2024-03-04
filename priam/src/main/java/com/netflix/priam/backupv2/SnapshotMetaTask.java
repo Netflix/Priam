@@ -205,10 +205,7 @@ public class SnapshotMetaTask extends AbstractBackup {
         Instant snapshotInstant = clock.instant();
         String token = instanceIdentity.getInstance().getToken();
         BackupMetadata backupMetadata =
-                new BackupMetadata(
-                        BackupVersion.SNAPSHOT_META_SERVICE,
-                        token,
-                        new Date(snapshotInstant.toEpochMilli()));
+                new BackupMetadata(token, new Date(snapshotInstant.toEpochMilli()));
         snapshotStatusMgr.start(backupMetadata);
 
         try {

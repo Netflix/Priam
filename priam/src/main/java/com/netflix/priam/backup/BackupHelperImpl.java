@@ -28,12 +28,10 @@ public class BackupHelperImpl implements BackupHelper {
 
     @Inject
     public BackupHelperImpl(
-            IConfiguration config,
-            IFileSystemContext backupFileSystemCtx,
-            Provider<AbstractBackupPath> pathFactory) {
+            IConfiguration config, IBackupFileSystem fs, Provider<AbstractBackupPath> pathFactory) {
         this.config = config;
         this.pathFactory = pathFactory;
-        this.fs = backupFileSystemCtx.getFileStrategy(config);
+        this.fs = fs;
     }
 
     /**
@@ -88,9 +86,7 @@ public class BackupHelperImpl implements BackupHelper {
 
     private CompressionType getCorrectCompressionAlgorithm(
             AbstractBackupPath path, Set<String> compressedFiles) {
-        if (!AbstractBackupPath.BackupFileType.isV2(path.getType())
-                || path.getLastModified().toEpochMilli()
-                        < config.getCompressionTransitionEpochMillis()) {
+        if (path.getLastModified().toEpochMilli() < config.getCompressionTransitionEpochMillis()) {
             return CompressionType.SNAPPY;
         }
         String file = path.getFileName();

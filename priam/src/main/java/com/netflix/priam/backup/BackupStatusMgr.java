@@ -186,8 +186,7 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
      */
     protected abstract LinkedList<BackupMetadata> fetch(String snapshotDate);
 
-    public List<BackupMetadata> getLatestBackupMetadata(
-            BackupVersion backupVersion, DateUtil.DateRange dateRange) {
+    public List<BackupMetadata> getLatestBackupMetadata(DateUtil.DateRange dateRange) {
         Instant startDay = dateRange.getStartTime().truncatedTo(ChronoUnit.DAYS);
         Instant endDay = dateRange.getEndTime().truncatedTo(ChronoUnit.DAYS);
 
@@ -210,7 +209,6 @@ public abstract class BackupStatusMgr implements IBackupStatusMgr {
                 .stream()
                 .filter(Objects::nonNull)
                 .filter(backupMetadata -> backupMetadata.getStatus() == Status.FINISHED)
-                .filter(backupMetadata -> backupMetadata.getBackupVersion().equals(backupVersion))
                 .filter(
                         backupMetadata ->
                                 backupMetadata

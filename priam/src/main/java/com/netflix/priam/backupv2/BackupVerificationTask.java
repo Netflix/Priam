@@ -86,9 +86,7 @@ public class BackupVerificationTask extends Task {
         Instant slo =
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
         DateRange dateRange = new DateRange(slo, now);
-        List<BackupMetadata> verifiedBackups =
-                backupVerification.verifyBackupsInRange(
-                        BackupVersion.SNAPSHOT_META_SERVICE, dateRange);
+        List<BackupMetadata> verifiedBackups = backupVerification.verifyBackupsInRange(dateRange);
 
         verifiedBackups
                 .stream()

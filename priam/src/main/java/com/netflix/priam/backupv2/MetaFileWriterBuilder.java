@@ -22,7 +22,6 @@ import com.google.common.collect.ImmutableSet;
 import com.google.gson.stream.JsonWriter;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.IFileSystemContext;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
 import java.io.FileWriter;
@@ -97,10 +96,10 @@ public class MetaFileWriterBuilder {
                 IConfiguration configuration,
                 InstanceIdentity instanceIdentity,
                 Provider<AbstractBackupPath> pathFactory,
-                IFileSystemContext backupFileSystemCtx,
+                IBackupFileSystem fileSystem,
                 @Named("v2") IMetaProxy metaProxy) {
             this.pathFactory = pathFactory;
-            this.backupFileSystem = backupFileSystemCtx.getFileStrategy(configuration);
+            this.backupFileSystem = fileSystem;
             this.metaProxy = metaProxy;
             List<String> backupIdentifier = new ArrayList<>();
             backupIdentifier.add(instanceIdentity.getInstance().getToken());

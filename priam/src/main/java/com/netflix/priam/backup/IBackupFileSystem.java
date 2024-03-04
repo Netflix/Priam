@@ -106,17 +106,6 @@ public interface IBackupFileSystem {
      */
     Path getPrefix();
 
-    /**
-     * List all files in the backup location for the specified time range.
-     *
-     * @param path This is used as the `prefix` for listing files in the filesystem. All the files
-     *     that start with this prefix will be returned.
-     * @param start Start date of the file upload.
-     * @param till End date of the file upload.
-     * @return Iterator of the AbstractBackupPath matching the criteria.
-     */
-    Iterator<AbstractBackupPath> list(String path, Date start, Date till);
-
     /** Get a list of prefixes for the cluster available in backup for the specified date */
     Iterator<AbstractBackupPath> listPrefixes(Date date);
 

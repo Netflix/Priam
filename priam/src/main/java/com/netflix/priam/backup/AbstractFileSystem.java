@@ -44,7 +44,6 @@ import java.util.Set;
 import java.util.concurrent.*;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import org.apache.commons.collections4.iterators.FilterIterator;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -306,29 +305,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                     abstractBackupPath.parsePartialPrefix(remotePath.toString());
                     return abstractBackupPath;
                 });
-    }
-
-    @Override
-    public Iterator<AbstractBackupPath> list(String path, Date start, Date till) {
-        String prefix = pathProvider.get().remotePrefix(start, till, path);
-        Iterator<String> fileIterator = listFileSystem(prefix, null, null);
-
-        @SuppressWarnings("unchecked")
-        TransformIterator<String, AbstractBackupPath> transformIterator =
-                new TransformIterator(
-                        fileIterator,
-                        remotePath -> {
-                            AbstractBackupPath abstractBackupPath = pathProvider.get();
-                            abstractBackupPath.parseRemote(remotePath.toString());
-                            return abstractBackupPath;
-                        });
-
-        return new FilterIterator<>(
-                transformIterator,
-                abstractBackupPath ->
-                        (abstractBackupPath.getTime().after(start)
-                                        && abstractBackupPath.getTime().before(till))
-                                || abstractBackupPath.getTime().equals(start));
     }
 
     @Override

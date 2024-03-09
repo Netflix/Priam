@@ -55,8 +55,6 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
-    private static final String JOBNAME = "AbstractRestore";
-    private static final String SYSTEM_KEYSPACE = "system";
     private static BigInteger restoreToken;
     final IBackupFileSystem fs;
     final Sleeper sleeper;
@@ -75,7 +73,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     public AbstractRestore(
             IConfiguration config,
             IBackupFileSystem fs,
-            String name,
             Sleeper sleeper,
             Provider<AbstractBackupPath> pathProvider,
             InstanceIdentity instanceIdentity,
@@ -267,26 +264,4 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
      * @throws Exception If there is any error in downloading file from the remote file system.
      */
     protected abstract Future<Path> downloadFile(final AbstractBackupPath path) throws Exception;
-
-    final class BoundedList<E> extends LinkedList<E> {
-
-        private final int limit;
-
-        BoundedList(int limit) {
-            this.limit = limit;
-        }
-
-        @Override
-        public boolean add(E o) {
-            super.add(o);
-            while (size() > limit) {
-                super.remove();
-            }
-            return true;
-        }
-    }
-
-    public final int getDownloadTasksQueued() {
-        return fs.getDownloadTasksQueued();
-    }
 }

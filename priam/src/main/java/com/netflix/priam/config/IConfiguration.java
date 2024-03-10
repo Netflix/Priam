@@ -1183,4 +1183,8 @@ public interface IConfiguration {
      * @return The result for the property, or the defaultValue if provided (null otherwise)
      */
     String getProperty(String key, String defaultValue);
+
+    default boolean skipMetaFileValidationOnRestore() {
+        return false;
+    }
 }

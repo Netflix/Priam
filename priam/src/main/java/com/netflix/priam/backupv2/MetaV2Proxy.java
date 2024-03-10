@@ -43,6 +43,7 @@ public class MetaV2Proxy implements IMetaProxy {
     private final Path metaFileDirectory;
     private final IBackupFileSystem fs;
     private final Provider<AbstractBackupPath> abstractBackupPathProvider;
+    private final IConfiguration config;
 
     @Inject
     public MetaV2Proxy(
@@ -52,6 +53,7 @@ public class MetaV2Proxy implements IMetaProxy {
         fs = backupFileSystemCtx.getFileStrategy(configuration);
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         metaFileDirectory = Paths.get(configuration.getDataFileLocation());
+        this.config = configuration;
     }
 
     @Override
@@ -196,7 +198,9 @@ public class MetaV2Proxy implements IMetaProxy {
             metaFile = downloadMetaFile(metaBackupPath);
             result.manifestAvailable = true;
 
-            metaFileBackupValidator.readMeta(metaFile);
+            if (!config.skipMetaFileValidationOnRestore()) {
+                metaFileBackupValidator.readMeta(metaFile);
+            }
             result.valid = (result.filesInMetaOnly.isEmpty());
         } catch (FileNotFoundException fne) {
             logger.error(fne.getLocalizedMessage());

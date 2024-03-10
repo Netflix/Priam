@@ -125,11 +125,6 @@ public interface IConfiguration {
         return 0;
     }
 
-    /** @return Get list of racs to backup. Backup all racs if empty */
-    default List<String> getBackupRacs() {
-        return Collections.EMPTY_LIST;
-    }
-
     /**
      * Backup location i.e. remote file system to upload backups. e.g. for S3 it will be s3 bucket
      * name

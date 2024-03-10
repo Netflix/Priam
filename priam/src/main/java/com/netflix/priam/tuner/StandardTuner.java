@@ -67,7 +67,7 @@ public class StandardTuner implements ICassandraTuner {
         map.put("listen_address", hostname);
         map.put("rpc_address", hostname);
         // Dont bootstrap in restore mode
-        if (!Restore.isRestoreEnabled(config, instanceInfo)) {
+        if (!Restore.isRestoreEnabled(config)) {
             map.put("auto_bootstrap", config.getAutoBoostrap());
         } else {
             map.put("auto_bootstrap", false);

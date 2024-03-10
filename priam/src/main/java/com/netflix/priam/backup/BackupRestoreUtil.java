@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
 import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.time.Instant;
@@ -89,8 +88,7 @@ public class BackupRestoreUtil {
             DateUtil.DateRange dateRange,
             IMetaProxy metaProxy) {
         Instant snapshotTime;
-        if (metaProxy instanceof MetaV2Proxy) snapshotTime = latestValidMetaFile.getLastModified();
-        else snapshotTime = latestValidMetaFile.getTime().toInstant();
+        snapshotTime = latestValidMetaFile.getLastModified();
         DateUtil.DateRange incrementalDateRange =
                 new DateUtil.DateRange(snapshotTime, dateRange.getEndTime());
         List<AbstractBackupPath> incrementalPaths = new ArrayList<>();

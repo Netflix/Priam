@@ -17,7 +17,10 @@
 
 package com.netflix.priam.backupv2;
 
-import com.netflix.priam.backup.*;
+import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreException;
+import com.netflix.priam.backup.BackupVerificationResult;
+import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
 import java.io.File;
@@ -48,9 +51,9 @@ public class MetaV2Proxy implements IMetaProxy {
     @Inject
     public MetaV2Proxy(
             IConfiguration configuration,
-            IFileSystemContext backupFileSystemCtx,
+            IBackupFileSystem fileSystem,
             Provider<AbstractBackupPath> abstractBackupPathProvider) {
-        fs = backupFileSystemCtx.getFileStrategy(configuration);
+        this.fs = fileSystem;
         this.abstractBackupPathProvider = abstractBackupPathProvider;
         metaFileDirectory = Paths.get(configuration.getDataFileLocation());
         this.config = configuration;

@@ -19,19 +19,15 @@ package com.netflix.priam.aws;
 import com.google.api.client.util.Lists;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.utils.DateUtil;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Optional;
 import javax.inject.Inject;
 
 /**
@@ -40,18 +36,13 @@ import javax.inject.Inject;
  * this instance.
  */
 public class RemoteBackupPath extends AbstractBackupPath {
-    private static final ImmutableSet<BackupFileType> V2_ONLY_FILE_TYPES =
-            ImmutableSet.of(
-                    BackupFileType.META_V2,
-                    BackupFileType.SST_V2,
-                    BackupFileType.SECONDARY_INDEX_V2);
 
     @Inject
     public RemoteBackupPath(IConfiguration config, InstanceIdentity factory) {
         super(config, factory);
     }
 
-    private ImmutableList.Builder<String> getV2Prefix() {
+    private ImmutableList.Builder<String> getPrefix() {
         ImmutableList.Builder<String> prefix = ImmutableList.builder();
         prefix.add(baseDir, prependHash(clusterName), token);
         return prefix;
@@ -82,8 +73,8 @@ public class RemoteBackupPath extends AbstractBackupPath {
      * Another major difference w.r.t. V1 is having no distinction between SNAP and SST files as we upload SSTables only
      * once to remote file system.
      */
-    private String getV2Location() {
-        ImmutableList.Builder<String> parts = getV2Prefix();
+    private String getLocation() {
+        ImmutableList.Builder<String> parts = getPrefix();
         // JDK-8177809 truncate to seconds to ensure consistent behavior with our old method of
         // getting lastModified time (File::lastModified) in Java 8.
         long lastModified = getLastModified().toEpochMilli() / 1_000L * 1_000L;
@@ -98,7 +89,25 @@ public class RemoteBackupPath extends AbstractBackupPath {
         return toPath(parts.build()).toString();
     }
 
-    private void parseV2Location(Path remotePath) {
+    private Path toPath(ImmutableList<String> parts) {
+        return Paths.get(parts.get(0), parts.subList(1, parts.size()).toArray(new String[0]));
+    }
+
+    /**
+     * Format of backup path: 1. For old style backups:
+     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNAP|META]/KEYSPACE/COLUMNFAMILY/FILE
+     *
+     * <p>2. For new style backups (SnapshotMetaService)
+     * BASE/[cluster_name_hash]_cluster/TOKEN//[META_V2|SST_V2]/KEYSPACE/COLUMNFAMILY/[last_modified_time_ms]/FILE.compression
+     */
+    @Override
+    public String getRemotePath() {
+        return getLocation();
+    }
+
+    @Override
+    public void parseRemote(String remoteFilepath) {
+        Path remotePath = Paths.get(remoteFilepath);
         Preconditions.checkArgument(
                 remotePath.getNameCount() >= 8,
                 String.format("%s has fewer than %d parts", remotePath, 8));
@@ -128,36 +137,9 @@ public class RemoteBackupPath extends AbstractBackupPath {
                 Paths.get(config.getDataFileLocation(), parts.toArray(new String[] {})).toFile();
     }
 
-    private String getV1Location() {
-        ImmutableList.Builder<String> parts = ImmutableList.builder();
-        String timeString = DateUtil.formatyyyyMMddHHmm(time);
-        parts.add(baseDir, region, clusterName, token, timeString, type.toString());
-        if (BackupFileType.isDataFile(type)) {
-            parts.add(keyspace, columnFamily);
-        }
-        parts.add(fileName);
-        return toPath(parts.build()).toString();
-    }
-
-    private Path toPath(ImmutableList<String> parts) {
-        return Paths.get(parts.get(0), parts.subList(1, parts.size()).toArray(new String[0]));
-    }
-
-    private void parseV1Location(Path remotePath) {
-        Preconditions.checkArgument(
-                remotePath.getNameCount() >= 7,
-                String.format("%s has fewer than %d parts", remotePath, 7));
-        parseV1Prefix(remotePath);
-        time = DateUtil.getDate(remotePath.getName(4).toString());
-        type = BackupFileType.valueOf(remotePath.getName(5).toString());
-        if (BackupFileType.isDataFile(type)) {
-            keyspace = remotePath.getName(6).toString();
-            columnFamily = remotePath.getName(7).toString();
-        }
-        fileName = remotePath.getName(remotePath.getNameCount() - 1).toString();
-    }
-
-    private void parseV1Prefix(Path remotePath) {
+    @Override
+    public void parsePartialPrefix(String remoteFilePath) {
+        Path remotePath = Paths.get(remoteFilePath);
         Preconditions.checkArgument(
                 remotePath.getNameCount() >= 4,
                 String.format("%s needs %d parts to parse prefix", remotePath, 4));
@@ -165,38 +147,6 @@ public class RemoteBackupPath extends AbstractBackupPath {
         region = remotePath.getName(1).toString();
         clusterName = remotePath.getName(2).toString();
         token = remotePath.getName(3).toString();
-    }
-
-    /**
-     * Format of backup path: 1. For old style backups:
-     * BASE/REGION/CLUSTER/TOKEN/[SNAPSHOTTIME]/[SST|SNAP|META]/KEYSPACE/COLUMNFAMILY/FILE
-     *
-     * <p>2. For new style backups (SnapshotMetaService)
-     * BASE/[cluster_name_hash]_cluster/TOKEN//[META_V2|SST_V2]/KEYSPACE/COLUMNFAMILY/[last_modified_time_ms]/FILE.compression
-     */
-    @Override
-    public String getRemotePath() {
-        return V2_ONLY_FILE_TYPES.contains(type) ? getV2Location() : getV1Location();
-    }
-
-    @Override
-    public void parseRemote(String remotePath) {
-        // Hack to determine type in advance of parsing. Will disappear once v1 is retired
-        Optional<BackupFileType> inferredType =
-                Arrays.stream(BackupFileType.values())
-                        .filter(bft -> remotePath.contains(PATH_SEP + bft.toString() + PATH_SEP))
-                        .findAny()
-                        .filter(V2_ONLY_FILE_TYPES::contains);
-        if (inferredType.isPresent()) {
-            parseV2Location(Paths.get(remotePath));
-        } else {
-            parseV1Location(Paths.get(remotePath));
-        }
-    }
-
-    @Override
-    public void parsePartialPrefix(String remoteFilePath) {
-        parseV1Prefix(Paths.get(remoteFilePath));
     }
 
     @Override
@@ -217,7 +167,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
             clusterName = removeHash(location.getName(2).toString());
         }
         token = instanceIdentity.getInstance().getToken();
-        ImmutableList.Builder<String> parts = getV2Prefix();
+        ImmutableList.Builder<String> parts = getPrefix();
         parts.add(fileType.toString());
         return toPath(parts.build());
     }

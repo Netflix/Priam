@@ -31,16 +31,14 @@ public final class BackupMetadata implements Serializable {
     private Status status;
     private boolean cassandraSnapshotSuccess;
     private Date lastValidated;
-    private BackupVersion backupVersion;
     private String snapshotLocation;
 
-    public BackupMetadata(BackupVersion backupVersion, String token, Date start) {
+    public BackupMetadata(String token, Date start) {
         if (start == null || token == null || StringUtils.isEmpty(token))
             throw new IllegalArgumentException(
                     String.format(
                             "Invalid Input: Token: %s or start date: %s is null or empty.",
                             token, start));
-        this.backupVersion = backupVersion;
         this.snapshotDate = DateUtil.formatyyyyMMdd(start);
         this.token = token;
         this.start = start;
@@ -57,8 +55,7 @@ public final class BackupMetadata implements Serializable {
 
         return this.snapshotDate.equals(that.snapshotDate)
                 && this.token.equals(that.token)
-                && this.start.equals(that.start)
-                && this.backupVersion.equals(that.backupVersion);
+                && this.start.equals(that.start);
     }
 
     @Override
@@ -66,7 +63,6 @@ public final class BackupMetadata implements Serializable {
         int result = this.snapshotDate.hashCode();
         result = 31 * result + this.token.hashCode();
         result = 31 * result + this.start.hashCode();
-        result = 31 * result + this.backupVersion.hashCode();
         return result;
     }
 
@@ -169,15 +165,6 @@ public final class BackupMetadata implements Serializable {
      */
     public void setCassandraSnapshotSuccess(boolean cassandraSnapshotSuccess) {
         this.cassandraSnapshotSuccess = cassandraSnapshotSuccess;
-    }
-
-    /**
-     * Get the backup version for the snapshot.
-     *
-     * @return backup version of the snapshot.
-     */
-    public BackupVersion getBackupVersion() {
-        return backupVersion;
     }
 
     /**

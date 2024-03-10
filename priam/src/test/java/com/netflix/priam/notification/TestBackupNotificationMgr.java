@@ -108,7 +108,7 @@ public class TestBackupNotificationMgr {
                         "fakeBackup",
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
         backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
@@ -149,7 +149,7 @@ public class TestBackupNotificationMgr {
                         "fakeBackup",
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
         backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
@@ -190,7 +190,7 @@ public class TestBackupNotificationMgr {
                         "fakeBackup",
                         "fakeData.db");
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST);
+        abstractBackupPath.parseLocal(path.toFile(), AbstractBackupPath.BackupFileType.SST_V2);
         backupNotificationMgr.notify(abstractBackupPath, UploadStatus.STARTED);
         new Verifications() {
             {
@@ -254,7 +254,7 @@ public class TestBackupNotificationMgr {
         new Expectations() {
             {
                 backupRestoreConfig.getBackupNotifyComponentIncludeList();
-                result = "SOME_FAKE_FILE_TYPE_1, SOME_FAKE_FILE_TYPE_2, SST";
+                result = "SOME_FAKE_FILE_TYPE_1, SOME_FAKE_FILE_TYPE_2, SST_V2";
                 maxTimes = 2;
             }
         };

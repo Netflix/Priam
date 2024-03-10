@@ -18,7 +18,6 @@ package com.netflix.priam.restore;
 
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.MetaData;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
@@ -29,7 +28,6 @@ import com.netflix.priam.utils.Sleeper;
 import java.nio.file.Path;
 import java.util.concurrent.Future;
 import javax.inject.Inject;
-import javax.inject.Named;
 import javax.inject.Provider;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
@@ -44,13 +42,12 @@ public class Restore extends AbstractRestore {
     @Inject
     public Restore(
             IConfiguration config,
-            @Named("backup") IBackupFileSystem fs,
+            IBackupFileSystem fs,
             Sleeper sleeper,
             ICassandraProcess cassProcess,
             Provider<AbstractBackupPath> pathProvider,
             InstanceIdentity instanceIdentity,
             RestoreTokenSelector tokenSelector,
-            MetaData metaData,
             InstanceState instanceState,
             IPostRestoreHook postRestoreHook) {
         super(
@@ -62,7 +59,6 @@ public class Restore extends AbstractRestore {
                 instanceIdentity,
                 tokenSelector,
                 cassProcess,
-                metaData,
                 instanceState,
                 postRestoreHook);
     }

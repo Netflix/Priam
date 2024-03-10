@@ -105,8 +105,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (backupRestoreUtil.isFiltered(
-                    temp.getKeyspace(), temp.getColumnFamily())) { // is filtered?
+            if (backupRestoreUtil.isFiltered(temp.getKeyspace(), temp.getColumnFamily())) {
                 logger.info(
                         "Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
                         temp.newRestoreFile(),
@@ -155,7 +154,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     }
 
     public void restore(DateUtil.DateRange dateRange) throws Exception {
-        // fail early if post restore hook has invalid parameters
         if (!postRestoreHook.hasValidParameters()) {
             throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
         }
@@ -163,7 +161,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
         IMetaProxy metaProxy = metaV2Proxy;
 
-        // Set the restore status.
         instanceState.getRestoreStatus().resetStatus();
         instanceState
                 .getRestoreStatus()
@@ -183,14 +180,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
 
-            // Stop cassandra if its running
             stopCassProcess();
 
-            // Cleanup local data
             File dataDir = new File(config.getDataFileLocation());
             if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
 
-            // Find latest valid meta file.
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
 
@@ -218,22 +212,17 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 allFiles.addAll(metaProxy.getIncrementals(incrementalDateRange));
             }
 
-            // Download snapshot which is listed in the meta file.
             List<Future<Path>> futureList = new ArrayList<>(download(allFiles.iterator()));
 
-            // Wait for all the futures to finish.
             waitForCompletion(futureList);
 
-            // Given that files are restored now, kick off post restore hook
             logger.info("Starting post restore hook");
             postRestoreHook.execute();
             logger.info("Completed executing post restore hook");
 
-            // Declare restore as finished.
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
 
-            // Start cassandra if restore is successful.
             if (!config.doesCassandraStartManually()) cassProcess.start(true);
             else
                 logger.info(

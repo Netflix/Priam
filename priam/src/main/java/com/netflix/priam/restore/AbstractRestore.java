@@ -25,7 +25,6 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
@@ -41,7 +40,6 @@ import java.util.concurrent.Future;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -93,12 +91,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         this.postRestoreHook = postRestoreHook;
     }
 
-    public static boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac =
-                (CollectionUtils.isEmpty(conf.getBackupRacs())
-                        || conf.getBackupRacs().contains(instanceInfo.getRac()));
-        return (isRestoreMode && isBackedupRac);
+    public static boolean isRestoreEnabled(IConfiguration conf) {
+        return StringUtils.isNotBlank(conf.getRestoreSnapshot());
     }
 
     private List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator) throws Exception {
@@ -123,7 +117,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
     @Override
     public void execute() throws Exception {
-        if (!isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) return;
+        if (!isRestoreEnabled(config)) return;
 
         logger.info("Starting restore for {}", config.getRestoreSnapshot());
         final DateUtil.DateRange dateRange = new DateUtil.DateRange(config.getRestoreSnapshot());

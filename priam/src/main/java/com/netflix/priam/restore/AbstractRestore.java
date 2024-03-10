@@ -106,21 +106,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
             if (backupRestoreUtil.isFiltered(temp.getKeyspace(), temp.getColumnFamily())) {
-                logger.info(
-                        "Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
-                        temp.newRestoreFile(),
-                        temp.getKeyspace(),
-                        temp.getColumnFamily());
                 continue;
             }
-
-            File localFileHandler = temp.newRestoreFile();
-            if (logger.isDebugEnabled())
-                logger.debug(
-                        "Created local file name: "
-                                + localFileHandler.getAbsolutePath()
-                                + File.pathSeparator
-                                + localFileHandler.getName());
             futureList.add(downloadFile(temp));
         }
         return futureList;
@@ -142,15 +129,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         final DateUtil.DateRange dateRange = new DateUtil.DateRange(config.getRestoreSnapshot());
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
-                logger.info("Attempting restore");
                 restore(dateRange);
-                logger.info("Restore completed");
 
                 // Wait for other server init to complete
                 sleeper.sleep(30000);
                 return null;
             }
         }.call();
+        logger.info("Restore complete.");
     }
 
     public void restore(DateUtil.DateRange dateRange) throws Exception {
@@ -189,14 +175,12 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
 
             if (!latestValidMetaFile.isPresent()) {
-                logger.info("No valid snapshot meta file found, Restore Failed.");
                 instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
                 instanceState.setRestoreStatus(Status.FAILED);
                 return;
             }
 
-            logger.info(
-                    "Snapshot Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
+            logger.info("Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
             instanceState
                     .getRestoreStatus()
                     .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
@@ -216,21 +200,15 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
             waitForCompletion(futureList);
 
-            logger.info("Starting post restore hook");
             postRestoreHook.execute();
-            logger.info("Completed executing post restore hook");
 
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
             instanceState.setRestoreStatus(Status.FINISHED);
 
             if (!config.doesCassandraStartManually()) cassProcess.start(true);
-            else
-                logger.info(
-                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
         } catch (Exception e) {
             instanceState.setRestoreStatus(Status.FAILED);
             instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            logger.error("Error while trying to restore: {}", e.getMessage(), e);
             throw e;
         } finally {
             instanceIdentity.getInstance().setToken(origToken);

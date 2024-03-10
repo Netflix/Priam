@@ -49,13 +49,12 @@ import org.slf4j.LoggerFactory;
 
 /**
  * A means to perform a restore. This class contains the following characteristics: - It is agnostic
- * to the source type of the restore, this is determine by the injected IBackupFileSystem. - This
+ * to the source type of the restore, this is determined by the injected IBackupFileSystem. - This
  * class can be scheduled, i.e. it is a "Task". - When this class is executed, it uses its own
  * thread pool to execute the restores.
  */
 public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
-    private static BigInteger restoreToken;
     final IBackupFileSystem fs;
     final Sleeper sleeper;
     private final BackupRestoreUtil backupRestoreUtil;
@@ -94,7 +93,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         this.postRestoreHook = postRestoreHook;
     }
 
-    public static final boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
+    public static boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
         boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
         boolean isBackedupRac =
                 (CollectionUtils.isEmpty(conf.getBackupRacs())
@@ -102,8 +101,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         return (isRestoreMode && isBackedupRac);
     }
 
-    private List<Future<Path>> download(
-            Iterator<AbstractBackupPath> fsIterator, boolean waitForCompletion) throws Exception {
+    private List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
@@ -126,10 +124,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                                 + localFileHandler.getName());
             futureList.add(downloadFile(temp));
         }
-
-        // Wait for all download to finish that were started from this method.
-        if (waitForCompletion) waitForCompletion(futureList);
-
         return futureList;
     }
 
@@ -182,7 +176,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
         try {
             if (config.isRestoreClosestToken()) {
-                restoreToken =
+                BigInteger restoreToken =
                         tokenSelector.getClosestToken(
                                 new BigInteger(origToken),
                                 new Date(dateRange.getStartTime().toEpochMilli()));
@@ -225,8 +219,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             }
 
             // Download snapshot which is listed in the meta file.
-            List<Future<Path>> futureList = new ArrayList<>();
-            futureList.addAll(download(allFiles.iterator(), false));
+            List<Future<Path>> futureList = new ArrayList<>(download(allFiles.iterator()));
 
             // Wait for all the futures to finish.
             waitForCompletion(futureList);

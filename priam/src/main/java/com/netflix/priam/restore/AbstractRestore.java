@@ -29,7 +29,6 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
@@ -39,7 +38,6 @@ import java.util.concurrent.Future;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -147,8 +145,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
             stopCassProcess();
-            File dataDir = new File(config.getDataFileLocation());
-            if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
             if (!latestValidMetaFile.isPresent()) {

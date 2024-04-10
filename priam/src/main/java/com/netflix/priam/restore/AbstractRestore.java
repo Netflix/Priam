@@ -34,7 +34,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
 import javax.inject.Inject;
@@ -136,16 +135,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         if (!postRestoreHook.hasValidParameters()) {
             throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
         }
-        Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
         IMetaProxy metaProxy = metaV2Proxy;
-        instanceState.getRestoreStatus().resetStatus();
-        instanceState
-                .getRestoreStatus()
-                .setStartDateRange(
-                        LocalDateTime.ofInstant(dateRange.getStartTime(), ZoneId.of("UTC")));
-        instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
-        instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
-        instanceState.setRestoreStatus(Status.STARTED);
+        instanceState.startRestore(dateRange);
         String origToken = instanceIdentity.getInstance().getToken();
         try {
             if (config.isRestoreClosestToken()) {
@@ -161,14 +152,11 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
             if (!latestValidMetaFile.isPresent()) {
-                instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-                instanceState.setRestoreStatus(Status.FAILED);
+                instanceState.endRestore(Status.FAILED, LocalDateTime.now());
                 return;
             }
             logger.info("Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
-            instanceState
-                    .getRestoreStatus()
-                    .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
+            instanceState.setRestoreMetaFile(latestValidMetaFile.get().getRemotePath());
             List<AbstractBackupPath> allFiles =
                     BackupRestoreUtil.getMostRecentSnapshotPaths(
                             latestValidMetaFile.get(), metaProxy, pathProvider);
@@ -182,12 +170,10 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             List<Future<Path>> futureList = new ArrayList<>(download(allFiles.iterator()));
             waitForCompletion(futureList);
             postRestoreHook.execute();
-            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            instanceState.setRestoreStatus(Status.FINISHED);
+            instanceState.endRestore(Status.FINISHED, LocalDateTime.now());
             if (!config.doesCassandraStartManually()) cassProcess.start(true);
         } catch (Exception e) {
-            instanceState.setRestoreStatus(Status.FAILED);
-            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
+            instanceState.endRestore(Status.FAILED, LocalDateTime.now());
             throw e;
         } finally {
             instanceIdentity.getInstance().setToken(origToken);

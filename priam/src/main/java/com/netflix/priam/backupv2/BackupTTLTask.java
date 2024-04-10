@@ -108,9 +108,7 @@ public class BackupTTLTask extends Task {
 
     @Override
     public void execute() throws Exception {
-        if (instanceState.getRestoreStatus() != null
-                && instanceState.getRestoreStatus().getStatus() != null
-                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
+        if (instanceState.isRestoring()) {
             logger.info("Not executing the TTL Task for backups as Priam is in restore mode.");
             return;
         }

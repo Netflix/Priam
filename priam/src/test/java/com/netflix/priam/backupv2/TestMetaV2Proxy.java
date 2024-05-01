@@ -17,10 +17,7 @@
 
 package com.netflix.priam.backupv2;
 
-<<<<<<< HEAD
 import com.google.common.collect.ImmutableList;
-=======
->>>>>>> d51863c2 (Change IMetaProxy API to return an ImmutableList of AbstractBackupPaths when fetching incrementals. The iterators are always fully materialized. Also, remove the now-redundant method from BackupRestoreUtil that merely wrapped the MetaProxy call.)
 import com.google.common.truth.Truth;
 import com.google.inject.Guice;
 import com.google.inject.Injector;

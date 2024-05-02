@@ -22,16 +22,17 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.ICassandraOperations;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.concurrent.Future;
@@ -59,6 +60,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final ICassandraProcess cassProcess;
     private final InstanceState instanceState;
     private final IPostRestoreHook postRestoreHook;
+    private final ICassandraOperations cassOps;
 
     @Inject
     @Named("v2")
@@ -73,7 +75,8 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             RestoreTokenSelector tokenSelector,
             ICassandraProcess cassProcess,
             InstanceState instanceState,
-            IPostRestoreHook postRestoreHook) {
+            IPostRestoreHook postRestoreHook,
+            ICassandraOperations cassOps) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
@@ -86,6 +89,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 new BackupRestoreUtil(
                         config.getRestoreIncludeCFList(), config.getRestoreExcludeCFList());
         this.postRestoreHook = postRestoreHook;
+        this.cassOps = cassOps;
     }
 
     public static boolean isRestoreEnabled(IConfiguration conf) {
@@ -106,10 +110,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
 
     private void waitForCompletion(List<Future<Path>> futureList) throws Exception {
         for (Future<Path> future : futureList) future.get();
-    }
-
-    private void stopCassProcess() throws IOException {
-        cassProcess.stop(true);
     }
 
     @Override
@@ -144,7 +144,6 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                                 new Date(dateRange.getStartTime().toEpochMilli()));
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
-            stopCassProcess();
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
             if (!latestValidMetaFile.isPresent()) {
@@ -165,9 +164,17 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             }
             List<Future<Path>> futureList = new ArrayList<>(download(allFiles.iterator()));
             waitForCompletion(futureList);
-            postRestoreHook.execute();
-            instanceState.endRestore(Status.FINISHED, LocalDateTime.now());
-            if (!config.doesCassandraStartManually()) cassProcess.start(true);
+            List<String> failedImports = cassOps.importAll(config.getRestoreDataLocation());
+            if (!failedImports.isEmpty()) {
+                instanceState.endRestore(Status.FAILED, LocalDateTime.now());
+            } else {
+                postRestoreHook.execute();
+                if (!config.doesCassandraStartManually()
+                        && !CassandraMonitor.hasCassadraStarted()) {
+                    cassProcess.start(true);
+                }
+                instanceState.endRestore(Status.FINISHED, LocalDateTime.now());
+            }
         } catch (Exception e) {
             instanceState.endRestore(Status.FAILED, LocalDateTime.now());
             throw e;

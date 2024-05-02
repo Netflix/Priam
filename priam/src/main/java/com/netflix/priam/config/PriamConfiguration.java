@@ -279,6 +279,11 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
+    public String getRestoreDataLocation() {
+        return config.get(PRIAM_PRE + ".restore.data.location");
+    }
+
+    @Override
     public boolean isRestoreEncrypted() {
         return config.get(PRIAM_PRE + ".encrypted.restore.enabled", false);
     }

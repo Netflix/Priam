@@ -61,4 +61,10 @@ public interface ICassandraOperations {
     void forceKeyspaceFlush(String keyspaceName) throws Exception;
 
     List<Map<String, String>> gossipInfo() throws Exception;
+
+    /**
+     * import sstables from the directory at srcDir into the configured data directory. importAll
+     * Will just move them if Cassandra hasn't started.
+     */
+    List<String> importAll(String srcDir) throws Exception;
 }

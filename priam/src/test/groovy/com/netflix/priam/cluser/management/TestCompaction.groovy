@@ -150,7 +150,7 @@ class TestCompaction extends Specification {
 
 
     private static int concurrentRuns(int size) {
-        CassandraMonitor.setIsCassadraStarted()
+        CassandraMonitor.setIsCassandraStarted(true)
         ExecutorService threads = Executors.newFixedThreadPool(size)
         List<Callable<Boolean>> torun = new ArrayList<>(size)
         for (int i = 0; i < size; i++) {

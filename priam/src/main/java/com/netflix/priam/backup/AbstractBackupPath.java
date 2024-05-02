@@ -138,12 +138,13 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
     /** Local restore file */
     public File newRestoreFile() {
         File return_;
-        String dataDir = config.getDataFileLocation();
+        String dataDir = config.getRestoreDataLocation();
         switch (type) {
             case SECONDARY_INDEX_V2:
-                String restoreFileName =
-                        PATH_JOINER.join(dataDir, keyspace, columnFamily, indexDir, fileName);
-                return_ = new File(restoreFileName);
+                return_ =
+                        new File(
+                                PATH_JOINER.join(
+                                        dataDir, keyspace, columnFamily, indexDir, fileName));
                 break;
             case META_V2:
                 return_ = new File(PATH_JOINER.join(config.getDataFileLocation(), fileName));

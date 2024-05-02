@@ -43,6 +43,7 @@ public class FakeConfiguration implements IConfiguration {
     private String partitioner;
     private String diskFailurePolicy;
     private int blockForPeersTimeoutInSecs;
+    private String dataFileLocation;
 
     public Map<String, String> fakeProperties = new HashMap<>();
 
@@ -339,5 +340,17 @@ public class FakeConfiguration implements IConfiguration {
     @Override
     public int getBlockForPeersTimeoutInSecs() {
         return this.blockForPeersTimeoutInSecs;
+    }
+
+    public FakeConfiguration setDataFileLocation(String dataFileLocation) {
+        this.dataFileLocation = dataFileLocation;
+        return this;
+    }
+
+    @Override
+    public String getDataFileLocation() {
+        return dataFileLocation == null
+                ? IConfiguration.super.getDataFileLocation()
+                : dataFileLocation;
     }
 }

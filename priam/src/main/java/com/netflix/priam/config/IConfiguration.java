@@ -398,6 +398,10 @@ public interface IConfiguration {
         return StringUtils.EMPTY;
     }
 
+    default String getRestoreDataLocation() {
+        return getCassandraBaseDirectory() + "/restore";
+    }
+
     /** @return Get the region to connect to SDB for instance identity */
     default String getSDBInstanceIdentityRegion() {
         return "us-east-1";

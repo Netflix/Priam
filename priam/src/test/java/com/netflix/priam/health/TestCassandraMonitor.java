@@ -63,7 +63,7 @@ public class TestCassandraMonitor {
 
         Assert.assertFalse(CassandraMonitor.hasCassadraStarted());
 
-        CassandraMonitor.setIsCassadraStarted();
+        CassandraMonitor.setIsCassandraStarted(true);
         Assert.assertTrue(CassandraMonitor.hasCassadraStarted());
 
         monitor.execute();

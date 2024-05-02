@@ -16,8 +16,17 @@
  */
 package com.netflix.priam.connection;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.utils.RetryableCallable;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import javax.inject.Inject;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
@@ -201,5 +210,57 @@ public class CassandraOperations implements ICassandraOperations {
             logger.error("Unable to parse nodetool gossipinfo output from Cassandra.", e);
         }
         return returnPublicIpSourceIpMap;
+    }
+
+    @Override
+    public List<String> importAll(String srcDir) throws IOException {
+        List<String> failedImports = new ArrayList<>();
+        if (CassandraMonitor.hasCassadraStarted()) {
+            for (Path tableDir : BackupRestoreUtil.getBackupDirectories(srcDir, "")) {
+                String keyspace = tableDir.getParent().getFileName().toString();
+                String table = tableDir.getFileName().toString().split("-")[0];
+                failedImports.addAll(importData(keyspace, table, tableDir.toString()));
+            }
+        } else {
+            recursiveMove(Paths.get(srcDir), Paths.get(configuration.getDataFileLocation()));
+        }
+        return failedImports;
+    }
+
+    private List<String> importData(String keyspace, String table, String source)
+            throws IOException {
+        try (JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+            return nodeTool.importNewSSTables(
+                    keyspace,
+                    table,
+                    ImmutableSet.of(source),
+                    false /* resetLevel */,
+                    false /* clearRepaired */,
+                    true /* verifySSTables */,
+                    true /* verifyTokens */,
+                    true /* invalidateCaches */,
+                    false /* extendedVerify */,
+                    false /* copyData */);
+        }
+    }
+
+    private void recursiveMove(Path source, Path destination) throws IOException {
+        Preconditions.checkState(Files.exists(source));
+        if (!Files.exists(destination)) {
+            if (!destination.toFile().mkdirs()) {
+                throw new IOException("Failed creating " + destination);
+            }
+        }
+        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(source)) {
+            for (Path path : directoryStream) {
+                if (Files.isRegularFile(path)) {
+                    Files.move(path, destination.resolve(path.getFileName()));
+                } else if (Files.isDirectory(path)) {
+                    recursiveMove(path, destination.resolve(path.getFileName()));
+                } else {
+                    throw new IOException("Failed determining type of inode is " + path);
+                }
+            }
+        }
     }
 }

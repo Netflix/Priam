@@ -201,6 +201,8 @@ public class TestBackupV2Service {
                 result = "-1";
                 configuration.isIncrementalBackupEnabled();
                 result = true;
+                configuration.getDataFileLocation();
+                result = "target/data";
                 backupRestoreConfig.enableV2Backups();
                 result = true;
                 backupRestoreConfig.getBackupVerificationCronExpression();

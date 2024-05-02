@@ -19,6 +19,7 @@ package com.netflix.priam.restore;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.ICassandraOperations;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -46,7 +47,8 @@ public class Restore extends AbstractRestore {
             InstanceIdentity instanceIdentity,
             RestoreTokenSelector tokenSelector,
             InstanceState instanceState,
-            IPostRestoreHook postRestoreHook) {
+            IPostRestoreHook postRestoreHook,
+            ICassandraOperations cassandraOperations) {
         super(
                 config,
                 fs,
@@ -56,7 +58,8 @@ public class Restore extends AbstractRestore {
                 tokenSelector,
                 cassProcess,
                 instanceState,
-                postRestoreHook);
+                postRestoreHook,
+                cassandraOperations);
     }
 
     @Override

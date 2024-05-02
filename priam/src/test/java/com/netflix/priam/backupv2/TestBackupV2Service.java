@@ -22,6 +22,7 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.backup.AbstractBackup;
 import com.netflix.priam.backup.BRTestModule;
+import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.JMXNodeTool;
@@ -116,7 +117,8 @@ public class TestBackupV2Service {
 
         // snapshot V2 name should not be there.
         Set<Path> backupPaths =
-                AbstractBackup.getBackupDirectories(configuration, AbstractBackup.SNAPSHOT_FOLDER);
+                BackupRestoreUtil.getBackupDirectories(
+                        configuration.getDataFileLocation(), AbstractBackup.SNAPSHOT_FOLDER);
         for (Path backupPath : backupPaths) {
             Assert.assertFalse(Files.exists(Paths.get(backupPath.toString(), snapshotName)));
             Assert.assertTrue(Files.exists(Paths.get(backupPath.toString(), snapshotV1Name)));

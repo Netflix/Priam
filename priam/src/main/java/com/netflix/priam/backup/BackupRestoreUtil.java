@@ -155,8 +155,7 @@ public class BackupRestoreUtil {
                     try (DirectoryStream<Path> keyspaceStream =
                             Files.newDirectoryStream(keyspaceDirPath, Files::isDirectory)) {
                         for (Path columnfamilyDirPath : keyspaceStream) {
-                            Path backupDirPath =
-                                    Paths.get(columnfamilyDirPath.toString(), monitoringFolder);
+                            Path backupDirPath = columnfamilyDirPath.resolve(monitoringFolder);
                             if (Files.isDirectory(backupDirPath)) {
                                 backupPaths.add(backupDirPath);
                             }

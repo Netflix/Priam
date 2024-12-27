@@ -148,7 +148,7 @@ public class BackupRestoreUtil {
             String dataDirectory, String monitoringFolder) throws IOException {
         ImmutableSet.Builder<Path> backupPaths = ImmutableSet.builder();
         Path dataPath = Paths.get(dataDirectory);
-        if (Files.exists(dataPath) && Files.isDirectory(dataPath))
+        if (Files.isDirectory(dataPath))
             try (DirectoryStream<Path> directoryStream =
                     Files.newDirectoryStream(dataPath, Files::isDirectory)) {
                 for (Path keyspaceDirPath : directoryStream) {
@@ -157,7 +157,7 @@ public class BackupRestoreUtil {
                         for (Path columnfamilyDirPath : keyspaceStream) {
                             Path backupDirPath =
                                     Paths.get(columnfamilyDirPath.toString(), monitoringFolder);
-                            if (Files.exists(backupDirPath) && Files.isDirectory(backupDirPath)) {
+                            if (Files.isDirectory(backupDirPath)) {
                                 backupPaths.add(backupDirPath);
                             }
                         }

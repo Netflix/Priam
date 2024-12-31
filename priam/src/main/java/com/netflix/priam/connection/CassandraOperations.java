@@ -23,15 +23,15 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.utils.RetryableCallable;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import javax.inject.Inject;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 
 /** This class encapsulates interactions with Cassandra. Created by aagrawal on 6/19/18. */
 public class CassandraOperations implements ICassandraOperations {
@@ -222,7 +222,22 @@ public class CassandraOperations implements ICassandraOperations {
                 failedImports.addAll(importData(keyspace, table, tableDir.toString()));
             }
         } else {
-            recursiveMove(Paths.get(srcDir), Paths.get(configuration.getDataFileLocation()));
+            Path target = Paths.get(configuration.getDataFileLocation());
+            Path source = Paths.get(srcDir);
+            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    Path targetDir = target.resolve(source.relativize(dir));
+                    Files.createDirectories(targetDir);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.move(file, target.resolve(source.relativize(file)), REPLACE_EXISTING);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
         }
         return failedImports;
     }

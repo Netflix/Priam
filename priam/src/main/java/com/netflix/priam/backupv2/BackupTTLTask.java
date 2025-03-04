@@ -17,287 +17,243 @@
 
 package com.netflix.priam.backupv2;
 
+import com.amazonaws.services.s3.model.DeleteObjectsRequest;
 import com.google.api.client.util.Lists;
 import com.google.common.base.Joiner;
-import com.google.common.base.Preconditions;
 import com.google.common.base.Splitter;
-import com.netflix.priam.backup.AbstractBackupPath;
+import com.google.common.collect.ImmutableSet;
+import com.netflix.priam.aws.S3Iterator;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupFileSystem;
-import com.netflix.priam.backup.Status;
+import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.CompressionType;
-import com.netflix.priam.config.IBackupRestoreConfig;
-import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.health.InstanceState;
-import com.netflix.priam.identity.token.TokenRetriever;
-import com.netflix.priam.scheduler.SimpleTimer;
-import com.netflix.priam.scheduler.Task;
-import com.netflix.priam.scheduler.TaskTimer;
-import com.netflix.priam.utils.DateUtil;
+import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.math.Fraction;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
 import javax.inject.Singleton;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
+import java.util.stream.Collectors;
 
-/**
- * This class is used to TTL or delete the SSTable components from the backups after they are not
- * referenced in the backups for more than {@link IConfiguration#getBackupRetentionDays()}. This
- * operation is executed on CRON and is configured via {@link
- * IBackupRestoreConfig#getBackupTTLMonitorPeriodInSec()}.
- *
- * <p>To TTL the SSTable components we refer to the first manifest file on the remote file system
- * after the TTL period. Any sstable components referenced in that manifest file should not be
- * deleted. Any other sstable components (files) on remote file system before the TTL period can be
- * safely deleted. Created by aagrawal on 11/26/18.
- */
+// TODO filesystem methods (download, delete, list), deal with basedir, read meta, inject a clock
+// TODO opportunities to split out:  S3 interactions, local file interactions, a new class that represents a backup path
 @Singleton
-public class BackupTTLTask extends Task {
-    private static final Logger logger = LoggerFactory.getLogger(BackupTTLTask.class);
-    private IBackupRestoreConfig backupRestoreConfig;
-    private IMetaProxy metaProxy;
-    private IBackupFileSystem fileSystem;
-    private Provider<AbstractBackupPath> abstractBackupPathProvider;
-    private InstanceState instanceState;
-    public static final String JOBNAME = "BackupTTLService";
-    private Map<String, Boolean> filesInMeta = new HashMap<>();
-    private List<Path> filesToDelete = new ArrayList<>();
-    private static final Lock lock = new ReentrantLock();
+public class BackupTTLTask {
+    private static final Logger log = LoggerFactory.getLogger(BackupTTLTask.class);
+    private List<String> filesToDelete = new ArrayList<>();
     private final int BATCH_SIZE = 1000;
-    private final Instant start_of_feature = DateUtil.parseInstant("201801010000");
-    private final int maxWaitMillis;
+    // TODO our LIST calls might be cheaper if this was later. Look into that.
+    private static final Instant THE_START = Instant.parse("2018-01-01T00:00:00Z");
     private static final int BACKUP_TYPE_INDEX = 3;
-    private static final Splitter PATH_SPLITTER = Splitter.on('/');
-    private static final Joiner PATH_JOINER = Joiner.on('/');
+    private static final int LAST_MODIFIED_INDEX = 4;
+    private static final Splitter SPLITTER = Splitter.on('/');
+    private static final Joiner JOINER = Joiner.on('/');
+    private final BlobStore blobStore;
 
     @Inject
-    public BackupTTLTask(
-            IConfiguration configuration,
-            IBackupRestoreConfig backupRestoreConfig,
-            @Named("v2") IMetaProxy metaProxy,
-            IBackupFileSystem filesystem,
-            Provider<AbstractBackupPath> abstractBackupPathProvider,
-            TokenRetriever tokenRetriever,
-            InstanceState instanceState)
-            throws Exception {
-        super(configuration);
-        this.backupRestoreConfig = backupRestoreConfig;
-        this.metaProxy = metaProxy;
-        this.fileSystem = filesystem;
-        this.abstractBackupPathProvider = abstractBackupPathProvider;
-        this.instanceState = instanceState;
-        this.maxWaitMillis =
-                configuration.isLocalBootstrapEnabled()
-                        ? Math.toIntExact(Duration.ofSeconds(1).toMillis())
-                        : 1_000
-                                * backupRestoreConfig.getBackupTTLMonitorPeriodInSec()
-                                / tokenRetriever.getRingPosition().getDenominator();
+    public BackupTTLTask(BlobStore blobStore) {
+        this.blobStore = blobStore;
     }
 
-    @Override
-    public void execute() throws Exception {
-        if (instanceState.getRestoreStatus() != null
-                && instanceState.getRestoreStatus().getStatus() != null
-                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
-            logger.info("Not executing the TTL Task for backups as Priam is in restore mode.");
+    public void execute(String appName, String token, int retentionDays, int gracePeriodDays) throws Exception {
+        filesToDelete.clear();
+        // TODO inject clock
+        Instant now = Instant.now();
+        String globalPrefix = JOINER.join(baseDir, prependHash(appName), token);
+        Optional<String> oldestMeta = getOldestMetaFile(now, globalPrefix, retentionDays);
+        if (!oldestMeta.isPresent()) {
+            return;
+        }
+        Path localFile = downloadFile(oldestMeta.get(), 10 /* retries */);
+        ImmutableSet<String> filesInMeta = getFilesFromMeta(localFile);
+        FileUtils.deleteQuietly(localFile.toFile());
+        if (filesInMeta.isEmpty()) {
             return;
         }
 
-        // Do not allow more than one backupTTLService to run at the same time. This is possible
-        // as this happens on CRON.
-        if (!lock.tryLock()) {
-            logger.warn("{} is already running! Try again later.", JOBNAME);
-            throw new Exception(JOBNAME + " already running");
+        Iterator<String> remoteFileLocations =
+                new S3Iterator(s3Client, getShard(), JOINER.join(globalPrefix, FileType.SST_V2.toString()), null, null);
+        Instant dateToTtl = now.minus(retentionDays + gracePeriodDays, ChronoUnit.DAYS);
+        while (remoteFileLocations.hasNext()) {
+            String path = remoteFileLocations.next();
+            if (getLastModified(path).isAfter(dateToTtl)) {
+                break;
+            }
+            if (!filesInMeta.contains(removeCompressionPart(path))) {
+                deleteFile(path);
+            }
         }
+        deleteFiles();
+    }
 
-        // Sleep a random amount but not so long that it will spill into the next token's turn.
-        if (maxWaitMillis > 0) Thread.sleep(new Random().nextInt(maxWaitMillis));
+    private Optional<String> getOldestMetaFile(Instant now, String globalPrefix, int retentionDays) {
+        List<String> metas = getAllMetaFiles(now, JOINER.join(globalPrefix, FileType.META_V2.toString()));
+        Instant dateToTtl = now.minus(retentionDays, ChronoUnit.DAYS);
+        if (getLastModified(metas.get(metas.size() - 1)).isBefore(dateToTtl)) {
+            return Optional.empty();
+        }
+        String oldestMeta = null;
+        for (String meta : metas) {
+            if (getLastModified(meta).isBefore(dateToTtl)) {
+                deleteFile(meta);
+            } else {
+                oldestMeta = meta;
+                break;
+            }
+        }
+        return Optional.ofNullable(oldestMeta);
+    }
 
+    private void deleteFile(String path) throws BackupRestoreException {
+        filesToDelete.add(path);
+        if (filesToDelete.size() >= BATCH_SIZE) {
+            deleteFiles();
+            filesToDelete.clear();
+        }
+    }
+
+    private void deleteFiles() throws BackupRestoreException {
+        if (filesToDelete.isEmpty()) {
+            return;
+        }
         try {
-            filesInMeta.clear();
-            filesToDelete.clear();
-
-            Instant dateToTtl =
-                    DateUtil.getInstant().minus(config.getBackupRetentionDays(), ChronoUnit.DAYS);
-
-            // Find the snapshot just after this date.
-            List<AbstractBackupPath> metas =
-                    metaProxy.findMetaFiles(
-                            new DateUtil.DateRange(dateToTtl, DateUtil.getInstant()));
-
-            if (metas.size() == 0) {
-                logger.info("No meta file found and thus cannot run TTL Service");
-                return;
-            }
-
-            // Get the first file after the TTL time as we get files which are sorted latest to
-            // oldest.
-            AbstractBackupPath metaFile = metas.get(metas.size() - 1);
-
-            // Download the meta file to local file system.
-            Path localFile = metaProxy.downloadMetaFile(metaFile);
-
-            // Walk over the file system iterator and if not in map, it is eligible for delete.
-            new MetaFileWalker().readMeta(localFile);
-
-            logger.info("No. of component files loaded from meta file: {}", filesInMeta.size());
-
-            // Delete the meta file downloaded locally
-            FileUtils.deleteQuietly(localFile.toFile());
-
-            // If there are no files listed in meta, do not delete. This could be a bug!!
-            if (filesInMeta.isEmpty()) {
-                logger.warn("Meta file was empty. This should not happen. Getting out!!");
-                return;
-            }
-
-            // Delete the  old META files. We are giving start date which is so back in past to get
-            // all the META files.
-            // This feature did not exist in Jan 2018.
-            metas =
-                    metaProxy.findMetaFiles(
-                            new DateUtil.DateRange(
-                                    start_of_feature, dateToTtl.minus(1, ChronoUnit.HOURS)));
-
-            if (metas != null && metas.size() != 0) {
-                logger.info(
-                        "Will delete(TTL) {} META files starting from: [{}]",
-                        metas.size(),
-                        metas.get(metas.size() - 1).getLastModified());
-                for (AbstractBackupPath meta : metas) {
-                    deleteFile(meta, false);
-                }
-            }
-
-            Iterator<String> remoteFileLocations =
-                    fileSystem.listFileSystem(getSSTPrefix(), null, null);
-
-            /*
-            We really cannot delete the files until the TTL period.
-            Cassandra can flush files on file system like Index.db first and other component files later (like 30 mins). If there is a snapshot in between, then this "single" component file would not be part of the snapshot as SSTable is still not part of Cassandra's "view". Only if Cassandra could provide strong guarantees on the file system such that -
-
-            1. All component will be flushed to disk as real SSTables only if they are part of the view. Until that happens all the files will be "tmp" files.
-            2. All component flushed will have the same "last modified" file. i.e. on the first flush. Stats.db can change over time and that is OK.
-            Since this is not the case, the TTL may end up deleting this file even though the file is part of the next snapshot. To avoid, this we add grace period (based on how long compaction can run) when we delete the files.
-            */
-            dateToTtl = dateToTtl.minus(config.getGracePeriodDaysForCompaction(), ChronoUnit.DAYS);
-            logger.info(
-                    "Will delete(TTL) SST_V2 files which are before this time: {}. Input: [TTL: {} days, Grace Period: {} days]",
-                    dateToTtl,
-                    config.getBackupRetentionDays(),
-                    config.getGracePeriodDaysForCompaction());
-
-            while (remoteFileLocations.hasNext()) {
-                AbstractBackupPath backupPath = abstractBackupPathProvider.get();
-                backupPath.parseRemote(remoteFileLocations.next());
-                // If lastModifiedTime is after the dateToTTL, we should get out of this loop as
-                // remote file systems always give locations which are sorted.
-                if (backupPath.getLastModified().isAfter(dateToTtl)) {
-                    logger.info(
-                            "Breaking from TTL. Got a key which is after the TTL time: {}",
-                            backupPath.getRemotePath());
-                    break;
-                }
-
-                if (!filesInMeta.containsKey(removeCompressionPart(backupPath.getRemotePath()))) {
-                    deleteFile(backupPath, false);
-                } else {
-                    if (logger.isDebugEnabled())
-                        logger.debug(
-                                "Not deleting this key as it is referenced in backups: {}",
-                                backupPath.getRemotePath());
-                }
-            }
-
-            // Delete remaining files.
-            deleteFile(null, true);
-
-            logger.info("Finished processing files for TTL service");
-        } finally {
-            lock.unlock();
+            List<DeleteObjectsRequest.KeyVersion> keys =
+                    filesToDelete
+                            .stream()
+                            .map(DeleteObjectsRequest.KeyVersion::new)
+                            .collect(Collectors.toList());
+            s3Client.deleteObjects(
+                    new DeleteObjectsRequest(getShard()).withKeys(keys).withQuiet(true));
+        } catch (Exception e) {
+            throw new BackupRestoreException(e + " while trying to delete the objects");
         }
     }
 
-    private void deleteFile(AbstractBackupPath path, boolean forceClear)
-            throws BackupRestoreException {
-        if (path != null) filesToDelete.add(Paths.get(path.getRemotePath()));
-
-        if (forceClear || filesToDelete.size() >= BATCH_SIZE) {
-            fileSystem.deleteRemoteFiles(filesToDelete);
-            filesToDelete.clear();
-        }
+    //TODO implement more completely or deprecate and pass as a parameter
+    private String getShard() {
+        return "foo";
     }
 
-    private String getSSTPrefix() {
-        Path location = fileSystem.getPrefix();
-        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
-        return abstractBackupPath
-                .remoteV2Prefix(location, AbstractBackupPath.BackupFileType.SST_V2)
-                .toString();
-    }
-
-    @Override
-    public String getName() {
-        return JOBNAME;
-    }
-
-    /**
-     * Interval between trying to TTL data on Remote file system.
-     *
-     * @param backupRestoreConfig {@link IBackupRestoreConfig#getBackupTTLMonitorPeriodInSec()} to
-     *     get configuration details from priam. Use "-1" to disable the service.
-     * @return the timer to be used for backup ttl service.
-     * @throws Exception if the configuration is not set correctly or are not valid. This is to
-     *     ensure we fail-fast.
-     */
-    public static TaskTimer getTimer(
-            IBackupRestoreConfig backupRestoreConfig, Fraction ringPosition) throws Exception {
-        int period = backupRestoreConfig.getBackupTTLMonitorPeriodInSec();
-        Instant start = Instant.ofEpochSecond((long) (period * ringPosition.doubleValue()));
-        return new SimpleTimer(JOBNAME, period, start);
-    }
-
-    private class MetaFileWalker extends MetaFileReader {
-        @Override
-        public void process(ColumnFamilyResult columnfamilyResult) {
-            for (ColumnFamilyResult.SSTableResult sstable : columnfamilyResult.getSstables()) {
-                for (FileUploadResult component : sstable.getSstableComponents()) {
-                    filesInMeta.put(removeCompressionPart(component.getBackupPath()), null);
-                }
-            }
-        }
+    // TODO need to re-implement this
+    private ImmutableSet<String> getFilesFromMeta(Path localFile) {
+        ImmutableSet.Builder<String> files = ImmutableSet.builder();
+        try-with-resources
+        FileStream.get(localFile)
+                .filter(file -> file.contains("backupPath"))
+                .forEach(file -> files.add(new String[]{removeCompressionPart(file)}, null);
     }
 
     static String removeCompressionPart(String backupPath) {
-        List<String> parts = Lists.newArrayList(PATH_SPLITTER.split(backupPath));
-        AbstractBackupPath.BackupFileType fileType =
-            AbstractBackupPath.BackupFileType.valueOf(parts.get(BACKUP_TYPE_INDEX));
+        List<String> parts = Lists.newArrayList(SPLITTER.split(backupPath));
+        FileType fileType =
+            FileType.valueOf(parts.get(BACKUP_TYPE_INDEX));
         String compressionType;
-        if (fileType == AbstractBackupPath.BackupFileType.SST_V2) {
+        if (fileType == FileType.SST_V2) {
             compressionType = parts.remove(7);
-        } else if (fileType == AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2) {
+        } else if (fileType == FileType.SECONDARY_INDEX_V2) {
             compressionType = parts.remove(8);
         } else {
             throw new IllegalStateException(
                 String.format("only %s, and %s, are supported, saw %s",
-                    AbstractBackupPath.BackupFileType.SST_V2.name(),
-                    AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2.name(),
+                    FileType.SST_V2.name(),
+                    FileType.SECONDARY_INDEX_V2.name(),
                     fileType));
         }
-        // check compressionType validity
+        // checks compressionType validity
         CompressionType.valueOf(compressionType);
-        return PATH_JOINER.join(parts);
+        return JOINER.join(parts);
+    }
+
+    // TODO need better name for sstPrefix
+    private List<String> getAllMetaFiles(Instant end, String sstPrefix) {
+        ArrayList<String> metas = new ArrayList<>();
+        String prefix = getMatch(end, sstPrefix);
+        String marker = getMatch(null , sstPrefix);
+        Iterator<String> iterator = new S3Iterator(s3Client, getShard(), prefix, null, marker);
+        while (iterator.hasNext()) {
+            String path = iterator.next();
+            Instant lastModified = getLastModified(path);
+            if (THE_START.compareTo(lastModified) <= 0 && end.compareTo(lastModified) >= 0) {
+                metas.add(path);
+            }
+        }
+        // TODO does this have the same effect when sorting Strings?
+        metas.sort(Collections.reverseOrder());
+        return metas;
+    }
+
+    private Instant getLastModified(String backupPath) {
+        String lastModified = SPLITTER.limit(LAST_MODIFIED_INDEX + 1).splitToList(backupPath).get(LAST_MODIFIED_INDEX);
+        return Instant.ofEpochMilli(Long.parseLong(lastModified));
+    }
+
+    private String getMatch(Instant end, String prefix) {
+        String match = THE_START.toEpochMilli() + "";
+        if (end != null) {
+            int diff = StringUtils.indexOfDifference(match, end.toEpochMilli() + "");
+            if (diff >= 0) {
+                match = match.substring(0, diff);
+            }
+        }
+        return Paths.get(prefix, FileType.META_V2.toString(), match).toString();
+    }
+
+    private String prependHash(String appName) {
+        return String.format("%d_%s", appName.hashCode() % 10000, appName);
+    }
+
+    public Path downloadFile(final String path, final int retry)
+            throws BackupRestoreException {
+        try {
+            new BoundedExponentialRetryCallable<Void>(500, 10000, retry) {
+                @Override
+                public Void retriableCall() throws Exception {
+                    downloadFileImpl(path);
+                    return null;
+                }
+            }.call();
+        } catch (Exception e) {
+            throw new BackupRestoreException(e.getMessage());
+        }
+        return new File(path.newRestoreFile().getAbsolutePath() + suffix).toPath();
+    }
+
+    private void downloadFileImpl(String path)
+            throws BackupRestoreException {
+        // TODO generate temporary place for meta files to go
+        File localFile = new File(path.newRestoreFile().getAbsolutePath() + suffix);
+        long size = super.getFileSize(remotePath);
+        final int bufferSize = Math.toIntExact(Math.min(MAX_BUFFER_SIZE, size));
+        try (BufferedInputStream is =
+                     new BufferedInputStream(
+                             new RangeReadInputStream(s3Client, getShard(), size, path),
+                             bufferSize);
+             BufferedOutputStream os =
+                     new BufferedOutputStream(new FileOutputStream(localFile))) {
+            if (path.getCompression() == CompressionType.NONE) {
+                IOUtils.copyLarge(is, os);
+            } else {
+                compress.decompressAndClose(is, os);
+            }
+        } catch (Exception e) {
+            throw new BackupRestoreException(e.getMessage());
+        }
+    }
+
+    private enum FileType {
+        META_V2,
+        SECONDARY_INDEX_V2,
+        SST_V2;
     }
 }

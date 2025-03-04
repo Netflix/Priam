@@ -29,6 +29,7 @@ import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.connection.CassandraOperations;
 import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.identity.InstanceIdentity;
+import com.netflix.priam.scheduler.ChangelogExecutor;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.TaskTimer;
 import com.netflix.priam.utils.DateUtil;
@@ -95,6 +96,7 @@ public class SnapshotMetaTask extends AbstractBackup {
     private final IBackupRestoreConfig backupRestoreConfig;
     private final BackupVerification backupVerification;
     private final BackupHelper backupHelper;
+    private final ChangelogExecutor changelogExecutor;
 
     private enum MetaStep {
         META_GENERATION,
@@ -114,7 +116,7 @@ public class SnapshotMetaTask extends AbstractBackup {
             CassandraOperations cassandraOperations,
             Clock clock,
             IBackupRestoreConfig backupRestoreConfig,
-            BackupVerification backupVerification) {
+            BackupVerification backupVerification, ChangelogExecutor changelogExecutor) {
         super(config);
         this.config = config;
         this.backupHelper = backupHelper;
@@ -129,6 +131,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                         config.getSnapshotIncludeCFList(), config.getSnapshotExcludeCFList());
         this.metaFileWriter = metaFileWriter;
         this.metaProxy = metaProxy;
+        this.changelogExecutor = changelogExecutor;
         this.threadPool = Executors.newSingleThreadExecutor();
     }
 
@@ -201,6 +204,9 @@ public class SnapshotMetaTask extends AbstractBackup {
             logger.warn("SnapshotMetaService is already running! Try again later.");
             throw new IllegalStateException("SnapshotMetaService already running");
         }
+
+        // Execute the changelog task to sync up schema before taking the snapshot
+        changelogExecutor.executeChangelogTask();
 
         // Save start snapshot status
         Instant snapshotInstant = clock.instant();

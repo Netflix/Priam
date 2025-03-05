@@ -60,7 +60,7 @@ public class BackupV2Service implements IService {
 
     @Override
     public void scheduleService() throws Exception {
-        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(backupRestoreConfig);
+        TaskTimer snapshotMetaTimer = SnapshotMetaTask.getTimer(backupRestoreConfig.getSnapshotMetaServiceCronExpression());
         if (snapshotMetaTimer == null) {
             SnapshotMetaTask.cleanOldBackups(configuration);
         }

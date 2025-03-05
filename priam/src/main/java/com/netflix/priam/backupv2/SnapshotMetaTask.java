@@ -132,17 +132,8 @@ public class SnapshotMetaTask extends AbstractBackup {
         this.threadPool = Executors.newSingleThreadExecutor();
     }
 
-    /**
-     * Interval between generating snapshot meta file using {@link SnapshotMetaTask}.
-     *
-     * @param config {@link IBackupRestoreConfig#getSnapshotMetaServiceCronExpression()} to get
-     *     configuration details from priam. Use "-1" to disable the service.
-     * @return the timer to be used for snapshot meta service.
-     * @throws IllegalArgumentException if the configuration is not set correctly or are not valid.
-     *     This is to ensure we fail-fast.
-     */
-    public static TaskTimer getTimer(IBackupRestoreConfig config) throws IllegalArgumentException {
-        return CronTimer.getCronTimer(JOBNAME, config.getSnapshotMetaServiceCronExpression());
+    public static TaskTimer getTimer(String cron) throws IllegalArgumentException {
+        return CronTimer.getCronTimer(JOBNAME, cron);
     }
 
     static void cleanOldBackups(IConfiguration config) throws Exception {
@@ -161,7 +152,7 @@ public class SnapshotMetaTask extends AbstractBackup {
 
     public static boolean isBackupEnabled(IBackupRestoreConfig backupRestoreConfig)
             throws Exception {
-        return (getTimer(backupRestoreConfig) != null);
+        return (getTimer(backupRestoreConfig.getSnapshotMetaServiceCronExpression()) != null);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {

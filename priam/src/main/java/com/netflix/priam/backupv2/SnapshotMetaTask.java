@@ -73,8 +73,6 @@ import org.slf4j.LoggerFactory;
  */
 @Singleton
 public class SnapshotMetaTask extends AbstractBackup {
-    public static final String JOBNAME = "SnapshotMetaService";
-
     private static final Logger logger = LoggerFactory.getLogger(SnapshotMetaTask.class);
     public static final String SNAPSHOT_PREFIX = "snap_v2_";
     private static final String CASSANDRA_MANIFEST_FILE = "manifest.json";
@@ -132,8 +130,8 @@ public class SnapshotMetaTask extends AbstractBackup {
         this.threadPool = Executors.newSingleThreadExecutor();
     }
 
-    public static TaskTimer getTimer(String cron) throws IllegalArgumentException {
-        return CronTimer.getCronTimer(JOBNAME, cron);
+    public static TaskTimer getTimer(String jobName, String cron) throws IllegalArgumentException {
+        return CronTimer.getCronTimer(jobName, cron);
     }
 
     static void cleanOldBackups(IConfiguration config) throws Exception {
@@ -152,7 +150,7 @@ public class SnapshotMetaTask extends AbstractBackup {
 
     public static boolean isBackupEnabled(IBackupRestoreConfig backupRestoreConfig)
             throws Exception {
-        return (getTimer(backupRestoreConfig.getSnapshotMetaServiceCronExpression()) != null);
+        return (getTimer(getJobName(), backupRestoreConfig.getSnapshotMetaServiceCronExpression()) != null);
     }
 
     String generateSnapshotName(Instant snapshotInstant) {
@@ -252,7 +250,11 @@ public class SnapshotMetaTask extends AbstractBackup {
 
     @Override
     public String getName() {
-        return JOBNAME;
+        return getJobName();
+    }
+
+    public static String getJobName() {
+        return SnapshotMetaTask.class.getSimpleName();
     }
 
     private void uploadAllFiles(final File backupDir) throws Exception {

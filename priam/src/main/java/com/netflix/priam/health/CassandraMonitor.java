@@ -169,8 +169,8 @@ public class CassandraMonitor extends Task {
     }
 
     // Added for testing only
-    public static void setIsCassadraStarted() {
+    public static void setIsCassandraStarted(boolean newStartedState) {
         // Setting cassandra flag to true
-        isCassandraStarted.set(true);
+        isCassandraStarted.set(newStartedState);
     }
 }

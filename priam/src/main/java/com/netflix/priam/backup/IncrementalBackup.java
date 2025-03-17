@@ -79,7 +79,8 @@ public class IncrementalBackup extends AbstractBackup {
 
     private static void cleanOldBackups(IConfiguration configuration) throws Exception {
         Set<Path> backupPaths =
-                AbstractBackup.getBackupDirectories(configuration, INCREMENTAL_BACKUP_FOLDER);
+                BackupRestoreUtil.getBackupDirectories(
+                        configuration.getDataFileLocation(), INCREMENTAL_BACKUP_FOLDER);
         for (Path backupDirPath : backupPaths) {
             FileUtils.cleanDirectory(backupDirPath.toFile());
         }

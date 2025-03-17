@@ -18,8 +18,11 @@ package com.netflix.priam.health;
 
 import com.netflix.priam.backup.BackupMetadata;
 import com.netflix.priam.backup.Status;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.GsonJsonSerializer;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import javax.inject.Inject;
@@ -143,10 +146,29 @@ public class InstanceState {
         return isHealthy.get();
     }
 
-    private boolean isRestoring() {
+    public boolean isRestoring() {
         return restoreStatus != null
                 && restoreStatus.getStatus() != null
                 && restoreStatus.getStatus() == Status.STARTED;
+    }
+
+    public void startRestore(DateUtil.DateRange dateRange) {
+        restoreStatus.resetStatus();
+        restoreStatus.setStartDateRange(
+                LocalDateTime.ofInstant(dateRange.getStartTime(), ZoneId.of("UTC")));
+        Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
+        restoreStatus.setEndDateRange(DateUtil.convert(endTime));
+        restoreStatus.setExecutionStartTime(LocalDateTime.now());
+        setRestoreStatus(Status.STARTED);
+    }
+
+    public void endRestore(Status status, LocalDateTime endTime) {
+        restoreStatus.setExecutionEndTime(endTime);
+        setRestoreStatus(status);
+    }
+
+    public void setRestoreMetaFile(String path) {
+        restoreStatus.setSnapshotMetaFile(path);
     }
 
     private void setHealthy() {

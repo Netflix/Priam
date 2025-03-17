@@ -74,9 +74,7 @@ public class BackupVerificationTask extends Task {
             return;
         }
 
-        if (instanceState.getRestoreStatus() != null
-                && instanceState.getRestoreStatus().getStatus() != null
-                && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
+        if (instanceState.isRestoring()) {
             logger.info("Skipping backup verification. Priam is in restore mode.");
             return;
         }

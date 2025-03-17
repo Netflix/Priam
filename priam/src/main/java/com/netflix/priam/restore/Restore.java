@@ -19,6 +19,7 @@ package com.netflix.priam.restore;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.ICassandraOperations;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
@@ -30,14 +31,11 @@ import java.util.concurrent.Future;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import javax.inject.Singleton;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Main class for restoring data from backup. Backup restored using this way are not encrypted. */
 @Singleton
 public class Restore extends AbstractRestore {
     public static final String JOBNAME = "AUTO_RESTORE_JOB";
-    private static final Logger logger = LoggerFactory.getLogger(Restore.class);
 
     @Inject
     public Restore(
@@ -49,18 +47,19 @@ public class Restore extends AbstractRestore {
             InstanceIdentity instanceIdentity,
             RestoreTokenSelector tokenSelector,
             InstanceState instanceState,
-            IPostRestoreHook postRestoreHook) {
+            IPostRestoreHook postRestoreHook,
+            ICassandraOperations cassandraOperations) {
         super(
                 config,
                 fs,
-                JOBNAME,
                 sleeper,
                 pathProvider,
                 instanceIdentity,
                 tokenSelector,
                 cassProcess,
                 instanceState,
-                postRestoreHook);
+                postRestoreHook,
+                cassandraOperations);
     }
 
     @Override

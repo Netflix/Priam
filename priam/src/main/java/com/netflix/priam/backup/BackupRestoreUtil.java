@@ -18,9 +18,14 @@
 package com.netflix.priam.backup;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.utils.DateUtil;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -129,5 +134,35 @@ public class BackupRestoreUtil {
                     && (includeFilter.get(keyspace).isEmpty()
                             || includeFilter.get(keyspace).contains(columnFamilyName)));
         return false;
+    }
+
+    /**
+     * Get all the backup directories for Cassandra.
+     *
+     * @param dataDirectory the location of the data folder.
+     * @param monitoringFolder folder where cassandra backup's are configured.
+     * @return Set of the path(s) containing the backup folder for each columnfamily.
+     * @throws IOException
+     */
+    public static ImmutableSet<Path> getBackupDirectories(
+            String dataDirectory, String monitoringFolder) throws IOException {
+        ImmutableSet.Builder<Path> backupPaths = ImmutableSet.builder();
+        Path dataPath = Paths.get(dataDirectory);
+        if (Files.isDirectory(dataPath))
+            try (DirectoryStream<Path> directoryStream =
+                    Files.newDirectoryStream(dataPath, Files::isDirectory)) {
+                for (Path keyspaceDirPath : directoryStream) {
+                    try (DirectoryStream<Path> keyspaceStream =
+                            Files.newDirectoryStream(keyspaceDirPath, Files::isDirectory)) {
+                        for (Path columnfamilyDirPath : keyspaceStream) {
+                            Path backupDirPath = columnfamilyDirPath.resolve(monitoringFolder);
+                            if (Files.isDirectory(backupDirPath)) {
+                                backupPaths.add(backupDirPath);
+                            }
+                        }
+                    }
+                }
+            }
+        return backupPaths.build();
     }
 }

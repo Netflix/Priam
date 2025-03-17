@@ -21,13 +21,7 @@ import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.SystemUtils;
 import java.io.File;
 import java.io.FileFilter;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.HashSet;
 import java.util.Optional;
-import java.util.Set;
 import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,40 +88,6 @@ public abstract class AbstractBackup extends Task {
      * @throws Exception throws exception if there is any error in process the directory.
      */
     protected abstract void processColumnFamily(File backupDir) throws Exception;
-
-    /**
-     * Get all the backup directories for Cassandra.
-     *
-     * @param config to get the location of the data folder.
-     * @param monitoringFolder folder where cassandra backup's are configured.
-     * @return Set of the path(s) containing the backup folder for each columnfamily.
-     * @throws Exception incase of IOException.
-     */
-    public static Set<Path> getBackupDirectories(IConfiguration config, String monitoringFolder)
-            throws Exception {
-        HashSet<Path> backupPaths = new HashSet<>();
-        if (config.getDataFileLocation() == null) return backupPaths;
-        Path dataPath = Paths.get(config.getDataFileLocation());
-        if (Files.exists(dataPath) && Files.isDirectory(dataPath))
-            try (DirectoryStream<Path> directoryStream =
-                    Files.newDirectoryStream(dataPath, path -> Files.isDirectory(path))) {
-                for (Path keyspaceDirPath : directoryStream) {
-                    try (DirectoryStream<Path> keyspaceStream =
-                            Files.newDirectoryStream(
-                                    keyspaceDirPath, path -> Files.isDirectory(path))) {
-                        for (Path columnfamilyDirPath : keyspaceStream) {
-                            Path backupDirPath =
-                                    Paths.get(columnfamilyDirPath.toString(), monitoringFolder);
-                            if (Files.exists(backupDirPath) && Files.isDirectory(backupDirPath)) {
-                                logger.debug("Backup folder: {}", backupDirPath);
-                                backupPaths.add(backupDirPath);
-                            }
-                        }
-                    }
-                }
-            }
-        return backupPaths;
-    }
 
     protected static File[] getSecondaryIndexDirectories(File backupDir) {
         FileFilter filter = (file) -> file.getName().startsWith(".") && isAReadableDirectory(file);

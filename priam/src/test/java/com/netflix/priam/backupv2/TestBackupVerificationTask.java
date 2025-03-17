@@ -151,10 +151,11 @@ public class TestBackupVerificationTask {
     }
 
     @Test
-    public void testRestoreMode(@Mocked InstanceState state) throws Exception {
+    public void testRestoreMode(@Mocked InstanceState.RestoreStatus restoreStatus)
+            throws Exception {
         new Expectations() {
             {
-                state.getRestoreStatus().getStatus();
+                restoreStatus.getStatus();
                 result = Status.STARTED;
             }
         };

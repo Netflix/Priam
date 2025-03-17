@@ -28,6 +28,8 @@ import com.netflix.priam.config.FakeBackupRestoreConfig;
 import com.netflix.priam.config.FakeConfiguration;
 import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.CassandraOperations;
+import com.netflix.priam.connection.ICassandraOperations;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.defaultimpl.FakeCassandraProcess;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
@@ -78,5 +80,6 @@ public class BRTestModule extends AbstractModule {
         bind(IMetaProxy.class).annotatedWith(Names.named("v2")).to(MetaV2Proxy.class);
         bind(DynamicRateLimiter.class).to(FakeDynamicRateLimiter.class);
         bind(Clock.class).toInstance(Clock.fixed(Instant.EPOCH, ZoneId.systemDefault()));
+        bind(ICassandraOperations.class).to(CassandraOperations.class).in(Scopes.SINGLETON);
     }
 }

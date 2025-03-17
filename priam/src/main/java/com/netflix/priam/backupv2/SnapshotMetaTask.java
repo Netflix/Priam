@@ -138,7 +138,9 @@ public class SnapshotMetaTask extends AbstractBackup {
 
     static void cleanOldBackups(IConfiguration config) throws Exception {
         // Clean up all the backup directories, if any.
-        Set<Path> backupPaths = AbstractBackup.getBackupDirectories(config, SNAPSHOT_FOLDER);
+        Set<Path> backupPaths =
+                BackupRestoreUtil.getBackupDirectories(
+                        config.getDataFileLocation(), SNAPSHOT_FOLDER);
         for (Path backupDirPath : backupPaths)
             try (DirectoryStream<Path> directoryStream =
                     Files.newDirectoryStream(backupDirPath, Files::isDirectory)) {

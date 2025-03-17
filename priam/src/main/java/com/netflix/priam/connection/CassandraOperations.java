@@ -16,13 +16,22 @@
  */
 package com.netflix.priam.connection;
 
+import com.google.common.base.Preconditions;
+import com.google.common.collect.ImmutableSet;
+import com.netflix.priam.backup.BackupRestoreUtil;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.utils.RetryableCallable;
+import java.io.IOException;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import javax.inject.Inject;
 import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static java.nio.file.StandardCopyOption.*;
 
 /** This class encapsulates interactions with Cassandra. Created by aagrawal on 6/19/18. */
 public class CassandraOperations implements ICassandraOperations {
@@ -201,5 +210,52 @@ public class CassandraOperations implements ICassandraOperations {
             logger.error("Unable to parse nodetool gossipinfo output from Cassandra.", e);
         }
         return returnPublicIpSourceIpMap;
+    }
+
+    @Override
+    public List<String> importAll(String srcDir) throws IOException {
+        List<String> failedImports = new ArrayList<>();
+        if (CassandraMonitor.hasCassadraStarted()) {
+            for (Path tableDir : BackupRestoreUtil.getBackupDirectories(srcDir, "")) {
+                String keyspace = tableDir.getParent().getFileName().toString();
+                String table = tableDir.getFileName().toString().split("-")[0];
+                failedImports.addAll(importData(keyspace, table, tableDir.toString()));
+            }
+        } else {
+            Path target = Paths.get(configuration.getDataFileLocation());
+            Path source = Paths.get(srcDir);
+            Files.walkFileTree(source, new SimpleFileVisitor<Path>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    Path targetDir = target.resolve(source.relativize(dir));
+                    Files.createDirectories(targetDir);
+                    return FileVisitResult.CONTINUE;
+                }
+
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    Files.move(file, target.resolve(source.relativize(file)), ATOMIC_MOVE, COPY_ATTRIBUTES);
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+        }
+        return failedImports;
+    }
+
+    private List<String> importData(String keyspace, String table, String source)
+            throws IOException {
+        try (JMXNodeTool nodeTool = JMXNodeTool.instance(configuration)) {
+            return nodeTool.importNewSSTables(
+                    keyspace,
+                    table,
+                    ImmutableSet.of(source),
+                    false /* resetLevel */,
+                    false /* clearRepaired */,
+                    true /* verifySSTables */,
+                    true /* verifyTokens */,
+                    true /* invalidateCaches */,
+                    false /* extendedVerify */,
+                    false /* copyData */);
+        }
     }
 }

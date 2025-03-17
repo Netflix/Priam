@@ -93,11 +93,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public List<String> getBackupRacs() {
-        return config.getList(PRIAM_PRE + ".backup.racs");
-    }
-
-    @Override
     public String getRestorePrefix() {
         return config.get(PRIAM_PRE + ".restore.prefix");
     }
@@ -281,6 +276,11 @@ public class PriamConfiguration implements IConfiguration {
     @Override
     public String getRestoreSnapshot() {
         return config.get(PRIAM_PRE + ".restore.snapshot", "");
+    }
+
+    @Override
+    public String getRestoreDataLocation() {
+        return config.get(PRIAM_PRE + ".restore.data.location");
     }
 
     @Override

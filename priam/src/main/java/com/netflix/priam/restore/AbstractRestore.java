@@ -22,42 +22,35 @@ import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backup.Status;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.connection.ICassandraOperations;
 import com.netflix.priam.defaultimpl.ICassandraProcess;
+import com.netflix.priam.health.CassandraMonitor;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.identity.InstanceIdentity;
-import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.RetryableCallable;
 import com.netflix.priam.utils.Sleeper;
-import java.io.File;
-import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Path;
+import java.nio.file.*;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.concurrent.Future;
 import javax.inject.Inject;
 import javax.inject.Named;
 import javax.inject.Provider;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * A means to perform a restore. This class contains the following characteristics: - It is agnostic
- * to the source type of the restore, this is determine by the injected IBackupFileSystem. - This
+ * to the source type of the restore, this is determined by the injected IBackupFileSystem. - This
  * class can be scheduled, i.e. it is a "Task". - When this class is executed, it uses its own
  * thread pool to execute the restores.
  */
 public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private static final Logger logger = LoggerFactory.getLogger(AbstractRestore.class);
-    private static final String JOBNAME = "AbstractRestore";
-    private static final String SYSTEM_KEYSPACE = "system";
-    private static BigInteger restoreToken;
     final IBackupFileSystem fs;
     final Sleeper sleeper;
     private final BackupRestoreUtil backupRestoreUtil;
@@ -67,6 +60,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     private final ICassandraProcess cassProcess;
     private final InstanceState instanceState;
     private final IPostRestoreHook postRestoreHook;
+    private final ICassandraOperations cassOps;
 
     @Inject
     @Named("v2")
@@ -75,14 +69,14 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
     public AbstractRestore(
             IConfiguration config,
             IBackupFileSystem fs,
-            String name,
             Sleeper sleeper,
             Provider<AbstractBackupPath> pathProvider,
             InstanceIdentity instanceIdentity,
             RestoreTokenSelector tokenSelector,
             ICassandraProcess cassProcess,
             InstanceState instanceState,
-            IPostRestoreHook postRestoreHook) {
+            IPostRestoreHook postRestoreHook,
+            ICassandraOperations cassOps) {
         super(config);
         this.fs = fs;
         this.sleeper = sleeper;
@@ -95,44 +89,22 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                 new BackupRestoreUtil(
                         config.getRestoreIncludeCFList(), config.getRestoreExcludeCFList());
         this.postRestoreHook = postRestoreHook;
+        this.cassOps = cassOps;
     }
 
-    public static final boolean isRestoreEnabled(IConfiguration conf, InstanceInfo instanceInfo) {
-        boolean isRestoreMode = StringUtils.isNotBlank(conf.getRestoreSnapshot());
-        boolean isBackedupRac =
-                (CollectionUtils.isEmpty(conf.getBackupRacs())
-                        || conf.getBackupRacs().contains(instanceInfo.getRac()));
-        return (isRestoreMode && isBackedupRac);
+    public static boolean isRestoreEnabled(IConfiguration conf) {
+        return StringUtils.isNotBlank(conf.getRestoreSnapshot());
     }
 
-    private List<Future<Path>> download(
-            Iterator<AbstractBackupPath> fsIterator, boolean waitForCompletion) throws Exception {
+    private List<Future<Path>> download(Iterator<AbstractBackupPath> fsIterator) throws Exception {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (backupRestoreUtil.isFiltered(
-                    temp.getKeyspace(), temp.getColumnFamily())) { // is filtered?
-                logger.info(
-                        "Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
-                        temp.newRestoreFile(),
-                        temp.getKeyspace(),
-                        temp.getColumnFamily());
+            if (backupRestoreUtil.isFiltered(temp.getKeyspace(), temp.getColumnFamily())) {
                 continue;
             }
-
-            File localFileHandler = temp.newRestoreFile();
-            if (logger.isDebugEnabled())
-                logger.debug(
-                        "Created local file name: "
-                                + localFileHandler.getAbsolutePath()
-                                + File.pathSeparator
-                                + localFileHandler.getName());
             futureList.add(downloadFile(temp));
         }
-
-        // Wait for all download to finish that were started from this method.
-        if (waitForCompletion) waitForCompletion(futureList);
-
         return futureList;
     }
 
@@ -140,82 +112,46 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         for (Future<Path> future : futureList) future.get();
     }
 
-    private void stopCassProcess() throws IOException {
-        cassProcess.stop(true);
-    }
-
     @Override
     public void execute() throws Exception {
-        if (!isRestoreEnabled(config, instanceIdentity.getInstanceInfo())) return;
+        if (!isRestoreEnabled(config)) return;
 
         logger.info("Starting restore for {}", config.getRestoreSnapshot());
         final DateUtil.DateRange dateRange = new DateUtil.DateRange(config.getRestoreSnapshot());
         new RetryableCallable<Void>() {
             public Void retriableCall() throws Exception {
-                logger.info("Attempting restore");
                 restore(dateRange);
-                logger.info("Restore completed");
-
                 // Wait for other server init to complete
                 sleeper.sleep(30000);
                 return null;
             }
         }.call();
+        logger.info("Restore complete.");
     }
 
     public void restore(DateUtil.DateRange dateRange) throws Exception {
-        // fail early if post restore hook has invalid parameters
         if (!postRestoreHook.hasValidParameters()) {
             throw new PostRestoreHookException("Invalid PostRestoreHook parameters");
         }
-
-        Date endTime = new Date(dateRange.getEndTime().toEpochMilli());
         IMetaProxy metaProxy = metaV2Proxy;
-
-        // Set the restore status.
-        instanceState.getRestoreStatus().resetStatus();
-        instanceState
-                .getRestoreStatus()
-                .setStartDateRange(
-                        LocalDateTime.ofInstant(dateRange.getStartTime(), ZoneId.of("UTC")));
-        instanceState.getRestoreStatus().setEndDateRange(DateUtil.convert(endTime));
-        instanceState.getRestoreStatus().setExecutionStartTime(LocalDateTime.now());
-        instanceState.setRestoreStatus(Status.STARTED);
+        instanceState.startRestore(dateRange);
         String origToken = instanceIdentity.getInstance().getToken();
-
         try {
             if (config.isRestoreClosestToken()) {
-                restoreToken =
+                BigInteger restoreToken =
                         tokenSelector.getClosestToken(
                                 new BigInteger(origToken),
                                 new Date(dateRange.getStartTime().toEpochMilli()));
                 instanceIdentity.getInstance().setToken(restoreToken.toString());
             }
-
-            // Stop cassandra if its running
-            stopCassProcess();
-
-            // Cleanup local data
-            File dataDir = new File(config.getDataFileLocation());
-            if (dataDir.exists() && dataDir.isDirectory()) FileUtils.cleanDirectory(dataDir);
-
-            // Find latest valid meta file.
             Optional<AbstractBackupPath> latestValidMetaFile =
                     BackupRestoreUtil.getLatestValidMetaPath(metaProxy, dateRange);
-
             if (!latestValidMetaFile.isPresent()) {
-                logger.info("No valid snapshot meta file found, Restore Failed.");
-                instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-                instanceState.setRestoreStatus(Status.FAILED);
+                instanceState.endRestore(Status.FAILED, LocalDateTime.now());
                 return;
             }
-
-            logger.info(
-                    "Snapshot Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
-            instanceState
-                    .getRestoreStatus()
-                    .setSnapshotMetaFile(latestValidMetaFile.get().getRemotePath());
-
+            logger.info("Meta file for restore {}", latestValidMetaFile.get().getRemotePath());
+            instanceState.setRestoreMetaFile(latestValidMetaFile.get().getRemotePath());
             List<AbstractBackupPath> allFiles =
                     BackupRestoreUtil.getMostRecentSnapshotPaths(
                             latestValidMetaFile.get(), metaProxy, pathProvider);
@@ -226,32 +162,22 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
                                 dateRange.getEndTime());
                 allFiles.addAll(metaProxy.getIncrementals(incrementalDateRange));
             }
-
-            // Download snapshot which is listed in the meta file.
-            List<Future<Path>> futureList = new ArrayList<>();
-            futureList.addAll(download(allFiles.iterator(), false));
-
-            // Wait for all the futures to finish.
+            List<Future<Path>> futureList = new ArrayList<>(download(allFiles.iterator()));
             waitForCompletion(futureList);
-
-            // Given that files are restored now, kick off post restore hook
-            logger.info("Starting post restore hook");
-            postRestoreHook.execute();
-            logger.info("Completed executing post restore hook");
-
-            // Declare restore as finished.
-            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            instanceState.setRestoreStatus(Status.FINISHED);
-
-            // Start cassandra if restore is successful.
-            if (!config.doesCassandraStartManually()) cassProcess.start(true);
-            else
-                logger.info(
-                        "config.doesCassandraStartManually() is set to True, hence Cassandra needs to be started manually ...");
+            List<String> failedImports = cassOps.importAll(config.getRestoreDataLocation());
+            if (!failedImports.isEmpty()) {
+                failedImports.forEach(failure -> logger.warn("Failed to import {}", failure));
+                instanceState.endRestore(Status.FAILED, LocalDateTime.now());
+            } else {
+                postRestoreHook.execute();
+                if (!config.doesCassandraStartManually()
+                        && !CassandraMonitor.hasCassadraStarted()) {
+                    cassProcess.start(true);
+                }
+                instanceState.endRestore(Status.FINISHED, LocalDateTime.now());
+            }
         } catch (Exception e) {
-            instanceState.setRestoreStatus(Status.FAILED);
-            instanceState.getRestoreStatus().setExecutionEndTime(LocalDateTime.now());
-            logger.error("Error while trying to restore: {}", e.getMessage(), e);
+            instanceState.endRestore(Status.FAILED, LocalDateTime.now());
             throw e;
         } finally {
             instanceIdentity.getInstance().setToken(origToken);
@@ -267,26 +193,4 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
      * @throws Exception If there is any error in downloading file from the remote file system.
      */
     protected abstract Future<Path> downloadFile(final AbstractBackupPath path) throws Exception;
-
-    final class BoundedList<E> extends LinkedList<E> {
-
-        private final int limit;
-
-        BoundedList(int limit) {
-            this.limit = limit;
-        }
-
-        @Override
-        public boolean add(E o) {
-            super.add(o);
-            while (size() > limit) {
-                super.remove();
-            }
-            return true;
-        }
-    }
-
-    public final int getDownloadTasksQueued() {
-        return fs.getDownloadTasksQueued();
-    }
 }

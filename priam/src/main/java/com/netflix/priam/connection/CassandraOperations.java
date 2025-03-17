@@ -31,7 +31,7 @@ import org.apache.cassandra.db.ColumnFamilyStoreMBean;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static java.nio.file.StandardCopyOption.*;
 
 /** This class encapsulates interactions with Cassandra. Created by aagrawal on 6/19/18. */
 public class CassandraOperations implements ICassandraOperations {
@@ -234,7 +234,7 @@ public class CassandraOperations implements ICassandraOperations {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    Files.move(file, target.resolve(source.relativize(file)), REPLACE_EXISTING);
+                    Files.move(file, target.resolve(source.relativize(file)), ATOMIC_MOVE, COPY_ATTRIBUTES);
                     return FileVisitResult.CONTINUE;
                 }
             });
@@ -256,26 +256,6 @@ public class CassandraOperations implements ICassandraOperations {
                     true /* invalidateCaches */,
                     false /* extendedVerify */,
                     false /* copyData */);
-        }
-    }
-
-    private void recursiveMove(Path source, Path destination) throws IOException {
-        Preconditions.checkState(Files.exists(source));
-        if (!Files.exists(destination)) {
-            if (!destination.toFile().mkdirs()) {
-                throw new IOException("Failed creating " + destination);
-            }
-        }
-        try (DirectoryStream<Path> directoryStream = Files.newDirectoryStream(source)) {
-            for (Path path : directoryStream) {
-                if (Files.isRegularFile(path)) {
-                    Files.move(path, destination.resolve(path.getFileName()));
-                } else if (Files.isDirectory(path)) {
-                    recursiveMove(path, destination.resolve(path.getFileName()));
-                } else {
-                    throw new IOException("Failed determining type of inode is " + path);
-                }
-            }
         }
     }
 }

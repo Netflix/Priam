@@ -166,6 +166,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
             waitForCompletion(futureList);
             List<String> failedImports = cassOps.importAll(config.getRestoreDataLocation());
             if (!failedImports.isEmpty()) {
+                failedImports.forEach(failure -> logger.warn("Failed to import {}", failure));
                 instanceState.endRestore(Status.FAILED, LocalDateTime.now());
             } else {
                 postRestoreHook.execute();

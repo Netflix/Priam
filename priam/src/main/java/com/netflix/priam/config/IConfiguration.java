@@ -1138,6 +1138,4 @@ public interface IConfiguration {
     default boolean skipMetaFileValidationOnRestore() {
         return false;
     }
-
-    default boolean enableSynchronizingDroppedColumns() { return false; }
 }

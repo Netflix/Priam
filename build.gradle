@@ -44,7 +44,9 @@ allprojects {
       implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
-        
+      implementation platform("software.amazon.awssdk:bom:latest.release")
+      implementation("software.amazon.awssdk:s3")
+
       implementation 'com.google.inject:guice:4.2.2'
       implementation 'com.google.inject.extensions:guice-servlet:4.2.2'
       implementation 'org.quartz-scheduler:quartz:2.3.0'

@@ -67,7 +67,7 @@ public abstract class AbstractBackup extends Task {
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
                 if (isAReadableDirectory(backupDir)) {
                     String columnFamilyName = getColumnFamily(backupDir);
-                    if (backupRestoreUtil.isFiltered(keyspaceDir.getName(), columnFamilyName)) {
+                    if (backupRestoreUtil.shouldOmitFromBackup(keyspaceDir.getName(), columnFamilyName)) {
                         // Clean the backup/snapshot directory else files will keep getting
                         // accumulated.
                         SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);

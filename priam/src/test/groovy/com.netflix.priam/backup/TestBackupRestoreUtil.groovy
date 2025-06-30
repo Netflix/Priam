@@ -24,38 +24,91 @@ import spock.lang.Unroll
  */
 @Unroll
 class TestBackupRestoreUtil extends Specification {
-    def "IsFilter for KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter is #result"() {
+    def "shouldOmitFromBackup for KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter is #result"() {
         expect:
-        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).isFiltered(keyspace, columnfamily) == result
+        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromBackup(keyspace, columnfamily) == result
 
         where:
-        configIncludeFilter | configExcludeFilter | keyspace | columnfamily || result
-        null                | null                | "defg"   | "gh"         || false
-        "abc.*"             | null                | "abc"    | "cd"         || false
-        "abc.*"             | null                | "ab"     | "cd"         || true
-        null                | "abc.de"            | "abc"    | "def"        || false
-        null                | "abc.de"            | "abc"    | "de"         || true
-        "abc.*,def.*"       | null                | "abc"    | "cd"         || false
-        "abc.*,def.*"       | null                | "def"    | "ab"         || false
-        "abc.*,def.*"       | null                | "ab"     | "cd"         || true
-        "abc.*,def.*"       | null                | "df"     | "ab"         || true
-        null                | "abc.de,fg.hi"      | "abc"    | "def"        || false
-        null                | "abc.de,fg.hi"      | "abc"    | "de"         || true
-        null                | "abc.de,fg.hi"      | "fg"     | "hijk"       || false
-        null                | "abc.de,fg.hi"      | "fg"     | "hi"         || true
-        "abc.*"             | "ab.ab"             | "ab"     | "cd"         || true
-        "abc.*"             | "ab.ab"             | "ab"     | "ab"         || true
-        "abc.*"             | "abc.ab"            | "abc"    | "ab"         || true
-        "abc.*"             | "abc.ab"            | "abc"    | "cd"         || false
-        "abc.cd"            | "abc.*"             | "abc"    | "cd"         || true
-        "abc.*"             | "abc.*"             | "abc"    | "cd"         || true
-        "abc.*,def.*"       | "abc.*"             | "def"    | "ab"         || false
+        configIncludeFilter | configExcludeFilter | keyspace | columnfamily                 || result
+        null                | null                | "defg"   | "gh"                         || false
+        "abc.*"             | null                | "abc"    | "cd"         				|| false
+        "abc.*"             | null                | "ab"     | "cd"         				|| true
+        null                | "abc.de"            | "abc"    | "def"        				|| false
+        null                | "abc.de"            | "abc"    | "de"         				|| true
+        "abc.*,def.*"       | null                | "abc"    | "cd"         				|| false
+        "abc.*,def.*"       | null                | "def"    | "ab"         				|| false
+        "abc.*,def.*"       | null                | "ab"     | "cd"         				|| true
+        "abc.*,def.*"       | null                | "df"     | "ab"         				|| true
+        null                | "abc.de,fg.hi"      | "abc"    | "def"        				|| false
+        null                | "abc.de,fg.hi"      | "abc"    | "de"         				|| true
+        null                | "abc.de,fg.hi"      | "fg"     | "hijk"       				|| false
+        null                | "abc.de,fg.hi"      | "fg"     | "hi"         				|| true
+        "abc.*"             | "ab.ab"             | "ab"     | "cd"         				|| true
+        "abc.*"             | "ab.ab"             | "ab"     | "ab"         				|| true
+        "abc.*"             | "abc.ab"            | "abc"    | "ab"         				|| true
+        "abc.*"             | "abc.ab"            | "abc"    | "cd"         				|| false
+        "abc.cd"            | "abc.*"             | "abc"    | "cd"         				|| true
+        "abc.*"             | "abc.*"             | "abc"    | "cd"         				|| true
+        "abc.*,def.*"       | "abc.*"             | "def"    | "ab"         				|| false
+        null                | null                | "system"   | "local"    				|| true
+        null                | null                | "system"   | "peers"    				|| true
+        null                | null                | "system"   | "hints"    				|| true
+        null                | null                | "system"   | "compactions_in_progress"  || true
+        null                | null                | "system"   | "LocationInfo"             || true
+        null                | null                | "system"   | "peers_v2"                 || false
     }
 
 
     def "Expected exception KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
         when:
-        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).isFiltered(keyspace, columnfamily)
+        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromBackup(keyspace, columnfamily)
+
+        then:
+        thrown(ExcpectedException)
+
+        where:
+        configIncludeFilter | configExcludeFilter | keyspace | columnfamily || ExcpectedException
+        null                | "def"               | "defg"   | null         || IllegalArgumentException
+        "abc"               | null                | null     | "cd"         || IllegalArgumentException
+    }
+
+    def "shouldOmitFromRestore for KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter is #result"() {
+        expect:
+        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromRestore(keyspace, columnfamily) == result
+
+        where:
+        configIncludeFilter | configExcludeFilter | keyspace | columnfamily                 || result
+        null                | null                | "defg"   | "gh"                         || false
+        "abc.*"             | null                | "abc"    | "cd"         				|| false
+        "abc.*"             | null                | "ab"     | "cd"         				|| true
+        null                | "abc.de"            | "abc"    | "def"        				|| false
+        null                | "abc.de"            | "abc"    | "de"         				|| true
+        "abc.*,def.*"       | null                | "abc"    | "cd"         				|| false
+        "abc.*,def.*"       | null                | "def"    | "ab"         				|| false
+        "abc.*,def.*"       | null                | "ab"     | "cd"         				|| true
+        "abc.*,def.*"       | null                | "df"     | "ab"         				|| true
+        null                | "abc.de,fg.hi"      | "abc"    | "def"        				|| false
+        null                | "abc.de,fg.hi"      | "abc"    | "de"         				|| true
+        null                | "abc.de,fg.hi"      | "fg"     | "hijk"       				|| false
+        null                | "abc.de,fg.hi"      | "fg"     | "hi"         				|| true
+        "abc.*"             | "ab.ab"             | "ab"     | "cd"         				|| true
+        "abc.*"             | "ab.ab"             | "ab"     | "ab"         				|| true
+        "abc.*"             | "abc.ab"            | "abc"    | "ab"         				|| true
+        "abc.*"             | "abc.ab"            | "abc"    | "cd"         				|| false
+        "abc.cd"            | "abc.*"             | "abc"    | "cd"         				|| true
+        "abc.*"             | "abc.*"             | "abc"    | "cd"         				|| true
+        "abc.*,def.*"       | "abc.*"             | "def"    | "ab"         				|| false
+        null                | null                | "system"   | "local"    				|| true
+        null                | null                | "system"   | "peers"    				|| true
+        null                | null                | "system"   | "hints"    				|| true
+        null                | null                | "system"   | "compactions_in_progress"  || true
+        null                | null                | "system"   | "LocationInfo"             || true
+        null                | null                | "system"   | "peers_v2"                 || true
+    }
+
+    def "Expected exception KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
+        when:
+        new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromRestore(keyspace, columnfamily)
 
         then:
         thrown(ExcpectedException)

@@ -110,8 +110,7 @@ public abstract class AbstractRestore extends Task implements IRestoreStrategy {
         List<Future<Path>> futureList = new ArrayList<>();
         while (fsIterator.hasNext()) {
             AbstractBackupPath temp = fsIterator.next();
-            if (backupRestoreUtil.isFiltered(
-                    temp.getKeyspace(), temp.getColumnFamily())) { // is filtered?
+            if (backupRestoreUtil.shouldOmitFromRestore(temp.getKeyspace(), temp.getColumnFamily())) {
                 logger.info(
                         "Bypassing restoring file \"{}\" as it is part of the keyspace.columnfamily filter list.  Its keyspace:cf is: {}:{}",
                         temp.newRestoreFile(),

@@ -20,14 +20,15 @@ package com.netflix.priam.backup;
 import com.google.common.collect.ImmutableMap;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.utils.DateUtil;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.inject.Provider;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang3.StringUtils;
 
 /** Helper methods applicable to both backup and restore */
 public class BackupRestoreUtil {
@@ -41,10 +42,11 @@ public class BackupRestoreUtil {
                     Arrays.asList(
                             "local",
                             "peers",
-                            "peers_v2",
                             "hints",
                             "compactions_in_progress",
                             "LocationInfo"));
+    private static final Map<String, List<String>> EXTRA_TABLES_TO_EXCLUDE_FROM_RESTORE =
+            ImmutableMap.of("system", Arrays.asList("peers_v2"));
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {
@@ -113,7 +115,7 @@ public class BackupRestoreUtil {
      * @param columnFamilyDir name of the columnfamily directory in consideration
      * @return true if directory should be filter from processing; otherwise, false.
      */
-    public final boolean isFiltered(String keyspace, String columnFamilyDir) {
+    public final boolean shouldOmitFromBackup(String keyspace, String columnFamilyDir) {
         if (StringUtils.isEmpty(keyspace) || StringUtils.isEmpty(columnFamilyDir)) return false;
         String columnFamilyName = columnFamilyDir.split("-")[0];
         if (FILTER_COLUMN_FAMILY.containsKey(keyspace)
@@ -129,5 +131,12 @@ public class BackupRestoreUtil {
                     && (includeFilter.get(keyspace).isEmpty()
                             || includeFilter.get(keyspace).contains(columnFamilyName)));
         return false;
+    }
+
+    public final boolean shouldOmitFromRestore(String keyspace, String columnFamilyDir) {
+        String columnFamilyName = columnFamilyDir.split("-")[0];
+        return shouldOmitFromBackup(keyspace, columnFamilyDir) ||
+                (EXTRA_TABLES_TO_EXCLUDE_FROM_RESTORE.containsKey(keyspace)
+                        && EXTRA_TABLES_TO_EXCLUDE_FROM_RESTORE.get(keyspace).contains(columnFamilyName));
     }
 }

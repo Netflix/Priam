@@ -1,4 +1,7 @@
 # Changelog
+## 2025/07/01 4.1.18
+Include system.peers_v2 in backups; Ignore it when restoring.
+
 ## 2024/09/08 4.1.14
 Do not delete backups if only the compression type differs. #1103
 Always set isReplace when the replace ip is set. #1102

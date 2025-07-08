@@ -98,7 +98,12 @@ public abstract class AbstractBackupPath implements Comparable<AbstractBackupPat
         BasicFileAttributes fileAttributes;
         try {
             fileAttributes = Files.readAttributes(file.toPath(), BasicFileAttributes.class);
-            this.lastModified = fileAttributes.lastModifiedTime().toInstant();
+            // Use creation time for Statistics.db files to avoid re-uploading due to LCS uplevel or incremental repair
+            if (file.getName().endsWith("-Statistics.db")) {
+                this.lastModified = fileAttributes.creationTime().toInstant();
+            } else {
+                this.lastModified = fileAttributes.lastModifiedTime().toInstant();
+            }
             this.creationTime = fileAttributes.creationTime().toInstant();
             this.size = fileAttributes.size();
         } catch (IOException e) {

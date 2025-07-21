@@ -50,7 +50,7 @@ class TestBackupRestoreUtil extends Specification {
         "abc.cd"            | "abc.*"             | "abc"    | "cd"         				|| true
         "abc.*"             | "abc.*"             | "abc"    | "cd"         				|| true
         "abc.*,def.*"       | "abc.*"             | "def"    | "ab"         				|| false
-        null                | null                | "system"   | "local"    				|| true
+        null                | null                | "system"   | "local"    				|| false
         null                | null                | "system"   | "peers"    				|| true
         null                | null                | "system"   | "hints"    				|| true
         null                | null                | "system"   | "compactions_in_progress"  || true

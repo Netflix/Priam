@@ -148,7 +148,7 @@ public class TestBackup {
         }
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
-        Assert.assertEquals(7, filesystem.uploadedFiles.size());
+        Assert.assertEquals(9, filesystem.uploadedFiles.size());
         for (String filePath : expectedFiles)
             Assert.assertTrue(filesystem.uploadedFiles.contains(filePath));
     }

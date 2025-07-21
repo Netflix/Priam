@@ -40,13 +40,12 @@ public class BackupRestoreUtil {
             ImmutableMap.of(
                     "system",
                     Arrays.asList(
-                            "local",
                             "peers",
                             "hints",
                             "compactions_in_progress",
                             "LocationInfo"));
     private static final Map<String, List<String>> EXTRA_TABLES_TO_EXCLUDE_FROM_RESTORE =
-            ImmutableMap.of("system", Arrays.asList("peers_v2"));
+            ImmutableMap.of("system", Arrays.asList("peers_v2", "local"));
 
     @Inject
     public BackupRestoreUtil(String configIncludeFilter, String configExcludeFilter) {

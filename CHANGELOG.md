@@ -1,4 +1,7 @@
 # Changelog
+## 2025/08/06 4.1.19
+Publish system.local in backups; ignore them on restore.
+
 ## 2025/07/01 4.1.18
 Include system.peers_v2 in backups; Ignore it when restoring.
 

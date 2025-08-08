@@ -23,6 +23,7 @@ import com.google.common.io.Files;
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.util.List;
 import org.apache.commons.codec.binary.Base64;
@@ -78,6 +79,16 @@ public class SystemUtils {
         try {
             MessageDigest mdigest = MessageDigest.getInstance("MD5");
             mdigest.update(buf, 0, buf.length);
+            return mdigest.digest();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] md5(ByteBuffer buffer) {
+        try {
+            MessageDigest mdigest = MessageDigest.getInstance("MD5");
+            mdigest.update(buffer.duplicate());
             return mdigest.digest();
         } catch (Exception e) {
             throw new RuntimeException(e);

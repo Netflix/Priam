@@ -34,6 +34,7 @@ import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
@@ -41,6 +42,7 @@ import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
@@ -209,6 +211,70 @@ public class TestS3FileSystem {
         } catch (BackupRestoreException e) {
             Assert.assertTrue(true);
         }
+    }
+
+    @Test
+    public void testGetFileByteBufferNoCompression() throws Exception {
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        RemoteBackupPath backupPath = injector.getInstance(RemoteBackupPath.class);
+        File testFile = localFile();
+        backupPath.parseLocal(testFile, BackupFileType.SST_V2);
+        backupPath.setCompression(CompressionType.NONE);
+        
+        ByteBuffer result = fs.getFileByteBuffer(backupPath);
+        
+        Assert.assertNotNull(result);
+        Assert.assertEquals(testFile.length(), result.remaining());
+        
+        byte[] expected = new byte[5 << 10];
+        Arrays.fill(expected, (byte) 8);
+        byte[] actual = new byte[result.remaining()];
+        result.get(actual);
+        Assert.assertArrayEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetFileByteBufferWithSnappyCompression() throws Exception {
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        RemoteBackupPath backupPath = injector.getInstance(RemoteBackupPath.class);
+        File testFile = localFile();
+        backupPath.parseLocal(testFile, BackupFileType.SST_V2);
+        backupPath.setCompression(CompressionType.SNAPPY);
+        
+        ByteBuffer result = fs.getFileByteBuffer(backupPath);
+        
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result.remaining() > 0);
+        Assert.assertTrue(result.remaining() < testFile.length()); // Should be compressed
+    }
+
+    @Test
+    public void testGetFileByteBufferEmptyFile() throws Exception {
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        RemoteBackupPath backupPath = injector.getInstance(RemoteBackupPath.class);
+        
+        String caller = Thread.currentThread().getStackTrace()[1].getMethodName();
+        File emptyFile = new File(DIR + caller + "empty-file.db");
+        emptyFile.createNewFile();
+        
+        backupPath.parseLocal(emptyFile, BackupFileType.SST_V2);
+        backupPath.setCompression(CompressionType.NONE);
+        
+        ByteBuffer result = fs.getFileByteBuffer(backupPath);
+        
+        Assert.assertNotNull(result);
+        Assert.assertEquals(0, result.remaining());
+    }
+
+    @Test(expected = BackupRestoreException.class)
+    public void testGetFileByteBufferNonExistentFile() throws Exception {
+        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        RemoteBackupPath backupPath = injector.getInstance(RemoteBackupPath.class);
+        
+        File nonExistentFile = new File(DIR + "non-existent-file.db");
+        backupPath.parseLocal(nonExistentFile, BackupFileType.SST_V2);
+        
+        fs.getFileByteBuffer(backupPath);
     }
 
     private File localFile() throws IOException {

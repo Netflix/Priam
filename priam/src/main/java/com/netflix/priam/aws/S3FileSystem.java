@@ -19,6 +19,7 @@ package com.netflix.priam.aws;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.*;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -33,10 +34,15 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.ByteBufferInputStream;
 import com.netflix.priam.utils.SystemUtils;
+import com.netflix.priam.utils.ThreadLocalByteBuffer;
 import java.io.*;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -50,6 +56,7 @@ import javax.inject.Singleton;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
 
 /** Implementation of IBackupFileSystem for S3 */
 @Singleton
@@ -57,6 +64,8 @@ public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
     private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
     private final DynamicRateLimiter dynamicRateLimiter;
+    private final ThreadLocal<ByteBuffer> inputBufferThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<ByteBuffer> compressBufferThreadLocal = new ThreadLocal<>();
 
     @Inject
     public S3FileSystem(
@@ -174,24 +183,27 @@ public class S3FileSystem extends S3FileSystemBase {
     protected long uploadFileImpl(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        if (localFile.length() >= config.getBackupChunkSize()) return uploadMultipart(path, target);
-        byte[] chunk = getFileContents(path);
+
+        if (localFile.length() >= config.getBackupChunkSize())
+            return uploadMultipart(path, target);
+
+        ByteBuffer buffer = getFileByteBuffer(path);
         // C* snapshots may have empty files. That is probably unintentional.
-        if (chunk.length > 0) {
-            rateLimiter.acquire(chunk.length);
-            dynamicRateLimiter.acquire(path, target, chunk.length);
+        if (buffer.remaining() > 0) {
+            rateLimiter.acquire(buffer.remaining());
+            dynamicRateLimiter.acquire(path, target, buffer.remaining());
         }
         try {
             new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                 @Override
                 public PutObjectResult retriableCall() {
-                    return s3Client.putObject(generatePut(path, chunk));
+                    return s3Client.putObject(generatePut(path, buffer));
                 }
             }.call();
         } catch (Exception e) {
             throw new BackupRestoreException("Error uploading file: " + localFile.getName(), e);
         }
-        return chunk.length;
+        return buffer.remaining();
     }
 
     private PutObjectRequest generatePut(AbstractBackupPath path, byte[] chunk) {
@@ -210,6 +222,22 @@ public class S3FileSystem extends S3FileSystemBase {
         return put;
     }
 
+    private PutObjectRequest generatePut(AbstractBackupPath path, ByteBuffer buffer) {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        ObjectMetadata metadata = getObjectMetadata(localFile);
+        metadata.setContentLength(buffer.remaining());
+        PutObjectRequest put =
+                new PutObjectRequest(
+                        config.getBackupPrefix(),
+                        path.getRemotePath(),
+                        new ByteBufferInputStream(buffer),
+                        metadata);
+        if (config.addMD5ToBackupUploads()) {
+            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(buffer)));
+        }
+        return put;
+    }
+
     private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
@@ -220,6 +248,35 @@ public class S3FileSystem extends S3FileSystemBase {
                 byteArrayOutputStream.write(chunks.next());
             }
             return byteArrayOutputStream.toByteArray();
+        } catch (Exception e) {
+            throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
+        }
+    }
+
+    @VisibleForTesting
+    public ByteBuffer getFileByteBuffer(AbstractBackupPath path) throws BackupRestoreException {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        long fileSize = localFile.length();
+        
+        try {
+            // Get input buffer and read file data directly into it
+            ByteBuffer inputBuffer = ThreadLocalByteBuffer.get(inputBufferThreadLocal, (int) fileSize);
+            try (FileChannel channel = FileChannel.open(localFile.toPath(), StandardOpenOption.READ)) {
+                channel.read(inputBuffer);
+                inputBuffer.flip();
+            }
+            
+            // Compress if needed, otherwise return input buffer
+            if (path.getCompression() == CompressionType.SNAPPY) {
+                int maxCompressedLength = Snappy.maxCompressedLength((int) fileSize);
+                ByteBuffer compressBuffer = ThreadLocalByteBuffer.get(compressBufferThreadLocal, maxCompressedLength);
+                int compressedSize = Snappy.compress(inputBuffer, compressBuffer);
+                compressBuffer.limit(compressedSize);
+                compressBuffer.position(0);
+                return compressBuffer;
+            } else {
+                return inputBuffer;
+            }
         } catch (Exception e) {
             throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
         }

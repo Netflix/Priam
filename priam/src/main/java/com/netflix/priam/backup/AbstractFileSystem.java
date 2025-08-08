@@ -184,7 +184,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                 long uploadedFileSize;
 
                 // Upload file if it not present at remote location.
-                if (path.getType() != BackupFileType.SST_V2 || !checkObjectExists(remotePath)) {
+                if (path.getType() != BackupFileType.SST_V2 || path.isIncremental() || !checkObjectExists(remotePath)) {
                     backupNotificationMgr.notify(path, UploadStatus.STARTED);
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(

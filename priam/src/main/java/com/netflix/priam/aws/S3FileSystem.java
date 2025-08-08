@@ -66,6 +66,7 @@ public class S3FileSystem extends S3FileSystemBase {
     private final DynamicRateLimiter dynamicRateLimiter;
     private final ThreadLocal<ByteBuffer> inputBufferThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<ByteBuffer> compressBufferThreadLocal = new ThreadLocal<>();
+    private final ThreadLocal<ByteBuffer> chunkBufferThreadLocal = new ThreadLocal<>();
 
     @Inject
     public S3FileSystem(
@@ -137,35 +138,96 @@ public class S3FileSystem extends S3FileSystemBase {
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
+        long fileSize = localFile.length();
+        
         InitiateMultipartUploadRequest initRequest =
                 new InitiateMultipartUploadRequest(prefix, remotePath)
                         .withObjectMetadata(getObjectMetadata(localFile));
         String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
-        DataPart part = new DataPart(prefix, remotePath, uploadId);
-        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
+        List<PartETag> partETags = new ArrayList<>();
 
-        try (InputStream in = new FileInputStream(localFile)) {
-            Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
+        try (FileChannel channel = FileChannel.open(localPath, StandardOpenOption.READ)) {
             int partNum = 0;
-            AtomicInteger partsPut = new AtomicInteger(0);
             long compressedFileSize = 0;
-
-            while (chunks.hasNext()) {
-                byte[] chunk = chunks.next();
-                rateLimiter.acquire(chunk.length);
-                dynamicRateLimiter.acquire(path, target, chunk.length);
-                DataPart dp = new DataPart(++partNum, chunk, prefix, remotePath, uploadId);
-                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsPut);
-                compressedFileSize += chunk.length;
-                // TODO: output Future<Etag> instead, collect them here, wait for all below
-                executor.submit(partUploader);
+            long position = 0;
+            
+            // Allocate thread-local buffers for reading and compression
+            ByteBuffer readBuffer = ThreadLocalByteBuffer.get(inputBufferThreadLocal, (int) Math.min(chunkSize, fileSize));
+            ByteBuffer compressBuffer = null;
+            if (path.getCompression() == CompressionType.SNAPPY) {
+                int maxCompressedLength = Snappy.maxCompressedLength((int) chunkSize);
+                compressBuffer = ThreadLocalByteBuffer.get(compressBufferThreadLocal, maxCompressedLength);
             }
+            
+            while (position < fileSize) {
+                // Read chunk from file
+                long bytesToRead = Math.min(chunkSize, fileSize - position);
+                readBuffer.clear();
+                readBuffer.limit((int) bytesToRead);
+                
+                int bytesRead = 0;
+                while (bytesRead < bytesToRead) {
+                    int read = channel.read(readBuffer, position + bytesRead);
+                    if (read == -1) break;
+                    bytesRead += read;
+                }
+                readBuffer.flip();
+                position += bytesRead;
+                
+                // Compress if needed
+                ByteBuffer uploadBuffer;
+                int uploadSize;
+                if (path.getCompression() == CompressionType.SNAPPY) {
+                    compressBuffer.clear();
+                    uploadSize = Snappy.compress(readBuffer, compressBuffer);
+                    compressBuffer.limit(uploadSize);
+                    compressBuffer.position(0);
+                    uploadBuffer = compressBuffer;
+                } else {
+                    uploadBuffer = readBuffer;
+                    uploadSize = bytesRead;
+                }
+                
+                // Apply rate limiting
+                rateLimiter.acquire(uploadSize);
+                dynamicRateLimiter.acquire(path, target, uploadSize);
+                
+                // Upload part directly from ByteBuffer
+                partNum++;
+                UploadPartRequest uploadRequest = new UploadPartRequest()
+                        .withBucketName(prefix)
+                        .withKey(remotePath)
+                        .withUploadId(uploadId)
+                        .withPartNumber(partNum)
+                        .withPartSize(uploadSize)
+                        .withInputStream(new ByteBufferInputStream(uploadBuffer));
+                
+                if (config.addMD5ToBackupUploads()) {
+                    uploadRequest.setMd5Digest(SystemUtils.toBase64(SystemUtils.md5(uploadBuffer)));
+                }
 
-            executor.sleepTillEmpty();
-            logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
-            Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
-                    new S3PartUploader(s3Client, part, partETags).completeUpload();
+                UploadPartResult uploadResult = new BoundedExponentialRetryCallable<UploadPartResult>(200, 10000, 5) {
+                    @Override
+                    public UploadPartResult retriableCall() {
+                        return s3Client.uploadPart(uploadRequest);
+                    }
+                }.call();
+                
+                partETags.add(uploadResult.getPartETag());
+                compressedFileSize += uploadSize;
+                
+                if (logger.isDebugEnabled()) {
+                    logger.debug("Uploaded part {} of size {}", partNum, uploadSize);
+                }
+            }
+            
+            logger.info("{} done. part count: {}", localFile, partNum);
+            
+            // Complete the multipart upload
+            CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(
+                    prefix, remotePath, uploadId, partETags);
+            CompleteMultipartUploadResult resultS3MultiPartUploadComplete = 
+                    s3Client.completeMultipartUpload(completeRequest);
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
 
             if (logger.isDebugEnabled()) {
@@ -175,7 +237,9 @@ public class S3FileSystem extends S3FileSystemBase {
 
             return compressedFileSize;
         } catch (Exception e) {
-            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(
+                    prefix, remotePath, uploadId);
+            s3Client.abortMultipartUpload(abortRequest);
             throw new BackupRestoreException("Error uploading file: " + localPath.toString(), e);
         }
     }
@@ -206,22 +270,6 @@ public class S3FileSystem extends S3FileSystemBase {
         return buffer.remaining();
     }
 
-    private PutObjectRequest generatePut(AbstractBackupPath path, byte[] chunk) {
-        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        ObjectMetadata metadata = getObjectMetadata(localFile);
-        metadata.setContentLength(chunk.length);
-        PutObjectRequest put =
-                new PutObjectRequest(
-                        config.getBackupPrefix(),
-                        path.getRemotePath(),
-                        new ByteArrayInputStream(chunk),
-                        metadata);
-        if (config.addMD5ToBackupUploads()) {
-            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
-        }
-        return put;
-    }
-
     private PutObjectRequest generatePut(AbstractBackupPath path, ByteBuffer buffer) {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         ObjectMetadata metadata = getObjectMetadata(localFile);
@@ -236,21 +284,6 @@ public class S3FileSystem extends S3FileSystemBase {
             put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(buffer)));
         }
         return put;
-    }
-
-    private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {
-        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
-                InputStream in = new BufferedInputStream(new FileInputStream(localFile))) {
-            Iterator<byte[]> chunks =
-                    new ChunkedStream(in, config.getBackupChunkSize(), path.getCompression());
-            while (chunks.hasNext()) {
-                byteArrayOutputStream.write(chunks.next());
-            }
-            return byteArrayOutputStream.toByteArray();
-        } catch (Exception e) {
-            throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
-        }
     }
 
     @VisibleForTesting

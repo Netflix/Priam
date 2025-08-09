@@ -29,10 +29,8 @@ import com.google.api.client.util.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
 import com.google.inject.Injector;
-import com.netflix.priam.aws.DataPart;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.aws.S3FileSystem;
-import com.netflix.priam.aws.S3PartUploader;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.IConfiguration;
@@ -82,7 +80,6 @@ public class TestS3FileSystem {
 
     @BeforeClass
     public static void setUp() {
-        new MockS3PartUploader();
         new MockAmazonS3Client();
         if (!DIR.exists()) DIR.mkdirs();
     }
@@ -94,7 +91,6 @@ public class TestS3FileSystem {
 
     @Test
     public void testFileUpload() throws Exception {
-        MockS3PartUploader.setup();
         AbstractFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.META_V2);
@@ -107,7 +103,6 @@ public class TestS3FileSystem {
 
     @Test
     public void testFileUploadDeleteExists() throws Exception {
-        MockS3PartUploader.setup();
         IBackupFileSystem fs = injector.getInstance(NullBackupFileSystem.class);
         RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
         backupfile.parseLocal(localFile(), BackupFileType.SST_V2);
@@ -120,41 +115,6 @@ public class TestS3FileSystem {
         Assert.assertFalse(fs.checkObjectExists(Paths.get(backupfile.getRemotePath())));
     }
 
-    @Test
-    public void testFileUploadFailures() throws Exception {
-        MockS3PartUploader.setup();
-        MockS3PartUploader.partFailure = true;
-        long noOfFailures = backupMetrics.getInvalidUploads().count();
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(localFile(), BackupFileType.META_V2);
-        try {
-            // temporary hack to allow tests to complete in a timely fashion
-            // This will be removed once we stop inheriting from AbstractFileSystem
-            fs.uploadAndDeleteInternal(backupfile, Instant.EPOCH, 0 /* retries */);
-        } catch (BackupRestoreException e) {
-            // ignore
-        }
-        Assert.assertEquals(0, MockS3PartUploader.compattempts);
-        Assert.assertEquals(1, backupMetrics.getInvalidUploads().count() - noOfFailures);
-    }
-
-    @Test
-    public void testFileUploadCompleteFailure() throws Exception {
-        MockS3PartUploader.setup();
-        MockS3PartUploader.completionFailure = true;
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        fs.setS3Client(new MockAmazonS3Client().getMockInstance());
-        RemoteBackupPath backupfile = injector.getInstance(RemoteBackupPath.class);
-        backupfile.parseLocal(localFile(), BackupFileType.META_V2);
-        try {
-            // temporary hack to allow tests to complete in a timely fashion
-            // This will be removed once we stop inheriting from AbstractFileSystem
-            fs.uploadAndDeleteInternal(backupfile, Instant.EPOCH, 0 /* retries */);
-        } catch (BackupRestoreException e) {
-            // ignore
-        }
-    }
 
     @Test
     public void testCleanupAdd() throws Exception {
@@ -291,48 +251,6 @@ public class TestS3FileSystem {
         return file;
     }
 
-    // Mock Nodeprobe class
-    static class MockS3PartUploader extends MockUp<S3PartUploader> {
-        static int compattempts = 0;
-        static int partAttempts = 0;
-        static boolean partFailure = false;
-        static boolean completionFailure = false;
-        private static List<PartETag> partETags;
-
-        @Mock
-        public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
-            MockS3PartUploader.partETags = partETags;
-        }
-
-        @Mock
-        private Void uploadPart() throws AmazonClientException, BackupRestoreException {
-            ++partAttempts;
-            if (partFailure) throw new BackupRestoreException("Test exception");
-            partETags.add(new PartETag(0, null));
-            return null;
-        }
-
-        @Mock
-        public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException {
-            ++compattempts;
-            if (completionFailure) throw new BackupRestoreException("Test exception");
-
-            return null;
-        }
-
-        @Mock
-        public Void retriableCall() throws AmazonClientException, BackupRestoreException {
-            logger.info("MOCK UPLOADING...");
-            return uploadPart();
-        }
-
-        public static void setup() {
-            compattempts = 0;
-            partAttempts = 0;
-            partFailure = false;
-            completionFailure = false;
-        }
-    }
 
     static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
         private boolean ruleAvailable = false;

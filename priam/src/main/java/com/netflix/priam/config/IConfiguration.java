@@ -1147,6 +1147,6 @@ public interface IConfiguration {
      * @return true to use reusable ByteBuffer implementation, false for legacy implementation
      */
     default boolean useReusableBufferForMultipartUploads() {
-        return false;
+        return true;
     }
 }

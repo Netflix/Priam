@@ -1138,4 +1138,15 @@ public interface IConfiguration {
     default boolean skipMetaFileValidationOnRestore() {
         return false;
     }
+
+    /**
+     * Use reusable ByteBuffer implementation for S3 multipart uploads.
+     * When true, uses thread-local ByteBuffers to reduce memory allocation overhead.
+     * When false, uses the legacy byte array based implementation.
+     * 
+     * @return true to use reusable ByteBuffer implementation, false for legacy implementation
+     */
+    default boolean useReusableBufferForMultipartUploads() {
+        return false;
+    }
 }

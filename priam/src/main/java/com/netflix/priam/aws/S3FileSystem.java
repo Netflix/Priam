@@ -131,12 +131,21 @@ public class S3FileSystem extends S3FileSystemBase {
 
     private long uploadMultipart(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
+        if (config.useReusableBufferForMultipartUploads()) {
+            return uploadMultipartWithBuffers(path, target);
+        } else {
+            return uploadMultipartLegacy(path, target);
+        }
+    }
+
+    private long uploadMultipartWithBuffers(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
         long chunkSize = getChunkSize(localPath);
         String prefix = config.getBackupPrefix();
         if (logger.isDebugEnabled())
-            logger.debug("Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize);
+            logger.debug("Uploading to {}/{} with chunk size {} (using ByteBuffer implementation)", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
         long fileSize = localFile.length();
         
@@ -244,6 +253,57 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
+    private long uploadMultipartLegacy(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
+        Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
+        String remotePath = path.getRemotePath();
+        long chunkSize = getChunkSize(localPath);
+        String prefix = config.getBackupPrefix();
+        if (logger.isDebugEnabled())
+            logger.debug("Uploading to {}/{} with chunk size {} (using legacy implementation)", prefix, remotePath, chunkSize);
+        File localFile = localPath.toFile();
+        InitiateMultipartUploadRequest initRequest =
+                new InitiateMultipartUploadRequest(prefix, remotePath)
+                        .withObjectMetadata(getObjectMetadata(localFile));
+        String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
+        DataPart part = new DataPart(prefix, remotePath, uploadId);
+        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
+
+        try (InputStream in = new FileInputStream(localFile)) {
+            Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
+            int partNum = 0;
+            AtomicInteger partsPut = new AtomicInteger(0);
+            long compressedFileSize = 0;
+
+            while (chunks.hasNext()) {
+                byte[] chunk = chunks.next();
+                rateLimiter.acquire(chunk.length);
+                dynamicRateLimiter.acquire(path, target, chunk.length);
+                DataPart dp = new DataPart(++partNum, chunk, prefix, remotePath, uploadId);
+                S3PartUploader partUploader = new S3PartUploader(s3Client, dp, partETags, partsPut);
+                compressedFileSize += chunk.length;
+                executor.submit(partUploader);
+            }
+
+            executor.sleepTillEmpty();
+            logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
+            Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
+            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
+                    new S3PartUploader(s3Client, part, partETags).completeUpload();
+            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
+
+            if (logger.isDebugEnabled()) {
+                final S3ResponseMetadata info = s3Client.getCachedResponseMetadata(initRequest);
+                logger.debug("Request Id: {}, Host Id: {}", info.getRequestId(), info.getHostId());
+            }
+
+            return compressedFileSize;
+        } catch (Exception e) {
+            new S3PartUploader(s3Client, part, partETags).abortUpload();
+            throw new BackupRestoreException("Error uploading file: " + localPath.toString(), e);
+        }
+    }
+
     protected long uploadFileImpl(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
@@ -251,6 +311,16 @@ public class S3FileSystem extends S3FileSystemBase {
         if (localFile.length() >= config.getBackupChunkSize())
             return uploadMultipart(path, target);
 
+        if (config.useReusableBufferForMultipartUploads()) {
+            return uploadFileWithByteBuffer(path, target);
+        } else {
+            return uploadFileWithByteArray(path, target);
+        }
+    }
+
+    private long uploadFileWithByteBuffer(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         ByteBuffer buffer = getFileByteBuffer(path);
         // C* snapshots may have empty files. That is probably unintentional.
         if (buffer.remaining() > 0) {
@@ -261,7 +331,7 @@ public class S3FileSystem extends S3FileSystemBase {
             new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
                 @Override
                 public PutObjectResult retriableCall() {
-                    return s3Client.putObject(generatePut(path, buffer));
+                    return s3Client.putObject(generatePutFromBuffer(path, buffer));
                 }
             }.call();
         } catch (Exception e) {
@@ -270,7 +340,29 @@ public class S3FileSystem extends S3FileSystemBase {
         return buffer.remaining();
     }
 
-    private PutObjectRequest generatePut(AbstractBackupPath path, ByteBuffer buffer) {
+    private long uploadFileWithByteArray(AbstractBackupPath path, Instant target)
+            throws BackupRestoreException {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        byte[] chunk = getFileContents(path);
+        // C* snapshots may have empty files. That is probably unintentional.
+        if (chunk.length > 0) {
+            rateLimiter.acquire(chunk.length);
+            dynamicRateLimiter.acquire(path, target, chunk.length);
+        }
+        try {
+            new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+                @Override
+                public PutObjectResult retriableCall() {
+                    return s3Client.putObject(generatePutFromByteArray(path, chunk));
+                }
+            }.call();
+        } catch (Exception e) {
+            throw new BackupRestoreException("Error uploading file: " + localFile.getName(), e);
+        }
+        return chunk.length;
+    }
+
+    private PutObjectRequest generatePutFromBuffer(AbstractBackupPath path, ByteBuffer buffer) {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
         ObjectMetadata metadata = getObjectMetadata(localFile);
         metadata.setContentLength(buffer.remaining());
@@ -282,6 +374,22 @@ public class S3FileSystem extends S3FileSystemBase {
                         metadata);
         if (config.addMD5ToBackupUploads()) {
             put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(buffer)));
+        }
+        return put;
+    }
+
+    private PutObjectRequest generatePutFromByteArray(AbstractBackupPath path, byte[] chunk) {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        ObjectMetadata metadata = getObjectMetadata(localFile);
+        metadata.setContentLength(chunk.length);
+        PutObjectRequest put =
+                new PutObjectRequest(
+                        config.getBackupPrefix(),
+                        path.getRemotePath(),
+                        new ByteArrayInputStream(chunk),
+                        metadata);
+        if (config.addMD5ToBackupUploads()) {
+            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
         }
         return put;
     }
@@ -310,6 +418,21 @@ public class S3FileSystem extends S3FileSystemBase {
             } else {
                 return inputBuffer;
             }
+        } catch (Exception e) {
+            throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
+        }
+    }
+
+    private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {
+        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
+        try (ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+                InputStream in = new BufferedInputStream(new FileInputStream(localFile))) {
+            Iterator<byte[]> chunks =
+                    new ChunkedStream(in, config.getBackupChunkSize(), path.getCompression());
+            while (chunks.hasNext()) {
+                byteArrayOutputStream.write(chunks.next());
+            }
+            return byteArrayOutputStream.toByteArray();
         } catch (Exception e) {
             throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
         }

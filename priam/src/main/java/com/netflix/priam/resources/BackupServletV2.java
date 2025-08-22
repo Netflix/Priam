@@ -29,12 +29,11 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import com.netflix.priam.utils.GsonJsonSerializer;
+
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -118,6 +117,13 @@ public class BackupServletV2 {
     public Response clearCache() throws Exception {
         fs.clearCache();
         return Response.ok(REST_SUCCESS, MediaType.APPLICATION_JSON).build();
+    }
+
+    @GET
+    @Path("/warmupCache")
+    public Response warmupCache() throws Exception {
+        int size = fs.warmupCache();
+        return Response.ok("{\"size\":" + size + "}", MediaType.APPLICATION_JSON).build();
     }
 
     @GET

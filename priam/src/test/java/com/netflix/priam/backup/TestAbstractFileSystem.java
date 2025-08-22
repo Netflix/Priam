@@ -19,6 +19,9 @@ package com.netflix.priam.backup;
 
 import com.google.inject.Guice;
 import com.google.inject.Injector;
+import com.google.inject.name.Named;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -52,6 +55,8 @@ public class TestAbstractFileSystem {
     private BackupNotificationMgr backupNotificationMgr;
     private FailureFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
+    private IBackupStatusMgr backupStatusMgr;
+    private IMetaProxy metaV2Proxy;
 
     @Before
     public void setBackupMetrics() {
@@ -65,15 +70,21 @@ public class TestAbstractFileSystem {
         backupMetrics = injector.getInstance(BackupMetrics.class);
         Provider<AbstractBackupPath> pathProvider = injector.getProvider(AbstractBackupPath.class);
 
+        if (backupStatusMgr == null)
+            backupStatusMgr = injector.getInstance(IBackupStatusMgr.class);
+
+        if (metaV2Proxy == null)
+            metaV2Proxy = injector.getInstance(MetaV2Proxy.class);
+
         if (failureFileSystem == null)
             failureFileSystem =
                     new FailureFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                            configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
 
         if (myFileSystem == null)
             myFileSystem =
                     new MyFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                            configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
 
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
     }
@@ -277,8 +288,10 @@ public class TestAbstractFileSystem {
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
                 BackupNotificationMgr backupNotificationMgr,
-                Provider<AbstractBackupPath> pathProvider) {
-            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                Provider<AbstractBackupPath> pathProvider,
+                IBackupStatusMgr backupStatusMgr,
+                @Named("v2") IMetaProxy metaV2Proxy) {
+            super(configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
         }
 
         @Override
@@ -307,8 +320,10 @@ public class TestAbstractFileSystem {
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
                 BackupNotificationMgr backupNotificationMgr,
-                Provider<AbstractBackupPath> pathProvider) {
-            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                Provider<AbstractBackupPath> pathProvider,
+                IBackupStatusMgr backupStatusMgr,
+                @Named("v2") IMetaProxy metaV2Proxy) {
+            super(configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
         }
 
         @Override

@@ -21,10 +21,9 @@ import com.amazonaws.services.s3.S3ResponseMetadata;
 import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.aws.auth.IS3Credential;
-import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.DynamicRateLimiter;
-import com.netflix.priam.backup.RangeReadInputStream;
+import com.netflix.priam.backup.*;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
@@ -67,8 +66,10 @@ public class S3FileSystem extends S3FileSystemBase {
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
             InstanceInfo instanceInfo,
-            DynamicRateLimiter dynamicRateLimiter) {
-        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
+            DynamicRateLimiter dynamicRateLimiter,
+            IBackupStatusMgr backupStatusMgr,
+            IMetaProxy metaV2Proxy) {
+        super(pathProvider, compress, config, backupMetrics, backupNotificationMgr, backupStatusMgr, metaV2Proxy);
         s3Client =
                 AmazonS3Client.builder()
                         .withCredentials(cred.getAwsCredentialProvider())

@@ -26,22 +26,23 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.notification.UploadStatus;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
+import com.netflix.priam.utils.DateUtil;
 import com.netflix.spectator.api.patterns.PolledMeter;
 import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.time.temporal.ChronoUnit;
+import java.util.*;
 import java.util.concurrent.*;
+import java.util.stream.Collectors;
 import javax.inject.Inject;
 import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.TransformIterator;
@@ -65,6 +66,8 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
     private final BackupNotificationMgr backupNotificationMgr;
+    private final IBackupStatusMgr backupStatusMgr;
+    private final IMetaProxy metaProxy;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
@@ -75,11 +78,15 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
             IConfiguration configuration,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
-            Provider<AbstractBackupPath> pathProvider) {
+            Provider<AbstractBackupPath> pathProvider,
+            IBackupStatusMgr backupStatusMgr,
+            IMetaProxy metaProxy) {
         this.configuration = configuration;
         this.backupMetrics = backupMetrics;
         this.pathProvider = pathProvider;
         this.backupNotificationMgr = backupNotificationMgr;
+        this.backupStatusMgr = backupStatusMgr;
+        this.metaProxy = metaProxy;
         this.objectCache =
                 CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
@@ -240,6 +247,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         objectCache.put(remotePath, Boolean.TRUE);
     }
 
+
     @Override
     public boolean checkObjectExists(Path remotePath) {
         // Check in cache, if remote file exists.
@@ -320,5 +328,43 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     @Override
     public void clearCache() {
         objectCache.invalidateAll();
+    }
+
+    @Override
+    public int warmupCache() throws Exception {
+        Instant now = Instant.now();
+        Optional<BackupMetadata> latestBackupMetadata = backupStatusMgr.getLatestBackupMetadata(
+                        new DateUtil.DateRange(now.minus(1, ChronoUnit.DAYS), now))
+                .stream()
+                .filter(metadata -> metadata.getLastValidated() != null)
+                .max(Comparator.comparing(BackupMetadata::getStart));
+
+        if (!latestBackupMetadata.isPresent()) {
+            return 0;
+        }
+
+        Path metadataLocation = Paths.get(latestBackupMetadata.get().getSnapshotLocation());
+        if (metadataLocation.getNameCount() > 1) {
+            metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
+        } else {
+            throw new IllegalArgumentException("Path does not have enough elements: " + metadataLocation);
+        }
+
+        AbstractBackupPath abstractBackupPath = pathProvider.get();
+        abstractBackupPath.parseRemote(metadataLocation.toString());
+
+        List<AbstractBackupPath> files = BackupRestoreUtil.getMostRecentSnapshotPaths(
+                abstractBackupPath, metaProxy, pathProvider);
+
+        List<Path> remotePaths = files.stream()
+                .map(AbstractBackupPath::getRemotePath)
+                .map(Paths::get)
+                .collect(Collectors.toList());
+
+        for (Path path : remotePaths) {
+            addObjectCache(path);
+        }
+
+        return remotePaths.size();
     }
 }

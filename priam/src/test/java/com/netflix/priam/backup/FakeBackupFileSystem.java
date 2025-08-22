@@ -17,6 +17,9 @@
 
 package com.netflix.priam.backup;
 
+import com.google.inject.name.Named;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -44,8 +47,10 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
             IConfiguration configuration,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
-            Provider<AbstractBackupPath> pathProvider) {
-        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+            Provider<AbstractBackupPath> pathProvider,
+            IBackupStatusMgr backupStatusMgr,
+            @Named("v2") IMetaProxy metaV2Proxy) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
     }
 
     public void setupTest(List<String> files) {

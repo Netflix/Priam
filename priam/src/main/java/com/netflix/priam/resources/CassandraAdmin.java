@@ -28,6 +28,8 @@ import com.netflix.priam.defaultimpl.ICassandraProcess;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.util.Iterator;
 import java.util.List;
@@ -490,18 +492,36 @@ public class CassandraAdmin {
 
     /*
     @parm in - absolute path on disk of compressed file.
-    @param out - absolute path on disk for output, decompressed file
+    @param out - file name for output, decompressed file (will be placed in a restricted directory)
     @parapm compression algorithn -- optional and if not provided, defaults to Snappy
     */
     @GET
     @Path("/decompress")
     public Response decompress(@QueryParam("in") String in, @QueryParam("out") String out)
             throws Exception {
+        // Define a safe output directory. In a real system, consider making this configurable.
+        final Path safeOutputDir = Paths.get("/tmp/priam_decompress_out").toAbsolutePath().normalize();
+        // Validate 'out' is a simple filename, does not contain parent directory traversal, separators, or absolute path
+        if (out == null || out.isEmpty()
+                || out.contains("..")
+                || out.contains("/") || out.contains("\\")
+                || Paths.get(out).isAbsolute()) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("Invalid output file name: possible path traversal detected.").build();
+        }
+        // Resolve file path within safe directory
+        Path outputPath = safeOutputDir.resolve(out).normalize().toAbsolutePath();
+        if (!outputPath.startsWith(safeOutputDir)) {
+            return Response.status(Response.Status.BAD_REQUEST)
+                .entity("Invalid output file name: not allowed outside safe output directory.").build();
+        }
+        // Ensure output directory exists
+        java.nio.file.Files.createDirectories(safeOutputDir);
         SnappyCompression compress = new SnappyCompression();
-        compress.decompressAndClose(new FileInputStream(in), new FileOutputStream(out));
+        compress.decompressAndClose(new FileInputStream(in), new FileOutputStream(outputPath.toString()));
         JSONObject object = new JSONObject();
         object.put("Input compressed file", in);
-        object.put("Output decompress file", out);
+        object.put("Output decompress file", outputPath.toString());
         return Response.ok(object.toString(), MediaType.APPLICATION_JSON).build();
     }
 }

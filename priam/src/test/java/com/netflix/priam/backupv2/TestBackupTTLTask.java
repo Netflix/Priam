@@ -139,7 +139,6 @@ public class TestBackupTTLTask {
     @After
     public void cleanup() {
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
-        backupFileSystem.cleanup();
     }
 
     private List<String> getAllFiles() {

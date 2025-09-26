@@ -112,11 +112,6 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public void cleanup() {
-        clearTest();
-    }
-
-    @Override
     protected void downloadFileImpl(AbstractBackupPath path, String suffix)
             throws BackupRestoreException {
         if (path.getType() == AbstractBackupPath.BackupFileType.META_V2) {

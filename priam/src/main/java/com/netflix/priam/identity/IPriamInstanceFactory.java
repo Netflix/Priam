@@ -17,15 +17,13 @@
 package com.netflix.priam.identity;
 
 import com.google.common.collect.ImmutableSet;
-import com.google.inject.ImplementedBy;
-import com.netflix.priam.aws.SDBInstanceFactory;
+
 import java.util.Map;
 
 /**
  * Interface for managing Cassandra instance data. Provides functionality to register, update,
  * delete or list instances from the registry
  */
-@ImplementedBy(SDBInstanceFactory.class)
 public interface IPriamInstanceFactory {
     /**
      * Return a list of all Cassandra server nodes registered.

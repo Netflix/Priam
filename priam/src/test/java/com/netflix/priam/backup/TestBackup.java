@@ -70,6 +70,7 @@ public class TestBackup {
 
     @Test
     public void testIncrementalBackup() throws Exception {
+        filesystem.clearTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
@@ -84,6 +85,7 @@ public class TestBackup {
 
     @Test
     public void testIncrementalBackupOfSecondaryIndexes() throws Exception {
+        filesystem.clearTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         File secondaryIndexBackupDir =
@@ -102,6 +104,7 @@ public class TestBackup {
 
     @Test
     public void testClusterSpecificColumnFamiliesSkippedBefore21() throws Exception {
+        filesystem.clearTest();
         String[] columnFamilyDirs = {"schema_columns", "local", "peers", "LocationInfo"};
         testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
     }

@@ -57,7 +57,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
         }
     }
 
-    private void clearTest() {
+    public void clearTest() {
         flist.clear();
         downloadedFiles.clear();
         uploadedFiles.clear();

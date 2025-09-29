@@ -104,7 +104,6 @@ public class TestBackup {
 
     @Test
     public void testClusterSpecificColumnFamiliesSkippedBefore21() throws Exception {
-        filesystem.clearTest();
         String[] columnFamilyDirs = {"schema_columns", "local", "peers", "LocationInfo"};
         testClusterSpecificColumnFamiliesSkipped(columnFamilyDirs);
     }
@@ -122,6 +121,7 @@ public class TestBackup {
 
     private void testClusterSpecificColumnFamiliesSkipped(String[] columnFamilyDirs)
             throws Exception {
+        filesystem.clearTest();
         File tmp = new File("target/data/");
         if (tmp.exists()) cleanup(tmp);
         // Generate "data"

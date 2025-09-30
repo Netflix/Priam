@@ -83,7 +83,7 @@ public class TestBackupVerification {
     @Test
     public void noBackup() throws Exception {
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+                backupVerification.findLatestVerifiedBackup(
                         false, new DateRange(Instant.now(), Instant.now()));
         Assert.assertFalse(backupVerificationResultOptinal.isPresent());
     }
@@ -128,7 +128,7 @@ public class TestBackupVerification {
         setUp();
         // Verify for backup version 2.0
         Optional<BackupVerificationResult> backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+                backupVerification.findLatestVerifiedBackup(
                         false, new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
         Assert.assertEquals(Instant.EPOCH, backupVerificationResultOptinal.get().snapshotInstant);
@@ -144,7 +144,7 @@ public class TestBackupVerification {
 
         // Retry the verification, it should not try and re-verify
         backupVerificationResultOptinal =
-                backupVerification.verifyLatestBackup(
+                backupVerification.findLatestVerifiedBackup(
                         false, new DateRange(backupDate + "," + backupDate));
         Assert.assertTrue(backupVerificationResultOptinal.isPresent());
         Assert.assertEquals(

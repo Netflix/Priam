@@ -18,7 +18,6 @@
 package com.netflix.priam.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.BackupV2Service;
@@ -140,6 +139,14 @@ public class BackupServletV2 {
     }
 
     @GET
+    @Path("/foo/{daterange}")
+    public Response foo(@PathParam("daterange") String daterange) throws Exception {
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
+        BackupVerificationResult result = backupVerification.verifyLatestBackup(dateRange);
+        return Response.ok(result.toString()).build();
+    }
+
+    @GET
     @Path("/validate/{daterange}")
     public Response validateV2SnapshotByDate(
             @PathParam("daterange") String daterange,
@@ -147,7 +154,7 @@ public class BackupServletV2 {
             throws Exception {
         DateUtil.DateRange dateRange = new DateUtil.DateRange(daterange);
         Optional<BackupVerificationResult> result =
-                backupVerification.verifyLatestBackup(force, dateRange);
+                backupVerification.findLatestVerifiedBackup(force, dateRange);
         if (!result.isPresent()) {
             return Response.noContent()
                     .entity("No valid meta found for provided time range")

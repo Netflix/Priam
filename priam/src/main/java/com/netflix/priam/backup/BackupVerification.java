@@ -54,7 +54,17 @@ public class BackupVerification {
         this.abstractBackupPathProvider = abstractBackupPathProvider;
     }
 
-    public Optional<BackupVerificationResult> verifyLatestBackup(boolean force, DateRange dateRange)
+    public BackupVerificationResult verifyLatestBackup(DateRange dateRange)
+            throws IllegalArgumentException {
+        String snapshot = backupStatusMgr.getLatestBackupMetadata(dateRange).get(0).getSnapshotLocation();
+        Path metadataLocation = Paths.get(snapshot);
+        metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
+        AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
+        abstractBackupPath.parseRemote(metadataLocation.toString());
+        return metaV2Proxy.isMetaFileValid(abstractBackupPath);
+    }
+
+    public Optional<BackupVerificationResult> findLatestVerifiedBackup(boolean force, DateRange dateRange)
             throws IllegalArgumentException {
         IMetaProxy metaProxy = metaV2Proxy;
         for (BackupMetadata backupMetadata : backupStatusMgr.getLatestBackupMetadata(dateRange)) {

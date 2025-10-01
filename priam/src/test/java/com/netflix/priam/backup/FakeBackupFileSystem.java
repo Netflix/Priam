@@ -57,7 +57,7 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
         }
     }
 
-    private void clearTest() {
+    public void clearTest() {
         flist.clear();
         downloadedFiles.clear();
         uploadedFiles.clear();
@@ -109,11 +109,6 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
                             path.parseRemote(remotePath.toString());
                             flist.remove(path);
                         });
-    }
-
-    @Override
-    public void cleanup() {
-        clearTest();
     }
 
     @Override

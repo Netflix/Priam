@@ -155,42 +155,6 @@ public class TestS3FileSystem {
     }
 
     @Test
-    public void testCleanupAdd() throws Exception {
-        MockAmazonS3Client.setRuleAvailable(false);
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
-        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
-    }
-
-    @Test
-    public void testCleanupIgnore() throws Exception {
-        MockAmazonS3Client.setRuleAvailable(true);
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
-        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
-    }
-
-    @Test
-    public void testCleanupUpdate() throws Exception {
-        MockAmazonS3Client.setRuleAvailable(true);
-        S3FileSystem fs = injector.getInstance(S3FileSystem.class);
-        String clusterPrefix = "casstestbackup/" + region + "/fake-app/";
-        MockAmazonS3Client.updateRule(
-                MockAmazonS3Client.getBucketLifecycleConfig(clusterPrefix, 2));
-        fs.cleanup();
-        Assert.assertEquals(1, MockAmazonS3Client.bconf.getRules().size());
-        BucketLifecycleConfiguration.Rule rule = MockAmazonS3Client.bconf.getRules().get(0);
-        Assert.assertEquals("casstestbackup/" + region + "/fake-app/", rule.getId());
-        Assert.assertEquals(configuration.getBackupRetentionDays(), rule.getExpirationInDays());
-    }
-
-    @Test
     public void testDeleteObjects() throws Exception {
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
         List<Path> filesToDelete = new ArrayList<>();

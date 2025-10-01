@@ -120,9 +120,6 @@ public interface IBackupFileSystem {
      */
     Iterator<String> listFileSystem(String prefix, String delimiter, String marker);
 
-    /** Runs cleanup or set retention */
-    void cleanup();
-
     /** Give the file system a chance to terminate any thread pools, etc. */
     void shutdown();
 

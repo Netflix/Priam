@@ -59,11 +59,6 @@ public class NullBackupFileSystem extends AbstractFileSystem {
     }
 
     @Override
-    public void cleanup() {
-        // TODO Auto-generated method stub
-    }
-
-    @Override
     protected void downloadFileImpl(AbstractBackupPath path, String suffix)
             throws BackupRestoreException {}
 

@@ -70,7 +70,7 @@ public class TestBackup {
 
     @Test
     public void testIncrementalBackup() throws Exception {
-        filesystem.cleanup();
+        filesystem.clearTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         backup.execute();
@@ -85,7 +85,7 @@ public class TestBackup {
 
     @Test
     public void testIncrementalBackupOfSecondaryIndexes() throws Exception {
-        filesystem.cleanup();
+        filesystem.clearTest();
         generateIncrementalFiles();
         IncrementalBackup backup = injector.getInstance(IncrementalBackup.class);
         File secondaryIndexBackupDir =
@@ -121,7 +121,7 @@ public class TestBackup {
 
     private void testClusterSpecificColumnFamiliesSkipped(String[] columnFamilyDirs)
             throws Exception {
-        filesystem.cleanup();
+        filesystem.clearTest();
         File tmp = new File("target/data/");
         if (tmp.exists()) cleanup(tmp);
         // Generate "data"

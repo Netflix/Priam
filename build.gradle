@@ -43,7 +43,6 @@ allprojects {
       implementation 'com.amazonaws:aws-java-sdk-ec2:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
-      implementation 'com.amazonaws:aws-java-sdk-simpledb:latest.release'
         
       implementation 'com.google.inject:guice:4.2.2'
       implementation 'com.google.inject.extensions:guice-servlet:4.2.2'

@@ -5,14 +5,21 @@ import static java.util.stream.Collectors.toSet;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.utils.DateUtil;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 import javax.inject.Inject;
@@ -82,6 +89,25 @@ public class BackupHelperImpl implements BackupHelper {
         }
         bps.addAll(dataFiles.build());
         return bps.build();
+    }
+
+    @Override
+    public void warmupCache(IMetaProxy metaProxy, IBackupStatusMgr snapshotStatusMgr) throws Exception {
+        Instant now = Instant.now();
+        DateUtil.DateRange dateRange = new DateUtil.DateRange(now.minus(1, ChronoUnit.DAYS), now);
+        Optional<String> snapshotLocation = snapshotStatusMgr.getLatestBackupMetadata(dateRange)
+                .stream()
+                .filter(backupMetadata -> backupMetadata.getLastValidated() != null)
+                .max(Comparator.comparing(BackupMetadata::getStart))
+                .map(BackupMetadata::getSnapshotLocation);
+        if (snapshotLocation.isPresent()) {
+            AbstractBackupPath backupPath = pathFactory.get();
+            backupPath.parseRemote(snapshotLocation.get());
+            BackupRestoreUtil.getMostRecentSnapshotPaths(backupPath, metaProxy, pathFactory)
+                    .stream()
+                    .map(abp -> Paths.get(abp.getRemotePath()))
+                    .forEach(fs::addObjectCache);
+        }
     }
 
     private CompressionType getCorrectCompressionAlgorithm(

@@ -41,7 +41,6 @@ public class BackupServletV2Test {
     private BackupServletV2 resource;
     private RestoreServlet restoreResource;
     private InstanceInfo instanceInfo;
-    private IBackupFileSystem fs;
     private static final String backupDate = "201812011000";
     private static final Path location =
             Paths.get(
@@ -63,7 +62,6 @@ public class BackupServletV2Test {
         restoreResource = injector.getInstance(RestoreServlet.class);
         pathProvider = injector.getProvider(AbstractBackupPath.class);
         configuration = injector.getInstance(IConfiguration.class);
-        fs = injector.getInstance(IBackupFileSystem.class);
     }
 
     @Test
@@ -261,7 +259,6 @@ public class BackupServletV2Test {
                 GsonJsonSerializer.getGson().toJson(new ArrayList<>()),
                 response.getEntity().toString());
     }
-
 
     private static BackupVerificationResult getBackupVerificationResult() {
         BackupVerificationResult result = new BackupVerificationResult();

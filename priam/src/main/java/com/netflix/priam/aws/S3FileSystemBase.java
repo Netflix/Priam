@@ -25,9 +25,6 @@ import com.google.common.util.concurrent.RateLimiter;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
 import com.netflix.priam.backup.BackupRestoreException;
-import com.netflix.priam.backup.IBackupStatusMgr;
-import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.backupv2.MetaV2Proxy;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
@@ -58,10 +55,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             ICompression compress,
             final IConfiguration config,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr,
-            IBackupStatusMgr backupStatusMgr,
-            IMetaProxy metaV2Proxy) {
-        super(config, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
+            BackupNotificationMgr backupNotificationMgr) {
+        super(config, backupMetrics, backupNotificationMgr, pathProvider);
         this.compress = compress;
         this.config = config;
 

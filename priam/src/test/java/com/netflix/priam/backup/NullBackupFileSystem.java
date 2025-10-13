@@ -17,7 +17,6 @@
 
 package com.netflix.priam.backup;
 
-import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -28,8 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import javax.inject.Inject;
 import javax.inject.Provider;
-import com.google.inject.name.Named;
-
 
 public class NullBackupFileSystem extends AbstractFileSystem {
 
@@ -38,10 +35,8 @@ public class NullBackupFileSystem extends AbstractFileSystem {
             IConfiguration configuration,
             BackupMetrics backupMetrics,
             BackupNotificationMgr backupNotificationMgr,
-            Provider<AbstractBackupPath> pathProvider,
-            IBackupStatusMgr backupStatusMgr,
-            @Named("v2") IMetaProxy metaV2Proxy) {
-        super(configuration, backupMetrics, backupNotificationMgr, pathProvider, backupStatusMgr, metaV2Proxy);
+            Provider<AbstractBackupPath> pathProvider) {
+        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
     }
 
     public void shutdown() {

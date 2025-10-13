@@ -173,10 +173,6 @@ public interface IBackupFileSystem {
     /** Clear the cache for the backup file system, if any. */
     void clearCache();
 
-    /**
-     * Warm up cache with the latest validated backup if any.
-     *
-     * @return the number of files added to cache.
-     * */
-    int warmupCache() throws Exception;
+    /** Add remote backup path to the object cache*/
+    void addObjectCache(Path remotePath);
 }

@@ -4,6 +4,9 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.util.concurrent.ListenableFuture;
 import com.google.inject.ImplementedBy;
+import com.netflix.priam.backupv2.IMetaProxy;
+import com.netflix.priam.backup.IBackupStatusMgr;
+
 import java.io.File;
 import java.io.IOException;
 import java.time.Instant;
@@ -26,4 +29,6 @@ public interface BackupHelper {
 
     ImmutableSet<AbstractBackupPath> getBackupPaths(
             File dir, AbstractBackupPath.BackupFileType type) throws IOException;
+
+    void warmupCache(IMetaProxy metaProxy, IBackupStatusMgr snapshotStatusMgr) throws Exception;
 }

@@ -255,6 +255,10 @@ public class SnapshotMetaTask extends AbstractBackup {
         return JOBNAME;
     }
 
+    public void warmCache() throws Exception {
+        backupHelper.warmupCache(metaProxy, snapshotStatusMgr);
+    }
+
     private void uploadAllFiles(final File backupDir) throws Exception {
         // Process all the snapshots with SNAPSHOT_PREFIX. This will ensure that we "resume" the
         // uploads of previous snapshot leftover as Priam restarted or any failure for any reason

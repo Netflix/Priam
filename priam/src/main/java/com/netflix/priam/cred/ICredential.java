@@ -16,12 +16,12 @@
  */
 package com.netflix.priam.cred;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.google.inject.ImplementedBy;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
 /** Credential file interface for services supporting Access ID and key authentication */
 @ImplementedBy(ClearCredential.class)
 public interface ICredential {
     /** @return AWS Credential Provider object */
-    AWSCredentialsProvider getAwsCredentialProvider();
+    AwsCredentialsProvider getAwsCredentialProvider();
 }

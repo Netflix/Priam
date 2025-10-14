@@ -16,14 +16,15 @@
  */
 package com.netflix.priam.cred;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import java.io.FileInputStream;
 import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
 /**
  * This is a basic implementation of ICredentials. User should prefer to implement their own
@@ -56,15 +57,8 @@ public class ClearCredential implements ICredential {
         }
     }
 
-    public AWSCredentialsProvider getAwsCredentialProvider() {
-        return new AWSCredentialsProvider() {
-            public AWSCredentials getCredentials() {
-                return new BasicAWSCredentials(AWS_ACCESS_ID, AWS_KEY);
-            }
-
-            public void refresh() {
-                // NOP
-            }
-        };
+    public AwsCredentialsProvider getAwsCredentialProvider() {
+        AwsCredentials credentials = AwsBasicCredentials.create(AWS_ACCESS_ID, AWS_KEY);
+        return StaticCredentialsProvider.create(credentials);
     }
 }

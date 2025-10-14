@@ -13,13 +13,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration;
-import com.amazonaws.services.s3.model.BucketLifecycleConfiguration.Rule;
-import com.amazonaws.services.s3.model.CompleteMultipartUploadResult;
-import com.amazonaws.services.s3.model.DeleteObjectsRequest;
-import com.amazonaws.services.s3.model.lifecycle.*;
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -39,11 +32,21 @@ import java.util.stream.Collectors;
 import javax.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.BucketLifecycleConfiguration;
+import software.amazon.awssdk.services.s3.model.CompleteMultipartUploadResponse;
+import software.amazon.awssdk.services.s3.model.Delete;
+import software.amazon.awssdk.services.s3.model.DeleteObjectsRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.HeadObjectResponse;
+import software.amazon.awssdk.services.s3.model.LifecycleRule;
+import software.amazon.awssdk.services.s3.model.ObjectIdentifier;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final int MAX_CHUNKS = 9995; // 10K is AWS limit, minus a small buffer
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
-    AmazonS3 s3Client;
+    S3Client s3Client;
     final IConfiguration config;
     final ICompression compress;
     final BlockingSubmitThreadPoolExecutor executor;
@@ -88,36 +91,41 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
                 objectExistLimiter.getRate());
     }
 
-    private AmazonS3 getS3Client() {
+    private S3Client getS3Client() {
         return s3Client;
     }
 
     /*
      * A means to change the default handle to the S3 client.
      */
-    public void setS3Client(AmazonS3 client) {
+    public void setS3Client(S3Client client) {
         s3Client = client;
     }
 
     void checkSuccessfulUpload(
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete, Path localPath)
+            CompleteMultipartUploadResponse resultS3MultiPartUploadComplete, Path localPath)
             throws BackupRestoreException {
         if (null != resultS3MultiPartUploadComplete
-                && null != resultS3MultiPartUploadComplete.getETag()) {
+                && null != resultS3MultiPartUploadComplete.eTag()) {
             logger.info(
                     "Uploaded file: {}, object eTag: {}",
                     localPath,
-                    resultS3MultiPartUploadComplete.getETag());
+                    resultS3MultiPartUploadComplete.eTag());
         } else {
             throw new BackupRestoreException(
-                    "Error uploading file as ETag or CompleteMultipartUploadResult is NULL -"
+                    "Error uploading file as ETag or CompleteMultipartUploadResponse is NULL -"
                             + localPath);
         }
     }
 
     @Override
     public long getFileSize(String remotePath) throws BackupRestoreException {
-        return s3Client.getObjectMetadata(getShard(), remotePath).getContentLength();
+        HeadObjectRequest request = HeadObjectRequest.builder()
+                .bucket(getShard())
+                .key(remotePath)
+                .build();
+        HeadObjectResponse response = s3Client.headObject(request);
+        return response.contentLength();
     }
 
     @Override
@@ -125,8 +133,13 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         objectExistLimiter.acquire();
         boolean exists = false;
         try {
-            exists = s3Client.doesObjectExist(getShard(), remotePath.toString());
-        } catch (AmazonClientException ex) {
+            HeadObjectRequest request = HeadObjectRequest.builder()
+                    .bucket(getShard())
+                    .key(remotePath.toString())
+                    .build();
+            s3Client.headObject(request);
+            exists = true;
+        } catch (SdkException ex) {
             // No point throwing this exception up.
             logger.error(
                     "Exception while checking existence of object: {}. Error: {}",
@@ -152,16 +165,21 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
         if (remotePaths.isEmpty()) return;
 
         try {
-            List<DeleteObjectsRequest.KeyVersion> keys =
+            List<ObjectIdentifier> keys =
                     remotePaths
                             .stream()
                             .map(
                                     remotePath ->
-                                            new DeleteObjectsRequest.KeyVersion(
-                                                    remotePath.toString()))
+                                            ObjectIdentifier.builder()
+                                                    .key(remotePath.toString())
+                                                    .build())
                             .collect(Collectors.toList());
-            s3Client.deleteObjects(
-                    new DeleteObjectsRequest(getShard()).withKeys(keys).withQuiet(true));
+            Delete delete = Delete.builder().objects(keys).quiet(true).build();
+            DeleteObjectsRequest request = DeleteObjectsRequest.builder()
+                    .bucket(getShard())
+                    .delete(delete)
+                    .build();
+            s3Client.deleteObjects(request);
             logger.info("Deleted {} objects from S3", remotePaths.size());
         } catch (Exception e) {
             logger.error(

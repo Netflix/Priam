@@ -16,14 +16,15 @@
  */
 package com.netflix.priam.backup;
 
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.GetObjectRequest;
-import com.amazonaws.services.s3.model.S3ObjectInputStream;
 import com.netflix.priam.utils.RetryableCallable;
 import java.io.IOException;
 import java.io.InputStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.ResponseInputStream;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.GetObjectRequest;
+import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 
 /**
  * An implementation of InputStream that will request explicit byte ranges of the target file. This
@@ -33,14 +34,14 @@ import org.slf4j.LoggerFactory;
 public class RangeReadInputStream extends InputStream {
     private static final Logger logger = LoggerFactory.getLogger(RangeReadInputStream.class);
 
-    private final AmazonS3 s3Client;
+    private final S3Client s3Client;
     private final String bucketName;
     private final long fileSize;
     private final String remotePath;
     private long offset;
 
     public RangeReadInputStream(
-            AmazonS3 s3Client, String bucketName, long fileSize, String remotePath) {
+            S3Client s3Client, String bucketName, long fileSize, String remotePath) {
         this.s3Client = s3Client;
         this.bucketName = bucketName;
         this.fileSize = fileSize;
@@ -59,9 +60,13 @@ public class RangeReadInputStream extends InputStream {
         try {
             return new RetryableCallable<Integer>() {
                 public Integer retriableCall() throws IOException {
-                    GetObjectRequest req = new GetObjectRequest(bucketName, remotePath);
-                    req.setRange(firstByte, endByte);
-                    try (S3ObjectInputStream is = s3Client.getObject(req).getObjectContent()) {
+                    GetObjectRequest req = GetObjectRequest.builder()
+                            .bucket(bucketName)
+                            .key(remotePath)
+                            .range("bytes=" + firstByte + "-" + endByte)
+                            .build();
+
+                    try (ResponseInputStream<GetObjectResponse> is = s3Client.getObject(req)) {
                         byte[] readBuf = new byte[4092];
                         int rCnt;
                         int readTotal = 0;

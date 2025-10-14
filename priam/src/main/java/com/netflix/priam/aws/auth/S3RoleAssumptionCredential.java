@@ -13,15 +13,17 @@
  */
 package com.netflix.priam.aws.auth;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import javax.inject.Inject;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 @Singleton
 public class S3RoleAssumptionCredential implements IS3Credential {
@@ -30,7 +32,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
 
     private final ICredential cred;
     private final IConfiguration config;
-    private AWSCredentialsProvider stsSessionCredentialsProvider;
+    private AwsCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
     public S3RoleAssumptionCredential(ICredential cred, IConfiguration config) {
@@ -39,13 +41,13 @@ public class S3RoleAssumptionCredential implements IS3Credential {
     }
 
     @Override
-    public AWSCredentials getCredentials() throws Exception {
+    public AwsCredentials getCredentials() throws Exception {
 
         if (this.stsSessionCredentialsProvider == null) {
             this.getAwsCredentialProvider();
         }
 
-        return this.stsSessionCredentialsProvider.getCredentials();
+        return this.stsSessionCredentialsProvider.resolveCredentials();
     }
 
     /*
@@ -57,11 +59,15 @@ public class S3RoleAssumptionCredential implements IS3Credential {
      *
      */
     public void refresh() {
-        this.cred.getAwsCredentialProvider().refresh();
+        // In SDK v2, credentials are refreshed automatically by the provider
+        // We can force a refresh by getting new credentials
+        if (this.stsSessionCredentialsProvider != null) {
+            this.stsSessionCredentialsProvider.resolveCredentials();
+        }
     }
 
     @Override
-    public AWSCredentialsProvider getAwsCredentialProvider() {
+    public AwsCredentialsProvider getAwsCredentialProvider() {
         if (this.stsSessionCredentialsProvider == null) {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
@@ -79,12 +85,20 @@ public class S3RoleAssumptionCredential implements IS3Credential {
                         // (STS) to create temporary, short-lived session with explicit refresh for
                         // session/token expiration.
                         try {
+                            StsClient stsClient = StsClient.builder()
+                                    .credentialsProvider(this.cred.getAwsCredentialProvider())
+                                    .build();
+
+                            AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
+                                    .roleArn(roleArn)
+                                    .roleSessionName(AWS_ROLE_ASSUMPTION_SESSION_NAME)
+                                    .build();
 
                             this.stsSessionCredentialsProvider =
-                                    new STSAssumeRoleSessionCredentialsProvider(
-                                            this.cred.getAwsCredentialProvider(),
-                                            roleArn,
-                                            AWS_ROLE_ASSUMPTION_SESSION_NAME);
+                                    StsAssumeRoleCredentialsProvider.builder()
+                                            .stsClient(stsClient)
+                                            .refreshRequest(assumeRoleRequest)
+                                            .build();
 
                         } catch (Exception ex) {
                             throw new IllegalStateException(

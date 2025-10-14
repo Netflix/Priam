@@ -16,9 +16,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ResponseMetadata;
-import com.amazonaws.services.s3.model.*;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
@@ -50,6 +47,10 @@ import javax.inject.Singleton;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 /** Implementation of IBackupFileSystem for S3 */
 @Singleton
@@ -70,9 +71,9 @@ public class S3FileSystem extends S3FileSystemBase {
             DynamicRateLimiter dynamicRateLimiter) {
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         s3Client =
-                AmazonS3Client.builder()
-                        .withCredentials(cred.getAwsCredentialProvider())
-                        .withRegion(instanceInfo.getRegion())
+                S3Client.builder()
+                        .credentialsProvider(cred.getAwsCredentialProvider())
+                        .region(Region.of(instanceInfo.getRegion()))
                         .build();
         this.dynamicRateLimiter = dynamicRateLimiter;
     }
@@ -104,19 +105,24 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    private ObjectMetadata getObjectMetadata(File file) {
-        ObjectMetadata ret = new ObjectMetadata();
-        long lastModified = file.lastModified();
+    private PutObjectRequest.Builder getObjectMetadataBuilder(File file, String bucket, String key) {
+        PutObjectRequest.Builder builder = PutObjectRequest.builder()
+                .bucket(bucket)
+                .key(key);
 
+        long lastModified = file.lastModified();
         if (lastModified != 0) {
-            ret.addUserMetadata("local-modification-time", Long.toString(lastModified));
+            builder.metadata(java.util.Map.of("local-modification-time", Long.toString(lastModified)));
         }
 
         long fileSize = file.length();
         if (fileSize != 0) {
-            ret.addUserMetadata("local-size", Long.toString(fileSize));
+            java.util.Map<String, String> metadata = new java.util.HashMap<>();
+            metadata.put("local-modification-time", Long.toString(lastModified));
+            metadata.put("local-size", Long.toString(fileSize));
+            builder.metadata(metadata);
         }
-        return ret;
+        return builder;
     }
 
     private long uploadMultipart(AbstractBackupPath path, Instant target)
@@ -128,12 +134,29 @@ public class S3FileSystem extends S3FileSystemBase {
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
-        InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(prefix, remotePath)
-                        .withObjectMetadata(getObjectMetadata(localFile));
-        String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
+
+        CreateMultipartUploadRequest.Builder initRequestBuilder = CreateMultipartUploadRequest.builder()
+                .bucket(prefix)
+                .key(remotePath);
+
+        // Add metadata
+        long lastModified = localFile.lastModified();
+        long fileSize = localFile.length();
+        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        if (lastModified != 0) {
+            metadata.put("local-modification-time", Long.toString(lastModified));
+        }
+        if (fileSize != 0) {
+            metadata.put("local-size", Long.toString(fileSize));
+        }
+        if (!metadata.isEmpty()) {
+            initRequestBuilder.metadata(metadata);
+        }
+
+        CreateMultipartUploadRequest initRequest = initRequestBuilder.build();
+        String uploadId = s3Client.createMultipartUpload(initRequest).uploadId();
         DataPart part = new DataPart(prefix, remotePath, uploadId);
-        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
+        List<CompletedPart> partETags = Collections.synchronizedList(new ArrayList<>());
 
         try (InputStream in = new FileInputStream(localFile)) {
             Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
@@ -155,14 +178,9 @@ public class S3FileSystem extends S3FileSystemBase {
             executor.sleepTillEmpty();
             logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
             Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
+            CompleteMultipartUploadResponse resultS3MultiPartUploadComplete =
                     new S3PartUploader(s3Client, part, partETags).completeUpload();
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
-
-            if (logger.isDebugEnabled()) {
-                final S3ResponseMetadata info = s3Client.getCachedResponseMetadata(initRequest);
-                logger.debug("Request Id: {}, Host Id: {}", info.getRequestId(), info.getHostId());
-            }
 
             return compressedFileSize;
         } catch (Exception e) {
@@ -182,10 +200,10 @@ public class S3FileSystem extends S3FileSystemBase {
             dynamicRateLimiter.acquire(path, target, chunk.length);
         }
         try {
-            new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+            new BoundedExponentialRetryCallable<PutObjectResponse>(1000, 10000, 5) {
                 @Override
-                public PutObjectResult retriableCall() {
-                    return s3Client.putObject(generatePut(path, chunk));
+                public PutObjectResponse retriableCall() {
+                    return s3Client.putObject(generatePut(path, chunk), RequestBody.fromBytes(chunk));
                 }
             }.call();
         } catch (Exception e) {
@@ -196,18 +214,30 @@ public class S3FileSystem extends S3FileSystemBase {
 
     private PutObjectRequest generatePut(AbstractBackupPath path, byte[] chunk) {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        ObjectMetadata metadata = getObjectMetadata(localFile);
-        metadata.setContentLength(chunk.length);
-        PutObjectRequest put =
-                new PutObjectRequest(
-                        config.getBackupPrefix(),
-                        path.getRemotePath(),
-                        new ByteArrayInputStream(chunk),
-                        metadata);
-        if (config.addMD5ToBackupUploads()) {
-            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+
+        PutObjectRequest.Builder builder = PutObjectRequest.builder()
+                .bucket(config.getBackupPrefix())
+                .key(path.getRemotePath())
+                .contentLength((long) chunk.length);
+
+        // Add metadata
+        long lastModified = localFile.lastModified();
+        long fileSize = localFile.length();
+        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        if (lastModified != 0) {
+            metadata.put("local-modification-time", Long.toString(lastModified));
         }
-        return put;
+        if (fileSize != 0) {
+            metadata.put("local-size", Long.toString(fileSize));
+        }
+        if (!metadata.isEmpty()) {
+            builder.metadata(metadata);
+        }
+
+        if (config.addMD5ToBackupUploads()) {
+            builder.contentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+        }
+        return builder.build();
     }
 
     private byte[] getFileContents(AbstractBackupPath path) throws BackupRestoreException {

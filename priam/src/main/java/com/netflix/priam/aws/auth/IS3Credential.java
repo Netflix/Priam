@@ -13,13 +13,13 @@
  */
 package com.netflix.priam.aws.auth;
 
-import com.amazonaws.auth.AWSCredentials;
 import com.netflix.priam.cred.ICredential;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
 
 /*
  * Credentials specific to Amazon S3
  */
 public interface IS3Credential extends ICredential {
 
-    AWSCredentials getCredentials() throws Exception;
+    AwsCredentials getCredentials() throws Exception;
 }

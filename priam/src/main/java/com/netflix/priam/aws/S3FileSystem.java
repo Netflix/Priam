@@ -37,8 +37,10 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -143,7 +145,7 @@ public class S3FileSystem extends S3FileSystemBase {
         // Add metadata
         long lastModified = localFile.lastModified();
         long fileSize = localFile.length();
-        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        Map<String, String> metadata = new HashMap<>();
         if (lastModified != 0) {
             metadata.put("local-modification-time", Long.toString(lastModified));
         }
@@ -224,7 +226,7 @@ public class S3FileSystem extends S3FileSystemBase {
         // Add metadata
         long lastModified = localFile.lastModified();
         long fileSize = localFile.length();
-        java.util.Map<String, String> metadata = new java.util.HashMap<>();
+        Map<String, String> metadata = new HashMap<>();
         if (lastModified != 0) {
             metadata.put("local-modification-time", Long.toString(lastModified));
         }

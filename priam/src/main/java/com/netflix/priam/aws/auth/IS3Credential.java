@@ -16,8 +16,8 @@ package com.netflix.priam.aws.auth;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
-/**
- * Credentials specific to Amazon S3 using SDK v2
+/*
+ * Credentials specific to Amazon S3
  */
 public interface IS3Credential {
 

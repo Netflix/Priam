@@ -18,7 +18,7 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 
 /*
- * Provides credentials from the S3 instance using SDK v2.
+ * Provides credentials from the S3 instance.
  */
 public class S3InstanceCredential implements IS3Credential {
 

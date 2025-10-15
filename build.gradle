@@ -36,14 +36,17 @@ allprojects {
       implementation 'com.google.guava:guava:21.0'
       implementation 'com.google.code.findbugs:jsr305:3.0.2'
         
-      // AWS Services - SDK v2
+      // AWS Services - SDK v1 (for non-S3 services)
+      implementation 'com.amazonaws:aws-java-sdk-core:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-sns:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-ec2:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
+      implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
+
+      // AWS Services - SDK v2 (only for S3)
       implementation platform('software.amazon.awssdk:bom:2.20.0')
       implementation 'software.amazon.awssdk:s3'
-      implementation 'software.amazon.awssdk:sns'
-      implementation 'software.amazon.awssdk:ec2'
-      implementation 'software.amazon.awssdk:autoscaling'
-      implementation 'software.amazon.awssdk:sts'
-      implementation 'software.amazon.awssdk:auth'
+      implementation 'software.amazon.awssdk:sts' // Needed for S3 role assumption
         
       implementation 'com.google.inject:guice:4.2.2'
       implementation 'com.google.inject.extensions:guice-servlet:4.2.2'

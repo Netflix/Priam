@@ -111,15 +111,16 @@ public class S3FileSystem extends S3FileSystemBase {
                 .key(key);
 
         long lastModified = file.lastModified();
-        if (lastModified != 0) {
-            builder.metadata(java.util.Map.of("local-modification-time", Long.toString(lastModified)));
-        }
-
         long fileSize = file.length();
-        if (fileSize != 0) {
+
+        if (lastModified != 0 || fileSize != 0) {
             java.util.Map<String, String> metadata = new java.util.HashMap<>();
-            metadata.put("local-modification-time", Long.toString(lastModified));
-            metadata.put("local-size", Long.toString(fileSize));
+            if (lastModified != 0) {
+                metadata.put("local-modification-time", Long.toString(lastModified));
+            }
+            if (fileSize != 0) {
+                metadata.put("local-size", Long.toString(fileSize));
+            }
             builder.metadata(metadata);
         }
         return builder;

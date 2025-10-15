@@ -15,6 +15,7 @@ package com.netflix.priam.aws.auth;
 
 import com.netflix.priam.config.IConfiguration;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +35,8 @@ public class S3RoleAssumptionCredential implements IS3Credential {
     private AwsCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
-    public S3RoleAssumptionCredential(IS3Credential cred, IConfiguration config) {
+    public S3RoleAssumptionCredential(
+            @Named("s3") IS3Credential cred, IConfiguration config) {
         this.cred = cred;
         this.config = config;
     }

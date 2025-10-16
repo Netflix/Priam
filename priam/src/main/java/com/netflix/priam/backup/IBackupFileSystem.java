@@ -175,4 +175,7 @@ public interface IBackupFileSystem {
 
     /** Add remote backup path to the object cache*/
     void addObjectCache(Path remotePath);
+    
+    /** Synchronously put the contents of an in-memory String to the blob store. **/
+    void putObject(String bucket, String key, String value);
 }

@@ -72,4 +72,7 @@ public class NullBackupFileSystem extends AbstractFileSystem {
             throws BackupRestoreException {
         return 0;
     }
+
+    @Override
+    public void putObject(String bucket, String key, String value) {}
 }

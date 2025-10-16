@@ -107,8 +107,13 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    private Map<String, String> getFileMetadata(File file) {
-        Map<String, String> metadata = new HashMap<>();
+    @Override
+    public void putObject(String bucket, String key, String value) {
+        s3Client.putObject(bucket, key, value);
+    }
+
+    private ObjectMetadata getObjectMetadata(File file) {
+        ObjectMetadata ret = new ObjectMetadata();
         long lastModified = file.lastModified();
         long fileSize = file.length();
 

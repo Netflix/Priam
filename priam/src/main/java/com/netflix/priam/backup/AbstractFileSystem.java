@@ -26,6 +26,7 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
+import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
@@ -37,10 +38,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.*;
 import javax.inject.Inject;
 import javax.inject.Provider;
@@ -236,9 +234,11 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
         return path;
     }
 
-    private void addObjectCache(Path remotePath) {
+    @Override
+    public void addObjectCache(Path remotePath) {
         objectCache.put(remotePath, Boolean.TRUE);
     }
+
 
     @Override
     public boolean checkObjectExists(Path remotePath) {

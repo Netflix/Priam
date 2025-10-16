@@ -64,6 +64,10 @@ public class BackupV2Service implements IService {
         if (snapshotMetaTimer == null) {
             SnapshotMetaTask.cleanOldBackups(configuration);
         }
+
+        // Warm up object cache
+        snapshotMetaTask.warmCache();
+
         scheduleTask(scheduler, SnapshotMetaTask.class, snapshotMetaTimer);
 
         if (snapshotMetaTimer != null) {

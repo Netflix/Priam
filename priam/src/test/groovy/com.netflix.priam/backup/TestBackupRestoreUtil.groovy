@@ -59,7 +59,7 @@ class TestBackupRestoreUtil extends Specification {
     }
 
 
-    def "Expected exception KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
+    def "Expected exception for shouldOmitFromBackup KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
         when:
         new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromBackup(keyspace, columnfamily)
 
@@ -106,7 +106,7 @@ class TestBackupRestoreUtil extends Specification {
         null                | null                | "system"   | "peers_v2"                 || true
     }
 
-    def "Expected exception KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
+    def "Expected exception for shouldOmitFromRestore KS #keyspace and CF #columnfamily with configuration include #configIncludeFilter and exclude #configExcludeFilter"() {
         when:
         new BackupRestoreUtil(configIncludeFilter, configExcludeFilter).shouldOmitFromRestore(keyspace, columnfamily)
 

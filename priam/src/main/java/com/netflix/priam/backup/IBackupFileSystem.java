@@ -172,4 +172,7 @@ public interface IBackupFileSystem {
 
     /** Clear the cache for the backup file system, if any. */
     void clearCache();
+
+    /** Add remote backup path to the object cache*/
+    void addObjectCache(Path remotePath);
 }

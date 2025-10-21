@@ -63,8 +63,8 @@ public class S3Iterator implements Iterator<String> {
     private Iterator<String> createIterator() {
         if (objectListing == null) initListing();
         List<String> temp = Lists.newArrayList();
-        for (S3Object summary : objectListing.contents()) {
-            temp.add(summary.key());
+        for (S3Object object : objectListing.contents()) {
+            temp.add(object.key());
         }
         return temp.iterator();
     }

@@ -133,7 +133,6 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             s3Client.headObject(request);
             exists = true;
         } catch (NoSuchKeyException ex) {
-            // Object doesn't exist
             exists = false;
         } catch (SdkException ex) {
             // No point throwing this exception up.

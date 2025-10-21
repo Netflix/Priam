@@ -20,8 +20,5 @@ import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
  * Credentials specific to Amazon S3
  */
 public interface IS3Credential {
-
-    AwsCredentials getCredentials() throws Exception;
-
     AwsCredentialsProvider getAwsCredentialProvider();
 }

@@ -70,7 +70,7 @@ public class S3RoleAssumptionCredential implements IS3Credential {
                         try {
 
                             StsClient stsClient = StsClient.builder()
-                                    .credentialsProvider(this.cred.getAwsCredentialProvider())
+                                    .credentialsProvider(cred.getAwsCredentialProvider())
                                     .build();
 
                             AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()

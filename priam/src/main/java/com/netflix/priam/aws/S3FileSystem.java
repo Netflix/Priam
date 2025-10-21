@@ -107,25 +107,18 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    private PutObjectRequest.Builder getObjectMetadataBuilder(File file, String bucket, String key) {
-        PutObjectRequest.Builder builder = PutObjectRequest.builder()
-                .bucket(bucket)
-                .key(key);
-
+    private Map<String, String> getFileMetadata(File file) {
+        Map<String, String> metadata = new HashMap<>();
         long lastModified = file.lastModified();
         long fileSize = file.length();
 
-        if (lastModified != 0 || fileSize != 0) {
-            java.util.Map<String, String> metadata = new java.util.HashMap<>();
-            if (lastModified != 0) {
-                metadata.put("local-modification-time", Long.toString(lastModified));
-            }
-            if (fileSize != 0) {
-                metadata.put("local-size", Long.toString(fileSize));
-            }
-            builder.metadata(metadata);
+        if (lastModified != 0) {
+            metadata.put("local-modification-time", Long.toString(lastModified));
         }
-        return builder;
+        if (fileSize != 0) {
+            metadata.put("local-size", Long.toString(fileSize));
+        }
+        return metadata;
     }
 
     private long uploadMultipart(AbstractBackupPath path, Instant target)
@@ -142,16 +135,7 @@ public class S3FileSystem extends S3FileSystemBase {
                 .bucket(prefix)
                 .key(remotePath);
 
-        // Add metadata
-        long lastModified = localFile.lastModified();
-        long fileSize = localFile.length();
-        Map<String, String> metadata = new HashMap<>();
-        if (lastModified != 0) {
-            metadata.put("local-modification-time", Long.toString(lastModified));
-        }
-        if (fileSize != 0) {
-            metadata.put("local-size", Long.toString(fileSize));
-        }
+        Map<String, String> metadata = getFileMetadata(localFile);
         if (!metadata.isEmpty()) {
             initRequestBuilder.metadata(metadata);
         }
@@ -223,16 +207,7 @@ public class S3FileSystem extends S3FileSystemBase {
                 .key(path.getRemotePath())
                 .contentLength((long) chunk.length);
 
-        // Add metadata
-        long lastModified = localFile.lastModified();
-        long fileSize = localFile.length();
-        Map<String, String> metadata = new HashMap<>();
-        if (lastModified != 0) {
-            metadata.put("local-modification-time", Long.toString(lastModified));
-        }
-        if (fileSize != 0) {
-            metadata.put("local-size", Long.toString(fileSize));
-        }
+        Map<String, String> metadata = getFileMetadata(localFile);
         if (!metadata.isEmpty()) {
             builder.metadata(metadata);
         }

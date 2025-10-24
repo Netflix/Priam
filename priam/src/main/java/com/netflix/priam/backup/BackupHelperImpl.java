@@ -10,6 +10,8 @@ import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.config.BackupsToCompress;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.utils.DateUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -19,13 +21,16 @@ import java.nio.file.Paths;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
 public class BackupHelperImpl implements BackupHelper {
+    private static final Logger logger = LoggerFactory.getLogger(BackupHelperImpl.class);
 
     private static final String COMPRESSION_SUFFIX = "-CompressionInfo.db";
     private static final String DATA_SUFFIX = "-Data.db";
@@ -93,21 +98,27 @@ public class BackupHelperImpl implements BackupHelper {
 
     @Override
     public void warmupCache(IMetaProxy metaProxy, IBackupStatusMgr snapshotStatusMgr) throws Exception {
+        int count = 0;
         Instant now = Instant.now();
         DateUtil.DateRange dateRange = new DateUtil.DateRange(now.minus(1, ChronoUnit.DAYS), now);
         Optional<String> snapshotLocation = snapshotStatusMgr.getLatestBackupMetadata(dateRange)
                 .stream()
                 .filter(backupMetadata -> backupMetadata.getLastValidated() != null)
                 .max(Comparator.comparing(BackupMetadata::getStart))
-                .map(BackupMetadata::getSnapshotLocation);
+                .map(bm -> bm.getSnapshotLocation().substring(
+                        bm.getSnapshotLocation().indexOf(AbstractBackupPath.PATH_SEP) + 1));
+
         if (snapshotLocation.isPresent()) {
             AbstractBackupPath backupPath = pathFactory.get();
             backupPath.parseRemote(snapshotLocation.get());
-            BackupRestoreUtil.getMostRecentSnapshotPaths(backupPath, metaProxy, pathFactory)
+            List<Path> paths = BackupRestoreUtil.getMostRecentSnapshotPaths(backupPath, metaProxy, pathFactory)
                     .stream()
                     .map(abp -> Paths.get(abp.getRemotePath()))
-                    .forEach(fs::addObjectCache);
+                    .collect(Collectors.toList());
+            paths.forEach(fs::addObjectCache);
+            count = paths.size();
         }
+        logger.info("Warmed up object cache with {} entries", count);
     }
 
     private CompressionType getCorrectCompressionAlgorithm(

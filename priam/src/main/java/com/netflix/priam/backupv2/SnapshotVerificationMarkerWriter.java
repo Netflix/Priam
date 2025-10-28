@@ -11,8 +11,8 @@ import org.slf4j.LoggerFactory;
 import javax.inject.Inject;
 import javax.inject.Provider;
 
-public class SnapshotValidationMarkerWriter {
-    private static final Logger logger = LoggerFactory.getLogger(SnapshotValidationMarkerWriter.class);
+public class SnapshotVerificationMarkerWriter {
+    private static final Logger logger = LoggerFactory.getLogger(SnapshotVerificationMarkerWriter.class);
     private static final String METADATA_PREFIX = "metadata";
     private final IConfiguration config;
     private final InstanceInfo instanceInfo;
@@ -20,7 +20,7 @@ public class SnapshotValidationMarkerWriter {
     private final IBackupFileSystem fs;
 
     @Inject
-    public SnapshotValidationMarkerWriter(
+    public SnapshotVerificationMarkerWriter(
             IConfiguration config,
             InstanceInfo instanceInfo,
             Provider<AbstractBackupPath> pathProvider,

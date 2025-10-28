@@ -18,7 +18,6 @@
 package com.netflix.priam.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.BackupV2Service;
@@ -64,7 +63,7 @@ public class BackupServletV2 {
     private final BackupNotificationMgr backupNotificationMgr;
     private final IConfiguration config;
     private final DirectorySize directorySize;
-    private final SnapshotValidationMarkerWriter snapshotValidationMarkerWriter;
+    private final SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter;
 
     private static final String REST_SUCCESS = "[\"ok\"]";
 
@@ -81,7 +80,7 @@ public class BackupServletV2 {
             BackupNotificationMgr backupNotificationMgr,
             IConfiguration config,
             DirectorySize directorySize,
-            SnapshotValidationMarkerWriter snapshotValidationMarkerWriter) {
+            SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
@@ -93,7 +92,7 @@ public class BackupServletV2 {
         this.backupNotificationMgr = backupNotificationMgr;
         this.config = config;
         this.directorySize = directorySize;
-        this.snapshotValidationMarkerWriter = snapshotValidationMarkerWriter;
+        this.snapshotVerificationMarkerWriter = snapshotVerificationMarkerWriter;
     }
 
     @GET
@@ -168,7 +167,7 @@ public class BackupServletV2 {
                 result.get().remotePath);
 
         backupNotificationMgr.notify(result.get().remotePath, result.get().snapshotInstant);
-        snapshotValidationMarkerWriter.write(result.get().remotePath);
+        snapshotVerificationMarkerWriter.write(result.get().remotePath);
 
         return Response.ok(result.get().toString()).build();
     }

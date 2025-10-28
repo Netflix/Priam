@@ -28,12 +28,6 @@ public class S3InstanceCredential implements IS3Credential {
         this.credentialsProvider = InstanceProfileCredentialsProvider.create();
     }
 
-    @Override
-    public AwsCredentials getCredentials() throws Exception {
-        return this.credentialsProvider.resolveCredentials();
-    }
-
-    @Override
     public AwsCredentialsProvider getAwsCredentialProvider() {
         return this.credentialsProvider;
     }

@@ -41,15 +41,6 @@ public class S3RoleAssumptionCredential implements IS3Credential {
         this.config = config;
     }
 
-    @Override
-    public AwsCredentials getCredentials() throws Exception {
-        if (this.stsSessionCredentialsProvider == null) {
-            this.getAwsCredentialProvider();
-        }
-        return this.stsSessionCredentialsProvider.resolveCredentials();
-    }
-
-    @Override
     public AwsCredentialsProvider getAwsCredentialProvider() {
         if (this.stsSessionCredentialsProvider == null) {
             synchronized (this) {

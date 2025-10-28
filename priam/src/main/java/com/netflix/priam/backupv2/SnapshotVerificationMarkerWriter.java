@@ -1,10 +1,13 @@
 package com.netflix.priam.backupv2;
 
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
+import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
+import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,7 +44,13 @@ public class SnapshotVerificationMarkerWriter {
                 instanceInfo.getRac(),
                 path.getToken());
         try {
-            fs.putObject(config.getBackupPrefix(), key, remotePath);
+            new BoundedExponentialRetryCallable<Void>(0, 0, 3) {
+                @Override
+                public Void retriableCall() throws Exception {
+                    fs.putObject(config.getBackupPrefix(), key, remotePath);
+                    return null;
+                }
+            }.call();
         } catch (Exception e) {
             logger.error("Failed to put snapshot verification marker. bucket: {}, key: {}, value: {}, message: {}",
                     config.getBackupPrefix(),

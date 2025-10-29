@@ -66,9 +66,24 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
 
         UploadPartResponse res = client.uploadPart(req, RequestBody.fromBytes(dataPart.getPartData()));
 
-        if (!res.eTag().equals(SystemUtils.toHex(dataPart.getMd5())))
+        // AWS SDK v2 returns ETags without quotes, but we need to compare the MD5 hex
+        String expectedMd5 = SystemUtils.toHex(dataPart.getMd5());
+        String actualETag = res.eTag();
+
+        if (actualETag != null && actualETag.startsWith("\"") && actualETag.endsWith("\"")) {
+            actualETag = actualETag.substring(1, actualETag.length() - 1);
+        }
+
+        if (actualETag != null && actualETag.contains("-")) {
+            actualETag = actualETag.substring(0, actualETag.indexOf("-"));
+        }
+
+        if (!actualETag.equals(expectedMd5)) {
+            logger.error("MD5 mismatch for part {}: expected={}, actual={}",
+                    dataPart.getPartNo(), expectedMd5, actualETag);
             throw new BackupRestoreException(
                     "Unable to match MD5 for part " + dataPart.getPartNo());
+        }
 
         CompletedPart completedPart = CompletedPart.builder()
                 .partNumber(dataPart.getPartNo())

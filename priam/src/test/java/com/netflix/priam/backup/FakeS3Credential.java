@@ -31,12 +31,6 @@ public class FakeS3Credential implements IS3Credential {
         this.credentialsProvider = StaticCredentialsProvider.create(credentials);
     }
 
-    @Override
-    public AwsCredentials getCredentials() throws Exception {
-        return credentialsProvider.resolveCredentials();
-    }
-
-    @Override
     public AwsCredentialsProvider getAwsCredentialProvider() {
         return credentialsProvider;
     }

@@ -151,7 +151,9 @@ public class TestS3FileSystem {
 
     @Test
     public void testDeleteObjects() throws Exception {
+        MockAmazonS3Client.emulateError = false;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.setS3Client(new StubS3Client());
         List<Path> filesToDelete = new ArrayList<>();
         // Empty files
         fs.deleteRemoteFiles(filesToDelete);
@@ -253,6 +255,43 @@ public class TestS3FileSystem {
                     .message("Unable to reach AWS")
                     .statusCode(500)
                     .build();
+            return DeleteObjectsResponse.builder().build();
+        }
+    }
+
+    // Simple stub implementation for testing deleteObjects
+    static class StubS3Client implements S3Client {
+        @Override
+        public String serviceName() {
+            return "s3";
+        }
+
+        @Override
+        public void close() {
+        }
+
+        @Override
+        public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
+            return CreateMultipartUploadResponse.builder()
+                    .uploadId("test-upload-id")
+                    .build();
+        }
+
+        @Override
+        public PutObjectResponse putObject(PutObjectRequest request, software.amazon.awssdk.core.sync.RequestBody body) {
+            return PutObjectResponse.builder()
+                    .eTag("test-etag")
+                    .build();
+        }
+
+        @Override
+        public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest request) {
+            if (MockAmazonS3Client.emulateError) {
+                throw S3Exception.builder()
+                        .message("Unable to reach AWS")
+                        .statusCode(500)
+                        .build();
+            }
             return DeleteObjectsResponse.builder().build();
         }
     }

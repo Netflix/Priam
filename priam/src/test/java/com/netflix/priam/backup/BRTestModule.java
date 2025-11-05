@@ -69,6 +69,10 @@ public class BRTestModule extends AbstractModule {
         bind(Sleeper.class).to(FakeSleeper.class);
 
         bind(IS3Credential.class)
+                .annotatedWith(Names.named("s3"))
+                .to(FakeS3Credential.class)
+                .in(Scopes.SINGLETON);
+        bind(IS3Credential.class)
                 .annotatedWith(Names.named("awss3roleassumption"))
                 .to(S3RoleAssumptionCredential.class);
 

@@ -17,14 +17,9 @@
 
 package com.netflix.priam.backup;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.AmazonServiceException;
-import com.amazonaws.SdkClientException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.model.*;
-import com.amazonaws.services.s3.model.lifecycle.LifecycleFilter;
-import com.amazonaws.services.s3.model.lifecycle.LifecyclePrefixPredicate;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 import com.google.api.client.util.Preconditions;
 import com.google.common.collect.Lists;
 import com.google.inject.Guice;
@@ -156,7 +151,9 @@ public class TestS3FileSystem {
 
     @Test
     public void testDeleteObjects() throws Exception {
+        MockAmazonS3Client.emulateError = false;
         S3FileSystem fs = injector.getInstance(S3FileSystem.class);
+        fs.setS3Client(new StubS3Client());
         List<Path> filesToDelete = new ArrayList<>();
         // Empty files
         fs.deleteRemoteFiles(filesToDelete);
@@ -195,23 +192,23 @@ public class TestS3FileSystem {
         static int partAttempts = 0;
         static boolean partFailure = false;
         static boolean completionFailure = false;
-        private static List<PartETag> partETags;
+        private static List<CompletedPart> partETags;
 
         @Mock
-        public void $init(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
+        public void $init(S3Client client, DataPart dp, List<CompletedPart> partETags) {
             MockS3PartUploader.partETags = partETags;
         }
 
         @Mock
-        private Void uploadPart() throws AmazonClientException, BackupRestoreException {
+        private Void uploadPart() throws SdkException, BackupRestoreException {
             ++partAttempts;
             if (partFailure) throw new BackupRestoreException("Test exception");
-            partETags.add(new PartETag(0, null));
+            partETags.add(CompletedPart.builder().partNumber(0).eTag(null).build());
             return null;
         }
 
         @Mock
-        public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException {
+        public CompleteMultipartUploadResponse completeUpload() throws BackupRestoreException {
             ++compattempts;
             if (completionFailure) throw new BackupRestoreException("Test exception");
 
@@ -219,7 +216,7 @@ public class TestS3FileSystem {
         }
 
         @Mock
-        public Void retriableCall() throws AmazonClientException, BackupRestoreException {
+        public Void retriableCall() throws SdkException, BackupRestoreException {
             logger.info("MOCK UPLOADING...");
             return uploadPart();
         }
@@ -232,84 +229,70 @@ public class TestS3FileSystem {
         }
     }
 
-    static class MockAmazonS3Client extends MockUp<AmazonS3Client> {
-        private boolean ruleAvailable = false;
-        static BucketLifecycleConfiguration bconf;
+    static class MockAmazonS3Client extends MockUp<S3Client> {
         static boolean emulateError = false;
 
         @Mock
-        public InitiateMultipartUploadResult initiateMultipartUpload(
-                InitiateMultipartUploadRequest initiateMultipartUploadRequest)
-                throws AmazonClientException {
-            return new InitiateMultipartUploadResult();
-        }
-
-        public PutObjectResult putObject(PutObjectRequest putObjectRequest)
-                throws SdkClientException {
-            PutObjectResult result = new PutObjectResult();
-            result.setETag("ad");
-            return result;
+        public CreateMultipartUploadResponse createMultipartUpload(
+                CreateMultipartUploadRequest request) throws SdkException {
+            return CreateMultipartUploadResponse.builder()
+                    .uploadId("test-upload-id")
+                    .build();
         }
 
         @Mock
-        public BucketLifecycleConfiguration getBucketLifecycleConfiguration(String bucketName) {
-            return bconf;
+        public PutObjectResponse putObject(PutObjectRequest request, software.amazon.awssdk.core.sync.RequestBody body)
+                throws SdkException {
+            return PutObjectResponse.builder()
+                    .eTag("ad")
+                    .build();
         }
 
         @Mock
-        public void setBucketLifecycleConfiguration(
-                String bucketName, BucketLifecycleConfiguration bucketLifecycleConfiguration) {
-            bconf = bucketLifecycleConfiguration;
+        public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest request)
+                throws SdkException {
+            if (emulateError) throw S3Exception.builder()
+                    .message("Unable to reach AWS")
+                    .statusCode(500)
+                    .build();
+            return DeleteObjectsResponse.builder().build();
+        }
+    }
+
+    // Simple stub implementation for testing deleteObjects
+    static class StubS3Client implements S3Client {
+        @Override
+        public String serviceName() {
+            return "s3";
         }
 
-        @Mock
-        public DeleteObjectsResult deleteObjects(DeleteObjectsRequest var1)
-                throws SdkClientException, AmazonServiceException {
-            if (emulateError) throw new AmazonServiceException("Unable to reach AWS");
-            return null;
+        @Override
+        public void close() {
         }
 
-        static BucketLifecycleConfiguration.Rule getBucketLifecycleConfig(
-                String prefix, int expirationDays) {
-            return new BucketLifecycleConfiguration.Rule()
-                    .withExpirationInDays(expirationDays)
-                    .withFilter(new LifecycleFilter(new LifecyclePrefixPredicate(prefix)))
-                    .withStatus(BucketLifecycleConfiguration.ENABLED)
-                    .withId(prefix);
+        @Override
+        public CreateMultipartUploadResponse createMultipartUpload(CreateMultipartUploadRequest request) {
+            return CreateMultipartUploadResponse.builder()
+                    .uploadId("test-upload-id")
+                    .build();
         }
 
-        static void setRuleAvailable(boolean ruleAvailable) {
-            if (ruleAvailable) {
-                bconf = new BucketLifecycleConfiguration();
-                if (bconf.getRules() == null) bconf.setRules(Lists.newArrayList());
+        @Override
+        public PutObjectResponse putObject(PutObjectRequest request, software.amazon.awssdk.core.sync.RequestBody body) {
+            return PutObjectResponse.builder()
+                    .eTag("test-etag")
+                    .build();
+        }
 
-                List<BucketLifecycleConfiguration.Rule> rules = bconf.getRules();
-                String clusterPath = "casstestbackup/" + region + "/fake-app/";
-
-                List<BucketLifecycleConfiguration.Rule> potentialRules =
-                        rules.stream()
-                                .filter(rule -> rule.getId().equalsIgnoreCase(clusterPath))
-                                .collect(Collectors.toList());
-                if (potentialRules == null || potentialRules.isEmpty())
-                    rules.add(
-                            getBucketLifecycleConfig(
-                                    clusterPath, configuration.getBackupRetentionDays()));
+        @Override
+        public DeleteObjectsResponse deleteObjects(DeleteObjectsRequest request) {
+            if (MockAmazonS3Client.emulateError) {
+                throw S3Exception.builder()
+                        .message("Unable to reach AWS")
+                        .statusCode(500)
+                        .build();
             }
-        }
-
-        static void updateRule(BucketLifecycleConfiguration.Rule updatedRule) {
-            List<BucketLifecycleConfiguration.Rule> rules = bconf.getRules();
-            Optional<BucketLifecycleConfiguration.Rule> updateRule =
-                    rules.stream()
-                            .filter(rule -> rule.getId().equalsIgnoreCase(updatedRule.getId()))
-                            .findFirst();
-            if (updateRule.isPresent()) {
-                rules.remove(updateRule.get());
-                rules.add(updatedRule);
-            } else {
-                rules.add(updatedRule);
-            }
-            bconf.setRules(rules);
+            return DeleteObjectsResponse.builder().build();
         }
     }
 }

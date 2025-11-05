@@ -13,55 +13,35 @@
  */
 package com.netflix.priam.aws.auth;
 
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.cred.ICredential;
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
 @Singleton
 public class S3RoleAssumptionCredential implements IS3Credential {
     private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "S3RoleAssumptionSession";
     private static final Logger logger = LoggerFactory.getLogger(S3RoleAssumptionCredential.class);
 
-    private final ICredential cred;
+    private final IS3Credential cred;
     private final IConfiguration config;
-    private AWSCredentialsProvider stsSessionCredentialsProvider;
+    private AwsCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
-    public S3RoleAssumptionCredential(ICredential cred, IConfiguration config) {
+    public S3RoleAssumptionCredential(
+            @Named("s3") IS3Credential cred, IConfiguration config) {
         this.cred = cred;
         this.config = config;
     }
 
-    @Override
-    public AWSCredentials getCredentials() throws Exception {
-
-        if (this.stsSessionCredentialsProvider == null) {
-            this.getAwsCredentialProvider();
-        }
-
-        return this.stsSessionCredentialsProvider.getCredentials();
-    }
-
-    /*
-     * Accessing an AWS resource requires a valid login token and credentials.  Both information is provided by the provider.
-     * In addition, both login token and credentials can expire after a certain duration.  If expired,
-     * the client needs to ask the provider to 'refresh" the information, hence the purpose of this behavior.
-     *
-     * TODO: this behavior needs to be part of the interface IS3Credential
-     *
-     */
-    public void refresh() {
-        this.cred.getAwsCredentialProvider().refresh();
-    }
-
-    @Override
-    public AWSCredentialsProvider getAwsCredentialProvider() {
+    public AwsCredentialsProvider getAwsCredentialProvider() {
         if (this.stsSessionCredentialsProvider == null) {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
@@ -80,11 +60,20 @@ public class S3RoleAssumptionCredential implements IS3Credential {
                         // session/token expiration.
                         try {
 
+                            StsClient stsClient = StsClient.builder()
+                                    .credentialsProvider(cred.getAwsCredentialProvider())
+                                    .build();
+
+                            AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
+                                    .roleArn(roleArn)
+                                    .roleSessionName(AWS_ROLE_ASSUMPTION_SESSION_NAME)
+                                    .build();
+
                             this.stsSessionCredentialsProvider =
-                                    new STSAssumeRoleSessionCredentialsProvider(
-                                            this.cred.getAwsCredentialProvider(),
-                                            roleArn,
-                                            AWS_ROLE_ASSUMPTION_SESSION_NAME);
+                                    StsAssumeRoleCredentialsProvider.builder()
+                                            .stsClient(stsClient)
+                                            .refreshRequest(assumeRoleRequest)
+                                            .build();
 
                         } catch (Exception ex) {
                             throw new IllegalStateException(

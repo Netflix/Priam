@@ -16,29 +16,29 @@
  */
 package com.netflix.priam.aws;
 
-import com.amazonaws.AmazonClientException;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.model.*;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
-import java.io.ByteArrayInputStream;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
 
 public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
-    private final AmazonS3 client;
+    private final S3Client client;
     private final DataPart dataPart;
-    private final List<PartETag> partETags;
+    private final List<CompletedPart> partETags;
     private AtomicInteger partsUploaded = null; // num of data parts successfully uploaded
 
     private static final Logger logger = LoggerFactory.getLogger(S3PartUploader.class);
     private static final int MAX_RETRIES = 5;
     private static final int DEFAULT_MIN_SLEEP_MS = 200;
 
-    public S3PartUploader(AmazonS3 client, DataPart dp, List<PartETag> partETags) {
+    public S3PartUploader(S3Client client, DataPart dp, List<CompletedPart> partETags) {
         super(DEFAULT_MIN_SLEEP_MS, BoundedExponentialRetryCallable.MAX_SLEEP, MAX_RETRIES);
         this.client = client;
         this.dataPart = dp;
@@ -46,7 +46,7 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
     }
 
     public S3PartUploader(
-            AmazonS3 client, DataPart dp, List<PartETag> partETags, AtomicInteger partsUploaded) {
+            S3Client client, DataPart dp, List<CompletedPart> partETags, AtomicInteger partsUploaded) {
         super(DEFAULT_MIN_SLEEP_MS, BoundedExponentialRetryCallable.MAX_SLEEP, MAX_RETRIES);
         this.client = client;
         this.dataPart = dp;
@@ -54,45 +54,74 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
         this.partsUploaded = partsUploaded;
     }
 
-    private Void uploadPart() throws AmazonClientException, BackupRestoreException {
-        UploadPartRequest req = new UploadPartRequest();
-        req.setBucketName(dataPart.getBucketName());
-        req.setKey(dataPart.getS3key());
-        req.setUploadId(dataPart.getUploadID());
-        req.setPartNumber(dataPart.getPartNo());
-        req.setPartSize(dataPart.getPartData().length);
-        req.setMd5Digest(SystemUtils.toBase64(dataPart.getMd5()));
-        req.setInputStream(new ByteArrayInputStream(dataPart.getPartData()));
-        UploadPartResult res = client.uploadPart(req);
-        PartETag partETag = res.getPartETag();
-        if (!partETag.getETag().equals(SystemUtils.toHex(dataPart.getMd5())))
+    private Void uploadPart() throws SdkException, BackupRestoreException {
+        UploadPartRequest req = UploadPartRequest.builder()
+                .bucket(dataPart.getBucketName())
+                .key(dataPart.getS3key())
+                .uploadId(dataPart.getUploadID())
+                .partNumber(dataPart.getPartNo())
+                .contentLength((long) dataPart.getPartData().length)
+                .contentMD5(SystemUtils.toBase64(dataPart.getMd5()))
+                .build();
+
+        UploadPartResponse res = client.uploadPart(req, RequestBody.fromBytes(dataPart.getPartData()));
+
+        // AWS SDK v2 returns ETags without quotes, but we need to compare the MD5 hex
+        String expectedMd5 = SystemUtils.toHex(dataPart.getMd5());
+        String actualETag = res.eTag();
+
+        if (actualETag != null && actualETag.startsWith("\"") && actualETag.endsWith("\"")) {
+            actualETag = actualETag.substring(1, actualETag.length() - 1);
+        }
+
+        if (actualETag != null && actualETag.contains("-")) {
+            actualETag = actualETag.substring(0, actualETag.indexOf("-"));
+        }
+
+        if (!actualETag.equals(expectedMd5)) {
+            logger.error("MD5 mismatch for part {}: expected={}, actual={}",
+                    dataPart.getPartNo(), expectedMd5, actualETag);
             throw new BackupRestoreException(
                     "Unable to match MD5 for part " + dataPart.getPartNo());
-        partETags.add(partETag);
+        }
+
+        CompletedPart completedPart = CompletedPart.builder()
+                .partNumber(dataPart.getPartNo())
+                .eTag(res.eTag())
+                .build();
+
+        partETags.add(completedPart);
         if (this.partsUploaded != null) this.partsUploaded.incrementAndGet();
         return null;
     }
 
-    public CompleteMultipartUploadResult completeUpload() throws BackupRestoreException {
-        CompleteMultipartUploadRequest compRequest =
-                new CompleteMultipartUploadRequest(
-                        dataPart.getBucketName(),
-                        dataPart.getS3key(),
-                        dataPart.getUploadID(),
-                        partETags);
+    public CompleteMultipartUploadResponse completeUpload() throws BackupRestoreException {
+        CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder()
+                .parts(partETags)
+                .build();
+
+        CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
+                .bucket(dataPart.getBucketName())
+                .key(dataPart.getS3key())
+                .uploadId(dataPart.getUploadID())
+                .multipartUpload(completedMultipartUpload)
+                .build();
+
         return client.completeMultipartUpload(compRequest);
     }
 
     // Abort
     public void abortUpload() {
-        AbortMultipartUploadRequest abortRequest =
-                new AbortMultipartUploadRequest(
-                        dataPart.getBucketName(), dataPart.getS3key(), dataPart.getUploadID());
+        AbortMultipartUploadRequest abortRequest = AbortMultipartUploadRequest.builder()
+                .bucket(dataPart.getBucketName())
+                .key(dataPart.getS3key())
+                .uploadId(dataPart.getUploadID())
+                .build();
         client.abortMultipartUpload(abortRequest);
     }
 
     @Override
-    public Void retriableCall() throws AmazonClientException, BackupRestoreException {
+    public Void retriableCall() throws SdkException, BackupRestoreException {
         logger.debug(
                 "Picked up part {} size {}", dataPart.getPartNo(), dataPart.getPartData().length);
         return uploadPart();

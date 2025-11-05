@@ -35,15 +35,19 @@ allprojects {
       implementation 'com.sun.jersey.contribs:jersey-guice:1.19.4'
       implementation 'com.google.guava:guava:21.0'
       implementation 'com.google.code.findbugs:jsr305:3.0.2'
-        
-      // AWS Services
+
+      // AWS Services - SDK v1 (for EC2, AutoScaling, STS)
       implementation 'com.amazonaws:aws-java-sdk-core:latest.release'
-      implementation 'com.amazonaws:aws-java-sdk-s3:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-sns:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-ec2:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
-        
+
+      // AWS Services - SDK v2 (for S3, SNS)
+      implementation platform('software.amazon.awssdk:bom:2.20.0')
+      implementation 'software.amazon.awssdk:s3'
+      implementation 'software.amazon.awssdk:sts' // Needed for S3 role assumption
+
       implementation 'com.google.inject:guice:4.2.2'
       implementation 'com.google.inject.extensions:guice-servlet:4.2.2'
       implementation 'org.quartz-scheduler:quartz:2.3.0'

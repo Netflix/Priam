@@ -17,13 +17,13 @@
 package com.netflix.priam.aws;
 
 import com.google.common.base.Preconditions;
+import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.DynamicRateLimiter;
 import com.netflix.priam.backup.RangeReadInputStream;
 import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
-import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;
@@ -31,21 +31,6 @@ import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
-import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,6 +38,17 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
+import java.io.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /** Implementation of IBackupFileSystem for S3 */
 @Singleton
@@ -109,11 +105,13 @@ public class S3FileSystem extends S3FileSystemBase {
 
     @Override
     public void putObject(String bucket, String key, String value) {
-        s3Client.putObject(bucket, key, value);
+        s3Client.putObject(
+                PutObjectRequest.builder().bucket(bucket).key(key).build(),
+                RequestBody.fromBytes(value.getBytes()));
     }
 
-    private ObjectMetadata getObjectMetadata(File file) {
-        ObjectMetadata ret = new ObjectMetadata();
+    private Map<String, String> getFileMetadata(File file) {
+            Map<String, String> metadata = new HashMap<>();
         long lastModified = file.lastModified();
         long fileSize = file.length();
 

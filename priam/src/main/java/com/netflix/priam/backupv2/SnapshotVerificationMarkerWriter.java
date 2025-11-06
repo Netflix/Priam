@@ -1,9 +1,7 @@
 package com.netflix.priam.backupv2;
 
-import com.amazonaws.services.s3.model.PutObjectResult;
 import com.netflix.priam.aws.RemoteBackupPath;
 import com.netflix.priam.backup.AbstractBackupPath;
-import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.identity.config.InstanceInfo;

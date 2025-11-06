@@ -1,4 +1,8 @@
 # Changelog
+## 2025/11/06 4.1.22
+Persist validation markers to S3 for UCC. (#1122)
+Migrating to new S3 SDK (#1124)
+
 ## 2025/08/06 4.1.19
 Publish system.local in backups; ignore them on restore.
 

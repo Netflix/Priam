@@ -188,7 +188,7 @@ public class TestBackupVerificationTask {
         BackupMetadata backupMetadata = new BackupMetadata("12345", new Date());
         backupMetadata.setLastValidated(
                 new Date(Instant.now().plus(1, ChronoUnit.HOURS).toEpochMilli()));
-        backupMetadata.setSnapshotLocation("bucket/path/to/file.db");
+        backupMetadata.setSnapshotLocation("useast1-cass-test-1/test_backup/-1002_cass_compromised_credentials/-3074457343809683002/META_V2/1762448400000/SNAPPY/PLAINTEXT/meta_v2_202511061700.json");
         return backupMetadata;
     }
 }

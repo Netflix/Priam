@@ -50,7 +50,7 @@ public class RemoteBackupPath extends AbstractBackupPath {
     /* This will ensure that there is some randomness in the path at the start so that remote file systems
     can hash the contents better when we have lot of clusters backing up at the same remote location.
     */
-    private String prependHash(String appName) {
+    public static String prependHash(String appName) {
         return String.format("%d_%s", appName.hashCode() % 10000, appName);
     }
 

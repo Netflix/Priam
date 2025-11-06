@@ -18,12 +18,12 @@
 package com.netflix.priam.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.netflix.priam.PriamServer;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.backupv2.BackupTTLTask;
 import com.netflix.priam.backupv2.BackupV2Service;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.SnapshotMetaTask;
+import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.DateUtil;
@@ -63,6 +63,7 @@ public class BackupServletV2 {
     private final BackupNotificationMgr backupNotificationMgr;
     private final IConfiguration config;
     private final DirectorySize directorySize;
+    private final SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter;
 
     private static final String REST_SUCCESS = "[\"ok\"]";
 
@@ -78,7 +79,8 @@ public class BackupServletV2 {
             BackupV2Service backupService,
             BackupNotificationMgr backupNotificationMgr,
             IConfiguration config,
-            DirectorySize directorySize) {
+            DirectorySize directorySize,
+            SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter) {
         this.backupStatusMgr = backupStatusMgr;
         this.backupVerification = backupVerification;
         this.snapshotMetaService = snapshotMetaService;
@@ -90,6 +92,7 @@ public class BackupServletV2 {
         this.backupNotificationMgr = backupNotificationMgr;
         this.config = config;
         this.directorySize = directorySize;
+        this.snapshotVerificationMarkerWriter = snapshotVerificationMarkerWriter;
     }
 
     @GET
@@ -164,6 +167,7 @@ public class BackupServletV2 {
                 result.get().remotePath);
 
         backupNotificationMgr.notify(result.get().remotePath, result.get().snapshotInstant);
+        snapshotVerificationMarkerWriter.write(result.get().remotePath);
 
         return Response.ok(result.get().toString()).build();
     }

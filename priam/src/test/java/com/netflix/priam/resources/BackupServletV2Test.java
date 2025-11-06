@@ -264,7 +264,7 @@ public class BackupServletV2Test {
         BackupVerificationResult result = new BackupVerificationResult();
         result.valid = true;
         result.manifestAvailable = true;
-        result.remotePath = "some_random";
+        result.remotePath = "test_backup/-1002_cass_compromised_credentials/-3074457343809683002/META_V2/1762448400000/SNAPPY/PLAINTEXT/meta_v2_202511061700.json";
         result.filesMatched = 123;
         result.snapshotInstant = Instant.EPOCH;
         return result;

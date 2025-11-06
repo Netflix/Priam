@@ -44,11 +44,12 @@ public class BackupVerificationTask extends Task {
     private static final Logger logger = LoggerFactory.getLogger(BackupVerificationTask.class);
     public static final String JOBNAME = "BackupVerificationService";
 
-    private IBackupRestoreConfig backupRestoreConfig;
-    private BackupVerification backupVerification;
-    private BackupMetrics backupMetrics;
-    private InstanceState instanceState;
-    private BackupNotificationMgr backupNotificationMgr;
+    private final IBackupRestoreConfig backupRestoreConfig;
+    private final BackupVerification backupVerification;
+    private final BackupMetrics backupMetrics;
+    private final InstanceState instanceState;
+    private final BackupNotificationMgr backupNotificationMgr;
+    private final SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter;
 
     @Inject
     public BackupVerificationTask(
@@ -57,13 +58,15 @@ public class BackupVerificationTask extends Task {
             BackupVerification backupVerification,
             BackupMetrics backupMetrics,
             InstanceState instanceState,
-            BackupNotificationMgr backupNotificationMgr) {
+            BackupNotificationMgr backupNotificationMgr,
+            SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupVerification = backupVerification;
         this.backupMetrics = backupMetrics;
         this.instanceState = instanceState;
         this.backupNotificationMgr = backupNotificationMgr;
+        this.snapshotVerificationMarkerWriter = snapshotVerificationMarkerWriter;
     }
 
     @Override
@@ -104,6 +107,7 @@ public class BackupVerificationTask extends Task {
                                     snapshotKey);
                             backupNotificationMgr.notify(
                                     snapshotKey, result.getStart().toInstant());
+                            snapshotVerificationMarkerWriter.write(snapshotKey);
                         });
 
         if (verifiedBackups.isEmpty()) {

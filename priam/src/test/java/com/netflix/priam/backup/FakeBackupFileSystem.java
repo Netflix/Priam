@@ -141,4 +141,9 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
         addFile(path.getRemotePath());
         return path.getBackupFile().length();
     }
+    
+    @Override
+    public void putObject(String bucket, String key, String value) {
+        throw new UnsupportedOperationException();
+    }
 }

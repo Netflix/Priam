@@ -105,8 +105,9 @@ public class S3FileSystem extends S3FileSystemBase {
 
     @Override
     public void putObject(String bucket, String key, String value) {
+        String md5 = SystemUtils.toBase64(SystemUtils.md5(value.getBytes()));
         s3Client.putObject(
-                PutObjectRequest.builder().bucket(bucket).key(key).build(),
+                PutObjectRequest.builder().bucket(bucket).key(key).contentMD5(md5).build(),
                 RequestBody.fromBytes(value.getBytes()));
     }
 

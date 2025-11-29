@@ -1,4 +1,7 @@
 # Changelog
+## 2025/11/29 4.1.23
+Add MD5 hash to validation markers. (#1123)
+
 ## 2025/11/06 4.1.22
 Persist validation markers to S3 for UCC. (#1122)
 Migrating to new S3 SDK (#1124)

@@ -1,4 +1,7 @@
 # Changelog
+## 2025/12/04 4.1.24
+Set the marker to the last key when delimiter is null \[in S3Iterator\] (#1127)
+
 ## 2025/11/29 4.1.23
 Add MD5 hash to validation markers. (#1123)
 

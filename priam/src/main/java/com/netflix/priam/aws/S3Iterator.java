@@ -77,10 +77,15 @@ public class S3Iterator implements Iterator<String> {
             while (objectListing.isTruncated() && !iterator.hasNext()) {
                 ListObjectsRequest.Builder listReqBuilder = ListObjectsRequest.builder()
                         .bucket(bucket)
-                        .prefix(prefix)
-                        .marker(objectListing.nextMarker());
+                        .prefix(prefix);
 
-                if (StringUtils.isNotBlank(delimiter)) listReqBuilder.delimiter(delimiter);
+                if (StringUtils.isNotBlank(delimiter)) {
+                    // nextMarker() is only published when delimiter is specified.
+                    listReqBuilder.delimiter(delimiter).marker(objectListing.nextMarker());
+                } else {
+                    String marker = objectListing.contents().get(objectListing.contents().size() - 1).key();
+                    listReqBuilder.marker(marker);
+                }
 
                 objectListing = s3Client.listObjects(listReqBuilder.build());
                 iterator = createIterator();

@@ -76,9 +76,12 @@ public class BackupVerification {
             throws IllegalArgumentException {
         IMetaProxy metaProxy = metaV2Proxy;
         List<BackupMetadata> results = new ArrayList<>();
+        System.out.println("@@@ getting backup metadata");
         for (BackupMetadata backupMetadata : backupStatusMgr.getLatestBackupMetadata(dateRange)) {
+            System.out.println("@@@ snapshot: " +  backupMetadata.getSnapshotLocation());
             if (backupMetadata.getLastValidated() != null
                     || verifyBackup(metaProxy, backupMetadata).isPresent()) {
+                System.out.println("@@@ Adding to results");
                 results.add(backupMetadata);
             }
         }
@@ -92,17 +95,24 @@ public class BackupVerification {
 
     private Optional<BackupVerificationResult> verifyBackup(
             IMetaProxy metaProxy, BackupMetadata latestBackupMetaData) {
+        System.out.println("@@@ verifying: " +  latestBackupMetaData.getSnapshotLocation());
         Path metadataLocation = Paths.get(latestBackupMetaData.getSnapshotLocation());
         metadataLocation = metadataLocation.subpath(1, metadataLocation.getNameCount());
         AbstractBackupPath abstractBackupPath = abstractBackupPathProvider.get();
         abstractBackupPath.parseRemote(metadataLocation.toString());
         BackupVerificationResult result = metaProxy.isMetaFileValid(abstractBackupPath);
         if (result.valid) {
+            System.out.println("@@@ Valid! Now updating.");
             updateLatestResult(latestBackupMetaData);
             Date now = new Date(DateUtil.getInstant().toEpochMilli());
             latestBackupMetaData.setLastValidated(now);
             backupStatusMgr.update(latestBackupMetaData);
+            System.out.println("@@@ Updated");
             return Optional.of(result);
+        }
+        System.out.println("@@@ metafile is invalid.");
+        if (!result.filesInMetaOnly.isEmpty()) {
+            System.out.println("@@@ example missing file: " + result.filesInMetaOnly.get(0));
         }
         return Optional.empty();
     }

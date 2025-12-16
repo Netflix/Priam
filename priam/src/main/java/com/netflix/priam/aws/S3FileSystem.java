@@ -131,25 +131,31 @@ public class S3FileSystem extends S3FileSystemBase {
         String remotePath = path.getRemotePath();
         long chunkSize = getChunkSize(localPath);
         String prefix = config.getBackupPrefix();
+        System.out.println(String.format("@@@ Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize));
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {}", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
 
+        System.out.println("@@@ creating multipart upload request");
         CreateMultipartUploadRequest.Builder initRequestBuilder = CreateMultipartUploadRequest.builder()
                 .bucket(prefix)
                 .key(remotePath);
 
+        System.out.println("@@@ adding file metadata");
         Map<String, String> metadata = getFileMetadata(localFile);
         if (!metadata.isEmpty()) {
             initRequestBuilder.metadata(metadata);
         }
 
+        System.out.println("@@@ creating upload and getting id");
         CreateMultipartUploadRequest initRequest = initRequestBuilder.build();
         String uploadId = s3Client.createMultipartUpload(initRequest).uploadId();
+        System.out.println("@@@ wrapping in DataPart");
         DataPart part = new DataPart(prefix, remotePath, uploadId);
         List<CompletedPart> partETags = Collections.synchronizedList(new ArrayList<>());
 
         try (InputStream in = new FileInputStream(localFile)) {
+            System.out.println("@@@ creating chunked stream");
             Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
             int partNum = 0;
             AtomicInteger partsPut = new AtomicInteger(0);
@@ -166,15 +172,21 @@ public class S3FileSystem extends S3FileSystemBase {
                 executor.submit(partUploader);
             }
 
+            System.out.println("@@@ waiting until complete");
             executor.sleepTillEmpty();
+            System.out.println("@@@ " + localFile + " done. part count: " + partsPut.get() + " expected: " + partNum);
             logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
             Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
+            System.out.println(String.format("@@@ complete multipart upload"));
             CompleteMultipartUploadResponse resultS3MultiPartUploadComplete =
                     new S3PartUploader(s3Client, part, partETags).completeUpload();
+            System.out.println(String.format("@@@ check successful"));
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
 
+            System.out.println(String.format("@@@ return file size {}", compressedFileSize));
             return compressedFileSize;
         } catch (Exception e) {
+            System.out.println("@@@ error uploading multipart file " + localPath.toFile() + ": " + e.getMessage());
             new S3PartUploader(s3Client, part, partETags).abortUpload();
             throw new BackupRestoreException("Error uploading file: " + localPath.toString(), e);
         }

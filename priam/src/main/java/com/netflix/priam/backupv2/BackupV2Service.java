@@ -75,6 +75,7 @@ public class BackupV2Service implements IService {
             // restart.
             snapshotMetaTask.uploadFiles();
 
+            System.out.println("@@@ scheduling backup verfication");
             // Schedule the backup verification service
             scheduleTask(
                     scheduler,

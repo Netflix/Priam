@@ -52,6 +52,7 @@ public abstract class AbstractBackup extends Task {
                     "The configured 'data file location' does not exist or is not a directory: "
                             + config.getDataFileLocation());
         }
+        System.out.println("Scanning for backup in: " + dataDir.getAbsolutePath());
         logger.debug("Scanning for backup in: {}", dataDir.getAbsolutePath());
         File[] keyspaceDirectories = dataDir.listFiles();
         if (keyspaceDirectories == null) return;
@@ -59,19 +60,23 @@ public abstract class AbstractBackup extends Task {
         for (File keyspaceDir : keyspaceDirectories) {
             if (keyspaceDir.isFile()) continue;
 
+//            System.out.println("Entering keyspace " + keyspaceDir.getName());
             logger.debug("Entering {} keyspace..", keyspaceDir.getName());
             File[] columnFamilyDirectories = keyspaceDir.listFiles();
             if (columnFamilyDirectories == null) continue;
 
             for (File columnFamilyDir : columnFamilyDirectories) {
+//                System.out.println("Entering CF " + columnFamilyDir.getName());
                 File backupDir = new File(columnFamilyDir, monitoringFolder);
                 if (isAReadableDirectory(backupDir)) {
                     String columnFamilyName = getColumnFamily(backupDir);
                     if (backupRestoreUtil.shouldOmitFromBackup(keyspaceDir.getName(), columnFamilyName)) {
+//                        System.out.println("Omitting " + columnFamilyName);
                         // Clean the backup/snapshot directory else files will keep getting
                         // accumulated.
                         SystemUtils.cleanupDir(backupDir.getAbsolutePath(), null);
                     } else {
+//                        System.out.println("Including " + columnFamilyName);
                         processColumnFamily(backupDir);
                     }
                 }

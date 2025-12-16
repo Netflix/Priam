@@ -165,11 +165,13 @@ public class SnapshotMetaTask extends AbstractBackup {
      * which matches backup version 2.0 naming conventions.
      */
     public void uploadFiles() {
+        System.out.println("@@@ uploading files");
         try {
             // enqueue all the old snapshot folder for upload/delete, if any, as we don't want
             // our disk to be filled by them.
             metaStep = MetaStep.UPLOAD_FILES;
             initiateBackup(SNAPSHOT_FOLDER, backupRestoreUtil);
+            System.out.println("@@@ finished queuing the files for upload");
             logger.info("Finished queuing the files for upload");
         } catch (Exception e) {
             logger.error("Error while trying to upload all the files", e);
@@ -276,6 +278,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                     continue;
                 }
 
+                System.out.println("uploading and deleting all files in " + backupDir.getName());
                 // Process each snapshot of SNAPSHOT_PREFIX
                 // We do not want to wait for completion and we just want to add them to queue. This
                 // is to ensure that next run happens on time.
@@ -284,6 +287,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                         .uploadAndDeleteAllFiles(snapshotDirectory, type, target, true)
                         .forEach(future -> addCallback(future, snapshotDirectory));
 
+                System.out.println("uploading and secondary indexes in " + backupDir.getName());
                 // Next, upload secondary indexes
                 type = AbstractBackupPath.BackupFileType.SECONDARY_INDEX_V2;
                 ImmutableList<ListenableFuture<AbstractBackupPath>> futures;
@@ -342,6 +346,7 @@ public class SnapshotMetaTask extends AbstractBackup {
                         .ifPresent(this::deleteUploadedFiles);
                 break;
             case UPLOAD_FILES:
+                System.out.println("processing " + backupDir.getName());
                 uploadAllFiles(backupDir);
                 break;
             default:

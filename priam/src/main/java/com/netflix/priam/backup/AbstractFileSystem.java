@@ -178,6 +178,7 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
 
         if (tasksQueued.add(localPath)) {
             logger.info("Uploading file: {} to location: {}", localPath, remotePath);
+            System.out.println("@@@ Uploading " + localPath + " to " + remotePath);
             try {
                 long uploadedFileSize;
 
@@ -207,13 +208,14 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                     logger.info("File: {} already present on remoteFileSystem.", remotePath);
                 }
 
+                System.out.println("@@@ Successfully uploaded file: " + localPath + " to " + remotePath);
                 logger.info(
                         "Successfully uploaded file: {} to location: {}", localPath, remotePath);
 
                 if (!FileUtils.deleteQuietly(localFile))
-                    logger.warn(
+                    System.out.println(
                             String.format(
-                                    "Failed to delete local file %s.",
+                                    "@@@ Failed to delete local file %s.",
                                     localFile.getAbsolutePath()));
 
             } catch (Exception e) {

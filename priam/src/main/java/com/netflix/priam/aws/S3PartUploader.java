@@ -19,8 +19,10 @@ package com.netflix.priam.aws;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
-import java.util.List;
+
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkException;
@@ -55,6 +57,7 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
     }
 
     private Void uploadPart() throws SdkException, BackupRestoreException {
+        System.out.println("@@@ creating upload part request");
         UploadPartRequest req = UploadPartRequest.builder()
                 .bucket(dataPart.getBucketName())
                 .key(dataPart.getS3key())
@@ -64,8 +67,10 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
                 .contentMD5(SystemUtils.toBase64(dataPart.getMd5()))
                 .build();
 
+        System.out.println("@@@ uploading part");
         UploadPartResponse res = client.uploadPart(req, RequestBody.fromBytes(dataPart.getPartData()));
 
+        System.out.println("@@@ comparing md5: " + SystemUtils.toHex(dataPart.getMd5()) + " to " + res.eTag());
         // AWS SDK v2 returns ETags without quotes, but we need to compare the MD5 hex
         String expectedMd5 = SystemUtils.toHex(dataPart.getMd5());
         String actualETag = res.eTag();
@@ -79,6 +84,7 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
         }
 
         if (!actualETag.equals(expectedMd5)) {
+            System.out.println("@@@ MD5 mismatch for part " + dataPart.getPartNo() + " expected = " + expectedMd5 + " actual = " + actualETag);
             logger.error("MD5 mismatch for part {}: expected={}, actual={}",
                     dataPart.getPartNo(), expectedMd5, actualETag);
             throw new BackupRestoreException(
@@ -95,11 +101,14 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
         return null;
     }
 
-    public CompleteMultipartUploadResponse completeUpload() throws BackupRestoreException {
+    public CompleteMultipartUploadResponse completeUpload() {
+        System.out.println("@@@ Building completed multipart upload");
+        partETags.sort(Comparator.comparingInt(CompletedPart::partNumber));
         CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder()
                 .parts(partETags)
                 .build();
 
+        System.out.println("@@@ Building complete multipart upload request");
         CompleteMultipartUploadRequest compRequest = CompleteMultipartUploadRequest.builder()
                 .bucket(dataPart.getBucketName())
                 .key(dataPart.getS3key())
@@ -107,6 +116,7 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
                 .multipartUpload(completedMultipartUpload)
                 .build();
 
+        System.out.println("@@@ completing multipart upload");
         return client.completeMultipartUpload(compRequest);
     }
 

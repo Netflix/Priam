@@ -71,12 +71,14 @@ public class BackupVerificationTask extends Task {
 
     @Override
     public void execute() throws Exception {
+        System.out.println("@@@ executing backup verification task at " + Instant.now().toString());
         // Ensure that backup version 2.0 is actually enabled.
         if (backupRestoreConfig.getSnapshotMetaServiceCronExpression().equals("-1")) {
             logger.info("Skipping backup verification. V2 backups are not enabled.");
             return;
         }
 
+        System.out.println("@@@ checking if in restore mode");
         if (instanceState.getRestoreStatus() != null
                 && instanceState.getRestoreStatus().getStatus() != null
                 && instanceState.getRestoreStatus().getStatus() == Status.STARTED) {
@@ -84,13 +86,17 @@ public class BackupVerificationTask extends Task {
             return;
         }
 
+        System.out.println("@@@ validating");
         // Validate the backup done in last x hours.
         Instant now = DateUtil.getInstant();
+        System.out.println("@@@ now: " + now.toString());
         Instant slo =
                 now.minus(backupRestoreConfig.getBackupVerificationSLOInHours(), ChronoUnit.HOURS);
+        System.out.println("@@@ slo: " + slo.toString());
         DateRange dateRange = new DateRange(slo, now);
         List<BackupMetadata> verifiedBackups = backupVerification.verifyBackupsInRange(dateRange);
 
+        System.out.println("@@@ notifying");
         verifiedBackups
                 .stream()
                 .filter(result -> result.getLastValidated().toInstant().isAfter(now))
@@ -101,6 +107,7 @@ public class BackupVerificationTask extends Task {
                                     snapshotLocation
                                             .subpath(1, snapshotLocation.getNameCount())
                                             .toString();
+                            System.out.println("@@@ Notifying for " + result.getSnapshotLocation());
                             logger.info(
                                     "Sending {} message for backup: {}",
                                     AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
@@ -110,12 +117,15 @@ public class BackupVerificationTask extends Task {
                             snapshotVerificationMarkerWriter.write(snapshotKey);
                         });
 
+        System.out.println("@@@ ensuring we are within SLO");
         if (verifiedBackups.isEmpty()) {
+            System.out.println("@@@ failed to meet SLO");
             logger.error(
                     "Not able to find any snapshot which is valid in our SLO window: {} hours",
                     backupRestoreConfig.getBackupVerificationSLOInHours());
             backupMetrics.incrementBackupVerificationFailure();
         }
+        System.out.println("@@@ done at " + Instant.now().toString());
     }
 
     /**

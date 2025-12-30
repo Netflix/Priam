@@ -16,9 +16,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.amazonaws.services.s3.AmazonS3Client;
-import com.amazonaws.services.s3.S3ResponseMetadata;
-import com.amazonaws.services.s3.model.*;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
 import com.netflix.priam.aws.auth.IS3Credential;
@@ -37,6 +34,20 @@ import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.ByteBufferInputStream;
 import com.netflix.priam.utils.SystemUtils;
 import com.netflix.priam.utils.ThreadLocalByteBuffer;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xerial.snappy.Snappy;
+import software.amazon.awssdk.core.exception.SdkException;
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.s3.S3Client;
+import software.amazon.awssdk.services.s3.model.*;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.inject.Singleton;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
@@ -44,19 +55,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.inject.Singleton;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xerial.snappy.Snappy;
 
 /** Implementation of IBackupFileSystem for S3 */
 @Singleton
@@ -80,9 +80,9 @@ public class S3FileSystem extends S3FileSystemBase {
             DynamicRateLimiter dynamicRateLimiter) {
         super(pathProvider, compress, config, backupMetrics, backupNotificationMgr);
         s3Client =
-                AmazonS3Client.builder()
-                        .withCredentials(cred.getAwsCredentialProvider())
-                        .withRegion(instanceInfo.getRegion())
+                S3Client.builder()
+                        .credentialsProvider(cred.getAwsCredentialProvider())
+                        .region(Region.of(instanceInfo.getRegion()))
                         .build();
         this.dynamicRateLimiter = dynamicRateLimiter;
     }
@@ -114,19 +114,26 @@ public class S3FileSystem extends S3FileSystemBase {
         }
     }
 
-    private ObjectMetadata getObjectMetadata(File file) {
-        ObjectMetadata ret = new ObjectMetadata();
+    @Override
+    public void putObject(String bucket, String key, String value) {
+        String md5 = SystemUtils.toBase64(SystemUtils.md5(value.getBytes()));
+        s3Client.putObject(
+                PutObjectRequest.builder().bucket(bucket).key(key).contentMD5(md5).build(),
+                RequestBody.fromBytes(value.getBytes()));
+    }
+
+    private Map<String, String> getFileMetadata(File file) {
+            Map<String, String> metadata = new HashMap<>();
         long lastModified = file.lastModified();
+        long fileSize = file.length();
 
         if (lastModified != 0) {
-            ret.addUserMetadata("local-modification-time", Long.toString(lastModified));
+            metadata.put("local-modification-time", Long.toString(lastModified));
         }
-
-        long fileSize = file.length();
         if (fileSize != 0) {
-            ret.addUserMetadata("local-size", Long.toString(fileSize));
+            metadata.put("local-size", Long.toString(fileSize));
         }
-        return ret;
+        return metadata;
     }
 
     private long uploadMultipart(AbstractBackupPath path, Instant target)
@@ -148,12 +155,19 @@ public class S3FileSystem extends S3FileSystemBase {
             logger.debug("Uploading to {}/{} with chunk size {} (using ByteBuffer implementation)", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
         long fileSize = localFile.length();
-        
-        InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(prefix, remotePath)
-                        .withObjectMetadata(getObjectMetadata(localFile));
-        String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
-        List<PartETag> partETags = new ArrayList<>();
+
+        CreateMultipartUploadRequest.Builder initRequestBuilder = CreateMultipartUploadRequest.builder()
+                .bucket(prefix)
+                .key(remotePath);
+
+        Map<String, String> metadata = getFileMetadata(localFile);
+        if (!metadata.isEmpty()) {
+            initRequestBuilder.metadata(metadata);
+        }
+
+        CreateMultipartUploadRequest initRequest = initRequestBuilder.build();
+        String uploadId = s3Client.createMultipartUpload(initRequest).uploadId();
+        List<CompletedPart> completedParts = new ArrayList<>();
 
         try (FileChannel channel = FileChannel.open(localPath, StandardOpenOption.READ)) {
             int partNum = 0;
@@ -203,26 +217,34 @@ public class S3FileSystem extends S3FileSystemBase {
                 
                 // Upload part directly from ByteBuffer
                 partNum++;
-                UploadPartRequest uploadRequest = new UploadPartRequest()
-                        .withBucketName(prefix)
-                        .withKey(remotePath)
-                        .withUploadId(uploadId)
-                        .withPartNumber(partNum)
-                        .withPartSize(uploadSize)
-                        .withInputStream(new ByteBufferInputStream(uploadBuffer));
-                
+                UploadPartRequest.Builder req = UploadPartRequest.builder()
+                        .bucket(prefix)
+                        .key(remotePath)
+                        .uploadId(uploadId)
+                        .partNumber(partNum)
+                        .contentLength((long) uploadSize);
+
+                byte[] md5 = SystemUtils.md5(uploadBuffer);
                 if (config.addMD5ToBackupUploads()) {
-                    uploadRequest.setMd5Digest(SystemUtils.toBase64(SystemUtils.md5(uploadBuffer)));
+                    req.contentMD5(SystemUtils.toBase64(md5));
                 }
 
-                UploadPartResult uploadResult = new BoundedExponentialRetryCallable<UploadPartResult>(200, 10000, 5) {
+                UploadPartResponse uploadResult = new BoundedExponentialRetryCallable<UploadPartResponse>(200, 10000, 5) {
                     @Override
-                    public UploadPartResult retriableCall() {
-                        return s3Client.uploadPart(uploadRequest);
+                    public UploadPartResponse retriableCall() {
+                        try (ByteBufferInputStream inputStream = new ByteBufferInputStream(uploadBuffer)) {
+                            return s3Client.uploadPart(
+                                    req.build(),
+                                    RequestBody.fromInputStream(inputStream, uploadSize));
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }.call();
-                
-                partETags.add(uploadResult.getPartETag());
+
+                String eTag = uploadResult.eTag();
+                validateUpload(eTag, md5, partNum);
+                completedParts.add(CompletedPart.builder().partNumber(partNum).eTag(eTag).build());
                 compressedFileSize += uploadSize;
                 
                 if (logger.isDebugEnabled()) {
@@ -233,23 +255,42 @@ public class S3FileSystem extends S3FileSystemBase {
             logger.info("{} done. part count: {}", localFile, partNum);
             
             // Complete the multipart upload
-            CompleteMultipartUploadRequest completeRequest = new CompleteMultipartUploadRequest(
-                    prefix, remotePath, uploadId, partETags);
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete = 
-                    s3Client.completeMultipartUpload(completeRequest);
-            checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
-
-            if (logger.isDebugEnabled()) {
-                final S3ResponseMetadata info = s3Client.getCachedResponseMetadata(initRequest);
-                logger.debug("Request Id: {}, Host Id: {}", info.getRequestId(), info.getHostId());
-            }
+            CompleteMultipartUploadResponse multipartUploadResponse =
+                    s3Client.completeMultipartUpload(
+                            CompleteMultipartUploadRequest.builder()
+                                    .bucket(prefix)
+                                    .key(remotePath)
+                                    .uploadId(uploadId)
+                                    .multipartUpload(CompletedMultipartUpload.builder().parts(completedParts).build())
+                                    .build());
+            checkSuccessfulUpload(multipartUploadResponse, localPath);
 
             return compressedFileSize;
         } catch (Exception e) {
-            AbortMultipartUploadRequest abortRequest = new AbortMultipartUploadRequest(
-                    prefix, remotePath, uploadId);
-            s3Client.abortMultipartUpload(abortRequest);
+            s3Client.abortMultipartUpload(
+                    AbortMultipartUploadRequest.builder().bucket(prefix).key(remotePath).uploadId(uploadId).build());
             throw new BackupRestoreException("Error uploading file: " + localPath.toString(), e);
+        }
+    }
+
+    private void validateUpload(String eTag, byte[] md5, int partNumber) throws SdkException, BackupRestoreException {
+        // AWS SDK v2 returns ETags without quotes, but we need to compare the MD5 hex
+        String expectedMd5 = SystemUtils.toHex(md5);
+        String actualETag = eTag;
+
+        if (actualETag != null && actualETag.startsWith("\"") && actualETag.endsWith("\"")) {
+            actualETag = actualETag.substring(1, actualETag.length() - 1);
+        }
+
+        if (actualETag != null && actualETag.contains("-")) {
+            actualETag = actualETag.substring(0, actualETag.indexOf("-"));
+        }
+
+        if (!actualETag.equals(expectedMd5)) {
+            logger.error("MD5 mismatch for part {}: expected={}, actual={}",
+                    partNumber, expectedMd5, actualETag);
+            throw new BackupRestoreException(
+                    "Unable to match MD5 for part " + partNumber);
         }
     }
 
@@ -262,12 +303,20 @@ public class S3FileSystem extends S3FileSystemBase {
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {} (using legacy implementation)", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
-        InitiateMultipartUploadRequest initRequest =
-                new InitiateMultipartUploadRequest(prefix, remotePath)
-                        .withObjectMetadata(getObjectMetadata(localFile));
-        String uploadId = s3Client.initiateMultipartUpload(initRequest).getUploadId();
+
+        CreateMultipartUploadRequest.Builder initRequestBuilder = CreateMultipartUploadRequest.builder()
+                .bucket(prefix)
+                .key(remotePath);
+
+        Map<String, String> metadata = getFileMetadata(localFile);
+        if (!metadata.isEmpty()) {
+            initRequestBuilder.metadata(metadata);
+        }
+
+        CreateMultipartUploadRequest initRequest = initRequestBuilder.build();
+        String uploadId = s3Client.createMultipartUpload(initRequest).uploadId();
         DataPart part = new DataPart(prefix, remotePath, uploadId);
-        List<PartETag> partETags = Collections.synchronizedList(new ArrayList<>());
+        List<CompletedPart> partETags = Collections.synchronizedList(new ArrayList<>());
 
         try (InputStream in = new FileInputStream(localFile)) {
             Iterator<byte[]> chunks = new ChunkedStream(in, chunkSize, path.getCompression());
@@ -288,14 +337,9 @@ public class S3FileSystem extends S3FileSystemBase {
             executor.sleepTillEmpty();
             logger.info("{} done. part count: {} expected: {}", localFile, partsPut.get(), partNum);
             Preconditions.checkState(partNum == partETags.size(), "part count mismatch");
-            CompleteMultipartUploadResult resultS3MultiPartUploadComplete =
+            CompleteMultipartUploadResponse resultS3MultiPartUploadComplete =
                     new S3PartUploader(s3Client, part, partETags).completeUpload();
             checkSuccessfulUpload(resultS3MultiPartUploadComplete, localPath);
-
-            if (logger.isDebugEnabled()) {
-                final S3ResponseMetadata info = s3Client.getCachedResponseMetadata(initRequest);
-                logger.debug("Request Id: {}, Host Id: {}", info.getRequestId(), info.getHostId());
-            }
 
             return compressedFileSize;
         } catch (Exception e) {
@@ -328,10 +372,16 @@ public class S3FileSystem extends S3FileSystemBase {
             dynamicRateLimiter.acquire(path, target, buffer.remaining());
         }
         try {
-            new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+            new BoundedExponentialRetryCallable<PutObjectResponse>(1000, 10000, 5) {
                 @Override
-                public PutObjectResult retriableCall() {
-                    return s3Client.putObject(generatePutFromBuffer(path, buffer));
+                public PutObjectResponse retriableCall() {
+                    try (ByteBufferInputStream inputStream = new ByteBufferInputStream(buffer)) {
+                        return s3Client.putObject(
+                                generatePutFromBuffer(path, buffer),
+                                RequestBody.fromInputStream(inputStream, buffer.remaining()));
+                    } catch (IOException e) {
+                       throw new RuntimeException(e) ;
+                    }
                 }
             }.call();
         } catch (Exception e) {
@@ -350,10 +400,10 @@ public class S3FileSystem extends S3FileSystemBase {
             dynamicRateLimiter.acquire(path, target, chunk.length);
         }
         try {
-            new BoundedExponentialRetryCallable<PutObjectResult>(1000, 10000, 5) {
+            new BoundedExponentialRetryCallable<PutObjectResponse>(1000, 10000, 5) {
                 @Override
-                public PutObjectResult retriableCall() {
-                    return s3Client.putObject(generatePutFromByteArray(path, chunk));
+                public PutObjectResponse retriableCall() {
+                    return s3Client.putObject(generatePutFromByteArray(path, chunk), RequestBody.fromBytes(chunk));
                 }
             }.call();
         } catch (Exception e) {
@@ -364,34 +414,38 @@ public class S3FileSystem extends S3FileSystemBase {
 
     private PutObjectRequest generatePutFromBuffer(AbstractBackupPath path, ByteBuffer buffer) {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        ObjectMetadata metadata = getObjectMetadata(localFile);
-        metadata.setContentLength(buffer.remaining());
-        PutObjectRequest put =
-                new PutObjectRequest(
-                        config.getBackupPrefix(),
-                        path.getRemotePath(),
-                        new ByteBufferInputStream(buffer),
-                        metadata);
-        if (config.addMD5ToBackupUploads()) {
-            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(buffer)));
+        PutObjectRequest.Builder put =
+                PutObjectRequest.builder()
+                        .bucket(config.getBackupPrefix())
+                        .key(path.getRemotePath())
+                        .contentLength((long) buffer.remaining());
+        Map<String, String> metadata = getFileMetadata(localFile);
+        if (!metadata.isEmpty()) {
+            put.metadata(metadata);
         }
-        return put;
+        if (config.addMD5ToBackupUploads()) {
+            put.contentMD5(SystemUtils.toBase64(SystemUtils.md5(buffer)));
+        }
+        return put.build();
     }
 
     private PutObjectRequest generatePutFromByteArray(AbstractBackupPath path, byte[] chunk) {
         File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        ObjectMetadata metadata = getObjectMetadata(localFile);
-        metadata.setContentLength(chunk.length);
-        PutObjectRequest put =
-                new PutObjectRequest(
-                        config.getBackupPrefix(),
-                        path.getRemotePath(),
-                        new ByteArrayInputStream(chunk),
-                        metadata);
-        if (config.addMD5ToBackupUploads()) {
-            put.getMetadata().setContentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+
+        PutObjectRequest.Builder builder = PutObjectRequest.builder()
+                .bucket(config.getBackupPrefix())
+                .key(path.getRemotePath())
+                .contentLength((long) chunk.length);
+
+        Map<String, String> metadata = getFileMetadata(localFile);
+        if (!metadata.isEmpty()) {
+            builder.metadata(metadata);
         }
-        return put;
+
+        if (config.addMD5ToBackupUploads()) {
+            builder.contentMD5(SystemUtils.toBase64(SystemUtils.md5(chunk)));
+        }
+        return builder.build();
     }
 
     @VisibleForTesting

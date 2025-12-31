@@ -19,14 +19,16 @@ package com.netflix.priam.aws;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.SystemUtils;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
     private final S3Client client;
@@ -95,7 +97,8 @@ public class S3PartUploader extends BoundedExponentialRetryCallable<Void> {
         return null;
     }
 
-    public CompleteMultipartUploadResponse completeUpload() throws BackupRestoreException {
+    public CompleteMultipartUploadResponse completeUpload() {
+        partETags.sort(Comparator.comparingInt(CompletedPart::partNumber));
         CompletedMultipartUpload completedMultipartUpload = CompletedMultipartUpload.builder()
                 .parts(partETags)
                 .build();

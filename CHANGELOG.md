@@ -1,4 +1,7 @@
 # Changelog
+## 2025/12/30 4.1.25
+Ensure completed parts are sorted by part number in advance of completing multipart uploads. #1129
+
 ## 2025/12/04 4.1.24
 Set the marker to the last key when delimiter is null \[in S3Iterator\] (#1127)
 

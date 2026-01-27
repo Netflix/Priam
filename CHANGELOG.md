@@ -1,4 +1,7 @@
 # Changelog
+## 2026/01/26 4.1.26
+Use reusable ByteBuffer to improve upload throughput. Use new SDK. #1131
+
 ## 2025/12/30 4.1.25
 Ensure completed parts are sorted by part number in advance of completing multipart uploads. #1129
 

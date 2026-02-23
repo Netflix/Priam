@@ -1,4 +1,7 @@
 # Changelog
+## 2026/02/23 3.1.128
+Make backup grooming function in the local bootstrap case. (#1071)
+
 ## 2023/08/03 3.1.127
 Add config for Cassandra disk_failure_policy #1066
 

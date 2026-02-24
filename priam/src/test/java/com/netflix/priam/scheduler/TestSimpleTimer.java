@@ -5,8 +5,8 @@ import java.text.ParseException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
-import org.junit.Assert;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 import org.quartz.Trigger;
 
 public class TestSimpleTimer {
@@ -20,7 +20,7 @@ public class TestSimpleTimer {
 
     @Test
     public void startBeforeEpoch() {
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () -> new SimpleTimer("foo", PERIOD, Instant.EPOCH.minus(5, ChronoUnit.SECONDS)));
     }
@@ -38,13 +38,14 @@ public class TestSimpleTimer {
 
     @Test
     public void negativePeriod() {
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalArgumentException.class, () -> new SimpleTimer("foo", -PERIOD, START));
     }
 
     @Test
     public void zeroPeriod() {
-        Assert.assertThrows(IllegalArgumentException.class, () -> new SimpleTimer("foo", 0, START));
+        Assertions.assertThrows(
+                IllegalArgumentException.class, () -> new SimpleTimer("foo", 0, START));
     }
 
     private void assertions(Trigger trigger, Instant start) {

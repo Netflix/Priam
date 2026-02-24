@@ -41,7 +41,6 @@ import mockit.Expectations;
 import mockit.Mocked;
 import org.apache.commons.lang3.math.Fraction;
 import org.codehaus.jettison.json.JSONObject;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.jupiter.api.Assertions;
 
@@ -429,7 +428,7 @@ public class TokenRetrieverTest {
     public void testThrowOnDuplicateTokenInSameRegion() {
         prepareTokenGenerationTest();
         create(1, instanceInfo.getInstanceId(), "host_0", "1.2.3.4", "us-east-1d", 1808575600 + "");
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalStateException.class, () -> getTokenRetriever().generateNewToken());
     }
 

@@ -14,9 +14,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
 
 public class TestBackupDynamicRateLimiter {
     private static final Instant NOW = Instant.ofEpochMilli(1 << 16);
@@ -76,7 +76,7 @@ public class TestBackupDynamicRateLimiter {
     @Test
     public void noBackupThreads() {
         rateLimiter = getRateLimiter(ImmutableMap.of("Priam.backup.threads", 0), NOW, DIR_SIZE);
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> timePermitAcquisition(getBackupPath(), LATER, 20));
     }
@@ -84,7 +84,7 @@ public class TestBackupDynamicRateLimiter {
     @Test
     public void negativeBackupThreads() {
         rateLimiter = getRateLimiter(ImmutableMap.of("Priam.backup.threads", -1), NOW, DIR_SIZE);
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalStateException.class,
                 () -> timePermitAcquisition(getBackupPath(), LATER, 20));
     }
@@ -99,7 +99,7 @@ public class TestBackupDynamicRateLimiter {
     @Test
     public void noPermitsRequested() {
         rateLimiter = getRateLimiter(ImmutableMap.of("Priam.backup.threads", 1), NOW, DIR_SIZE);
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () -> timePermitAcquisition(getBackupPath(), LATER, 0));
     }
@@ -107,7 +107,7 @@ public class TestBackupDynamicRateLimiter {
     @Test
     public void negativePermitsRequested() {
         rateLimiter = getRateLimiter(ImmutableMap.of("Priam.backup.threads", 1), NOW, DIR_SIZE);
-        Assert.assertThrows(
+        Assertions.assertThrows(
                 IllegalArgumentException.class,
                 () -> timePermitAcquisition(getBackupPath(), LATER, -1));
     }

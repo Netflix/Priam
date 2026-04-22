@@ -1,0 +1,2 @@
+# Poison marker file for cache poisoning test
+CACHE_POISON_HB_12345

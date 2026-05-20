@@ -37,7 +37,6 @@ import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
-    private static final int MAX_CHUNKS = 9995; // 10K is AWS limit, minus a small buffer
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystemBase.class);
     S3Client s3Client;
     final IConfiguration config;
@@ -188,9 +187,5 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
                     e.getMessage());
             throw new BackupRestoreException(e + " while trying to delete the objects");
         }
-    }
-
-    final long getChunkSize(Path path) {
-        return Math.max(path.toFile().length() / MAX_CHUNKS, config.getBackupChunkSize());
     }
 }

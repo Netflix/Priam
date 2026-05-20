@@ -21,13 +21,17 @@ import java.nio.ByteBuffer;
 public class ThreadLocalByteBuffer {
     
     public static ByteBuffer get(ThreadLocal<ByteBuffer> threadLocalBuffer, int bytes) {
+        return get(threadLocalBuffer, bytes, true);
+    }
+
+    public static ByteBuffer get(ThreadLocal<ByteBuffer> threadLocalBuffer, int bytes, boolean direct) {
         ByteBuffer buffer = threadLocalBuffer.get();
-        
-        if (buffer == null || buffer.capacity() < bytes) {
-            buffer = ByteBuffer.allocateDirect(bytes);
+
+        if (buffer == null || buffer.capacity() < bytes || buffer.isDirect() != direct) {
+            buffer = direct ? ByteBuffer.allocateDirect(bytes) : ByteBuffer.allocate(bytes);
             threadLocalBuffer.set(buffer);
         }
-        
+
         buffer.clear();
         buffer.limit(bytes);
         return buffer;

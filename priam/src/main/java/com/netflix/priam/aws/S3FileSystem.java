@@ -138,7 +138,7 @@ public class S3FileSystem extends S3FileSystemBase {
 
     private long uploadMultipart(AbstractBackupPath path, Instant target)
             throws BackupRestoreException {
-        if (config.useReusableBufferForMultipartUploads()) {
+        if (config.useReusableBufferForMultipartUploads() && path.getCompression() == CompressionType.NONE) {
             return uploadMultipartWithBuffers(path, target);
         } else {
             return uploadMultipartLegacy(path, target);
@@ -355,7 +355,7 @@ public class S3FileSystem extends S3FileSystemBase {
         if (localFile.length() >= config.getBackupChunkSize())
             return uploadMultipart(path, target);
 
-        if (config.useReusableBufferForMultipartUploads()) {
+        if (config.useReusableBufferForMultipartUploads() && path.getCompression() == CompressionType.NONE) {
             return uploadFileWithByteBuffer(path, target);
         } else {
             return uploadFileWithByteArray(path, target);

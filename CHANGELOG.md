@@ -1,4 +1,7 @@
 # Changelog
+## 2026/05/31 4.1.27
+Prohibit using reusable ByteBuffer unless backups are not compressed. #1141
+
 ## 2026/01/26 4.1.26
 Use reusable ByteBuffer to improve upload throughput. Use new SDK. #1131
 

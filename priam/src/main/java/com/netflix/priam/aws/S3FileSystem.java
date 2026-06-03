@@ -33,11 +33,9 @@ import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.priam.utils.ByteBufferInputStream;
 import com.netflix.priam.utils.SystemUtils;
-import com.netflix.priam.utils.ThreadLocalByteBuffer;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xerial.snappy.Snappy;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -50,10 +48,8 @@ import javax.inject.Provider;
 import javax.inject.Singleton;
 import java.io.*;
 import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,11 +58,12 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Singleton
 public class S3FileSystem extends S3FileSystemBase {
     private static final Logger logger = LoggerFactory.getLogger(S3FileSystem.class);
+    private static final int MAX_CHUNKS = 9995; // 10K is AWS limit, minus a small buffer
     private static final long MAX_BUFFER_SIZE = 5L * 1024L * 1024L;
+
     private final DynamicRateLimiter dynamicRateLimiter;
     private final ThreadLocal<ByteBuffer> inputBufferThreadLocal = new ThreadLocal<>();
     private final ThreadLocal<ByteBuffer> compressBufferThreadLocal = new ThreadLocal<>();
-    private final ThreadLocal<ByteBuffer> chunkBufferThreadLocal = new ThreadLocal<>();
 
     @Inject
     public S3FileSystem(
@@ -85,6 +82,10 @@ public class S3FileSystem extends S3FileSystemBase {
                         .region(Region.of(instanceInfo.getRegion()))
                         .build();
         this.dynamicRateLimiter = dynamicRateLimiter;
+    }
+
+    static long getChunkSize(Path path, long minimumChunkSize) {
+        return Math.max(path.toFile().length() / MAX_CHUNKS, minimumChunkSize);
     }
 
     @Override
@@ -149,12 +150,11 @@ public class S3FileSystem extends S3FileSystemBase {
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
-        long chunkSize = getChunkSize(localPath);
+        long chunkSize = getChunkSize(localPath, config.getBackupChunkSize());
         String prefix = config.getBackupPrefix();
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {} (using ByteBuffer implementation)", prefix, remotePath, chunkSize);
         File localFile = localPath.toFile();
-        long fileSize = localFile.length();
 
         CreateMultipartUploadRequest.Builder initRequestBuilder = CreateMultipartUploadRequest.builder()
                 .bucket(prefix)
@@ -169,53 +169,14 @@ public class S3FileSystem extends S3FileSystemBase {
         String uploadId = s3Client.createMultipartUpload(initRequest).uploadId();
         List<CompletedPart> completedParts = new ArrayList<>();
 
-        try (FileChannel channel = FileChannel.open(localPath, StandardOpenOption.READ)) {
+        try (BufferIterator bufferIterator = new BufferIterator(inputBufferThreadLocal, compressBufferThreadLocal, path, config.getBackupChunkSize())) {
             int partNum = 0;
             long compressedFileSize = 0;
-            long position = 0;
-            
-            // Allocate thread-local buffers for reading and compression
-            ByteBuffer readBuffer = ThreadLocalByteBuffer.get(inputBufferThreadLocal, (int) Math.min(chunkSize, fileSize));
-            ByteBuffer compressBuffer = null;
-            if (path.getCompression() == CompressionType.SNAPPY) {
-                int maxCompressedLength = Snappy.maxCompressedLength((int) chunkSize);
-                compressBuffer = ThreadLocalByteBuffer.get(compressBufferThreadLocal, maxCompressedLength);
-            }
-            
-            while (position < fileSize) {
-                // Read chunk from file
-                long bytesToRead = Math.min(chunkSize, fileSize - position);
-                readBuffer.clear();
-                readBuffer.limit((int) bytesToRead);
-                
-                int bytesRead = 0;
-                while (bytesRead < bytesToRead) {
-                    int read = channel.read(readBuffer, position + bytesRead);
-                    if (read == -1) break;
-                    bytesRead += read;
-                }
-                readBuffer.flip();
-                position += bytesRead;
-                
-                // Compress if needed
-                ByteBuffer uploadBuffer;
-                int uploadSize;
-                if (path.getCompression() == CompressionType.SNAPPY) {
-                    compressBuffer.clear();
-                    uploadSize = Snappy.compress(readBuffer, compressBuffer);
-                    compressBuffer.limit(uploadSize);
-                    compressBuffer.position(0);
-                    uploadBuffer = compressBuffer;
-                } else {
-                    uploadBuffer = readBuffer;
-                    uploadSize = bytesRead;
-                }
-                
-                // Apply rate limiting
+            while (bufferIterator.hasNext()) {
+                ByteBuffer uploadBuffer = bufferIterator.next();
+                int uploadSize = uploadBuffer.limit();
                 rateLimiter.acquire(uploadSize);
                 dynamicRateLimiter.acquire(path, target, uploadSize);
-                
-                // Upload part directly from ByteBuffer
                 partNum++;
                 UploadPartRequest.Builder req = UploadPartRequest.builder()
                         .bucket(prefix)
@@ -223,12 +184,10 @@ public class S3FileSystem extends S3FileSystemBase {
                         .uploadId(uploadId)
                         .partNumber(partNum)
                         .contentLength((long) uploadSize);
-
                 byte[] md5 = SystemUtils.md5(uploadBuffer);
                 if (config.addMD5ToBackupUploads()) {
                     req.contentMD5(SystemUtils.toBase64(md5));
                 }
-
                 UploadPartResponse uploadResult = new BoundedExponentialRetryCallable<UploadPartResponse>(200, 10000, 5) {
                     @Override
                     public UploadPartResponse retriableCall() {
@@ -246,15 +205,12 @@ public class S3FileSystem extends S3FileSystemBase {
                 validateUpload(eTag, md5, partNum);
                 completedParts.add(CompletedPart.builder().partNumber(partNum).eTag(eTag).build());
                 compressedFileSize += uploadSize;
-                
+
                 if (logger.isDebugEnabled()) {
                     logger.debug("Uploaded part {} of size {}", partNum, uploadSize);
                 }
             }
-            
             logger.info("{} done. part count: {}", localFile, partNum);
-            
-            // Complete the multipart upload
             CompleteMultipartUploadResponse multipartUploadResponse =
                     s3Client.completeMultipartUpload(
                             CompleteMultipartUploadRequest.builder()
@@ -298,7 +254,7 @@ public class S3FileSystem extends S3FileSystemBase {
             throws BackupRestoreException {
         Path localPath = Paths.get(path.getBackupFile().getAbsolutePath());
         String remotePath = path.getRemotePath();
-        long chunkSize = getChunkSize(localPath);
+        long chunkSize = getChunkSize(localPath, config.getBackupChunkSize());
         String prefix = config.getBackupPrefix();
         if (logger.isDebugEnabled())
             logger.debug("Uploading to {}/{} with chunk size {} (using legacy implementation)", prefix, remotePath, chunkSize);
@@ -450,29 +406,14 @@ public class S3FileSystem extends S3FileSystemBase {
 
     @VisibleForTesting
     public ByteBuffer getFileByteBuffer(AbstractBackupPath path) throws BackupRestoreException {
-        File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
-        long fileSize = localFile.length();
-        
-        try {
-            // Get input buffer and read file data directly into it
-            ByteBuffer inputBuffer = ThreadLocalByteBuffer.get(inputBufferThreadLocal, (int) fileSize);
-            try (FileChannel channel = FileChannel.open(localFile.toPath(), StandardOpenOption.READ)) {
-                channel.read(inputBuffer);
-                inputBuffer.flip();
-            }
-            
-            // Compress if needed, otherwise return input buffer
-            if (path.getCompression() == CompressionType.SNAPPY) {
-                int maxCompressedLength = Snappy.maxCompressedLength((int) fileSize);
-                ByteBuffer compressBuffer = ThreadLocalByteBuffer.get(compressBufferThreadLocal, maxCompressedLength);
-                int compressedSize = Snappy.compress(inputBuffer, compressBuffer);
-                compressBuffer.limit(compressedSize);
-                compressBuffer.position(0);
-                return compressBuffer;
-            } else {
-                return inputBuffer;
-            }
+        try (BufferIterator bufferIterator = new BufferIterator(
+                inputBufferThreadLocal,
+                compressBufferThreadLocal,
+                path,
+                config.getBackupChunkSize())) {
+            return bufferIterator.next();
         } catch (Exception e) {
+            File localFile = Paths.get(path.getBackupFile().getAbsolutePath()).toFile();
             throw new BackupRestoreException("Error reading file: " + localFile.getName(), e);
         }
     }

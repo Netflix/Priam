@@ -26,27 +26,28 @@ import com.google.common.util.concurrent.ListenableFuture;
 import com.google.common.util.concurrent.ListeningExecutorService;
 import com.google.common.util.concurrent.MoreExecutors;
 import com.netflix.priam.backup.AbstractBackupPath.BackupFileType;
-import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
-import com.netflix.priam.notification.UploadStatus;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
 import com.netflix.spectator.api.patterns.PolledMeter;
-import java.io.File;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.time.Instant;
-import java.util.*;
-import java.util.concurrent.*;
-import javax.inject.Inject;
-import javax.inject.Provider;
 import org.apache.commons.collections4.iterators.TransformIterator;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Provider;
+import java.io.File;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.Instant;
+import java.util.Date;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.*;
 
 /**
  * This class is responsible for managing parallelism and orchestrating the upload and download, but
@@ -62,7 +63,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     private final Set<Path> tasksQueued;
     private final ListeningExecutorService fileUploadExecutor;
     private final ThreadPoolExecutor fileDownloadExecutor;
-    private final BackupNotificationMgr backupNotificationMgr;
 
     // This is going to be a write-thru cache containing the most frequently used items from remote
     // file system. This is to ensure that we don't make too many API calls to remote file system.
@@ -72,12 +72,10 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
     public AbstractFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr,
             Provider<AbstractBackupPath> pathProvider) {
         this.configuration = configuration;
         this.backupMetrics = backupMetrics;
         this.pathProvider = pathProvider;
-        this.backupNotificationMgr = backupNotificationMgr;
         this.objectCache =
                 CacheBuilder.newBuilder().maximumSize(configuration.getBackupQueueSize()).build();
         tasksQueued = new ConcurrentHashMap<>().newKeySet();
@@ -183,7 +181,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
 
                 // Upload file if it not present at remote location.
                 if (path.getType() != BackupFileType.SST_V2 || path.isIncremental() || !checkObjectExists(remotePath)) {
-                    backupNotificationMgr.notify(path, UploadStatus.STARTED);
                     uploadedFileSize =
                             new BoundedExponentialRetryCallable<Long>(
                                     500 /* minSleep */, 10000 /* maxSleep */, retry) {
@@ -201,7 +198,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                     backupMetrics.recordUploadRate(uploadedFileSize);
                     backupMetrics.incrementValidUploads();
                     path.setCompressedFileSize(uploadedFileSize);
-                    backupNotificationMgr.notify(path, UploadStatus.SUCCESS);
                 } else {
                     // file is already uploaded to remote file system.
                     logger.info("File: {} already present on remoteFileSystem.", remotePath);
@@ -224,7 +220,6 @@ public abstract class AbstractFileSystem implements IBackupFileSystem {
                         remotePath,
                         e.getMessage(),
                         e);
-                backupNotificationMgr.notify(path, UploadStatus.FAILED);
                 throw new BackupRestoreException(e.getMessage());
             } finally {
                 // Remove the task from the list so if we try to upload file ever again, we can.

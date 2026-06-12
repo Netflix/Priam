@@ -21,7 +21,6 @@ import com.google.inject.Guice;
 import com.google.inject.Injector;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.BackupFileUtils;
 import java.io.File;
 import java.nio.file.Path;
@@ -49,7 +48,6 @@ public class TestAbstractFileSystem {
     private Injector injector;
     private IConfiguration configuration;
     private BackupMetrics backupMetrics;
-    private BackupNotificationMgr backupNotificationMgr;
     private FailureFileSystem failureFileSystem;
     private MyFileSystem myFileSystem;
 
@@ -59,21 +57,18 @@ public class TestAbstractFileSystem {
 
         if (configuration == null) configuration = injector.getInstance(IConfiguration.class);
 
-        if (backupNotificationMgr == null)
-            backupNotificationMgr = injector.getInstance(BackupNotificationMgr.class);
-
         backupMetrics = injector.getInstance(BackupMetrics.class);
         Provider<AbstractBackupPath> pathProvider = injector.getProvider(AbstractBackupPath.class);
 
         if (failureFileSystem == null)
             failureFileSystem =
                     new FailureFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                            configuration, backupMetrics, pathProvider);
 
         if (myFileSystem == null)
             myFileSystem =
                     new MyFileSystem(
-                            configuration, backupMetrics, backupNotificationMgr, pathProvider);
+                            configuration, backupMetrics, pathProvider);
 
         BackupFileUtils.cleanupDir(Paths.get(configuration.getDataFileLocation()));
     }
@@ -276,9 +271,8 @@ public class TestAbstractFileSystem {
         public FailureFileSystem(
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
-                BackupNotificationMgr backupNotificationMgr,
                 Provider<AbstractBackupPath> pathProvider) {
-            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+            super(configuration, backupMetrics, pathProvider);
         }
 
         @Override
@@ -306,9 +300,8 @@ public class TestAbstractFileSystem {
         public MyFileSystem(
                 IConfiguration configuration,
                 BackupMetrics backupMetrics,
-                BackupNotificationMgr backupNotificationMgr,
                 Provider<AbstractBackupPath> pathProvider) {
-            super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+            super(configuration, backupMetrics, pathProvider);
         }
 
         @Override

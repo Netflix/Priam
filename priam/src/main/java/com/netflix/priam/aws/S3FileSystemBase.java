@@ -13,7 +13,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.RateLimiter;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.AbstractFileSystem;
@@ -21,20 +20,19 @@ import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.BlockingSubmitThreadPoolExecutor;
-import java.nio.file.Path;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.stream.Collectors;
-import javax.inject.Provider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import software.amazon.awssdk.core.exception.SdkException;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.*;
+
+import javax.inject.Provider;
+import java.nio.file.Path;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.stream.Collectors;
 
 public abstract class S3FileSystemBase extends AbstractFileSystem {
     private static final int MAX_CHUNKS = 9995; // 10K is AWS limit, minus a small buffer
@@ -50,9 +48,8 @@ public abstract class S3FileSystemBase extends AbstractFileSystem {
             Provider<AbstractBackupPath> pathProvider,
             ICompression compress,
             final IConfiguration config,
-            BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr) {
-        super(config, backupMetrics, backupNotificationMgr, pathProvider);
+            BackupMetrics backupMetrics) {
+        super(config, backupMetrics, pathProvider);
         this.compress = compress;
         this.config = config;
 

@@ -19,7 +19,6 @@ package com.netflix.priam.backup;
 
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,9 +42,8 @@ public class FakeBackupFileSystem extends AbstractFileSystem {
     public FakeBackupFileSystem(
             IConfiguration configuration,
             BackupMetrics backupMetrics,
-            BackupNotificationMgr backupNotificationMgr,
             Provider<AbstractBackupPath> pathProvider) {
-        super(configuration, backupMetrics, backupNotificationMgr, pathProvider);
+        super(configuration, backupMetrics, pathProvider);
     }
 
     public void setupTest(List<String> files) {

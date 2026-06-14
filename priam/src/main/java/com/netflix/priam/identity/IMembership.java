@@ -50,36 +50,4 @@ public interface IMembership {
      * @return
      */
     int getRacCount();
-
-    /**
-     * Add security group ACLs
-     *
-     * @param listIPs
-     * @param from
-     * @param to
-     */
-    void addACL(Collection<String> listIPs, int from, int to);
-
-    /**
-     * Remove security group ACLs
-     *
-     * @param listIPs
-     * @param from
-     * @param to
-     */
-    void removeACL(Collection<String> listIPs, int from, int to);
-
-    /**
-     * List all ACLs
-     *
-     * @return
-     */
-    ImmutableSet<String> listACL(int from, int to);
-
-    /**
-     * Expand the membership size by 1.
-     *
-     * @param count
-     */
-    void expandRacMembership(int count);
 }

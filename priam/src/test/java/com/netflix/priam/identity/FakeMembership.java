@@ -52,25 +52,4 @@ public class FakeMembership implements IMembership {
     public int getRacCount() {
         return 3;
     }
-
-    @Override
-    public void addACL(Collection<String> listIPs, int from, int to) {
-        acl.addAll(listIPs);
-    }
-
-    @Override
-    public void removeACL(Collection<String> listIPs, int from, int to) {
-        acl.removeAll(listIPs);
-    }
-
-    @Override
-    public ImmutableSet<String> listACL(int from, int to) {
-        return ImmutableSet.copyOf(acl);
-    }
-
-    @Override
-    public void expandRacMembership(int count) {
-        // TODO Auto-generated method stub
-
-    }
 }

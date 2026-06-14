@@ -17,11 +17,11 @@
 
 package com.netflix.priam.backup;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.netflix.priam.cred.ICredential;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 
 class FakeNullCredential implements ICredential {
-    public AWSCredentialsProvider getAwsCredentialProvider() {
+    public AwsCredentialsProvider getAwsCredentialProvider() {
         // TODO Auto-generated method stub
         return null;
     }

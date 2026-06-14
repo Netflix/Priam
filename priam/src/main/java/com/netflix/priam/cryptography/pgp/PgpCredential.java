@@ -13,9 +13,10 @@
  */
 package com.netflix.priam.cryptography.pgp;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredentialGeneric;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+
 import javax.inject.Inject;
 
 /*
@@ -32,7 +33,7 @@ public class PgpCredential implements ICredentialGeneric {
     }
 
     @Override
-    public AWSCredentialsProvider getAwsCredentialProvider() {
+    public AwsCredentialsProvider getAwsCredentialProvider() {
         return null;
     }
 

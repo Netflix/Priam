@@ -13,18 +13,18 @@
  */
 package com.netflix.priam.aws.auth;
 
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
+import com.netflix.priam.cred.ICredential;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.InstanceProfileCredentialsProvider;
 
 /*
- * Provides credentials from the S3 instance.
+ * Provides credentials that work with SDK V2
  */
-public class S3InstanceCredential implements IS3Credential {
+public class InstanceCredential implements ICredential {
 
     private final InstanceProfileCredentialsProvider credentialsProvider;
 
-    public S3InstanceCredential() {
+    public InstanceCredential() {
         this.credentialsProvider = InstanceProfileCredentialsProvider.create();
     }
 

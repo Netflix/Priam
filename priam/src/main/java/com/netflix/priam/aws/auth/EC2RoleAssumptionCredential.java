@@ -13,11 +13,15 @@
  */
 package com.netflix.priam.aws.auth;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
+import org.apache.commons.lang3.Validate;
+import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
+import software.amazon.awssdk.services.sts.StsClient;
+import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
+import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
+
 import javax.inject.Inject;
 
 public class EC2RoleAssumptionCredential implements ICredential {
@@ -25,7 +29,7 @@ public class EC2RoleAssumptionCredential implements ICredential {
     private final ICredential cred;
     private final IConfiguration config;
     private final InstanceInfo instanceInfo;
-    private AWSCredentialsProvider stsSessionCredentialsProvider;
+    private AwsCredentialsProvider stsSessionCredentialsProvider;
 
     @Inject
     public EC2RoleAssumptionCredential(
@@ -36,43 +40,32 @@ public class EC2RoleAssumptionCredential implements ICredential {
     }
 
     @Override
-    public AWSCredentialsProvider getAwsCredentialProvider() {
+    public AwsCredentialsProvider getAwsCredentialProvider() {
         if (this.stsSessionCredentialsProvider == null) {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
-
-                    String roleArn;
-                    /**
-                     * Create the assumed IAM role based on the environment. For example, if the
-                     * current environment is VPC, then the assumed role is for EC2 classic, and
-                     * vice versa.
-                     */
-                    if (instanceInfo.getInstanceEnvironment()
-                            == InstanceInfo.InstanceEnvironment.CLASSIC) {
-                        roleArn = this.config.getClassicEC2RoleAssumptionArn();
-                        // Env is EC2 classic --> IAM assumed role for VPC created
-                    } else {
-                        roleArn = this.config.getVpcEC2RoleAssumptionArn();
-                        // Env is VPC --> IAM assumed role for EC2 classic created.
-                    }
-
-                    //
-                    if (roleArn == null || roleArn.isEmpty())
-                        throw new NullPointerException(
-                                "Role ARN is null or empty probably due to missing config entry");
-
-                    /**
-                     * Get handle to an implementation that uses AWS Security Token Service (STS) to
-                     * create temporary, short-lived session with explicit refresh for session/token
-                     * expiration.
-                     */
+                    String roleArn =
+                            instanceInfo.getInstanceEnvironment() == InstanceInfo.InstanceEnvironment.CLASSIC
+                                    ? this.config.getClassicEC2RoleAssumptionArn()
+                                    : this.config.getVpcEC2RoleAssumptionArn();
+                    Validate.notEmpty(roleArn, "roleArn is empty");
                     try {
-                        this.stsSessionCredentialsProvider =
-                                new STSAssumeRoleSessionCredentialsProvider(
-                                        this.cred.getAwsCredentialProvider(),
-                                        roleArn,
-                                        AWS_ROLE_ASSUMPTION_SESSION_NAME);
+                        StsClient stsClient =
+                                StsClient.builder()
+                                        .credentialsProvider(this.cred.getAwsCredentialProvider())
+                                        .build();
 
+                        AssumeRoleRequest assumeRoleRequest =
+                                AssumeRoleRequest.builder()
+                                        .roleArn(roleArn)
+                                        .roleSessionName(AWS_ROLE_ASSUMPTION_SESSION_NAME)
+                                        .build();
+
+                        this.stsSessionCredentialsProvider =
+                                StsAssumeRoleCredentialsProvider.builder()
+                                        .stsClient(stsClient)
+                                        .refreshRequest(assumeRoleRequest)
+                                        .build();
                     } catch (Exception ex) {
                         throw new IllegalStateException(
                                 "Exception in getting handle to AWS Security Token Service (STS).  Msg: "
@@ -82,7 +75,6 @@ public class EC2RoleAssumptionCredential implements ICredential {
                 }
             }
         }
-
         return this.stsSessionCredentialsProvider;
     }
 }

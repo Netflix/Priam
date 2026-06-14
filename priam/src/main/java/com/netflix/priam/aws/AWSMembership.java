@@ -16,12 +16,6 @@
  */
 package com.netflix.priam.aws;
 
-import com.amazonaws.services.autoscaling.AmazonAutoScaling;
-import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
-import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
-import com.amazonaws.services.autoscaling.model.Instance;
 import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
@@ -30,8 +24,15 @@ import com.netflix.priam.identity.config.InstanceInfo;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.autoscaling.AutoScalingClient;
+import software.amazon.awssdk.services.autoscaling.model.AutoScalingGroup;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import software.amazon.awssdk.services.autoscaling.model.DescribeAutoScalingGroupsResponse;
+import software.amazon.awssdk.services.autoscaling.model.Instance;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -58,25 +59,23 @@ public class AWSMembership implements IMembership {
 
     @Override
     public ImmutableSet<String> getRacMembership() {
-        AmazonAutoScaling client = null;
-        try {
+        try (AutoScalingClient client = getAutoScalingClient()) {
             List<String> asgNames = new ArrayList<>();
             asgNames.add(instanceInfo.getAutoScalingGroup());
             asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
-            client = getAutoScalingClient();
             DescribeAutoScalingGroupsRequest asgReq =
-                    new DescribeAutoScalingGroupsRequest()
-                            .withAutoScalingGroupNames(
-                                    asgNames.toArray(new String[asgNames.size()]));
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
+                    DescribeAutoScalingGroupsRequest.builder()
+                            .autoScalingGroupNames(asgNames)
+                            .build();
+            DescribeAutoScalingGroupsResponse res = client.describeAutoScalingGroups(asgReq);
 
             ImmutableSet.Builder<String> instanceIds = ImmutableSet.builder();
-            for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
-                for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
-                            || ins.getLifecycleState().equalsIgnoreCase("shutting-down")
-                            || ins.getLifecycleState().equalsIgnoreCase("Terminated")))
-                        instanceIds.add(ins.getInstanceId());
+            for (AutoScalingGroup asg : res.autoScalingGroups()) {
+                for (Instance ins : asg.instances())
+                    if (!(ins.lifecycleStateAsString().equalsIgnoreCase("Terminating")
+                            || ins.lifecycleStateAsString().equalsIgnoreCase("shutting-down")
+                            || ins.lifecycleStateAsString().equalsIgnoreCase("Terminated")))
+                        instanceIds.add(ins.instanceId());
             }
             if (logger.isInfoEnabled()) {
                 logger.info(
@@ -87,29 +86,24 @@ public class AWSMembership implements IMembership {
                                 StringUtils.join(instanceIds, ",")));
             }
             return instanceIds.build();
-        } finally {
-            if (client != null) client.shutdown();
         }
     }
 
     /** Actual membership AWS source of truth... */
     @Override
     public int getRacMembershipSize() {
-        AmazonAutoScaling client = null;
-        try {
-            client = getAutoScalingClient();
+        try (AutoScalingClient client = getAutoScalingClient()) {
             DescribeAutoScalingGroupsRequest asgReq =
-                    new DescribeAutoScalingGroupsRequest()
-                            .withAutoScalingGroupNames(instanceInfo.getAutoScalingGroup());
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
+                    DescribeAutoScalingGroupsRequest.builder()
+                            .autoScalingGroupNames(instanceInfo.getAutoScalingGroup())
+                            .build();
+            DescribeAutoScalingGroupsResponse res = client.describeAutoScalingGroups(asgReq);
             int size = 0;
-            for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
-                size += asg.getMaxSize();
+            for (AutoScalingGroup asg : res.autoScalingGroups()) {
+                size += asg.maxSize();
             }
             logger.info("Query on ASG returning {} instances", size);
             return size;
-        } finally {
-            if (client != null) client.shutdown();
         }
     }
 
@@ -118,10 +112,10 @@ public class AWSMembership implements IMembership {
         return config.getRacs().size();
     }
 
-    protected AmazonAutoScaling getAutoScalingClient() {
-        return AmazonAutoScalingClientBuilder.standard()
-                .withCredentials(provider.getAwsCredentialProvider())
-                .withRegion(instanceInfo.getRegion())
+    protected AutoScalingClient getAutoScalingClient() {
+        return AutoScalingClient.builder()
+                .region(Region.of(instanceInfo.getRegion()))
+                .credentialsProvider(provider.getAwsCredentialProvider())
                 .build();
     }
 }

@@ -13,32 +13,40 @@
  */
 package com.netflix.priam.identity.config;
 
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.util.EC2MetadataUtils;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
+import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.utils.RetryableCallable;
-import java.util.List;
-import javax.inject.Inject;
-import javax.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
-import org.codehaus.jettison.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import software.amazon.awssdk.imds.Ec2MetadataClient;
+import software.amazon.awssdk.regions.Region;
+import software.amazon.awssdk.services.ec2.Ec2Client;
+import software.amazon.awssdk.services.ec2.model.AvailabilityZone;
+import software.amazon.awssdk.services.ec2.model.DescribeInstancesRequest;
+import software.amazon.awssdk.services.ec2.model.Tag;
+
+import javax.inject.Inject;
+import javax.inject.Singleton;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Singleton
 public class AWSInstanceInfo implements InstanceInfo {
     private static final Logger logger = LoggerFactory.getLogger(AWSInstanceInfo.class);
 
-    static final String PUBLIC_HOSTNAME_URL = "/latest/meta-data/public-hostname";
-    static final String LOCAL_HOSTNAME_URL = "/latest/meta-data/local-hostname";
-    static final String PUBLIC_HOSTIP_URL = "/latest/meta-data/public-ipv4";
-    static final String LOCAL_HOSTIP_URL = "/latest/meta-data/local-ipv4";
+    private static final String LATEST_METADATA = "/latest/meta-data/";
+    static final String PUBLIC_HOSTNAME_URL = LATEST_METADATA + "public-hostname";
+    static final String LOCAL_HOSTNAME_URL = LATEST_METADATA + "local-hostname";
+    static final String PUBLIC_HOSTIP_URL = LATEST_METADATA + "public-ipv4";
+    static final String LOCAL_HOSTIP_URL = LATEST_METADATA + "local-ipv4";
+    private static final String AVAILABILITY_ZONE = LATEST_METADATA + "placement/availability-zone";
+    private static final String INSTANCE_ID = LATEST_METADATA + "instance-id";
+    private static final String INSTANCE_TYPE = LATEST_METADATA + "instance-type";
+    private static final String REGION = LATEST_METADATA + "placement/region";
+    private static final String MAC = LATEST_METADATA + "mac";
 
-    private JSONObject identityDocument = null;
     private String privateIp;
     private String hostIP;
     private String rac;
@@ -47,20 +55,19 @@ public class AWSInstanceInfo implements InstanceInfo {
     private String instanceType;
     private String mac;
     private String region;
-    private String availabilityZone;
-    private ICredential credential;
+    private IS3Credential credential;
     private String vpcId;
     private InstanceEnvironment instanceEnvironment;
 
     @Inject
-    public AWSInstanceInfo(ICredential credential) {
+    public AWSInstanceInfo(IS3Credential credential) {
         this.credential = credential;
     }
 
     @Override
     public String getPrivateIP() {
         if (privateIp == null) {
-            privateIp = EC2MetadataUtils.getPrivateIpAddress();
+            privateIp = tryGetDataFromUrl(LOCAL_HOSTIP_URL);
         }
         return privateIp;
     }
@@ -68,32 +75,28 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getRac() {
         if (rac == null) {
-            rac = EC2MetadataUtils.getAvailabilityZone();
+            rac = tryGetDataFromUrl(AVAILABILITY_ZONE);
         }
         return rac;
     }
 
     @Override
     public List<String> getDefaultRacks() {
-        // Get the fist 3 available zones in the region
-        AmazonEC2 client =
-                AmazonEC2ClientBuilder.standard()
-                        .withCredentials(credential.getAwsCredentialProvider())
-                        .withRegion(getRegion())
-                        .build();
-        DescribeAvailabilityZonesResult res = client.describeAvailabilityZones();
-        List<String> zone = Lists.newArrayList();
-        for (AvailabilityZone reg : res.getAvailabilityZones()) {
-            if (reg.getState().equals("available")) zone.add(reg.getZoneName());
-            if (zone.size() == 3) break;
+        try (Ec2Client client = getEc2Client()) {
+            return client.describeAvailabilityZones()
+                    .availabilityZones()
+                    .stream()
+                    .filter(zone -> zone.stateAsString().equals("available"))
+                    .map(AvailabilityZone::zoneName)
+                    .limit(3)
+                    .collect(Collectors.toList());
         }
-        return ImmutableList.copyOf(zone);
     }
 
     @Override
     public String getInstanceId() {
         if (instanceId == null) {
-            instanceId = EC2MetadataUtils.getInstanceId();
+            instanceId = tryGetDataFromUrl(INSTANCE_ID);
         }
         return instanceId;
     }
@@ -101,14 +104,14 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getInstanceType() {
         if (instanceType == null) {
-            instanceType = EC2MetadataUtils.getInstanceType();
+            instanceType = tryGetDataFromUrl(INSTANCE_TYPE);
         }
         return instanceType;
     }
 
     private String getMac() {
         if (mac == null) {
-            mac = EC2MetadataUtils.getNetworkInterfaces().get(0).getMacAddress();
+            mac = tryGetDataFromUrl(MAC);
         }
         return mac;
     }
@@ -116,51 +119,40 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public String getRegion() {
         if (region == null) {
-            region = EC2MetadataUtils.getEC2InstanceRegion();
+            region = tryGetDataFromUrl(REGION);
         }
         return region;
     }
 
     @Override
     public String getVpcId() {
-        String nacId = getMac();
-        if (StringUtils.isEmpty(nacId)) return null;
-
-        if (vpcId == null)
-            try {
-                vpcId = EC2MetadataUtils.getNetworkInterfaces().get(0).getVpcId();
-            } catch (Exception e) {
-                logger.info(
-                        "Vpc id does not exist for running instance, not fatal as running instance maybe not be in vpc.  Msg: {}",
-                        e.getLocalizedMessage());
+        if (vpcId == null) {
+            String mac = getMac();
+            if (!StringUtils.isEmpty(mac)) {
+                vpcId = tryGetDataFromUrl(LATEST_METADATA + "network/interfaces/macs/" + mac + "/vpc-id");
             }
-
+        }
         return vpcId;
     }
 
     @Override
     public String getAutoScalingGroup() {
-        final AmazonEC2 client =
-                AmazonEC2ClientBuilder.standard()
-                        .withCredentials(credential.getAwsCredentialProvider())
-                        .withRegion(getRegion())
-                        .build();
-        try {
+        try (Ec2Client client = getEc2Client()) {
             return new RetryableCallable<String>(15, 30000) {
                 public String retriableCall() throws IllegalStateException {
                     DescribeInstancesRequest desc =
-                            new DescribeInstancesRequest().withInstanceIds(getInstanceId());
-                    DescribeInstancesResult res = client.describeInstances(desc);
-
-                    for (Reservation resr : res.getReservations()) {
-                        for (Instance ins : resr.getInstances()) {
-                            for (com.amazonaws.services.ec2.model.Tag tag : ins.getTags()) {
-                                if (tag.getKey().equals("aws:autoscaling:groupName"))
-                                    return tag.getValue();
-                            }
-                        }
+                            DescribeInstancesRequest.builder().instanceIds(getInstanceId()).build();
+                    Optional<Tag> matchingTag =
+                            client.describeInstances(desc)
+                                    .reservations()
+                                    .stream()
+                                    .flatMap(res -> res.instances().stream())
+                                    .flatMap(instance -> instance.tags().stream())
+                                    .filter(tag -> tag.key().equals("aws:autoscaling:groupName"))
+                                    .findFirst();
+                    if (matchingTag.isPresent()) {
+                        return matchingTag.get().value();
                     }
-
                     throw new IllegalStateException("Couldn't determine ASG name");
                 }
             }.call();
@@ -173,8 +165,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     @Override
     public InstanceEnvironment getInstanceEnvironment() {
         if (instanceEnvironment == null) {
-            instanceEnvironment =
-                    (getVpcId() == null) ? InstanceEnvironment.CLASSIC : InstanceEnvironment.VPC;
+            instanceEnvironment = (getVpcId() == null) ? InstanceEnvironment.CLASSIC : InstanceEnvironment.VPC;
         }
         return instanceEnvironment;
     }
@@ -183,8 +174,7 @@ public class AWSInstanceInfo implements InstanceInfo {
     public String getHostname() {
         if (hostName == null) {
             String publicHostName = tryGetDataFromUrl(PUBLIC_HOSTNAME_URL);
-            hostName =
-                    publicHostName == null ? tryGetDataFromUrl(LOCAL_HOSTNAME_URL) : publicHostName;
+            hostName = publicHostName == null ? tryGetDataFromUrl(LOCAL_HOSTNAME_URL) : publicHostName;
         }
         return hostName;
     }
@@ -198,9 +188,17 @@ public class AWSInstanceInfo implements InstanceInfo {
         return hostIP;
     }
 
+    private Ec2Client getEc2Client() {
+        return Ec2Client.builder()
+                .region(Region.of(getRegion()))
+                .credentialsProvider(credential.getAwsCredentialProvider())
+                .build();
+    }
+
     String tryGetDataFromUrl(String url) {
-        try {
-            return EC2MetadataUtils.getData(url);
+        try (Ec2MetadataClient client = Ec2MetadataClient.create()) {
+            // trim()? -> V2 client sometimes appends newlines
+            return client.get(url).asString().trim();
         } catch (Exception e) {
             return null;
         }

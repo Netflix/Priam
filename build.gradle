@@ -42,10 +42,13 @@ allprojects {
       implementation 'com.amazonaws:aws-java-sdk-autoscaling:latest.release'
       implementation 'com.amazonaws:aws-java-sdk-sts:latest.release'
 
-      // AWS Services - SDK v2 (for S3, SNS)
-      implementation platform('software.amazon.awssdk:bom:2.20.0')
+      // AWS Services - SDK v2 (for S3)
+      implementation platform('software.amazon.awssdk:bom:2.27.21')
       implementation 'software.amazon.awssdk:s3'
-      implementation 'software.amazon.awssdk:sts' // Needed for S3 role assumption
+        implementation 'software.amazon.awssdk:sts' // Needed for S3 role assumption
+        implementation("software.amazon.awssdk:imds")
+        implementation("software.amazon.awssdk:ec2")
+        implementation("software.amazon.awssdk:url-connection-client")
 
       implementation 'com.google.inject:guice:4.2.2'
       implementation 'com.google.inject.extensions:guice-servlet:4.2.2'

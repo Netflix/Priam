@@ -549,11 +549,6 @@ public class PriamConfiguration implements IConfiguration {
     }
 
     @Override
-    public boolean isDualAccount() {
-        return config.get(PRIAM_PRE + ".roleassumption.dualaccount", false);
-    }
-
-    @Override
     public String getGcsServiceAccountId() {
         return config.get(PRIAM_PRE + ".gcs.service.acct.id");
     }

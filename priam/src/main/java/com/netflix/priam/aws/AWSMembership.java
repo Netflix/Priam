@@ -18,23 +18,23 @@ package com.netflix.priam.aws;
 
 import com.amazonaws.services.autoscaling.AmazonAutoScaling;
 import com.amazonaws.services.autoscaling.AmazonAutoScalingClientBuilder;
-import com.amazonaws.services.autoscaling.model.*;
+import com.amazonaws.services.autoscaling.model.AutoScalingGroup;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsRequest;
+import com.amazonaws.services.autoscaling.model.DescribeAutoScalingGroupsResult;
 import com.amazonaws.services.autoscaling.model.Instance;
-import com.amazonaws.services.ec2.AmazonEC2;
-import com.amazonaws.services.ec2.AmazonEC2ClientBuilder;
-import com.amazonaws.services.ec2.model.*;
-import com.amazonaws.services.ec2.model.Filter;
 import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.IMembership;
 import com.netflix.priam.identity.config.InstanceInfo;
-import java.util.*;
-import javax.inject.Inject;
-import javax.inject.Named;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Class to query amazon ASG for its members to provide - Number of valid nodes in the ASG - Number
@@ -45,18 +45,15 @@ public class AWSMembership implements IMembership {
     private final IConfiguration config;
     private final ICredential provider;
     private final InstanceInfo instanceInfo;
-    private final ICredential crossAccountProvider;
 
     @Inject
     public AWSMembership(
             IConfiguration config,
             ICredential provider,
-            @Named("awsec2roleassumption") ICredential crossAccountProvider,
             InstanceInfo instanceInfo) {
         this.config = config;
         this.provider = provider;
         this.instanceInfo = instanceInfo;
-        this.crossAccountProvider = crossAccountProvider;
     }
 
     @Override
@@ -117,40 +114,6 @@ public class AWSMembership implements IMembership {
     }
 
     @Override
-    public ImmutableSet<String> getCrossAccountRacMembership() {
-        AmazonAutoScaling client = null;
-        try {
-            List<String> asgNames = new ArrayList<>();
-            asgNames.add(instanceInfo.getAutoScalingGroup());
-            asgNames.addAll(Arrays.asList(config.getSiblingASGNames().split("\\s*,\\s*")));
-            client = getCrossAccountAutoScalingClient();
-            DescribeAutoScalingGroupsRequest asgReq =
-                    new DescribeAutoScalingGroupsRequest()
-                            .withAutoScalingGroupNames(
-                                    asgNames.toArray(new String[asgNames.size()]));
-            DescribeAutoScalingGroupsResult res = client.describeAutoScalingGroups(asgReq);
-
-            ImmutableSet.Builder<String> instanceIds = ImmutableSet.builder();
-            for (AutoScalingGroup asg : res.getAutoScalingGroups()) {
-                for (Instance ins : asg.getInstances())
-                    if (!(ins.getLifecycleState().equalsIgnoreCase("Terminating")
-                            || ins.getLifecycleState().equalsIgnoreCase("shutting-down")
-                            || ins.getLifecycleState().equalsIgnoreCase("Terminated")))
-                        instanceIds.add(ins.getInstanceId());
-            }
-            if (logger.isInfoEnabled()) {
-                logger.info(
-                        String.format(
-                                "Querying Amazon returned following instance in the cross-account ASG: %s --> %s",
-                                instanceInfo.getRac(), StringUtils.join(instanceIds, ",")));
-            }
-            return instanceIds.build();
-        } finally {
-            if (client != null) client.shutdown();
-        }
-    }
-
-    @Override
     public int getRacCount() {
         return config.getRacs().size();
     }
@@ -158,13 +121,6 @@ public class AWSMembership implements IMembership {
     protected AmazonAutoScaling getAutoScalingClient() {
         return AmazonAutoScalingClientBuilder.standard()
                 .withCredentials(provider.getAwsCredentialProvider())
-                .withRegion(instanceInfo.getRegion())
-                .build();
-    }
-
-    protected AmazonAutoScaling getCrossAccountAutoScalingClient() {
-        return AmazonAutoScalingClientBuilder.standard()
-                .withCredentials(crossAccountProvider.getAwsCredentialProvider())
                 .withRegion(instanceInfo.getRegion())
                 .build();
     }

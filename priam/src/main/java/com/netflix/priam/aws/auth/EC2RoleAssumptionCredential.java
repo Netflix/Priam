@@ -37,7 +37,7 @@ public class EC2RoleAssumptionCredential implements ICredential {
 
     @Override
     public AWSCredentialsProvider getAwsCredentialProvider() {
-        if (this.config.isDualAccount() || this.stsSessionCredentialsProvider == null) {
+        if (this.stsSessionCredentialsProvider == null) {
             synchronized (this) {
                 if (this.stsSessionCredentialsProvider == null) {
 

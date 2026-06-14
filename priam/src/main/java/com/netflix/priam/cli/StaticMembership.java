@@ -81,18 +81,4 @@ public class StaticMembership implements IMembership {
     public int getRacCount() {
         return racCount;
     }
-
-    @Override
-    public void addACL(Collection<String> listIPs, int from, int to) {}
-
-    @Override
-    public void removeACL(Collection<String> listIPs, int from, int to) {}
-
-    @Override
-    public ImmutableSet<String> listACL(int from, int to) {
-        return null;
-    }
-
-    @Override
-    public void expandRacMembership(int count) {}
 }

@@ -38,13 +38,6 @@ public interface IMembership {
     int getRacMembershipSize();
 
     /**
-     * Get a set of Instances in the cross-account but current RAC
-     *
-     * @return
-     */
-    ImmutableSet<String> getCrossAccountRacMembership();
-
-    /**
      * Number of RACs
      *
      * @return

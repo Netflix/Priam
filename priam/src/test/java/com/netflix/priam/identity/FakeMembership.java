@@ -18,7 +18,7 @@
 package com.netflix.priam.identity;
 
 import com.google.common.collect.ImmutableSet;
-import java.util.Collection;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -36,11 +36,6 @@ public class FakeMembership implements IMembership {
     @Override
     public ImmutableSet<String> getRacMembership() {
         return instances;
-    }
-
-    @Override
-    public ImmutableSet<String> getCrossAccountRacMembership() {
-        return null;
     }
 
     @Override

@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.IMembership;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
@@ -64,11 +63,6 @@ public class StaticMembership implements IMembership {
     @Override
     public ImmutableSet<String> getRacMembership() {
         return racMembership;
-    }
-
-    @Override
-    public ImmutableSet<String> getCrossAccountRacMembership() {
-        return null;
     }
 
     @Override

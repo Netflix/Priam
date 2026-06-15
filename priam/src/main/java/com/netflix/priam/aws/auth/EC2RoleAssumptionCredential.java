@@ -25,7 +25,7 @@ import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 import javax.inject.Inject;
 
 public class EC2RoleAssumptionCredential implements ICredential {
-    private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "AwsRoleAssumptionSession";
+    private static final String SESSION_NAME = "AwsRoleAssumptionSession";
     private final ICredential cred;
     private final IConfiguration config;
     private final InstanceInfo instanceInfo;
@@ -51,16 +51,9 @@ public class EC2RoleAssumptionCredential implements ICredential {
                     Validate.notEmpty(roleArn, "roleArn is empty");
                     try {
                         StsClient stsClient =
-                                StsClient.builder()
-                                        .credentialsProvider(this.cred.getAwsCredentialProvider())
-                                        .build();
-
+                                StsClient.builder().credentialsProvider(cred.getAwsCredentialProvider()).build();
                         AssumeRoleRequest assumeRoleRequest =
-                                AssumeRoleRequest.builder()
-                                        .roleArn(roleArn)
-                                        .roleSessionName(AWS_ROLE_ASSUMPTION_SESSION_NAME)
-                                        .build();
-
+                                AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(SESSION_NAME).build();
                         this.stsSessionCredentialsProvider =
                                 StsAssumeRoleCredentialsProvider.builder()
                                         .stsClient(stsClient)

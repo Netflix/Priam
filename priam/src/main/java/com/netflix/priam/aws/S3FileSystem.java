@@ -18,7 +18,6 @@ package com.netflix.priam.aws;
 
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.base.Preconditions;
-import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.backup.AbstractBackupPath;
 import com.netflix.priam.backup.BackupRestoreException;
 import com.netflix.priam.backup.DynamicRateLimiter;
@@ -27,6 +26,7 @@ import com.netflix.priam.compress.ChunkedStream;
 import com.netflix.priam.compress.CompressionType;
 import com.netflix.priam.compress.ICompression;
 import com.netflix.priam.config.IConfiguration;
+import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.identity.config.InstanceInfo;
 import com.netflix.priam.merics.BackupMetrics;
 import com.netflix.priam.utils.BoundedExponentialRetryCallable;
@@ -69,7 +69,7 @@ public class S3FileSystem extends S3FileSystemBase {
 
     @Inject
     public S3FileSystem(
-            @Named("awss3roleassumption") IS3Credential cred,
+            @Named("awss3roleassumption") ICredential cred,
             Provider<AbstractBackupPath> pathProvider,
             ICompression compress,
             final IConfiguration config,

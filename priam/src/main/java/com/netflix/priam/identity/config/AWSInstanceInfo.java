@@ -13,7 +13,6 @@
  */
 package com.netflix.priam.identity.config;
 
-import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.cred.ICredential;
 import com.netflix.priam.utils.RetryableCallable;
 import org.apache.commons.lang3.StringUtils;
@@ -55,12 +54,12 @@ public class AWSInstanceInfo implements InstanceInfo {
     private String instanceType;
     private String mac;
     private String region;
-    private IS3Credential credential;
+    private ICredential credential;
     private String vpcId;
     private InstanceEnvironment instanceEnvironment;
 
     @Inject
-    public AWSInstanceInfo(IS3Credential credential) {
+    public AWSInstanceInfo(ICredential credential) {
         this.credential = credential;
     }
 

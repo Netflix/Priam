@@ -14,67 +14,52 @@
 package com.netflix.priam.aws.auth;
 
 import com.netflix.priam.config.IConfiguration;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Singleton;
+import com.netflix.priam.cred.ICredential;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.services.sts.StsClient;
 import software.amazon.awssdk.services.sts.auth.StsAssumeRoleCredentialsProvider;
 import software.amazon.awssdk.services.sts.model.AssumeRoleRequest;
 
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Singleton;
+
 @Singleton
-public class S3RoleAssumptionCredential implements IS3Credential {
-    private static final String AWS_ROLE_ASSUMPTION_SESSION_NAME = "S3RoleAssumptionSession";
+public class S3RoleAssumptionCredential implements ICredential {
+    private static final String SESSION_NAME = "S3RoleAssumptionSession";
     private static final Logger logger = LoggerFactory.getLogger(S3RoleAssumptionCredential.class);
 
-    private final IS3Credential cred;
+    private final ICredential cred;
     private final IConfiguration config;
-    private AwsCredentialsProvider stsSessionCredentialsProvider;
+    private AwsCredentialsProvider credentialsProvider;
 
     @Inject
-    public S3RoleAssumptionCredential(
-            @Named("s3") IS3Credential cred, IConfiguration config) {
+    public S3RoleAssumptionCredential(@Named("s3") ICredential cred, IConfiguration config) {
         this.cred = cred;
         this.config = config;
     }
 
     public AwsCredentialsProvider getAwsCredentialProvider() {
-        if (this.stsSessionCredentialsProvider == null) {
+        if (this.credentialsProvider == null) {
             synchronized (this) {
-                if (this.stsSessionCredentialsProvider == null) {
-
-                    final String roleArn = this.config.getAWSRoleAssumptionArn();
-                    // IAM role created for bucket own by account "awsprodbackup"
+                if (this.credentialsProvider == null) {
+                    final String roleArn = config.getAWSRoleAssumptionArn();
                     if (roleArn == null || roleArn.isEmpty()) {
-                        logger.warn(
-                                "Role ARN is null or empty probably due to missing config entry. Falling back to instance level credentials");
-                        this.stsSessionCredentialsProvider = this.cred.getAwsCredentialProvider();
-                        // throw new NullPointerException("Role ARN is null or empty probably due to
-                        // missing config entry");
+                        logger.warn("Role ARN is empty due to missing config. Using instance level credentials");
+                        credentialsProvider = cred.getAwsCredentialProvider();
                     } else {
-                        // Get handle to an implementation that uses AWS Security Token Service
-                        // (STS) to create temporary, short-lived session with explicit refresh for
-                        // session/token expiration.
                         try {
-
-                            StsClient stsClient = StsClient.builder()
-                                    .credentialsProvider(cred.getAwsCredentialProvider())
-                                    .build();
-
-                            AssumeRoleRequest assumeRoleRequest = AssumeRoleRequest.builder()
-                                    .roleArn(roleArn)
-                                    .roleSessionName(AWS_ROLE_ASSUMPTION_SESSION_NAME)
-                                    .build();
-
-                            this.stsSessionCredentialsProvider =
+                            StsClient stsClient =
+                                    StsClient.builder().credentialsProvider(cred.getAwsCredentialProvider()).build();
+                            AssumeRoleRequest assumeRoleRequest =
+                                    AssumeRoleRequest.builder().roleArn(roleArn).roleSessionName(SESSION_NAME).build();
+                            credentialsProvider =
                                     StsAssumeRoleCredentialsProvider.builder()
                                             .stsClient(stsClient)
                                             .refreshRequest(assumeRoleRequest)
                                             .build();
-
                         } catch (Exception ex) {
                             throw new IllegalStateException(
                                     "Exception in getting handle to AWS Security Token Service (STS).  Msg: "
@@ -85,7 +70,6 @@ public class S3RoleAssumptionCredential implements IS3Credential {
                 }
             }
         }
-
-        return this.stsSessionCredentialsProvider;
+        return credentialsProvider;
     }
 }

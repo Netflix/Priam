@@ -128,7 +128,7 @@ public class TokenRetriever implements ITokenRetriever {
             public PriamInstance retriableCall() throws Exception {
                 logger.info("Trying to grab an existing token");
                 sleeper.sleep(new Random().nextInt(5000) + 10000);
-                Set<String> racInstanceIds = getRacInstanceIds();
+                Set<String> racInstanceIds = membership.getRacMembership();
                 ImmutableSet<PriamInstance> allIds = factory.getAllIds(config.getAppName());
                 List<PriamInstance> instances =
                         allIds.stream()
@@ -348,13 +348,6 @@ public class TokenRetriever implements ITokenRetriever {
                 .stream()
                 .filter((i) -> i.getInstanceId().equals(myInstanceInfo.getInstanceId()))
                 .findFirst();
-    }
-
-    private Set<String> getRacInstanceIds() { // TODO(CASS-1986)
-        ImmutableSet<String> racMembership = membership.getRacMembership();
-        return config.isDualAccount()
-                ? Sets.union(membership.getCrossAccountRacMembership(), racMembership)
-                : racMembership;
     }
 
     private boolean isNew(PriamInstance instance) {

@@ -19,16 +19,20 @@ package com.netflix.priam.resources;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.netflix.priam.backup.*;
-import com.netflix.priam.backupv2.BackupTTLTask;
-import com.netflix.priam.backupv2.BackupV2Service;
-import com.netflix.priam.backupv2.IMetaProxy;
-import com.netflix.priam.backupv2.SnapshotMetaTask;
 import com.netflix.priam.backupv2.*;
 import com.netflix.priam.config.IConfiguration;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.utils.DateUtil;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import com.netflix.priam.utils.GsonJsonSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.inject.Inject;
+import javax.inject.Named;
+import javax.inject.Provider;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
@@ -36,14 +40,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
-import javax.inject.Inject;
-import javax.inject.Named;
-import javax.inject.Provider;
-import javax.ws.rs.*;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Created by aagrawal on 1/16/19. */
 @Path("/v2/backup")
@@ -60,7 +56,6 @@ public class BackupServletV2 {
     private final IMetaProxy metaProxy;
     private final Provider<AbstractBackupPath> pathProvider;
     private final BackupV2Service backupService;
-    private final BackupNotificationMgr backupNotificationMgr;
     private final IConfiguration config;
     private final DirectorySize directorySize;
     private final SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter;
@@ -77,7 +72,6 @@ public class BackupServletV2 {
             @Named("v2") IMetaProxy metaV2Proxy,
             Provider<AbstractBackupPath> pathProvider,
             BackupV2Service backupService,
-            BackupNotificationMgr backupNotificationMgr,
             IConfiguration config,
             DirectorySize directorySize,
             SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter) {
@@ -89,7 +83,6 @@ public class BackupServletV2 {
         this.metaProxy = metaV2Proxy;
         this.pathProvider = pathProvider;
         this.backupService = backupService;
-        this.backupNotificationMgr = backupNotificationMgr;
         this.config = config;
         this.directorySize = directorySize;
         this.snapshotVerificationMarkerWriter = snapshotVerificationMarkerWriter;
@@ -156,19 +149,7 @@ public class BackupServletV2 {
                     .entity("No valid meta found for provided time range")
                     .build();
         }
-
-        // Send notification for any verified backups. This is useful in one-off backup consumption
-        // by downward dependencies.
-        // Side-effect: It may send notification for already verified snapshot i.e. duplicate
-        // message may be sent.
-        logger.info(
-                "Sending {} message for backup: {}",
-                AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                result.get().remotePath);
-
-        backupNotificationMgr.notify(result.get().remotePath, result.get().snapshotInstant);
         snapshotVerificationMarkerWriter.write(result.get().remotePath);
-
         return Response.ok(result.get().toString()).build();
     }
 

@@ -24,7 +24,6 @@ import com.google.inject.Injector;
 import com.netflix.priam.backup.*;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.Metrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.UnsupportedTypeException;
 import com.netflix.priam.utils.DateUtil.DateRange;
 import com.netflix.spectator.api.Counter;
@@ -45,12 +44,10 @@ public class TestBackupVerificationTask {
     @Inject private BackupVerificationTask backupVerificationService;
     private Counter badVerifications;
     @Mocked private BackupVerification backupVerification;
-    @Mocked private BackupNotificationMgr backupNotificationMgr;
 
     @Before
     public void setUp() {
         new MockBackupVerification();
-        new MockBackupNotificationMgr();
         Injector injector = Guice.createInjector(new BRTestModule());
         injector.injectMembers(this);
         badVerifications =
@@ -91,8 +88,6 @@ public class TestBackupVerificationTask {
         }
     }
 
-    private static final class MockBackupNotificationMgr extends MockUp<BackupNotificationMgr> {}
-
     @Test
     public void throwError() {
         MockBackupVerification.shouldThrow(true);
@@ -106,12 +101,6 @@ public class TestBackupVerificationTask {
         MockBackupVerification.setVerifiedBackups(getRecentlyValidatedMetadata());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
-        new Verifications() {
-            {
-                backupNotificationMgr.notify(anyString, (Instant) any);
-                times = 1;
-            }
-        };
     }
 
     @Test
@@ -128,12 +117,6 @@ public class TestBackupVerificationTask {
         MockBackupVerification.setVerifiedBackups(getPreviouslyValidatedMetadata());
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(0);
-        new Verifications() {
-            {
-                backupNotificationMgr.notify(anyString, (Instant) any);
-                times = 0;
-            }
-        };
     }
 
     @Test
@@ -142,12 +125,6 @@ public class TestBackupVerificationTask {
         MockBackupVerification.setVerifiedBackups();
         backupVerificationService.execute();
         Truth.assertThat(badVerifications.count()).isEqualTo(1);
-        new Verifications() {
-            {
-                backupNotificationMgr.notify(anyString, (Instant) any);
-                maxTimes = 0;
-            }
-        };
     }
 
     @Test
@@ -163,11 +140,6 @@ public class TestBackupVerificationTask {
         new Verifications() {
             {
                 backupVerification.verifyBackupsInRange((DateRange) any);
-                maxTimes = 0;
-            }
-
-            {
-                backupNotificationMgr.notify(anyString, (Instant) any);
                 maxTimes = 0;
             }
         };

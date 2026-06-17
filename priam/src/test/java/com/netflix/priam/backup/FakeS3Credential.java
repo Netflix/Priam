@@ -17,13 +17,13 @@
 
 package com.netflix.priam.backup;
 
-import com.netflix.priam.aws.auth.IS3Credential;
+import com.netflix.priam.cred.ICredential;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentials;
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProvider;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 
-public class FakeS3Credential implements IS3Credential {
+public class FakeS3Credential implements ICredential {
     private final AwsCredentialsProvider credentialsProvider;
 
     public FakeS3Credential() {

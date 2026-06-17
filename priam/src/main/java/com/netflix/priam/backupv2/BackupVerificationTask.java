@@ -22,7 +22,6 @@ import com.netflix.priam.config.IBackupRestoreConfig;
 import com.netflix.priam.config.IConfiguration;
 import com.netflix.priam.health.InstanceState;
 import com.netflix.priam.merics.BackupMetrics;
-import com.netflix.priam.notification.BackupNotificationMgr;
 import com.netflix.priam.scheduler.CronTimer;
 import com.netflix.priam.scheduler.Task;
 import com.netflix.priam.scheduler.TaskTimer;
@@ -48,7 +47,6 @@ public class BackupVerificationTask extends Task {
     private final BackupVerification backupVerification;
     private final BackupMetrics backupMetrics;
     private final InstanceState instanceState;
-    private final BackupNotificationMgr backupNotificationMgr;
     private final SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter;
 
     @Inject
@@ -58,14 +56,12 @@ public class BackupVerificationTask extends Task {
             BackupVerification backupVerification,
             BackupMetrics backupMetrics,
             InstanceState instanceState,
-            BackupNotificationMgr backupNotificationMgr,
             SnapshotVerificationMarkerWriter snapshotVerificationMarkerWriter) {
         super(configuration);
         this.backupRestoreConfig = backupRestoreConfig;
         this.backupVerification = backupVerification;
         this.backupMetrics = backupMetrics;
         this.instanceState = instanceState;
-        this.backupNotificationMgr = backupNotificationMgr;
         this.snapshotVerificationMarkerWriter = snapshotVerificationMarkerWriter;
     }
 
@@ -101,12 +97,6 @@ public class BackupVerificationTask extends Task {
                                     snapshotLocation
                                             .subpath(1, snapshotLocation.getNameCount())
                                             .toString();
-                            logger.info(
-                                    "Sending {} message for backup: {}",
-                                    AbstractBackupPath.BackupFileType.SNAPSHOT_VERIFIED,
-                                    snapshotKey);
-                            backupNotificationMgr.notify(
-                                    snapshotKey, result.getStart().toInstant());
                             snapshotVerificationMarkerWriter.write(snapshotKey);
                         });
 

@@ -20,7 +20,6 @@ package com.netflix.priam.backup;
 import com.google.inject.AbstractModule;
 import com.google.inject.Scopes;
 import com.google.inject.name.Names;
-import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backupv2.IMetaProxy;
 import com.netflix.priam.backupv2.MetaV2Proxy;
@@ -42,13 +41,14 @@ import com.netflix.priam.utils.FakeSleeper;
 import com.netflix.priam.utils.Sleeper;
 import com.netflix.spectator.api.DefaultRegistry;
 import com.netflix.spectator.api.Registry;
+import org.junit.Ignore;
+import org.quartz.SchedulerFactory;
+import org.quartz.impl.StdSchedulerFactory;
+
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
-import org.junit.Ignore;
-import org.quartz.SchedulerFactory;
-import org.quartz.impl.StdSchedulerFactory;
 
 @Ignore
 public class BRTestModule extends AbstractModule {
@@ -68,11 +68,11 @@ public class BRTestModule extends AbstractModule {
         bind(IBackupFileSystem.class).to(FakeBackupFileSystem.class).in(Scopes.SINGLETON);
         bind(Sleeper.class).to(FakeSleeper.class);
 
-        bind(IS3Credential.class)
+        bind(ICredential.class)
                 .annotatedWith(Names.named("s3"))
                 .to(FakeS3Credential.class)
                 .in(Scopes.SINGLETON);
-        bind(IS3Credential.class)
+        bind(ICredential.class)
                 .annotatedWith(Names.named("awss3roleassumption"))
                 .to(S3RoleAssumptionCredential.class);
 

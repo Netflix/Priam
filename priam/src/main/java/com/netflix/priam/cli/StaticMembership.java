@@ -20,7 +20,6 @@ import com.google.common.collect.ImmutableSet;
 import com.netflix.priam.identity.IMembership;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Collection;
 import java.util.Properties;
 import org.apache.cassandra.io.util.FileUtils;
 import org.slf4j.Logger;
@@ -67,11 +66,6 @@ public class StaticMembership implements IMembership {
     }
 
     @Override
-    public ImmutableSet<String> getCrossAccountRacMembership() {
-        return null;
-    }
-
-    @Override
     public int getRacMembershipSize() {
         if (racMembership == null) return 0;
         return racMembership.size();
@@ -81,18 +75,4 @@ public class StaticMembership implements IMembership {
     public int getRacCount() {
         return racCount;
     }
-
-    @Override
-    public void addACL(Collection<String> listIPs, int from, int to) {}
-
-    @Override
-    public void removeACL(Collection<String> listIPs, int from, int to) {}
-
-    @Override
-    public ImmutableSet<String> listACL(int from, int to) {
-        return null;
-    }
-
-    @Override
-    public void expandRacMembership(int count) {}
 }

@@ -20,7 +20,6 @@ import com.google.inject.AbstractModule;
 import com.google.inject.name.Names;
 import com.netflix.priam.aws.S3FileSystem;
 import com.netflix.priam.aws.auth.EC2RoleAssumptionCredential;
-import com.netflix.priam.aws.auth.IS3Credential;
 import com.netflix.priam.aws.auth.S3RoleAssumptionCredential;
 import com.netflix.priam.backup.IBackupFileSystem;
 import com.netflix.priam.backupv2.IMetaProxy;
@@ -37,7 +36,7 @@ public class PriamGuiceModule extends AbstractModule {
         bind(SchedulerFactory.class).to(StdSchedulerFactory.class).asEagerSingleton();
 
         bind(IBackupFileSystem.class).to(S3FileSystem.class);
-        bind(IS3Credential.class)
+        bind(ICredential.class)
                 .annotatedWith(Names.named("awss3roleassumption"))
                 .to(S3RoleAssumptionCredential.class);
         bind(ICredential.class)
